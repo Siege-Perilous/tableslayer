@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+	"name": "docs",
 	"version": "0.0.1",
 	"private": true,
 	"type": "module",
@@ -22,6 +22,7 @@
 		"@sveltejs/adapter-auto": "^3.1.1",
 		"@sveltejs/kit": "^2.5.2",
 		"@sveltejs/vite-plugin-svelte": "^3.0.2",
+		"@tableslayer/tsconfig": "workspace:*",
 		"@typescript-eslint/eslint-plugin": "^7.1.0",
 		"@typescript-eslint/parser": "^7.1.0",
 		"eslint": "^8.57.0",

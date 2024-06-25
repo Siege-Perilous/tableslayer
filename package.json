@@ -4,7 +4,9 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write ."
+    "tsc": "turbo run tsc",
+    "format-check": "prettier --check .",
+    "format-write": "prettier --write ."
   },
   "devDependencies": {
     "prettier": "^3.2.5",
@@ -15,5 +17,5 @@
   "engines": {
     "node": ">=18"
   },
-  "name": "with-svelte"
+  "name": "@tableslayer"
 }
