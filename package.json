@@ -4,14 +4,27 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "tsc": "turbo run tsc",
     "format-check": "prettier --check .",
-    "format-write": "prettier --write ."
+    "format-write": "prettier --write .",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
     "prettier": "^3.2.5",
+    "prettier-plugin-organize-imports": "^3.2.4",
     "prettier-plugin-svelte": "^3.2.2",
     "turbo": "^2.0.5"
+  },
+  "lint-staged": {
+    "*.{js,ts,svelte,css}": [
+      "npx prettier --config=.prettierrc.precommit.js --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "npx prettier --write"
+    ]
   },
   "packageManager": "pnpm@8.15.6",
   "engines": {
