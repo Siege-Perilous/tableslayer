@@ -8,6 +8,10 @@
     ".": {
       "types": "./index.ts",
       "svelte": "./index.ts"
+    },
+    "./styles/*.css": {
+      "import": "./styles/*.css",
+      "require": "./styles/*.css"
     }
   },
   "scripts": {

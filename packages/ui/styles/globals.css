@@ -1,0 +1,9 @@
+html {
+  --bg: purple;
+  color: black;
+}
+
+html.dark {
+  --bg: green;
+  color: white;
+}
