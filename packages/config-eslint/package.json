@@ -2,10 +2,10 @@
   "name": "@tableslayer/eslint-config",
   "version": "0.0.0",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.14.1",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-config-turbo": "^2.0.0",
+    "eslint-config-turbo": "^2.0.5",
     "eslint-plugin-svelte": "^2.41.0"
   },
   "publishConfig": {
