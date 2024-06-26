@@ -1,5 +1,5 @@
 {
-  "name": "@repo/ui",
+  "name": "@tableslayer/ui",
   "version": "0.0.0",
   "type": "module",
   "module": "index.ts",
@@ -14,7 +14,7 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
+    "@tableslayer/eslint-config": "workspace:*",
     "svelte": "^4.2.12"
   }
 }

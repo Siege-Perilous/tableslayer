@@ -29,16 +29,13 @@ importers:
 
   apps/docs:
     dependencies:
-      '@repo/ui':
+      '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
     devDependencies:
       '@playwright/test':
         specifier: ^1.42.1
         version: 1.42.1
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/config-eslint
       '@sveltejs/adapter-auto':
         specifier: ^3.1.1
         version: 3.1.1(@sveltejs/kit@2.5.2)
@@ -48,6 +45,9 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.0.2
         version: 3.0.2(svelte@4.2.12)(vite@5.1.4)
+      '@tableslayer/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/config-eslint
       '@tableslayer/tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-typescript
@@ -87,16 +87,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@repo/ui':
+      '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
     devDependencies:
       '@playwright/test':
         specifier: ^1.42.1
         version: 1.42.1
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/config-eslint
       '@sveltejs/adapter-auto':
         specifier: ^3.1.1
         version: 3.1.1(@sveltejs/kit@2.5.2)
@@ -106,6 +103,9 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.0.2
         version: 3.0.2(svelte@4.2.12)(vite@5.1.4)
+      '@tableslayer/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/config-eslint
       '@tableslayer/tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-typescript
@@ -169,7 +169,7 @@ importers:
 
   packages/ui:
     devDependencies:
-      '@repo/eslint-config':
+      '@tableslayer/eslint-config':
         specifier: workspace:*
         version: link:../config-eslint
       svelte:
