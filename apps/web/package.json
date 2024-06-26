@@ -15,7 +15,8 @@
     "test:unit": "vitest"
   },
   "dependencies": {
-    "@tableslayer/ui": "workspace:*"
+    "@tableslayer/ui": "workspace:*",
+    "mode-watcher": "^0.3.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
