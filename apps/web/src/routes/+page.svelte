@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MyCounterButton } from '@repo/ui';
+  import { MyCounterButton } from '@tableslayer/ui';
 </script>
 
 <h1>Web</h1>

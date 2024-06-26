@@ -5,6 +5,7 @@ module.exports = {
   trailingComma: 'none',
   printWidth: 120,
   endOfLine: 'auto',
-  plugins: ['prettier-plugin-organize-imports'],
-  organizeImportsSkipDestructiveCodeActions: true
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-svelte'],
+  organizeImportsSkipDestructiveCodeActions: true,
+  overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }]
 };
