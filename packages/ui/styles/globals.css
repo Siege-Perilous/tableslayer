@@ -1,9 +1,9 @@
 html {
-  --bg: purple;
+  --bg: white;
   color: black;
 }
 
 html.dark {
-  --bg: green;
+  --bg: black;
   color: white;
 }
