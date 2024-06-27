@@ -6,6 +6,9 @@
       "inputs": ["$TURBO_DEFAULT", ".env*"],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
+    "web#build": {
+      "env": ["TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"]
+    },
     "tsc": {
       "dependsOn": ["^tsc"],
       "outputs": []
