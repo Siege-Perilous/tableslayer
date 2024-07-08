@@ -16,10 +16,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
+    "db:drop": "drizzle-kit drop",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@libsql/client": "^0.7.0",
+    "@lucia-auth/adapter-drizzle": "^1.0.7",
+    "@node-rs/argon2": "^1.8.3",
     "@tableslayer/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
@@ -36,6 +39,7 @@
     "@typescript-eslint/parser": "^7.14.1",
     "drizzle-kit": "^0.22.7",
     "eslint": "^8.57.0",
+    "lucia": "^3.2.0",
     "prettier": "^3.3.2",
     "prettier-plugin-svelte": "^3.2.5",
     "svelte": "5.0.0-next.166",

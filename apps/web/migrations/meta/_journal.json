@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1719497962467,
-      "tag": "0000_fantastic_darkstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1719506400238,
-      "tag": "0001_fearless_synch",
+      "when": 1720419117716,
+      "tag": "0000_simple_sunfire",
       "breakpoints": true
     }
   ]
