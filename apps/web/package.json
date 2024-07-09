@@ -26,7 +26,9 @@
     "@tableslayer/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
-    "mode-watcher": "^0.3.1"
+    "mode-watcher": "^0.3.1",
+    "oslo": "^1.2.1",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
@@ -35,6 +37,7 @@
     "@sveltejs/vite-plugin-svelte": "^3.1.1",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
     "drizzle-kit": "^0.22.7",
