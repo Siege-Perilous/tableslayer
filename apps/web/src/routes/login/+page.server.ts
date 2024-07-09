@@ -18,15 +18,10 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   default: async (event) => {
     const formData = await event.request.formData();
-    const username = formData.get('username');
+    const email = formData.get('email');
     const password = formData.get('password');
 
-    if (
-      typeof username !== 'string' ||
-      username.length < 3 ||
-      username.length > 31 ||
-      !/^[a-z0-9_-]+$/.test(username)
-    ) {
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return fail(400, {
         message: 'Invalid username'
       });
@@ -37,7 +32,7 @@ export const actions: Actions = {
       });
     }
 
-    const existingUser = await db.select().from(usersTable).where(eq(usersTable.name, username)).get();
+    const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
     if (!existingUser) {
       return fail(400, {

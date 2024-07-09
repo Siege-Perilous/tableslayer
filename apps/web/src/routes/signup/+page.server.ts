@@ -2,11 +2,11 @@ import { db } from '$lib/db';
 import { lucia } from '$lib/server/auth';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
-import { generateId } from 'lucia';
+import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
-import { usersTable } from '$lib/db/schema';
+import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
 
 // Define a custom type for database errors
 interface DatabaseError extends Error {
@@ -23,19 +23,8 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   default: async (event) => {
     const formData = await event.request.formData();
-    const username = formData.get('username');
     const email = formData.get('email');
     const password = formData.get('password');
-    if (
-      typeof username !== 'string' ||
-      username.length < 3 ||
-      username.length > 31 ||
-      !/^[a-z0-9_-]+$/.test(username)
-    ) {
-      return fail(400, {
-        message: 'Invalid username'
-      });
-    }
     if (typeof password !== 'string' || password.length < 6 || password.length > 255) {
       return fail(400, {
         message: 'Invalid password'
@@ -54,16 +43,20 @@ export const actions: Actions = {
       outputLen: 32,
       parallelism: 1
     });
-    const userId = generateId(15);
+    const userId = uuidv4();
     console.log('userId', userId); // 'userId 1a2b3c
 
     try {
       await db.insert(usersTable).values({
         id: userId,
-        name: username,
+        name: '',
         email: email,
         passwordHash: passwordHash,
         address: '' // Assuming address can be empty
+      });
+
+      await db.insert(emailVerificationCodesTable).values({
+        userId
       });
 
       const session = await lucia.createSession(userId, {});
@@ -72,6 +65,7 @@ export const actions: Actions = {
         path: '.',
         ...sessionCookie.attributes
       });
+      return redirect(302, 'verify-email');
     } catch (error) {
       const e = error as DatabaseError;
       console.log(e);
@@ -86,6 +80,5 @@ export const actions: Actions = {
         message: 'An unknown error occurred'
       });
     }
-    return redirect(302, '/');
   }
 };
