@@ -1,4 +1,12 @@
-## Links
+## Things to do
+
+- Add Google oauth
+- Email system to send out verification codes
+- Figure out Zod and `routes/api` system
+- Project / route structure. Website repo vs. app repo vs. combined
+- eslint v9
+
+## Research
 
 Sending emails with Cloudflare Workers
 https://www.fadhil-blog.dev/blog/cloudflare-worker-send-email/

@@ -1,5 +1,7 @@
+// src/lib/db/schema.ts
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,11 +41,9 @@ export const sessionTable = sqliteTable('session', {
   expiresAt: integer('expires_at').notNull()
 });
 
+// Generate Zod schemas
+export const insertUserSchema = createInsertSchema(usersTable);
+export const selectUserSchema = createSelectSchema(usersTable);
+
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
-
-export type InsertEmailVerificationCode = typeof emailVerificationCodesTable.$inferInsert;
-export type SelectEmailVerificationCode = typeof emailVerificationCodesTable.$inferSelect;
-
-export type InsertSession = typeof sessionTable.$inferInsert;
-export type SelectSession = typeof sessionTable.$inferSelect;
