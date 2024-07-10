@@ -1,5 +1,3 @@
-import { db } from '$lib/db';
-import { scenesTable } from '$lib/db/schema';
 import { getUser } from '$lib/server';
 import type { PageServerLoad } from './$types';
 
@@ -10,9 +8,7 @@ export const load = (async (event) => {
     user = await getUser(userId);
   }
 
-  const scenes = await db.select().from(scenesTable);
   return {
-    user,
-    scenes
+    user
   };
 }) satisfies PageServerLoad;

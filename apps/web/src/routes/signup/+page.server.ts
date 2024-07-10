@@ -51,19 +51,16 @@ export const actions: Actions = {
       parallelism: 1
     });
     const userId = uuidv4();
-    console.log('userId', userId); // 'userId 1a2b3c
 
     try {
       await db.insert(usersTable).values({
         id: userId,
         name: '',
         email: email,
-        passwordHash: passwordHash,
-        address: '' // Assuming address can be empty
+        passwordHash: passwordHash
       });
 
       await db.insert(emailVerificationCodesTable).values({
-        id: uuidv4(),
         userId
       });
 
