@@ -1,9 +1,13 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { goto } from '$app/navigation';
 
   import type { ActionData } from './$types';
 
   export let form: ActionData;
+  if (form?.status === 200) {
+    goto('/verify-email');
+  }
 </script>
 
 <h1>Create an account</h1>

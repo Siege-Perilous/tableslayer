@@ -1,3 +1,8 @@
+## Links
+
+Sending emails with Cloudflare Workers
+https://www.fadhil-blog.dev/blog/cloudflare-worker-send-email/
+
 Runthrough of svelte 5
 https://sveltekit.io/blog/svelte-5
 
