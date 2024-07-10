@@ -26,9 +26,11 @@
     "@tableslayer/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
+    "drizzle-zod": "^0.5.1",
     "mode-watcher": "^0.3.1",
     "oslo": "^1.2.1",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
