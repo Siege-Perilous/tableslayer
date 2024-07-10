@@ -7,6 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
 import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { getUser } from '$lib/server';
 
 // Define a custom type for database errors
 interface DatabaseError extends Error {
@@ -15,7 +16,13 @@ interface DatabaseError extends Error {
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
-    return redirect(302, '/');
+    const userId = event.locals.user.id;
+    const user = await getUser(userId);
+    if (user && user.emailVerified) {
+      throw redirect(302, '/');
+    } else {
+      throw redirect(302, '/verify-email');
+    }
   }
   return {};
 };
@@ -56,6 +63,7 @@ export const actions: Actions = {
       });
 
       await db.insert(emailVerificationCodesTable).values({
+        id: uuidv4(),
         userId
       });
 
@@ -65,10 +73,22 @@ export const actions: Actions = {
         path: '.',
         ...sessionCookie.attributes
       });
-      return redirect(302, 'verify-email');
+
+      // return an ok response
+      return {
+        status: 200,
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Success'
+        })
+      };
     } catch (error) {
       const e = error as DatabaseError;
-      console.log(e);
+      console.error('Database error:', e); // More detailed error logging
+      console.error('Error code:', e.code); // Log error code if available
+      console.error('Error stack:', e.stack); // Log error stack for debugging
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {

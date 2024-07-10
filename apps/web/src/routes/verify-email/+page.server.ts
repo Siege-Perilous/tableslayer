@@ -1,5 +1,6 @@
 import { db } from '$lib/db';
 import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { getUser } from '$lib/server';
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { isWithinExpirationDate } from 'oslo';
@@ -15,13 +16,13 @@ export const load = (async (event) => {
 
   if (event.locals.user) {
     const userId = event.locals.user.id;
+    const user = await getUser(userId);
+    isVerified = user !== undefined && user.emailVerified;
     const emailVerificationCode = await db
       .select()
       .from(emailVerificationCodesTable)
       .where(eq(emailVerificationCodesTable.userId, userId))
       .get();
-    const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).get();
-    isVerified = user !== undefined && user.emailVerified;
     isWithinExpiration = emailVerificationCode !== undefined && isWithinExpirationDate(emailVerificationCode.expiresAt);
 
     return {
@@ -35,7 +36,9 @@ export const load = (async (event) => {
 export const actions: Actions = {
   verify: async (event) => {
     if (!event.locals.user) {
-      return redirect(302, '/');
+      return fail(401, {
+        message: 'Unauthorized'
+      });
     }
     const userId = event.locals.user.id;
     const formData = await event.request.formData();
