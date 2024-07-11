@@ -99,6 +99,9 @@ importers:
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@tanstack/svelte-query':
+        specifier: ^5.51.1
+        version: 5.51.1(svelte@5.0.0-next.166)
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
@@ -1746,6 +1749,19 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@tanstack/query-core@5.51.1:
+    resolution: {integrity: sha512-fJBMQMpo8/KSsWW5ratJR5+IFr7YNJ3K2kfP9l5XObYHsgfVy1w3FJUWU4FT2fj7+JMaEg33zOcNDBo0LMwHnw==}
+    dev: false
+
+  /@tanstack/svelte-query@5.51.1(svelte@5.0.0-next.166):
+    resolution: {integrity: sha512-MpovODB8oshrXSYgd75i3GYOh5mxaXYGrQfSReF52U8szCLoHG6RvQuTgiyOPx7qkRW0xyxwOVhOoS25sFUSMw==}
+    peerDependencies:
+      svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
+    dependencies:
+      '@tanstack/query-core': 5.51.1
+      svelte: 5.0.0-next.166
+    dev: false
 
   /@tybys/wasm-util@0.8.3:
     resolution: {integrity: sha512-Z96T/L6dUFFxgFJ+pQtkPpne9q7i6kIPYCFnQBHSgSPV9idTsKfIhCss0h5iM9irweZCatkrdeP8yi5uM1eX6Q==}
