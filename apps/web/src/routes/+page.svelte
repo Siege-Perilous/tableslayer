@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MyCounterButton, Skeleton } from '@tableslayer/ui';
-  import { loading, delayedLoading } from '$lib/stores/loading';
+  import { loadingMap, delayedLoadingMap } from '$lib/stores';
   import { onMount } from 'svelte';
   import type { SelectUser } from '$lib/db/schema';
   import { fetchWithLoading } from '$lib/utils';
@@ -11,7 +11,7 @@
 
   onMount(async () => {
     try {
-      users = await fetchWithLoading('/api/test');
+      users = await fetchWithLoading('/api/test', 'users');
     } catch (err) {
       const error = err as Error;
       error.message;
@@ -22,8 +22,8 @@
 <h1>Web</h1>
 <MyCounterButton />
 
-{#if $loading}
-  {#if $delayedLoading}
+{#if $loadingMap.get('users')}
+  {#if $delayedLoadingMap.get('users')}
     <Skeleton />
   {:else}
     <p>Loading...</p>

@@ -1,17 +1,13 @@
-import { delayedLoading, startLoading, stopLoading } from '$lib/stores/loading';
-
+import { startDelayedLoading, startLoading, stopDelayedLoading, stopLoading } from '$lib/stores/loading';
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function fetchWithLoading(url: string, options?: RequestInit) {
-  startLoading();
-  let delayedLoadingTimeout: NodeJS.Timeout;
-
+export async function fetchWithLoading(url: string, key: string, options?: RequestInit) {
+  startLoading(key);
+  startDelayedLoading(key);
   try {
-    delayedLoadingTimeout = setTimeout(() => {
-      delayedLoading.set(true);
-    }, 1000); // Show delayed loading state after 1 second
+    await delay(2000); // Simulate a 2-second delay for testing purposes
 
     const response = await fetch(url, options);
     if (!response.ok) {
@@ -20,11 +16,9 @@ export async function fetchWithLoading(url: string, options?: RequestInit) {
 
     const data = await response.json();
 
-    clearTimeout(delayedLoadingTimeout);
-    delayedLoading.set(false);
     return data;
   } finally {
-    stopLoading();
-    delayedLoading.set(false);
+    stopLoading(key);
+    stopDelayedLoading(key);
   }
 }
