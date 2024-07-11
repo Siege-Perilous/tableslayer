@@ -1,38 +1,21 @@
 <script lang="ts">
-  import { MyCounterButton, Skeleton } from '@tableslayer/ui';
-  import { loadingMap, delayedLoadingMap } from '$lib/stores';
-  import { onMount } from 'svelte';
-  import type { SelectUser } from '$lib/db/schema';
-  import { fetchWithLoading } from '$lib/utils';
+  import { MyCounterButton } from '@tableslayer/ui';
+  import { createUsersQuery } from '$lib/queries/users';
 
   let { data } = $props();
-  let users: SelectUser[] = $state([]);
-  let error: string | null = $state(null);
-
-  onMount(async () => {
-    try {
-      users = await fetchWithLoading('/api/test', 'users');
-    } catch (err) {
-      const error = err as Error;
-      error.message;
-    }
-  });
+  const usersQuery = createUsersQuery();
 </script>
 
 <h1>Web</h1>
 <MyCounterButton />
 
-{#if $loadingMap.get('users')}
-  {#if $delayedLoadingMap.get('users')}
-    <Skeleton />
-  {:else}
-    <p>Loading...</p>
-  {/if}
-{:else if error}
-  <p>{error}</p>
-{:else}
+{#if $usersQuery.isLoading}
+  <p>Loading...</p>
+{:else if $usersQuery.isError}
+  <p>{$usersQuery.error}</p>
+{:else if $usersQuery.isSuccess}
   <ul>
-    {#each users as user}
+    {#each $usersQuery.data as user}
       <li>{user.name} ({user.email})</li>
     {/each}
   </ul>
