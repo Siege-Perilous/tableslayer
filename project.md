@@ -2,6 +2,7 @@
 
 - Add Google oauth
 - Email system to send out verification codes
+- Add way to resent code or change email.
 - Figure out Zod and `routes/api` system
 - Project / route structure. Website repo vs. app repo vs. combined
 - eslint v9
