@@ -1,13 +1,11 @@
 import { db } from '$lib/db';
+import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { getUser, sendSingleEmail } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
-
-// Import the users table schema
-import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
-import { getUser } from '$lib/server';
 
 // Define a custom type for database errors
 interface DatabaseError extends Error {
@@ -60,15 +58,26 @@ export const actions: Actions = {
         passwordHash: passwordHash
       });
 
-      await db.insert(emailVerificationCodesTable).values({
-        userId
-      });
+      const emailVerificationCode = await db
+        .insert(emailVerificationCodesTable)
+        .values({
+          userId
+        })
+        .returning()
+        .get();
 
       const session = await lucia.createSession(userId, {});
       const sessionCookie = lucia.createSessionCookie(session.id);
       event.cookies.set(sessionCookie.name, sessionCookie.value, {
         path: '.',
         ...sessionCookie.attributes
+      });
+
+      // Send email
+      await sendSingleEmail({
+        to: email,
+        subject: 'Verify your email',
+        html: `Your verification code is: ${emailVerificationCode.code}`
       });
 
       // return an ok response
