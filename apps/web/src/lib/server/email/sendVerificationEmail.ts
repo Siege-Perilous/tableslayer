@@ -15,7 +15,7 @@ export const sendVerificationEmail = async (userId: string, email: string) => {
 
   await sendSingleEmail({
     to: email,
-    subject: 'Verify your email',
+    subject: 'Verify your email at Table Slayer',
     html: `Your verification code is: ${emailVerificationCode.code}`
   });
 

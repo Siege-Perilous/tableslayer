@@ -1,8 +1,10 @@
 ## Things to do
 
 - Add Google oauth
+- Add cloudflare r2
 - Gravatar
 - Project / route structure. Website repo vs. app repo vs. combined
+  - Think if logged in, just go to last project
 - eslint v9
 
 ## Research

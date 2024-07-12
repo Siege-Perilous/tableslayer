@@ -10,7 +10,7 @@ interface EmailOptions {
   from?: string;
 }
 
-export const sendSingleEmail = async ({ from = 'onboarding@resend.dev', to, subject, html }: EmailOptions) => {
+export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, subject, html }: EmailOptions) => {
   const recipient = dev ? 'dave.snider@gmail.com' : to;
   console.log('Sending email to', recipient, 'from', from);
   try {
