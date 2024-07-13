@@ -1,5 +1,5 @@
 import { db } from '$lib/db';
-import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { emailVerificationCodesTable, usersTable, workspaceMemberTable, workspaceTable } from '$lib/db/schema';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { hash } from '@node-rs/argon2';
@@ -49,8 +49,10 @@ export const actions: Actions = {
       parallelism: 1
     });
     const userId = uuidv4();
+    const workspaceId = uuidv4();
 
     try {
+      // Create a new user with a Gravatar image
       const gravatar = getGravatarUrl(email);
       const image = (await uploadImage(gravatar)) as string;
       await db.insert(usersTable).values({
@@ -61,6 +63,19 @@ export const actions: Actions = {
         avatar: image
       });
 
+      // Create a personal workspace for the user
+      await db.insert(workspaceTable).values({
+        id: workspaceId,
+        name: 'Personal'
+      });
+
+      await db.insert(workspaceMemberTable).values({
+        workspaceId,
+        userId: userId,
+        role: 'admin'
+      });
+
+      // Create an email verification code
       const emailVerificationCode = await db
         .insert(emailVerificationCodesTable)
         .values({
@@ -69,18 +84,19 @@ export const actions: Actions = {
         .returning()
         .get();
 
-      const session = await lucia.createSession(userId, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      event.cookies.set(sessionCookie.name, sessionCookie.value, {
-        path: '.',
-        ...sessionCookie.attributes
-      });
-
       // Send email
       await sendSingleEmail({
         to: email,
         subject: 'Verify your email',
         html: `Your verification code is: ${emailVerificationCode.code}`
+      });
+
+      // Create an auth session
+      const session = await lucia.createSession(userId, {});
+      const sessionCookie = lucia.createSessionCookie(session.id);
+      event.cookies.set(sessionCookie.name, sessionCookie.value, {
+        path: '.',
+        ...sessionCookie.attributes
       });
 
       // return an ok response
