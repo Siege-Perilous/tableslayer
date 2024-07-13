@@ -1,4 +1,3 @@
-// src/lib/db/schema.ts
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -13,7 +12,8 @@ export const usersTable = sqliteTable('users', {
   name: text('name').notNull(),
   email: text('email').unique().notNull(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
-  passwordHash: text('password_hash').notNull()
+  passwordHash: text('password_hash').notNull(),
+  avatar: text('avatar').notNull().default('zinnoreedvg0jvsdgvxa')
 });
 
 export const emailVerificationCodesTable = sqliteTable('email_verification_codes', {

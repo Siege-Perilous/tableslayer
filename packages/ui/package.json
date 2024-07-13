@@ -20,5 +20,8 @@
   "devDependencies": {
     "@tableslayer/eslint-config": "workspace:*",
     "svelte": "5.0.0-next.166"
+  },
+  "dependencies": {
+    "@cloudinary/url-gen": "^1.19.0"
   }
 }

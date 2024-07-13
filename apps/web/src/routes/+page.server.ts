@@ -1,5 +1,4 @@
-import { getAssetInfo, getUser, uploadImage } from '$lib/server';
-import { v2 as cloudinary } from 'cloudinary';
+import { getUser } from '$lib/server';
 import type { PageServerLoad } from './$types';
 
 export const load = (async (event) => {
@@ -9,29 +8,19 @@ export const load = (async (event) => {
     user = await getUser(userId);
   }
 
-  cloudinary.config({
-    secure: true
-  });
-
-  const publicId = (await uploadImage(
-    'https://www.milwaukeeindependent.com/wp-content/uploads/2022/09/090222_ThereBeDragons_STK_TStudio.jpg'
-  )) as string;
-
-  const color = await getAssetInfo(publicId);
-  console.log('color', color);
-
-  const optimizedImage = cloudinary.url(publicId, {
+  /* const image = cloudinary.url(publicId, {
     fetch_format: 'auto',
-    quality: 'auto'
-  });
-  console.log('optimizedImage', optimizedImage);
+    quality: 'auto',
+    width: 400,
+    height: 400,
+    crop: 'fit'
+  }); */
 
-  const image = cloudinary.image(publicId, {
+  /* const image = cloudinary.image(publicId, {
     effect: 'gen_replace:from_the dragon;to_a wolf;'
-  });
+  }); */
 
   return {
-    user,
-    image
+    user
   };
 }) satisfies PageServerLoad;
