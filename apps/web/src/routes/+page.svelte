@@ -9,6 +9,8 @@
 <h1>Web</h1>
 <MyCounterButton />
 
+{data.image}
+
 {#if $usersQuery.isLoading}
   <p>Loading...</p>
 {:else if $usersQuery.isError}
