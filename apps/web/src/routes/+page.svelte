@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MyCounterButton } from '@tableslayer/ui';
   import { createUsersQuery } from '$lib/queries/users';
+  import { CldImage } from 'svelte-cloudinary';
 
   let { data } = $props();
   const usersQuery = createUsersQuery();
@@ -8,8 +9,6 @@
 
 <h1>Web</h1>
 <MyCounterButton />
-
-{data.image}
 
 {#if $usersQuery.isLoading}
   <p>Loading...</p>
@@ -24,5 +23,6 @@
 {/if}
 
 {#if data.user && data.user.email}
+  <CldImage src={data.user.avatar} width={40} height={40} />
   <p>Logged in as: {data.user.email}</p>
 {/if}

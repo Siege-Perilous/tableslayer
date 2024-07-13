@@ -1,6 +1,6 @@
 import { db } from '$lib/db';
 import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
-import { getUser, sendSingleEmail } from '$lib/server';
+import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
@@ -51,11 +51,14 @@ export const actions: Actions = {
     const userId = uuidv4();
 
     try {
+      const gravatar = getGravatarUrl(email);
+      const image = (await uploadImage(gravatar)) as string;
       await db.insert(usersTable).values({
         id: userId,
         name: '',
         email: email,
-        passwordHash: passwordHash
+        passwordHash: passwordHash,
+        avatar: image
       });
 
       const emailVerificationCode = await db
