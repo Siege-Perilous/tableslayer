@@ -1,5 +1,6 @@
-<!-- src/routes/+layout.svelte -->
-<script context="module" lang="ts">
+<!-- I removed conxtext="module" from the script tag, it might be important -->
+<script lang="ts">
+  let { children } = $props();
   import { QueryClientProvider } from '@tanstack/svelte-query';
   import { queryClient } from '$lib/queryClient';
   import '@tableslayer/ui/styles/globals.css';
@@ -10,7 +11,7 @@
 <QueryClientProvider client={queryClient}>
   <ModeWatcher />
   <GlobalLoading />
-  <slot />
+  {@render children()}
 </QueryClientProvider>
 
 <style>
