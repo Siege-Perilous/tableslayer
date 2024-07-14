@@ -3,5 +3,4 @@
   console.log(data);
 </script>
 
-hello
-{data.party.name}
+{data.party?.name}
