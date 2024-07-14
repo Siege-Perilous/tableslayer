@@ -3,6 +3,7 @@ import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
+import { isValidEmail } from '$lib/utils';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,7 +37,7 @@ export const actions: Actions = {
         message: 'Invalid password'
       });
     }
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (typeof email !== 'string' || !isValidEmail(email)) {
       return fail(400, {
         message: 'Invalid email'
       });
