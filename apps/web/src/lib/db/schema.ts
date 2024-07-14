@@ -44,7 +44,7 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
 });
 
-export const workspaceTable = sqliteTable('workspace', {
+export const partyTable = sqliteTable('party', {
   id: text('id')
     .primaryKey()
     .notNull()
@@ -54,12 +54,12 @@ export const workspaceTable = sqliteTable('workspace', {
   avatar: text('avatar').notNull().default('gwda4udjrsacbec6fsca')
 });
 
-export const workspaceMemberTable = sqliteTable(
-  'workspace_member',
+export const partyMemberTable = sqliteTable(
+  'party_member',
   {
-    workspaceId: text('workspace_id')
+    partyId: text('party_id')
       .notNull()
-      .references(() => workspaceTable.id, { onDelete: 'cascade' }),
+      .references(() => partyTable.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -67,19 +67,19 @@ export const workspaceMemberTable = sqliteTable(
   },
   (table) => {
     return {
-      id: primaryKey({ columns: [table.workspaceId, table.userId] })
+      id: primaryKey({ columns: [table.partyId, table.userId] })
     };
   }
 );
 
-export const workspaceInviteTable = sqliteTable('workspace_invite', {
+export const partyInviteTable = sqliteTable('party_invite', {
   id: text('id')
     .primaryKey()
     .notNull()
     .$default(() => uuidv4()),
-  workspaceId: text('workspace_id')
+  partyId: text('party_id')
     .notNull()
-    .references(() => workspaceTable.id, { onDelete: 'cascade' }),
+    .references(() => partyTable.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   role: text('role', { enum: ['owner', 'editor', 'viewer'] }).notNull()
 });
@@ -91,5 +91,5 @@ export const selectUserSchema = createSelectSchema(usersTable);
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
 
-export type InsertWorkspace = typeof workspaceTable.$inferInsert;
-export type SelectWorkspace = typeof workspaceTable.$inferSelect;
+export type InsertParty = typeof partyTable.$inferInsert;
+export type SelectParty = typeof partyTable.$inferSelect;
