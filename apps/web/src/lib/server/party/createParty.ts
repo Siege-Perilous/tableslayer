@@ -1,5 +1,5 @@
 import { db } from '$lib/db';
-import { workspaceTable, type SelectWorkspace } from '$lib/db/schema';
+import { partyTable, type SelectParty } from '$lib/db/schema';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,31 +7,31 @@ interface CustomError extends Error {
   code?: string;
 }
 
-export const createRandomNamedWorkspace = async (): Promise<SelectWorkspace> => {
-  let workspaceName = createRandomName();
-  let isWorkspaceNameUnique = false;
+export const createRandomNamedParty = async (): Promise<SelectParty> => {
+  let partyName = createRandomName();
+  let isPartyNameUnique = false;
 
-  while (!isWorkspaceNameUnique) {
-    const slug = generateSlug(workspaceName);
+  while (!isPartyNameUnique) {
+    const slug = generateSlug(partyName);
 
     try {
-      const workspace = await db
-        .insert(workspaceTable)
+      const party = await db
+        .insert(partyTable)
         .values({
           id: uuidv4(),
-          name: workspaceName,
+          name: partyName,
           slug
         })
         .returning()
         .get();
 
-      isWorkspaceNameUnique = true;
-      return workspace;
+      isPartyNameUnique = true;
+      return party;
     } catch (error) {
       const customError = error as CustomError;
       if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
         // Handle unique constraint violation
-        workspaceName = createRandomName(); // Generate a new name and try again
+        partyName = createRandomName(); // Generate a new name and try again
       } else {
         throw error; // Rethrow other errors
       }
@@ -39,5 +39,5 @@ export const createRandomNamedWorkspace = async (): Promise<SelectWorkspace> => 
   }
 
   // This return is here to satisfy TypeScript, but logically this should never be reached.
-  throw new Error('Failed to create a unique workspace name');
+  throw new Error('Failed to create a unique party name');
 };

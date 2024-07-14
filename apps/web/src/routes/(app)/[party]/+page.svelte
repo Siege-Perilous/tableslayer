@@ -4,4 +4,4 @@
 </script>
 
 hello
-{data.workspace.name}
+{data.party.name}

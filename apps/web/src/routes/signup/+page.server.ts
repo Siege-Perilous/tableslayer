@@ -1,8 +1,8 @@
 import { db } from '$lib/db';
-import { emailVerificationCodesTable, usersTable, workspaceMemberTable } from '$lib/db/schema';
+import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/schema';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
-import { createRandomNamedWorkspace } from '$lib/server/workspace/createWorkspace';
+import { createRandomNamedParty } from '$lib/server/party/createParty';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
@@ -63,11 +63,11 @@ export const actions: Actions = {
         avatar: image
       });
 
-      // Create a personal workspace for the user
-      const workspace = await createRandomNamedWorkspace();
+      // Create a personal party for the user
+      const party = await createRandomNamedParty();
 
-      await db.insert(workspaceMemberTable).values({
-        workspaceId: workspace.id,
+      await db.insert(partyMemberTable).values({
+        partyId: party.id,
         userId: userId,
         role: 'admin'
       });
