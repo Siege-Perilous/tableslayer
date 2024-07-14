@@ -49,7 +49,8 @@ export const workspaceTable = sqliteTable('workspace', {
     .primaryKey()
     .notNull()
     .$default(() => uuidv4()),
-  name: text('name').notNull(),
+  name: text('name').notNull().unique(),
+  slug: text('slug').notNull().unique(),
   avatar: text('avatar').notNull().default('gwda4udjrsacbec6fsca')
 });
 
@@ -89,3 +90,6 @@ export const selectUserSchema = createSelectSchema(usersTable);
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
+
+export type InsertWorkspace = typeof workspaceTable.$inferInsert;
+export type SelectWorkspace = typeof workspaceTable.$inferSelect;

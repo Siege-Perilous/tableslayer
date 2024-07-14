@@ -1,7 +1,8 @@
 import { db } from '$lib/db';
-import { emailVerificationCodesTable, usersTable, workspaceMemberTable, workspaceTable } from '$lib/db/schema';
+import { emailVerificationCodesTable, usersTable, workspaceMemberTable } from '$lib/db/schema';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
+import { createRandomNamedWorkspace } from '$lib/server/workspace/createWorkspace';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
@@ -49,7 +50,6 @@ export const actions: Actions = {
       parallelism: 1
     });
     const userId = uuidv4();
-    const workspaceId = uuidv4();
 
     try {
       // Create a new user with a Gravatar image
@@ -64,13 +64,10 @@ export const actions: Actions = {
       });
 
       // Create a personal workspace for the user
-      await db.insert(workspaceTable).values({
-        id: workspaceId,
-        name: 'Personal'
-      });
+      const workspace = await createRandomNamedWorkspace();
 
       await db.insert(workspaceMemberTable).values({
-        workspaceId,
+        workspaceId: workspace.id,
         userId: userId,
         role: 'admin'
       });
