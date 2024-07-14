@@ -1,6 +1,7 @@
 import { db } from '$lib/db';
 import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
 import { getUser, sendVerificationEmail } from '$lib/server';
+import { isValidEmail } from '$lib/utils';
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { isWithinExpirationDate } from 'oslo';
@@ -47,7 +48,7 @@ export const actions: Actions = {
     const formData = await event.request.formData();
     const email = formData.get('email');
 
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (typeof email !== 'string' || !isValidEmail(email)) {
       return fail(400, { message: 'Invalid email' });
     }
 
