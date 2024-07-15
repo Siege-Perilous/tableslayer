@@ -1,5 +1,6 @@
 ## Things to do
 
+- Use forsmap on other forms other than login
 - Add Google oauth
 - Workspace
   - invites
@@ -22,9 +23,6 @@ https://sveltekit.io/blog/svelte-5
 
 Panes
 https://github.com/svecosystem/paneforge
-
-Forms
-https://github.com/svecosystem/formsnap
 
 Runed
 https://github.com/svecosystem/runed
