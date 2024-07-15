@@ -1,10 +1,10 @@
 import { db } from '$lib/db';
+import { loginSchema } from '$lib/schemas';
 import { lucia } from '$lib/server/auth';
 import { verify } from '@node-rs/argon2';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
@@ -18,11 +18,6 @@ export const load: PageServerLoad = async (event) => {
   const loginForm = await superValidate(zod(loginSchema));
   return { loginForm };
 };
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
-});
 
 export const actions: Actions = {
   login: async (event) => {
