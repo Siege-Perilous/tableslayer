@@ -29,6 +29,7 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
     "drizzle-zod": "^0.5.1",
+    "formsnap": "^1.0.1",
     "mode-watcher": "^0.3.1",
     "oslo": "^1.2.1",
     "resend": "^3.4.0",
