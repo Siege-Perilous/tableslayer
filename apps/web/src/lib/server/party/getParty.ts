@@ -51,3 +51,9 @@ export const isEmailAlreadyInvitedToParty = async (email: string, partyId: strin
 
   return !!inviteRelation;
 };
+
+export const getEmailsInvitedToParty = async (partyId: string) => {
+  const inviteRelations = await db.select().from(partyInviteTable).where(eq(partyInviteTable.partyId, partyId)).all();
+  const emails = inviteRelations.map((invite) => invite.email);
+  return emails;
+};
