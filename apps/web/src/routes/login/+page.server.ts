@@ -1,7 +1,10 @@
 import { db } from '$lib/db';
 import { lucia } from '$lib/server/auth';
 import { verify } from '@node-rs/argon2';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
+import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
@@ -12,32 +15,28 @@ export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
     return redirect(302, '/');
   }
-  return {};
+  const loginForm = await superValidate(zod(loginSchema));
+  return { loginForm };
 };
 
-export const actions: Actions = {
-  default: async (event) => {
-    const formData = await event.request.formData();
-    const email = formData.get('email');
-    const password = formData.get('password');
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+});
 
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return fail(400, {
-        message: 'Invalid email'
-      });
+export const actions: Actions = {
+  login: async (event) => {
+    const cookies = event.cookies;
+    const loginForm = await superValidate(event.request, zod(loginSchema));
+    if (!loginForm.valid) {
+      return message(loginForm, 'Incorrect email or password');
     }
-    if (typeof password !== 'string' || password.length < 6 || password.length > 255) {
-      return fail(400, {
-        message: 'Invalid password'
-      });
-    }
+    const { email, password } = loginForm.data;
 
     const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
     if (!existingUser) {
-      return fail(400, {
-        message: 'Incorrect username or password'
-      });
+      return message(loginForm, 'Incorrect email or password');
     }
 
     const validPassword = await verify(existingUser.passwordHash, password, {
@@ -57,18 +56,16 @@ export const actions: Actions = {
       // Since protecting against this is non-trivial,
       // it is crucial your implementation is protected against brute-force attacks with login throttling, 2FA, etc.
       // If usernames are public, you can outright tell the user that the username is invalid.
-      return fail(400, {
-        message: 'Incorrect username or password'
-      });
+      return message(loginForm, 'Incorrect email or password');
     }
 
     const session = await lucia.createSession(existingUser.id.toString(), {});
     const sessionCookie = lucia.createSessionCookie(session.id);
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
+    cookies.set(sessionCookie.name, sessionCookie.value, {
       path: '.',
       ...sessionCookie.attributes
     });
 
-    return redirect(302, '/');
+    return message(loginForm, 'Login successful! Redirecting...'), redirect(302, '/');
   }
 };
