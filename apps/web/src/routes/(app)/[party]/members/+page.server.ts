@@ -1,6 +1,7 @@
 import { db } from '$lib/db';
 import { partyInviteTable } from '$lib/db/schema';
 import {
+  getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
   isEmailAlreadyInvitedToParty,
@@ -18,13 +19,33 @@ export const load = (async ({ parent }) => {
   }
 
   const members = (await getPartyMembers(party.id)) || [];
+  const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   return {
-    members
+    members,
+    invitedEmails
   };
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
+  resendInvite: async (event) => {
+    const formData = await event.request.formData();
+    const email = formData.get('email') as string;
+    const partyId = formData.get('partyId') as string;
+
+    try {
+      await sendPartyInviteEmail(partyId, email);
+      return {
+        message: 'Email invitation sent'
+      };
+    } catch (error) {
+      console.error('Error resending invite', error);
+      return {
+        status: 500,
+        message: 'Error resending invite'
+      };
+    }
+  },
   inviteMember: async (event) => {
     const formData = await event.request.formData();
     const email = formData.get('email');
