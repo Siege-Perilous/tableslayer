@@ -24,14 +24,14 @@ export const actions: Actions = {
     const cookies = event.cookies;
     const loginForm = await superValidate(event.request, zod(loginSchema));
     if (!loginForm.valid) {
-      return message(loginForm, 'Incorrect email or password');
+      return message(loginForm, 'Incorrect email or password', { status: 400 });
     }
     const { email, password } = loginForm.data;
 
     const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
     if (!existingUser) {
-      return message(loginForm, 'Incorrect email or password');
+      return message(loginForm, 'Incorrect email or password', { status: 400 });
     }
 
     const validPassword = await verify(existingUser.passwordHash, password, {
@@ -51,7 +51,7 @@ export const actions: Actions = {
       // Since protecting against this is non-trivial,
       // it is crucial your implementation is protected against brute-force attacks with login throttling, 2FA, etc.
       // If usernames are public, you can outright tell the user that the username is invalid.
-      return message(loginForm, 'Incorrect email or password');
+      return message(loginForm, 'Incorrect email or password', { status: 400 });
     }
 
     const session = await lucia.createSession(existingUser.id.toString(), {});
