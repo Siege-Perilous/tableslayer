@@ -1,11 +1,13 @@
 import { db } from '$lib/db';
 import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/schema';
+import { signupSchema } from '$lib/schemas';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
-import { isValidEmail } from '$lib/utils';
 import { hash } from '@node-rs/argon2';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -24,24 +26,20 @@ export const load: PageServerLoad = async (event) => {
       throw redirect(302, '/verify-email');
     }
   }
-  return {};
+  const signupForm = await superValidate(zod(signupSchema));
+  return {
+    signupForm
+  };
 };
 
 export const actions: Actions = {
   default: async (event) => {
-    const formData = await event.request.formData();
-    const email = formData.get('email');
-    const password = formData.get('password');
-    if (typeof password !== 'string' || password.length < 6 || password.length > 255) {
-      return fail(400, {
-        message: 'Invalid password'
-      });
+    const signupForm = await superValidate(event.request, zod(signupSchema));
+    if (!signupForm.valid) {
+      return message(signupForm, 'Check the form for errors');
     }
-    if (typeof email !== 'string' || !isValidEmail(email)) {
-      return fail(400, {
-        message: 'Invalid email'
-      });
-    }
+
+    const { email, password } = signupForm.data;
 
     const passwordHash = await hash(password, {
       // recommended minimum parameters
@@ -97,31 +95,17 @@ export const actions: Actions = {
         ...sessionCookie.attributes
       });
 
-      // return an ok response
-      return {
-        status: 200,
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: 'Success'
-        })
-      };
+      return (
+        message(signupForm, 'Account created! Check your email for a verification code'), redirect(302, '/verify-email')
+      );
     } catch (error) {
       const e = error as DatabaseError;
-      console.error('Database error:', e); // More detailed error logging
-      console.error('Error code:', e.code); // Log error code if available
-      console.error('Error stack:', e.stack); // Log error stack for debugging
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return fail(400, {
-          message: 'Username or email already used'
-        });
+        return message(signupForm, 'Email already in use');
       }
-      return fail(500, {
-        message: 'An unknown error occurred'
-      });
+      return message(signupForm, 'An unknown error occurred');
     }
   }
 };
