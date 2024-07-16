@@ -36,7 +36,7 @@ export const actions: Actions = {
   default: async (event) => {
     const signupForm = await superValidate(event.request, zod(signupSchema));
     if (!signupForm.valid) {
-      return message(signupForm, 'Check the form for errors');
+      return message(signupForm, 'Check the form for errors', { status: 400 });
     }
 
     const { email, password } = signupForm.data;
@@ -103,9 +103,9 @@ export const actions: Actions = {
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return message(signupForm, 'Email already in use');
+        return message(signupForm, 'Email already in use', { status: 400 });
       }
-      return message(signupForm, 'An unknown error occurred');
+      return message(signupForm, 'An unknown error occurred', { status: 400 });
     }
   }
 };

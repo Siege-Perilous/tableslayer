@@ -11,7 +11,6 @@
     resetForm: true
   });
   const { form: formData, enhance, message } = form;
-  console.log(message);
 </script>
 
 <h1>Sign in</h1>

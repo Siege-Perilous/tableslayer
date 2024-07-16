@@ -1,5 +1,6 @@
 import { db } from '$lib/db';
 import { partyInviteTable } from '$lib/db/schema';
+import { inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
 import {
   getEmailsInvitedToParty,
   getParty,
@@ -8,10 +9,11 @@ import {
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
 } from '$lib/server';
-import { isValidEmail } from '$lib/utils';
+import { message, superValidate } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load = (async ({ parent }) => {
+export const load: PageServerLoad = async ({ parent }) => {
   const { party } = await parent();
 
   if (!party) {
@@ -21,64 +23,39 @@ export const load = (async ({ parent }) => {
   const members = (await getPartyMembers(party.id)) || [];
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
+  const inviteMemberForm = await superValidate(zod(inviteMemberSchema));
+  const resendInviteForm = await superValidate(zod(resendInviteSchema));
+
   return {
     members,
-    invitedEmails
+    invitedEmails,
+    inviteMemberForm,
+    resendInviteForm
   };
-}) satisfies PageServerLoad;
+};
 
 export const actions: Actions = {
-  resendInvite: async (event) => {
-    const formData = await event.request.formData();
-    const email = formData.get('email') as string;
-    const partyId = formData.get('partyId') as string;
-
-    try {
-      await sendPartyInviteEmail(partyId, email);
-      return {
-        message: 'Email invitation sent'
-      };
-    } catch (error) {
-      console.error('Error resending invite', error);
-      return {
-        status: 500,
-        message: 'Error resending invite'
-      };
-    }
-  },
   inviteMember: async (event) => {
-    const formData = await event.request.formData();
-    const email = formData.get('email');
-    const partyId = formData.get('partyId') as string;
-    const party = await getParty(partyId);
-
-    if (typeof email !== 'string' || !isValidEmail(email)) {
-      return {
-        status: 400,
-        message: 'Invalid email'
-      };
+    const inviteMemberForm = await superValidate(event.request, zod(inviteMemberSchema));
+    if (!inviteMemberForm.valid) {
+      return message(inviteMemberForm, 'Invalid email address', { status: 400 });
     }
+
+    const { email, partyId } = inviteMemberForm.data;
+    const party = await getParty(partyId);
 
     if (!party) {
       throw new Error('Party not found');
     }
 
     const alreadyInParty = await isUserByEmailInPartyAlready(email, partyId);
-
     if (alreadyInParty) {
-      return {
-        status: 400,
-        message: 'A user of that email is already in the party'
-      };
+      return message(inviteMemberForm, 'A user of that email is already in the party', { status: 400 });
     }
 
     const alreadyInvited = await isEmailAlreadyInvitedToParty(email, partyId);
-
     if (alreadyInvited) {
-      return {
-        status: 400,
-        message: 'This email is already invited'
-      };
+      return message(inviteMemberForm, 'This email is already invited', { status: 400 });
     }
 
     try {
@@ -89,15 +66,27 @@ export const actions: Actions = {
       });
 
       await sendPartyInviteEmail(partyId, email);
-      return {
-        message: 'Email invitation sent'
-      };
+      return message(inviteMemberForm, 'Email invitation sent');
     } catch (error) {
       console.error('Error inviting member', error);
-      return {
-        status: 500,
-        message: 'Error inviting member'
-      };
+      return message(inviteMemberForm, 'Error inviting member', { status: 500 });
+    }
+  },
+
+  resendInvite: async (event) => {
+    const resendInviteForm = await superValidate(event.request, zod(resendInviteSchema));
+    if (!resendInviteForm.valid) {
+      return message(resendInviteForm, 'Invalid email address', { status: 400 });
+    }
+
+    const { email, partyId } = resendInviteForm.data;
+
+    try {
+      await sendPartyInviteEmail(partyId, email);
+      return message(resendInviteForm, 'Email invitation sent');
+    } catch (error) {
+      console.error('Error resending invite', error);
+      return message(resendInviteForm, 'Error resending invite', { status: 500 });
     }
   }
 };
