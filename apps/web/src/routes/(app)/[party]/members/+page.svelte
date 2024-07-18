@@ -8,15 +8,11 @@
   let { data } = $props();
 
   const inviteMemberForm = superForm(data.inviteMemberForm, {
-    validators: zodClient(inviteMemberSchema)
-  });
-
-  const resendInviteForm = superForm(data.resendInviteForm, {
-    validators: zodClient(resendInviteSchema)
+    validators: zodClient(inviteMemberSchema),
+    resetForm: true
   });
 
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
-  const { form: resendInviteData, enhance: enhanceResendInvite, message: resendInviteMessage } = resendInviteForm;
 </script>
 
 <h2>Invite new member</h2>
@@ -28,8 +24,13 @@
     </Control>
     <FieldErrors />
   </Field>
-  <input type="hidden" name="partyId" value={data.party?.id} />
-  <button type="submit">Invite</button>
+  <Field form={inviteMemberForm} name="email">
+    <Control let:attrs>
+      <input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
+      <button type="submit">Invite</button>
+    </Control>
+    <FieldErrors />
+  </Field>
   {#if $inviteMemberMessage}
     <p>{$inviteMemberMessage}</p>
   {/if}
@@ -41,17 +42,40 @@
 {:else}
   <ul>
     {#each data.invitedEmails as email}
+      {@const resendInviteForm = superForm(
+        { email, partyId: data.party?.id },
+        { validators: zodClient(resendInviteSchema) }
+      )}
+      {@const {
+        form: resendInviteData,
+        enhance: enhanceResendInvite,
+        message: resendInviteMessage,
+        formId
+      } = resendInviteForm}
+
       <form method="post" action="?/resendInvite" use:enhanceResendInvite>
-        <input type="hidden" name="partyId" value={data.party?.id} />
-        <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="__superform_id" value={formId} />
+        <Field form={resendInviteForm} name="email">
+          <Control let:attrs>
+            <input {...attrs} type="hidden" value={email} />
+          </Control>
+          <FieldErrors />
+        </Field>
+        <Field form={resendInviteForm} name="partyId">
+          <Control let:attrs>
+            <input {...attrs} type="hidden" value={data.party?.id} />
+          </Control>
+          <FieldErrors />
+        </Field>
         <li>
           {email}
           <button type="submit">Resend</button>
-          {#if $resendInviteMessage}
-            <p>{$resendInviteMessage}</p>
+          {#if resendInviteMessage}
+            <p>Message: {resendInviteMessage}</p>
           {/if}
         </li>
       </form>
+      <SuperDebug data={resendInviteData} label="Resend invite" />
     {/each}
   </ul>
 {/if}
@@ -65,5 +89,4 @@
   {/each}
 {/if}
 
-<SuperDebug data={$inviteMemberData} />
-<SuperDebug data={$resendInviteData} />
+<SuperDebug data={$inviteMemberData} label="Invite member" />

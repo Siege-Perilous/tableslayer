@@ -43,45 +43,48 @@ export const actions: Actions = {
   changeEmail: async (event) => {
     const changeEmailForm = await superValidate(event.request, zod(changeUserEmailSchema));
     if (!event.locals.user) {
-      return message(changeEmailForm, 'Unauthorized');
+      return message(changeEmailForm, { type: 'error', text: 'Unauthorized' }, { status: 401 });
     }
-    if (!changeEmailForm.valid) return message(changeEmailForm, 'Invalid email address');
+    if (!changeEmailForm.valid)
+      return message(changeEmailForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
 
     const userId = event.locals.user.id;
     const { email } = changeEmailForm.data;
 
     const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
     if (existingUser) {
-      return message(changeEmailForm, 'This email is already in use');
+      return message(changeEmailForm, { type: 'error', text: 'Email already in use' }, { status: 400 });
     }
 
     await db.update(usersTable).set({ email }).where(eq(usersTable.id, userId)).execute();
     await sendVerificationEmail(userId, email);
 
-    return message(changeEmailForm, 'Email updated successfully');
+    return message(changeEmailForm, { type: 'success', text: 'Email changed successfully' });
   },
 
   resend: async (event) => {
     const resendForm = await superValidate(event.request, zod(resendVerificationCodeSchema));
     if (!event.locals.user) {
-      return message(resendForm, 'Unauthorized');
+      return message(resendForm, { type: 'error', text: 'Unauthorized' }, { status: 401 });
     }
-    if (!resendForm.valid) return message(resendForm, 'Failed to resend email');
+    if (!resendForm.valid)
+      return message(resendForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
 
     const userId = event.locals.user.id;
     const user = await getUser(userId);
-    if (!user) return message(resendForm, 'Failed to resend email');
+    if (!user) return message(resendForm, { type: 'error', text: 'User not found' }, { status: 404 });
 
     await sendVerificationEmail(user.id, user.email);
-    return message(resendForm, 'Verification email resent successfully');
+    return message(resendForm, { type: 'success', text: 'Verification email sent' });
   },
 
   verify: async (event) => {
     const verifyForm = await superValidate(event.request, zod(verificationCodeSchema));
     if (!event.locals.user) {
-      return message(verifyForm, 'Unauthorized');
+      return message(verifyForm, { type: 'error', text: 'Unauthorized' }, { status: 401 });
     }
-    if (!verifyForm.valid) return message(verifyForm, 'Invalid verification code');
+    if (!verifyForm.valid)
+      return message(verifyForm, { type: 'error', text: 'Invalid verification code' }, { status: 400 });
 
     const userId = event.locals.user.id;
     const { code } = verifyForm.data;
@@ -92,12 +95,12 @@ export const actions: Actions = {
       .get();
 
     if (!verificationCode || !isWithinExpirationDate(verificationCode.expiresAt) || verificationCode.code !== code) {
-      return message(verifyForm, 'Invalid or expired verification code');
+      return message(verifyForm, { type: 'error', text: 'Invalid verification code' }, { status: 400 });
     }
 
     await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, userId)).execute();
     await db.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
 
-    return message(verifyForm, 'Email verified successfully');
+    return message(verifyForm, { type: 'success', text: 'Email verified' });
   }
 };

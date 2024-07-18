@@ -9,6 +9,12 @@ declare global {
       user: import('lucia').User | null;
       session: import('lucia').Session | null;
     }
+    namespace Superforms {
+      type Message = {
+        type: 'error' | 'success';
+        text: string;
+      };
+    }
   }
 }
 

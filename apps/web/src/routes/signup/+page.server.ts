@@ -36,7 +36,7 @@ export const actions: Actions = {
   default: async (event) => {
     const signupForm = await superValidate(event.request, zod(signupSchema));
     if (!signupForm.valid) {
-      return message(signupForm, 'Check the form for errors', { status: 400 });
+      return message(signupForm, { type: 'error', text: 'Check the form for errors' }, { status: 400 });
     }
 
     const { email, password } = signupForm.data;
@@ -95,17 +95,18 @@ export const actions: Actions = {
         ...sessionCookie.attributes
       });
 
-      return (
-        message(signupForm, 'Account created! Check your email for a verification code'), redirect(302, '/verify-email')
-      );
+      return message(signupForm, {
+        type: 'success',
+        text: 'Account created! Check your email for a verification code'
+      });
     } catch (error) {
       const e = error as DatabaseError;
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return message(signupForm, 'Email already in use', { status: 400 });
+        return message(signupForm, { type: 'error', text: 'Email already in use' }, { status: 400 });
       }
-      return message(signupForm, 'An unknown error occurred', { status: 400 });
+      return message(signupForm, { type: 'error', text: 'An error occurred' }, { status: 500 });
     }
   }
 };
