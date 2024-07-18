@@ -20,10 +20,18 @@ export const load: PageServerLoad = async ({ parent }) => {
     throw new Error('Party is undefined');
   }
 
+  const inviteMemberSchemaWithPartyId = inviteMemberSchema.extend({
+    partyId: inviteMemberSchema.shape.partyId.default(party.id)
+  });
+
+  const resendInviteSchemaWithPartyId = inviteMemberSchema.extend({
+    partyId: inviteMemberSchema.shape.partyId.default(party.id)
+  });
+
   const members = (await getPartyMembers(party.id)) || [];
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
-  const inviteMemberForm = await superValidate(zod(inviteMemberSchema));
+  const inviteMemberForm = await superValidate(zod(inviteMemberSchemaWithPartyId));
   const resendInviteForm = await superValidate(zod(resendInviteSchema));
 
   return {
@@ -38,7 +46,7 @@ export const actions: Actions = {
   inviteMember: async (event) => {
     const inviteMemberForm = await superValidate(event.request, zod(inviteMemberSchema));
     if (!inviteMemberForm.valid) {
-      return message(inviteMemberForm, 'Invalid email address', { status: 400 });
+      return message(inviteMemberForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
     }
 
     const { email, partyId } = inviteMemberForm.data;
@@ -50,12 +58,20 @@ export const actions: Actions = {
 
     const alreadyInParty = await isUserByEmailInPartyAlready(email, partyId);
     if (alreadyInParty) {
-      return message(inviteMemberForm, 'A user of that email is already in the party', { status: 400 });
+      return message(
+        inviteMemberForm,
+        { type: 'error', text: 'A user of that email is already in the party' },
+        { status: 400 }
+      );
     }
 
     const alreadyInvited = await isEmailAlreadyInvitedToParty(email, partyId);
     if (alreadyInvited) {
-      return message(inviteMemberForm, 'This email is already invited', { status: 400 });
+      return message(
+        inviteMemberForm,
+        { type: 'error', text: 'That email has already been invited to the party' },
+        { status: 400 }
+      );
     }
 
     try {
@@ -66,27 +82,27 @@ export const actions: Actions = {
       });
 
       await sendPartyInviteEmail(partyId, email);
-      return message(inviteMemberForm, 'Email invitation sent');
+      return message(inviteMemberForm, { type: 'success', text: 'Member invited' });
     } catch (error) {
-      console.error('Error inviting member', error);
-      return message(inviteMemberForm, 'Error inviting member', { status: 500 });
+      console.log('Error inviting member', error);
+      return message(inviteMemberForm, { type: 'error', text: 'Error inviting member' }, { status: 500 });
     }
   },
 
   resendInvite: async (event) => {
     const resendInviteForm = await superValidate(event.request, zod(resendInviteSchema));
     if (!resendInviteForm.valid) {
-      return message(resendInviteForm, 'Invalid email address', { status: 400 });
+      return message(resendInviteForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
     }
 
     const { email, partyId } = resendInviteForm.data;
 
     try {
       await sendPartyInviteEmail(partyId, email);
-      return message(resendInviteForm, 'Email invitation sent');
+      return message(resendInviteForm, { type: 'success', text: 'Invite resent' });
     } catch (error) {
-      console.error('Error resending invite', error);
-      return message(resendInviteForm, 'Error resending invite', { status: 500 });
+      console.log('Error resending invite', error);
+      return message(resendInviteForm, { type: 'error', text: 'Error resending invite' }, { status: 500 });
     }
   }
 };

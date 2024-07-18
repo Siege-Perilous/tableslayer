@@ -40,9 +40,9 @@
         </Control>
         <FieldErrors />
       </Field>
-      <button>Continue</button>
+      <button>Verify</button>
       {#if $verifyMessage}
-        <p>{$verifyMessage}</p>
+        <p>{$verifyMessage.text}</p>
       {/if}
     </form>
   {:else}
@@ -50,7 +50,7 @@
     <form method="post" action="?/resend" use:enhanceResend>
       <button>Resend</button>
       {#if $resendMessage}
-        <p>{$resendMessage}</p>
+        <p>{$resendMessage.text}</p>
       {/if}
     </form>
   {/if}
@@ -66,11 +66,11 @@
     <button>Change email</button>
     <button type="button" onclick={() => (isChangingEmail = false)}>Cancel</button>
     {#if $changeEmailMessage}
-      <p>{$changeEmailMessage}</p>
+      <p>{$changeEmailMessage.text}</p>
     {/if}
   </form>
 {/if}
 
-<SuperDebug data={$changeEmailData} />
-<SuperDebug data={$resendData} />
-<SuperDebug data={$verifyData} />
+<SuperDebug data={$changeEmailData} label="Change email" />
+<SuperDebug data={$resendData} label="Resend email" />
+<SuperDebug data={$verifyData} label="Verify code" />

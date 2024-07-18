@@ -37,7 +37,7 @@
     <FieldErrors />
   </Field>
   {#if $message}
-    <p>{$message}</p>
+    <p>{$message.text}</p>
   {/if}
   <button type="submit">Submit</button>
 </form>
