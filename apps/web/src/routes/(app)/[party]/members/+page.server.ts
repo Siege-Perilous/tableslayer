@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ parent }) => {
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   const inviteMemberForm = await superValidate(zod(inviteMemberSchemaWithPartyId));
-  const resendInviteForm = await superValidate(zod(resendInviteSchema));
+  const resendInviteForm = await superValidate(zod(resendInviteSchemaWithPartyId));
 
   return {
     members,
@@ -90,14 +90,17 @@ export const actions: Actions = {
   },
 
   resendInvite: async (event) => {
+    console.log('resendInvite');
     const resendInviteForm = await superValidate(event.request, zod(resendInviteSchema));
     if (!resendInviteForm.valid) {
+      console.log('Invalid email address');
       return message(resendInviteForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
     }
 
     const { email, partyId } = resendInviteForm.data;
 
     try {
+      console.log('Resending invite');
       await sendPartyInviteEmail(partyId, email);
       return message(resendInviteForm, { type: 'success', text: 'Invite resent' });
     } catch (error) {

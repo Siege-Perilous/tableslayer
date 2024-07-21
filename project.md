@@ -29,3 +29,6 @@ https://github.com/svecosystem/runed
 
 TRPC
 https://itnext.io/how-to-use-trpc-in-your-sveltekit-project-if-youre-a-zoomer-fullstack-developer-b70823262324
+
+Refresh APi
+https://www.reddit.com/r/sveltejs/comments/15fy5u8/best_way_to_refresh_apifetched_data_in_a_component/

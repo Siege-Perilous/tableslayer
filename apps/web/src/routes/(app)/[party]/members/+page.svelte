@@ -2,8 +2,9 @@
   import { superForm } from 'sveltekit-superforms/client';
   import { Field, Control, Label, FieldErrors } from 'formsnap';
   import { zodClient } from 'sveltekit-superforms/adapters';
-  import { inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
+  import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
+  import ResendInvite from '$lib/components/resendInvite.svelte';
 
   let { data } = $props();
 
@@ -13,6 +14,7 @@
   });
 
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
+  const partyId = data.party?.id as string;
 </script>
 
 <h2>Invite new member</h2>
@@ -32,7 +34,7 @@
     <FieldErrors />
   </Field>
   {#if $inviteMemberMessage}
-    <p>{$inviteMemberMessage}</p>
+    <p>{$inviteMemberMessage.text}</p>
   {/if}
 </form>
 
@@ -42,40 +44,7 @@
 {:else}
   <ul>
     {#each data.invitedEmails as email}
-      {@const resendInviteForm = superForm(
-        { email, partyId: data.party?.id },
-        { validators: zodClient(resendInviteSchema) }
-      )}
-      {@const {
-        form: resendInviteData,
-        enhance: enhanceResendInvite,
-        message: resendInviteMessage,
-        formId
-      } = resendInviteForm}
-
-      <form method="post" action="?/resendInvite" use:enhanceResendInvite>
-        <input type="hidden" name="__superform_id" value={formId} />
-        <Field form={resendInviteForm} name="email">
-          <Control let:attrs>
-            <input {...attrs} type="hidden" value={email} />
-          </Control>
-          <FieldErrors />
-        </Field>
-        <Field form={resendInviteForm} name="partyId">
-          <Control let:attrs>
-            <input {...attrs} type="hidden" value={data.party?.id} />
-          </Control>
-          <FieldErrors />
-        </Field>
-        <li>
-          {email}
-          <button type="submit">Resend</button>
-          {#if resendInviteMessage}
-            <p>Message: {resendInviteMessage}</p>
-          {/if}
-        </li>
-      </form>
-      <SuperDebug data={resendInviteData} label="Resend invite" />
+      <ResendInvite {email} {partyId} />
     {/each}
   </ul>
 {/if}
