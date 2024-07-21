@@ -1,8 +1,10 @@
 <script lang="ts">
   let { data } = $props();
-  const { invites } = data;
+  const { invite } = data;
 </script>
 
-{#each invites as invite}
-  <p>You have been invited to join {invite.party.name}</p>
-{/each}
+{#if !invite}
+  <p>No invites found</p>
+{/if}
+
+<p>You have been invited to join {invite?.party?.name}</p>

@@ -3,14 +3,14 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from '../$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
-  //  if (event.locals.user) redirect(302, '/profile');
   const { user } = await parent();
   if (user) {
     return redirect(302, '/profile');
   }
+  // @ts-expect-error - params is not typed
   const code = params.code;
-  const invites = await getPartyInvitesForCode(code);
+  const invite = await getPartyInvitesForCode(code);
   return {
-    invites
+    invite
   };
 };
