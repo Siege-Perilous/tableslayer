@@ -1,7 +1,7 @@
 <script lang="ts">
-  import AcceptPartyInvite from '$lib/components/party/AcceptPartyInvite.svelte';
+  import PartyInviteResponse from '$lib/components/party/PartyInviteResponse.svelte';
   let { data } = $props();
-  const { invites } = data;
+  const { invites, parties } = data;
 </script>
 
 <h2>Party invites</h2>
@@ -12,5 +12,17 @@
 
 {#each invites as invite}
   <p>You have been invited to join {invite.party?.name}</p>
-  <AcceptPartyInvite code={invite.invite.code} />
+  <PartyInviteResponse code={invite.invite.code} />
 {/each}
+
+<h2>Parties</h2>
+
+{#if parties.length === 0}
+  <p>You are not a member of any parties</p>
+{:else}
+  <ul>
+    {#each parties as party}
+      <li><a href={`/${party.slug}`}>{party.name}</a></li>
+    {/each}
+  </ul>
+{/if}

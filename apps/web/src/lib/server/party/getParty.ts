@@ -57,3 +57,14 @@ export const getEmailsInvitedToParty = async (partyId: string) => {
   const emails = inviteRelations.map((invite) => invite.email);
   return emails;
 };
+
+export const getPartiesForUser = async (userId: string) => {
+  const partyMembers = await db.select().from(partyMemberTable).where(eq(partyMemberTable.userId, userId)).all();
+  if (partyMembers === undefined || partyMembers.length === 0) {
+    return [];
+  } else {
+    const partyIds = partyMembers.map((member) => member.partyId);
+    const parties = await db.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
+    return parties;
+  }
+};

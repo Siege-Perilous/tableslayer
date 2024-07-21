@@ -1,5 +1,5 @@
-import { acceptInviteSchema } from '$lib/schemas';
-import { acceptPartyInvite, declinePartyInvite, getPartyInvitesForEmail } from '$lib/server';
+import { inviteResponseSchema } from '$lib/schemas';
+import { acceptPartyInvite, declinePartyInvite, getPartiesForUser, getPartyInvitesForEmail } from '$lib/server';
 import type { Actions } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -10,11 +10,13 @@ export const load: PageServerLoad = async ({ parent }) => {
   const email = user.email;
   const invites = await getPartyInvitesForEmail(email);
 
-  const acceptInviteForm = await superValidate(zod(acceptInviteSchema));
+  const inviteResponseForm = await superValidate(zod(inviteResponseSchema));
+  const parties = await getPartiesForUser(user.id);
 
   return {
     invites,
-    acceptInviteForm
+    inviteResponseForm,
+    parties
   };
 };
 
@@ -25,29 +27,29 @@ export const actions: Actions = {
     }
     const userId = event.locals.user.id;
 
-    const acceptInviteForm = await superValidate(event.request, zod(acceptInviteSchema));
-    if (!acceptInviteForm.valid) {
-      return message(acceptInviteForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
+    const inviteResponseForm = await superValidate(event.request, zod(inviteResponseSchema));
+    if (!inviteResponseForm.valid) {
+      return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
 
     try {
-      const { code } = acceptInviteForm.data;
+      const { code } = inviteResponseForm.data;
       await acceptPartyInvite(code, userId);
-      return message(acceptInviteForm, { type: 'success', text: 'Invite accepted' });
+      return message(inviteResponseForm, { type: 'success', text: 'Invite accepted' });
     } catch (error) {
-      return message(acceptInviteForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
+      return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
   },
   async declineInvite(event) {
-    const acceptInviteForm = await superValidate(event.request, zod(acceptInviteSchema));
-    if (!acceptInviteForm.valid) {
-      return message(acceptInviteForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
+    const inviteResponseForm = await superValidate(event.request, zod(inviteResponseSchema));
+    if (!inviteResponseForm.valid) {
+      return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
     try {
-      const { code } = acceptInviteForm.data;
+      const { code } = inviteResponseForm.data;
       await declinePartyInvite(code);
     } catch (error) {
-      return message(acceptInviteForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
+      return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
   }
 };
