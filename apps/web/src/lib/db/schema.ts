@@ -80,6 +80,13 @@ export const partyInviteTable = sqliteTable('party_invite', {
   partyId: text('party_id')
     .notNull()
     .references(() => partyTable.id, { onDelete: 'cascade' }),
+  invitedBy: text('invited_by')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  code: text('code')
+    .notNull()
+    .unique()
+    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
   email: text('email').notNull(),
   role: text('role', { enum: ['owner', 'editor', 'viewer'] }).notNull()
 });
