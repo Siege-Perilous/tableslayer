@@ -38,3 +38,5 @@ export const resendInviteSchema = z.object({
   email: z.string().email(),
   partyId: z.string()
 });
+
+export type ResendInviteSchema = typeof resendInviteSchema;
