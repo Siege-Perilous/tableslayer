@@ -14,9 +14,9 @@ import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
-  const { party } = await parent();
+  const { party, user } = await parent();
 
-  if (!party) {
+  if (!party || !user) {
     throw new Error('Party is undefined');
   }
 
@@ -52,9 +52,10 @@ export const actions: Actions = {
     const { email, partyId } = inviteMemberForm.data;
     const party = await getParty(partyId);
 
-    if (!party) {
-      throw new Error('Party not found');
+    if (!party || !event.locals.user) {
+      throw new Error('Party or user not found');
     }
+    const userId = event.locals.user.id;
 
     const alreadyInParty = await isUserByEmailInPartyAlready(email, partyId);
     if (alreadyInParty) {
@@ -78,7 +79,8 @@ export const actions: Actions = {
       await db.insert(partyInviteTable).values({
         partyId,
         email,
-        role: 'viewer'
+        role: 'viewer',
+        invitedBy: userId
       });
 
       await sendPartyInviteEmail(partyId, email);

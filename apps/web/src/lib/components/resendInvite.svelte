@@ -18,7 +18,6 @@
 <form method="post" action="?/resendInvite" use:enhance>
   <Field {form} name="email">
     <Control let:attrs>
-      <Label>{email}</Label>
       <input {...attrs} type="hidden" name="email" bind:value={email} />
       <input {...attrs} type="hidden" name="partyId" bind:value={partyId} />
       <button type="submit">Resend</button>
