@@ -7,6 +7,7 @@ export const load = (async (event) => {
 
   const userId = event.locals.user.id;
   const user = await getUser(userId);
+  if (!user) redirect(302, '/login');
 
   return {
     user

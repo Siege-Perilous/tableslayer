@@ -72,6 +72,7 @@ export const partyMemberTable = sqliteTable(
   }
 );
 
+export const VALID_PARTY_ROLES = ['admin', 'editor', 'viewer'] as const;
 export const partyInviteTable = sqliteTable('party_invite', {
   id: text('id')
     .primaryKey()
@@ -88,15 +89,17 @@ export const partyInviteTable = sqliteTable('party_invite', {
     .unique()
     .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
   email: text('email').notNull(),
-  role: text('role', { enum: ['owner', 'editor', 'viewer'] }).notNull()
+  role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });
 
 // Generate Zod schemas
 export const insertUserSchema = createInsertSchema(usersTable);
 export const selectUserSchema = createSelectSchema(usersTable);
+export const insertPartyMember = createInsertSchema(partyMemberTable);
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
+export type InsertPartyMember = typeof partyMemberTable.$inferInsert;
 
 export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { Field, Control, FieldErrors, Label } from 'formsnap';
+  import { Field, Control, FieldErrors } from 'formsnap';
   import { resendInviteSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
 
