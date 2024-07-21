@@ -4,7 +4,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
-  import ResendInvite from '$lib/components/resendInvite.svelte';
+  import ResendInvite from '$lib/components/party/ResendInvite.svelte';
 
   let { data } = $props();
 

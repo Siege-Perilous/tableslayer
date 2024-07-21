@@ -1,4 +1,5 @@
 import { getPartyFromSlug, isUserAdminInParty } from '$lib/server';
+import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load = (async ({ params, parent }) => {
@@ -7,8 +8,7 @@ export const load = (async ({ params, parent }) => {
   //  console.log('party page', party);
   const { user } = await parent();
   if (!party || !user) {
-    // 404
-    return;
+    return redirect(302, '/login');
   }
 
   const isPartyAdmin = await isUserAdminInParty(user.id, party.id);
