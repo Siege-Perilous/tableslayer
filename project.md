@@ -1,16 +1,14 @@
 ## Things to do
 
-- Use forsmap on other forms other than login
 - Add Google oauth
 - Workspace
   - invites
     - DONE Invites list in profile
     - DONE Accept works from /profile
     - DONE List works from /accept-invite/code, but shouldn't be a list
-    - Need to make a deny invite component for profile
+    - DONE to make a deny invite component for profile
     - Need to make accepting an invite work if logged out, going through signup
   - routes
-- Gravatar
 - Project / route structure. Website repo vs. app repo vs. combined
   - Think if logged in, just go to last project
 - eslint v9

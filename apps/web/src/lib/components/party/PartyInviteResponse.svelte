@@ -1,6 +1,5 @@
 <script lang="ts">
   import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { Field, Control, FieldErrors } from 'formsnap';
   import { inviteResponseSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
   let {
@@ -8,13 +7,28 @@
   }: {
     code: string;
   } = $props();
-  const inviteResponseForm = superForm({ code }, { validators: zodClient(inviteResponseSchema) });
-  const { form, enhance, message } = inviteResponseForm;
+  const inviteResponseForm = superForm(
+    { code },
+    { validators: zodClient(inviteResponseSchema), delayMs: 300, clearOnSubmit: 'errors-and-message' }
+  );
+  const { form, enhance, message, formId, delayed } = inviteResponseForm;
 </script>
 
-<form method="post" use:enhance>
-  <button formaction="?/acceptInvite" name="code" value={code}>Accept</button>
-  <button formaction="?/declineInvite" name="code" value={code}>Decline</button>
+<form method="POST" use:enhance>
+  <button formaction="?/acceptInvite" name="code" onclick={() => ($formId = code)} value={code}>
+    {#if $delayed && $formId === code}
+      Loading...
+    {:else}
+      Accept
+    {/if}
+  </button>
+  <button formaction="?/declineInvite" name="code" onclick={() => ($formId = code)} value={code}>
+    {#if $delayed && $formId === code}
+      Loading...
+    {:else}
+      Deny
+    {/if}
+  </button>
 </form>
 
 {#if $message}

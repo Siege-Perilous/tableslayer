@@ -7,10 +7,13 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
   const { user } = await parent();
+  if (!user) {
+    throw new Error('User not found');
+  }
   const email = user.email;
-  const invites = await getPartyInvitesForEmail(email);
-
   const inviteResponseForm = await superValidate(zod(inviteResponseSchema));
+
+  const invites = await getPartyInvitesForEmail(email);
   const parties = await getPartiesForUser(user.id);
 
   return {
@@ -22,6 +25,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 export const actions: Actions = {
   async acceptInvite(event) {
+    await new Promise((r) => setTimeout(r, 1000));
     if (!event.locals.user) {
       throw new Error('User not found');
     }
@@ -41,6 +45,7 @@ export const actions: Actions = {
     }
   },
   async declineInvite(event) {
+    await new Promise((r) => setTimeout(r, 1000));
     const inviteResponseForm = await superValidate(event.request, zod(inviteResponseSchema));
     if (!inviteResponseForm.valid) {
       return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
@@ -48,6 +53,7 @@ export const actions: Actions = {
     try {
       const { code } = inviteResponseForm.data;
       await declinePartyInvite(code);
+      return message(inviteResponseForm, { type: 'success', text: 'Invite declined' });
     } catch (error) {
       return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }

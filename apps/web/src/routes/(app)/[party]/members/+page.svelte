@@ -5,10 +5,11 @@
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
   import ResendInvite from '$lib/components/party/ResendInvite.svelte';
+  import { invalidateAll } from '$app/navigation';
 
   let { data } = $props();
 
-  const { party, isPartyAdmin, members, invitedEmails } = data;
+  const { party, isPartyAdmin, members, invitedEmails } = $derived(data);
 
   const inviteMemberForm = superForm(data.inviteMemberForm, {
     validators: zodClient(inviteMemberSchema),
@@ -16,8 +17,10 @@
   });
 
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
-  const partyId = party?.id as string;
+  const partyId = data.party.id as string;
 </script>
+
+<button onclick={() => invalidateAll()}>Refresh</button>
 
 <h2>Invite new member</h2>
 {#if isPartyAdmin}
@@ -45,26 +48,22 @@
 {/if}
 
 <h2>Already invited</h2>
-{#if invitedEmails.length === 0}
-  <p>No invited emails found.</p>
-{:else}
-  <ul>
-    {#each invitedEmails as email}
-      <li>
-        {email}
-        <ResendInvite {email} {partyId} />
-      </li>
-    {/each}
-  </ul>
-{/if}
+<ul>
+  {#each invitedEmails as email (email)}
+    <li>
+      {email}
+      <ResendInvite {email} {partyId} />
+    </li>
+  {:else}
+    <li>No invites found.</li>
+  {/each}
+</ul>
 
 <h2>Members of {party?.name}</h2>
-{#if members.length === 0}
-  <p>No members found.</p>
+{#each members as member (member.id)}
+  <p>{member.email}</p>
 {:else}
-  {#each members as member}
-    <p>{member.email}</p>
-  {/each}
-{/if}
+  <p>No members found.</p>
+{/each}
 
 <SuperDebug data={$inviteMemberData} label="Invite member" />

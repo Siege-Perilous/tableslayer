@@ -9,7 +9,5 @@ export const load = (async (event) => {
   const user = await getUser(userId);
   if (!user) redirect(302, '/login');
 
-  return {
-    user
-  };
+  return {};
 }) satisfies LayoutServerLoad;

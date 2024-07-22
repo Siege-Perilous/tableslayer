@@ -4,6 +4,7 @@
   import { CldImage } from 'svelte-cloudinary';
 
   let { data } = $props();
+  const { user } = $derived(data);
   const usersQuery = createUsersQuery();
 </script>
 
@@ -24,11 +25,11 @@
 {/if}
 
 <h2>User status</h2>
-{#if data.user && data.user.email}
-  <CldImage src={data.user.avatar} width={40} height={40} />
-  <p>Logged in as: <a href="/profile">{data.user.email}</a></p>
+{#if user && user.email}
+  <CldImage src={user.avatar} width={40} height={40} />
+  <p>Logged in as: <a href="/profile">{user.email}</a></p>
   <p><a href="/logout">Logout</a></p>
-  {#if data.user.emailVerified}
+  {#if user.emailVerified}
     <p>Email is verified</p>
   {:else}
     <p>Email is not verified</p>
