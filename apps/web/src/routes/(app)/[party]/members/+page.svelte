@@ -5,7 +5,6 @@
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
   import ResendInvite from '$lib/components/party/ResendInvite.svelte';
-  import { invalidateAll } from '$app/navigation';
 
   let { data } = $props();
 
@@ -19,8 +18,6 @@
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
   const partyId = data.party.id as string;
 </script>
-
-<button onclick={() => invalidateAll()}>Refresh</button>
 
 <h2>Invite new member</h2>
 {#if isPartyAdmin}
