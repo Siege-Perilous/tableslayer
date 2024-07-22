@@ -1,6 +1,6 @@
 import { db } from '$lib/db';
 import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export const getPartyInvitesForEmail = async (email: string) => {
   const invitesWithPartyInfo = await db
@@ -60,4 +60,14 @@ export const acceptPartyInvite = async (code: string, userId: string) => {
 
 export const declinePartyInvite = async (code: string) => {
   await db.delete(partyInviteTable).where(eq(partyInviteTable.code, code)).run();
+};
+
+export const getPartyInvite = async (partyId: string, email: string) => {
+  const invite = await db
+    .select()
+    .from(partyInviteTable)
+    .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+    .get();
+
+  return invite;
 };

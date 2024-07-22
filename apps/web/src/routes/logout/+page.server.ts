@@ -12,5 +12,5 @@ export const load: PageServerLoad = async (event) => {
     path: '.',
     ...sessionCookie.attributes
   });
-  return redirect(302, '/');
+  return redirect(302, '/login');
 };
