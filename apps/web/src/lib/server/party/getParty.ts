@@ -1,5 +1,12 @@
 import { db } from '$lib/db';
-import { partyInviteTable, partyMemberTable, partyTable, usersTable } from '$lib/db/schema';
+import {
+  partyInviteTable,
+  partyMemberTable,
+  partyTable,
+  usersTable,
+  type PartyRole,
+  type SelectUser
+} from '$lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string) => {
@@ -17,15 +24,23 @@ export const getPartyFromSlug = async (partySlug: string) => {
   return party;
 };
 
-export const getPartyMembers = async (partyId: string) => {
-  const memberRelations = await db.select().from(partyMemberTable).where(eq(partyMemberTable.partyId, partyId));
-  if (memberRelations === undefined || memberRelations.length === 0) {
-    return [];
-  } else {
-    const userIds = memberRelations.map((relation) => relation.userId);
-    const users = await db.select().from(usersTable).where(inArray(usersTable.id, userIds)).all();
-    return users;
-  }
+export const getPartyMembers = async (partyId: string): Promise<Array<SelectUser & { role: PartyRole }>> => {
+  const memberRelations = await db
+    .select({
+      id: partyMemberTable.userId,
+      role: partyMemberTable.role,
+      name: usersTable.name,
+      email: usersTable.email,
+      emailVerified: usersTable.emailVerified,
+      avatar: usersTable.avatar,
+      passwordHash: usersTable.passwordHash
+    })
+    .from(partyMemberTable)
+    .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))
+    .where(eq(partyMemberTable.partyId, partyId))
+    .all();
+
+  return memberRelations;
 };
 
 export const isUserByEmailInPartyAlready = async (email: string, partyId: string) => {

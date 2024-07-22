@@ -4,7 +4,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
-  import ResendInvite from '$lib/components/party/ResendInvite.svelte';
+  import { PartyMember, ResendInvite } from '$lib/components';
 
   let { data } = $props();
 
@@ -58,7 +58,7 @@
 
 <h2>Members of {party?.name}</h2>
 {#each members as member (member.id)}
-  <p>{member.email}</p>
+  <PartyMember {member} />
 {:else}
   <p>No members found.</p>
 {/each}

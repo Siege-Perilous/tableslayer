@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PartyInviteResponse from '$lib/components/party/PartyInviteResponse.svelte';
+  import { PartyInviteResponse } from '$lib/components';
   let { data } = $props();
   const { invites, parties } = $derived(data);
 </script>

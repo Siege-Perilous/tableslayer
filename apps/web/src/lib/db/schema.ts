@@ -73,6 +73,8 @@ export const partyMemberTable = sqliteTable(
 );
 
 export const VALID_PARTY_ROLES = ['admin', 'editor', 'viewer'] as const;
+export type PartyRole = (typeof VALID_PARTY_ROLES)[number];
+
 export const partyInviteTable = sqliteTable('party_invite', {
   id: text('id')
     .primaryKey()

@@ -2,13 +2,9 @@
 
 - Add Google oauth
 - Workspace
-  - invites
-    - DONE Invites list in profile
-    - DONE Accept works from /profile
-    - DONE List works from /accept-invite/code, but shouldn't be a list
-    - DONE to make a deny invite component for profile
-    - Need to make accepting an invite work if logged out, going through signup
-  - routes
+  - Need to display role in member list
+  - Need to be able to remove yourself from a party
+  - Need to be able to remove a member from party if you are the admin
 - Project / route structure. Website repo vs. app repo vs. combined
   - Think if logged in, just go to last project
 - eslint v9

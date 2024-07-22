@@ -5,7 +5,7 @@
   import { queryClient } from '$lib/queryClient';
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher } from 'mode-watcher';
-  import GlobalLoading from '$lib/components/GlobalLoading.svelte';
+  import { GlobalLoading } from '$lib/components';
 </script>
 
 <QueryClientProvider client={queryClient}>

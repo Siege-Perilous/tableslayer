@@ -17,6 +17,11 @@ export const load: PageServerLoad = async (event) => {
   const userId = event.locals.user.id;
   const user = await getUser(userId);
   const isVerified = user?.emailVerified ?? false;
+
+  if (isVerified) {
+    throw redirect(302, '/profile');
+  }
+
   const emailVerificationCode = await db
     .select()
     .from(emailVerificationCodesTable)
