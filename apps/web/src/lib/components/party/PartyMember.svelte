@@ -30,7 +30,7 @@
 <p>{member.email} - {member.role} - {partyId}</p>
 
 <form method="POST" action="?/changeRole" use:enhance>
-  <Field {form} name="email">
+  <Field {form} name="role">
     <Control let:attrs>
       <select {...attrs} name="role" bind:value={$form.role} onchange={() => ($formId = member.id)}>
         {#each VALID_PARTY_ROLES as role}

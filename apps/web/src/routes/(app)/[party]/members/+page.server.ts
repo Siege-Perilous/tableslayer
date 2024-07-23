@@ -130,6 +130,7 @@ export const actions: Actions = {
 
     try {
       changePartyRole(userId, partyId, role);
+      return message(changeRoleForm, { type: 'success', text: 'Role changed' });
     } catch (error) {
       return message(changeRoleForm, { type: 'error', text: 'Error changing role' }, { status: 500 });
     }
