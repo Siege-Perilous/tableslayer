@@ -4,7 +4,7 @@ import { signupSchema } from '$lib/schemas';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
-import { hash } from '@node-rs/argon2';
+import { createHash } from '$lib/utils';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -41,13 +41,7 @@ export const actions: Actions = {
 
     const { email, password } = signupForm.data;
 
-    const passwordHash = await hash(password, {
-      // recommended minimum parameters
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1
-    });
+    const passwordHash = await createHash(password);
     const userId = uuidv4();
 
     try {

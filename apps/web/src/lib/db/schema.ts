@@ -94,6 +94,18 @@ export const partyInviteTable = sqliteTable('party_invite', {
   role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });
 
+export const gameSessionTable = sqliteTable('game_session', {
+  id: text('id')
+    .primaryKey()
+    .notNull()
+    .$default(() => uuidv4()),
+  name: text('name').notNull(),
+  partyId: text('party_id')
+    .notNull()
+    .references(() => partyTable.id, { onDelete: 'cascade' }),
+  dbUrl: text('db_url').notNull()
+});
+
 // Generate Zod schemas
 export const insertUserSchema = createInsertSchema(usersTable);
 export const selectUserSchema = createSelectSchema(usersTable);
