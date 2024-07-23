@@ -24,11 +24,14 @@ export const getPartyFromSlug = async (partySlug: string) => {
   return party;
 };
 
-export const getPartyMembers = async (partyId: string): Promise<Array<SelectUser & { role: PartyRole }>> => {
+export const getPartyMembers = async (
+  partyId: string
+): Promise<Array<SelectUser & { role: PartyRole; partyId: string }>> => {
   const memberRelations = await db
     .select({
       id: partyMemberTable.userId,
       role: partyMemberTable.role,
+      partyId: partyMemberTable.partyId,
       name: usersTable.name,
       email: usersTable.email,
       emailVerified: usersTable.emailVerified,
@@ -38,6 +41,7 @@ export const getPartyMembers = async (partyId: string): Promise<Array<SelectUser
     .from(partyMemberTable)
     .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))
     .where(eq(partyMemberTable.partyId, partyId))
+    .orderBy(partyMemberTable.role) // Works only because the roles naturally are alpha
     .all();
 
   return memberRelations;
@@ -82,4 +86,23 @@ export const getPartiesForUser = async (userId: string) => {
     const parties = await db.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
     return parties;
   }
+};
+
+export const changePartyRole = async (userId: string, partyId: string, role: PartyRole) => {
+  const existingMember = await db
+    .select()
+    .from(partyMemberTable)
+    .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+    .get();
+
+  if (!existingMember) {
+    throw new Error('User is not a member of the party.');
+  }
+
+  // Update the user's role in the party
+  await db
+    .update(partyMemberTable)
+    .set({ role: role })
+    .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+    .run();
 };

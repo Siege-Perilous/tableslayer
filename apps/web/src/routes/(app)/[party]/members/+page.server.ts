@@ -1,7 +1,8 @@
 import { db } from '$lib/db';
 import { partyInviteTable } from '$lib/db/schema';
-import { inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
+import { changeRoleSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
 import {
+  changePartyRole,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
@@ -20,6 +21,7 @@ export const load: PageServerLoad = async ({ parent }) => {
     throw new Error('Party is undefined');
   }
 
+  // Superform schemas
   const inviteMemberSchemaWithPartyId = inviteMemberSchema.extend({
     partyId: inviteMemberSchema.shape.partyId.default(party.id)
   });
@@ -28,17 +30,24 @@ export const load: PageServerLoad = async ({ parent }) => {
     partyId: inviteMemberSchema.shape.partyId.default(party.id)
   });
 
-  const members = (await getPartyMembers(party.id)) || [];
-  const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
+  const changeRoleSchemeWithPartyId = changeRoleSchema.extend({
+    partyId: changeRoleSchema.shape.partyId.default(party.id)
+  });
 
   const inviteMemberForm = await superValidate(zod(inviteMemberSchemaWithPartyId));
   const resendInviteForm = await superValidate(zod(resendInviteSchemaWithPartyId));
+  const changeRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
+
+  // Party members and invited emails
+  const members = (await getPartyMembers(party.id)) || [];
+  const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   return {
     members,
     invitedEmails,
     inviteMemberForm,
-    resendInviteForm
+    resendInviteForm,
+    changeRoleForm
   };
 };
 
@@ -108,6 +117,21 @@ export const actions: Actions = {
     } catch (error) {
       console.log('Error resending invite', error);
       return message(resendInviteForm, { type: 'error', text: 'Error resending invite' }, { status: 500 });
+    }
+  },
+
+  changeRole: async (event) => {
+    const changeRoleForm = await superValidate(event.request, zod(changeRoleSchema));
+    if (!changeRoleForm.valid) {
+      return message(changeRoleForm, { type: 'error', text: 'Invalid role' }, { status: 400 });
+    }
+
+    const { userId, partyId, role } = changeRoleForm.data;
+
+    try {
+      changePartyRole(userId, partyId, role);
+    } catch (error) {
+      return message(changeRoleForm, { type: 'error', text: 'Error changing role' }, { status: 500 });
     }
   }
 };

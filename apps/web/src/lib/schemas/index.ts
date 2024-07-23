@@ -1,3 +1,4 @@
+import { VALID_PARTY_ROLES } from '$lib/db/schema';
 import { z } from 'zod';
 
 // Auth
@@ -43,4 +44,11 @@ export type ResendInviteSchema = typeof resendInviteSchema;
 
 export const inviteResponseSchema = z.object({
   code: z.string()
+});
+
+const roleSchema = z.enum(VALID_PARTY_ROLES);
+export const changeRoleSchema = z.object({
+  userId: z.string(),
+  role: roleSchema,
+  partyId: z.string()
 });
