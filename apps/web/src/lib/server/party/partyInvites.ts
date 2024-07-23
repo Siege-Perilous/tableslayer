@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/app/schema';
 import { and, eq } from 'drizzle-orm';
 
 export const getPartyInvitesForEmail = async (email: string) => {

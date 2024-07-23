@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { partyMemberTable } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { partyMemberTable } from '$lib/db/app/schema';
 import { and, eq } from 'drizzle-orm';
 
 export const isUserAdminInParty = async (userId: string, partyId: string): Promise<boolean> => {

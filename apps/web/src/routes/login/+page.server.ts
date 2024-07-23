@@ -1,4 +1,4 @@
-import { db } from '$lib/db';
+import { db } from '$lib/db/app';
 import { loginSchema } from '$lib/schemas';
 import { lucia } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
@@ -7,7 +7,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
-import { usersTable } from '$lib/db/schema';
+import { usersTable } from '$lib/db/app/schema';
 import { verifyHash } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 

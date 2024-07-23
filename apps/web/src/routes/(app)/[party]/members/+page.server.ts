@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { partyInviteTable } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { partyInviteTable } from '$lib/db/app/schema';
 import { changeRoleSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
 import {
   changePartyRole,

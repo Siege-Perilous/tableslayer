@@ -1,7 +1,7 @@
 <script lang="ts">
   import { CldImage } from 'svelte-cloudinary';
-  import { type SelectUser, VALID_PARTY_ROLES } from '$lib/db/schema';
-  import { type PartyRole } from '$lib/db/schema';
+  import { type SelectUser, VALID_PARTY_ROLES } from '$lib/db/app/schema';
+  import { type PartyRole } from '$lib/db/app/schema';
   import SuperDebug, { superForm } from 'sveltekit-superforms';
   import { Control, Field } from 'formsnap';
   import { changeRoleSchema } from '$lib/schemas';

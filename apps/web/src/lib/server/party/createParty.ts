@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { partyTable, type SelectParty } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { partyTable, type SelectParty } from '$lib/db/app/schema';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 

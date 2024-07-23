@@ -1,4 +1,4 @@
-import { VALID_PARTY_ROLES } from '$lib/db/schema';
+import { VALID_PARTY_ROLES } from '$lib/db/app/schema';
 import { z } from 'zod';
 
 // Auth
