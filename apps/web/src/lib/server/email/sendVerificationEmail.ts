@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { emailVerificationCodesTable } from '$lib/db/app/schema';
 import { sendSingleEmail } from '$lib/server';
 import { eq } from 'drizzle-orm';
 

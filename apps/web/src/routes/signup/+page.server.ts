@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/app/schema';
 import { signupSchema } from '$lib/schemas';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';

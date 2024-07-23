@@ -1,4 +1,4 @@
-import { db } from '$lib/db';
+import { db } from '$lib/db/app';
 import {
   partyInviteTable,
   partyMemberTable,
@@ -6,7 +6,7 @@ import {
   usersTable,
   type PartyRole,
   type SelectUser
-} from '$lib/db/schema';
+} from '$lib/db/app/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string) => {

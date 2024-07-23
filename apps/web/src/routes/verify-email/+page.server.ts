@@ -1,5 +1,5 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { db } from '$lib/db/app';
+import { emailVerificationCodesTable, usersTable } from '$lib/db/app/schema';
 import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
 import { getUser, sendVerificationEmail } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
