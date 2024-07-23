@@ -1,9 +1,8 @@
-import { db } from '$lib/db';
-import { selectUserSchema, usersTable } from '$lib/db/schema';
+import { appDb, selectUserSchema, usersTable } from '$lib/db';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async () => {
-  const users = await db.select().from(usersTable);
+  const users = await appDb.select().from(usersTable);
 
   // Validate users using generated Zod schema
   const parsedUsers = selectUserSchema.array().safeParse(users);

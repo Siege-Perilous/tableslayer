@@ -1,5 +1,4 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/schema';
+import { appDb, emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db';
 import { signupSchema } from '$lib/schemas';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
@@ -48,7 +47,7 @@ export const actions: Actions = {
       // Create a new user with a Gravatar image
       const gravatar = getGravatarUrl(email);
       const image = (await uploadImage(gravatar)) as string;
-      await db.insert(usersTable).values({
+      await appDb.insert(usersTable).values({
         id: userId,
         name: '',
         email: email,
@@ -59,14 +58,14 @@ export const actions: Actions = {
       // Create a personal party for the user
       const party = await createRandomNamedParty();
 
-      await db.insert(partyMemberTable).values({
+      await appDb.insert(partyMemberTable).values({
         partyId: party.id,
         userId: userId,
         role: 'admin'
       });
 
       // Create an email verification code
-      const emailVerificationCode = await db
+      const emailVerificationCode = await appDb
         .insert(emailVerificationCodesTable)
         .values({
           userId

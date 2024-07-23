@@ -1,9 +1,8 @@
-import { db } from '$lib/db';
-import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/schema';
+import { appDb, partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db';
 import { and, eq } from 'drizzle-orm';
 
 export const getPartyInvitesForEmail = async (email: string) => {
-  const invitesWithPartyInfo = await db
+  const invitesWithPartyInfo = await appDb
     .select({
       invite: partyInviteTable,
       party: {
@@ -22,7 +21,7 @@ export const getPartyInvitesForEmail = async (email: string) => {
 };
 
 export const getPartyInvitesForCode = async (code: string) => {
-  const invitesWithPartyInfo = await db
+  const invitesWithPartyInfo = await appDb
     .select({
       invite: partyInviteTable,
       party: {
@@ -40,7 +39,7 @@ export const getPartyInvitesForCode = async (code: string) => {
 };
 
 export const acceptPartyInvite = async (code: string, userId: string) => {
-  const invite = await db.select().from(partyInviteTable).where(eq(partyInviteTable.code, code)).get();
+  const invite = await appDb.select().from(partyInviteTable).where(eq(partyInviteTable.code, code)).get();
 
   if (!invite) {
     return false;
@@ -52,18 +51,18 @@ export const acceptPartyInvite = async (code: string, userId: string) => {
     return false;
   }
 
-  await db.delete(partyInviteTable).where(eq(partyInviteTable.code, code)).run();
-  await db.insert(partyMemberTable).values({ partyId: invite.partyId, userId, role: invite.role }).run();
+  await appDb.delete(partyInviteTable).where(eq(partyInviteTable.code, code)).run();
+  await appDb.insert(partyMemberTable).values({ partyId: invite.partyId, userId, role: invite.role }).run();
 
   return true;
 };
 
 export const declinePartyInvite = async (code: string) => {
-  await db.delete(partyInviteTable).where(eq(partyInviteTable.code, code)).run();
+  await appDb.delete(partyInviteTable).where(eq(partyInviteTable.code, code)).run();
 };
 
 export const getPartyInvite = async (partyId: string, email: string) => {
-  const invite = await db
+  const invite = await appDb
     .select()
     .from(partyInviteTable)
     .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))

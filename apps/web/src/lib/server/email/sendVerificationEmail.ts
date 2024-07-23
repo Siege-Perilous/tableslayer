@@ -1,11 +1,10 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable } from '$lib/db/schema';
+import { appDb, emailVerificationCodesTable } from '$lib/db';
 import { sendSingleEmail } from '$lib/server';
 import { eq } from 'drizzle-orm';
 
 export const sendVerificationEmail = async (userId: string, email: string) => {
-  await db.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
-  const emailVerificationCode = await db
+  await appDb.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
+  const emailVerificationCode = await appDb
     .insert(emailVerificationCodesTable)
     .values({
       userId

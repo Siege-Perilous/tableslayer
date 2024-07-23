@@ -1,5 +1,4 @@
-import { db } from '$lib/db';
-import { emailVerificationCodesTable, usersTable } from '$lib/db/schema';
+import { appDb, emailVerificationCodesTable, usersTable } from '$lib/db';
 import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
 import { getUser, sendVerificationEmail } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
@@ -22,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
     throw redirect(302, '/profile');
   }
 
-  const emailVerificationCode = await db
+  const emailVerificationCode = await appDb
     .select()
     .from(emailVerificationCodesTable)
     .where(eq(emailVerificationCodesTable.userId, userId))
@@ -56,12 +55,12 @@ export const actions: Actions = {
     const userId = event.locals.user.id;
     const { email } = changeEmailForm.data;
 
-    const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+    const existingUser = await appDb.select().from(usersTable).where(eq(usersTable.email, email)).get();
     if (existingUser) {
       return message(changeEmailForm, { type: 'error', text: 'Email already in use' }, { status: 400 });
     }
 
-    await db.update(usersTable).set({ email }).where(eq(usersTable.id, userId)).execute();
+    await appDb.update(usersTable).set({ email }).where(eq(usersTable.id, userId)).execute();
     await sendVerificationEmail(userId, email);
 
     return message(changeEmailForm, { type: 'success', text: 'Email changed successfully' });
@@ -93,7 +92,7 @@ export const actions: Actions = {
 
     const userId = event.locals.user.id;
     const { code } = verifyForm.data;
-    const verificationCode = await db
+    const verificationCode = await appDb
       .select()
       .from(emailVerificationCodesTable)
       .where(eq(emailVerificationCodesTable.userId, userId))
@@ -103,8 +102,8 @@ export const actions: Actions = {
       return message(verifyForm, { type: 'error', text: 'Invalid verification code' }, { status: 400 });
     }
 
-    await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, userId)).execute();
-    await db.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
+    await appDb.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, userId)).execute();
+    await appDb.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
 
     return message(verifyForm, { type: 'success', text: 'Email verified' });
   }

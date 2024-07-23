@@ -1,4 +1,4 @@
-import { db } from '$lib/db';
+import { appDb, usersTable } from '$lib/db';
 import { loginSchema } from '$lib/schemas';
 import { lucia } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
@@ -7,7 +7,6 @@ import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
-import { usersTable } from '$lib/db/schema';
 import { verifyHash } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 
@@ -28,7 +27,7 @@ export const actions: Actions = {
     }
     const { email, password } = loginForm.data;
 
-    const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+    const existingUser = await appDb.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
     if (!existingUser) {
       return message(loginForm, { type: 'error', text: 'Incorrect email or password' }, { status: 400 });

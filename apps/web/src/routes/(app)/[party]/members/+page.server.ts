@@ -1,5 +1,4 @@
-import { db } from '$lib/db';
-import { partyInviteTable } from '$lib/db/schema';
+import { appDb, partyInviteTable } from '$lib/db';
 import { changeRoleSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
 import {
   changePartyRole,
@@ -85,7 +84,7 @@ export const actions: Actions = {
     }
 
     try {
-      await db.insert(partyInviteTable).values({
+      await appDb.insert(partyInviteTable).values({
         partyId,
         email,
         role: 'viewer',

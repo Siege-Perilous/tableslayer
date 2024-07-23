@@ -1,5 +1,4 @@
-import { db } from '$lib/db';
-import { partyTable, type SelectParty } from '$lib/db/schema';
+import { appDb, partyTable, type SelectParty } from '$lib/db';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,7 +14,7 @@ export const createRandomNamedParty = async (): Promise<SelectParty> => {
     const slug = generateSlug(partyName);
 
     try {
-      const party = await db
+      const party = await appDb
         .insert(partyTable)
         .values({
           id: uuidv4(),

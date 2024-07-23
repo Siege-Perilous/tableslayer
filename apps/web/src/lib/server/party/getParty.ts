@@ -1,33 +1,33 @@
-import { db } from '$lib/db';
 import {
+  appDb,
   partyInviteTable,
   partyMemberTable,
   partyTable,
   usersTable,
   type PartyRole,
   type SelectUser
-} from '$lib/db/schema';
+} from '$lib/db';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string) => {
-  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+  const party = await appDb.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
   return party;
 };
 
 export const getPartyFromName = async (partyName: string) => {
-  const party = await db.select().from(partyTable).where(eq(partyTable.name, partyName)).get();
+  const party = await appDb.select().from(partyTable).where(eq(partyTable.name, partyName)).get();
   return party;
 };
 
 export const getPartyFromSlug = async (partySlug: string) => {
-  const party = await db.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
+  const party = await appDb.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
   return party;
 };
 
 export const getPartyMembers = async (
   partyId: string
 ): Promise<Array<SelectUser & { role: PartyRole; partyId: string }>> => {
-  const memberRelations = await db
+  const memberRelations = await appDb
     .select({
       id: partyMemberTable.userId,
       role: partyMemberTable.role,
@@ -48,11 +48,11 @@ export const getPartyMembers = async (
 };
 
 export const isUserByEmailInPartyAlready = async (email: string, partyId: string) => {
-  const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+  const user = await appDb.select().from(usersTable).where(eq(usersTable.email, email)).get();
   if (user === undefined) {
     return false;
   }
-  const partyMember = await db
+  const partyMember = await appDb
     .select()
     .from(partyMemberTable)
     .where(and(eq(partyMemberTable.userId, user.id), eq(partyMemberTable.partyId, partyId)))
@@ -62,7 +62,7 @@ export const isUserByEmailInPartyAlready = async (email: string, partyId: string
 };
 
 export const isEmailAlreadyInvitedToParty = async (email: string, partyId: string) => {
-  const inviteRelation = await db
+  const inviteRelation = await appDb
     .select()
     .from(partyInviteTable)
     .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
@@ -72,24 +72,28 @@ export const isEmailAlreadyInvitedToParty = async (email: string, partyId: strin
 };
 
 export const getEmailsInvitedToParty = async (partyId: string) => {
-  const inviteRelations = await db.select().from(partyInviteTable).where(eq(partyInviteTable.partyId, partyId)).all();
+  const inviteRelations = await appDb
+    .select()
+    .from(partyInviteTable)
+    .where(eq(partyInviteTable.partyId, partyId))
+    .all();
   const emails = inviteRelations.map((invite) => invite.email);
   return emails;
 };
 
 export const getPartiesForUser = async (userId: string) => {
-  const partyMembers = await db.select().from(partyMemberTable).where(eq(partyMemberTable.userId, userId)).all();
+  const partyMembers = await appDb.select().from(partyMemberTable).where(eq(partyMemberTable.userId, userId)).all();
   if (partyMembers === undefined || partyMembers.length === 0) {
     return [];
   } else {
     const partyIds = partyMembers.map((member) => member.partyId);
-    const parties = await db.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
+    const parties = await appDb.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
     return parties;
   }
 };
 
 export const changePartyRole = async (userId: string, partyId: string, role: PartyRole) => {
-  const existingMember = await db
+  const existingMember = await appDb
     .select()
     .from(partyMemberTable)
     .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
@@ -100,7 +104,7 @@ export const changePartyRole = async (userId: string, partyId: string, role: Par
   }
 
   // Update the user's role in the party
-  await db
+  await appDb
     .update(partyMemberTable)
     .set({ role: role })
     .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
