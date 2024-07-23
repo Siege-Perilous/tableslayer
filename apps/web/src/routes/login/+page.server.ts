@@ -1,7 +1,6 @@
 import { db } from '$lib/db';
 import { loginSchema } from '$lib/schemas';
 import { lucia } from '$lib/server/auth';
-import { verify } from '@node-rs/argon2';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -9,6 +8,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
 import { usersTable } from '$lib/db/schema';
+import { verifyHash } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async (event) => {
@@ -34,12 +34,7 @@ export const actions: Actions = {
       return message(loginForm, { type: 'error', text: 'Incorrect email or password' }, { status: 400 });
     }
 
-    const validPassword = await verify(existingUser.passwordHash, password, {
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1
-    });
+    const validPassword = await verifyHash(existingUser.passwordHash, password);
 
     if (!validPassword) {
       // NOTE:
