@@ -102,6 +102,9 @@ importers:
       '@tanstack/svelte-query':
         specifier: ^5.51.11
         version: 5.51.11(svelte@5.0.0-next.166)
+      '@tursodatabase/api':
+        specifier: ^1.8.1
+        version: 1.8.1
       cloudinary:
         specifier: ^2.3.0
         version: 2.3.0
@@ -2335,6 +2338,12 @@ packages:
     dependencies:
       '@tanstack/query-core': 5.51.9
       svelte: 5.0.0-next.166
+    dev: false
+
+  /@tursodatabase/api@1.8.1:
+    resolution: {integrity: sha512-/HhBZEJEtGtI3FlP+vZY0VG+/GRO9L/yaPOjg/lWRDi0x9tjX6pvDiX1QOaeadKzGVkXH6gM+HYEH8LZnvOhKQ==}
+    dependencies:
+      whatwg-fetch: 3.6.20
     dev: false
 
   /@tybys/wasm-util@0.8.3:
@@ -5792,6 +5801,10 @@ packages:
   /web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
+    dev: false
+
+  /whatwg-fetch@3.6.20:
+    resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
     dev: false
 
   /which@2.0.2:

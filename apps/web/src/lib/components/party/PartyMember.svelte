@@ -12,7 +12,7 @@
     partyId: string;
   };
 
-  let { member }: { member: PartyMemberProps; partyId: string } = $props();
+  let { member }: { member: PartyMemberProps } = $props();
 
   const { id: userId, role, partyId } = member;
 
@@ -20,10 +20,11 @@
     { userId, partyId, role },
     {
       validators: zodClient(changeRoleSchema),
-      resetForm: true
+      invalidateAll: 'force',
+      resetForm: false
     }
   );
-  const { form, enhance, message, formId, delayed } = changeRoleForm;
+  const { form, enhance, message, formId } = changeRoleForm;
 </script>
 
 <CldImage src={member.avatar} width={40} height={40} />
@@ -32,7 +33,7 @@
 <form method="POST" action="?/changeRole" use:enhance>
   <Field {form} name="role">
     <Control let:attrs>
-      <select {...attrs} name="role" bind:value={$form.role} onchange={() => ($formId = member.id)}>
+      <select {...attrs} name="role" bind:value={$form.role} onselectstart={() => ($formId = member.id)}>
         {#each VALID_PARTY_ROLES as role}
           <option value={role}>{role}</option>
         {/each}
