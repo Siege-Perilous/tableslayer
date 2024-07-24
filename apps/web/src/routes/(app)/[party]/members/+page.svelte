@@ -11,8 +11,7 @@
   const { party, isPartyAdmin, members, invitedEmails } = $derived(data);
 
   const inviteMemberForm = superForm(data.inviteMemberForm, {
-    validators: zodClient(inviteMemberSchema),
-    resetForm: true
+    validators: zodClient(inviteMemberSchema)
   });
 
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;

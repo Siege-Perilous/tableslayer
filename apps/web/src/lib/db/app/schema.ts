@@ -103,7 +103,7 @@ export const gameSessionTable = sqliteTable('game_session', {
   partyId: text('party_id')
     .notNull()
     .references(() => partyTable.id, { onDelete: 'cascade' }),
-  dbUrl: text('db_url').notNull()
+  dbName: text('db_name').notNull()
 });
 
 // Generate Zod schemas
