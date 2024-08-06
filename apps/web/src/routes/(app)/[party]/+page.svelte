@@ -1,6 +1,9 @@
 <script lang="ts">
   let { data } = $props();
-  console.log(data);
+  const { party, gameSessions } = $derived(data);
 </script>
 
-{data.party?.name}
+{party.name}
+{#each gameSessions as session}
+  <a href={`${party.slug}/${session.slug}`}>{session.name}</a>
+{/each}

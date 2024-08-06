@@ -52,3 +52,4 @@ export const changeRoleSchema = z.object({
   role: roleSchema,
   partyId: z.string()
 });
+export type ChangeRoleSchema = typeof changeRoleSchema;

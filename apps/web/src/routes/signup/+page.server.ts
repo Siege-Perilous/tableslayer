@@ -4,6 +4,7 @@ import { signupSchema } from '$lib/schemas';
 import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
 import { lucia } from '$lib/server/auth';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
+import { createGameSessionDb } from '$lib/server/turso';
 import { createHash } from '$lib/utils';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -64,6 +65,9 @@ export const actions: Actions = {
         userId: userId,
         role: 'admin'
       });
+
+      // Create a game session database
+      await createGameSessionDb(party.id);
 
       // Create an email verification code
       const emailVerificationCode = await db
