@@ -9,4 +9,4 @@ const client = createClient({
   authToken: process.env.TURSO_GS_PARENT_DB_AUTH_TOKEN!
 });
 
-export const db = drizzle(client);
+export const gsDb = drizzle(client);

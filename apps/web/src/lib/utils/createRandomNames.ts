@@ -449,10 +449,37 @@ export const locations = [
   'Helios'
 ];
 
+const timeOfDay = [
+  'Morning',
+  'Noon',
+  'Afternoon',
+  'Evening',
+  'Night',
+  'Midnight',
+  'Twilight',
+  'Dawn',
+  'Dusk',
+  'Sunrise',
+  'Sunset',
+  'Daybreak',
+  'Nightfall',
+  'Starlight',
+  'Moonlight',
+  'Sunlight',
+  'Shadow'
+];
+
 export const createRandomName = () => {
   const adjective = uniqueAdjectives[Math.floor(Math.random() * uniqueAdjectives.length)];
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const location = locations[Math.floor(Math.random() * locations.length)];
   const randomName = `The ${adjective} ${noun} of ${location}`;
+  return randomName;
+};
+
+export const createRandomGameSessionName = () => {
+  const location = locations[Math.floor(Math.random() * locations.length)];
+  const time = timeOfDay[Math.floor(Math.random() * timeOfDay.length)];
+  const randomName = `${location} ${time}`;
   return randomName;
 };

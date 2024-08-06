@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,6 +52,7 @@ export const partyTable = sqliteTable('party', {
   name: text('name').notNull().unique(),
   slug: text('slug').notNull().unique(),
   avatar: text('avatar').notNull().default('gwda4udjrsacbec6fsca')
+  // Neat way to computer  slug: text('slug').notNull().unique().generatedAlwaysAs((): SQL => sql`lower(replace(${partyTable.name}, ' ', '-'))`),
 });
 
 export const partyMemberTable = sqliteTable(
@@ -94,26 +95,35 @@ export const partyInviteTable = sqliteTable('party_invite', {
   role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });
 
-export const gameSessionTable = sqliteTable('game_session', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
-  name: text('name').notNull(),
-  partyId: text('party_id')
-    .notNull()
-    .references(() => partyTable.id, { onDelete: 'cascade' }),
-  dbName: text('db_name').notNull()
-});
+export const gameSessionTable = sqliteTable(
+  'game_session',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    partyId: text('party_id')
+      .notNull()
+      .references(() => partyTable.id, { onDelete: 'cascade' }),
+    dbName: text('db_name').unique().notNull()
+  },
+  (table) => ({
+    uniqueNameWithinParty: uniqueIndex('unique_party_name').on(table.partyId, table.slug)
+  })
+);
 
 // Generate Zod schemas
 export const insertUserSchema = createInsertSchema(usersTable);
 export const selectUserSchema = createSelectSchema(usersTable);
 export const insertPartyMember = createInsertSchema(partyMemberTable);
+export const gameSessionSchema = createInsertSchema(gameSessionTable);
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
 export type InsertPartyMember = typeof partyMemberTable.$inferInsert;
+export type SelectGameSession = typeof gameSessionTable.$inferSelect;
 
 export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;

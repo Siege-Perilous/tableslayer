@@ -5,7 +5,6 @@ import {
   changePartyRole,
   getEmailsInvitedToParty,
   getParty,
-  getPartyMembers,
   isEmailAlreadyInvitedToParty,
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
@@ -38,12 +37,9 @@ export const load: PageServerLoad = async ({ parent }) => {
   const resendInviteForm = await superValidate(zod(resendInviteSchemaWithPartyId));
   const changeRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
 
-  // Party members and invited emails
-  const members = (await getPartyMembers(party.id)) || [];
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   return {
-    members,
     invitedEmails,
     inviteMemberForm,
     resendInviteForm,
