@@ -6,5 +6,5 @@ export const sceneTable = sqliteTable('scene', {
     .primaryKey()
     .notNull()
     .$default(() => uuidv4()),
-  name: text('name').notNull()
+  name: text('name').notNull().default('New Scene')
 });
