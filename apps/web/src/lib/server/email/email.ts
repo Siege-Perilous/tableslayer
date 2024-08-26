@@ -11,7 +11,7 @@ interface EmailOptions {
 }
 
 export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, subject, html }: EmailOptions) => {
-  const recipient = dev ? 'dave.snider@gmail.com' : to;
+  const recipient = dev ? (process.env.DEV_EMAIL as string) : to;
   console.log('Sending email to', recipient, 'from', from);
   try {
     await resend.emails.send({

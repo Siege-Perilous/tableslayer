@@ -15,7 +15,8 @@
         "CLOUDINARY_CLOUD_NAME",
         "CLOUDINARY_URL",
         "TURSO_GS_PARENT_DB_URL",
-        "TURSO_GS_PARENT_DB_AUTH_TOKEN"
+        "TURSO_GS_PARENT_DB_AUTH_TOKEN",
+        "DEV_EMAIL"
       ]
     },
     "tsc": {
