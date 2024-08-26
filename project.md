@@ -5,6 +5,7 @@
   - Need to display role in member list
   - Need to be able to remove yourself from a party
   - Need to be able to remove a member from party if you are the admin
+- Likely should migrate to plunk for email sending?
 - Project / route structure. Website repo vs. app repo vs. combined
   - Think if logged in, just go to last project
 - eslint v9

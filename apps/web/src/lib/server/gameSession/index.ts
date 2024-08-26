@@ -6,3 +6,8 @@ export const getPartyGameSessions = async (partyId: string): Promise<SelectGameS
   const gameSessions = await db.select().from(gameSessionTable).where(eq(gameSessionTable.partyId, partyId)).all();
   return gameSessions;
 };
+
+export const getPartyGameSessionFromSlug = async (slug: string) => {
+  const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.slug, slug)).get();
+  return gameSession;
+};
