@@ -30,6 +30,7 @@
     "@node-rs/argon2": "^1.8.3",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.51.11",
+    "@threlte/core": "8.0.0-next.15",
     "@tursodatabase/api": "^1.8.1",
     "cloudinary": "^2.3.0",
     "dotenv": "^16.4.5",
