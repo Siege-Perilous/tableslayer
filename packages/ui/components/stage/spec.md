@@ -25,6 +25,7 @@ The monorepo will likely change often in the `app` project. The current version 
 
 The `<Stage />` always maintains the same `layers`. Some layers might not be in use, but the layer positioning on the z-axis should always remain the same:
 
+- Pings
 - Grid
 - Weather
 - Fog of war
@@ -64,8 +65,9 @@ The stage will be viewable in three modes. This likely will have nothing to do w
   - The weather should size appropriately to the screen automatically.
   - Able to set opacity of this layer
 - [ ] An exploration for what a lighting layer might look like
-  - Could be hue / lightness sliders?
+  - Could be hue / lightness slider presets that are assigned to a "mood"? This could just be a layer that sits above the image itself and performs an overlay.
   - Could be placable "lights" that sit over the background layer?
+- [ ] GM should be able to "ping" a location on the grid using their mouse pointer. This can just be a basic circle effect for now. The ping should show above all layers.
 
 ## Outside considerations
 
@@ -75,6 +77,9 @@ The stage will be viewable in three modes. This likely will have nothing to do w
 
 ## Things specifically not expected at this point of the project
 
+The following would happen in a later stage of this project
+
 - Wiring up the component into the app
 - Maintaining edits outside of the browser session through a data layer
 - Refinement of all the layers beyond a prototype (more and better effects)
+- Maintaining real-time state without a data layer.
