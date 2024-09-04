@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { MyCounterButton } from '@tableslayer/ui';
+  import { MyCounterButton, Stage } from '@tableslayer/ui';
+  import { Canvas } from '@threlte/core';
   import { createUsersQuery } from '$lib/queries/users';
   import { CldImage } from 'svelte-cloudinary';
 
@@ -10,6 +11,11 @@
 
 <h1>Web</h1>
 <MyCounterButton />
+<div class="canvasTest">
+  <Canvas>
+    <Stage />
+  </Canvas>
+</div>
 
 {#if $usersQuery.isLoading}
   <p>Loading...</p>
@@ -39,3 +45,10 @@
   <p>Not logged in</p>
   <p><a href="/login">Login</a></p>
 {/if}
+
+<style>
+  .canvasTest {
+    width: 100%;
+    height: 500px;
+  }
+</style>
