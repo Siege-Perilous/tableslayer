@@ -1,10 +1,13 @@
 ## Things to do
 
-- Add Google oauth
+- Add Google oauth to login providers
 - Workspace
   - Need to display role in member list
   - Need to be able to remove yourself from a party
   - Need to be able to remove a member from party if you are the admin
+- Game session
+  - Need to wire up session db to session views and create main data schema.
+  - Need to be able to delete and rename sessions.
 - Likely should migrate to plunk for email sending?
 - Project / route structure. Website repo vs. app repo vs. combined
   - Think if logged in, just go to last project
