@@ -4,6 +4,8 @@ Table Slayer provides tools for game masters to project animated battle maps on 
 
 ## Development
 
+`pnpm run dev` should open all the apps under their own port.
+
 To get started, edit the `.env` file in each `app` and run `pnpm run dev` to load local development.
 
 ### Apps and packages
@@ -13,6 +15,10 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 - `ui`: Svelte components used within the web app.
 - `config-eslint`: Shared linting config across the repo.
 - `config-typescript` Shared typescript config across the repo.
+
+## Linting, prettier and CI
+
+Because TypeScript, linting and prettier are provided globally within the repo, you'll need to make sure your IDE's project starts from the root of the monorepo to receive auto-fixes. During CI, Husky should check as you make commits.
 
 ## Styling
 
