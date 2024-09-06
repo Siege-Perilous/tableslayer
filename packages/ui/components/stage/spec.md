@@ -50,6 +50,7 @@ The stage will be viewable in three modes. This likely will have nothing to do w
 - [ ] Can move and scale the image within the screen.
   - Any overflow outside the screen should be hidden
   - The image should initially try to size itself properly within the screen (similar to CSS `cover`)
+- [ ] Can zoom / unzoom the size of the stage within a bounding box (the UI). Think zooming within Figma. The artboard remains the same absolute size, but the view of it zooms within the UI.
 - [ ] Can create a grid layer with square and hex format. The size, color and opacity of the grid should be configurable.
   - This can be a simple CSS layer above the canvas.
 - [ ] Can create a fog of war that sits above the background
@@ -82,4 +83,5 @@ The following would happen in a later stage of this project
 - Wiring up the component into the app
 - Maintaining edits outside of the browser session through a data layer
 - Refinement of all the layers beyond a prototype (more and better effects)
-- Maintaining real-time state without a data layer.
+- Maintaining real-time state with a data layer.
+- Styling of the UI that passes updates props within the stage
