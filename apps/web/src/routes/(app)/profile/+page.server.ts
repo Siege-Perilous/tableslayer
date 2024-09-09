@@ -41,6 +41,7 @@ export const actions: Actions = {
       await acceptPartyInvite(code, userId);
       return message(inviteResponseForm, { type: 'success', text: 'Invite accepted' });
     } catch (error) {
+      console.log('invite error', error);
       return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
   },
@@ -55,6 +56,7 @@ export const actions: Actions = {
       await declinePartyInvite(code);
       return message(inviteResponseForm, { type: 'success', text: 'Invite declined' });
     } catch (error) {
+      console.log('invite error', error);
       return message(inviteResponseForm, { type: 'error', text: 'Invalid code' }, { status: 401 });
     }
   }
