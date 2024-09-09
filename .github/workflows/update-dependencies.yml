@@ -1,9 +1,5 @@
 name: Update dependencies
 
-permissions:
-  contents: write
-  pull-requests: write
-
 on:
   workflow_dispatch:
   schedule:
@@ -12,6 +8,10 @@ on:
 jobs:
   update-deps:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v3
