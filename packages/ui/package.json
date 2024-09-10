@@ -22,7 +22,7 @@
     "svelte": "5.0.0-next.243"
   },
   "dependencies": {
-    "@cloudinary/url-gen": "^1.19.0",
+    "@cloudinary/url-gen": "^1.20.0",
     "@threlte/core": "8.0.0-next.15",
     "@threlte/extras": "9.0.0-next.22"
   }
