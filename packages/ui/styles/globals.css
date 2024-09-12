@@ -1,4 +1,8 @@
-html {
+@import 'reset.css';
+@import 'vars.css';
+
+.light {
+  color-scheme: light;
   --bg: white;
   --contrastFull: black;
   --consttrastHighest: #111;
@@ -9,7 +13,8 @@ html {
   --contrastEmpty: white;
 }
 
-html.dark {
+.dark {
+  color-scheme: dark;
   --bg: black;
   --contrastFull: white;
   --consttrastHighest: #eee;
@@ -23,4 +28,5 @@ html.dark {
 
 html {
   color: var(--contrastFull);
+  font-family: var(--font-sans);
 }
