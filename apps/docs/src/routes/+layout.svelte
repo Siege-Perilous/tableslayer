@@ -4,11 +4,8 @@
   import { ModeWatcher, toggleMode } from 'mode-watcher';
 </script>
 
-<ModeWatcher />
+<ModeWatcher darkClassNames={['dark']} lightClassNames={['light']} />
 
 <button onclick={toggleMode}>Toggle Mode</button>
 
 {@render children()}
-
-<style>
-</style>

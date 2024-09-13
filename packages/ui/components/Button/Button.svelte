@@ -18,15 +18,18 @@
     color-scheme: light;
     --btn-bg: var(--gray-2);
     --btn-border: solid 1px var(--gray-3);
+    --btn-color: var(--gray-9);
   }
 
   :global(.dark) {
     color-scheme: dark;
     --btn-bg: var(--gray-9);
     --btn-border: solid 1px var(--gray-8);
+    --btn-color: var(--gray-1);
   }
 
   .btn {
+    color: var(--btn-color);
     background-color: var(--btn-bg);
     box-shadow: var(--shadow-2);
     height: var(--size-5);

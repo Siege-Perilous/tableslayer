@@ -11,6 +11,7 @@
   --contrastLow: #999;
   --contrastLowest: #ccc;
   --contrastEmpty: white;
+  color: var(--contrastFull);
 }
 
 .dark {
@@ -27,6 +28,6 @@
 }
 
 html {
-  color: var(--contrastFull);
   font-family: var(--font-sans);
+  background-color: var(--bg);
 }
