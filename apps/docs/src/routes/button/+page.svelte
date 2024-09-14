@@ -2,4 +2,4 @@
   import { Button } from '@tableslayer/ui';
 </script>
 
-<Button>Hello</Button>
+<Button size="lg">Hello</Button>

@@ -29,6 +29,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@tabler/icons-svelte':
+        specifier: ^3.16.0
+        version: 3.16.0(svelte@5.0.0-next.243)
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
