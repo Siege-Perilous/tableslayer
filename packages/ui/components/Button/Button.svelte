@@ -1,8 +1,9 @@
-<script lang="ts">
+<script lang="ts" module>
   import type { Snippet } from 'svelte';
   import type { HTMLButtonAttributes } from 'svelte/elements';
+  import classNames from 'classnames';
 
-  type ButtonProps = {
+  export type ButtonProps = {
     children: Snippet;
     start?: Snippet;
     end?: Snippet;
@@ -10,7 +11,9 @@
     isDisabled?: boolean;
     size?: 'sm' | 'md' | 'lg';
   } & HTMLButtonAttributes;
+</script>
 
+<script lang="ts">
   let {
     children,
     start,
@@ -21,15 +24,10 @@
     ...restProps
   }: ButtonProps = $props();
 
-  const btnClasses = `btn btn--${size} ${isLoading && 'loading'}`;
-  const btnSize = {
-    sm: 'var(--size-4)',
-    md: 'var(--size-5)',
-    lg: 'var(--size-6)'
-  }[size];
+  const btnClasses = classNames('btn', `btn--${size}`, isLoading && 'isLoading');
 </script>
 
-<button class={btnClasses} disabled={isDisabled} {...restProps} style:--btn-size={btnSize}>
+<button class={btnClasses} disabled={isDisabled} {...restProps}>
   {#if isLoading}
     <span>Loading...</span>
   {/if}
@@ -64,7 +62,6 @@
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
-    height: var(--btn-size);
     padding: 0 var(--size-2);
     border-radius: var(--radius-2);
     display: inline-flex;
@@ -73,6 +70,20 @@
     border: var(--btn-border);
     cursor: pointer;
   }
+
+  .btn--sm {
+    font-size: var(--font-size-1);
+    height: var(--size-6);
+  }
+  .btn--md {
+    font-size: var(--font-size-2);
+    height: var(--size-7);
+  }
+  .btn--lg {
+    font-size: var(--font-size-3);
+    height: var(--size-8);
+  }
+
   .btn:hover {
     background-color: var(--btn-bgHover);
     border: var(--btn-borderHover);

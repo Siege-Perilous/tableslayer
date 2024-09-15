@@ -1,0 +1,19 @@
+{
+  "extends": ["@tableslayer/tsconfig/base.json", "@tsconfig/svelte/tsconfig.json"],
+  "compilerOptions": {
+    "paths": {
+      "$components": ["./components/"],
+      "$components/*": ["./components/*"]
+    },
+    "rootDirs": ["./"],
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "noEmit": true,
+    "target": "esnext"
+  },
+  "include": ["./index.ts", "./components/Button/Button.svelte"],
+  "exclude": ["./node_modules/**"]
+}
