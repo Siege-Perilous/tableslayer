@@ -1,5 +1,6 @@
 <script>
   import jsonData from '../../../../typedocgen.json';
+  import Markdown from '@magidoc/plugin-svelte-marked';
   export let componentName = '';
 
   // Function to get component data (props)
@@ -91,7 +92,7 @@
             {/if}
           </td>
           <td>{getComment(prop)}</td>
-          <td>{getDefaultValue(prop)}</td>
+          <td><Markdown source={getDefaultValue(prop)} /></td>
         </tr>
       {/each}
     </tbody>

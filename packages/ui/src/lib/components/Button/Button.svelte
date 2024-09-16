@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ButtonProps } from './ButtonTypes.ts';
+  import type { ButtonProps } from './types';
   import classNames from 'classnames';
   let {
     children,
@@ -30,27 +30,27 @@
 <style>
   :global(.light) {
     color-scheme: light;
-    --btn-bg: var(--gray-2);
-    --btn-bgHover: var(--gray-3);
-    --btn-border: solid 1px var(--gray-3);
-    --btn-borderHover: solid 1px var(--gray-4);
-    --btn-color: var(--gray-9);
+    --btn-bg: var(--gray-100);
+    --btn-bgHover: var(--gray-200);
+    --btn-border: solid 1px var(--gray-300);
+    --btn-borderHover: solid 1px var(--gray-400);
+    --btn-color: var(--gray-900);
   }
 
   :global(.dark) {
     color-scheme: dark;
-    --btn-bg: var(--gray-9);
-    --btn-bgHover: var(--gray-8);
-    --btn-border: solid 1px var(--gray-8);
-    --btn-borderHover: solid 1px var(--gray-7);
-    --btn-color: var(--gray-1);
+    --btn-bg: var(--gray-950);
+    --btn-bgHover: var(--gray-900);
+    --btn-border: solid 1px var(--gray-800);
+    --btn-borderHover: solid 1px var(--gray-700);
+    --btn-color: var(--gray-50);
   }
 
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
     padding: 0 var(--size-2);
-    border-radius: var(--radius-2);
+    border-radius: var(--radius-1);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -63,16 +63,16 @@
     height: var(--size-6);
   }
   .btn--md {
-    font-size: var(--font-size-2);
-    height: var(--size-7);
+    font-size: var(--font-size-1);
+    height: var(--size-6);
   }
   .btn--lg {
-    font-size: var(--font-size-3);
+    font-size: var(--font-size-2);
     height: var(--size-8);
   }
 
   .btn:hover {
-    background-color: blue;
+    background-color: (--btn-bgHover);
     border: var(--btn-borderHover);
   }
 </style>

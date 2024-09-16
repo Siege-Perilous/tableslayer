@@ -1,6 +1,6 @@
 export { default as Avatar } from './components/Avatar/Avatar.svelte';
 export * from './components/Button';
-export { default as ColorMode } from './components/ColorMode/ColorMode.svelte';
+export * from './components/ColorMode';
 export { default as Skeleton } from './components/loading/Skeleton.svelte';
 export { default as MyCounterButton } from './components/MyCounterButton.svelte';
 export { default as PropsTable } from './components/PropsTable/PropsTable.svelte';

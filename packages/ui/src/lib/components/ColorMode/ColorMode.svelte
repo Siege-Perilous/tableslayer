@@ -1,15 +1,8 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
-  import type { SvelteHTMLElements } from 'svelte/elements';
-
-  interface ColorModeProps {
-    children: Snippet;
-    mode: 'light' | 'dark';
-    as?: keyof SvelteHTMLElements;
-  }
-  let { children, mode, as = 'div' }: ColorModeProps = $props();
+  import type { ColorModeProps } from './types';
+  let { children, mode, as = 'div', ...restProps }: ColorModeProps = $props();
 </script>
 
-<svelte:element this={as} class={mode}>
+<svelte:element this={as} class={mode} {...restProps}>
   {@render children()}
 </svelte:element>

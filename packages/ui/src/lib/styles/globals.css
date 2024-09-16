@@ -4,6 +4,7 @@
 .light {
   color-scheme: light;
   --bg: white;
+  --fg: black;
   --contrastFull: black;
   --consttrastHighest: #111;
   --contrastHigh: #333;
@@ -11,12 +12,13 @@
   --contrastLow: #999;
   --contrastLowest: #ccc;
   --contrastEmpty: white;
-  color: var(--contrastFull);
+  color: var(--fg);
 }
 
 .dark {
   color-scheme: dark;
   --bg: black;
+  --fg: white;
   --contrastFull: white;
   --consttrastHighest: #eee;
   --contrastHigh: #ccc;
@@ -24,7 +26,7 @@
   --contrastLow: #666;
   --contrastLowest: #333;
   --contrastEmpty: black;
-  color: var(--contrastFull);
+  color: var(--fg);
 }
 
 html {

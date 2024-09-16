@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { Button, PropsTable } from '@tableslayer/ui';
+  import { Button, PropsTable, ColorModeCompare } from '@tableslayer/ui';
 </script>
 
-<Button size="lg">Hello</Button>
+<ColorModeCompare>
+  <Button>Hello I am a button</Button>
+</ColorModeCompare>
 
 <PropsTable componentName="Button" />

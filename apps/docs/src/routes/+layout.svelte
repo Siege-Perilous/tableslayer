@@ -36,6 +36,8 @@
     display: flex;
     min-height: 100vh;
     gap: var(--size-4);
+    max-width: 1200px;
+    margin: 0 auto;
   }
   nav {
     width: 200px;
@@ -52,7 +54,10 @@
       line-height: var(--font-lineheight-5);
     }
     a:hover {
-      color: var(--red-5);
+      color: var(--primary-500);
     }
+  }
+  main {
+    flex-grow: 1;
   }
 </style>

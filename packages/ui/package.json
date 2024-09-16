@@ -34,6 +34,7 @@
     "svelte": "^5.0.0-next.1"
   },
   "devDependencies": {
+    "@magidoc/plugin-svelte-marked": "^6.0.1",
     "@melt-ui/svelte": "^0.83.0",
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/kit": "^2.5.26",
@@ -41,6 +42,8 @@
     "@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
+    "@types/marked": "^6.0.0",
+    "marked": "^14.1.2",
     "svelte": "5.0.0-next.243",
     "svelte-check": "^4.0.0",
     "typedoc": "^0.26.7",
