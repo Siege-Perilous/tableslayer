@@ -11,12 +11,12 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "husky": "^9.1.5",
+    "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.0.0",
     "prettier-plugin-svelte": "^3.2.6",
-    "turbo": "^2.1.1"
+    "turbo": "^2.1.2"
   },
   "lint-staged": {
     "*.{js,ts,svelte,css}": [
