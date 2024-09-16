@@ -140,10 +140,18 @@
                   "flags": {
                     "isOptional": true
                   },
+                  "comment": {
+                    "summary": [
+                      {
+                        "kind": "text",
+                        "text": "Renders inside of a flex after the children."
+                      }
+                    ]
+                  },
                   "sources": [
                     {
                       "fileName": "Button/ButtonTypes.d.ts",
-                      "line": 10,
+                      "line": 12,
                       "character": 4
                     }
                   ],
@@ -169,7 +177,7 @@
                   "sources": [
                     {
                       "fileName": "Button/ButtonTypes.d.ts",
-                      "line": 12,
+                      "line": 14,
                       "character": 4
                     }
                   ],
@@ -189,7 +197,7 @@
                   "sources": [
                     {
                       "fileName": "Button/ButtonTypes.d.ts",
-                      "line": 11,
+                      "line": 13,
                       "character": 4
                     }
                   ],
@@ -206,10 +214,29 @@
                   "flags": {
                     "isOptional": true
                   },
+                  "comment": {
+                    "summary": [
+                      {
+                        "kind": "text",
+                        "text": "Size of the button."
+                      }
+                    ],
+                    "blockTags": [
+                      {
+                        "tag": "@default",
+                        "content": [
+                          {
+                            "kind": "code",
+                            "text": "```ts\nmd\n```"
+                          }
+                        ]
+                      }
+                    ]
+                  },
                   "sources": [
                     {
                       "fileName": "Button/ButtonTypes.d.ts",
-                      "line": 13,
+                      "line": 19,
                       "character": 4
                     }
                   ],
@@ -243,25 +270,14 @@
                     "summary": [
                       {
                         "kind": "text",
-                        "text": "Renders the children elements inside the button."
-                      }
-                    ],
-                    "blockTags": [
-                      {
-                        "tag": "@default",
-                        "content": [
-                          {
-                            "kind": "code",
-                            "text": "```ts\nundefined\n```"
-                          }
-                        ]
+                        "text": "Renders inside of a flex before the children."
                       }
                     ]
                   },
                   "sources": [
                     {
                       "fileName": "Button/ButtonTypes.d.ts",
-                      "line": 9,
+                      "line": 8,
                       "character": 4
                     }
                   ],

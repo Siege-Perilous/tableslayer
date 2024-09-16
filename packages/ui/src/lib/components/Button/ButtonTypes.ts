@@ -4,12 +4,18 @@ import type { HTMLButtonAttributes } from 'svelte/elements';
 export type ButtonProps = {
   children: Snippet;
   /**
-   * Renders the children elements inside the button.
-   * @default undefined
+   * Renders inside of a flex before the children.
    */
   start?: Snippet;
+  /**
+   * Renders inside of a flex after the children.
+   */
   end?: Snippet;
   isLoading?: boolean;
   isDisabled?: boolean;
+  /**
+   * Size of the button.
+   * @default md
+   */
   size?: 'sm' | 'md' | 'lg';
 } & HTMLButtonAttributes;
