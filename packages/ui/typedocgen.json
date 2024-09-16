@@ -1,0 +1,2902 @@
+{
+  "id": 0,
+  "name": "@tableslayer/ui",
+  "variant": "project",
+  "kind": 1,
+  "flags": {},
+  "children": [
+    {
+      "id": 13,
+      "name": "Avatar",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "Avatar/Avatar.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "Avatar/Avatar.svelte.d.ts",
+          "line": 23,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 1,
+              "name": "Avatar",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 20,
+      "name": "Button",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "Button/Button.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "Button/Button.svelte.d.ts",
+          "line": 18,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 14,
+              "name": "Button",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 21,
+      "name": "ButtonProps",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "Button/ButtonTypes.d.ts",
+          "line": 3,
+          "character": 12
+        }
+      ],
+      "type": {
+        "type": "intersection",
+        "types": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 22,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 23,
+                  "name": "children",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 4,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                },
+                {
+                  "id": 25,
+                  "name": "end",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 10,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                },
+                {
+                  "id": 27,
+                  "name": "isDisabled",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 12,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "boolean"
+                  }
+                },
+                {
+                  "id": 26,
+                  "name": "isLoading",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 11,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "boolean"
+                  }
+                },
+                {
+                  "id": 28,
+                  "name": "size",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 13,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "union",
+                    "types": [
+                      {
+                        "type": "literal",
+                        "value": "sm"
+                      },
+                      {
+                        "type": "literal",
+                        "value": "md"
+                      },
+                      {
+                        "type": "literal",
+                        "value": "lg"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": 24,
+                  "name": "start",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "comment": {
+                    "summary": [
+                      {
+                        "kind": "text",
+                        "text": "Renders the children elements inside the button."
+                      }
+                    ],
+                    "blockTags": [
+                      {
+                        "tag": "@default",
+                        "content": [
+                          {
+                            "kind": "code",
+                            "text": "```ts\nundefined\n```"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Button/ButtonTypes.d.ts",
+                      "line": 9,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [23, 25, 27, 26, 28, 24]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "Button/ButtonTypes.d.ts",
+                  "line": 3,
+                  "character": 26
+                }
+              ]
+            }
+          },
+          {
+            "type": "reference",
+            "target": {
+              "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/elements.d.ts",
+              "qualifiedName": "HTMLButtonAttributes"
+            },
+            "name": "HTMLButtonAttributes",
+            "package": "svelte"
+          }
+        ]
+      }
+    },
+    {
+      "id": 39,
+      "name": "ColorMode",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "ColorMode/ColorMode.svelte.d.ts",
+          "line": 16,
+          "character": 14
+        },
+        {
+          "fileName": "ColorMode/ColorMode.svelte.d.ts",
+          "line": 23,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 29,
+              "name": "ColorMode",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 65,
+      "name": "MyCounterButton",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "MyCounterButton.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "MyCounterButton.svelte.d.ts",
+          "line": 17,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 59,
+              "name": "MyCounterButton",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 74,
+      "name": "PropsTable",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+          "line": 2,
+          "character": 5
+        },
+        {
+          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+          "line": 9,
+          "character": 14
+        }
+      ],
+      "type": {
+        "type": "intersection",
+        "types": [
+          {
+            "type": "reference",
+            "target": {
+              "sourceFileName": "",
+              "qualifiedName": "SvelteComponent"
+            },
+            "typeArguments": [
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 75,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "children": [
+                    {
+                      "id": 76,
+                      "name": "componentName",
+                      "variant": "declaration",
+                      "kind": 1024,
+                      "flags": {
+                        "isOptional": true
+                      },
+                      "sources": [
+                        {
+                          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                          "line": 3,
+                          "character": 4
+                        }
+                      ],
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "groups": [
+                    {
+                      "title": "Properties",
+                      "children": [76]
+                    }
+                  ],
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 2,
+                      "character": 34
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 77,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 4,
+                      "character": 3
+                    }
+                  ],
+                  "indexSignatures": [
+                    {
+                      "id": 78,
+                      "name": "__index",
+                      "variant": "signature",
+                      "kind": 8192,
+                      "flags": {},
+                      "sources": [
+                        {
+                          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                          "line": 5,
+                          "character": 4
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "id": 79,
+                          "name": "evt",
+                          "variant": "param",
+                          "kind": 32768,
+                          "flags": {},
+                          "type": {
+                            "type": "intrinsic",
+                            "name": "string"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "type": "reference",
+                        "target": {
+                          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                          "qualifiedName": "CustomEvent"
+                        },
+                        "typeArguments": [
+                          {
+                            "type": "intrinsic",
+                            "name": "any"
+                          }
+                        ],
+                        "name": "CustomEvent",
+                        "package": "typescript"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 80,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 6,
+                      "character": 3
+                    }
+                  ]
+                }
+              }
+            ],
+            "name": "SvelteComponent"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 81,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 82,
+                  "name": "$$bindings",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 7,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [82]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                  "line": 6,
+                  "character": 9
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 49,
+      "name": "Skeleton",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "loading/Skeleton.svelte.d.ts",
+          "line": 2,
+          "character": 5
+        },
+        {
+          "fileName": "loading/Skeleton.svelte.d.ts",
+          "line": 9,
+          "character": 14
+        }
+      ],
+      "type": {
+        "type": "intersection",
+        "types": [
+          {
+            "type": "reference",
+            "target": {
+              "sourceFileName": "",
+              "qualifiedName": "SvelteComponent"
+            },
+            "typeArguments": [
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 50,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 2,
+                      "character": 32
+                    }
+                  ],
+                  "indexSignatures": [
+                    {
+                      "id": 51,
+                      "name": "__index",
+                      "variant": "signature",
+                      "kind": 8192,
+                      "flags": {},
+                      "sources": [
+                        {
+                          "fileName": "loading/Skeleton.svelte.d.ts",
+                          "line": 3,
+                          "character": 4
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "id": 52,
+                          "name": "x",
+                          "variant": "param",
+                          "kind": 32768,
+                          "flags": {},
+                          "type": {
+                            "type": "intrinsic",
+                            "name": "string"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "never"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 53,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 4,
+                      "character": 3
+                    }
+                  ],
+                  "indexSignatures": [
+                    {
+                      "id": 54,
+                      "name": "__index",
+                      "variant": "signature",
+                      "kind": 8192,
+                      "flags": {},
+                      "sources": [
+                        {
+                          "fileName": "loading/Skeleton.svelte.d.ts",
+                          "line": 5,
+                          "character": 4
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "id": 55,
+                          "name": "evt",
+                          "variant": "param",
+                          "kind": 32768,
+                          "flags": {},
+                          "type": {
+                            "type": "intrinsic",
+                            "name": "string"
+                          }
+                        }
+                      ],
+                      "type": {
+                        "type": "reference",
+                        "target": {
+                          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                          "qualifiedName": "CustomEvent"
+                        },
+                        "typeArguments": [
+                          {
+                            "type": "intrinsic",
+                            "name": "any"
+                          }
+                        ],
+                        "name": "CustomEvent",
+                        "package": "typescript"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "reflection",
+                "declaration": {
+                  "id": 56,
+                  "name": "__type",
+                  "variant": "declaration",
+                  "kind": 65536,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 6,
+                      "character": 3
+                    }
+                  ]
+                }
+              }
+            ],
+            "name": "SvelteComponent"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 57,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 58,
+                  "name": "$$bindings",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 7,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [58]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "loading/Skeleton.svelte.d.ts",
+                  "line": 6,
+                  "character": 9
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 89,
+      "name": "Stage",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "stage/stage.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "stage/stage.svelte.d.ts",
+          "line": 17,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 83,
+              "name": "Stage",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 106,
+      "name": "ToolTip",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 28,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 90,
+              "name": "ToolTip",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 1,
+      "name": "Avatar",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "Avatar/Avatar.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "Avatar/Avatar.svelte.d.ts",
+          "line": 23,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 2,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 4,
+                  "name": "alt",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 16,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                },
+                {
+                  "id": 7,
+                  "name": "className",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 19,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                },
+                {
+                  "id": 5,
+                  "name": "initials",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 17,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                },
+                {
+                  "id": 6,
+                  "name": "size",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 18,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "union",
+                    "types": [
+                      {
+                        "type": "literal",
+                        "value": "sm"
+                      },
+                      {
+                        "type": "literal",
+                        "value": "md"
+                      },
+                      {
+                        "type": "literal",
+                        "value": "lg"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": 3,
+                  "name": "src",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 15,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [4, 7, 5, 6, 3]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "Avatar/Avatar.svelte.d.ts",
+                  "line": 14,
+                  "character": 57
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 8,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Avatar/Avatar.svelte.d.ts",
+                  "line": 20,
+                  "character": 3
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 9,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "Avatar/Avatar.svelte.d.ts",
+                      "line": 21,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 10,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 11,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Avatar/Avatar.svelte.d.ts",
+                  "line": 22,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 12,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Avatar/Avatar.svelte.d.ts",
+                  "line": 22,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 14,
+      "name": "Button",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "Button/Button.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "Button/Button.svelte.d.ts",
+          "line": 18,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reference",
+            "target": 21,
+            "name": "ButtonProps",
+            "package": "@tableslayer/ui"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 15,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Button/Button.svelte.d.ts",
+                  "line": 15,
+                  "character": 70
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 16,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "Button/Button.svelte.d.ts",
+                      "line": 16,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 17,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 18,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Button/Button.svelte.d.ts",
+                  "line": 17,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 19,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Button/Button.svelte.d.ts",
+                  "line": 17,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 29,
+      "name": "ColorMode",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "ColorMode/ColorMode.svelte.d.ts",
+          "line": 16,
+          "character": 14
+        },
+        {
+          "fileName": "ColorMode/ColorMode.svelte.d.ts",
+          "line": 23,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 30,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 33,
+                  "name": "as",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                      "line": 19,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "typeOperator",
+                    "operator": "keyof",
+                    "target": {
+                      "type": "reference",
+                      "target": {
+                        "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/elements.d.ts",
+                        "qualifiedName": "SvelteHTMLElements"
+                      },
+                      "name": "SvelteHTMLElements",
+                      "package": "svelte"
+                    }
+                  }
+                },
+                {
+                  "id": 31,
+                  "name": "children",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                      "line": 17,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                },
+                {
+                  "id": 32,
+                  "name": "mode",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                      "line": 18,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "union",
+                    "types": [
+                      {
+                        "type": "literal",
+                        "value": "light"
+                      },
+                      {
+                        "type": "literal",
+                        "value": "dark"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [33, 31, 32]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                  "line": 16,
+                  "character": 60
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 34,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                  "line": 20,
+                  "character": 3
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 35,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                      "line": 21,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 36,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 37,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                  "line": 22,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 38,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ColorMode/ColorMode.svelte.d.ts",
+                  "line": 22,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 59,
+      "name": "MyCounterButton",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "MyCounterButton.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "MyCounterButton.svelte.d.ts",
+          "line": 17,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reference",
+            "target": {
+              "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+              "qualifiedName": "Record"
+            },
+            "typeArguments": [
+              {
+                "type": "intrinsic",
+                "name": "string"
+              },
+              {
+                "type": "intrinsic",
+                "name": "never"
+              }
+            ],
+            "name": "Record",
+            "package": "typescript"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 60,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "MyCounterButton.svelte.d.ts",
+                  "line": 14,
+                  "character": 89
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 61,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "MyCounterButton.svelte.d.ts",
+                      "line": 15,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 62,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 63,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "MyCounterButton.svelte.d.ts",
+                  "line": 16,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 64,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "MyCounterButton.svelte.d.ts",
+                  "line": 16,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 66,
+      "name": "PropsTable",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+          "line": 2,
+          "character": 5
+        },
+        {
+          "fileName": "PropsTable/PropsTable.svelte.d.ts",
+          "line": 9,
+          "character": 14
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 67,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 68,
+                  "name": "componentName",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 10,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "string"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [68]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                  "line": 9,
+                  "character": 61
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 69,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                  "line": 11,
+                  "character": 3
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 70,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "PropsTable/PropsTable.svelte.d.ts",
+                      "line": 12,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 71,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 72,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {}
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 73,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {}
+            }
+          },
+          {
+            "type": "intrinsic",
+            "name": "string"
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 40,
+      "name": "Skeleton",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "loading/Skeleton.svelte.d.ts",
+          "line": 2,
+          "character": 5
+        },
+        {
+          "fileName": "loading/Skeleton.svelte.d.ts",
+          "line": 9,
+          "character": 14
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 41,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "loading/Skeleton.svelte.d.ts",
+                  "line": 9,
+                  "character": 59
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 42,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 10,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 43,
+                      "name": "x",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "never"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 44,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "loading/Skeleton.svelte.d.ts",
+                  "line": 11,
+                  "character": 3
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 45,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "loading/Skeleton.svelte.d.ts",
+                      "line": 12,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 46,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 47,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {}
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 48,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {}
+            }
+          },
+          {
+            "type": "intrinsic",
+            "name": "string"
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 83,
+      "name": "Stage",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "stage/stage.svelte.d.ts",
+          "line": 14,
+          "character": 14
+        },
+        {
+          "fileName": "stage/stage.svelte.d.ts",
+          "line": 17,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reference",
+            "target": {
+              "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+              "qualifiedName": "Record"
+            },
+            "typeArguments": [
+              {
+                "type": "intrinsic",
+                "name": "string"
+              },
+              {
+                "type": "intrinsic",
+                "name": "never"
+              }
+            ],
+            "name": "Record",
+            "package": "typescript"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 84,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "stage/stage.svelte.d.ts",
+                  "line": 14,
+                  "character": 79
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 85,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "stage/stage.svelte.d.ts",
+                      "line": 15,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 86,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 87,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "stage/stage.svelte.d.ts",
+                  "line": 16,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 88,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "stage/stage.svelte.d.ts",
+                  "line": 16,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 90,
+      "name": "ToolTip",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 28,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 91,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "children": [
+                {
+                  "id": 92,
+                  "name": "children",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 16,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                },
+                {
+                  "id": 97,
+                  "name": "closeDelay",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 21,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "number"
+                  }
+                },
+                {
+                  "id": 98,
+                  "name": "closeOnPointerDown",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 22,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "boolean"
+                  }
+                },
+                {
+                  "id": 99,
+                  "name": "forceVisible",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 23,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "boolean"
+                  }
+                },
+                {
+                  "id": 96,
+                  "name": "openDelay",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 20,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "number"
+                  }
+                },
+                {
+                  "id": 93,
+                  "name": "positioning",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {
+                    "isOptional": true
+                  },
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 17,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reflection",
+                    "declaration": {
+                      "id": 94,
+                      "name": "__type",
+                      "variant": "declaration",
+                      "kind": 65536,
+                      "flags": {},
+                      "children": [
+                        {
+                          "id": 95,
+                          "name": "placement",
+                          "variant": "declaration",
+                          "kind": 1024,
+                          "flags": {},
+                          "sources": [
+                            {
+                              "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                              "line": 18,
+                              "character": 8
+                            }
+                          ],
+                          "type": {
+                            "type": "union",
+                            "types": [
+                              {
+                                "type": "literal",
+                                "value": "top"
+                              },
+                              {
+                                "type": "literal",
+                                "value": "right"
+                              },
+                              {
+                                "type": "literal",
+                                "value": "bottom"
+                              },
+                              {
+                                "type": "literal",
+                                "value": "left"
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "groups": [
+                        {
+                          "title": "Properties",
+                          "children": [95]
+                        }
+                      ],
+                      "sources": [
+                        {
+                          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                          "line": 17,
+                          "character": 18
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": 100,
+                  "name": "toolTipContent",
+                  "variant": "declaration",
+                  "kind": 1024,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 24,
+                      "character": 4
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                      "qualifiedName": "\"svelte\".Snippet"
+                    },
+                    "name": "Snippet",
+                    "package": "svelte",
+                    "qualifiedName": "\"svelte\".Snippet"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "title": "Properties",
+                  "children": [92, 97, 98, 99, 96, 93, 100]
+                }
+              ],
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 15,
+                  "character": 58
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 101,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 25,
+                  "character": 3
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 102,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 26,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 103,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 104,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 27,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 105,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 27,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "title": "Type Aliases",
+      "children": [13, 20, 21, 39, 65, 74, 49, 89, 106]
+    },
+    {
+      "title": "Variables",
+      "children": [1, 14, 29, 59, 66, 40, 83, 90]
+    }
+  ],
+  "packageName": "@tableslayer/ui",
+  "packageVersion": "0.0.1",
+  "symbolIdMap": {
+    "0": {
+      "sourceFileName": "dist/index.d.ts",
+      "qualifiedName": ""
+    },
+    "1": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "Avatar"
+    },
+    "2": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "3": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.src"
+    },
+    "4": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.alt"
+    },
+    "5": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.initials"
+    },
+    "6": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.size"
+    },
+    "7": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.className"
+    },
+    "8": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "9": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "11": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "12": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "13": {
+      "sourceFileName": "dist/components/Avatar/Avatar.svelte.d.ts",
+      "qualifiedName": "Avatar"
+    },
+    "14": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "Button"
+    },
+    "15": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "16": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "18": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "19": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "20": {
+      "sourceFileName": "dist/components/Button/Button.svelte.d.ts",
+      "qualifiedName": "Button"
+    },
+    "21": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "ButtonProps"
+    },
+    "22": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type"
+    },
+    "23": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.children"
+    },
+    "24": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.start"
+    },
+    "25": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.end"
+    },
+    "26": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.isLoading"
+    },
+    "27": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.isDisabled"
+    },
+    "28": {
+      "sourceFileName": "dist/components/Button/ButtonTypes.d.ts",
+      "qualifiedName": "__type.size"
+    },
+    "29": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "ColorMode"
+    },
+    "30": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "31": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type.children"
+    },
+    "32": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type.mode"
+    },
+    "33": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type.as"
+    },
+    "34": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "35": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "37": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "38": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "39": {
+      "sourceFileName": "dist/components/ColorMode/ColorMode.svelte.d.ts",
+      "qualifiedName": "ColorMode"
+    },
+    "40": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "Skeleton"
+    },
+    "41": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "42": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "44": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "45": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "47": {
+      "sourceFileName": "",
+      "qualifiedName": "__type"
+    },
+    "48": {
+      "sourceFileName": "",
+      "qualifiedName": "__type"
+    },
+    "49": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "Skeleton"
+    },
+    "50": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "51": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "53": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "54": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "56": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "57": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "58": {
+      "sourceFileName": "dist/components/loading/Skeleton.svelte.d.ts",
+      "qualifiedName": "__type.$$bindings"
+    },
+    "59": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "MyCounterButton"
+    },
+    "60": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "61": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "63": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "64": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "65": {
+      "sourceFileName": "dist/components/MyCounterButton.svelte.d.ts",
+      "qualifiedName": "MyCounterButton"
+    },
+    "66": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "PropsTable"
+    },
+    "67": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "68": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type.componentName"
+    },
+    "69": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "70": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "72": {
+      "sourceFileName": "",
+      "qualifiedName": "__type"
+    },
+    "73": {
+      "sourceFileName": "",
+      "qualifiedName": "__type"
+    },
+    "74": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "PropsTable"
+    },
+    "75": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "76": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type.componentName"
+    },
+    "77": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "78": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "80": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "81": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "82": {
+      "sourceFileName": "dist/components/PropsTable/PropsTable.svelte.d.ts",
+      "qualifiedName": "__type.$$bindings"
+    },
+    "83": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "Stage"
+    },
+    "84": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "85": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "87": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "88": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "89": {
+      "sourceFileName": "dist/components/stage/stage.svelte.d.ts",
+      "qualifiedName": "Stage"
+    },
+    "90": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "ToolTip"
+    },
+    "91": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "92": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.children"
+    },
+    "93": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.positioning"
+    },
+    "94": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "95": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.placement"
+    },
+    "96": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.openDelay"
+    },
+    "97": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.closeDelay"
+    },
+    "98": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.closeOnPointerDown"
+    },
+    "99": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.forceVisible"
+    },
+    "100": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.toolTipContent"
+    },
+    "101": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "102": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "104": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "105": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "106": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "ToolTip"
+    }
+  },
+  "files": {
+    "entries": {
+      "1": "dist/index.d.ts"
+    },
+    "reflections": {
+      "1": 0
+    }
+  }
+}
