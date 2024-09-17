@@ -30,32 +30,35 @@
 <style>
   :global(.light) {
     color-scheme: light;
-    --btn-bg: var(--gray-100);
-    --btn-bgHover: var(--gray-200);
-    --btn-border: solid 1px var(--gray-300);
-    --btn-borderHover: solid 1px var(--gray-400);
-    --btn-color: var(--gray-900);
+    --btn-bg: var(--bg);
+    --btn-bgHover: var(--primary-50);
+    --btn-border: solid 2px var(--fg);
+    --btn-borderHover: solid 2px var(--primary-600);
+    --btn-color: var(--fg);
   }
 
   :global(.dark) {
     color-scheme: dark;
-    --btn-bg: var(--gray-950);
-    --btn-bgHover: var(--gray-900);
-    --btn-border: solid 1px var(--gray-800);
-    --btn-borderHover: solid 1px var(--gray-700);
-    --btn-color: var(--gray-50);
+    --btn-bg: var(--bg);
+    --btn-bgHover: var(--primary-950);
+    --btn-border: solid 2px var(--fg);
+    --btn-borderHover: solid 2px var(--primary-500);
+    --btn-color: var(--fg);
   }
 
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
-    padding: 0 var(--size-2);
-    border-radius: var(--radius-1);
+    padding: 0 var(--size-3);
+    border-radius: var(--radius-4);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: var(--btn-border);
+    gap: var(--size-2);
     cursor: pointer;
+    font-weight: var(--font-weight-5);
+    border: var(--btn-border);
+    font-weight: var(--font-weight-6);
   }
 
   .btn--sm {
@@ -64,7 +67,7 @@
   }
   .btn--md {
     font-size: var(--font-size-1);
-    height: var(--size-6);
+    height: var(--size-7);
   }
   .btn--lg {
     font-size: var(--font-size-2);
@@ -72,7 +75,7 @@
   }
 
   .btn:hover {
-    background-color: (--btn-bgHover);
+    background-color: var(--btn-bgHover);
     border: var(--btn-borderHover);
   }
 </style>

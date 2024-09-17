@@ -7,6 +7,7 @@
 <div class="compare">
   <ColorMode mode="light">
     <div class="compare__block">
+      <h2>Light mode</h2>
       {@render children()}
       <div></div>
     </div></ColorMode
@@ -14,6 +15,7 @@
 
   <ColorMode mode="dark">
     <div class="compare__block compare__block-border">
+      <h2>Dark mode</h2>
       {@render children()}
     </div>
   </ColorMode>
@@ -33,5 +35,10 @@
   }
   .compare__block-border {
     border-right: var(--border-1);
+  }
+  h2 {
+    font-size: var(--font-size-3);
+    font-weight: var(--font-weight-6);
+    margin-bottom: var(--size-5);
   }
 </style>

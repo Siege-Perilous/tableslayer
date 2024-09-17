@@ -16,7 +16,7 @@
 
 <header>
   <div class="headerContainer">
-    <h2>Table Slayer</h2>
+    <h2>Components</h2>
     <Button onclick={toggleMode}>Toggle Mode</Button>
   </div>
 </header>
@@ -61,6 +61,7 @@
     width: 200px;
     background: var(--bg);
     padding: var(--size-4);
+    padding-left: 0;
     border-right: var(--border-1);
     li {
       font-size: var(--font-size-1);

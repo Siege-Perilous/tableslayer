@@ -1,4 +1,5 @@
 @import 'reset.css';
+@import 'normalize.css';
 @import 'vars.css';
 
 .light {
