@@ -14,6 +14,12 @@
 
 <ModeWatcher darkClassNames={['dark']} lightClassNames={['light']} />
 
+<header>
+  <div class="headerContainer">
+    <h2>Table Slayer</h2>
+    <Button onclick={toggleMode}>Toggle Mode</Button>
+  </div>
+</header>
 <div class="wrap">
   <nav>
     <ul>
@@ -23,8 +29,6 @@
         </li>
       {/each}
     </ul>
-
-    <Button onclick={toggleMode}>Toggle Mode</Button>
   </nav>
   <main>
     {@render children()}
@@ -32,11 +36,25 @@
 </div>
 
 <style>
+  header {
+    background: var(--bg);
+    padding: var(--size-4);
+    border-bottom: var(--border-1);
+    h2 {
+      font-weight: var(--font-weight-6);
+      font-size: var(--font-size-2);
+    }
+  }
+  .headerContainer {
+    max-width: var(--contain-desktop);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+  }
   .wrap {
     display: flex;
     min-height: 100vh;
-    gap: var(--size-4);
-    max-width: 1200px;
+    max-width: var(--contain-desktop);
     margin: 0 auto;
   }
   nav {

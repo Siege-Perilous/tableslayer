@@ -6,12 +6,11 @@
   --bg: white;
   --fg: black;
   --contrastFull: black;
-  --consttrastHighest: #111;
-  --contrastHigh: #333;
-  --contrastMedium: #666;
-  --contrastLow: #999;
-  --contrastLowest: #ccc;
-  --contrastEmpty: white;
+  --consttrastHighest: var(--gray-700);
+  --contrastHigh: var(--gray-500);
+  --contrastMedium: var(--gray-300);
+  --contrastLow: var(--gray-100);
+  --contrastLowest: var(--gray-50) --contrastEmpty: white;
   color: var(--fg);
 }
 
@@ -20,11 +19,11 @@
   --bg: black;
   --fg: white;
   --contrastFull: white;
-  --consttrastHighest: #eee;
-  --contrastHigh: #ccc;
-  --contrastMedium: #999;
-  --contrastLow: #666;
-  --contrastLowest: #333;
+  --consttrastHighest: var(--gray-300);
+  --contrastHigh: var(--gray-500);
+  --contrastMedium: var(--gray-800);
+  --contrastLow: var(--gray-900);
+  --contrastLowest: var(--gray-950);
   --contrastEmpty: black;
   color: var(--fg);
 }
