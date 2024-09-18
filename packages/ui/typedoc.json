@@ -1,0 +1,9 @@
+{
+  "entryPoints": ["./dist/index.d.ts"],
+  "json": "./typedocgen.json",
+  "exclude": ["**/node_modules/**"],
+  "excludeExternals": true,
+  "includeVersion": true,
+  "excludePrivate": true,
+  "readme": "none"
+}
