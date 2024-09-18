@@ -1,12 +1,9 @@
 <script lang="ts">
-  import { Stage } from '@tableslayer/ui';
-  import { Canvas } from '@threlte/core';
+  import { StageWrapper } from '@tableslayer/ui';
 </script>
 
 <div class="canvasTest">
-  <Canvas>
-    <Stage />
-  </Canvas>
+  <StageWrapper />
 </div>
 
 <style>

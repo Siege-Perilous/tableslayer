@@ -6,5 +6,6 @@ export * from './components/Link';
 export { default as Skeleton } from './components/loading/Skeleton.svelte';
 export { default as MyCounterButton } from './components/MyCounterButton.svelte';
 export { default as PropsTable } from './components/PropsTable/PropsTable.svelte';
-export { default as Stage } from './components/stage/stage.svelte';
+export { default as Stage } from './components/Stage/Stage.svelte';
+export { default as StageWrapper } from './components/StageWrapper/StageWrapper.svelte';
 export * from './components/ToolTip';

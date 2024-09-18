@@ -33,6 +33,7 @@ This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://v
 - [Svelte](https://svelte.dev/) provides the frontend framework. This repo uses Svelte 5. [This article](https://sveltekit.io/blog/svelte-5) provides a summary of the changes.
   - [Superforms](https://superforms.rocks/) + [Form Snap](https://formsnap.dev/) power the forms.
   - [Tanstack / Svelte query](https://tanstack.com/) for client fetching.
+  - [Tweakpane](https://kitschpatrol.com/svelte-tweakpane-ui/docs/getting-started) for debug controls for the Three.js scene
 - [Cloudinary](https://cloudinary.com) is used for a CDN.
 - [Resend](https://resend.com) is used for email management.
 - [Turso](https://turso.com) is used for SQLite db hosting.
