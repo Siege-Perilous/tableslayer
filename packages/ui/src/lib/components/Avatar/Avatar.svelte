@@ -1,7 +1,7 @@
 <script lang="ts">
   import classNames from 'classnames';
   import type { AvatarProps } from './types';
-  let { src, alt, initials, size = 'sm', isLoading, ...restProps }: AvatarProps = $props();
+  let { src, alt, initials, size = 'sm', isLoading }: AvatarProps = $props();
   import { createAvatar, melt } from '@melt-ui/svelte';
 
   const avatarClasses = classNames('avatar', `avatar--${size}`, isLoading && 'isLoading');
@@ -13,7 +13,7 @@
   });
 </script>
 
-<div class={avatarClasses} {...restProps}>
+<div class={avatarClasses}>
   <img use:melt={$image} {alt} class="avatar__image" />
   <span use:melt={$fallback} class="avatar__text">{initials}</span>
 </div>
