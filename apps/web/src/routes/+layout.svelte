@@ -9,7 +9,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-  <ModeWatcher />
+  <ModeWatcher darkClassNames={['dark']} lightClassNames={['light']} />
   <GlobalLoading />
   {@render children()}
 </QueryClientProvider>

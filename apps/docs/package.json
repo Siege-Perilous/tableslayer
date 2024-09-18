@@ -15,9 +15,12 @@
     "test:unit": "vitest"
   },
   "dependencies": {
-    "@tableslayer/ui": "workspace:*"
+    "@tabler/icons-svelte": "^3.16.0",
+    "@tableslayer/ui": "workspace:*",
+    "mode-watcher": "^0.4.1"
   },
   "devDependencies": {
+    "@melt-ui/pp": "^0.3.2",
     "@playwright/test": "^1.47.0",
     "@sveltejs/adapter-auto": "^3.2.4",
     "@sveltejs/kit": "^2.5.26",

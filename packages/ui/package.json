@@ -1,29 +1,63 @@
 {
   "name": "@tableslayer/ui",
-  "version": "0.0.0",
-  "type": "module",
-  "module": "index.ts",
-  "main": "index.ts",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "pnpm check:watch",
+    "build": "vite build && npm run package",
+    "preview": "vite preview",
+    "package": "svelte-kit sync && svelte-package && typedoc",
+    "prepublishOnly": "npm run package",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "typedoc": "typedoc"
+  },
   "exports": {
     ".": {
-      "types": "./index.ts",
-      "svelte": "./index.ts"
+      "types": "./src/lib/index.d.ts",
+      "svelte": "./src/lib/index.ts"
     },
     "./styles/*.css": {
-      "import": "./styles/*.css",
-      "require": "./styles/*.css"
+      "import": "./src/lib/styles/*.css",
+      "require": "./src/lib/styles/*.css"
+    },
+    "./typedoc.json": {
+      "import": "./typedocgen.json",
+      "require": "./typedocgen.json"
     }
   },
-  "scripts": {
-    "lint": "eslint ."
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.spec.*"
+  ],
+  "peerDependencies": {
+    "svelte": "^5.0.0-next.1"
   },
   "devDependencies": {
+    "@magidoc/plugin-svelte-marked": "^6.0.1",
+    "@melt-ui/svelte": "^0.83.0",
+    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/kit": "^2.5.26",
+    "@sveltejs/package": "^2.3.5",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
     "@tableslayer/eslint-config": "workspace:*",
-    "svelte": "5.0.0-next.243"
+    "@tableslayer/tsconfig": "workspace:*",
+    "@types/marked": "^6.0.0",
+    "marked": "^14.1.2",
+    "svelte": "5.0.0-next.243",
+    "svelte-check": "^4.0.0",
+    "typedoc": "^0.26.7",
+    "typescript": "^5.0.0",
+    "vite": "^5.4.3"
   },
   "dependencies": {
     "@cloudinary/url-gen": "^1.20.0",
+    "@tabler/icons-svelte": "^3.16.0",
     "@threlte/core": "8.0.0-next.15",
-    "@threlte/extras": "9.0.0-next.22"
-  }
+    "@threlte/extras": "9.0.0-next.22",
+    "classnames": "^2.5.1"
+  },
+  "svelte": "./src/lib/index.ts",
+  "types": "./src/lib/index.d.ts",
+  "type": "module"
 }
