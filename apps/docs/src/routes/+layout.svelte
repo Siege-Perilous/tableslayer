@@ -10,7 +10,7 @@
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
     { name: 'Link', path: '/link' },
-    { name: 'Tool tip', path: '/tooltip' }
+    { name: 'ToolTip', path: '/tooltip' }
   ];
 </script>
 
