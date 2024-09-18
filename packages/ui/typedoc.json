@@ -1,7 +1,6 @@
 {
   "entryPoints": ["./dist/index.d.ts"],
   "json": "./typedocgen.json",
-  "out": "./docs",
   "exclude": ["**/node_modules/**"],
   "excludeExternals": true,
   "includeVersion": true,

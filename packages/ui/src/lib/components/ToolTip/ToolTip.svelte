@@ -1,22 +1,12 @@
 <script lang="ts">
   import { createTooltip, melt } from '@melt-ui/svelte';
-  import type { Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
+  import type { ToolTipProps } from './types';
 
-  interface ToolTipProps {
-    children: Snippet;
-    positioning?: {
-      placement: 'top' | 'right' | 'bottom' | 'left';
-    };
-    openDelay?: number;
-    closeDelay?: number;
-    closeOnPointerDown?: boolean;
-    forceVisible?: boolean;
-    toolTipContent: Snippet;
-  }
   let {
     children,
     positioning = { placement: 'top' },
+    defaultOpen = false,
     openDelay = 0,
     closeDelay = 0,
     closeOnPointerDown = false,
@@ -29,6 +19,7 @@
     states: { open }
   } = createTooltip({
     positioning,
+    defaultOpen,
     openDelay,
     closeDelay,
     closeOnPointerDown,
@@ -48,6 +39,24 @@
 {/if}
 
 <style>
+  :global(.dark) {
+    color-scheme: dark;
+    --tooltip-bg: var(--fg);
+    --tooltip-color: var(--bg);
+  }
+  :global(.light) {
+    color-scheme: light;
+    --tooltip-bg: var(--fg);
+    --tooltip-color: var(--bg);
+  }
+  .tooltip {
+    padding: var(--size-1) var(--size-2);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-color);
+    border-radius: var(--radius-1);
+    box-shadow: var(--shadow-1);
+    z-index: 1000;
+  }
   .trigger {
     display: inline-flex;
     align-items: center;

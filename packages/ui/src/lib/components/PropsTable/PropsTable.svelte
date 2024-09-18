@@ -16,15 +16,20 @@
     return props?.type ?? null;
   };
 
-  // Get prop reflection data
+  // Function to get the props list for reflection types
   const getPropsList = (type) => {
     if (type?.type === 'intersection') {
+      // Handle intersection types (e.g., ButtonProps extending HTMLButtonAttributes)
       return type.types?.filter((t) => t.type === 'reflection').flatMap((t) => t.declaration.children) || [];
+    }
+    if (type?.type === 'reflection') {
+      // Handle reflection types (e.g., ToolTipProps)
+      return type.declaration.children || [];
     }
     return [];
   };
 
-  // Extract extended types (e.g., HTMLButtonAttributes) from intersection type
+  // Function to extract extended types (e.g., HTMLButtonAttributes) from intersection types
   const getExtendedProps = (type) => {
     if (type?.type === 'intersection') {
       return (
@@ -45,7 +50,7 @@
   // Function to get the default value for a prop
   const getDefaultValue = (prop) => {
     const defaultTag = prop?.comment?.blockTags?.find((tag) => tag.tag === '@default');
-    return defaultTag ? defaultTag.content[0]?.text || 'N/A' : 'N/A';
+    return defaultTag ? defaultTag.content[0]?.text || '' : '';
   };
 
   // Fetch component data
@@ -91,7 +96,7 @@
               {prop.type.name}
             {/if}
           </td>
-          <td>{getComment(prop)}</td>
+          <td><Markdown source={getComment(prop)} /></td>
           <td><Markdown source={getDefaultValue(prop)} /></td>
         </tr>
       {/each}

@@ -12,6 +12,8 @@
   --contrastMedium: var(--gray-300);
   --contrastLow: var(--gray-100);
   --contrastLowest: var(--gray-50) --contrastEmpty: white;
+  --textPrimary: var(--primary-600);
+  --textMuted: var(--gray-400);
   color: var(--fg);
 }
 
@@ -26,6 +28,8 @@
   --contrastLow: var(--gray-900);
   --contrastLowest: var(--gray-950);
   --contrastEmpty: black;
+  --textPrimary: var(--primary-500);
+  --textMuted: var(--gray-400);
   color: var(--fg);
 }
 

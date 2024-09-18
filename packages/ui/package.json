@@ -5,7 +5,7 @@
     "dev": "pnpm check:watch",
     "build": "vite build && npm run package",
     "preview": "vite preview",
-    "package": "svelte-kit sync && svelte-package",
+    "package": "svelte-kit sync && svelte-package && typedoc",
     "prepublishOnly": "npm run package",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

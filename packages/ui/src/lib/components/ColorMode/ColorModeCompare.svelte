@@ -8,15 +8,18 @@
   <ColorMode mode="light">
     <div class="compare__block">
       <h2>Light mode</h2>
-      {@render children()}
-      <div></div>
+      <div class="compare__example">
+        {@render children()}
+      </div>
     </div></ColorMode
   >
 
   <ColorMode mode="dark">
     <div class="compare__block compare__block-border">
       <h2>Dark mode</h2>
-      {@render children()}
+      <div class="compare__example">
+        {@render children()}
+      </div>
     </div>
   </ColorMode>
 </div>
@@ -32,6 +35,14 @@
     padding: var(--size-5);
     background: var(--bg);
     min-height: 20vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .compare__example {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .compare__block-border {
     border-right: var(--border-1);

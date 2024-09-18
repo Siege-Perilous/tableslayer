@@ -8,7 +8,9 @@
     { name: 'Button', path: '/button' },
     { name: 'Color Mode', path: '/colormode' },
     { name: 'Stage', path: '/stage' },
-    { name: 'Icons', path: '/icons' }
+    { name: 'Icons', path: '/icons' },
+    { name: 'Link', path: '/link' },
+    { name: 'Tool tip', path: '/tooltip' }
   ];
 </script>
 
