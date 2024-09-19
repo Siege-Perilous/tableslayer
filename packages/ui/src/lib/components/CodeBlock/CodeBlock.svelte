@@ -3,8 +3,9 @@
   import { onMount } from 'svelte';
   import { createHighlighter } from 'shiki';
   import { createCssVariablesTheme } from 'shiki/theme-css-variables';
+  import classNames from 'classnames';
 
-  let { code, lang = 'svelte' }: CodeBlockProps = $props();
+  let { code, lang = 'svelte', variant = 'default' }: CodeBlockProps = $props();
 
   let highlightedCode = $state('');
 
@@ -26,12 +27,14 @@
       theme: 'css-variables'
     });
   });
+
+  const codeBlockClasses = classNames('codeBlock', `codeBlock--${variant}`);
 </script>
 
-<div class="codeBlock">
+<span class={codeBlockClasses}>
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html highlightedCode}
-</div>
+</span>
 
 <style>
   :global(.light) {
@@ -66,10 +69,21 @@
   :global(.shiki) {
     font-family: var(--font-mono);
     padding: var(--size-4);
+    margin: 0;
+  }
+  :global(.codeBlock--inline .shiki) {
+    font-family: var(--font-mono);
+    padding: 0;
+    margin: 0;
   }
   .codeBlock {
     font-family: var(--font-mono);
     max-width: 100%;
     overflow-x: auto;
+  }
+  .codeBlock--inline {
+    display: inline-block;
+    width: auto;
+    overflow-x: unset;
   }
 </style>
