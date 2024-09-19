@@ -11,6 +11,7 @@
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
     { name: 'Link', path: '/link' },
+    { name: 'Loader', path: '/loading' },
     { name: 'ToolTip', path: '/tooltip' }
   ];
 </script>
@@ -59,6 +60,7 @@
     min-height: 100vh;
     max-width: var(--contain-desktop);
     margin: 0 auto;
+    gap: var(--size-8);
   }
   nav {
     width: 200px;
@@ -81,5 +83,6 @@
   }
   main {
     flex-grow: 1;
+    padding: var(--size-8) 0;
   }
 </style>

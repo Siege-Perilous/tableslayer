@@ -1,17 +1,16 @@
 <script lang="ts">
   import { IconHeart, IconAxe, IconSword } from '@tabler/icons-svelte';
-  import { ColorModeCompare, Icon, PropsTable } from '@tableslayer/ui';
+  import { Icon } from '@tableslayer/ui';
+  import { Example } from '$lib/components';
 </script>
 
-<ColorModeCompare>
+<Example title="Icon" propsName="Icon">
   <div class="grid">
     <Icon Icon={IconHeart} />
     <Icon Icon={IconAxe} size="24px" color="blue" />
     <Icon Icon={IconSword} size="3rem" color="red" stroke={1} />
   </div>
-</ColorModeCompare>
-
-<PropsTable componentName="Icon" />
+</Example>
 
 <style>
   .grid {
