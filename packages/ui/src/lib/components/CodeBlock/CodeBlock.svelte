@@ -1,14 +1,14 @@
 <script lang="ts">
   import type { CodeBlockProps } from './types';
   import { onMount } from 'svelte';
-  import { codeToHtml, createHighlighter } from 'shiki';
+  import { createHighlighter } from 'shiki';
   import { createCssVariablesTheme } from 'shiki/theme-css-variables';
 
-  let { code, lang = 'svelte', theme }: CodeBlockProps = $props();
+  let { code, lang = 'svelte' }: CodeBlockProps = $props();
 
   let highlightedCode = $state('');
 
-  const myTheme = createCssVariablesTheme({
+  const theme = createCssVariablesTheme({
     name: 'css-variables',
     variablePrefix: '--shiki-',
     variableDefaults: {},
@@ -18,18 +18,18 @@
   onMount(async () => {
     const highlighter = await createHighlighter({
       langs: ['svelte', 'css', 'javascript', 'typescript'],
-      themes: [myTheme] // register the theme
+      themes: [theme]
     });
 
     highlightedCode = highlighter.codeToHtml(code, {
       lang: lang,
-      theme: 'css-variables' // use the theme
+      theme: 'css-variables'
     });
   });
 </script>
 
-<!-- Display the highlighted code -->
 <div class="codeBlock">
+  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html highlightedCode}
 </div>
 
