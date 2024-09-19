@@ -1,5 +1,6 @@
 export * from './components/Avatar';
 export * from './components/Button';
+export * from './components/CodeBlock';
 export * from './components/ColorMode';
 export * from './components/Icon';
 export * from './components/Link';
