@@ -55,7 +55,8 @@
     "@tabler/icons-svelte": "^3.16.0",
     "@threlte/core": "8.0.0-next.15",
     "@threlte/extras": "9.0.0-next.22",
-    "classnames": "^2.5.1"
+    "classnames": "^2.5.1",
+    "shiki": "^1.17.7"
   },
   "svelte": "./src/lib/index.ts",
   "types": "./src/lib/index.d.ts",

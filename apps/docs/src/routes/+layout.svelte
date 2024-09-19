@@ -7,6 +7,7 @@
     { name: 'Avatar', path: '/avatar' },
     { name: 'Button', path: '/button' },
     { name: 'Color Mode', path: '/colormode' },
+    { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
     { name: 'Link', path: '/link' },
