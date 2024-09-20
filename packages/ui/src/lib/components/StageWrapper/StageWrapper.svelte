@@ -2,11 +2,11 @@
   @component Wrapper for the `Stage` component which exposes a debug UI for modifying the stage properties
 -->
 <script lang="ts">
-  import { Canvas } from '@threlte/core';
-  import { Color, Pane, Folder } from 'svelte-tweakpane-ui';
+  import { Color, Pane, Slider, Folder, type ValueChangeEvent } from 'svelte-tweakpane-ui';
   import Stage from '../Stage/Stage.svelte';
   import type StageProps from '../Stage/StageProps';
-  import { LayerRotation } from '../Stage/Layers/enums';
+  import { LayerRotation } from '../Stage/effects/enums';
+  import { Vector2 } from 'three';
 
   let stageProps: StageProps = $state({
     background: {
@@ -15,20 +15,44 @@
       offset: { x: 0, y: 0 },
       rotation: LayerRotation.None,
       scale: 1.0
+    },
+    grid: {
+      opacity: 1,
+      spacing: 10,
+      offset: new Vector2(5, 5),
+      lineColor: '0xffffff',
+      lineThickness: 0.2
     }
   });
 
-  let backgroundStyle = $derived(`background-color: ${stageProps.background.color}`);
+  let stage: Stage;
+
+  function onUpdate() {
+    stage.updateProps(stageProps);
+  }
 </script>
 
-<div class="stage-background" style={backgroundStyle}>
-  <Canvas>
-    <Stage background={stageProps.background} />
-  </Canvas>
+<div id="stage-wrapper">
+  <Stage {...stageProps} bind:this={stage} />
 </div>
-
 <Pane position="draggable">
   <Folder title="Background">
     <Color bind:value={stageProps.background.color} label="Color" />
+  </Folder>
+
+  <Folder title="Grid">
+    <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} on:change={onUpdate} />
+    <Slider bind:value={stageProps.grid.spacing} label="Spacing" min={4} max={100} on:change={onUpdate} />
+    <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={-100} max={100} step={1} on:change={onUpdate} />
+    <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={-100} max={100} step={1} on:change={onUpdate} />
+    <Slider
+      bind:value={stageProps.grid.lineThickness}
+      label="Line Thickness"
+      min={0}
+      max={1}
+      step={0.01}
+      on:change={onUpdate}
+    />
+    <Color bind:value={stageProps.grid.lineColor} label="Line Color" on:change={onUpdate} />
   </Folder>
 </Pane>

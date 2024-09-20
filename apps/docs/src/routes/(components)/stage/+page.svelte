@@ -2,12 +2,12 @@
   import { StageWrapper } from '@tableslayer/ui';
 </script>
 
-<div class="canvasTest">
+<div class="stage-wrapper">
   <StageWrapper />
 </div>
 
 <style>
-  .canvasTest {
+  .stage-wrapper {
     width: 100%;
     height: 500px;
   }

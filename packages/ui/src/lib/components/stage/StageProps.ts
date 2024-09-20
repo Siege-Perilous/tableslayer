@@ -1,4 +1,5 @@
-import { LayerRotation } from './Layers/enums';
+import { LayerRotation } from './effects/enums';
+import { type GridProps } from './effects/GridPass';
 
 /**
  * Props for the Stage component
@@ -38,4 +39,5 @@ export default interface StageProps {
      */
     offset: { x: number; y: number };
   };
+  grid: GridProps;
 }
