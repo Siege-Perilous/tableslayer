@@ -8,4 +8,5 @@ export * from './components/Loading';
 export { default as MyCounterButton } from './components/MyCounterButton.svelte';
 export { default as PropsTable } from './components/PropsTable/PropsTable.svelte';
 export { default as Stage } from './components/stage/stage.svelte';
+export * from './components/Title';
 export * from './components/ToolTip';

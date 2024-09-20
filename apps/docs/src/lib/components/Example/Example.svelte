@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { ColorMode, PropsTable } from '@tableslayer/ui';
+  import { ColorMode, PropsTable, Title } from '@tableslayer/ui';
   import type { ExampleProps } from './types';
-  let { children, propsName, title }: ExampleProps = $props();
+  let { children, propsName, title, ...restProps }: ExampleProps = $props();
 </script>
 
-<h2>{title}</h2>
+<Title as="h2" size="md" style="margin-bottom: var(--size-5)">{title}</Title>
 
-<div class="compare">
+<div class="compare" {...restProps}>
   <ColorMode mode="light">
     <div class="compare__block">
-      <h3>Light mode</h3>
+      <Title as="h3" size="xs">Light mode</Title>
       <div class="compare__example">
         {@render children()}
       </div>
-    </div></ColorMode
-  >
+    </div>
+  </ColorMode>
 
   <ColorMode mode="dark">
     <div class="compare__block">
-      <h3>Dark mode</h3>
+      <Title as="h3" size="xs">Dark mode</Title>
       <div class="compare__example">
         {@render children()}
       </div>
@@ -49,15 +49,5 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  h2 {
-    font-size: var(--font-size-3);
-    font-weight: var(--font-weight-6);
-    margin-bottom: var(--size-5);
-  }
-  h3 {
-    font-size: var(--font-size-2);
-    font-weight: var(--font-weight-6);
-    margin-bottom: var(--size-5);
   }
 </style>

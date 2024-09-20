@@ -1997,6 +1997,198 @@
     },
     {
       "id": 164,
+      "name": "Title",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "Title/Title.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "Title/Title.svelte.d.ts",
+          "line": 18,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.es5.d.ts",
+          "qualifiedName": "InstanceType"
+        },
+        "typeArguments": [
+          {
+            "type": "query",
+            "queryType": {
+              "type": "reference",
+              "target": 158,
+              "name": "Title",
+              "package": "@tableslayer/ui"
+            }
+          }
+        ],
+        "name": "InstanceType",
+        "package": "typescript"
+      }
+    },
+    {
+      "id": 165,
+      "name": "TitleProps",
+      "variant": "declaration",
+      "kind": 2097152,
+      "flags": {},
+      "sources": [
+        {
+          "fileName": "Title/types.d.ts",
+          "line": 2,
+          "character": 12
+        }
+      ],
+      "type": {
+        "type": "reflection",
+        "declaration": {
+          "id": 166,
+          "name": "__type",
+          "variant": "declaration",
+          "kind": 65536,
+          "flags": {},
+          "children": [
+            {
+              "id": 168,
+              "name": "as",
+              "variant": "declaration",
+              "kind": 1024,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Title/types.d.ts",
+                  "line": 4,
+                  "character": 4
+                }
+              ],
+              "type": {
+                "type": "union",
+                "types": [
+                  {
+                    "type": "literal",
+                    "value": "h1"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "h2"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "h3"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "h4"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "h5"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "h6"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "span"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "p"
+                  }
+                ]
+              }
+            },
+            {
+              "id": 167,
+              "name": "children",
+              "variant": "declaration",
+              "kind": 1024,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Title/types.d.ts",
+                  "line": 3,
+                  "character": 4
+                }
+              ],
+              "type": {
+                "type": "reference",
+                "target": {
+                  "sourceFileName": "../../node_modules/.pnpm/svelte@5.0.0-next.243/node_modules/svelte/src/index.d.ts",
+                  "qualifiedName": "\"svelte\".Snippet"
+                },
+                "name": "Snippet",
+                "package": "svelte",
+                "qualifiedName": "\"svelte\".Snippet"
+              }
+            },
+            {
+              "id": 169,
+              "name": "size",
+              "variant": "declaration",
+              "kind": 1024,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Title/types.d.ts",
+                  "line": 5,
+                  "character": 4
+                }
+              ],
+              "type": {
+                "type": "union",
+                "types": [
+                  {
+                    "type": "literal",
+                    "value": "xs"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "sm"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "md"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "lg"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "xl"
+                  }
+                ]
+              }
+            }
+          ],
+          "groups": [
+            {
+              "title": "Properties",
+              "children": [168, 167, 169]
+            }
+          ],
+          "sources": [
+            {
+              "fileName": "Title/types.d.ts",
+              "line": 2,
+              "character": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 176,
       "name": "ToolTip",
       "variant": "declaration",
       "kind": 2097152,
@@ -2024,7 +2216,7 @@
             "type": "query",
             "queryType": {
               "type": "reference",
-              "target": 158,
+              "target": 170,
               "name": "ToolTip",
               "package": "@tableslayer/ui"
             }
@@ -2035,7 +2227,7 @@
       }
     },
     {
-      "id": 165,
+      "id": 177,
       "name": "ToolTipProps",
       "variant": "declaration",
       "kind": 2097152,
@@ -2050,14 +2242,14 @@
       "type": {
         "type": "reflection",
         "declaration": {
-          "id": 166,
+          "id": 178,
           "name": "__type",
           "variant": "declaration",
           "kind": 65536,
           "flags": {},
           "children": [
             {
-              "id": 167,
+              "id": 179,
               "name": "children",
               "variant": "declaration",
               "kind": 1024,
@@ -2081,7 +2273,7 @@
               }
             },
             {
-              "id": 173,
+              "id": 185,
               "name": "closeDelay",
               "variant": "declaration",
               "kind": 1024,
@@ -2101,7 +2293,7 @@
               }
             },
             {
-              "id": 174,
+              "id": 186,
               "name": "closeOnPointerDown",
               "variant": "declaration",
               "kind": 1024,
@@ -2121,7 +2313,7 @@
               }
             },
             {
-              "id": 171,
+              "id": 183,
               "name": "defaultOpen",
               "variant": "declaration",
               "kind": 1024,
@@ -2141,7 +2333,7 @@
               }
             },
             {
-              "id": 175,
+              "id": 187,
               "name": "forceVisible",
               "variant": "declaration",
               "kind": 1024,
@@ -2161,7 +2353,7 @@
               }
             },
             {
-              "id": 172,
+              "id": 184,
               "name": "openDelay",
               "variant": "declaration",
               "kind": 1024,
@@ -2181,7 +2373,7 @@
               }
             },
             {
-              "id": 168,
+              "id": 180,
               "name": "positioning",
               "variant": "declaration",
               "kind": 1024,
@@ -2198,14 +2390,14 @@
               "type": {
                 "type": "reflection",
                 "declaration": {
-                  "id": 169,
+                  "id": 181,
                   "name": "__type",
                   "variant": "declaration",
                   "kind": 65536,
                   "flags": {},
                   "children": [
                     {
-                      "id": 170,
+                      "id": 182,
                       "name": "placement",
                       "variant": "declaration",
                       "kind": 1024,
@@ -2243,7 +2435,7 @@
                   "groups": [
                     {
                       "title": "Properties",
-                      "children": [170]
+                      "children": [182]
                     }
                   ],
                   "sources": [
@@ -2257,7 +2449,7 @@
               }
             },
             {
-              "id": 176,
+              "id": 188,
               "name": "toolTipContent",
               "variant": "declaration",
               "kind": 1024,
@@ -2284,7 +2476,7 @@
           "groups": [
             {
               "title": "Properties",
-              "children": [167, 173, 174, 171, 175, 172, 168, 176]
+              "children": [179, 185, 186, 183, 187, 184, 180, 188]
             }
           ],
           "sources": [
@@ -4048,7 +4240,7 @@
     },
     {
       "id": 158,
-      "name": "ToolTip",
+      "name": "Title",
       "variant": "declaration",
       "kind": 32,
       "flags": {
@@ -4056,12 +4248,12 @@
       },
       "sources": [
         {
-          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "fileName": "Title/Title.svelte.d.ts",
           "line": 15,
           "character": 14
         },
         {
-          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "fileName": "Title/Title.svelte.d.ts",
           "line": 18,
           "character": 5
         }
@@ -4069,14 +4261,14 @@
       "type": {
         "type": "reference",
         "target": {
-          "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+          "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
           "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
         },
         "typeArguments": [
           {
             "type": "reference",
             "target": 165,
-            "name": "ToolTipProps",
+            "name": "TitleProps",
             "package": "@tableslayer/ui"
           },
           {
@@ -4089,9 +4281,9 @@
               "flags": {},
               "sources": [
                 {
-                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "fileName": "Title/Title.svelte.d.ts",
                   "line": 15,
-                  "character": 72
+                  "character": 68
                 }
               ],
               "indexSignatures": [
@@ -4103,7 +4295,7 @@
                   "flags": {},
                   "sources": [
                     {
-                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "fileName": "Title/Title.svelte.d.ts",
                       "line": 16,
                       "character": 4
                     }
@@ -4150,7 +4342,7 @@
               "flags": {},
               "sources": [
                 {
-                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "fileName": "Title/Title.svelte.d.ts",
                   "line": 17,
                   "character": 3
                 }
@@ -4161,6 +4353,143 @@
             "type": "reflection",
             "declaration": {
               "id": 163,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "Title/Title.svelte.d.ts",
+                  "line": 17,
+                  "character": 7
+                }
+              ]
+            }
+          },
+          {
+            "type": "literal",
+            "value": ""
+          }
+        ],
+        "name": "$$__sveltets_2_IsomorphicComponent",
+        "package": "@tableslayer/ui"
+      }
+    },
+    {
+      "id": 170,
+      "name": "ToolTip",
+      "variant": "declaration",
+      "kind": 32,
+      "flags": {
+        "isConst": true
+      },
+      "sources": [
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 15,
+          "character": 14
+        },
+        {
+          "fileName": "ToolTip/ToolTip.svelte.d.ts",
+          "line": 18,
+          "character": 5
+        }
+      ],
+      "type": {
+        "type": "reference",
+        "target": {
+          "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+          "qualifiedName": "$$__sveltets_2_IsomorphicComponent"
+        },
+        "typeArguments": [
+          {
+            "type": "reference",
+            "target": 177,
+            "name": "ToolTipProps",
+            "package": "@tableslayer/ui"
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 171,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 15,
+                  "character": 72
+                }
+              ],
+              "indexSignatures": [
+                {
+                  "id": 172,
+                  "name": "__index",
+                  "variant": "signature",
+                  "kind": 8192,
+                  "flags": {},
+                  "sources": [
+                    {
+                      "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                      "line": 16,
+                      "character": 4
+                    }
+                  ],
+                  "parameters": [
+                    {
+                      "id": 173,
+                      "name": "evt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "string"
+                      }
+                    }
+                  ],
+                  "type": {
+                    "type": "reference",
+                    "target": {
+                      "sourceFileName": "../../node_modules/.pnpm/typescript@5.6.2/node_modules/typescript/lib/lib.dom.d.ts",
+                      "qualifiedName": "CustomEvent"
+                    },
+                    "typeArguments": [
+                      {
+                        "type": "intrinsic",
+                        "name": "any"
+                      }
+                    ],
+                    "name": "CustomEvent",
+                    "package": "typescript"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 174,
+              "name": "__type",
+              "variant": "declaration",
+              "kind": 65536,
+              "flags": {},
+              "sources": [
+                {
+                  "fileName": "ToolTip/ToolTip.svelte.d.ts",
+                  "line": 17,
+                  "character": 3
+                }
+              ]
+            }
+          },
+          {
+            "type": "reflection",
+            "declaration": {
+              "id": 175,
               "name": "__type",
               "variant": "declaration",
               "kind": 65536,
@@ -4187,11 +4516,11 @@
   "groups": [
     {
       "title": "Type Aliases",
-      "children": [38, 39, 52, 53, 67, 74, 75, 80, 90, 91, 102, 103, 115, 116, 129, 7, 16, 148, 31, 164, 165]
+      "children": [38, 39, 52, 53, 67, 74, 75, 80, 90, 91, 102, 103, 115, 116, 129, 7, 16, 148, 31, 164, 165, 176, 177]
     },
     {
       "title": "Variables",
-      "children": [32, 46, 61, 68, 84, 96, 109, 120, 1, 8, 139, 25, 158]
+      "children": [32, 46, 61, 68, 84, 96, 109, 120, 1, 8, 139, 25, 158, 170]
     }
   ],
   "packageName": "@tableslayer/ui",
@@ -4754,74 +5083,118 @@
       "qualifiedName": "__type.$$bindings"
     },
     "158": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
-      "qualifiedName": "ToolTip"
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
+      "qualifiedName": "Title"
     },
     "159": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
       "qualifiedName": "__type"
     },
     "160": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
       "qualifiedName": "__type.__index"
     },
     "162": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
       "qualifiedName": "__type"
     },
     "163": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
       "qualifiedName": "__type"
     },
     "164": {
-      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
-      "qualifiedName": "ToolTip"
+      "sourceFileName": "dist/components/Title/Title.svelte.d.ts",
+      "qualifiedName": "Title"
     },
     "165": {
-      "sourceFileName": "dist/components/ToolTip/types.d.ts",
-      "qualifiedName": "ToolTipProps"
+      "sourceFileName": "dist/components/Title/types.d.ts",
+      "qualifiedName": "TitleProps"
     },
     "166": {
-      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "sourceFileName": "dist/components/Title/types.d.ts",
       "qualifiedName": "__type"
     },
     "167": {
-      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "sourceFileName": "dist/components/Title/types.d.ts",
       "qualifiedName": "__type.children"
     },
     "168": {
-      "sourceFileName": "dist/components/ToolTip/types.d.ts",
-      "qualifiedName": "__type.positioning"
+      "sourceFileName": "dist/components/Title/types.d.ts",
+      "qualifiedName": "__type.as"
     },
     "169": {
+      "sourceFileName": "dist/components/Title/types.d.ts",
+      "qualifiedName": "__type.size"
+    },
+    "170": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "ToolTip"
+    },
+    "171": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "172": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type.__index"
+    },
+    "174": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "175": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "__type"
+    },
+    "176": {
+      "sourceFileName": "dist/components/ToolTip/ToolTip.svelte.d.ts",
+      "qualifiedName": "ToolTip"
+    },
+    "177": {
+      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "qualifiedName": "ToolTipProps"
+    },
+    "178": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type"
     },
-    "170": {
+    "179": {
+      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "qualifiedName": "__type.children"
+    },
+    "180": {
+      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "qualifiedName": "__type.positioning"
+    },
+    "181": {
+      "sourceFileName": "dist/components/ToolTip/types.d.ts",
+      "qualifiedName": "__type"
+    },
+    "182": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.placement"
     },
-    "171": {
+    "183": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.defaultOpen"
     },
-    "172": {
+    "184": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.openDelay"
     },
-    "173": {
+    "185": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.closeDelay"
     },
-    "174": {
+    "186": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.closeOnPointerDown"
     },
-    "175": {
+    "187": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.forceVisible"
     },
-    "176": {
+    "188": {
       "sourceFileName": "dist/components/ToolTip/types.d.ts",
       "qualifiedName": "__type.toolTipContent"
     }

@@ -12,6 +12,7 @@
     { name: 'Icons', path: '/icons' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
+    { name: 'Title', path: '/title' },
     { name: 'ToolTip', path: '/tooltip' }
   ];
 </script>
