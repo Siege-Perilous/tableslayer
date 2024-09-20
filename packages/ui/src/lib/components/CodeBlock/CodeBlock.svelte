@@ -40,7 +40,7 @@
   :global(.light) {
     color-scheme: light;
     --shiki-foreground: #4c566a;
-    --shiki-background: #fafafa;
+    --shiki-background: var(--contrastLowest);
     --shiki-token-constant: #b48ead;
     --shiki-token-string: #a3be8c;
     --shiki-token-comment: #d08770;
@@ -55,7 +55,7 @@
   :global(.dark) {
     color-scheme: dark;
     --shiki-foreground: #cdd6f4;
-    --shiki-background: #1e1e2e;
+    --shiki-background: var(--contrastLowest);
     --shiki-token-constant: #f38ba8;
     --shiki-token-string: #a6e3a1;
     --shiki-token-comment: #7f849c;
@@ -73,7 +73,7 @@
   }
   :global(.codeBlock--inline .shiki) {
     font-family: var(--font-mono);
-    padding: 0;
+    padding: 0 var(--size-1);
     margin: 0;
   }
   .codeBlock {

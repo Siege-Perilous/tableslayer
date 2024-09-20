@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { Avatar, ColorModeCompare, PropsTable } from '@tableslayer/ui';
+  import { Avatar } from '@tableslayer/ui';
+  import { Example } from '$lib/components';
 </script>
 
-<ColorModeCompare>
+<Example title="Avatar" propsName="Avatar">
   <Avatar src="https://avatars.githubusercontent.com/u/324519?v=4" alt="Melt" initials="M" size="lg" />
-</ColorModeCompare>
-
-<PropsTable componentName="Avatar" />
+</Example>
