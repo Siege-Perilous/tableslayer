@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { Link, PropsTable, ColorModeCompare } from '@tableslayer/ui';
+  import { Link } from '@tableslayer/ui';
+  import { Example } from '$lib/components';
 </script>
 
-<ColorModeCompare>
+<Example title="Link" propsName="Link">
   <Link href="https://tableslayer.com">Hello I am a link</Link>
-</ColorModeCompare>
-
-<PropsTable componentName="Link" />
+</Example>

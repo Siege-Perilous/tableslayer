@@ -1,28 +1,25 @@
 <script lang="ts">
-  import { CodeBlock, Code, ColorModeCompare, PropsTable } from '@tableslayer/ui';
+  import { CodeBlock, Code } from '@tableslayer/ui';
+  import { Example } from '$lib/components';
   const exampleCode = `/* Coloring the themes comes later */
 a:has(> img) {
   border: 20px solid white;
 }`;
 </script>
 
-<ColorModeCompare>
+<Example title="CodeBlock" propsName="CodeBlock">
   <div class="flex">
     <CodeBlock code={exampleCode} lang="css" />
   </div>
-</ColorModeCompare>
+</Example>
 
-<PropsTable componentName="CodeBlock" />
-
-<ColorModeCompare>
+<Example title="Code" propsName="Code">
   <div class="flex">
     <p>
       Inline <Code lang="typescript" code={`const a = 1;`} /> code block
     </p>
   </div>
-</ColorModeCompare>
-
-<PropsTable componentName="Code" />
+</Example>
 
 <style>
   .flex {

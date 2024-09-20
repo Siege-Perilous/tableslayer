@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Button, PropsTable, ColorModeCompare, CodeBlock } from '@tableslayer/ui';
+  import { Button, CodeBlock } from '@tableslayer/ui';
   import { IconCheck } from '@tabler/icons-svelte';
+  import { Example } from '$lib/components';
   const example = `import { Button } from '@tableslayer/ui';
 import { IconCheck } from '@tabler/icons-svelte';
 
@@ -12,10 +13,8 @@ import { IconCheck } from '@tabler/icons-svelte';
   <IconCheck size={'1rem'} stroke={4} />
 {/snippet}
 
-<ColorModeCompare>
+<Example title="Button" propsName="Button">
   <Button start={iconCheck}>Hello I am a button</Button>
-</ColorModeCompare>
-
-<PropsTable componentName="Button" />
+</Example>
 
 <CodeBlock code={example} lang="svelte" />

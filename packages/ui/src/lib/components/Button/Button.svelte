@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ButtonProps } from './types';
+  import { Loader } from '../Loading';
   import classNames from 'classnames';
   let {
     children,
@@ -16,7 +17,7 @@
 
 <button class={btnClasses} disabled={isDisabled} {...restProps}>
   {#if isLoading}
-    <span>Loading...</span>
+    <Loader />
   {/if}
   {#if start}
     {@render start()}
