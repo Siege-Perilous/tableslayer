@@ -848,7 +848,6 @@
   --border-size-3: 5px;
   --border-size-4: 10px;
   --border-size-5: 25px;
-  --border-1: solid var(--border-size-1) var(--contrastLow);
   --radius-1: 2px;
   --radius-2: 5px;
   --radius-3: 1rem;

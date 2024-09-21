@@ -3,6 +3,7 @@ export * from './Button';
 export * from './CodeBlock';
 export * from './ColorMode';
 export * from './Icon';
+export * from './Input';
 export * from './Link';
 export * from './Loading';
 export { default as MyCounterButton } from './MyCounterButton.svelte';
