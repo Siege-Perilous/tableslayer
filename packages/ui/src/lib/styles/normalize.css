@@ -1,3 +1,4 @@
 *:focus-visible {
   outline: solid 2px var(--primary-500);
+  outline-offset: 2px;
 }

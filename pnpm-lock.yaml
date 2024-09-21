@@ -35,6 +35,9 @@ importers:
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      classnames:
+        specifier: ^2.5.1
+        version: 2.5.1
       mode-watcher:
         specifier: ^0.4.1
         version: 0.4.1(svelte@5.0.0-next.243)

@@ -3,4 +3,5 @@ export type ExampleProps = {
   children: Snippet;
   propsName: string;
   title: string;
+  layout?: 'row' | 'column';
 };
