@@ -15,6 +15,7 @@
   - Replace plugin-organize-imports with https://github.com/simonhaenisch/prettier-plugin-organize-imports/issues/39#issuecomment-2103296199
 - Codeblock
   - Better shiki styling https://github.com/antfu/shikiji/issues/6
+- Figure out utility classes vs. class passdown
 
 ## Research
 
