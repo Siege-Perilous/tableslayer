@@ -18,4 +18,6 @@ export type ButtonProps = {
    * @default md
    */
   size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'ghost' | 'danger' | 'link';
+  className?: string;
 } & HTMLButtonAttributes;

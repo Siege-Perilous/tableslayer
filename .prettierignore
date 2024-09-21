@@ -1,7 +1,9 @@
 .DS_Store
-.svelte-kit
-node_modules
-/build
+**/.svelte-kit
+**/node_modules
+**/dist
+**/build
+**/typedocgen.json
 /package
 .env
 .env.*
