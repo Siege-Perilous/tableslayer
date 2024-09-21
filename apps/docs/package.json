@@ -17,6 +17,7 @@
   "dependencies": {
     "@tabler/icons-svelte": "^3.16.0",
     "@tableslayer/ui": "workspace:*",
+    "classnames": "^2.5.1",
     "mode-watcher": "^0.4.1"
   },
   "devDependencies": {
