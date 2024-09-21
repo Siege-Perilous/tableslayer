@@ -1,7 +1,17 @@
 import * as THREE from 'three';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 
+export enum GridType {
+  Square = 0,
+  Hex = 1
+}
+
 export interface GridProps {
+  /**
+   * The type of grid. 0 for square, 1 for hex
+   */
+  type: GridType;
+
   /**
    * The opacity of the grid lines (0 to 1)
    */
@@ -39,7 +49,8 @@ export class GridPass extends ShaderPass {
         lineThickness: { value: props.lineThickness },
         lineColor: { value: new THREE.Color(props.lineColor) },
         offset: { value: props.offset },
-        screenSize: { value: screenSize }
+        screenSize: { value: screenSize },
+        gridType: { value: props.type }
       },
       vertexShader: `
       varying vec2 vUv;
@@ -56,6 +67,7 @@ export class GridPass extends ShaderPass {
       uniform vec2 offset;
       uniform float lineThickness;
       uniform vec3 lineColor;
+      uniform int gridType; // 0 for square, 1 for hex
         
       #define PI 3.141592653589793
       
@@ -82,18 +94,23 @@ export class GridPass extends ShaderPass {
         // Convert UV screen-space coordinates to screen pixel
         vec2 p = vUv * screenSize + offset;
 
-        vec4 hex_uv = getHex(p / spacing);
-        float iso = hex(hex_uv.xy);
+        vec3 finalColor;
+        if (gridType == 0) {
+          // Square grid
+          float lineX = smoothstep(-lineThickness, lineThickness, spacing * (1.0 + sin(p.x / spacing)));
+          float lineY = smoothstep(-lineThickness, lineThickness, spacing * (1.0 + sin(p.y / spacing)));
+          float gridFactor = lineX * lineY;
+          finalColor = mix(lineColor, sceneColor.rgb, gridFactor);
+         } else {
+          // Hex grid
+          vec4 hex_uv = getHex(p / spacing / 10.0);
+          float hexValue = hex(hex_uv.xy);
+          float gridFactor = smoothstep(0.5 - lineThickness / 10.0, 0.5 + lineThickness / 10.0, hexValue);
+          finalColor = mix(sceneColor.rgb, lineColor, gridFactor);
+        }
 
-        // Line thickness control
-        float lineX = smoothstep(-lineThickness, lineThickness, spacing * (1.0 + sin(p.x / spacing)));
-        float lineY = smoothstep(-lineThickness, lineThickness, spacing * (1.0 + sin(p.y / spacing)));
-        float gridFactor = iso; //lineX * lineY;
-
-        // Compute where grid lines are
-        vec3 finalColor = mix(lineColor, sceneColor.rgb, gridFactor);
         // Modulate by opacity of the grid lines
-        finalColor = mix( sceneColor.rgb, finalColor, opacity);
+        finalColor = mix(sceneColor.rgb, finalColor, opacity);
 
         gl_FragColor = vec4(finalColor, sceneColor.a);
       }`
@@ -104,6 +121,7 @@ export class GridPass extends ShaderPass {
 
   update(props: GridProps) {
     console.log(props);
+    this.uniforms['gridType'].value = props.type;
     this.uniforms['opacity'].value = props.opacity;
     this.uniforms['spacing'].value = props.spacing;
     this.uniforms['offset'].value = props.offset;
