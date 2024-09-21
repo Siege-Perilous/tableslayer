@@ -27,9 +27,3 @@ import { IconCheck, IconX } from '@tabler/icons-svelte';
 </Example>
 
 <CodeBlock code={example} lang="svelte" />
-
-<style>
-  :global(.btn.something) {
-    color: var(--fg);
-  }
-</style>
