@@ -9,3 +9,11 @@
 </script>
 
 <label for={id} use:melt={$root} {...restProps}>{@render children()}</label>
+
+<style>
+  label {
+    font-weight: var(--font-weight-6);
+    font-size: var(--font-size-1);
+    cursor: pointer;
+  }
+</style>
