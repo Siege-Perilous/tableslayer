@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ButtonProps } from './types';
+  import { Loader } from '../Loading';
   import classNames from 'classnames';
   let {
     children,
@@ -8,15 +9,26 @@
     isLoading = false,
     isDisabled = false,
     size = 'md',
+    variant = 'primary',
+    class: className,
     ...restProps
   }: ButtonProps = $props();
 
-  const btnClasses = classNames('btn', `btn--${size}`, isLoading && 'isLoading');
+  const btnClasses = classNames(
+    'btn',
+    `btn--${size}`,
+    isLoading && 'btn-isLoading',
+    isDisabled && 'btn--isDisabled',
+    `btn--${variant}`,
+    className ?? ''
+  );
+
+  const component = variant === 'link' ? 'a' : 'button';
 </script>
 
-<button class={btnClasses} disabled={isDisabled} {...restProps}>
+<svelte:element this={component} class={btnClasses} disabled={isDisabled} {...restProps}>
   {#if isLoading}
-    <span>Loading...</span>
+    <Loader />
   {/if}
   {#if start}
     {@render start()}
@@ -25,7 +37,7 @@
   {#if end}
     {@render end()}
   {/if}
-</button>
+</svelte:element>
 
 <style>
   :global(.light) {
@@ -35,6 +47,7 @@
     --btn-border: solid 2px var(--fg);
     --btn-borderHover: solid 2px var(--primary-600);
     --btn-color: var(--fg);
+    --btn-dangerStripesHover: var(--primary-300);
   }
 
   :global(.dark) {
@@ -44,6 +57,7 @@
     --btn-border: solid 2px var(--fg);
     --btn-borderHover: solid 2px var(--primary-500);
     --btn-color: var(--fg);
+    --btn-dangerStripesHover: var(--primary-700);
   }
 
   .btn {
@@ -58,6 +72,7 @@
     cursor: pointer;
     font-weight: var(--font-weight-5);
     border: var(--btn-border);
+    border-color: transparent;
     font-weight: var(--font-weight-6);
   }
 
@@ -74,8 +89,55 @@
     height: var(--size-8);
   }
 
+  .btn--primary {
+    border-color: var(--fg);
+  }
+  .btn--danger {
+    border-color: var(--fg);
+    background-image: linear-gradient(
+      135deg,
+      transparent 10%,
+      transparent 10%,
+      transparent 50%,
+      color-mix(in srgb, var(--fg), transparent 40%) 50%,
+      color-mix(in srgb, var(--fg), transparent 40%) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 14.14px 14.14px;
+    text-shadow: 0 0 4px var(--bg);
+  }
+  .btn--danger:hover {
+    background-image: linear-gradient(
+      135deg,
+      transparent 10%,
+      transparent 10%,
+      transparent 50%,
+      var(--btn-dangerStripesHover),
+      var(--btn-dangerStripesHover),
+      transparent 60%,
+      transparent 100%
+    );
+  }
   .btn:hover {
     background-color: var(--btn-bgHover);
     border: var(--btn-borderHover);
+  }
+  .btn--isDisabled {
+    cursor: pointer;
+  }
+  .btn--ghost {
+    background: none;
+    border-color: transparent;
+  }
+  .btn--link {
+    background: none;
+    border-color: transparent;
+    color: var(--textPrimary);
+  }
+  .btn--link:hover {
+    background: none;
+    border-color: transparent;
+    text-decoration: underline;
   }
 </style>

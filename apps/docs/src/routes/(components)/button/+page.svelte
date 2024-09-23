@@ -1,21 +1,29 @@
 <script lang="ts">
-  import { Button, PropsTable, ColorModeCompare, CodeBlock } from '@tableslayer/ui';
-  import { IconCheck } from '@tabler/icons-svelte';
+  import { Button, CodeBlock, Icon } from '@tableslayer/ui';
+  import { IconCheck, IconX, IconGhost3 } from '@tabler/icons-svelte';
+  import { Example } from '$lib/components';
   const example = `import { Button } from '@tableslayer/ui';
-import { IconCheck } from '@tabler/icons-svelte';
+import { IconCheck, IconX } from '@tabler/icons-svelte';
 
 <Button start={iconCheck}>Hello I am a button</Button>
 `;
 </script>
 
-{#snippet iconCheck()}
-  <IconCheck size={'1rem'} stroke={4} />
+{#snippet primaryStart()}
+  <Icon Icon={IconCheck} />
+{/snippet}
+{#snippet dangerStart()}
+  <Icon Icon={IconX} />
+{/snippet}
+{#snippet ghostStart()}
+  <Icon Icon={IconGhost3} size="1.5rem" />
 {/snippet}
 
-<ColorModeCompare>
-  <Button start={iconCheck}>Hello I am a button</Button>
-</ColorModeCompare>
-
-<PropsTable componentName="Button" />
+<Example title="Button" propsName="Button" layout="column">
+  <Button start={primaryStart}>Primary</Button>
+  <Button start={dangerStart} variant="danger">Danger</Button>
+  <Button start={ghostStart} variant="ghost">Ghost</Button>
+  <Button start={dangerStart} variant="link" class="something">Link</Button>
+</Example>
 
 <CodeBlock code={example} lang="svelte" />
