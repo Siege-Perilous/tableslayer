@@ -9,6 +9,6 @@ export type InputProps = {
 } & HTMLInputAttributes;
 
 export type LabelProps = {
-  id?: string;
+  id: string;
   children: Snippet;
 } & HTMLLabelAttributes;

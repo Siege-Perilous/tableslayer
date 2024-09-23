@@ -4,7 +4,7 @@
 </script>
 
 <Example title="Input" propsName="Input">
-  <Input placeholder="Hello I am an input" type="text" />
+  <Input id="first" placeholder="Hello I am an input" type="text" />
   <Button>Submit</Button>
 </Example>
 
