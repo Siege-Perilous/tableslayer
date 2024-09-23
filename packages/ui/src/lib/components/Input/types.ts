@@ -1,15 +1,14 @@
 import type { Snippet } from 'svelte';
-import type { HTMLInputAttributes, HTMLInputTypeAttribute } from 'svelte/elements';
+import type { HTMLInputAttributes, HTMLInputTypeAttribute, HTMLLabelAttributes } from 'svelte/elements';
 
 export type InputProps = {
   value: string;
   type: HTMLInputTypeAttribute;
   placeholder?: string;
   isDisabled?: boolean;
-  onChange: (value: string) => void;
 } & HTMLInputAttributes;
 
 export type LabelProps = {
-  id: string;
+  id?: string;
   children: Snippet;
-};
+} & HTMLLabelAttributes;
