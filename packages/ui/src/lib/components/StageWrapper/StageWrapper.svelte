@@ -4,7 +4,7 @@
 <script lang="ts">
   import { Color, Pane, List, Slider, Folder, type ValueChangeEvent, type ListOptions } from 'svelte-tweakpane-ui';
   import Stage from '../Stage/Stage.svelte';
-  import type StageProps from '../Stage/StageProps';
+  import type { StageProps } from '../Stage/types';
   import { LayerRotation } from '../Stage/effects/enums';
   import { Vector2 } from 'three';
   import { GridType } from '../Stage/effects/GridPass';

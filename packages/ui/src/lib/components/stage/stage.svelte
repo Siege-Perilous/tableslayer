@@ -5,7 +5,7 @@
   import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
   import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
   import { GridPass } from './effects/GridPass';
-  import type StageProps from './StageProps';
+  import type { StageProps } from './types';
 
   let canvas: HTMLCanvasElement;
 

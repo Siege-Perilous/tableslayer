@@ -7,6 +7,7 @@ export * from './Link';
 export * from './Loading';
 export { default as MyCounterButton } from './MyCounterButton.svelte';
 export { default as PropsTable } from './PropsTable/PropsTable.svelte';
-export { default as Stage } from './stage/stage.svelte';
+export * from './Stage';
+export * from './StageWrapper';
 export * from './Title';
 export * from './ToolTip';

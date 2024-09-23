@@ -4,7 +4,7 @@ import { type GridProps } from './effects/GridPass';
 /**
  * Props for the Stage component
  */
-export default interface StageProps {
+export type StageProps = {
   /**
    * Configuration for the Background layer
    */
@@ -40,4 +40,4 @@ export default interface StageProps {
     offset: { x: number; y: number };
   };
   grid: GridProps;
-}
+};
