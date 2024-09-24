@@ -1,6 +1,7 @@
 <script>
   import jsonData from '../../../../typedocgen.json';
   import Markdown from '@magidoc/plugin-svelte-marked';
+  import { Table, Th, Td, Title } from '@tableslayer/ui';
   export let componentName = '';
 
   const getComponentData = (componentName) => {
@@ -54,33 +55,33 @@
 </script>
 
 {#if componentType}
-  <h2>{componentName} Properties</h2>
+  <Title as="h3" size="sm">{componentName} Properties</Title>
 
   {#if extendedProps}
     <p><strong>Extends:</strong> {extendedProps}</p>
   {/if}
 
-  <table>
+  <Table>
     <thead>
       <tr>
-        <th>Property</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
+        <Th>Property</Th>
+        <Th>Type</Th>
+        <Th>Description</Th>
+        <Th>Default</Th>
       </tr>
     </thead>
     <tbody>
       {#each propsList as prop}
         <tr>
-          <td>
+          <Td>
             <strong>
               {prop.name}
               {#if !prop.flags.isOptional}
                 *
               {/if}
             </strong>
-          </td>
-          <td>
+          </Td>
+          <Td>
             {#if prop.type.type === 'intrinsic'}
               {prop.type.name}
             {/if}
@@ -89,13 +90,13 @@
             {:else if prop.type.type === 'reference'}
               {prop.type.name}
             {/if}
-          </td>
-          <td><Markdown source={getComment(prop)} /></td>
-          <td><Markdown source={getDefaultValue(prop)} /></td>
+          </Td>
+          <Td><Markdown source={getComment(prop)} /></Td>
+          <Td><Markdown source={getDefaultValue(prop)} /></Td>
         </tr>
       {/each}
     </tbody>
-  </table>
+  </Table>
 {:else}
   <p>No data available for {componentName}.</p>
 {/if}
