@@ -3,11 +3,11 @@
 -->
 <script lang="ts">
   import { Color, Pane, List, Slider, Folder, type ValueChangeEvent, type ListOptions } from 'svelte-tweakpane-ui';
-  import Stage from '../Stage/Stage.svelte';
+  import { Stage } from '../Stage';
   import type { StageProps } from '../Stage/types';
-  import { LayerRotation } from '../Stage/effects/enums';
+  import { GridType } from '../Stage/layers/Grid/types';
+  import { LayerRotation } from '../Stage/layers/types';
   import { Vector2 } from 'three';
-  import { GridType } from '../Stage/effects/GridPass';
 
   let stageProps: StageProps = $state({
     background: {
@@ -31,16 +31,10 @@
     Square: GridType.Square,
     Hex: GridType.Hex
   };
-
-  let stage: Stage;
-
-  function onUpdate() {
-    stage.updateProps(stageProps);
-  }
 </script>
 
 <div id="stage-wrapper">
-  <Stage {...stageProps} bind:this={stage} />
+  <Stage {...stageProps} />
 </div>
 <Pane position="draggable">
   <Folder title="Background">
@@ -48,19 +42,12 @@
   </Folder>
 
   <Folder title="Grid">
-    <List bind:value={stageProps.grid.type} label="Type" options={gridTypeOptions} on:change={onUpdate} />
-    <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} on:change={onUpdate} />
-    <Slider bind:value={stageProps.grid.spacing} label="Spacing" min={5} max={50} on:change={onUpdate} />
-    <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={-100} max={100} step={1} on:change={onUpdate} />
-    <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={-100} max={100} step={1} on:change={onUpdate} />
-    <Slider
-      bind:value={stageProps.grid.lineThickness}
-      label="Line Thickness"
-      min={0}
-      max={1}
-      step={0.01}
-      on:change={onUpdate}
-    />
-    <Color bind:value={stageProps.grid.lineColor} label="Line Color" on:change={onUpdate} />
+    <List bind:value={stageProps.grid.type} label="Type" options={gridTypeOptions} />
+    <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.grid.spacing} label="Spacing" min={5} max={50} />
+    <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={-100} max={100} step={1} />
+    <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={-100} max={100} step={1} />
+    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={0} max={1} step={0.01} />
+    <Color bind:value={stageProps.grid.lineColor} label="Line Color" />
   </Folder>
 </Pane>

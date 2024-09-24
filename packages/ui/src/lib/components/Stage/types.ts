@@ -1,5 +1,5 @@
-import { LayerRotation } from './effects/enums';
-import { type GridProps } from './effects/GridPass';
+import { type GridProps } from './layers/Grid/types';
+import { LayerRotation } from './layers/types';
 
 /**
  * Props for the Stage component
