@@ -2,7 +2,6 @@ export * from './Avatar';
 export * from './Button';
 export * from './CodeBlock';
 export * from './ColorMode';
-export * from './Field';
 export * from './Icon';
 export * from './Input';
 export * from './Link';

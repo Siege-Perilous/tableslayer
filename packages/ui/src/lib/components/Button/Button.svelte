@@ -2,6 +2,7 @@
   import type { ButtonProps } from './types';
   import { Loader } from '../Loading';
   import classNames from 'classnames';
+  /* @type {ButtonProps} */
   let {
     children,
     start,
@@ -10,7 +11,6 @@
     isDisabled = false,
     size = 'md',
     variant = 'primary',
-    class: className,
     ...restProps
   }: ButtonProps = $props();
 
@@ -20,11 +20,35 @@
     isLoading && 'btn-isLoading',
     isDisabled && 'btn--isDisabled',
     `btn--${variant}`,
-    className ?? ''
+    restProps.class ?? ''
   );
 
   const component = variant === 'link' ? 'a' : 'button';
 </script>
+
+<!--
+@component
+  ## Button
+
+  Button component is used to trigger an action or event.
+
+  @example
+  ```svelte
+  <Button>
+    {#snippet start()}
+      <Icon Icon={IconCheck} />
+    {/snippet}
+    Primary
+  </Button>
+  ```
+  @props
+  - `variant` - The variant of the button. Default is `primary`.
+  - `size` - The size of the button. Default is `md`.
+  - `isLoading` - The loading state of the button. Default is `false`.
+  - `isDisabled` - The disabled state of the button. Default is `false`.
+  - `start` - The start snippet of the button.
+  - `end` - The end snippet of the button.
+-->
 
 <svelte:element this={component} class={btnClasses} disabled={isDisabled} {...restProps}>
   {#if isLoading}
