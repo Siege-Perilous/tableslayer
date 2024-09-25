@@ -2,8 +2,8 @@
   "name": "@tableslayer/ui",
   "version": "0.0.1",
   "scripts": {
-    "dev": "pnpm check:watch",
-    "build": "vite build && npm run package",
+    "dev": "typedoc && pnpm check:watch",
+    "build": "svelte-kit sync && vite build && npm run package",
     "preview": "vite preview",
     "package": "svelte-kit sync && svelte-package && typedoc",
     "prepublishOnly": "npm run package",

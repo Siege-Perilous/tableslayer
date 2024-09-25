@@ -10,6 +10,7 @@
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
+    { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
     { name: 'Title', path: '/title' },

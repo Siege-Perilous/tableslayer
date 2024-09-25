@@ -11,6 +11,9 @@ coverage
 # svelte
 .svelte-kit
 
+# Typings for docs
+typedocgen.json
+
 # misc
 .DS_Store
 *.pem

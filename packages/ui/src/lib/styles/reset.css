@@ -77,6 +77,7 @@ meter {
 /* preformatted text - use only for this feature */
 :where(pre) {
   all: revert;
+  margin: 0;
   box-sizing: border-box;
 }
 

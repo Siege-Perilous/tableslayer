@@ -23,7 +23,7 @@
       spacing: 10,
       offset: new Vector2(5, 5),
       lineColor: '0xffffff',
-      lineThickness: 0.2
+      lineThickness: 1
     }
   });
 
@@ -47,7 +47,7 @@
     <Slider bind:value={stageProps.grid.spacing} label="Spacing" min={5} max={50} />
     <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={-100} max={100} step={1} />
     <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={-100} max={100} step={1} />
-    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={0} max={2} step={0.01} />
     <Color bind:value={stageProps.grid.lineColor} label="Line Color" />
   </Folder>
 </Pane>

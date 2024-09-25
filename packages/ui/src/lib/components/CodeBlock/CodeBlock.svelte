@@ -39,32 +39,32 @@
 <style>
   :global(.light) {
     color-scheme: light;
-    --shiki-foreground: #4c566a;
-    --shiki-background: var(--contrastLowest);
-    --shiki-token-constant: #b48ead;
-    --shiki-token-string: #a3be8c;
-    --shiki-token-comment: #d08770;
-    --shiki-token-keyword: #81a1c1;
-    --shiki-token-parameter: #8fbcbb;
-    --shiki-token-function: #5e81ac;
-    --shiki-token-string-expression: #ebcb8b;
-    --shiki-token-punctuation: #4c566a;
-    --shiki-token-link: #88c0d0;
+    --shiki-foreground: var(--fg);
+    --shiki-background: var(--bg);
+    --shiki-token-constant: #d33682;
+    --shiki-token-string: #2aa198;
+    --shiki-token-comment: #93a1a1;
+    --shiki-token-keyword: #6c71c4;
+    --shiki-token-parameter: #b58900;
+    --shiki-token-function: #268bd2;
+    --shiki-token-string-expression: #073642;
+    --shiki-token-punctuation: #657b83;
+    --shiki-token-link: #cb4b16;
   }
 
   :global(.dark) {
     color-scheme: dark;
-    --shiki-foreground: #cdd6f4;
-    --shiki-background: var(--contrastLowest);
-    --shiki-token-constant: #f38ba8;
-    --shiki-token-string: #a6e3a1;
-    --shiki-token-comment: #7f849c;
-    --shiki-token-keyword: #89b4fa;
-    --shiki-token-parameter: #94e2d5;
-    --shiki-token-function: #cba6f7;
-    --shiki-token-string-expression: #fab387;
-    --shiki-token-punctuation: #cdd6f4;
-    --shiki-token-link: #74c7ec;
+    --shiki-foreground: var(--fg);
+    --shiki-background: var(--bg);
+    --shiki-token-constant: #ff79c6;
+    --shiki-token-string: #f1fa8c;
+    --shiki-token-comment: #6272a4;
+    --shiki-token-keyword: #8be9fd;
+    --shiki-token-parameter: #bd93f9;
+    --shiki-token-function: #50fa7b;
+    --shiki-token-string-expression: #f8f8f2;
+    --shiki-token-punctuation: #ffb86c;
+    --shiki-token-link: #ff5555;
   }
   :global(.shiki) {
     font-family: var(--font-mono);
@@ -80,6 +80,8 @@
     font-family: var(--font-mono);
     max-width: 100%;
     overflow-x: auto;
+    border: var(--border-1);
+    display: block;
   }
   .codeBlock--inline {
     display: inline-block;
