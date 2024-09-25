@@ -19,5 +19,4 @@ export type ButtonProps = {
    */
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'ghost' | 'danger' | 'link';
-  className?: string;
 } & HTMLButtonAttributes;
