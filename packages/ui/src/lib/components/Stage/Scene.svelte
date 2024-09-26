@@ -47,8 +47,6 @@
   let gridMaterial = new GridMaterial(props.grid, renderTarget1.texture);
   gridMaterial.transparent = true;
 
-  let normalMaterial = new THREE.MeshBasicMaterial({ map: renderTarget2.texture });
-
   onMount(() => {
     let before = autoRender.current;
     autoRender.set(false);

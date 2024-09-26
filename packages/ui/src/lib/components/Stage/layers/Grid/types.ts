@@ -2,35 +2,52 @@ export type GridProps = {
   /**
    * The type of grid. 0 for square, 1 for hex
    */
-  type: GridType;
+  gridType: { value: number };
 
   /**
    * The opacity of the grid lines (0 to 1)
    */
-  opacity: number;
+  opacity: { value: number };
 
   /**
    * The grid spacing
    */
-  spacing: number;
+  spacing: { value: number };
 
   /**
    * Offset of the grid origin
    */
   offset: {
-    x: number;
-    y: number;
+    value: {
+      x: number;
+      y: number;
+    };
   };
 
   /**
    * Line thickness
    */
-  lineThickness: number;
+  lineThickness: { value: number };
 
   /**
    * Line color
    */
-  lineColor: string;
+  lineColor: { value: { r: number; g: number; b: number } };
+
+  /**
+   * Line thickness
+   */
+  shadowIntensity: { value: number };
+
+  /**
+   * Line thickness
+   */
+  shadowSize: { value: number };
+
+  /**
+   * Line color
+   */
+  shadowColor: { value: { r: number; g: number; b: number } };
 };
 
 export enum GridType {

@@ -17,7 +17,7 @@ export type StageProps = {
     /**
      * The background color represented as a hexadecimal string. If undefined, black is used as the default color.
      */
-    color: string;
+    color: { value: string };
 
     /**
      * Primary image of the background layer represented as a base64 string

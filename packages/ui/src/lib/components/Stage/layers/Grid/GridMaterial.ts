@@ -4,20 +4,15 @@ import vertexShader from './grid_vertex.glsl?raw';
 import type { GridProps } from './types';
 
 export class GridMaterial extends THREE.ShaderMaterial {
-  constructor(props: GridProps, tDiffuse: THREE.Texture) {
+  constructor(props: GridProps, tDiffuse: THREE.Texture, targetSize: THREE.Vector2 = new THREE.Vector2(0, 0)) {
     super({
       name: 'GridMaterial',
       fragmentShader,
       vertexShader,
       uniforms: {
+        ...props,
         tDiffuse: new THREE.Uniform(tDiffuse),
-        opacity: new THREE.Uniform(props.opacity),
-        spacing: new THREE.Uniform(props.spacing),
-        lineThickness: new THREE.Uniform(props.lineThickness),
-        lineColor: new THREE.Uniform(new THREE.Color(props.lineColor)),
-        offset: new THREE.Uniform(props.offset),
-        gridType: new THREE.Uniform(props.type),
-        targetSize: new THREE.Uniform(new THREE.Vector2(1, 1))
+        targetSize: new THREE.Uniform(targetSize)
       }
     });
   }
