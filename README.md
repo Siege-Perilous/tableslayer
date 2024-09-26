@@ -4,6 +4,8 @@ Table Slayer provides tools for game masters to project animated battle maps on 
 
 ## Development
 
+This repo requires certain Node and `pnpm` versions. These can be checked in `package.json`. If working in multiple Node based projects, you might want to use [nvm](https://github.com/nvm-sh/nvm) to manage your Node version and [corepack](https://nodejs.org/api/corepack.html#enabling-the-feature) (which comes with Node and needs to be enabled) to switch your package manager. If both are installed, it should auto-switch your versions as you enter the folder.
+
 `pnpm run dev` should open all the apps under their own port.
 
 To get started, edit the `.env` file in each `app` and run `pnpm run dev` to load local development.
