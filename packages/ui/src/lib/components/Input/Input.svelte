@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { InputProps } from './types';
-  let { value, placeholder, type, ...restProps }: InputProps = $props();
+  let { value = $bindable(), ...restProps }: InputProps = $props();
   import classNames from 'classnames';
 
   const inputClasses = classNames('input', restProps.class ?? '');
 </script>
 
-<input {type} {value} {placeholder} class={inputClasses} {...restProps} />
+<input bind:value {...restProps} class={inputClasses} />
 
 <style>
   .input {
