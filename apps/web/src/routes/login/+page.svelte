@@ -4,7 +4,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug from 'sveltekit-superforms';
   import { loginSchema } from '$lib/schemas';
-  import { Input, Button, Control, FieldErrors, Title, Link, Spacer } from '@tableslayer/ui';
+  import { Input, Button, Control, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.loginForm, {
@@ -14,7 +14,7 @@
   const { form: formData, enhance, message } = form;
 </script>
 
-<div class="login">
+<Panel class="login">
   <Title as="h1" size="lg">Sign in</Title>
   <Spacer size={2} />
   <p>Don't have an account? <Link href="/signup">Create an account</Link>.</p>
@@ -44,17 +44,15 @@
     <Button>Sign in</Button>
   </form>
   <Spacer />
-</div>
+</Panel>
 <SuperDebug data={$formData} display={false} />
 
 <style>
-  .login {
+  :global(.panel.login) {
     display: flex;
     flex-direction: column;
     max-width: 400px;
     padding: var(--size-8);
-    border-radius: var(--radius-2);
-    border: var(--border-1);
     margin: 20vh auto auto auto;
   }
 </style>

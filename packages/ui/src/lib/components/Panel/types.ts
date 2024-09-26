@@ -1,5 +1,6 @@
 import type { HTMLBaseAttributes } from 'svelte/elements';
 
-export type SpacerProps = {
-  size?: number;
+export type PanelProps = {
+  variant?: 'rounded' | 'cut';
+  borderWidth?: number;
 } & HTMLBaseAttributes;

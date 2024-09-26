@@ -6,6 +6,7 @@
   const routes = [
     { name: 'Avatar', path: '/avatar' },
     { name: 'Button', path: '/button' },
+    { name: 'Panel', path: '/panel' },
     { name: 'Color Mode', path: '/colormode' },
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Stage', path: '/stage' },

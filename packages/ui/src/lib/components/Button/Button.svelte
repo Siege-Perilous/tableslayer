@@ -66,7 +66,7 @@
 <style>
   :global(.light) {
     color-scheme: light;
-    --btn-bg: var(--bg);
+    --btn-bg: var(--contrastEmpty);
     --btn-bgHover: var(--primary-50);
     --btn-border: solid 2px var(--fg);
     --btn-borderHover: solid 2px var(--primary-600);
@@ -106,11 +106,11 @@
   }
   .btn--md {
     font-size: var(--font-size-1);
-    height: var(--size-7);
+    height: var(--size-8);
   }
   .btn--lg {
     font-size: var(--font-size-2);
-    height: var(--size-8);
+    height: var(--size-9);
   }
 
   .btn--primary {

@@ -10,9 +10,18 @@
 
 <style>
   .input {
-    height: var(--size-7);
+    height: var(--size-8);
     border: var(--border-1);
+    border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);
     padding: 0 var(--size-3);
+    background: var(--inputBg);
+    &:focus-visible {
+      outline: none;
+      border-color: var(--fg);
+    }
+  }
+  [data-fs-error] {
+    border-color: var(--textDanger);
   }
 </style>
