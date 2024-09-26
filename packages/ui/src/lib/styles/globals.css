@@ -14,8 +14,8 @@
   --contrastLowest: var(--gray-50);
   --textPrimary: var(--primary-600);
   --textMuted: var(--gray-400);
-  --textDanger: var(--yellow-600);
-  --border-1: solid var(--border-size-1) var(--contrastLow);
+  --textDanger: var(--yellow-800);
+  --border-1: solid var(--border-size-1) var(--contrastMedium);
   color: var(--fg);
 }
 
@@ -33,7 +33,7 @@
   --textPrimary: var(--primary-500);
   --textMuted: var(--gray-400);
   --textDanger: var(--yellow-200);
-  --border-1: solid var(--border-size-1) var(--contrastLow);
+  --border-1: solid var(--border-size-1) var(--contrastMedium);
   color: var(--fg);
 }
 
