@@ -47,8 +47,8 @@
     <List bind:value={stageProps.grid.gridType.value} label="Type" options={gridTypeOptions} />
     <Slider bind:value={stageProps.grid.opacity.value} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.spacing.value} label="Spacing" min={5} max={500} />
-    <Slider bind:value={stageProps.grid.offset.value.x} label="Offset X" min={-100} max={100} step={1} />
-    <Slider bind:value={stageProps.grid.offset.value.y} label="Offset Y" min={-100} max={100} step={1} />
+    <Slider bind:value={stageProps.grid.offset.value.x} label="Offset X" min={0} max={1} />
+    <Slider bind:value={stageProps.grid.offset.value.y} label="Offset Y" min={0} max={1} />
     <Slider bind:value={stageProps.grid.lineThickness.value} label="Line Thickness" min={1} max={20} step={0.01} />
     <!-- Use on:change callback here since this is modifying the color object directly which Svelte doesn't like -->
     <Color bind:value={stageProps.grid.lineColor.value} label="Line Color" />

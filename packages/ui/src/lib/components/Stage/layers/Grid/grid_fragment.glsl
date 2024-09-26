@@ -49,7 +49,7 @@ void main() {
   vec4 sceneColor = texture2D(tDiffuse, vUv);
 
   // Scale UV coords by the render target size
-  vec2 p = vUv * targetSize + offset;
+  vec2 p = vUv * targetSize + (offset * spacing);
 
   float grid = 0.0;
   float shadow = 0.0;

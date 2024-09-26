@@ -24,7 +24,7 @@
     }
   });
 
-  let quad: THREE.Mesh;
+  let quad: THREE.Mesh | undefined = $state(undefined);
 
   let renderCamera = new THREE.OrthographicCamera();
 
@@ -56,7 +56,7 @@
   });
 
   $effect(() => {
-    if ($backgroundImage) {
+    if (quad && $backgroundImage) {
       // Update the quad and render target sizes to match the image size
       const width = $backgroundImage.source.data.width ?? DEFAULT_IMAGE_WIDTH;
       const height = $backgroundImage.source.data.height ?? DEFAULT_IMAGE_HEIGHT;
@@ -96,7 +96,7 @@
   $effect(() => {});
 
   useTask(
-    (delta) => {
+    () => {
       if (!scene || !renderer) return;
       renderer.render(scene, $camera);
     },
