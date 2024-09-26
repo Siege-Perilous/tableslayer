@@ -1,3 +1,5 @@
+varying vec2 vUv;
+uniform sampler2D tDiffuse;
 uniform float opacity;
 uniform float spacing;
 uniform vec2 screenSize;
@@ -5,6 +7,7 @@ uniform vec2 offset;
 uniform float lineThickness;
 uniform vec3 lineColor;
 uniform int gridType; // 0 for square, 1 for hex
+uniform vec2 targetSize;
 
 #define PI 3.141592653589793
 
@@ -24,12 +27,12 @@ vec4 getHex(vec2 p) {
   return dot(h.xy, h.xy) < dot(h.zw, h.zw) ? vec4(h.xy, hC.xy) : vec4(h.zw, hC.zw + vec2(0.5, 1));
 }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+void main() {
   // Sample the scene texture
-  vec4 sceneColor = texture2D(inputBuffer, mod(vUv + 1.0, 2.0) - 1.0);
+  vec4 sceneColor = texture2D(tDiffuse, vUv);
 
   // Convert UV screen-space coordinates to screen pixel
-  vec2 p = vUv * screenSize + offset;
+  vec2 p = vUv * targetSize + offset;
 
   vec3 finalColor;
   if(gridType == 0) {
@@ -49,5 +52,5 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   // Modulate by opacity of the grid lines
   finalColor = mix(sceneColor.rgb, finalColor, opacity);
 
-  outputColor = vec4(finalColor, sceneColor.a);
+  gl_FragColor = vec4(finalColor, sceneColor.a);
 }

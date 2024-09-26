@@ -21,8 +21,8 @@
       type: GridType.Square,
       opacity: 1,
       spacing: 10,
-      offset: new Vector2(5, 5),
-      lineColor: '0xffffff',
+      offset: new Vector2(0, 0),
+      lineColor: '#ff0000',
       lineThickness: 1
     }
   });

@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { Canvas, T } from '@threlte/core';
-  import GridLayer from './layers/Grid/GridLayer.svelte';
-  import Layers from './layers/Layers.svelte';
+  import { Canvas } from '@threlte/core';
   import type { StageProps } from './types';
   import Scene from './Scene.svelte';
 
@@ -9,11 +7,5 @@
 </script>
 
 <Canvas>
-  <Scene />
-
-  <T.PerspectiveCamera makeDefault position={[0, 1, 5]} />
-
-  <Layers>
-    <GridLayer {...props.grid} />
-  </Layers>
+  <Scene {...props} />
 </Canvas>
