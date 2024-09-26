@@ -87,9 +87,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@fontsource/young-serif':
-        specifier: ^5.1.0
-        version: 5.1.0
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -1268,10 +1265,6 @@ packages:
   /@floating-ui/utils@0.2.7:
     resolution: {integrity: sha512-X8R8Oj771YRl/w+c1HqAC1szL8zWQRwFvgDwT129k9ACdBoud/+/rX9V0qiMl6LWUdP9voC2nDVZYPMQQsb6eA==}
     dev: true
-
-  /@fontsource/young-serif@5.1.0:
-    resolution: {integrity: sha512-Co85at1TfR7FCmF2VNIGy9ufjLbZvMZFEe2Mq298uHeGXkvQdk7zN13NqH54Lh6XO8GACz9DBENCxqolTnAkPA==}
-    dev: false
 
   /@gcornut/valibot-json-schema@0.31.0:
     resolution: {integrity: sha512-3xGptCurm23e7nuPQkdrE5rEs1FeTPHhAUsBuwwqG4/YeZLwJOoYZv+fmsppUEfo5y9lzUwNQrNqLS/q7HMc7g==}
