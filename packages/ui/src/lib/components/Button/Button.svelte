@@ -87,8 +87,8 @@
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
-    padding: 0 var(--size-3);
-    border-radius: var(--radius-4);
+    padding: 0 var(--size-2);
+    border-radius: var(--radius-2);
     display: inline-flex;
     align-items: center;
     justify-content: center;
