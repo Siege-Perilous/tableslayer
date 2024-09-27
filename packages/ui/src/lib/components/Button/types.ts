@@ -20,3 +20,9 @@ export type ButtonProps = {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'ghost' | 'danger' | 'link';
 } & HTMLButtonAttributes;
+
+export type IconButtonProps = {
+  children: Snippet;
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'ghost' | 'danger' | 'link';
+} & HTMLButtonAttributes;
