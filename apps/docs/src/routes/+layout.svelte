@@ -11,6 +11,7 @@
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
+    { name: 'IconButton', path: '/icon-button' },
     { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
