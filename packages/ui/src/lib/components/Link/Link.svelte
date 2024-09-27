@@ -23,7 +23,7 @@
     font-weight: var(--font-weight-6);
   }
   .link--primary {
-    color: var(--textPrimary);
+    color: var(--fgPrimary);
   }
   .link--fg {
     color: var(--fg);
@@ -32,7 +32,7 @@
     color: var(--bg);
   }
   .link--muted {
-    color: var(--textMuted);
+    color: var(--fgMuted);
   }
   .link:hover {
     text-decoration: underline;

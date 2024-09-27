@@ -12,6 +12,7 @@
 <style>
   .title {
     font-weight: var(--font-weight-6);
+    font-family: var(--font-serif);
   }
 
   .title-xs {
