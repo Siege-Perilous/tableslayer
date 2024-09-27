@@ -19,6 +19,7 @@
     &:focus-visible {
       outline: none;
       border-color: var(--fg);
+      background: var(--inputFocusBg);
     }
   }
   [data-fs-error] {

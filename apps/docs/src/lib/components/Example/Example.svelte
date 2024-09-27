@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { ColorMode, PropsTable, Title } from '@tableslayer/ui';
+  import { ColorMode, PropsTable, Title, Spacer } from '@tableslayer/ui';
   import type { ExampleProps } from './types';
-  let { children, propsName, title, layout, ...restProps }: ExampleProps = $props();
+  let { children, codeBlock, propsName, title, layout, ...restProps }: ExampleProps = $props();
   import classNames from 'classnames';
 
   const contentClasses = classNames('ex__content', layout && `ex__content--${layout}`);
 </script>
 
-<Title as="h2" size="md" style="margin-bottom: var(--size-5)">{title}</Title>
+<Title as="h2" size="md">{title}</Title>
+<Spacer size={5} />
 
 <div class="ex" {...restProps}>
   <ColorMode mode="light">
@@ -29,7 +30,13 @@
   </ColorMode>
 </div>
 
+{#if codeBlock}
+  <Spacer size={5} />
+  {@render codeBlock()}
+{/if}
+
 {#if propsName}
+  <Spacer size={5} />
   <PropsTable componentName={propsName} />
 {/if}
 

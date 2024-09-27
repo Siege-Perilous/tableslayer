@@ -1,7 +1,7 @@
 <script>
   import jsonData from '../../../../typedocgen.json';
   import Markdown from '@magidoc/plugin-svelte-marked';
-  import { Table, Th, Td, Title } from '@tableslayer/ui';
+  import { Table, Th, Td, Title, Spacer } from '@tableslayer/ui';
   export let componentName = '';
 
   const getComponentData = (componentName) => {
@@ -56,9 +56,11 @@
 
 {#if componentType}
   <Title as="h3" size="sm">{componentName} Properties</Title>
+  <Spacer size={2} />
 
   {#if extendedProps}
     <p><strong>Extends:</strong> {extendedProps}</p>
+    <Spacer />
   {/if}
 
   <Table>

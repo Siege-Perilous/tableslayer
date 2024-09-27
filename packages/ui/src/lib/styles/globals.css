@@ -19,6 +19,7 @@
   --border-1: solid var(--border-size-1) var(--contrastMedium);
   --surfaceBg: var(--contrastLowest);
   --inputBg: #f5f5f5;
+  --inputFocusBg: #fff;
   --inputBorderColor: var(--contrastMedium);
   color: var(--fg);
 }
@@ -39,7 +40,8 @@
   --textDanger: var(--yellow-200);
   --border-1: solid var(--border-size-1) var(--contrastMedium);
   --surfaceBg: var(--contrastLowest);
-  --inputBg: #000;
+  --inputBg: #1c1c1c;
+  --inputFocusBg: #222;
   --inputBorderColor: var(--contrastMedium);
   color: var(--fg);
 }
