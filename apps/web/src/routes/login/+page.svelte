@@ -51,7 +51,7 @@
   :global(.panel.login) {
     display: flex;
     flex-direction: column;
-    max-width: 400px;
+    max-width: var(--contain-smallForm);
     padding: var(--size-8);
     margin: 20vh auto auto auto;
   }

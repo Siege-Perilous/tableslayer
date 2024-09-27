@@ -1,8 +1,16 @@
 <script lang="ts">
   let { children } = $props();
   import '@tableslayer/ui/styles/globals.css';
-  import { ModeWatcher, toggleMode } from 'mode-watcher';
-  import { Button } from '@tableslayer/ui';
+  import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
+  import { Icon, IconButton } from '@tableslayer/ui';
+  import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
+
+  let isMenuOpen = $state(true);
+
+  const toggleMenu = () => {
+    isMenuOpen = !isMenuOpen;
+  };
+
   const routes = [
     { name: 'Avatar', path: '/avatar' },
     { name: 'Button', path: '/button' },
@@ -11,6 +19,7 @@
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Stage', path: '/stage' },
     { name: 'Icons', path: '/icons' },
+    { name: 'IconButton', path: '/icon-button' },
     { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
@@ -24,20 +33,29 @@
 
 <header>
   <div class="headerContainer">
-    <h2>Components</h2>
-    <Button onclick={toggleMode}>Toggle Mode</Button>
+    <div class="headerContainer__left">
+      <IconButton variant="ghost" title="Toggle menu" onclick={toggleMenu}>
+        <Icon Icon={IconMenu2} size={16} stroke={2} />
+      </IconButton>
+      <h2>Components</h2>
+    </div>
+    <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
+      <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
+    </IconButton>
   </div>
 </header>
 <div class="wrap">
-  <nav>
-    <ul>
-      {#each routes as route}
-        <li>
-          <a href={route.path}>{route.name}</a>
-        </li>
-      {/each}
-    </ul>
-  </nav>
+  {#if isMenuOpen}
+    <nav>
+      <ul>
+        {#each routes as route}
+          <li>
+            <a href={route.path}>{route.name}</a>
+          </li>
+        {/each}
+      </ul>
+    </nav>
+  {/if}
   <main>
     {@render children()}
   </main>
@@ -59,6 +77,11 @@
     display: flex;
     justify-content: space-between;
   }
+  .headerContainer__left {
+    display: flex;
+    align-items: center;
+    gap: var(--size-2);
+  }
   .wrap {
     display: flex;
     min-height: 100vh;
@@ -67,7 +90,7 @@
     gap: var(--size-8);
   }
   nav {
-    width: 200px;
+    min-width: 200px;
     background: var(--bg);
     padding: var(--size-4);
     padding-left: 0;

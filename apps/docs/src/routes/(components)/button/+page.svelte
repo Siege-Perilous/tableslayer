@@ -32,7 +32,7 @@ import { IconCheck } from '@tabler/icons-svelte';
   </Button>
   <Button variant="ghost">
     {#snippet start()}
-      <Icon Icon={IconGhost3} size="1.5rem" />
+      <Icon Icon={IconGhost3} size="1.25rem" />
     {/snippet}
     Ghost
   </Button>
