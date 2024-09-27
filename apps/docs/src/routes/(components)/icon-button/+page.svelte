@@ -12,7 +12,7 @@
     <Icon Icon={IconX} />
   </IconButton>
   <IconButton onclick={() => alert('hello')} variant="ghost">
-    <Icon Icon={IconGhost3} size="1.5rem" />
+    <Icon Icon={IconGhost3} size="1.5rem" stroke={2} />
   </IconButton>
   <IconButton onclick={() => alert('hello')} variant="link">
     <Icon Icon={IconLink} />

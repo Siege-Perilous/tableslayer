@@ -1,8 +1,9 @@
 <script lang="ts">
   let { children } = $props();
   import '@tableslayer/ui/styles/globals.css';
-  import { ModeWatcher, toggleMode } from 'mode-watcher';
-  import { Button } from '@tableslayer/ui';
+  import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
+  import { Icon, IconButton } from '@tableslayer/ui';
+  import { IconMoon, IconSun } from '@tabler/icons-svelte';
   const routes = [
     { name: 'Avatar', path: '/avatar' },
     { name: 'Button', path: '/button' },
@@ -26,7 +27,9 @@
 <header>
   <div class="headerContainer">
     <h2>Components</h2>
-    <Button onclick={toggleMode}>Toggle Mode</Button>
+    <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
+      <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
+    </IconButton>
   </div>
 </header>
 <div class="wrap">
