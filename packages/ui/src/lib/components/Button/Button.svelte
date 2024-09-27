@@ -50,7 +50,7 @@
   - `end` - The end snippet of the button.
 -->
 
-<svelte:element this={component} class={btnClasses} disabled={isDisabled} {...restProps}>
+<svelte:element this={component} disabled={isDisabled} {...restProps} class={btnClasses}>
   {#if isLoading}
     <Loader />
   {/if}

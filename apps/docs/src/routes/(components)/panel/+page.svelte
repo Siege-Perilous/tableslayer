@@ -9,8 +9,8 @@
 
 <style>
   :global(.panel.panelExample) {
-    width: 100px;
-    height: 100px;
+    width: 200px;
     padding: var(--size-4);
+    aspect-ratio: var(--ratio-widescreen);
   }
 </style>
