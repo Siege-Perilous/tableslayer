@@ -11,7 +11,7 @@
 <style>
   .input {
     height: var(--size-8);
-    border: var(--border-1);
+    border: var(--borderThin);
     border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);
     padding: 0 var(--size-3);
@@ -23,6 +23,6 @@
     }
   }
   [data-fs-error] {
-    border-color: var(--textDanger);
+    border-color: var(--fgDanger);
   }
 </style>

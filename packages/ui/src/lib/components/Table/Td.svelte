@@ -13,6 +13,6 @@
   .td {
     text-align: left;
     padding: var(--size-1) var(--size-3);
-    border-bottom: var(--border-1);
+    border-bottom: var(--borderThin);
   }
 </style>

@@ -45,7 +45,7 @@
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    border: var(--border-1);
+    border: var(--borderThin);
   }
   .ex__block {
     padding: var(--size-5);

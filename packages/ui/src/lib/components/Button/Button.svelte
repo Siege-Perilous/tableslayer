@@ -157,7 +157,7 @@
   .btn--link {
     background: none;
     border-color: transparent;
-    color: var(--textPrimary);
+    color: var(--fgPrimary);
   }
   .btn--link:hover {
     background: none;

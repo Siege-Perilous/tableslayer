@@ -80,7 +80,7 @@
     font-family: var(--font-mono);
     max-width: 100%;
     overflow-x: auto;
-    border: var(--border-1);
+    border: var(--borderThin);
     border-color: var(--contrastEmpty);
     display: block;
   }

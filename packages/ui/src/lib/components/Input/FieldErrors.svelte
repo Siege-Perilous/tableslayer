@@ -24,7 +24,7 @@
   .fieldError {
     display: inline-flex;
     gap: var(--size-1);
-    color: var(--textDanger);
+    color: var(--fgDanger);
     font-size: var(--font-size-1);
     font-weight: var(--font-weight-6);
     margin-top: var(--size-1);

@@ -14,6 +14,6 @@
     text-align: left;
     font-weight: var(--font-weight-6);
     padding: var(--size-1) var(--size-3);
-    border-bottom: var(--border-1);
+    border-bottom: var(--borderThin);
   }
 </style>

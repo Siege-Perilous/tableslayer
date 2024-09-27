@@ -832,11 +832,8 @@
   --animation-float: float 3s var(--ease-in-out-3) infinite;
   --animation-bounce: bounce 2s var(--ease-squish-2) infinite;
   --animation-pulse: pulse 2s var(--ease-out-3) infinite;
-  --border-size-1: 1px;
-  --border-size-2: 2px;
-  --border-size-3: 5px;
-  --border-size-4: 10px;
-  --border-size-5: 25px;
+  --borderWidthThin: 1px;
+  --borderWidthThick: 2px;
   --radius-1: 2px;
   --radius-2: 5px;
   --radius-3: 1rem;
