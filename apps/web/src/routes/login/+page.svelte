@@ -1,9 +1,10 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
-  import { Field, Control, Label, FieldErrors } from 'formsnap';
+  import { Field } from 'formsnap';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug from 'sveltekit-superforms';
   import { loginSchema } from '$lib/schemas';
+  import { Input, Button, Control, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.loginForm, {
@@ -13,26 +14,45 @@
   const { form: formData, enhance, message } = form;
 </script>
 
-<h1>Sign in</h1>
-<form method="POST" action="?/login" use:enhance>
-  <Field {form} name="email">
-    <Control let:attrs>
-      <Label>Email</Label>
-      <input {...attrs} type="email" bind:value={$formData.email} />
-    </Control>
-    <FieldErrors />
-  </Field>
-  <Field {form} name="password">
-    <Control let:attrs>
-      <Label>Password</Label>
-      <input {...attrs} type="password" bind:value={$formData.password} />
-    </Control>
-    <FieldErrors />
-  </Field>
-  {#if $message}
-    <p>{$message.text}</p>
-  {/if}
-  <button>Submit</button>
-</form>
-<a href="/signup">Create an account</a>
-<SuperDebug data={$formData} />
+<Panel class="login">
+  <Title as="h1" size="lg">Sign in</Title>
+  <Spacer size={2} />
+  <p>Don't have an account? <Link href="/signup">Create an account</Link>.</p>
+  <Spacer size={8} />
+  <form method="POST" action="?/login" use:enhance>
+    <Field {form} name="email">
+      <Control label="Email">
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="email" bind:value={$formData.email} />
+        {/snippet}
+      </Control>
+      <FieldErrors />
+    </Field>
+    <Spacer />
+    <Field {form} name="password">
+      <Control label="Password">
+        {#snippet children({ attrs })}
+          <Input type="password" {...attrs} bind:value={$formData.password} />
+        {/snippet}
+      </Control>
+      <FieldErrors />
+    </Field>
+    {#if $message}
+      <p>{$message.text}</p>
+    {/if}
+    <Spacer />
+    <Button>Sign in</Button>
+  </form>
+  <Spacer />
+</Panel>
+<SuperDebug data={$formData} display={false} />
+
+<style>
+  :global(.panel.login) {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    padding: var(--size-8);
+    margin: 20vh auto auto auto;
+  }
+</style>
