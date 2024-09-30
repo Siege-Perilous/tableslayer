@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Avatar, Button, Title } from '@tableslayer/ui';
+  import { Avatar, Button, Title, Popover } from '@tableslayer/ui';
   import { toggleMode } from 'mode-watcher';
   let { data, children } = $props();
   const { user } = data;
@@ -8,8 +8,14 @@
 <header>
   <div class="header_container">
     <Title as="p" size="md">Table Slayer</Title>
-    <Avatar src={user.avatar} alt={user?.name} initials={user.name.charAt(0)} size="lg" />
-    <Button href="/logout" variant="link">logout</Button>
+    <Popover>
+      {#snippet trigger()}
+        <Avatar src={user?.avatar} alt={user?.name} initials={user?.name.charAt(0)} size="md" />
+      {/snippet}
+      {#snippet content()}
+        <Button href="/logout" variant="link">logout</Button>
+      {/snippet}
+    </Popover>
   </div>
 </header>
 
@@ -20,7 +26,7 @@
 <style>
   header {
     background: var(--bg);
-    padding: var(--size-4);
+    padding: var(--size-2);
     border-bottom: var(--borderThin);
   }
   .header_container {
@@ -28,5 +34,6 @@
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
 </style>

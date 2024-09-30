@@ -24,6 +24,7 @@
     { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
+    { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Title', path: '/title' },
     { name: 'ToolTip', path: '/tooltip' }
