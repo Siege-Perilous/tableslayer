@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Avatar, Button, Title, Popover } from '@tableslayer/ui';
+  import { AvatarPopover, Button, Title, Popover } from '@tableslayer/ui';
   import { toggleMode } from 'mode-watcher';
   let { data, children } = $props();
   const { user } = data;
@@ -8,15 +8,13 @@
 <header>
   <div class="header_container">
     <Title as="p" size="md">Table Slayer</Title>
-    <Popover>
-      {#snippet trigger()}
-        <Avatar src={user?.avatar} alt={user?.name} initials={user?.name.charAt(0)} size="md" />
-      {/snippet}
+
+    <AvatarPopover src={user?.avatar}>
       {#snippet content()}
         {user?.email}
         <Button href="/logout" variant="link">logout</Button>
       {/snippet}
-    </Popover>
+    </AvatarPopover>
   </div>
 </header>
 

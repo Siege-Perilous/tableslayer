@@ -21,7 +21,7 @@
   .avatarPopoverTrigger {
     display: flex;
     align-items: center;
-    gap: var(--size-2);
+    gap: var(--size-1);
     padding-right: var(--size-2);
     background: var(--contrastMedium);
     border-radius: var(--radius-3);
