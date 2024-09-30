@@ -32,7 +32,8 @@
     "!dist/**/*.spec.*"
   ],
   "peerDependencies": {
-    "svelte": "^5.0.0-next.257"
+    "svelte": "^5.0.0-next.260",
+    "@melt-ui/svelte": "^0.83.0"
   },
   "devDependencies": {
     "@magidoc/plugin-svelte-marked": "^6.0.1",
@@ -45,7 +46,7 @@
     "@tableslayer/tsconfig": "workspace:*",
     "@types/marked": "^6.0.0",
     "marked": "^14.1.2",
-    "svelte": "5.0.0-next.257",
+    "svelte": "5.0.0-next.260",
     "svelte-check": "^4.0.4",
     "typedoc": "^0.26.7",
     "typescript": "^5.6.2",
