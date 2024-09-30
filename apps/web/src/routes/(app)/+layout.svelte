@@ -13,6 +13,7 @@
         <Avatar src={user?.avatar} alt={user?.name} initials={user?.name.charAt(0)} size="md" />
       {/snippet}
       {#snippet content()}
+        {user?.email}
         <Button href="/logout" variant="link">logout</Button>
       {/snippet}
     </Popover>

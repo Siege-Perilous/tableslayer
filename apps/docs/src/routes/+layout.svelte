@@ -14,6 +14,7 @@
 
   const routes = [
     { name: 'Avatar', path: '/avatar' },
+    { name: 'AvatarPopover', path: '/avatar-popover' },
     { name: 'Button', path: '/button' },
     { name: 'Panel', path: '/panel' },
     { name: 'Color Mode', path: '/colormode' },
