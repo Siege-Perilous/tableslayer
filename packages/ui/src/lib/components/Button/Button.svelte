@@ -50,7 +50,7 @@
   - `end` - The end snippet of the button.
 -->
 
-<svelte:element this={component} class={btnClasses} disabled={isDisabled} {...restProps}>
+<svelte:element this={component} disabled={isDisabled} {...restProps} class={btnClasses}>
   {#if isLoading}
     <Loader />
   {/if}
@@ -66,7 +66,7 @@
 <style>
   :global(.light) {
     color-scheme: light;
-    --btn-bg: var(--bg);
+    --btn-bg: var(--contrastEmpty);
     --btn-bgHover: var(--primary-50);
     --btn-border: solid 2px var(--fg);
     --btn-borderHover: solid 2px var(--primary-600);
@@ -87,8 +87,8 @@
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
-    padding: 0 var(--size-3);
-    border-radius: var(--radius-4);
+    padding: 0 var(--size-2);
+    border-radius: var(--radius-2);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -106,11 +106,11 @@
   }
   .btn--md {
     font-size: var(--font-size-1);
-    height: var(--size-7);
+    height: var(--size-8);
   }
   .btn--lg {
     font-size: var(--font-size-2);
-    height: var(--size-8);
+    height: var(--size-9);
   }
 
   .btn--primary {
@@ -157,7 +157,7 @@
   .btn--link {
     background: none;
     border-color: transparent;
-    color: var(--textPrimary);
+    color: var(--fgPrimary);
   }
   .btn--link:hover {
     background: none;

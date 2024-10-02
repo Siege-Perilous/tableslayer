@@ -4,34 +4,45 @@
 
 .light {
   color-scheme: light;
-  --bg: white;
+  --bg: #e5e5e5;
   --fg: black;
   --contrastFull: black;
-  --consttrastHighest: var(--gray-700);
-  --contrastHigh: var(--gray-500);
-  --contrastMedium: var(--gray-300);
-  --contrastLow: var(--gray-100);
-  --contrastLowest: var(--gray-50);
-  --textPrimary: var(--primary-600);
-  --textMuted: var(--gray-400);
-  --border-1: solid var(--border-size-1) var(--contrastLow);
+  --consttrastHighest: #111;
+  --contrastHigh: #222;
+  --contrastMedium: #ccc;
+  --contrastLow: #ddd;
+  --contrastLowest: #eee;
+  --contrastEmpty: #fff;
+  --fgPrimary: var(--primary-600);
+  --fgMuted: #666;
+  --fgDanger: var(--yellow-800);
+  --borderThin: solid var(--borderWidthThin) var(--contrastMedium);
+  --surfaceBg: var(--contrastLowest);
+  --inputBg: #f5f5f5;
+  --inputFocusBg: #fff;
+  --inputBorderColor: var(--contrastMedium);
   color: var(--fg);
 }
 
 .dark {
   color-scheme: dark;
-  --bg: black;
+  --bg: #151515;
   --fg: white;
   --contrastFull: white;
-  --consttrastHighest: var(--gray-300);
-  --contrastHigh: var(--gray-500);
-  --contrastMedium: var(--gray-800);
-  --contrastLow: var(--gray-900);
-  --contrastLowest: var(--gray-950);
-  --contrastEmpty: black;
-  --textPrimary: var(--primary-500);
-  --textMuted: var(--gray-400);
-  --border-1: solid var(--border-size-1) var(--contrastLow);
+  --consttrastHighest: #eee;
+  --contrastHigh: #aaa;
+  --contrastMedium: #333;
+  --contrastLow: #222;
+  --contrastLowest: #111;
+  --contrastEmpty: #000;
+  --fgPrimary: var(--primary-500);
+  --fgMuted: #ccc;
+  --fgDanger: var(--yellow-200);
+  --borderThin: solid var(--borderWidthThin) var(--contrastMedium);
+  --surfaceBg: var(--contrastLowest);
+  --inputBg: #1c1c1c;
+  --inputFocusBg: #222;
+  --inputBorderColor: var(--contrastMedium);
   color: var(--fg);
 }
 
