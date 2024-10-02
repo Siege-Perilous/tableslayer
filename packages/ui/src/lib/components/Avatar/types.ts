@@ -1,3 +1,4 @@
+import type { Snippet } from 'svelte';
 import type { HTMLBaseAttributes } from 'svelte/elements';
 
 export type AvatarProps = {
@@ -7,3 +8,9 @@ export type AvatarProps = {
   isLoading?: boolean;
   size?: 'sm' | 'md' | 'lg';
 } & HTMLBaseAttributes;
+
+export type AvatarPopoverProps = {
+  src: AvatarProps['src'];
+  size?: AvatarProps['size'];
+  content: Snippet;
+};

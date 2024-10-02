@@ -4,6 +4,7 @@
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
   import { Icon, IconButton } from '@tableslayer/ui';
   import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
+  import { page } from '$app/stores';
 
   let isMenuOpen = $state(true);
 
@@ -13,6 +14,7 @@
 
   const routes = [
     { name: 'Avatar', path: '/avatar' },
+    { name: 'AvatarPopover', path: '/avatar-popover' },
     { name: 'Button', path: '/button' },
     { name: 'Panel', path: '/panel' },
     { name: 'Color Mode', path: '/colormode' },
@@ -23,6 +25,7 @@
     { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
+    { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Title', path: '/title' },
     { name: 'ToolTip', path: '/tooltip' }
@@ -49,7 +52,7 @@
     <nav>
       <ul>
         {#each routes as route}
-          <li>
+          <li class:isActive={route.path === $page.url.pathname}>
             <a href={route.path}>{route.name}</a>
           </li>
         {/each}
@@ -98,6 +101,11 @@
     li {
       font-size: var(--font-size-1);
     }
+    li.isActive {
+      a {
+        color: var(--fgPrimary);
+      }
+    }
     a {
       font-weight: var(--font-weight-6);
       display: block;
@@ -105,7 +113,7 @@
       line-height: var(--font-lineheight-5);
     }
     a:hover {
-      color: var(--primary-500);
+      color: var(--fgPrimary);
     }
   }
   main {
