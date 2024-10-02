@@ -1,5 +1,3 @@
-varying vec2 vUv;
-
 uniform int gridType; // 0 for square, 1 for hex
 uniform float opacity;
 uniform float spacing;
@@ -9,9 +7,7 @@ uniform vec3 lineColor;
 uniform float shadowIntensity;
 uniform float shadowSize;
 uniform vec3 shadowColor;
-
-uniform sampler2D tDiffuse;
-uniform vec2 targetSize;
+uniform vec2 uResolution;
 
 #define PI 3.141592653589793
 const vec2 s = vec2(1.0, 1.7320508); // For hexagonal grid calculations
@@ -44,12 +40,9 @@ vec2 getHex(vec2 p) {
   return dot(h.xy, h.xy) < dot(h.zw, h.zw) ? h.xy : h.zw;
 }
 
-void main() {
-  // Sample the scene texture
-  vec4 sceneColor = texture2D(tDiffuse, vUv);
-
+void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
   // Scale UV coords by the render target size
-  vec2 p = vUv * targetSize + (offset * spacing);
+  vec2 p = uv * uResolution + (offset * spacing);
 
   float grid = 0.0;
   float shadow = 0.0;
@@ -63,8 +56,8 @@ void main() {
     shadow = smoothstep(1.0 - lineThickness / 100.0 * shadowSize, 1.0, hexValue);
   }
 
-  vec4 shadedScene = vec4(mix(sceneColor.rgb, shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity), 1.0);
+  vec4 shadedScene = vec4(mix(inputColor.rgb, shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity), 1.0);
   vec4 finalColor = vec4(mix(shadedScene.rgb, lineColor.rgb / 255.0, grid * opacity), 1.0);
 
-  gl_FragColor = finalColor;
+  outputColor = finalColor;
 }

@@ -8,6 +8,6 @@
 
 <style>
   .stage-wrapper {
-    height: 500px;
+    height: 800px;
   }
 </style>
