@@ -1,6 +1,6 @@
 <script lang="ts">
   import { AvatarPopover, Button, Title, Link, IconButton, Icon } from '@tableslayer/ui';
-  import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
+  import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
   const { user } = data;
