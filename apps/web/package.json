@@ -29,6 +29,7 @@
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@melt-ui/pp": "^0.3.2",
     "@node-rs/argon2": "^1.8.3",
+    "@tabler/icons-svelte": "^3.19.0",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.56.2",
     "@tursodatabase/api": "^1.8.1",

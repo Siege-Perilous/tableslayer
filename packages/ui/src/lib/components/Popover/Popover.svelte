@@ -3,14 +3,24 @@
   import { fade } from 'svelte/transition';
   import type { PopoverProps } from './types';
 
-  let { isOpen = false, trigger, content, positioning = { placement: 'bottom' } }: PopoverProps = $props();
+  let {
+    isOpen = false,
+    trigger,
+    content,
+    positioning = { placement: 'bottom' },
+    portal = null,
+    forceVisible,
+    closeOnOutsideClick = true
+  }: PopoverProps = $props();
 
   const {
     elements: { trigger: triggerAction, content: contentAction, close },
     states
   } = createPopover({
     positioning,
-    forceVisible: true
+    forceVisible,
+    portal,
+    closeOnOutsideClick
   });
 
   const sync = createSync(states);
@@ -37,8 +47,9 @@
   }
   .popContent {
     padding: var(--size-1) var(--size-2);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-color);
+    background: var(--bg);
+    color: var(--fg);
+    border: var(--borderThin);
     border-radius: var(--radius-1);
     box-shadow: var(--shadow-1);
     z-index: 1000;

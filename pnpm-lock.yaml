@@ -99,6 +99,9 @@ importers:
       '@node-rs/argon2':
         specifier: ^1.8.3
         version: 1.8.3
+      '@tabler/icons-svelte':
+        specifier: ^3.19.0
+        version: 3.19.0(svelte@5.0.0-next.260)
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -2549,6 +2552,7 @@ packages:
 
   libsql@0.4.5:
     resolution: {integrity: sha512-sorTJV6PNt94Wap27Sai5gtVLIea4Otb2LUiAUyr3p6BPOScGMKGt5F1b5X/XgkNtcsDKeX5qfeBDj+PdShclQ==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
