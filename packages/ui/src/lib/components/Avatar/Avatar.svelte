@@ -35,13 +35,13 @@
     height: var(--size-6);
   }
   .avatar--md {
-    width: var(--size-7);
-    height: var(--size-7);
+    width: var(--size-8);
+    height: var(--size-8);
     font-size: var(--font-size-4);
   }
   .avatar--lg {
-    width: var(--size-8);
-    height: var(--size-8);
+    width: var(--size-9);
+    height: var(--size-9);
   }
   .avatar__image {
     width: 100%;
