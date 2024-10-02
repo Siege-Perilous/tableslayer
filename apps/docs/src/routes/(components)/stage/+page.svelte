@@ -1,17 +1,13 @@
 <script lang="ts">
-  import { Stage } from '@tableslayer/ui';
-  import { Canvas } from '@threlte/core';
+  import { StageWrapper } from '@tableslayer/ui';
 </script>
 
-<div class="canvasTest">
-  <Canvas>
-    <Stage />
-  </Canvas>
+<div class="stage-wrapper">
+  <StageWrapper />
 </div>
 
 <style>
-  .canvasTest {
-    width: 100%;
-    height: 500px;
+  .stage-wrapper {
+    height: 800px;
   }
 </style>
