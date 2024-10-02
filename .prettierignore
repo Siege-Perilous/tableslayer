@@ -20,3 +20,8 @@ yarn.lock
 # turbo
 .turbo
 .vercel
+
+#shaders
+**/*.glsl
+**/*.frag
+**/*.vert
