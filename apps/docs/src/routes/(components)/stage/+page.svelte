@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { GridType, Stage, type StageProps } from '@tableslayer/ui';
+  import { GridType, Stage } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
   const stageProps = $state(StageDefaultProps);
