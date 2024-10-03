@@ -7,5 +7,5 @@
 </script>
 
 <Canvas>
-  <Scene {...props} />
+  <Scene {props} />
 </Canvas>

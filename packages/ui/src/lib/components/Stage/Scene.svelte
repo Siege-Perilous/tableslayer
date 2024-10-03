@@ -8,7 +8,7 @@
   import MapLayer from './layers/Map/MapLayer.svelte';
   import GridLayer from './layers/Grid/GridLayer.svelte';
 
-  let props: StageProps = $props();
+  let { props }: { props: StageProps } = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
