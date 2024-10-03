@@ -18,7 +18,8 @@
     "@tabler/icons-svelte": "^3.19.0",
     "@tableslayer/ui": "workspace:*",
     "classnames": "^2.5.1",
-    "mode-watcher": "^0.4.1"
+    "mode-watcher": "^0.4.1",
+    "svelte-tweakpane-ui": "^1.3.3"
   },
   "devDependencies": {
     "@melt-ui/pp": "^0.3.2",

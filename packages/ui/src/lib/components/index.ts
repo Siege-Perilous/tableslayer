@@ -12,7 +12,6 @@ export * from './Popover';
 export { default as PropsTable } from './PropsTable/PropsTable.svelte';
 export * from './Spacer';
 export * from './Stage';
-export * from './StageWrapper';
 export * from './Table';
 export * from './Title';
 export * from './ToolTip';
