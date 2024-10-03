@@ -14,14 +14,8 @@
   composer.addPass(gridPass);
 
   $effect(() => {
-    gridPass.mainCamera = $camera;
-  });
-
-  $effect(() => {
-    gridEffect.updateProps(props);
-  });
-
-  $effect(() => {
     gridEffect.resolution = new THREE.Vector2($size.width, $size.height);
+    gridPass.mainCamera = $camera;
+    gridEffect.updateProps(props);
   });
 </script>
