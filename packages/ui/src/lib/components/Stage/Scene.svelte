@@ -17,7 +17,6 @@
   composer.addPass(renderPass);
 
   onMount(() => {
-    console.log('mounting Scene');
     let before = autoRender.current;
     autoRender.set(false);
     return () => {
@@ -32,7 +31,6 @@
 
   // Screen size updated
   $effect(() => {
-    console.log('update screen size');
     composer.setSize($size.width, $size.height);
     renderer.setClearColor(new THREE.Color(props.backgroundColor));
   });
