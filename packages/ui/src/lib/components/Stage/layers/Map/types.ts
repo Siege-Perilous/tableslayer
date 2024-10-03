@@ -2,5 +2,8 @@
  * Props for the Map layer
  */
 export type MapProps = {
-  rotation: 0;
+  /**
+   * Rotation of the map relative to the stage
+   */
+  rotation: number;
 };

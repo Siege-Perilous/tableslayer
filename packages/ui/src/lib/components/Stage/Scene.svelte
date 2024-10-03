@@ -3,21 +3,20 @@
   import { onMount } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import { OrbitControls } from '@threlte/extras';
-  import { EffectComposer, EffectPass, RenderPass } from 'postprocessing';
-  import { GridEffect } from './layers/Grid/GridEffect';
+  import { EffectComposer, RenderPass } from 'postprocessing';
   import type { StageProps } from './types';
   import MapLayer from './layers/Map/MapLayer.svelte';
+  import GridLayer from './layers/Grid/GridLayer.svelte';
 
   let props: StageProps = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   const composer = new EffectComposer(renderer);
-
-  const gridEffect = new GridEffect(props.grid);
+  const renderPass = new RenderPass(scene);
+  composer.addPass(renderPass);
 
   onMount(() => {
-    console.log('mounting Scene');
     let before = autoRender.current;
     autoRender.set(false);
     return () => {
@@ -27,24 +26,13 @@
 
   // Camera updated
   $effect(() => {
-    console.log('update composer');
-    composer.removeAllPasses();
-    composer.addPass(new RenderPass(scene, $camera));
-    composer.addPass(new EffectPass($camera, gridEffect));
-  });
-
-  // Props changing
-  $effect(() => {
-    console.log('update grid props');
-    gridEffect.updateProps(props.grid);
+    renderPass.mainCamera = $camera;
   });
 
   // Screen size updated
   $effect(() => {
-    console.log('update screen size');
     composer.setSize($size.width, $size.height);
     renderer.setClearColor(new THREE.Color(props.backgroundColor));
-    gridEffect.resolution = new THREE.Vector2($size.width, $size.height);
   });
 
   useTask(
@@ -63,4 +51,5 @@
   />
 </T.OrthographicCamera>
 
-<MapLayer {...props.map} />
+<MapLayer props={props.map} />
+<GridLayer props={props.grid} {composer} />

@@ -3,7 +3,7 @@
   import { GridType, Stage, type StageProps } from '@tableslayer/ui';
 
   const stageProps: StageProps = $state({
-    backgroundColor: '#505050',
+    backgroundColor: '#0b0b0c',
     map: {
       rotation: 0
     },
@@ -14,9 +14,9 @@
       offset: { x: 0, y: 0 },
       lineColor: { r: 230, g: 230, b: 230 },
       lineThickness: 2,
-      shadowIntensity: 0.7,
+      shadowIntensity: 1,
       shadowColor: { r: 0, g: 0, b: 0 },
-      shadowSize: 1.2
+      shadowSize: 2
     }
   });
 
@@ -31,7 +31,7 @@
 </div>
 
 <!-- DEBUG UI -->
-<Pane position="draggable">
+<Pane position="draggable" title="Settings">
   <Folder title="Map">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
   </Folder>
@@ -53,5 +53,6 @@
 <style>
   .stage-wrapper {
     height: 800px;
+    border: 1px solid white;
   }
 </style>

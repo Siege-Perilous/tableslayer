@@ -87,7 +87,6 @@
   }
   .wrap {
     display: flex;
-    min-height: 100vh;
     max-width: var(--contain-desktop);
     margin: 0 auto;
     gap: var(--size-8);

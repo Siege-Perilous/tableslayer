@@ -1,13 +1,13 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T } from '@threlte/core';
-  import { ImageMaterial } from './ImageMaterial';
+  import { ImageMaterial } from '../../materials/ImageMaterial';
   import { useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
   import backgroundImageUrl from './sword_coast.jpg';
   import type { MapProps } from './types';
 
-  let props: MapProps = $props();
+  let { props }: { props: MapProps } = $props();
 
   const DEFAULT_IMAGE_WIDTH = 1920;
   const DEFAULT_IMAGE_HEIGHT = 1080;
