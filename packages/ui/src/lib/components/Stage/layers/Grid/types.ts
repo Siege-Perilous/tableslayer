@@ -1,8 +1,13 @@
+export enum GridType {
+  Square = 0,
+  Hex = 1
+}
+
 export type GridProps = {
   /**
    * The type of grid. 0 for square, 1 for hex
    */
-  gridType: number;
+  gridType: GridType;
 
   /**
    * The opacity of the grid lines (0 to 1)
@@ -47,8 +52,3 @@ export type GridProps = {
    */
   shadowColor: { r: number; g: number; b: number };
 };
-
-export enum GridType {
-  Square = 0,
-  Hex = 1
-}

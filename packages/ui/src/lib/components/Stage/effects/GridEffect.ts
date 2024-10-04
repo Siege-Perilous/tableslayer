@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Effect } from 'postprocessing';
 import * as THREE from 'three';
-import type { GridProps } from './types';
+import type { GridProps } from '../layers/Grid/types';
 
-import fragmentShader from './GridShader.frag?raw';
+import fragmentShader from '../shaders/GridShader.frag?raw';
 
 export class GridEffect extends Effect {
   constructor(props: GridProps) {

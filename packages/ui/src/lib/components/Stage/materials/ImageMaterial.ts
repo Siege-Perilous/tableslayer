@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import fragmentShader from './image_fragment.glsl?raw';
-import vertexShader from './image_vertex.glsl?raw';
+import fragmentShader from '../shaders/ImageShader.frag?raw';
+import vertexShader from '../shaders/ImageShader.vert?raw';
 
 export class ImageMaterial extends THREE.ShaderMaterial {
   constructor(options?: { map?: THREE.Texture }) {
