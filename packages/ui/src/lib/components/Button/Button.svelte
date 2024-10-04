@@ -11,6 +11,7 @@
     isDisabled = false,
     size = 'md',
     variant = 'primary',
+    href,
     ...restProps
   }: ButtonProps = $props();
 
@@ -23,7 +24,7 @@
     restProps.class ?? ''
   );
 
-  const component = variant === 'link' ? 'a' : 'button';
+  const component = href !== undefined ? 'a' : 'button';
 </script>
 
 <!--
@@ -50,7 +51,7 @@
   - `end` - The end snippet of the button.
 -->
 
-<svelte:element this={component} disabled={isDisabled} {...restProps} class={btnClasses}>
+<svelte:element this={component} {href} disabled={isDisabled} {...restProps} class={btnClasses}>
   {#if isLoading}
     <Loader />
   {/if}
