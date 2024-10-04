@@ -17,9 +17,8 @@
     { name: 'AvatarPopover', path: '/avatar-popover' },
     { name: 'Button', path: '/button' },
     { name: 'Panel', path: '/panel' },
-    { name: 'Color Mode', path: '/colormode' },
     { name: 'CodeBlock', path: '/codeblock' },
-    { name: 'Stage', path: '/stage' },
+    { name: 'Color Mode', path: '/colormode' },
     { name: 'Icons', path: '/icons' },
     { name: 'IconButton', path: '/icon-button' },
     { name: 'Input', path: '/input' },
@@ -27,6 +26,7 @@
     { name: 'Loader', path: '/loading' },
     { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
+    { name: 'Stage', path: '/stage' },
     { name: 'Title', path: '/title' },
     { name: 'ToolTip', path: '/tooltip' }
   ];
@@ -87,7 +87,6 @@
   }
   .wrap {
     display: flex;
-    min-height: 100vh;
     max-width: var(--contain-desktop);
     margin: 0 auto;
     gap: var(--size-8);

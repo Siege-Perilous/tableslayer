@@ -3,9 +3,9 @@
   import type { StageProps } from './types';
   import Scene from './Scene.svelte';
 
-  let props: StageProps = $props();
+  let { props }: { props: StageProps } = $props();
 </script>
 
 <Canvas>
-  <Scene {...props} />
+  <Scene {props} />
 </Canvas>

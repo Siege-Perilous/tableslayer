@@ -1,17 +1,22 @@
-import { type GridProps } from './layers/Grid/types';
+import type { GridProps } from './layers/Grid/types';
+import type { MapProps } from './layers/Map/types';
 
 /**
- * Props for the Stage component
+ * Properties for the Stage component
  */
 export type StageProps = {
   /**
-   * Configuration for the Background layer
+   * The background color represented as a hexadecimal string. If undefined, black is used as the default color.
    */
-  background: {
-    /**
-     * The background color represented as a hexadecimal string. If undefined, black is used as the default color.
-     */
-    color: string;
-  };
+  backgroundColor: string;
+
+  /**
+   * Properties for the map layer
+   */
+  map: MapProps;
+
+  /**
+   * Properties for the grid layer
+   */
   grid: GridProps;
 };
