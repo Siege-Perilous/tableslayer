@@ -40,6 +40,6 @@
   });
 </script>
 
-<T.Mesh bind:ref={mapQuad} position={[0, 0, -1]}>
+<T.Mesh bind:ref={mapQuad} position={[0, 0, -1]} rotation.z={(props.rotation / 180.0) * Math.PI}>
   <T.PlaneGeometry />
 </T.Mesh>

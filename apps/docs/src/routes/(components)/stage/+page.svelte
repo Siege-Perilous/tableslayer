@@ -28,6 +28,7 @@
     <Color bind:value={stageProps.backgroundColor} label="Color" />
     <Binding bind:object={stageProps.camera} key={'zoom'} label="Zoom" disabled />
     <Binding bind:object={stageProps.camera} key={'position'} label="Position" disabled />
+    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
   </Folder>
 
   <Folder title="Grid">
