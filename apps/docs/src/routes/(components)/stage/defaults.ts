@@ -1,7 +1,15 @@
-import { GridType } from '@tableslayer/ui';
+import { GridType, type StageProps } from '@tableslayer/ui';
 
-export const StageDefaultProps = {
+export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
+  camera: {
+    zoom: 0.2,
+    position: {
+      x: 0,
+      y: 0,
+      z: 1
+    }
+  },
   map: {
     rotation: 0
   },

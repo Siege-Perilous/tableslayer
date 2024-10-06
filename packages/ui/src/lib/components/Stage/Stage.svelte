@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Canvas } from '@threlte/core';
-  import type { StageProps } from './types';
+  import type { CameraProps, StageProps } from './types';
   import Scene from './Scene.svelte';
 
-  let { props }: { props: StageProps } = $props();
+  let { props, onCameraUpdate }: { props: StageProps; onCameraUpdate: (camera: CameraProps) => void } = $props();
 </script>
 
 <Canvas>
-  <Scene {props} />
+  <Scene stageProps={props} {onCameraUpdate} />
 </Canvas>

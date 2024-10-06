@@ -1,24 +1,33 @@
 <script lang="ts">
-  import { Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { GridType, Stage } from '@tableslayer/ui';
+  import { Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
+  import { GridType, Stage, type CameraProps, type StageProps } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
-  const stageProps = $state(StageDefaultProps);
+  const stageProps: StageProps = $state(StageDefaultProps);
 
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
     Hex: GridType.Hex
   };
+
+  function onCameraUpdate(camera: CameraProps) {
+    stageProps.camera.position.x = camera.position.x;
+    stageProps.camera.position.y = camera.position.y;
+    stageProps.camera.position.z = camera.position.z;
+    stageProps.camera.zoom = camera.zoom;
+  }
 </script>
 
 <div class="stage-wrapper">
-  <Stage props={stageProps} />
+  <Stage props={stageProps} {onCameraUpdate} />
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <Folder title="Map">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
+    <Binding bind:object={stageProps.camera} key={'zoom'} label="Zoom" />
+    <Binding bind:object={stageProps.camera} key={'position'} label="Position" />
   </Folder>
 
   <Folder title="Grid">
