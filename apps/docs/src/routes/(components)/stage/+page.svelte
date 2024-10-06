@@ -26,8 +26,8 @@
 <Pane position="draggable" title="Settings">
   <Folder title="Map">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
-    <Binding bind:object={stageProps.camera} key={'zoom'} label="Zoom" />
-    <Binding bind:object={stageProps.camera} key={'position'} label="Position" />
+    <Binding bind:object={stageProps.camera} key={'zoom'} label="Zoom" disabled />
+    <Binding bind:object={stageProps.camera} key={'position'} label="Position" disabled />
   </Folder>
 
   <Folder title="Grid">
