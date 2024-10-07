@@ -16,7 +16,7 @@
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-svelte": "^3.2.7",
-    "turbo": "^2.1.2"
+    "turbo": "^2.1.3"
   },
   "lint-staged": {
     "*.{js,ts,svelte,css}": [
