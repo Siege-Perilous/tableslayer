@@ -26,12 +26,10 @@
     let before = autoRender.current;
     autoRender.set(false);
 
-    if (controls) {
-      controls.addEventListener('change', (e) => {
-        const orthoCamera = camera.current as THREE.OrthographicCamera;
-        onCameraUpdate({ zoom: orthoCamera.zoom, position: orthoCamera.position });
-      });
-    }
+    controls?.addEventListener('change', (e) => {
+      const orthoCamera = camera.current as THREE.OrthographicCamera;
+      onCameraUpdate({ zoom: orthoCamera.zoom, position: orthoCamera.position });
+    });
 
     return () => {
       autoRender.set(before);
