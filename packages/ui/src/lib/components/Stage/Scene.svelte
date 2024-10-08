@@ -1,6 +1,5 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
   import { onMount } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, RenderPass } from 'postprocessing';
@@ -12,7 +11,6 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  let controls: OrbitControls | undefined = $state();
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
   composer.addPass(renderPass);
@@ -42,5 +40,5 @@
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<MapLayer props={props.map} />
+<MapLayer props={props.map} containerSize={$size} />
 <GridLayer props={props.grid} {composer} />
