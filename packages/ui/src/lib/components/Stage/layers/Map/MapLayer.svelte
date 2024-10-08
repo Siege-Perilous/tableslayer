@@ -29,7 +29,7 @@
       // Update the quad size to match the image size
       const bgWidth = $mapImage.source.data.width ?? DEFAULT_IMAGE_WIDTH;
       const bgHeight = $mapImage.source.data.height ?? DEFAULT_IMAGE_HEIGHT;
-      mapQuad.scale.set(bgWidth, bgHeight, 0);
+      mapQuad.scale.set(props.scale * bgWidth, props.scale * bgHeight, 0);
 
       let mapMaterial = new ImageMaterial();
       mapMaterial.uniforms['tDiffuse'].value = $mapImage;
@@ -38,6 +38,10 @@
   });
 </script>
 
-<T.Mesh bind:ref={mapQuad} position={[0, 0, -1]} rotation.z={(props.rotation / 180.0) * Math.PI}>
+<T.Mesh
+  bind:ref={mapQuad}
+  position={[props.offset.x, -props.offset.y, -1]}
+  rotation.z={(props.rotation / 180.0) * Math.PI}
+>
   <T.PlaneGeometry />
 </T.Mesh>

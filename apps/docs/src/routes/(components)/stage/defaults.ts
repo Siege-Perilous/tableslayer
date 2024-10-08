@@ -2,16 +2,13 @@ import { GridType, type StageProps } from '@tableslayer/ui';
 
 export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
-  camera: {
-    zoom: 0.2,
-    position: {
-      x: 0,
-      y: 0,
-      z: 1
-    }
-  },
   map: {
-    rotation: 0
+    rotation: 0,
+    scale: 0.2,
+    offset: {
+      x: 0,
+      y: 0
+    }
   },
   grid: {
     gridType: GridType.Square,

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { GridType, Stage, type CameraProps, type StageProps } from '@tableslayer/ui';
+  import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
+  import { GridType, Stage, type StageProps } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
   const stageProps: StageProps = $state(StageDefaultProps);
@@ -10,25 +10,23 @@
     Hex: GridType.Hex
   };
 
-  function onCameraUpdate(camera: CameraProps) {
-    stageProps.camera.position.x = camera.position.x;
-    stageProps.camera.position.y = camera.position.y;
-    stageProps.camera.position.z = camera.position.z;
-    stageProps.camera.zoom = camera.zoom;
+  function centerCamera() {
+    stageProps.map.offset = { x: 0, y: 0 };
   }
 </script>
 
 <div class="stage-wrapper">
-  <Stage props={stageProps} {onCameraUpdate} />
+  <Stage props={stageProps} />
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <Folder title="Map">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
-    <Binding bind:object={stageProps.camera} key={'zoom'} label="Zoom" disabled />
-    <Binding bind:object={stageProps.camera} key={'position'} label="Position" disabled />
+    <Slider bind:value={stageProps.map.scale} label="Scale" min={0.1} max={2} />
+    <Binding bind:object={stageProps.map} key={'offset'} label="Offset" />
     <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
+    <Button on:click={centerCamera} title="Center" />
   </Folder>
 
   <Folder title="Grid">
