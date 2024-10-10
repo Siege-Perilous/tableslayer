@@ -9,7 +9,7 @@ import { ScaleMode } from './types';
  * @param scaleMode Scaling mode controlling whether the image should be scaled to
  * fill the canvas (may result in cropping), fit inside the canvas (image will
  * be letterboxed), or if a custom scale should be used.
- * @param customScale
+ * @param customScale Custom scale factor to apply to the image if `scadleMode` is set to `Custom`
  * @returns
  */
 export function getImageScale(
