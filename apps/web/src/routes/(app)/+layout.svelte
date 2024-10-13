@@ -4,6 +4,8 @@
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
   const { user } = data;
+  import { getCldImageUrl } from 'svelte-cloudinary';
+  const avatar = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
 </script>
 
 <header>
@@ -14,7 +16,7 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={user?.avatar}>
+      <AvatarPopover src={avatar}>
         {#snippet content()}
           <div class="dropdown">
             <Link href="/profile">{user?.email}</Link>
