@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { CldImage } from 'svelte-cloudinary';
+  import { getCldImageUrl } from 'svelte-cloudinary';
   import { type SelectUser, VALID_PARTY_ROLES } from '$lib/db/app/schema';
   import { type PartyRole } from '$lib/db/app/schema';
   import SuperDebug, { superForm } from 'sveltekit-superforms';
   import { Control, Field } from 'formsnap';
   import { changeRoleSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
+  import { Avatar } from '@tableslayer/ui';
 
   type PartyMemberProps = SelectUser & {
     role: PartyRole;
@@ -25,9 +26,11 @@
     }
   );
   const { form, enhance, message, formId } = changeRoleForm;
+
+  const avatar = getCldImageUrl({ src: member?.avatar as string, width: 100, height: 100 });
 </script>
 
-<CldImage src={member.avatar} width={40} height={40} />
+<Avatar src={avatar} width={40} height={40} />
 <p>{member.email} - {member.role} - {partyId}</p>
 
 <form method="POST" action="?/changeRole" use:enhance>
