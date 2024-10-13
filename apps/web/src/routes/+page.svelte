@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { MyCounterButton } from '@tableslayer/ui';
+  import { Avatar, MyCounterButton } from '@tableslayer/ui';
   import { createUsersQuery } from '$lib/queries/users';
-  import { CldImage } from 'svelte-cloudinary';
+  import { getCldImageUrl } from 'svelte-cloudinary';
 
   let { data } = $props();
-  const { user } = $derived(data);
+  const { user } = data;
   const usersQuery = createUsersQuery();
+  const url = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
 </script>
 
 <h1>Web</h1>
@@ -26,7 +27,7 @@
 
 <h2>User status</h2>
 {#if user && user.email}
-  <CldImage src={user.avatar} width={40} height={40} />
+  <Avatar src={url} width={40} height={40} />
   <p>Logged in as: <a href="/profile">{user.email}</a></p>
   <p><a href="/logout">Logout</a></p>
   {#if user.emailVerified}
