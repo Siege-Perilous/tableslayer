@@ -17,7 +17,10 @@
   };
 
   function centerCamera() {
-    stageProps.map.offset = { x: 0, y: 0 };
+    stageProps.map.offset = {
+      x: 0,
+      y: 0
+    };
   }
 </script>
 
