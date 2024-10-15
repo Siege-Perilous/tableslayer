@@ -1,14 +1,27 @@
 <script lang="ts">
-  import { Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { GridType, Stage } from '@tableslayer/ui';
+  import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
+  import { ScaleMode, GridType, Stage, type StageProps } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
-  const stageProps = $state(StageDefaultProps);
+  const stageProps: StageProps = $state(StageDefaultProps);
 
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
     Hex: GridType.Hex
   };
+
+  const scaleModeOptions: ListOptions<number> = {
+    None: ScaleMode.Custom,
+    Fill: ScaleMode.Fill,
+    Fit: ScaleMode.Fit
+  };
+
+  function centerCamera() {
+    stageProps.map.offset = {
+      x: 0,
+      y: 0
+    };
+  }
 </script>
 
 <div class="stage-wrapper">
@@ -19,6 +32,22 @@
 <Pane position="draggable" title="Settings">
   <Folder title="Map">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
+    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
+    <List bind:value={stageProps.map.scaleMode} label="Fill Mode" options={scaleModeOptions} />
+    <Binding
+      bind:object={stageProps.map}
+      key={'offset'}
+      label="Offset"
+      disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
+    />
+    <Slider
+      bind:value={stageProps.map.customScale}
+      label="Scale"
+      min={0.1}
+      max={2}
+      disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
+    />
+    <Button on:click={centerCamera} title="Re-Center Map" />
   </Folder>
 
   <Folder title="Grid">
