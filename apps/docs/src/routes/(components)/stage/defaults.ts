@@ -1,9 +1,15 @@
-import { GridType } from '@tableslayer/ui';
+import { GridType, ScaleMode, type StageProps } from '@tableslayer/ui';
 
-export const StageDefaultProps = {
+export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
   map: {
-    rotation: 0
+    rotation: 0,
+    offset: {
+      x: 0,
+      y: 0
+    },
+    scaleMode: ScaleMode.Custom,
+    customScale: 0.2
   },
   grid: {
     gridType: GridType.Square,
