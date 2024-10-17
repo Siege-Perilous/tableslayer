@@ -23,6 +23,7 @@
 
   let mapQuad = $state(new THREE.Mesh());
   let imageSize = $state({ width: 0, height: 0 });
+
   let scale = $state(new THREE.Vector3());
 
   let mapImage = loader.load(backgroundImageUrl, {
@@ -52,12 +53,14 @@
   });
 </script>
 
-<FogOfWar props={fogOfWarProps} {scale} />
 <T.Mesh
   bind:ref={mapQuad}
   position={mapProps.scaleMode === ScaleMode.Custom ? [mapProps.offset.x, -mapProps.offset.y, -5] : [0, 0, -5]}
   rotation.z={(mapProps.rotation / 180.0) * Math.PI}
   scale={[scale.x, scale.y, scale.z]}
 >
+  <!-- Overlay fog of war on top of the map quad -->
+  <FogOfWar props={fogOfWarProps} {imageSize} />
+  <!-- Map texture is applied to this geometry -->
   <T.PlaneGeometry />
 </T.Mesh>
