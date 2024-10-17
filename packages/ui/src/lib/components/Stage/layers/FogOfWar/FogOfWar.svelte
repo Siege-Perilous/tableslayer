@@ -6,7 +6,9 @@
 
   let { props, scale }: { props: FogOfWarProps; scale: THREE.Vector3 } = $props();
 
-  const { camera } = useThrelte();
+  const { camera, renderer, size } = useThrelte();
+
+  $inspect(size);
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -24,26 +26,22 @@
     raycaster = new THREE.Raycaster();
 
     // Event listeners for mouse interaction
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', stopDrawing);
-    window.addEventListener('mousemove', onMouseMove);
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('mouseup', stopDrawing);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
 
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
     ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = 'rgba(255, 255, 255, 255)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     texture = new THREE.CanvasTexture(canvas);
     material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     fogQuad.material = material;
   });
 
-  function onMouseDown(event: MouseEvent): void {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  function onMouseDown(e: MouseEvent): void {
+    mouse.x = (e.offsetX / $size.width) * 2 - 1;
+    mouse.y = -(e.offsetY / $size.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, $camera);
     const intersects = raycaster.intersectObject(fogQuad);
@@ -51,8 +49,7 @@
     if (intersects.length > 0) {
       const { point } = intersects[0];
       const localPoint = fogQuad.worldToLocal(point);
-      drawStartPos.set((0.5 + localPoint.x) * canvas.width, localPoint.y * canvas.height);
-      console.log(localPoint);
+      drawStartPos.set(canvas.width * (localPoint.x + 0.5), canvas.height * (-localPoint.y + 0.5));
       drawing = true;
     }
   }
@@ -62,8 +59,16 @@
   }
 
   function onMouseMove(e: MouseEvent): void {
-    if (drawing) {
-      draw(e.offsetX, e.offsetY);
+    mouse.x = (e.offsetX / $size.width) * 2 - 1;
+    mouse.y = -(e.offsetY / $size.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, $camera);
+    const intersects = raycaster.intersectObject(fogQuad);
+
+    if (intersects.length > 0) {
+      const { point } = intersects[0];
+      const localPoint = fogQuad.worldToLocal(point);
+      draw(canvas.width * (localPoint.x + 0.5), canvas.height * (-localPoint.y + 0.5));
     }
   }
 
@@ -88,10 +93,14 @@
   $effect(() => {
     if (fogQuad) {
       fogQuad.scale.copy(scale);
+      canvas.width = scale.x;
+      canvas.height = scale.y;
+      ctx.fillStyle = 'rgba(255, 255, 255, 255)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   });
 </script>
 
-<T.Mesh bind:ref={fogQuad} position={[0, 0, -3]} rotation={[0, 0, 0]}>
+<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, -3]} rotation={[0, 0, 0]}>
   <T.PlaneGeometry />
 </T.Mesh>
