@@ -40,5 +40,5 @@
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<MapLayer props={props.map} containerSize={$size} />
+<MapLayer mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
 <GridLayer props={props.grid} {composer} />

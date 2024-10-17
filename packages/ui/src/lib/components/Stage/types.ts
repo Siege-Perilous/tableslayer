@@ -1,3 +1,4 @@
+import type { FogOfWarProps } from './layers/FogOfWar/types';
 import type { GridProps } from './layers/Grid/types';
 import type { MapProps } from './layers/Map/types';
 
@@ -11,12 +12,17 @@ export type StageProps = {
   backgroundColor: string;
 
   /**
-   * Properties for the map layer
+   * Properties for the fog of war layer
    */
-  map: MapProps;
+  fogOfWar: FogOfWarProps;
 
   /**
    * Properties for the grid layer
    */
   grid: GridProps;
+
+  /**
+   * Properties for the map layer
+   */
+  map: MapProps;
 };

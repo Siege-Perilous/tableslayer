@@ -7,8 +7,14 @@
   import backgroundImageUrl from './sword_coast.jpg';
   import { ScaleMode, type MapProps } from './types';
   import { getImageScale } from './MapHelpers';
+  import FogOfWar from '../FogOfWar/FogOfWar.svelte';
+  import type { FogOfWarProps } from '../FogOfWar/types';
 
-  let { props, containerSize }: { props: MapProps; containerSize: Size } = $props();
+  let {
+    mapProps,
+    fogOfWarProps,
+    containerSize
+  }: { mapProps: MapProps; fogOfWarProps: FogOfWarProps; containerSize: Size } = $props();
 
   const DEFAULT_IMAGE_WIDTH = 1920;
   const DEFAULT_IMAGE_HEIGHT = 1080;
@@ -16,6 +22,8 @@
   const loader = useLoader(TextureLoader);
 
   let mapQuad = $state(new THREE.Mesh());
+  let imageSize = $state({ width: 0, height: 0 });
+  let scale = $state(new THREE.Vector3());
 
   let mapImage = loader.load(backgroundImageUrl, {
     transform: (texture) => {
@@ -27,14 +35,10 @@
   $effect(() => {
     // Is the map image loaded yet?
     if ($mapImage) {
-      const imageSize: Size = {
+      imageSize = {
         width: $mapImage.source.data.width ?? DEFAULT_IMAGE_WIDTH,
         height: $mapImage.source.data.height ?? DEFAULT_IMAGE_HEIGHT
       };
-
-      // Update the quad size to match the image size
-      const mapScale = getImageScale(imageSize, containerSize, props.scaleMode, props.customScale);
-      mapQuad.scale.copy(mapScale);
 
       // Update the map quad shader to use the uploaded image
       let mapMaterial = new ImageMaterial();
@@ -42,16 +46,18 @@
       mapQuad.material = mapMaterial;
     }
   });
+
+  $effect(() => {
+    scale = getImageScale(imageSize, containerSize, mapProps.scaleMode, mapProps.customScale);
+  });
 </script>
 
+<FogOfWar props={fogOfWarProps} {scale} />
 <T.Mesh
   bind:ref={mapQuad}
-  position={[
-    props.scaleMode === ScaleMode.Custom ? props.offset.x : 0,
-    props.scaleMode === ScaleMode.Custom ? -props.offset.y : 0,
-    -1
-  ]}
-  rotation.z={(props.rotation / 180.0) * Math.PI}
+  position={mapProps.scaleMode === ScaleMode.Custom ? [mapProps.offset.x, -mapProps.offset.y, -5] : [0, 0, -5]}
+  rotation.z={(mapProps.rotation / 180.0) * Math.PI}
+  scale={[scale.x, scale.y, scale.z]}
 >
   <T.PlaneGeometry />
 </T.Mesh>
