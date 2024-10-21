@@ -1,9 +1,23 @@
 <script lang="ts">
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { ScaleMode, GridType, Stage, type StageProps } from '@tableslayer/ui';
+  import { ScaleMode, GridType, Stage, type StageProps, BrushType, DrawMode } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
+  import { draw } from 'svelte/transition';
 
   const stageProps: StageProps = $state(StageDefaultProps);
+  let stage;
+
+  const brushTypeOptions: ListOptions<number> = {
+    Round: BrushType.Round,
+    Square: BrushType.Square
+  };
+
+  const drawModeOptions: ListOptions<number> = {
+    Eraser: DrawMode.Eraser,
+    Brush: DrawMode.Brush,
+    Rectangle: DrawMode.Rectangle,
+    Circle: DrawMode.Circle
+  };
 
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
@@ -25,7 +39,7 @@
 </script>
 
 <div class="stage-wrapper">
-  <Stage props={stageProps} />
+  <Stage bind:this={stage} props={stageProps} />
 </div>
 
 <!-- DEBUG UI -->
@@ -48,6 +62,16 @@
       disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
     />
     <Button on:click={centerCamera} title="Re-Center Map" />
+  </Folder>
+
+  <Folder title="Fog of War">
+    <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
+    <List bind:value={stageProps.fogOfWar.brushType} label="Brush Type" options={brushTypeOptions} />
+    <Slider bind:value={stageProps.fogOfWar.brushSize} label="Brush Size" min={1} max={500} step={1} />
+    <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
+    <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Button on:click={() => stage!.resetFog()} title="Reset Fog" />
+    <Button on:click={() => stage!.revealAll()} title="Reveal All" />
   </Folder>
 
   <Folder title="Grid">

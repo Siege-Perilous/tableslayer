@@ -8,6 +8,7 @@
   import GridLayer from './layers/Grid/GridLayer.svelte';
 
   let { props }: { props: StageProps } = $props();
+  let mapLayer;
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -36,9 +37,17 @@
     },
     { stage: renderStage }
   );
+
+  export function resetFog() {
+    mapLayer!.resetFog();
+  }
+
+  export function revealAll() {
+    mapLayer!.revealAll();
+  }
 </script>
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<MapLayer mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
+<MapLayer bind:this={mapLayer} mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
 <GridLayer props={props.grid} {composer} />

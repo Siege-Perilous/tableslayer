@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Size, useThrelte } from '@threlte/core';
-  import type { FogOfWarProps } from './types';
+  import { BrushType, DrawMode, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
 
   let { props, imageSize }: { props: FogOfWarProps; imageSize: Size } = $props();
@@ -11,9 +11,10 @@
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
   let raycaster: THREE.Raycaster;
+
   let fogQuad = $state(new THREE.Mesh());
-  let material: THREE.MeshBasicMaterial;
-  let texture: THREE.CanvasTexture;
+  let fogMaterial = $state(new THREE.MeshBasicMaterial());
+  let fogTexture: THREE.CanvasTexture;
 
   let mouse = new THREE.Vector2();
   let drawing: boolean = false;
@@ -32,16 +33,38 @@
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
+  });
+
+  $effect(() => {
+    console.log(`Resetting fog of war canvas to ${imageSize.width}x${imageSize.height}`);
 
     canvas.width = imageSize.width;
     canvas.height = imageSize.height;
-    context.fillStyle = 'rgba(255, 255, 255, 255)';
+    context.fillStyle = 'white';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    texture = new THREE.CanvasTexture(canvas);
-    material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-    fogQuad.material = material;
+    // If texture already exists, dispose of existing one
+    if (fogTexture) {
+      fogTexture.dispose();
+    }
+
+    fogTexture = new THREE.CanvasTexture(canvas);
+    fogMaterial.map = fogTexture;
   });
+
+  export const revealAll = () => {
+    console.log('reveal all');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    fogTexture.needsUpdate = true;
+  };
+
+  export const resetFog = () => {
+    console.log('reset fog');
+    context.fillStyle = 'white';
+    context.globalCompositeOperation = 'source-over';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    fogTexture.needsUpdate = true;
+  };
 
   function onMouseDown(e: MouseEvent): void {
     const coords = getCanvasCoords(e);
@@ -72,20 +95,46 @@
   }
 
   function draw(p: THREE.Vector2): void {
-    if (drawing && texture) {
-      context.lineWidth = 250;
-      context.lineCap = 'round';
-
-      context.globalCompositeOperation = 'destination-out';
-      context.strokeStyle = '#000000';
-
-      context.moveTo(drawStartPos.x, drawStartPos.y);
-      context.lineTo(p.x, p.y);
-      context.stroke();
+    if (drawing && fogTexture) {
+      if (props.drawMode === DrawMode.Brush || props.drawMode === DrawMode.Eraser) {
+        if (props.brushType === BrushType.Round) {
+          drawRoundBrush(p);
+        } else if (props.brushType === BrushType.Square) {
+          drawSquareBrush(p);
+        }
+      } else {
+      }
 
       drawStartPos.set(p.x, p.y);
+      fogTexture.needsUpdate = true;
+    }
+  }
 
-      texture.needsUpdate = true;
+  function drawRoundBrush(p: THREE.Vector2) {
+    context.lineWidth = props.brushSize;
+    context.lineCap = 'round';
+
+    if (props.drawMode === DrawMode.Eraser) {
+      context.globalCompositeOperation = 'destination-out';
+      context.strokeStyle = 'black';
+    } else {
+      context.globalCompositeOperation = 'source-over';
+      context.strokeStyle = props.fogColor;
+    }
+
+    context.beginPath();
+    context.moveTo(drawStartPos.x, drawStartPos.y);
+    context.lineTo(p.x, p.y);
+    context.stroke();
+    context.closePath();
+  }
+
+  function drawSquareBrush(p: THREE.Vector2) {
+    if (props.drawMode === DrawMode.Brush) {
+      context.fillStyle = props.fogColor;
+      context.fillRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
+    } else if (props.drawMode === DrawMode.Eraser) {
+      context.clearRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
     }
   }
 
@@ -113,5 +162,6 @@
 </script>
 
 <T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, 3]} rotation={[0, 0, 0]}>
+  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

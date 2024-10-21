@@ -1,9 +1,13 @@
-import { GridType, ScaleMode, type StageProps } from '@tableslayer/ui';
+import { BrushType, DrawMode, GridType, ScaleMode, type StageProps } from '@tableslayer/ui';
 
 export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
   fogOfWar: {
-    fogColor: { r: 50, g: 50, b: 50 }
+    fogColor: '#00ff00',
+    opacity: 1,
+    brushSize: 200,
+    brushType: BrushType.Round,
+    drawMode: DrawMode.Brush
   },
   grid: {
     gridType: GridType.Square,
