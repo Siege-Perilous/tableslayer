@@ -100,7 +100,7 @@
     }
 
     // Save off the image state
-    imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    persistChanges();
     fogTexture.needsUpdate = true;
     drawing = false;
   }
@@ -119,7 +119,7 @@
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
       if (drawing) {
         // Restore the previous draw state, effectively clearing the outline from the previous frame
-        context.putImageData(imageData, 0, 0);
+        revertChanges();
         configureOutlineMode();
         activeTool.drawOutline(p);
       }
@@ -140,11 +140,10 @@
         }
 
         activeTool.draw(p);
-
-        imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        persistChanges();
       } else {
         // Restore the previous draw state, effectively clearing the outline from the previous frame
-        context.putImageData(imageData, 0, 0);
+        revertChanges();
         configureOutlineMode();
         activeTool.drawOutline(p);
       }
@@ -169,9 +168,15 @@
 
   function configureOutlineMode() {
     context.globalAlpha = 0.5;
-    context.globalCompositeOperation = 'source-over';
-    context.fillStyle = props.drawMode === DrawMode.Draw ? 'white' : 'black';
-    context.strokeStyle = props.drawMode === DrawMode.Draw ? 'white' : 'black';
+    if (props.drawMode === DrawMode.Draw) {
+      context.globalCompositeOperation = 'source-over';
+      context.fillStyle = 'white';
+      context.strokeStyle = 'white';
+    } else {
+      context.globalCompositeOperation = 'destination-out';
+      context.fillStyle = 'white';
+      context.strokeStyle = 'white';
+    }
   }
 
   /**
@@ -196,12 +201,22 @@
     }
   }
 
+  function persistChanges() {
+    if (canvas && canvas.width > 0 && canvas.height > 0) {
+      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function revertChanges() {
+    context.putImageData(imageData, 0, 0);
+  }
   /**
    * Clears all fog, revealing the entire map underneath
    */
   export const revealAll = () => {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
+    persistChanges();
     fogTexture.needsUpdate = true;
   };
 
@@ -211,6 +226,7 @@
   export const resetFog = () => {
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
+    persistChanges();
     fogTexture.needsUpdate = true;
   };
 </script>

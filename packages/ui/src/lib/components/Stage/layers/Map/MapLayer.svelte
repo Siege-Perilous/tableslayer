@@ -4,7 +4,7 @@
   import { ImageMaterial } from '../../materials/ImageMaterial';
   import { useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
-  import backgroundImageUrl from './sword_coast.jpg';
+  import backgroundImageUrl from './dungeon.png';
   import { ScaleMode, type MapProps } from './types';
   import { getImageScale } from './MapHelpers';
   import FogOfWar from '../FogOfWar/FogOfWar.svelte';
