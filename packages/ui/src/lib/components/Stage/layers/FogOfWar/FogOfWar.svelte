@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Size, useThrelte } from '@threlte/core';
-  import { BrushType, DrawMode, type FogOfWarProps } from './types';
+  import { BrushShape, DrawMode, ToolType, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
 
   let { props, imageSize }: { props: FogOfWarProps; imageSize: Size } = $props();
@@ -10,6 +10,7 @@
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
+  let imageData: ImageData;
   let raycaster: THREE.Raycaster;
 
   let fogQuad = $state(new THREE.Mesh());
@@ -18,7 +19,11 @@
 
   let mouse = new THREE.Vector2();
   let drawing: boolean = false;
-  let drawStartPos: THREE.Vector2 = new THREE.Vector2();
+  let start: THREE.Vector2 = new THREE.Vector2();
+
+  // If mouse leaves the drawing area, we need to reset the start position
+  // when it re-enters the drawing area to prevent the drawing from "jumping"
+  // to the new point
   let resetPos = false;
 
   onMount(() => {
@@ -40,8 +45,6 @@
 
     canvas.width = imageSize.width;
     canvas.height = imageSize.height;
-    context.fillStyle = 'white';
-    context.fillRect(0, 0, canvas.width, canvas.height);
 
     // If texture already exists, dispose of existing one
     if (fogTexture) {
@@ -50,63 +53,93 @@
 
     fogTexture = new THREE.CanvasTexture(canvas);
     fogMaterial.map = fogTexture;
+    resetFog();
+
+    if (canvas.width > 0 && canvas.height > 0) {
+      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    }
   });
 
   export const revealAll = () => {
-    console.log('reveal all');
+    configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
     fogTexture.needsUpdate = true;
   };
 
   export const resetFog = () => {
-    console.log('reset fog');
-    context.fillStyle = 'white';
-    context.globalCompositeOperation = 'source-over';
+    configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
     fogTexture.needsUpdate = true;
   };
 
   function onMouseDown(e: MouseEvent): void {
-    const coords = getCanvasCoords(e);
-    if (coords) {
-      drawStartPos.copy(coords);
+    const p = getCanvasCoords(e);
+    if (p) {
+      // Get the initial position of the mouse when the user clicks/touches the canvas
+      start.copy(p);
       drawing = true;
     }
   }
 
-  function onMouseUp(): void {
+  function onMouseUp(e: MouseEvent): void {
+    const p = getCanvasCoords(e);
+    if (p) {
+      // If drawing a 2D shape (e.g. rectangle/square), finish drawing on mouse up.
+      if (props.toolType === ToolType.Rectangle) {
+        drawRectangle(p);
+      } else if (props.toolType === ToolType.Ellipse) {
+        drawEllipse(p);
+      }
+    }
     drawing = false;
   }
 
   function onMouseMove(e: MouseEvent): void {
-    const coords = getCanvasCoords(e);
-    if (coords) {
-      if (resetPos) {
-        resetPos = false;
-        drawStartPos.copy(coords);
-      }
-      draw(coords);
-    } else {
-      // If mouse leaves the drawing area, we need to reset the start position
-      // when it re-enters the drawing area to prevent the drawing from "jumping"
-      // to the new point
+    const p = getCanvasCoords(e);
+    if (!p) {
+      // Mouse is outside canvas, reset the start position
       resetPos = true;
+      return;
+    }
+
+    // If mouse left the canvas area, reset the line start position
+    if (resetPos) {
+      resetPos = false;
+      start.copy(p);
+    }
+
+    // Restore the previous draw state, effectively clearing the outline
+    // from the previous frame
+    context.putImageData(imageData, 0, 0);
+
+    if (props.toolType === ToolType.Brush) {
+      if (drawing) {
+        drawBrush(p);
+      } else {
+        drawBrushOutline(p);
+      }
+    }
+
+    if (drawing) {
+      if (props.toolType === ToolType.Rectangle) {
+        drawRectangleOutline(p);
+      } else if (props.toolType === ToolType.Ellipse) {
+        drawEllipseOutline(p);
+      }
     }
   }
 
-  function draw(p: THREE.Vector2): void {
-    if (drawing && fogTexture) {
-      if (props.drawMode === DrawMode.Brush || props.drawMode === DrawMode.Eraser) {
-        if (props.brushType === BrushType.Round) {
-          drawRoundBrush(p);
-        } else if (props.brushType === BrushType.Square) {
-          drawSquareBrush(p);
-        }
-      } else {
-      }
+  function drawBrush(p: THREE.Vector2): void {
+    if (props.drawMode === DrawMode.Erase) {
+      configureClearMode();
+    } /* (props.drawMode === DrawMode.Draw) */ else {
+      configureDrawMode();
+    }
 
-      drawStartPos.set(p.x, p.y);
-      fogTexture.needsUpdate = true;
+    if (props.brushShape === BrushShape.Round) {
+      drawRoundBrush(p);
+    } else if (props.brushShape === BrushShape.Square) {
+      drawSquareBrush(p);
     }
   }
 
@@ -114,28 +147,116 @@
     context.lineWidth = props.brushSize;
     context.lineCap = 'round';
 
-    if (props.drawMode === DrawMode.Eraser) {
-      context.globalCompositeOperation = 'destination-out';
-      context.strokeStyle = 'black';
-    } else {
-      context.globalCompositeOperation = 'source-over';
-      context.strokeStyle = props.fogColor;
-    }
-
     context.beginPath();
-    context.moveTo(drawStartPos.x, drawStartPos.y);
+    context.moveTo(start.x, start.y);
     context.lineTo(p.x, p.y);
     context.stroke();
     context.closePath();
+
+    // Update the start position to the current position so the next
+    // line will start from the end of this line
+    start.set(p.x, p.y);
+
+    imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+    fogTexture.needsUpdate = true;
   }
 
   function drawSquareBrush(p: THREE.Vector2) {
-    if (props.drawMode === DrawMode.Brush) {
-      context.fillStyle = props.fogColor;
-      context.fillRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
-    } else if (props.drawMode === DrawMode.Eraser) {
-      context.clearRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
+    context.fillRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
+
+    imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function drawRectangle(end: THREE.Vector2) {
+    if (props.drawMode === DrawMode.Erase) {
+      configureClearMode();
+    } /* (props.drawMode === DrawMode.Draw) */ else {
+      configureDrawMode();
     }
+
+    context.fillRect(start.x, start.y, end.x - start.x, end.y - start.y);
+
+    imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function drawEllipse(end: THREE.Vector2) {
+    if (props.drawMode === DrawMode.Erase) {
+      configureClearMode();
+    } /* (props.drawMode === DrawMode.Draw) */ else {
+      configureDrawMode();
+    }
+
+    const rx = Math.abs(end.x - start.x);
+    const ry = Math.abs(end.y - start.y);
+
+    context.beginPath();
+    context.ellipse(start.x, start.y, rx, ry, 0, 0, 2 * Math.PI);
+    context.fill();
+
+    imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function drawBrushOutline(p: THREE.Vector2) {
+    configureOutlineMode();
+
+    if (props.brushShape === BrushShape.Square) {
+      context.fillRect(p.x - props.brushSize / 2, p.y - props.brushSize / 2, props.brushSize, props.brushSize);
+    } else {
+      context.beginPath();
+      context.ellipse(p.x, p.y, props.brushSize / 2, props.brushSize / 2, 0, 0, 2 * Math.PI);
+      context.fill();
+    }
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function drawRectangleOutline(p: THREE.Vector2) {
+    configureOutlineMode();
+
+    context.fillRect(start.x, start.y, p.x - start.x, p.y - start.y);
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function drawEllipseOutline(p: THREE.Vector2) {
+    const rx = Math.abs(p.x - start.x);
+    const ry = Math.abs(p.y - start.y);
+
+    configureOutlineMode();
+
+    context.beginPath();
+    context.ellipse(start.x, start.y, rx, ry, 0, 0, 2 * Math.PI);
+    context.fill();
+
+    fogTexture.needsUpdate = true;
+  }
+
+  function configureDrawMode() {
+    context.globalAlpha = 1.0;
+    context.globalCompositeOperation = 'source-over';
+    context.fillStyle = 'white';
+    context.strokeStyle = 'white';
+  }
+
+  function configureClearMode() {
+    context.globalAlpha = 1.0;
+    context.globalCompositeOperation = 'destination-out';
+    context.fillStyle = 'black';
+    context.strokeStyle = 'black';
+  }
+
+  function configureOutlineMode() {
+    context.globalAlpha = 0.5;
+    context.globalCompositeOperation = 'source-over';
+    context.fillStyle = props.drawMode === DrawMode.Draw ? 'white' : 'black';
+    context.strokeStyle = props.drawMode === DrawMode.Draw ? 'white' : 'black';
   }
 
   /**

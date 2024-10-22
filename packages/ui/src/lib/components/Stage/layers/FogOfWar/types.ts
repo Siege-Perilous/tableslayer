@@ -1,28 +1,37 @@
-export enum DrawMode {
-  Eraser = 0,
+export enum ToolType {
   Brush = 1,
   Rectangle = 2,
-  Circle = 3
+  Ellipse = 3
 }
 
-export enum BrushType {
+export enum DrawMode {
+  Erase = 0,
+  Draw = 1
+}
+
+export enum BrushShape {
   Round = 0,
   Square = 1
 }
 
 export type FogOfWarProps = {
   /**
-   * The drawing tool selection
+   * The type of drawing tool currently selected
+   */
+  toolType: ToolType;
+
+  /**
+   * The current drawing mode (`DrawMode.Erase` or `DrawMode.Draw`)
    */
   drawMode: DrawMode;
 
   /**
-   * The type of brush shape when `drawMode` is set to `DrawMode.Brush` or `DrawMode.Eraser`
+   * When `toolType = ToolType.Brush`, setting this controls the brush shape
    */
-  brushType: BrushType;
+  brushShape: BrushShape;
 
   /**
-   * Size of the brush when `drawMode` is set to `DrawMode.Brush` or `DrawMode.Eraser`
+   * When `toolType = ToolType.Brush`, setting this controls the brush size
    */
   brushSize: number;
 

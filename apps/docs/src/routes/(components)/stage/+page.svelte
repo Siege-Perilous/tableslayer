@@ -1,22 +1,26 @@
 <script lang="ts">
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { ScaleMode, GridType, Stage, type StageProps, BrushType, DrawMode } from '@tableslayer/ui';
+  import { ScaleMode, GridType, Stage, type StageProps, BrushShape, DrawMode, ToolType } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { draw } from 'svelte/transition';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage;
 
-  const brushTypeOptions: ListOptions<number> = {
-    Round: BrushType.Round,
-    Square: BrushType.Square
+  const toolTypeOptions: ListOptions<number> = {
+    Brush: ToolType.Brush,
+    Rectangle: ToolType.Rectangle,
+    Ellipse: ToolType.Ellipse
+  };
+
+  const brushShapeOptions: ListOptions<number> = {
+    Round: BrushShape.Round,
+    Square: BrushShape.Square
   };
 
   const drawModeOptions: ListOptions<number> = {
-    Eraser: DrawMode.Eraser,
-    Brush: DrawMode.Brush,
-    Rectangle: DrawMode.Rectangle,
-    Circle: DrawMode.Circle
+    Eraser: DrawMode.Erase,
+    Draw: DrawMode.Draw
   };
 
   const gridTypeOptions: ListOptions<number> = {
@@ -65,9 +69,22 @@
   </Folder>
 
   <Folder title="Fog of War">
+    <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
     <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
-    <List bind:value={stageProps.fogOfWar.brushType} label="Brush Type" options={brushTypeOptions} />
-    <Slider bind:value={stageProps.fogOfWar.brushSize} label="Brush Size" min={1} max={500} step={1} />
+    <List
+      bind:value={stageProps.fogOfWar.brushShape}
+      label="Brush Type"
+      options={brushShapeOptions}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
+    />
+    <Slider
+      bind:value={stageProps.fogOfWar.brushSize}
+      label="Brush Size"
+      min={1}
+      max={500}
+      step={1}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
+    />
     <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Button on:click={() => stage!.resetFog()} title="Reset Fog" />
