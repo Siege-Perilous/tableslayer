@@ -2,7 +2,6 @@
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
   import { ScaleMode, GridType, Stage, type StageProps, BrushShape, DrawMode, ToolType } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
-  import { draw } from 'svelte/transition';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage;
