@@ -1,9 +1,22 @@
 <script lang="ts">
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { ScaleMode, GridType, Stage, type StageProps } from '@tableslayer/ui';
+  import { ScaleMode, GridType, Stage, type StageProps, DrawMode, ToolType } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
   const stageProps: StageProps = $state(StageDefaultProps);
+  let stage;
+
+  const toolTypeOptions: ListOptions<number> = {
+    RoundBrush: ToolType.RoundBrush,
+    SquareBrush: ToolType.SquareBrush,
+    Rectangle: ToolType.Rectangle,
+    Ellipse: ToolType.Ellipse
+  };
+
+  const drawModeOptions: ListOptions<number> = {
+    Eraser: DrawMode.Erase,
+    Draw: DrawMode.Draw
+  };
 
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
@@ -25,7 +38,7 @@
 </script>
 
 <div class="stage-wrapper">
-  <Stage props={stageProps} />
+  <Stage bind:this={stage} props={stageProps} />
 </div>
 
 <!-- DEBUG UI -->
@@ -48,6 +61,24 @@
       disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
     />
     <Button on:click={centerCamera} title="Re-Center Map" />
+  </Folder>
+
+  <Folder title="Fog of War">
+    <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
+    <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
+    <Slider
+      bind:value={stageProps.fogOfWar.brushSize}
+      label="Brush Size"
+      min={1}
+      max={500}
+      step={1}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
+        stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
+    />
+    <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
+    <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Button on:click={() => stage!.functions.fogOfWar.resetFog()} title="Reset Fog" />
+    <Button on:click={() => stage!.functions.fogOfWar.revealAll()} title="Reveal All" />
   </Folder>
 
   <Folder title="Grid">

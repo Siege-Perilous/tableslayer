@@ -8,6 +8,7 @@ export class ImageMaterial extends THREE.ShaderMaterial {
       name: 'ImageMaterial',
       fragmentShader,
       vertexShader,
+      transparent: true,
       uniforms: {
         tDiffuse: { value: options?.map }
       }
