@@ -77,8 +77,8 @@
     />
     <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Button on:click={() => stage!.resetFog()} title="Reset Fog" />
-    <Button on:click={() => stage!.revealAll()} title="Reveal All" />
+    <Button on:click={() => stage!.functions.fogOfWar.resetFog()} title="Reset Fog" />
+    <Button on:click={() => stage!.functions.fogOfWar.revealAll()} title="Reveal All" />
   </Folder>
 
   <Folder title="Grid">

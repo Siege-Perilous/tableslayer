@@ -9,6 +9,7 @@
   import { getImageScale } from './MapHelpers';
   import FogOfWar from '../FogOfWar/FogOfWar.svelte';
   import type { FogOfWarProps } from '../FogOfWar/types';
+  import type { StageFunctions } from '../../types';
 
   const DEFAULT_IMAGE_WIDTH = 1920;
   const DEFAULT_IMAGE_HEIGHT = 1080;
@@ -16,11 +17,14 @@
   let {
     mapProps,
     fogOfWarProps,
-    containerSize
-  }: { mapProps: MapProps; fogOfWarProps: FogOfWarProps; containerSize: Size } = $props();
-
-  // Component references
-  let fogOfWar;
+    containerSize,
+    functions
+  }: {
+    mapProps: MapProps;
+    fogOfWarProps: FogOfWarProps;
+    containerSize: Size;
+    functions: StageFunctions;
+  } = $props();
 
   let mapQuad = $state(new THREE.Mesh());
   let imageSize = $state({ width: 0, height: 0 });
@@ -52,14 +56,6 @@
   $effect(() => {
     scale = getImageScale(imageSize, containerSize, mapProps.scaleMode, mapProps.customScale);
   });
-
-  export function resetFog() {
-    fogOfWar!.resetFog();
-  }
-
-  export function revealAll() {
-    fogOfWar!.revealAll();
-  }
 </script>
 
 <T.Mesh
@@ -69,7 +65,7 @@
   scale={[scale.x, scale.y, scale.z]}
 >
   <!-- Overlay fog of war on top of the map quad -->
-  <FogOfWar bind:this={fogOfWar} props={fogOfWarProps} {imageSize} />
+  <FogOfWar props={fogOfWarProps} {functions} {imageSize} />
   <!-- Map texture is applied to this geometry -->
   <T.PlaneGeometry />
 </T.Mesh>

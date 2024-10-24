@@ -6,9 +6,9 @@
   import type { StageProps } from './types';
   import MapLayer from './layers/Map/MapLayer.svelte';
   import GridLayer from './layers/Grid/GridLayer.svelte';
+  import type { StageFunctions } from './types';
 
-  let { props }: { props: StageProps } = $props();
-  let mapLayer;
+  let { props, functions }: { props: StageProps; functions: StageFunctions } = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -37,17 +37,9 @@
     },
     { stage: renderStage }
   );
-
-  export function resetFog() {
-    mapLayer!.resetFog();
-  }
-
-  export function revealAll() {
-    mapLayer!.revealAll();
-  }
 </script>
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<MapLayer bind:this={mapLayer} mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
+<MapLayer {functions} mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
 <GridLayer props={props.grid} {composer} />

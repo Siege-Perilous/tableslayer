@@ -4,8 +4,23 @@
   import { DrawMode, ToolType, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
+  import type { StageFunctions } from '../../types';
 
-  let { props, imageSize }: { props: FogOfWarProps; imageSize: Size } = $props();
+  let {
+    props,
+    imageSize,
+    functions
+  }: {
+    props: FogOfWarProps;
+    imageSize: Size;
+    functions: StageFunctions;
+  } = $props();
+
+  // Bind functions
+  functions.fogOfWar = {
+    resetFog,
+    revealAll
+  };
 
   const { camera, renderer, size } = useThrelte();
 
@@ -210,25 +225,26 @@
   function revertChanges() {
     context.putImageData(imageData, 0, 0);
   }
+
   /**
    * Clears all fog, revealing the entire map underneath
    */
-  export const revealAll = () => {
+  function revealAll() {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
     persistChanges();
     fogTexture.needsUpdate = true;
-  };
+  }
 
   /**
    * Resets the fog to fill the entire layer
    */
-  export const resetFog = () => {
+  function resetFog() {
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
     persistChanges();
     fogTexture.needsUpdate = true;
-  };
+  }
 </script>
 
 <T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, 3]} rotation={[0, 0, 0]}>

@@ -2,19 +2,18 @@
   import { Canvas } from '@threlte/core';
   import type { StageProps } from './types';
   import Scene from './Scene.svelte';
+  import type { StageFunctions } from './types';
+
+  export const functions: StageFunctions = $state({
+    fogOfWar: {
+      resetFog: () => {},
+      revealAll: () => {}
+    }
+  });
 
   let { props }: { props: StageProps } = $props();
-  let scene;
-
-  export function resetFog() {
-    scene!.resetFog();
-  }
-
-  export function revealAll() {
-    scene!.revealAll();
-  }
 </script>
 
 <Canvas>
-  <Scene bind:this={scene} {props} />
+  <Scene {props} {functions} />
 </Canvas>
