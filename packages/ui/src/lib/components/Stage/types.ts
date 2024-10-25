@@ -1,5 +1,13 @@
+import type { FogOfWarProps } from './layers/FogOfWar/types';
 import type { GridProps } from './layers/Grid/types';
 import type { MapProps } from './layers/Map/types';
+
+export interface StageFunctions {
+  fogOfWar: {
+    resetFog: () => void;
+    revealAll: () => void;
+  };
+}
 
 /**
  * Properties for the Stage component
@@ -11,12 +19,17 @@ export type StageProps = {
   backgroundColor: string;
 
   /**
-   * Properties for the map layer
+   * Properties for the fog of war layer
    */
-  map: MapProps;
+  fogOfWar: FogOfWarProps;
 
   /**
    * Properties for the grid layer
    */
   grid: GridProps;
+
+  /**
+   * Properties for the map layer
+   */
+  map: MapProps;
 };
