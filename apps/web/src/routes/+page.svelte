@@ -6,7 +6,7 @@
   let { data } = $props();
   const { user } = data;
   const usersQuery = createUsersQuery();
-  let url = '';
+  let url = $state('');
   if (user) {
     url = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
   }
