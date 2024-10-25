@@ -6,7 +6,10 @@
   let { data } = $props();
   const { user } = data;
   const usersQuery = createUsersQuery();
-  const url = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
+  let url = '';
+  if (user) {
+    url = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
+  }
 </script>
 
 <h1>Web</h1>
@@ -27,7 +30,7 @@
 
 <h2>User status</h2>
 {#if user && user.email}
-  <Avatar src={url} width={40} height={40} />
+  <Avatar src={url} size="md" />
   <p>Logged in as: <a href="/profile">{user.email}</a></p>
   <p><a href="/logout">Logout</a></p>
   {#if user.emailVerified}
