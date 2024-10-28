@@ -7,11 +7,18 @@
   export const functions: StageFunctions = $state({
     fogOfWar: {
       resetFog: () => {},
-      revealAll: () => {}
+      revealAll: () => {},
+      toBase64: () => {
+        return '';
+      }
     }
   });
 
   let { props }: { props: StageProps } = $props();
+
+  export function save() {}
+
+  export function load() {}
 </script>
 
 <Canvas>

@@ -12,6 +12,11 @@ export enum DrawMode {
 
 export type FogOfWarProps = {
   /**
+   * Initial texture data used to populate the fog of war layer
+   */
+  data: string;
+
+  /**
    * The type of drawing tool currently selected
    */
   toolType: ToolType;

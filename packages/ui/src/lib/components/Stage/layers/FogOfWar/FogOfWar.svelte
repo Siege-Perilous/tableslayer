@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
   import type { StageFunctions } from '../../types';
+  import { textureToBase64 } from '../../utils';
 
   let {
     props,
@@ -19,7 +20,8 @@
   // Bind functions
   functions.fogOfWar = {
     resetFog,
-    revealAll
+    revealAll,
+    toBase64
   };
 
   const { camera, renderer, size } = useThrelte();
@@ -69,6 +71,12 @@
 
     fogTexture = new THREE.CanvasTexture(canvas);
     fogMaterial.map = fogTexture;
+
+    // Load the initial fog of water data
+    const image = new Image();
+    image.src = props.data;
+    fogTexture.image = image;
+
     resetFog();
 
     if (canvas.width > 0 && canvas.height > 0) {
@@ -244,6 +252,10 @@
     context.fillRect(0, 0, canvas.width, canvas.height);
     persistChanges();
     fogTexture.needsUpdate = true;
+  }
+
+  function toBase64(): string {
+    return textureToBase64(fogTexture);
   }
 </script>
 
