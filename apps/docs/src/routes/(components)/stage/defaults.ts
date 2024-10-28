@@ -31,5 +31,10 @@ export const StageDefaultProps: StageProps = {
     },
     scaleMode: ScaleMode.Custom,
     customScale: 0.2
+  },
+  weather: {
+    opacity: 0.2,
+    scale: 1.0,
+    weatherType: 0
   }
 };
