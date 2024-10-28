@@ -15,10 +15,6 @@
   });
 
   let { props }: { props: StageProps } = $props();
-
-  export function save() {}
-
-  export function load() {}
 </script>
 
 <Canvas>
