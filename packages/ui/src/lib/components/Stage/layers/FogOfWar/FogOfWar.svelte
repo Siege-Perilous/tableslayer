@@ -61,9 +61,6 @@
   $effect(() => {
     console.log(`Resetting fog of war canvas to ${imageSize.width}x${imageSize.height}`);
 
-    canvas.width = imageSize.width;
-    canvas.height = imageSize.height;
-
     // If texture already exists, dispose of existing one
     if (fogTexture) {
       fogTexture.dispose();
@@ -72,14 +69,21 @@
     fogTexture = new THREE.CanvasTexture(canvas);
     fogMaterial.map = fogTexture;
 
-    // Load the initial fog of water data
-    const image = new Image();
-    image.src = props.data;
-    fogTexture.image = image;
-
-    resetFog();
-
-    if (canvas.width > 0 && canvas.height > 0) {
+    if (props.data) {
+      // If the props contains initial fog of war data, initialize the canvas to that data
+      const image = new Image();
+      image.src = props.data;
+      image.onload = () => {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        context.drawImage(image, 0, 0);
+        imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      };
+    } else if (canvas.width > 0 && canvas.height > 0) {
+      // Otherwise, start with a blank canvas
+      canvas.width = imageSize.width;
+      canvas.height = imageSize.height;
+      resetFog();
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     }
   });
@@ -254,6 +258,10 @@
     fogTexture.needsUpdate = true;
   }
 
+  /**
+   * Serializes the fog of war image data into a base-64 string
+   * @return A base-64 string
+   */
   function toBase64(): string {
     return textureToBase64(fogTexture);
   }

@@ -14,7 +14,7 @@ export type FogOfWarProps = {
   /**
    * Initial texture data used to populate the fog of war layer
    */
-  data: string;
+  data: string | null;
 
   /**
    * The type of drawing tool currently selected
