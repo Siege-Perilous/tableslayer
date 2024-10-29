@@ -16,8 +16,14 @@
         "CLOUDINARY_URL",
         "TURSO_GS_PARENT_DB_URL",
         "TURSO_GS_PARENT_DB_AUTH_TOKEN",
-        "DEV_EMAIL"
-      ]
+        "DEV_EMAIL",
+        "BASE_URL"
+      ],
+      "outputs": [".svelte-kit/**", ".vercel/**"]
+    },
+    "docs#build": {
+      "env": ["BASE_URL"],
+      "outputs": [".svelte-kit/**", ".vercel/**"]
     },
     "tsc": {
       "dependsOn": ["^tsc"],
