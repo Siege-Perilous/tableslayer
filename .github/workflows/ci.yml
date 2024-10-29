@@ -63,4 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - run: env | grep TURSO
       - run: pnpm test
