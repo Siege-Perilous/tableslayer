@@ -52,7 +52,7 @@ jobs:
       # Wait for the Vercel deployment to complete and get the preview URL
       - name: Wait for Vercel Preview Deployment
         id: vercel
-        uses: UnlyEd/github-action-await-vercel@v2.2.2
+        uses: UnlyEd/github-action-await-vercel@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
