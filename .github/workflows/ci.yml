@@ -74,7 +74,6 @@ jobs:
 
       #  # Run Playwright tests against the Vercel preview URL
       - name: Run Playwright Tests
-        working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }}
         run: pnpm run test
