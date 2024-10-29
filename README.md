@@ -22,6 +22,10 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 
 Because TypeScript, linting and prettier are provided globally within the repo, you'll need to make sure your IDE's project starts from the root of the monorepo to receive auto-fixes. During CI, Husky should check as you make commits.
 
+## Tests
+
+Playwright tests can be run in any of the app repos. They will run during CI.
+
 ## Styling
 
 - Vanilla CSS
