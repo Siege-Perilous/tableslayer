@@ -79,6 +79,7 @@
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Button on:click={() => stage!.functions.fogOfWar.resetFog()} title="Reset Fog" />
     <Button on:click={() => stage!.functions.fogOfWar.revealAll()} title="Reveal All" />
+    <Button on:click={() => console.log(stage!.functions.fogOfWar.toBase64())} title="Export" />
   </Folder>
 
   <Folder title="Grid">
