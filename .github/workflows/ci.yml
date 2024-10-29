@@ -57,7 +57,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          deployment-url: 'https://${{ matrix.app }}-git-${{ github.head_ref || github.ref_name }}-table-slayer.vercel.app'
+          deployment-url: 'https://${{ matrix.app }}-git-${{ (github.head_ref || github.ref_name).replace(/[-_ ]/g, "") }}-table-slayer.vercel.app'
           timeout: 600
           poll-interval: 10
 
