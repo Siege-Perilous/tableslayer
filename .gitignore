@@ -11,6 +11,9 @@ coverage
 # svelte
 .svelte-kit
 
+#vercel
+.vercel
+
 #playwright
 test-results
 
