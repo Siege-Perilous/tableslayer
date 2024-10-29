@@ -48,11 +48,37 @@ jobs:
 
       - run: pnpm tsc
 
-  # TODO: Reenable tests
+  # Turn test back on later
   #  test:
   #  runs-on: ubuntu-latest
+  #  env:
+  #  TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+  #  TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
+  #  TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
+  #  RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
+  #  CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+  #  CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+  #  CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+  #  TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
+  #  TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
   #  steps:
   #  - uses: actions/checkout@v3
   #  - uses: ./.github/shared
-
+  #  - name: Install Playwright Browsers
+  #  run: pnpx playwright install --with-deps
+  #  - name: Make envfile
+  #  uses: SpicyPizza/create-envfile@v2.0
+  #  with:
+  #  envkey_TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+  #  envkey_TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
+  #  envkey_TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
+  #  envkey_RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
+  #  envkey_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+  #  envkey_CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+  #  envkey_CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+  #  envkey_TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
+  #  envkey_TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
+  #  directory: apps/web/
+  #  file_name: .env
+  #  - run: env | grep TURSO
   #  - run: pnpm test
