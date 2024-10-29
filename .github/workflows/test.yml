@@ -1,0 +1,39 @@
+name: End-to-end testing
+
+on:
+  deployment_status:
+    types: [success] # Run only when a deployment is successful
+
+jobs:
+  e2e:
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    # This environment variable helps target the correct deployment environment URL.
+    env:
+      TEST_URL: ${{ github.event.deployment_status.environment_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+
+      # Change to the app directory and run installation
+      - name: Install dependencies for the specific app
+        run: pnpm install
+        working-directory: apps/docs
+
+      - name: Install Playwright Browsers
+        run: pnpm playwright install --with-deps
+        working-directory: apps/docs
+
+      - name: Run Playwright tests
+        run: pnpm test
+        working-directory: apps/docs
+        env:
+          TEST_URL: ${{ github.event.deployment_status.environment_url }}

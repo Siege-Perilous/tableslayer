@@ -6,6 +6,9 @@
       "inputs": ["$TURBO_DEFAULT", ".env*"],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
+    "docs#build": {
+      "env": ["TEST_URL"]
+    },
     "web#build": {
       "env": [
         "TURSO_API_TOKEN",
@@ -16,7 +19,8 @@
         "CLOUDINARY_URL",
         "TURSO_GS_PARENT_DB_URL",
         "TURSO_GS_PARENT_DB_AUTH_TOKEN",
-        "DEV_EMAIL"
+        "DEV_EMAIL",
+        "TEST_URL"
       ]
     },
     "tsc": {
