@@ -57,12 +57,12 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          deployment-url: ${{ matrix.url }}
+          deployment-url: 'https://${{ matrix.app }}-git-${{ github.head_ref || github.ref_name }}-table-slayer.vercel.app'
           timeout: 600
           poll-interval: 10
 
       - name: Display deployment status
-        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
+        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}. The branch is ${{ github.head_ref || github.ref_name }} '
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
