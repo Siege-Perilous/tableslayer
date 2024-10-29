@@ -44,8 +44,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [docs, web]
-        url: [tableslayer-docs.vercel.app, tableslayer-web.vercel.app]
+        include:
+          - app: docs
+            url: tableslayer-docs.vercel.app
+          - app: web
+            url: tableslayer-web.vercel.app
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
