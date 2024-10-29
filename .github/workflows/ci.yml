@@ -54,12 +54,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           project-name: ${{ matrix.app }}
-
-      - name: Wait for Vercel Deployment
-        uses: 'w9jds/wait-for-vercel-action@v1'
+      - name: Wait for Vercel Preview Deployment
+        id: vercel
+        uses: patrickedqvist/wait-for-vercel-preview@v1
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          deployment-url: ${{ steps.vercel.outputs.preview-url }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          project-name: ${{ matrix.app }}
 
       - name: Run Playwright Tests
         env:
