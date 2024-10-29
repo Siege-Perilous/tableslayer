@@ -58,8 +58,8 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
           deployment-url: ${{ matrix.url }}
-          timeout: 10
-          poll-interval: 1
+          timeout: 600
+          poll-interval: 10
 
       - name: Display deployment status
         run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
