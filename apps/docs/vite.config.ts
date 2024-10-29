@@ -7,6 +7,9 @@ export default defineConfig({
     port: 5173,
     strictPort: false
   },
+  preview: {
+    port: 4173
+  },
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}']
   },
