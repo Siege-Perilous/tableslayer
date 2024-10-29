@@ -46,9 +46,7 @@ jobs:
       matrix:
         include:
           - app: docs
-            url: tableslayer-docs.vercel.app
           - app: web
-            url: tableslayer-web.vercel.app
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
@@ -57,12 +55,15 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          deployment-url: ${{ matrix.url }}
+          deployment-commit-sha: ${{ github.sha }}
+          vercel-project-name: ${{ matrix.app }}
           timeout: 600
           poll-interval: 10
 
       - name: Display deployment status
-        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
+        run: |
+          DEPLOYMENT_URL=$(echo "${{ steps.await-vercel.outputs.deploymentDetails }}" | jq -r '.url')
+          echo "The deployment at $DEPLOYMENT_URL is ready."
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
