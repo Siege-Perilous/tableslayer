@@ -26,6 +26,10 @@ Because TypeScript, linting and prettier are provided globally within the repo, 
 
 Playwright tests can be run in any of the app repos. They will run during CI.
 
+## Deployment
+
+Deployment is handled by Vercel
+
 ## Styling
 
 - Vanilla CSS
