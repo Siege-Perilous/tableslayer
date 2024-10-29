@@ -22,14 +22,12 @@ jobs:
       # Change to the app directory and run installation
       - name: Install dependencies for the specific app
         run: pnpm install
-        working-directory: apps/docs
 
       - name: Install Playwright Browsers
-        run: pnpm playwright install --with-deps
+        run: pnpx playwright install --with-deps
         working-directory: apps/docs
 
       - name: Run Playwright tests
-        run: pnpm test
-        working-directory: apps/docs
+        run: pnpm docs#test
         env:
           TEST_URL: ${{ github.event.deployment_status.environment_url }}
