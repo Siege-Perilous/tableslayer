@@ -50,19 +50,14 @@ jobs:
       - uses: ./.github/shared
 
       # Wait for the Vercel deployment to complete and get the preview URL
-      - name: Wait for Vercel Preview Deployment
-        id: vercel
-        uses: UnlyEd/github-action-await-vercel@v2
+      - name: vercel-preview-url
+        uses: zentered/vercel-preview-url@v1.0.0
+        id: vercel_preview_url
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          team-id: ${{ secrets.VERCEL_TEAM_ID }}
-          vercel-project-name: ${{ matrix.app }}
-          github-commit-sha: ${{ github.event.pull_request.head.sha }}
-          wait-interval-seconds: 10
-          timeout-seconds: 600
-          alias-timeout-seconds: 60
-          verbose: true
+          vercel_team_id: ${{ secrets.VERCEL_TEAM_ID }}
+          vercel_project_id: ${{ matrix.app }}
 
       # Run Playwright tests against the Vercel preview URL
       - name: Run Playwright Tests
