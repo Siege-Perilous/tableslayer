@@ -21,7 +21,8 @@
       ]
     },
     "docs#build": {
-      "env": ["BASE_URL"]
+      "env": ["BASE_URL"],
+      "outputs": [".svelte-kit/**", ".vercel/**"]
     },
     "tsc": {
       "dependsOn": ["^tsc"],
