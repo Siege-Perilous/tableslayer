@@ -73,8 +73,8 @@ jobs:
       #  with:
       #  vercel_team_id: ${{ secrets.VERCEL_TEAM_ID }}
       #  vercel_project_id: ${{ matrix.app }}
-
-      #  # Run Playwright tests against the Vercel preview URL
+      - name: Install Playwright Browsers
+        run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
         working-directory: apps/${{ matrix.app }}
         env:
