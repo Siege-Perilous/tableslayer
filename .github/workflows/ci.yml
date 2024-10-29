@@ -58,8 +58,8 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
           deployment-url: ${{ matrix.url }}
-          timeout: 10
-          poll-interval: 1
+          timeout: 600
+          poll-interval: 10
 
       - name: Display deployment status
         run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
@@ -69,6 +69,7 @@ jobs:
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: 'https://${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }}'
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is $BASE_URL"
           pnpm run test
