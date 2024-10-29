@@ -78,7 +78,7 @@ jobs:
       - name: Run Playwright Tests
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }}
+          BASE_URL: 'https://${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }}'
         run: |
           echo "BASE_URL is $BASE_URL"
           pnpm run test
