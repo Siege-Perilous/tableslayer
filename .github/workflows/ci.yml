@@ -60,6 +60,10 @@ jobs:
           # Remove hyphens, underscores, and spaces
           SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/[-_ ]//g')
           echo "SANITIZED_BRANCH_NAME=$SANITIZED_BRANCH_NAME" >> $GITHUB_ENV
+      - name: Log deployment URL
+        run: |
+          DEPLOYMENT_URL="https://${{ matrix.app }}-git-${{ env.SANITIZED_BRANCH_NAME }}-table-slayer.vercel.app"
+          echo "Constructed Deployment URL: $DEPLOYMENT_URL"
       - uses: UnlyEd/github-action-await-vercel@v1
         id: await-vercel
         env:
