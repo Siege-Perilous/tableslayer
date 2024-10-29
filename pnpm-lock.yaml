@@ -38,6 +38,9 @@ importers:
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.4.5
       mode-watcher:
         specifier: ^0.4.1
         version: 0.4.1(svelte@5.1.3)
