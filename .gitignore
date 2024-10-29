@@ -11,6 +11,9 @@ coverage
 # svelte
 .svelte-kit
 
+#playwright
+test-results
+
 # Typings for docs
 typedocgen.json
 
