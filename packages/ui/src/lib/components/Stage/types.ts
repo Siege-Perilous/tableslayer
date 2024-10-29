@@ -6,6 +6,7 @@ export interface StageFunctions {
   fogOfWar: {
     resetFog: () => void;
     revealAll: () => void;
+    toBase64: () => string;
   };
 }
 

@@ -7,7 +7,10 @@
   export const functions: StageFunctions = $state({
     fogOfWar: {
       resetFog: () => {},
-      revealAll: () => {}
+      revealAll: () => {},
+      toBase64: () => {
+        return '';
+      }
     }
   });
 
