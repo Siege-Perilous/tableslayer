@@ -22,7 +22,8 @@
     "gsDb:migrate": "drizzle-kit migrate --config drizzle.config.gs.ts",
     "gsDb:push": "drizzle-kit push --config drizzle.config.gs.ts",
     "gsDb:drop": "drizzle-kit drop --config drizzle.config.gs.ts",
-    "gsDb:studio": "drizzle-kit studio --config drizzle.config.gs.ts"
+    "gsDb:studio": "drizzle-kit studio --config drizzle.config.gs.ts",
+    "postinstall": "svelte-kit sync"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
