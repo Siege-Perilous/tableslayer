@@ -52,17 +52,25 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
+      - name: Sanitize branch name
+        id: sanitize_branch
+        run: |
+          # Set branch name to either github.head_ref or github.ref_name
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          # Remove hyphens, underscores, and spaces
+          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -d '_- ')
+          echo "SANITIZED_BRANCH_NAME=$SANITIZED_BRANCH_NAME" >> $GITHUB_ENV
       - uses: UnlyEd/github-action-await-vercel@v1
         id: await-vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          deployment-url: 'https://${{ matrix.app }}-git-${{ (github.head_ref || github.ref_name).replace(/[-_ ]/g, "") }}-table-slayer.vercel.app'
+          deployment-url: 'https://${{ matrix.app }}-git-${{ env.SANITIZED_BRANCH_NAME }}-table-slayer.vercel.app'
           timeout: 600
           poll-interval: 10
 
       - name: Display deployment status
-        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}. The branch is ${{ github.head_ref || github.ref_name }} '
+        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}. The branch is ${{ github.head_ref || github.ref_name }}'
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
