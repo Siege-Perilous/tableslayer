@@ -56,13 +56,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          team-id: ${{ secrets.VERCEL_TEAM_ID }} # Optional, if you're using a Vercel team
-          vercel-project-name: ${{ matrix.app }} # Ensure this matches your Vercel project names
+          team-id: ${{ secrets.VERCEL_TEAM_ID }}
+          vercel-project-name: ${{ matrix.app }}
           github-commit-sha: ${{ github.event.pull_request.head.sha }}
           wait-interval-seconds: 10
-          timeout-seconds: 600 # Adjust based on your build times
+          timeout-seconds: 600
           alias-timeout-seconds: 60
-          verbose: true # Optional, for more detailed logs
+          verbose: true
 
       # Run Playwright tests against the Vercel preview URL
       - name: Run Playwright Tests
