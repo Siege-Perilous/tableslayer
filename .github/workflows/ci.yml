@@ -39,7 +39,7 @@ jobs:
 
       - run: pnpm tsc
 
-  e2e-tests:
+  tests:
     needs: [format-check, lint, tsc]
     runs-on: ubuntu-latest
     strategy:
@@ -60,19 +60,6 @@ jobs:
 
       - name: Display deployment status
         run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
-      #  steps:
-      #  - uses: actions/checkout@v3
-      #  - uses: ./.github/shared
-
-      #  # Wait for the Vercel deployment to complete and get the preview URL
-      #  - name: vercel-preview-url
-      #  uses: zentered/vercel-preview-url@v1.0.0
-      #  id: vercel_preview_url
-      #  env:
-      #  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      #  with:
-      #  vercel_team_id: ${{ secrets.VERCEL_TEAM_ID }}
-      #  vercel_project_id: ${{ matrix.app }}
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
