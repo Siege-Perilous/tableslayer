@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
-      # Use --quiet to supress warnings which show up in PRs
+      # Use --quiet to suppress warnings which show up in PRs
       - run: pnpm lint -- --quiet
 
   tsc:
@@ -38,66 +38,35 @@ jobs:
       - uses: ./.github/shared
 
       - run: pnpm tsc
+
   e2e-tests:
     needs: [format-check, lint, tsc]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [docs]
+        app: [docs] # Replace with your actual app names
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
 
-      - name: Get Vercel Deployment URL
-        id: vercel
-        uses: a7ul/vercel-preview-url@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          project-name: ${{ matrix.app }}
+      # Wait for the Vercel deployment to complete and get the preview URL
       - name: Wait for Vercel Preview Deployment
         id: vercel
-        uses: patrickedqvist/wait-for-vercel-preview@v1
+        uses: UnlyEd/github-action-await-vercel@v2.2.2
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          project-name: ${{ matrix.app }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          team-id: ${{ secrets.VERCEL_TEAM_ID }} # Optional, if you're using a Vercel team
+          vercel-project-name: ${{ matrix.app }} # Ensure this matches your Vercel project names
+          github-commit-sha: ${{ github.event.pull_request.head.sha }}
+          wait-interval-seconds: 10
+          timeout-seconds: 600 # Adjust based on your build times
+          alias-timeout-seconds: 60
+          verbose: true # Optional, for more detailed logs
 
+      # Run Playwright tests against the Vercel preview URL
       - name: Run Playwright Tests
+        working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: ${{ steps.vercel.outputs.preview-url }}
-        run: pnpm playwright test --config=apps/${{ matrix.app }}/playwright.config.ts
-
-  # Turn test back on later
-  #  test:
-  #  runs-on: ubuntu-latest
-  #  env:
-  #  TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
-  #  TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
-  #  TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
-  #  RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
-  #  CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-  #  CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
-  #  CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-  #  TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
-  #  TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - uses: ./.github/shared
-  #  - name: Install Playwright Browsers
-  #  run: pnpx playwright install --with-deps
-  #  - name: Make envfile
-  #  uses: SpicyPizza/create-envfile@v2.0
-  #  with:
-  #  envkey_TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
-  #  envkey_TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
-  #  envkey_TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
-  #  envkey_RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
-  #  envkey_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-  #  envkey_CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
-  #  envkey_CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-  #  envkey_TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
-  #  envkey_TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
-  #  directory: apps/web/
-  #  file_name: .env
-  #  - run: env | grep TURSO
-  #  - run: pnpm test
+          BASE_URL: https://${{ steps.vercel.outputs.preview-url }}
+        run: pnpm playwright test
