@@ -1,10 +1,8 @@
 import type { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
-  webServer: {
-    command: 'pnpm run build && pnpm run preview --port 8174',
-    port: 8174,
-    reuseExistingServer: true
+  use: {
+    baseURL: process.env.BASE_URL || 'http://localhost:8174'
   },
   testDir: 'tests',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/

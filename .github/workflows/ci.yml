@@ -15,15 +15,6 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  # TODO: Add a check for subproject files
-  #  checks:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - uses: ./.github/shared
-
-  #  - run: pnpm check-subprojects
-
   format-check:
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +38,33 @@ jobs:
       - uses: ./.github/shared
 
       - run: pnpm tsc
+  e2e-tests:
+    needs: [format-check, lint, tsc]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [docs]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/shared
+
+      - name: Get Vercel Deployment URL
+        id: vercel
+        uses: a7ul/vercel-preview-url@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          project-name: ${{ matrix.app }}
+
+      - name: Wait for Vercel Deployment
+        uses: 'w9jds/wait-for-vercel-action@v1'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          deployment-url: ${{ steps.vercel.outputs.preview-url }}
+
+      - name: Run Playwright Tests
+        env:
+          BASE_URL: ${{ steps.vercel.outputs.preview-url }}
+        run: pnpm playwright test --config=apps/${{ matrix.app }}/playwright.config.ts
 
   # Turn test back on later
   #  test:
