@@ -51,23 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
-
-      - name: Construct Vercel Preview URL
-        id: vercel-url
-        run: |
-          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          # Sanitize the branch name to match Vercel's URL encoding
-          BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr '/' '-' | tr '.' '-' | tr -c 'a-zA-Z0-9\-_' '-')
-          DEPLOYMENT_URL="https://${{ matrix.app }}-git-${BRANCH_NAME}-table-slayer.vercel.app"
-          echo "DEPLOYMENT_URL=${DEPLOYMENT_URL}" >> $GITHUB_ENV
-          echo "::set-output name=deployment_url::${DEPLOYMENT_URL}"
-
       - uses: UnlyEd/github-action-await-vercel@v1
         id: await-vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         with:
-          deployment-url: ${{ env.DEPLOYMENTURL }}
+          deployment-url: 'https://${{ matrix.app }}-git-${{ github.head_ref || github.ref_name }}-table-slayer.vercel.app'
           timeout: 60
           poll-interval: 10
 
