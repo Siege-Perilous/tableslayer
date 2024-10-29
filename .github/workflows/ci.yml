@@ -47,6 +47,7 @@ jobs:
         app: [docs]
         url: [tableslayer-docs.vercel.app]
     steps:
+      - uses: actions/checkout@v3
       - uses: ./.github/shared
       - uses: UnlyEd/github-action-await-vercel@v1
         id: await-vercel
