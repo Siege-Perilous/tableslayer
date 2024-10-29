@@ -50,17 +50,17 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+      TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
+      TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
+      RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
+      TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
       - run: pnpm test
-        env:
-          TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
-          TURSO_APP_DB_URL: ${{ secrets.TURSO_APP_DB_URL }}
-          TURSO_APP_DB_AUTH_TOKEN: ${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
-          RESEND_TOKEN: ${{ secrets.RESEND_TOKEN }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          TURSO_GS_PARENT_DB_URL: ${{ secrets.TURSO_GS_PARENT_DB_URL }}
-          TURSO_GS_PARENT_DB_AUTH_TOKEN: ${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
