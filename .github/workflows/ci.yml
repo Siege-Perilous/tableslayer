@@ -58,7 +58,7 @@ jobs:
           # Set branch name to either github.head_ref or github.ref_name
           BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
           # Remove hyphens, underscores, and spaces
-          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -d '_- ')
+          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/[-_ ]//g')
           echo "SANITIZED_BRANCH_NAME=$SANITIZED_BRANCH_NAME" >> $GITHUB_ENV
       - uses: UnlyEd/github-action-await-vercel@v1
         id: await-vercel
