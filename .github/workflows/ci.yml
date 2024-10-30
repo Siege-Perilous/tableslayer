@@ -64,13 +64,13 @@ jobs:
           github-commit: ${{ github.event.pull_request.head.sha }}
 
       - name: Display deployment status
-        run: 'echo "The deployment URL is ${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
+        run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: '${{ steps.get-vercel-deployment.outputs.deployment-url }}'
+          BASE_URL: 'https://${{ steps.get-vercel-deployment.outputs.deployment-url }}'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is $BASE_URL"
