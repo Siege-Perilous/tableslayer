@@ -95,5 +95,5 @@ jobs:
           BASE_URL: '${{ env.BASE_URL }}'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
-          echo "BASE_URL is $BASE_URL"
+          echo "BASE_URL is ${{ env.BASE_URL }}"
           pnpm run test
