@@ -61,6 +61,7 @@ jobs:
           fi
 
       - name: Get Preview URL
+        if: ${{ github.ref != 'refs/heads/main' }}
         uses: dlip/get-vercel-deployment-action@v1.0.2
         id: get-vercel-deployment
         with:
