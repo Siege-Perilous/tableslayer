@@ -24,7 +24,7 @@ Because TypeScript, linting and prettier are provided globally within the repo, 
 
 ## Tests
 
-Playwright tests can be run in any of the app repos. They will run during CI.
+Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any of the app-folders and they will be run against the vercel preview URLs that are generated with your PR.
 
 ## Styling
 
