@@ -46,13 +46,19 @@ jobs:
       matrix:
         include:
           - app: docs
-            id: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
           - app: web
-            id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
     name: ${{ matrix.app }} tests
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
+      - name: Set Vercel Project ID
+        id: set-vercel-id
+        run: |
+          if [ "${{ matrix.app }}" = "docs" ]; then
+            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_DOCS_PROJECT_ID }}" >> $GITHUB_ENV
+          elif [ "${{ matrix.app }}" = "web" ]; then
+            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_WEB_PROJECT_ID }}" >> $GITHUB_ENV
+          fi
 
       - name: Get Preview URL
         uses: dlip/get-vercel-deployment-action@v1.0.2
@@ -60,7 +66,7 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_TEAM_ID }}
-          vercel-project-id: ${{ matrix.id}}
+          vercel-project-id: ${{ env.VERCEL_PROJECT_ID }}
           github-branch: ${{ github.head_ref }}
           github-commit: ${{ github.event.pull_request.head.sha }}
 
