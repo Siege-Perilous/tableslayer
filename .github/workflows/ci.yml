@@ -46,9 +46,9 @@ jobs:
       matrix:
         include:
           - app: docs
-            id: ${{ SECRETS.VERCEL_DOCS_PROJECT_ID}}
+            id: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
           - app: web
-            id: ${{ SECRETS.VERCEL_WEB_PROJECT_ID}}
+            id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
     name: ${{ matrix.app }} tests
     steps:
       - uses: actions/checkout@v3
