@@ -46,9 +46,10 @@ jobs:
       matrix:
         include:
           - app: docs
-            id: prj_edZYUkD2d3mdPVYlQvly2WKauhho
+            id: ${{ SECRETS.VERCEL_DOCS_PROJECT_ID}}
           - app: web
-            id: prj_vp2Flu06j2nXnLbGVTW0qZcYTqf8
+            id: ${{ SECRETS.VERCEL_WEB_PROJECT_ID}}
+    name: ${{ matrix.app }} tests
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
