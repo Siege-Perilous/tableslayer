@@ -61,6 +61,7 @@ jobs:
           fi
 
       - name: Get Preview URL
+        if: ${{ github.ref != 'refs/heads/main' }}
         uses: dlip/get-vercel-deployment-action@v1.0.2
         id: get-vercel-deployment
         with:
@@ -69,6 +70,20 @@ jobs:
           vercel-project-id: ${{ env.VERCEL_PROJECT_ID }}
           github-branch: ${{ github.head_ref }}
           github-commit: ${{ github.event.pull_request.head.sha }}
+      - name: Set BASE_URL
+        id: set-base-url
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # Set the BASE_URL to the predefined production URL if on the main branch
+            if [ "${{ matrix.app }}" = "docs" ]; then
+              echo "BASE_URL=${{ vars.VERCEL_DOCS_PRODUCTION_URL }}" >> $GITHUB_ENV
+            elif [ "${{ matrix.app }}" = "web" ]; then
+              echo "BASE_URL=${{ vars.VERCEL_WEB_PRODUCTION_URL }}" >> $GITHUB_ENV
+            fi
+          else
+            # Use the dynamically obtained preview URL
+            echo "BASE_URL=https://${{ steps.get-vercel-deployment.outputs.deployment-url }}" >> $GITHUB_ENV
+          fi
 
       - name: Display deployment status
         run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
@@ -77,7 +92,7 @@ jobs:
       - name: Run Playwright Tests
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: 'https://${{ steps.get-vercel-deployment.outputs.deployment-url }}'
+          BASE_URL: '${{ env.BASE_URL }}'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is $BASE_URL"
