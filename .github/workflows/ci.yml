@@ -46,29 +46,38 @@ jobs:
       matrix:
         include:
           - app: docs
-            url: tableslayer-docs.vercel.app
           - app: web
-            url: tableslayer-web.vercel.app
+    name: ${{ matrix.app }} tests
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/shared
-      - uses: UnlyEd/github-action-await-vercel@v1
-        id: await-vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Set Vercel Project ID
+        id: set-vercel-id
+        run: |
+          if [ "${{ matrix.app }}" = "docs" ]; then
+            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_DOCS_PROJECT_ID }}" >> $GITHUB_ENV
+          elif [ "${{ matrix.app }}" = "web" ]; then
+            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_WEB_PROJECT_ID }}" >> $GITHUB_ENV
+          fi
+
+      - name: Get Preview URL
+        uses: dlip/get-vercel-deployment-action@v1.0.2
+        id: get-vercel-deployment
         with:
-          deployment-url: ${{ matrix.url }}
-          timeout: 600
-          poll-interval: 10
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID }}
+          vercel-project-id: ${{ env.VERCEL_PROJECT_ID }}
+          github-branch: ${{ github.head_ref }}
+          github-commit: ${{ github.event.pull_request.head.sha }}
 
       - name: Display deployment status
-        run: 'echo The deployment at ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }} is ${{ fromJson(steps.await-vercel.outputs.deploymentDetails).readyState }}'
+        run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
       - name: Install Playwright Browsers
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: 'https://${{ fromJson(steps.await-vercel.outputs.deploymentDetails).url }}'
+          BASE_URL: 'https://${{ steps.get-vercel-deployment.outputs.deployment-url }}'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is $BASE_URL"
