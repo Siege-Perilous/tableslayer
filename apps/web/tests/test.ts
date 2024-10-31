@@ -47,9 +47,9 @@ test.describe('Login Page Tests', () => {
     await page.getByLabel('Password').fill('wrongpassword');
 
     // Click on the sign-in button
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByTestId('loginSubmit').click();
 
     // Expect an error message for invalid credentials
-    await expect(page.locator('text=Incorrect email or password')).toBeVisible();
+    await expect(page.getByTestId('messageError')).toBeVisible();
   });
 });

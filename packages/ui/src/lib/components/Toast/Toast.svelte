@@ -63,9 +63,11 @@
           </p>
           <div class={classNames('toast__titleDot', `toast__titleDot--${data.type}`)}></div>
         </div>
-        <div use:melt={$description(id)}>
-          {data.body}
-        </div>
+        {#if data.body}
+          <div use:melt={$description(id)}>
+            {data.body}
+          </div>
+        {/if}
       </div>
       <button use:melt={$close(id)} aria-label="Close notification"><Icon Icon={IconX} /></button>
     </div>
