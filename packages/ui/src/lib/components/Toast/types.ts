@@ -1,5 +1,5 @@
 import type { HTMLBaseAttributes } from 'svelte/elements';
-export type ToastData = {
+export type ToastDataProps = {
   title: string;
   body: string;
   type: 'success' | 'danger' | 'info';

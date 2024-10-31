@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, CodeBlock, Spacer, type ToastData } from '@tableslayer/ui';
+  import { Button, CodeBlock, Spacer, type ToastDataProps } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import { addToast } from '@tableslayer/ui';
   const example = `
@@ -9,7 +9,7 @@ const invokeToast = () => {
     data: {
       title: 'Hello',
       body: 'This is a toast',
-      type: 'red'
+      type: 'danger'
     }
   });
 };
@@ -18,7 +18,7 @@ const invokeToast = () => {
 `;
 
   const invokeToast = () => {
-    const randomToasts: ToastData[] = [
+    const randomToasts: ToastDataProps[] = [
       {
         title: 'Success',
         body: 'This is a success toast',
@@ -41,7 +41,7 @@ const invokeToast = () => {
   };
 </script>
 
-<Example title="Button" propsName="Button" layout="column">
+<Example title="Toast" propsName="ToastDataProps" layout="column">
   {#snippet codeBlock()}
     <CodeBlock code={example} lang="svelte" />
   {/snippet}

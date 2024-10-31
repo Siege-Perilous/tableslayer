@@ -1,5 +1,5 @@
-<script lang="ts" context="module">
-  import type { ToastData } from './types';
+<script lang="ts" module>
+  import type { ToastDataProps } from './types';
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
   import classNames from 'classnames';
@@ -10,7 +10,7 @@
     helpers,
     states: { toasts },
     actions: { portal }
-  } = createToaster<ToastData>({ hover: 'pause-all' });
+  } = createToaster<ToastDataProps>({ hover: 'pause-all' });
 
   let isHovered = $state(false);
   let leaveTimeout: ReturnType<typeof setTimeout>;
@@ -59,7 +59,6 @@
         <div class="toast__title">
           <p use:melt={$title(id)} class="toast__titleText">
             {data.title}
-            {index + 1} of {$toasts.length}
           </p>
           <div class={classNames('toast__titleDot', `toast__titleDot--${data.type}`)}></div>
         </div>
