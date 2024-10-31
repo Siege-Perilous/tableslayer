@@ -2,7 +2,7 @@
   let { children } = $props();
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
-  import { Icon, IconButton } from '@tableslayer/ui';
+  import { Icon, IconButton, Toast } from '@tableslayer/ui';
   import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
 
@@ -28,6 +28,7 @@
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
     { name: 'Title', path: '/title' },
+    { name: 'Toast', path: '/toast' },
     { name: 'ToolTip', path: '/tooltip' }
   ];
 </script>
@@ -63,6 +64,8 @@
     {@render children()}
   </main>
 </div>
+
+<Toast />
 
 <style>
   header {
