@@ -1,6 +1,7 @@
 <script lang="ts">
   import { IconX } from '@tabler/icons-svelte';
   import { Icon, addToast } from '../';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { message }: { message: any } = $props();
 
   $inspect(message);
@@ -18,13 +19,13 @@
   });
 </script>
 
-<div class="fieldError">
+<div class="messageError">
   <Icon Icon={IconX} />
   <p>{message.text}</p>
 </div>
 
 <style>
-  .fieldError {
+  .messageError {
     display: flex;
     gap: var(--size-1);
     color: var(--fgDanger);
