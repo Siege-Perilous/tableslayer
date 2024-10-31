@@ -19,10 +19,12 @@
   });
 </script>
 
-<div class="messageError">
-  <Icon Icon={IconX} />
-  <p>{message.text}</p>
-</div>
+{#if message}
+  <div class="messageError" data-testid="messageError">
+    <Icon Icon={IconX} />
+    <p>{message.text}</p>
+  </div>
+{/if}
 
 <style>
   .messageError {
