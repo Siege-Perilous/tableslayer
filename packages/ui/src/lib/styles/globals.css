@@ -16,7 +16,9 @@
   --fgPrimary: var(--primary-600);
   --fgMuted: #666;
   --fgDanger: var(--yellow-800);
+  --fgSuccess: var(--green-800);
   --borderThin: solid var(--borderWidthThin) var(--contrastMedium);
+  --borderThick: solid var(--borderWidthThick) var(--contrastMedium);
   --surfaceBg: var(--contrastLowest);
   --inputBg: #f5f5f5;
   --inputFocusBg: #fff;
@@ -38,7 +40,9 @@
   --fgPrimary: var(--primary-500);
   --fgMuted: #ccc;
   --fgDanger: var(--yellow-200);
+  --fgSuccess: var(--green-200);
   --borderThin: solid var(--borderWidthThin) var(--contrastMedium);
+  --borderThick: solid var(--borderWidthThick) var(--contrastMedium);
   --surfaceBg: var(--contrastLowest);
   --inputBg: #1c1c1c;
   --inputFocusBg: #222;
