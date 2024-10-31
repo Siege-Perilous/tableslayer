@@ -6,6 +6,7 @@
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher } from 'mode-watcher';
   import { GlobalLoading } from '$lib/components';
+  import { Toast } from '@tableslayer/ui';
 </script>
 
 <QueryClientProvider client={queryClient}>
@@ -13,6 +14,8 @@
   <GlobalLoading />
   {@render children()}
 </QueryClientProvider>
+
+<Toast />
 
 <style>
   :global(body) {
