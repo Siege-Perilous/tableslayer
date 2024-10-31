@@ -41,7 +41,7 @@
       <MessageError message={$message} />
     {/if}
     <Spacer />
-    <Button>Sign in</Button>
+    <Button data-testid="loginSubmit">Sign in</Button>
   </form>
   <Spacer />
 </Panel>
