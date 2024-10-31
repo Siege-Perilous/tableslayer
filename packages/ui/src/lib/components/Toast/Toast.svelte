@@ -48,6 +48,7 @@
       animate:flip={{ duration: 500 }}
       in:fly={{ duration: 150, y: '100%' }}
       out:fly={{ duration: 150, y: '100%' }}
+      data-testid="toast"
       class="toast"
       style="z-index: index; visibility: {index > $toasts.length - 6 || isHovered
         ? 'visible'

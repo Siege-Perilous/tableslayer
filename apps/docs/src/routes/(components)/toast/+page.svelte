@@ -45,7 +45,7 @@ const invokeToast = () => {
   {#snippet codeBlock()}
     <CodeBlock code={example} lang="svelte" />
   {/snippet}
-  <Button onclick={invokeToast}>Invoke toast</Button>
+  <Button onclick={invokeToast} data-testid="toastButton">Invoke toast</Button>
 </Example>
 
 <Spacer size={8} />
