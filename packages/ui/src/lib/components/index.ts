@@ -14,4 +14,5 @@ export * from './Spacer';
 export * from './Stage';
 export * from './Table';
 export * from './Title';
+export * from './Toast';
 export * from './ToolTip';
