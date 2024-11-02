@@ -2,6 +2,8 @@
   import { createPopover, createSync, melt } from '@melt-ui/svelte';
   import { fade } from 'svelte/transition';
   import type { PopoverProps } from './types';
+  import classNames from 'classnames';
+  import type { HTMLBaseAttributes } from 'svelte/elements';
 
   let {
     isOpen = false,
@@ -10,8 +12,9 @@
     positioning = { placement: 'bottom' },
     portal = null,
     forceVisible,
-    closeOnOutsideClick = true
-  }: PopoverProps = $props();
+    closeOnOutsideClick = true,
+    ...restProps
+  }: PopoverProps & HTMLBaseAttributes = $props();
 
   const {
     elements: { trigger: triggerAction, content: contentAction, close },
@@ -35,7 +38,11 @@
 </button>
 
 {#if isOpen}
-  <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class="popContent">
+  <div
+    use:melt={$contentAction}
+    transition:fade={{ duration: 100 }}
+    class={classNames('popContent', ...(restProps.class ?? ''))}
+  >
     {@render content()}
     <button class="popClose" use:melt={$close}> close </button>
   </div>

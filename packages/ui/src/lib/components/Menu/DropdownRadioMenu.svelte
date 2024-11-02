@@ -1,0 +1,99 @@
+<script lang="ts">
+  import { createDropdownMenu, melt } from '@melt-ui/svelte';
+  import type { RadioMenuProps } from './types';
+  import { fly } from 'svelte/transition';
+  let { trigger, items, defaultItem, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
+  import { goto } from '$app/navigation';
+
+  const {
+    elements: { trigger: triggerAction, menu: menuAction },
+    builders: { createMenuRadioGroup },
+    states: { open }
+  } = createDropdownMenu({
+    forceVisible: true,
+    loop: true,
+    positioning: positioning
+  });
+
+  const {
+    elements: { radioGroup, radioItem },
+    helpers: { isChecked }
+  } = createMenuRadioGroup({
+    defaultValue: defaultItem.value
+  });
+
+  const handleItemClick = (href: string) => {
+    if (href) {
+      goto(href);
+    }
+  };
+</script>
+
+<button type="button" class="menuTrigger" use:melt={$triggerAction} aria-label="Menu">
+  {@render trigger()}
+</button>
+
+{#if $open}
+  <div class="menu" use:melt={$menuAction} transition:fly={{ duration: 50 }}>
+    <div use:melt={$radioGroup}>
+      {#each items as item}
+        <button
+          class="menuItem"
+          use:melt={$radioItem({ value: item.value })}
+          onclick={() => handleItemClick(item.href)}
+        >
+          <div class="menuSpace">
+            {#if $isChecked(item.value)}
+              <div class="menuDot"></div>
+            {/if}
+          </div>
+          {item.label}
+        </button>
+      {/each}
+    </div>
+  </div>
+{/if}
+
+<style>
+  :global(.light) {
+    --menuItemHover: var(--primary-50);
+  }
+  :global(.dark) {
+    --menuItemHover: var(--primary-950);
+  }
+  .menu {
+    padding: var(--size-2);
+    background: var(--bg);
+    color: var(--fg);
+    border: var(--borderThin);
+    border-radius: var(--radius-1);
+    box-shadow: var(--shadow-1);
+    z-index: 1000;
+  }
+  .menuTrigger {
+    cursor: pointer;
+  }
+  .menuItem {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: var(--size-2) var(--size-4);
+    gap: var(--size-4);
+    border-radius: var(--radius-1);
+    width: 100%;
+  }
+  .menuItem:hover {
+    color: var(--fgPrimary);
+    background: var(--contrastLow);
+  }
+  .menuSpace {
+    width: var(--size-2);
+    height: var(--size-2);
+  }
+  .menuDot {
+    width: var(--size-2);
+    height: var(--size-2);
+    background: var(--fgPrimary);
+    border-radius: 50%;
+  }
+</style>

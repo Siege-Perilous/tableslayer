@@ -1,4 +1,4 @@
-import { getUser } from '$lib/server';
+import { getPartiesForUser, getUser } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
@@ -9,5 +9,10 @@ export const load = (async (event) => {
   const user = await getUser(userId);
   if (!user) redirect(302, '/login');
 
-  return {};
+  const parties = await getPartiesForUser(user.id);
+
+  return {
+    user,
+    parties
+  };
 }) satisfies LayoutServerLoad;
