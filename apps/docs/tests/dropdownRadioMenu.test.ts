@@ -4,5 +4,5 @@ test('Test that menus work', async ({ page }) => {
   await page.goto('/menu');
   await page.waitForTimeout(500);
   await page.getByTestId('menuButton').first().click();
-  await expect(page.getByTestId('menuItem')).toBeVisible({ timeout: 1000 });
+  await expect(page.getByTestId('menuItem').first()).toBeVisible({ timeout: 1000 });
 });
