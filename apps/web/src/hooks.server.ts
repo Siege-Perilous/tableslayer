@@ -1,19 +1,24 @@
-import { getPartyInvitesForCode, isEmailInUserTable } from '$lib/server';
-import { lucia } from '$lib/server/auth';
-import { redirect, type Handle } from '@sveltejs/kit';
+import { deleteSessionTokenCookie, setSessionTokenCookie, validateSessionToken } from '$lib/server';
+import { type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const sessionId = event.cookies.get(lucia.sessionCookieName);
-  const pathname = event.url.pathname;
-  const searchParams = event.url.searchParams;
-  const redirectUrl = searchParams.get('redirect');
-
-  if (!sessionId) {
+  const token = event.cookies.get('session') ?? null;
+  if (token === null) {
     event.locals.user = null;
     event.locals.session = null;
+    return resolve(event);
+  }
 
-    // Logged out users get redirected to login or signup
-    if (pathname.startsWith('/accept-invite/')) {
+  const { session, user } = await validateSessionToken(token);
+  //  const pathname = event.url.pathname;
+  //  const searchParams = event.url.searchParams;
+  //  const redirectUrl = searchParams.get('redirect');
+  if (session !== null) {
+    setSessionTokenCookie(event, token, session.expiresAt);
+  } else {
+    deleteSessionTokenCookie(event);
+
+    /* if (pathname.startsWith('/accept-invite/')) {
       const inviteCode = pathname.split('/').pop() as string;
       const inviteEmail = await getPartyInvitesForCode(inviteCode);
       if (inviteEmail) {
@@ -25,40 +30,11 @@ export const handle: Handle = async ({ event, resolve }) => {
           throw redirect(302, `/signup?redirect=${redirectUrl}`);
         }
       }
-    }
-    return resolve(event);
+    } else if (redirectUrl) {
+      throw redirect(302, redirectUrl);
+    } */
   }
-
-  const { session, user } = await lucia.validateSession(sessionId);
-  if (session && session.fresh) {
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    // sveltekit types deviates from the de-facto standard
-    // you can use 'as any' too
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '/',
-      ...sessionCookie.attributes
-    });
-  }
-  if (!session) {
-    console.log('create blank session');
-    const sessionCookie = lucia.createBlankSessionCookie();
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '/',
-      ...sessionCookie.attributes
-    });
-  }
-  event.locals.user = user;
   event.locals.session = session;
-
-  // Logged in get redirected to profile
-  if (pathname.startsWith('/accept-invite/') && user) {
-    throw redirect(302, `/profile`);
-  }
-
-  // Redirect to the original URL after login
-  if (redirectUrl) {
-    throw redirect(302, redirectUrl);
-  }
-
+  event.locals.user = user;
   return resolve(event);
 };
