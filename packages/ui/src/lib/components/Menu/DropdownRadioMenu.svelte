@@ -22,7 +22,7 @@
     defaultValue: defaultItem.value
   });
 
-  const handleItemClick = (href: string) => {
+  const handleItemClick = (href?: string) => {
     if (href) {
       goto(href);
     }

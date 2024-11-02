@@ -5,7 +5,6 @@
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
   import { PartyMember, ResendInvite } from '$lib/components';
-  import { page } from '$app/stores';
 
   let { data } = $props();
 
@@ -17,7 +16,6 @@
 
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
   const partyId = data.party.id as string;
-  console.log('page', $page);
 </script>
 
 <h2>Invite new member</h2>
