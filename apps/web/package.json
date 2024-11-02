@@ -42,6 +42,7 @@
     "drizzle-zod": "^0.5.1",
     "formsnap": "^1.0.1",
     "mode-watcher": "^0.4.1",
+    "oslo": "^1.2.1",
     "resend": "^4.0.0",
     "slugify": "^1.6.6",
     "svelte-cloudinary": "^2.2.0",
