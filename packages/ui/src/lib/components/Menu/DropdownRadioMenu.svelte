@@ -29,7 +29,7 @@
   };
 </script>
 
-<button type="button" class="menuTrigger" use:melt={$triggerAction} aria-label="Menu">
+<button type="button" class="menuTrigger" use:melt={$triggerAction} aria-label="Menu" data-testid="menuButton">
   {@render trigger()}
 </button>
 
@@ -41,6 +41,7 @@
           class="menuItem"
           use:melt={$radioItem({ value: item.value })}
           onclick={() => handleItemClick(item.href)}
+          data-testid="menuItem"
         >
           <div class="menuSpace">
             {#if $isChecked(item.value)}
