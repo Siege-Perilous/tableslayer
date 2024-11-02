@@ -9,7 +9,7 @@ export const load: PageServerLoad = async (event) => {
   await lucia.invalidateSession(event.locals.session.id);
   const sessionCookie = lucia.createBlankSessionCookie();
   event.cookies.set(sessionCookie.name, sessionCookie.value, {
-    path: '.',
+    path: '/',
     ...sessionCookie.attributes
   });
   return redirect(302, '/login');

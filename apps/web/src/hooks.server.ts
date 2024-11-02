@@ -35,14 +35,15 @@ export const handle: Handle = async ({ event, resolve }) => {
     // sveltekit types deviates from the de-facto standard
     // you can use 'as any' too
     event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '.',
+      path: '/',
       ...sessionCookie.attributes
     });
   }
   if (!session) {
+    console.log('create blank session');
     const sessionCookie = lucia.createBlankSessionCookie();
     event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '.',
+      path: '/',
       ...sessionCookie.attributes
     });
   }
