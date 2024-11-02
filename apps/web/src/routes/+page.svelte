@@ -32,7 +32,7 @@
 {#if user && user.email}
   <Avatar src={url} size="md" />
   <p>Logged in as: <a href="/profile">{user.email}</a></p>
-  <p><a href="/logout">Logout</a></p>
+  <p><a href="/logout" data-sveltekit-preload-data="tap">Logout</a></p>
   {#if user.emailVerified}
     <p>Email is verified</p>
   {:else}

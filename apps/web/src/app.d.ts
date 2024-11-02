@@ -6,8 +6,8 @@ declare global {
     // interface PageData {}
     // interface Platform {}
     interface Locals {
-      user: import('lucia').User | null;
-      session: import('lucia').Session | null;
+      user: User | null;
+      session: Session | null;
     }
     namespace Superforms {
       type Message = {

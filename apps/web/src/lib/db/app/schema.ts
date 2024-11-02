@@ -24,7 +24,7 @@ export const sessionTable = sqliteTable('session', {
   userId: text('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  expiresAt: integer('expires_at').notNull()
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
 });
 
 export const emailVerificationCodesTable = sqliteTable('email_verification_codes', {
@@ -124,6 +124,7 @@ export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
 export type InsertPartyMember = typeof partyMemberTable.$inferInsert;
 export type SelectGameSession = typeof gameSessionTable.$inferSelect;
+export type SelectSession = typeof sessionTable.$inferSelect;
 
 export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;
