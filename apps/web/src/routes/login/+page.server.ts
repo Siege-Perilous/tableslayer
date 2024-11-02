@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
 import { loginSchema } from '$lib/schemas';
-import { lucia } from '$lib/server/auth';
+import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -21,7 +21,6 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
   login: async (event) => {
-    const cookies = event.cookies;
     const loginForm = await superValidate(event.request, zod(loginSchema));
     if (!loginForm.valid) {
       return message(loginForm, { type: 'error', text: 'Incorrect email or password' }, { status: 400 });
@@ -49,12 +48,9 @@ export const actions: Actions = {
       return message(loginForm, { type: 'error', text: 'Incorrect email or password' }, { status: 400 });
     }
 
-    const session = await lucia.createSession(existingUser.id.toString(), {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '/',
-      ...sessionCookie.attributes
-    });
+    const token = generateSessionToken();
+    await createSession(token, existingUser.id.toString());
+    setSessionTokenCookie(event, token);
 
     return message(loginForm, { type: 'success', text: 'Login successful, redirecting...' }), redirect(302, '/');
   }

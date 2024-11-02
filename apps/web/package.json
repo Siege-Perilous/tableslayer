@@ -30,6 +30,8 @@
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@melt-ui/pp": "^0.3.2",
     "@node-rs/argon2": "^2.0.0",
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
     "@tabler/icons-svelte": "^3.20.0",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.59.16",

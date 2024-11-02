@@ -1,8 +1,15 @@
 import { db } from '$lib/db/app';
 import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/app/schema';
 import { signupSchema } from '$lib/schemas';
-import { getGravatarUrl, getUser, sendSingleEmail, uploadImage } from '$lib/server';
-import { lucia } from '$lib/server/auth';
+import {
+  createSession,
+  generateSessionToken,
+  getGravatarUrl,
+  getUser,
+  sendSingleEmail,
+  setSessionTokenCookie,
+  uploadImage
+} from '$lib/server';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
 import { createGameSessionDb } from '$lib/server/turso';
 import { createHash } from '$lib/utils';
@@ -85,13 +92,9 @@ export const actions: Actions = {
         html: `Your verification code is: ${emailVerificationCode.code}`
       });
 
-      // Create an auth session
-      const session = await lucia.createSession(userId, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      event.cookies.set(sessionCookie.name, sessionCookie.value, {
-        path: '/',
-        ...sessionCookie.attributes
-      });
+      const token = generateSessionToken();
+      await createSession(token, userId.toString());
+      setSessionTokenCookie(event, token);
 
       return message(signupForm, {
         type: 'success',
