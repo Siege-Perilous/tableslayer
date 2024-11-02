@@ -1,12 +1,12 @@
 import { inviteResponseSchema } from '$lib/schemas';
-import { acceptPartyInvite, declinePartyInvite, getPartiesForUser, getPartyInvitesForEmail } from '$lib/server';
+import { acceptPartyInvite, declinePartyInvite, getPartyInvitesForEmail } from '$lib/server';
 import type { Actions } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
-  const { user } = await parent();
+  const { user, parties } = await parent();
   if (!user) {
     throw new Error('User not found');
   }
@@ -14,7 +14,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const inviteResponseForm = await superValidate(zod(inviteResponseSchema));
 
   const invites = await getPartyInvitesForEmail(email);
-  const parties = await getPartiesForUser(user.id);
 
   return {
     invites,

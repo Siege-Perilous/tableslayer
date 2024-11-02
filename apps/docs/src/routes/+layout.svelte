@@ -24,6 +24,7 @@
     { name: 'Input', path: '/input' },
     { name: 'Link', path: '/link' },
     { name: 'Loader', path: '/loading' },
+    { name: 'Menu', path: '/menu' },
     { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
@@ -93,6 +94,7 @@
     max-width: var(--contain-desktop);
     margin: 0 auto;
     gap: var(--size-8);
+    min-height: calc(100vh - 57px);
   }
   nav {
     min-width: 200px;

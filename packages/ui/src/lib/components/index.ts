@@ -6,6 +6,7 @@ export * from './Icon';
 export * from './Input';
 export * from './Link';
 export * from './Loading';
+export * from './Menu';
 export { default as MyCounterButton } from './MyCounterButton.svelte';
 export * from './Panel';
 export * from './Popover';
