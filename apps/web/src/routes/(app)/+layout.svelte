@@ -49,7 +49,7 @@
         {#snippet content()}
           <div class="dropdown">
             <Link href="/profile">{user?.email}</Link>
-            <Button href="/logout" variant="danger">logout</Button>
+            <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
         {/snippet}
       </AvatarPopover>

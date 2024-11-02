@@ -14,8 +14,10 @@ export const handle: Handle = async ({ event, resolve }) => {
   //  const searchParams = event.url.searchParams;
   //  const redirectUrl = searchParams.get('redirect');
   if (session !== null) {
-    setSessionTokenCookie(event, token, session.expiresAt);
+    console.log('Session is valid, setting new expiration date');
+    setSessionTokenCookie(event, token);
   } else {
+    console.log('Deleting invalid session token cookie');
     deleteSessionTokenCookie(event);
 
     /* if (pathname.startsWith('/accept-invite/')) {
