@@ -6,13 +6,15 @@ export const load = (async (event) => {
   if (!event.locals.user) redirect(302, '/login');
 
   const userId = event.locals.user.id;
-  const user = await getUser(userId);
-  if (!user) redirect(302, '/login');
-
-  const parties = await getPartiesForUser(user.id);
-
-  return {
-    user,
-    parties
-  };
+  try {
+    const user = await getUser(userId);
+    const parties = await getPartiesForUser(user.id);
+    return {
+      user,
+      parties
+    };
+  } catch (error) {
+    console.error('Error fetching user and parties', error);
+    throw error;
+  }
 }) satisfies LayoutServerLoad;

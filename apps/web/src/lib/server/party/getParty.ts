@@ -35,7 +35,7 @@ export const getPartyMembers = async (
       name: usersTable.name,
       email: usersTable.email,
       emailVerified: usersTable.emailVerified,
-      avatar: usersTable.avatar,
+      avatarFileId: usersTable.avatarFileId,
       passwordHash: usersTable.passwordHash
     })
     .from(partyMemberTable)

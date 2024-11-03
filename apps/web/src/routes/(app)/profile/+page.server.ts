@@ -7,8 +7,8 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
   const { user, parties } = await parent();
-  if (!user) {
-    throw new Error('User not found');
+  if (!user || !parties) {
+    throw new Error('User or parties not found');
   }
   const email = user.email;
   const inviteResponseForm = await superValidate(zod(inviteResponseSchema));

@@ -5,8 +5,6 @@
   let { data, children } = $props();
   const { user, parties } = data;
   import { IconChevronDown } from '@tabler/icons-svelte';
-  import { getCldImageUrl } from 'svelte-cloudinary';
-  const avatar = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
   import { page } from '$app/stores';
 
   const menuItems = parties.map((party) => ({
@@ -25,15 +23,17 @@
 <header>
   <div class="header_container">
     <div class="header_container__section">
-      <div class="logo">
-        <Title as="p" size="md">TS</Title>
-      </div>
+      <a href="/">
+        <div class="logo">
+          <Title as="p" size="md">TS</Title>
+        </div>
+      </a>
 
       {#if partySlug}
         <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]} positioning={{ placement: 'bottom-start' }}>
           {#snippet trigger()}
             <div class="partyDropdown">
-              <span>{selectedParty.name}</span>
+              <span>{selectedParty?.name}</span>
               <Icon Icon={IconChevronDown} />
             </div>
           {/snippet}
@@ -45,10 +45,10 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={avatar}>
+      <AvatarPopover src={user.avatarThumb.resizedUrl || user.avatarThumb.url}>
         {#snippet content()}
           <div class="dropdown">
-            <Link href="/profile">{user?.email}</Link>
+            <Link href="/profile">{user.email}</Link>
             <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
         {/snippet}

@@ -13,8 +13,31 @@ export const usersTable = sqliteTable('users', {
   email: text('email').unique().notNull(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   passwordHash: text('password_hash').notNull(),
-  avatar: text('avatar').notNull().default('zinnoreedvg0jvsdgvxa')
+  avatarFileId: integer('avatar_file_id')
+    .references(() => filesTable.id, { onDelete: 'set default' })
+    .notNull()
+    .default(1)
 });
+
+export const filesTable = sqliteTable('files', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  location: text('location').unique().notNull()
+});
+
+export const userFilesTable = sqliteTable(
+  'user_files',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    fileId: integer('file_id')
+      .notNull()
+      .references(() => filesTable.id, { onDelete: 'cascade' })
+  },
+  (table) => ({
+    id: primaryKey({ columns: [table.userId, table.fileId] })
+  })
+);
 
 export const sessionTable = sqliteTable('session', {
   id: text('id')
@@ -51,7 +74,9 @@ export const partyTable = sqliteTable('party', {
     .$default(() => uuidv4()),
   name: text('name').notNull().unique(),
   slug: text('slug').notNull().unique(),
-  avatar: text('avatar').notNull().default('gwda4udjrsacbec6fsca')
+  avatarFileId: integer('avatar_file_id')
+    .references(() => filesTable.id, { onDelete: 'set default' })
+    .default(1)
   // Neat way to computer  slug: text('slug').notNull().unique().generatedAlwaysAs((): SQL => sql`lower(replace(${partyTable.name}, ' ', '-'))`),
 });
 
