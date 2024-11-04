@@ -1,7 +1,5 @@
 export enum WeatherType {
-  Rain = 0,
-  Snow = 1,
-  Leaves = 2
+  Rain = 0
 }
 
 export type WeatherProps = {
