@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CodeBlock, Code } from '@tableslayer/ui';
+  import { CodeBlock, Code, Spacer } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   const exampleCode = `/* Coloring the themes comes later */
 a:has(> img) {
@@ -12,6 +12,7 @@ a:has(> img) {
     <CodeBlock code={exampleCode} lang="css" />
   </div>
 </Example>
+<Spacer size={8} />
 
 <Example title="Code" propsName="Code">
   <div class="flex">

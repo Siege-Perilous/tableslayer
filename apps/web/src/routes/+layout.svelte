@@ -9,6 +9,10 @@
   import { Toast } from '@tableslayer/ui';
 </script>
 
+<svelte:head>
+  <link rel="preload" as="font" href="/BlackChorola-Regular.woff" type="font/woff" crossorigin="anonymous" />
+</svelte:head>
+
 <QueryClientProvider client={queryClient}>
   <ModeWatcher darkClassNames={['dark']} lightClassNames={['light']} />
   <GlobalLoading />

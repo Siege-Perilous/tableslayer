@@ -12,7 +12,7 @@
     value: party.slug,
     href: `/${party.slug}`
   }));
-  let selectedParty = $state(parties.find((party) => party.slug === $page.params.party));
+  let selectedParty = $state(parties.find((party) => party.slug === $page.params.party) || undefined);
   let partySlug = $state($page.params.party);
   $effect(() => {
     selectedParty = parties.find((party) => party.slug === $page.params.party);
@@ -25,15 +25,15 @@
     <div class="header_container__section">
       <a href="/">
         <div class="logo">
-          <Title as="p" size="md">TS</Title>
+          <Title as="p" size="sm" style="margin-top: 4px;">TS</Title>
         </div>
       </a>
 
-      {#if partySlug}
+      {#if parties.length > 0}
         <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]} positioning={{ placement: 'bottom-start' }}>
           {#snippet trigger()}
             <div class="partyDropdown">
-              <span>{selectedParty?.name}</span>
+              <span>{selectedParty ? selectedParty.name : 'Select a party'}</span>
               <Icon Icon={IconChevronDown} />
             </div>
           {/snippet}

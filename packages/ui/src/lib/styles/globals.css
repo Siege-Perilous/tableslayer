@@ -2,6 +2,14 @@
 @import 'normalize.css';
 @import 'vars.css';
 
+@font-face {
+  src: url('/BlackChorola-Regular.woff') format('woff');
+  font-family: 'BlackChorola';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .light {
   color-scheme: light;
   --bg: #e5e5e5;

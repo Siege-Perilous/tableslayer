@@ -109,6 +109,7 @@ export const actions: Actions = {
       });
     } catch (error) {
       const e = error as DatabaseError;
+      console.log(e);
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {

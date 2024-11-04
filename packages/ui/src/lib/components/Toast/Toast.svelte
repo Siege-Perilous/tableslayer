@@ -113,7 +113,7 @@
   }
   .toast__title {
     display: flex;
-    align-items: center;
+    align-items: start;
     gap: var(--size-2);
   }
   .toast__titleText {
@@ -126,6 +126,9 @@
   .toast__titleDot {
     width: var(--size-2);
     height: var(--size-2);
+    min-width: var(--size-2);
+    min-height: var(--size-2);
+    margin-top: var(--size-1);
     border-radius: 50%;
   }
 

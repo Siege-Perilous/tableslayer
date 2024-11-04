@@ -2,7 +2,7 @@
   let { children } = $props();
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
-  import { Icon, IconButton, Toast } from '@tableslayer/ui';
+  import { Icon, IconButton, Toast, Title } from '@tableslayer/ui';
   import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
 
@@ -42,7 +42,7 @@
       <IconButton variant="ghost" title="Toggle menu" onclick={toggleMenu}>
         <Icon Icon={IconMenu2} size={16} stroke={2} />
       </IconButton>
-      <h2>Components</h2>
+      <Title as="h2" size="sm">Components</Title>
     </div>
     <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
       <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
