@@ -5,8 +5,6 @@
   let { data, children } = $props();
   const { user, parties } = data;
   import { IconChevronDown } from '@tabler/icons-svelte';
-  import { getCldImageUrl } from 'svelte-cloudinary';
-  const avatar = getCldImageUrl({ src: user?.avatar as string, width: 100, height: 100 });
   import { page } from '$app/stores';
 
   const menuItems = parties.map((party) => ({
@@ -14,26 +12,26 @@
     value: party.slug,
     href: `/${party.slug}`
   }));
-  let selectedParty = $state(parties.find((party) => party.slug === $page.params.party));
-  let partySlug = $state($page.params.party);
+  let selectedParty = $state(parties.find((party) => party.slug === $page.params.party) || undefined);
   $effect(() => {
     selectedParty = parties.find((party) => party.slug === $page.params.party);
-    partySlug = $page.params.party;
   });
 </script>
 
 <header>
   <div class="header_container">
     <div class="header_container__section">
-      <div class="logo">
-        <Title as="p" size="md">TS</Title>
-      </div>
+      <a href="/">
+        <div class="logo">
+          <Title as="p" size="sm" style="margin-top: 4px;">TS</Title>
+        </div>
+      </a>
 
-      {#if partySlug}
+      {#if parties.length > 0}
         <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]} positioning={{ placement: 'bottom-start' }}>
           {#snippet trigger()}
             <div class="partyDropdown">
-              <span>{selectedParty.name}</span>
+              <span>{selectedParty ? selectedParty.name : 'Select a party'}</span>
               <Icon Icon={IconChevronDown} />
             </div>
           {/snippet}
@@ -45,10 +43,10 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={avatar}>
+      <AvatarPopover src={user.avatarThumb.resizedUrl || user.avatarThumb.url}>
         {#snippet content()}
           <div class="dropdown">
-            <Link href="/profile">{user?.email}</Link>
+            <Link href="/profile">{user.email}</Link>
             <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
         {/snippet}

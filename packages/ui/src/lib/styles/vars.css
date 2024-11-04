@@ -1,8 +1,8 @@
 :where(html) {
   font-size: 14px;
-  --font-sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Segoe UI, Roboto,
-    Ubuntu, Cantarell, Noto Sans, sans-serif;
-  --font-serif: ui-serif, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Segoe UI,
+    Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+  --font-serif: 'BlackChorola';
   --font-mono: Dank Mono, Operator Mono, Inconsolata, Fira Mono, ui-monospace, SF Mono, Monaco, Droid Sans Mono,
     Source Code Pro, monospace;
   --font-weight-1: 100;

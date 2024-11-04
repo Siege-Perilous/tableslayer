@@ -21,12 +21,15 @@
 
 {#if message}
   <div class="messageError" data-testid="messageError">
-    <Icon Icon={IconX} />
+    <Icon Icon={IconX} class="messageErrorIcon" />
     <p>{message.text}</p>
   </div>
 {/if}
 
 <style>
+  :global(.messageErrorIcon) {
+    margin-top: 2px;
+  }
   .messageError {
     display: flex;
     gap: var(--size-1);
@@ -35,7 +38,7 @@
     font-weight: var(--font-weight-6);
     margin-top: var(--size-1);
     border-radius: var(--size-2);
-    height: var(--size-7);
-    align-items: center;
+    min-height: var(--size-7);
+    align-items: start;
   }
 </style>
