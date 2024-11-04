@@ -13,7 +13,7 @@ test.describe('Login Page Tests', () => {
     await page.getByLabel('Password').fill('testtest');
 
     // Click on the sign-in button
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByTestId('loginSubmit').click();
 
     // Wait for any form validation or login response
     await page.waitForURL('/');
@@ -27,7 +27,7 @@ test.describe('Login Page Tests', () => {
     await page.goto('/login');
 
     // Click the sign-in button without filling anything
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByTestId('loginSubmit').click();
 
     await page.getByLabel('Email').fill('dave');
     await page.getByLabel('Password').fill('test');
