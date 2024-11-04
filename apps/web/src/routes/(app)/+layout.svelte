@@ -13,10 +13,8 @@
     href: `/${party.slug}`
   }));
   let selectedParty = $state(parties.find((party) => party.slug === $page.params.party) || undefined);
-  let partySlug = $state($page.params.party);
   $effect(() => {
     selectedParty = parties.find((party) => party.slug === $page.params.party);
-    partySlug = $page.params.party;
   });
 </script>
 

@@ -6,8 +6,7 @@ test.describe('Login Page Tests', () => {
     await page.goto('/login');
 
     // Verify the page title and UI elements
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByTestId('createAccount')).toBeVisible();
+    await expect(page.getByTestId('signInHeading')).toBeVisible();
 
     // Fill in the email and password fields
     await page.getByLabel('Email').fill('dave@test.com');

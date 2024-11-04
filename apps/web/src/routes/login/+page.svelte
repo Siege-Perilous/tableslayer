@@ -15,7 +15,7 @@
 </script>
 
 <Panel class="login">
-  <Title as="h1" size="lg">Sign in</Title>
+  <Title as="h1" size="lg" data-testid="signInHeading">Sign in</Title>
   <Spacer size={2} />
   <p>Don't have an account? <Link href="/signup">Create an account</Link>.</p>
   <Spacer size={8} />
