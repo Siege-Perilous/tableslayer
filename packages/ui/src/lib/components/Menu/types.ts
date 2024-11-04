@@ -11,5 +11,5 @@ export type RadioMenuProps = {
   trigger: Snippet;
   items: RadioMenuItem[];
   defaultItem: RadioMenuItem;
-  positioning: FloatingConfig;
+  positioning?: FloatingConfig;
 };
