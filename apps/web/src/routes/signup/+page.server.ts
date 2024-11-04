@@ -8,12 +8,13 @@ import {
   getUser,
   sendSingleEmail,
   setSessionTokenCookie,
-  uploadImage
+  uploadFileFromUrl
 } from '$lib/server';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
 import { createGameSessionDb } from '$lib/server/turso';
 import { createHash } from '$lib/utils';
 import { redirect } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
@@ -53,16 +54,22 @@ export const actions: Actions = {
     const userId = uuidv4();
 
     try {
-      // Create a new user with a Gravatar image
-      const gravatar = getGravatarUrl(email);
-      const image = (await uploadImage(gravatar)) as string;
       await db.insert(usersTable).values({
         id: userId,
         name: '',
         email: email,
-        passwordHash: passwordHash,
-        avatar: image
+        passwordHash: passwordHash
       });
+      try {
+        const gravatar = getGravatarUrl(email);
+        const fileToUserRow = await uploadFileFromUrl(gravatar, userId, 'avatar');
+        if (fileToUserRow) {
+          await db.update(usersTable).set({ avatarFileId: fileToUserRow.fileId }).where(eq(usersTable.id, userId));
+        }
+      } catch (avatarError) {
+        console.error('Error uploading avatar', avatarError);
+        throw avatarError;
+      }
 
       // Create a personal party for the user
       const party = await createRandomNamedParty();
@@ -102,12 +109,13 @@ export const actions: Actions = {
       });
     } catch (error) {
       const e = error as DatabaseError;
+      console.log(e);
 
       // Handle unique constraint error
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return message(signupForm, { type: 'error', text: 'Email already in use' }, { status: 400 });
       }
-      return message(signupForm, { type: 'error', text: 'An error occurred' }, { status: 500 });
+      return message(signupForm, { type: 'error', text: `An error occurred: ${error}` }, { status: 500 });
     }
   }
 };

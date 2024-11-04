@@ -8,7 +8,7 @@
   <ul class="fieldErrors" {...errorAttrs}>
     {#each errors as err}
       <li class="fieldError" {...errorAttrs}>
-        <Icon Icon={IconX} />
+        <Icon Icon={IconX} class="fieldErrorIcon" />
         {err}
       </li>
     {/each}
@@ -31,5 +31,8 @@
     border-radius: var(--size-2);
     height: var(--size-7);
     align-items: center;
+  }
+  :global(.fieldErrorIcon) {
+    margin-top: 1px;
   }
 </style>

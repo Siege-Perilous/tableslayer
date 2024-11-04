@@ -10,7 +10,7 @@ export const getPartyInvitesForEmail = async (email: string) => {
         id: partyTable.id,
         name: partyTable.name,
         slug: partyTable.slug,
-        avatar: partyTable.avatar
+        avatarFileId: partyTable.avatarFileId
       }
     })
     .from(partyInviteTable)
@@ -29,7 +29,7 @@ export const getPartyInvitesForCode = async (code: string) => {
         id: partyTable.id,
         name: partyTable.name,
         slug: partyTable.slug,
-        avatar: partyTable.avatar
+        avatarFileId: partyTable.avatarFileId
       }
     })
     .from(partyInviteTable)
