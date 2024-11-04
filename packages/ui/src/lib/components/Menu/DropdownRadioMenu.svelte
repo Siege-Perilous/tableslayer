@@ -58,9 +58,11 @@
 <style>
   :global(.light) {
     --menuItemHover: var(--primary-50);
+    --menuItemBorderHover: solid 2px var(--primary-600);
   }
   :global(.dark) {
     --menuItemHover: var(--primary-950);
+    --menuItemBorderHover: solid 2px var(--primary-500);
   }
   .menu {
     padding: var(--size-2);
@@ -82,10 +84,11 @@
     gap: var(--size-4);
     border-radius: var(--radius-1);
     width: 100%;
+    border: solid 2px transparent;
   }
   .menuItem:hover {
-    color: var(--fgPrimary);
-    background: var(--contrastLow);
+    background-color: var(--menuItemHover);
+    border: var(--menuItemBorderHover);
   }
   .menuSpace {
     width: var(--size-2);

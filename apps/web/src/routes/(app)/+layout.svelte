@@ -4,7 +4,7 @@
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
   const { user, parties } = data;
-  import { IconChevronDown } from '@tabler/icons-svelte';
+  import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
 
   const menuItems = parties.map((party) => ({
@@ -28,14 +28,20 @@
       </a>
 
       {#if parties.length > 0}
-        <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]} positioning={{ placement: 'bottom-start' }}>
-          {#snippet trigger()}
-            <div class="partyDropdown">
-              <span>{selectedParty ? selectedParty.name : 'Select a party'}</span>
-              <Icon Icon={IconChevronDown} />
-            </div>
-          {/snippet}
-        </DropdownRadioMenu>
+        <div class="partyDropdown">
+          {#if selectedParty !== undefined}
+            <Link href={`/${selectedParty.slug}`} color="fg">{selectedParty.name}</Link>
+          {:else}
+            Choose a party
+          {/if}
+          <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]}>
+            {#snippet trigger()}
+              <div class="partyDropdown__icon">
+                <Icon Icon={IconSelector} />
+              </div>
+            {/snippet}
+          </DropdownRadioMenu>
+        </div>
       {/if}
     </div>
 
@@ -85,6 +91,16 @@
     gap: var(--size-2);
     align-items: center;
     font-weight: var(--font-weight-6);
+  }
+  .partyDropdown__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--size-2);
+  }
+  .partyDropdown__icon:hover {
+    background: var(--contrastLow);
+    border-radius: var(--radius-2);
   }
   .logo {
     background: var(--fgPrimary);
