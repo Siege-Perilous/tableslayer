@@ -88,8 +88,10 @@ jobs:
       - name: Display deployment status
         run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
       - name: Install Playwright Browsers
+        if: ${{ github.ref != 'refs/heads/main' }}
         run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
+        if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: '${{ env.BASE_URL }}'
