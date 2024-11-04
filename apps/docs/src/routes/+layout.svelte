@@ -73,10 +73,6 @@
     background: var(--bg);
     padding: var(--size-4);
     border-bottom: var(--borderThin);
-    h2 {
-      font-weight: var(--font-weight-6);
-      font-size: var(--font-size-2);
-    }
   }
   .headerContainer {
     max-width: var(--contain-desktop);
