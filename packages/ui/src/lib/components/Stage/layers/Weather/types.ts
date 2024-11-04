@@ -11,12 +11,35 @@ export type WeatherProps = {
   weatherType: WeatherType;
 
   /**
+   * Color of the weather effect
+   */
+  color: { r: number; g: number; b: number };
+
+  /**
+   * The angle that the weather is falling down
+   */
+  angle: number;
+
+  /**
    * The opacity of the weather layer
    */
   opacity: number;
 
   /**
-   * The scale the weather effects
+   * The speed of the rainfall
    */
-  scale: number;
+  speed: number;
+
+  /**
+   * The intensity of the rain
+   */
+  intensity: number;
+
+  /**
+   * The scale of the weather effect in each axis
+   */
+  scale: {
+    x: number;
+    y: number;
+  };
 };

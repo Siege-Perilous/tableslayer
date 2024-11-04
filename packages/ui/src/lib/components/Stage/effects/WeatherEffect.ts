@@ -9,8 +9,12 @@ export class WeatherEffect extends Effect {
   constructor(props: WeatherProps) {
     super('GridEffect', fragmentShader, {
       uniforms: new Map<string, THREE.Uniform<any>>([
-        ['opacity', new THREE.Uniform(props.opacity)],
-        ['scale', new THREE.Uniform(props.scale)],
+        ['uOpacity', new THREE.Uniform(props.opacity)],
+        ['uAngle', new THREE.Uniform(props.angle)],
+        ['uSpeed', new THREE.Uniform(props.speed)],
+        ['uIntensity', new THREE.Uniform(props.intensity)],
+        ['uScale', new THREE.Uniform(props.scale)],
+        ['uColor', new THREE.Uniform(props.color)],
         ['uResolution', new THREE.Uniform(new THREE.Vector2(0, 0))]
       ])
     });
@@ -18,8 +22,12 @@ export class WeatherEffect extends Effect {
 
   updateProps(props: WeatherProps) {
     const uniforms = this.uniforms;
-    uniforms.get('opacity')!.value = props.opacity;
-    uniforms.get('scale')!.value = props.scale;
+    uniforms.get('uOpacity')!.value = props.opacity;
+    uniforms.get('uAngle')!.value = props.angle;
+    uniforms.get('uSpeed')!.value = props.speed;
+    uniforms.get('uScale')!.value = props.scale;
+    uniforms.get('uIntensity')!.value = props.intensity;
+    uniforms.get('uColor')!.value = props.color;
   }
 
   get resolution(): THREE.Vector2 {

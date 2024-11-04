@@ -103,8 +103,12 @@
 
   <Folder title="Weather">
     <List bind:value={stageProps.weather.weatherType} label="Type" options={weatherTypeOptions} />
+    <Color bind:value={stageProps.weather.color} label="Color" />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.weather.scale} label="Scale" min={0.1} max={10} />
+    <Slider bind:value={stageProps.weather.angle} label="Angle" min={-180} max={180} step={0.1} />
+    <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
+    <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
+    <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
   </Folder>
 </Pane>
 
