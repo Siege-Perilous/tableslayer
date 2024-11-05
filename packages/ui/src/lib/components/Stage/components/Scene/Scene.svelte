@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { Canvas } from '@threlte/core';
   import * as THREE from 'three';
   import { onMount } from 'svelte';
-  import { type Size, T, useLoader, useThrelte, useTask } from '@threlte/core';
+  import { type Size, T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, RenderPass } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
   import type { StageFunctions } from '../Stage/types';
