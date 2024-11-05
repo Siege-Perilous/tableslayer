@@ -4,8 +4,8 @@
   import { DrawMode, ToolType, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
-  import type { StageFunctions } from '../../types';
-  import { textureToBase64 } from '../../utils';
+  import type { StageFunctions } from '../Stage/types';
+  import { textureToBase64 } from '../../helpers/utils';
 
   let {
     props,
@@ -267,7 +267,7 @@
   }
 </script>
 
-<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, 3]} rotation={[0, 0, 0]}>
+<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, -3]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

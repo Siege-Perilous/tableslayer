@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Effect } from 'postprocessing';
 import * as THREE from 'three';
-import type { WeatherProps } from '../layers/Weather/types';
+import type { WeatherProps } from '../components/WeatherLayer/types';
 
 import fragmentShader from '../shaders/WeatherShader.frag?raw';
 
