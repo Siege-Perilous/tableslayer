@@ -23,8 +23,7 @@
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   let imageSize: Size = $state({ width: 0, height: 0 });
-
-  $inspect(imageSize);
+  let scale = $state(new THREE.Vector3(1, 1, 1));
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
@@ -59,15 +58,11 @@
     },
     { stage: renderStage }
   );
-
-  let mapQuad = $state(new THREE.Mesh());
-  let scale = $state(new THREE.Vector3());
 </script>
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<T.Mesh
-  bind:ref={mapQuad}
+<T.Object3D
   position={props.scene.scaleMode === ScaleMode.Custom ? [props.scene.offset.x, -props.scene.offset.y, -5] : [0, 0, -5]}
   rotation.z={(props.scene.rotation / 180.0) * Math.PI}
   scale={[scale.x, scale.y, scale.z]}
@@ -76,4 +71,4 @@
   <GridLayer props={props.grid} {composer} />
   <FogOfWarLayer props={props.fogOfWar} {functions} {imageSize} />
   <MapLayer props={props.map} onimageloaded={onImageLoaded} />
-</T.Mesh>
+</T.Object3D>

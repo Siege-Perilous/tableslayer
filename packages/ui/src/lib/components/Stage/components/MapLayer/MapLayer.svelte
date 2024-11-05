@@ -12,10 +12,8 @@
 
   let { props, onimageloaded }: Props = $props();
 
-  let material = $state(new THREE.MeshBasicMaterial({ transparent: true, premultipliedAlpha: true }));
-
   const loader = useLoader(TextureLoader);
-  let mapImage = loader.load(backgroundImageUrl, {
+  let image = loader.load(backgroundImageUrl, {
     transform: (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
       return texture;
@@ -23,20 +21,18 @@
   });
 
   $effect(() => {
-    if ($mapImage) {
+    if ($image) {
       const size: Size = {
-        width: $mapImage.source.data.width ?? 0,
-        height: $mapImage.source.data.height ?? 0
+        width: $image.source.data.width ?? 0,
+        height: $image.source.data.height ?? 0
       };
-
-      material.map = $mapImage;
 
       onimageloaded(size);
     }
   });
 </script>
 
-<T.Mesh>
-  <T.MeshBasicMaterial bind:ref={material} />
+<T.Mesh position={[0, 0, 4]}>
+  <T.MeshBasicMaterial map={$image} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
