@@ -31,7 +31,6 @@ export const getImageDetails = async (url: string): Promise<ImageDetails> => {
 };
 
 export const transformImage = async (urlFragment: string, options: string) => {
-  console.log('transformImage', urlFragment, options);
   try {
     const url = `https://files.tableslayer.com/${urlFragment}`;
     const resizedUrl = `https://files.tableslayer.com/cdn-cgi/image/${options}/${urlFragment}`;

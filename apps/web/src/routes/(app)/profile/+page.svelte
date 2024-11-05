@@ -6,9 +6,9 @@
 
 <h2>Party invites</h2>
 
-{#each invites as invite (invite.invite.code)}
+{#each invites as invite}
   <p>You have been invited to join {invite.party?.name}</p>
-  <PartyInviteResponse code={invite.invite.code} />
+  <PartyInviteResponse {invite} />
 {:else}
   <p>No pending invites</p>
 {/each}

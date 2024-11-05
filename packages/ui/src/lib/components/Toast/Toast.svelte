@@ -5,6 +5,7 @@
   import classNames from 'classnames';
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
+  import { page } from '$app/stores';
   const {
     elements: { content, title, description, close },
     helpers,
@@ -32,6 +33,12 @@
 </script>
 
 <script lang="ts">
+  import { checkToastCookie } from './';
+  $effect(() => {
+    if ($page.url) {
+      checkToastCookie();
+    }
+  });
   import { createToaster, melt } from '@melt-ui/svelte';
 </script>
 
