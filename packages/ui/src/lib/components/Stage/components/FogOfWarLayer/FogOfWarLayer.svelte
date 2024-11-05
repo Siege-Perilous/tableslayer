@@ -4,8 +4,8 @@
   import { DrawMode, ToolType, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
-  import type { StageFunctions } from '../../types';
-  import { textureToBase64 } from '../../utils';
+  import type { StageFunctions } from '../Stage/types';
+  import { textureToBase64 } from '../../helpers/utils';
 
   let {
     props,

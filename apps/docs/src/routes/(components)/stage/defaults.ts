@@ -24,6 +24,9 @@ export const StageDefaultProps: StageProps = {
     shadowSize: 2
   },
   map: {
+    size: 0
+  },
+  scene: {
     rotation: 0,
     offset: {
       x: 0,

@@ -30,13 +30,11 @@
   };
 
   const weatherTypeOptions: ListOptions<number> = {
-    Rain: WeatherType.Rain,
-    Snow: WeatherType.Snow,
-    Leaves: WeatherType.Leaves
+    Rain: WeatherType.Rain
   };
 
   function centerCamera() {
-    stageProps.map.offset = {
+    stageProps.scene.offset = {
       x: 0,
       y: 0
     };
@@ -49,22 +47,22 @@
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <Folder title="Map">
+  <Folder title="Scene">
     <Color bind:value={stageProps.backgroundColor} label="Color" />
-    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
-    <List bind:value={stageProps.map.scaleMode} label="Fill Mode" options={scaleModeOptions} />
+    <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} />
+    <List bind:value={stageProps.scene.scaleMode} label="Fill Mode" options={scaleModeOptions} />
     <Binding
-      bind:object={stageProps.map}
+      bind:object={stageProps.scene}
       key={'offset'}
       label="Offset"
-      disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
+      disabled={stageProps.scene.scaleMode !== ScaleMode.Custom}
     />
     <Slider
-      bind:value={stageProps.map.customScale}
+      bind:value={stageProps.scene.customScale}
       label="Scale"
       min={0.1}
       max={2}
-      disabled={stageProps.map.scaleMode !== ScaleMode.Custom}
+      disabled={stageProps.scene.scaleMode !== ScaleMode.Custom}
     />
     <Button on:click={centerCamera} title="Re-Center Map" />
   </Folder>

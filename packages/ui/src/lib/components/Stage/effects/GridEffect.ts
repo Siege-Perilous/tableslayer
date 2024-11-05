@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Effect } from 'postprocessing';
 import * as THREE from 'three';
-import type { GridProps } from '../layers/Grid/types';
+import type { GridProps } from '../components/GridLayer/types';
 
 import fragmentShader from '../shaders/GridShader.frag?raw';
 
