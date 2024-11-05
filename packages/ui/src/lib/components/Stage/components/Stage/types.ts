@@ -1,7 +1,8 @@
-import type { FogOfWarProps } from './layers/FogOfWar/types';
-import type { GridProps } from './layers/Grid/types';
-import type { MapProps } from './layers/Map/types';
-import type { WeatherProps } from './layers/Weather/types';
+import type { FogOfWarProps } from '../FogOfWarLayer/types';
+import type { GridProps } from '../GridLayer/types';
+import type { MapProps } from '../MapLayer/types';
+import type { SceneProps } from '../Scene/types';
+import type { WeatherProps } from '../WeatherLayer/types';
 
 export interface StageFunctions {
   fogOfWar: {
@@ -34,6 +35,11 @@ export type StageProps = {
    * Properties for the map layer
    */
   map: MapProps;
+
+  /**
+   * Properties for the overall scene
+   */
+  scene: SceneProps;
 
   /**
    * Properties of the weather layer
