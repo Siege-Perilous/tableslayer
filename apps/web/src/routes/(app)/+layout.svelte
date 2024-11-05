@@ -7,15 +7,14 @@
   import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
 
-  const menuItems = parties.map((party) => ({
-    label: party.name,
-    value: party.slug,
-    href: `/${party.slug}`
-  }));
-  let selectedParty = $state(parties.find((party) => party.slug === $page.params.party) || undefined);
-  $effect(() => {
-    selectedParty = parties.find((party) => party.slug === $page.params.party);
-  });
+  let menuItems = $derived(
+    parties.map((party) => ({
+      label: party.name,
+      value: party.slug,
+      href: `/${party.slug}`
+    }))
+  );
+  let selectedParty = $derived(parties.find((party) => party.slug === $page.params.party));
 </script>
 
 <header>

@@ -30,7 +30,7 @@ test.describe('Login Page Tests', () => {
     await page.getByTestId('loginSubmit').click();
 
     await page.getByLabel('Email').fill('dave');
-    await page.getByLabel('Password').fill('test');
+    await page.getByLabel('Password').first().fill('test');
 
     // Expect to see validation errors for empty fields
     await expect(page.locator('text=Invalid email')).toBeVisible();

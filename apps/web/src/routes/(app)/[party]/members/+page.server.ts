@@ -9,6 +9,7 @@ import {
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
 } from '$lib/server';
+import { setToastCookie } from '@tableslayer/ui';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
@@ -89,6 +90,11 @@ export const actions: Actions = {
       });
 
       await sendPartyInviteEmail(partyId, email);
+
+      setToastCookie(event, {
+        title: `An invite has been sent to ${email}`,
+        type: 'success'
+      });
       return message(inviteMemberForm, { type: 'success', text: 'Member invited' });
     } catch (error) {
       console.log('Error inviting member', error);
@@ -109,6 +115,10 @@ export const actions: Actions = {
     try {
       console.log('Resending invite');
       await sendPartyInviteEmail(partyId, email);
+      setToastCookie(event, {
+        title: `An invite has been sent to ${email}`,
+        type: 'success'
+      });
       return message(resendInviteForm, { type: 'success', text: 'Invite resent' });
     } catch (error) {
       console.log('Error resending invite', error);
@@ -126,6 +136,11 @@ export const actions: Actions = {
 
     try {
       changePartyRole(userId, partyId, role);
+
+      setToastCookie(event, {
+        title: `Role changed to ${role}`,
+        type: 'success'
+      });
       return message(changeRoleForm, { type: 'success', text: 'Role changed' });
     } catch (error) {
       console.log('Error changing role', error);
