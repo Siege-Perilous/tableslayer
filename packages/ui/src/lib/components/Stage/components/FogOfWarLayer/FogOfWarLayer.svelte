@@ -267,7 +267,7 @@
   }
 </script>
 
-<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, 3]}>
+<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, -3]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

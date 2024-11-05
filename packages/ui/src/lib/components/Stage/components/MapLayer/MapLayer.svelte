@@ -32,7 +32,7 @@
   });
 </script>
 
-<T.Mesh position={[0, 0, 4]}>
+<T.Mesh position={[0, 0, -4]}>
   <T.MeshBasicMaterial map={$image} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
