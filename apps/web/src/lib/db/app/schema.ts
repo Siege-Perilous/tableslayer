@@ -153,3 +153,4 @@ export type SelectSession = typeof sessionTable.$inferSelect;
 
 export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;
+export type SelectPartyInvite = typeof partyInviteTable.$inferSelect;

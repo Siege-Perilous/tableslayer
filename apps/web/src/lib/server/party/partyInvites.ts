@@ -1,42 +1,71 @@
 import { db } from '$lib/db/app';
 import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/app/schema';
 import { and, eq } from 'drizzle-orm';
+import { getUser } from '../user';
 
 export const getPartyInvitesForEmail = async (email: string) => {
-  const invitesWithPartyInfo = await db
-    .select({
-      invite: partyInviteTable,
-      party: {
-        id: partyTable.id,
-        name: partyTable.name,
-        slug: partyTable.slug,
-        avatarFileId: partyTable.avatarFileId
-      }
-    })
-    .from(partyInviteTable)
-    .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
-    .where(eq(partyInviteTable.email, email))
-    .all();
+  try {
+    const invitesWithPartyInfo = await db
+      .select({
+        invite: partyInviteTable,
+        party: {
+          id: partyTable.id,
+          name: partyTable.name,
+          slug: partyTable.slug,
+          avatarFileId: partyTable.avatarFileId
+        }
+      })
+      .from(partyInviteTable)
+      .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .where(eq(partyInviteTable.email, email))
+      .all();
 
-  return invitesWithPartyInfo;
+    if (!invitesWithPartyInfo) {
+      throw new Error('No party invites found for email');
+    }
+
+    return invitesWithPartyInfo;
+  } catch (error) {
+    console.error('Error fetching party invites for email', error);
+    throw error;
+  }
 };
 
 export const getPartyInvitesForCode = async (code: string) => {
-  const invitesWithPartyInfo = await db
-    .select({
-      invite: partyInviteTable,
-      party: {
-        id: partyTable.id,
-        name: partyTable.name,
-        slug: partyTable.slug,
-        avatarFileId: partyTable.avatarFileId
-      }
-    })
-    .from(partyInviteTable)
-    .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
-    .where(eq(partyInviteTable.code, code))
-    .get();
-  return invitesWithPartyInfo;
+  try {
+    const invitesWithPartyInfo = await db
+      .select({
+        invite: partyInviteTable,
+        party: {
+          id: partyTable.id,
+          name: partyTable.name,
+          slug: partyTable.slug,
+          avatarFileId: partyTable.avatarFileId
+        }
+      })
+      .from(partyInviteTable)
+      .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .where(eq(partyInviteTable.code, code))
+      .get();
+
+    if (!invitesWithPartyInfo) {
+      throw new Error('No party invites found for code');
+    }
+
+    const invitedById = invitesWithPartyInfo.invite.invitedBy;
+
+    const invitedByUser = await getUser(invitedById);
+
+    const invitesWithPartyInfoAndInvitedBy = {
+      ...invitesWithPartyInfo,
+      invitedByUser
+    };
+
+    return invitesWithPartyInfoAndInvitedBy;
+  } catch (error) {
+    console.error('Error fetching party invites for code', error);
+    throw error;
+  }
 };
 
 export const acceptPartyInvite = async (code: string, userId: string) => {
@@ -63,11 +92,18 @@ export const declinePartyInvite = async (code: string) => {
 };
 
 export const getPartyInvite = async (partyId: string, email: string) => {
-  const invite = await db
-    .select()
-    .from(partyInviteTable)
-    .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
-    .get();
-
-  return invite;
+  try {
+    const invite = await db
+      .select()
+      .from(partyInviteTable)
+      .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+      .get();
+    if (!invite) {
+      throw new Error('No party invite found');
+    }
+    return invite;
+  } catch (error) {
+    console.error('Error fetching party invite', error);
+    throw error;
+  }
 };

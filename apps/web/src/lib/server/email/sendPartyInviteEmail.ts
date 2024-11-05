@@ -15,7 +15,7 @@ export const sendPartyInviteEmail = async (partyId: string, email: string) => {
 
   await sendSingleEmail({
     to: email,
-    subject: `You've been invited to play with ${party.name} on Siege Perilous`,
-    html: `Visit https://localhot:3000/accept-invite/${invite?.code} to join the party.`
+    subject: `You've been invited to play with ${party.name} on Table Slayer`,
+    html: `You've been invited to play with ${party.name} on Table Slayer. Visit https://localhot:3000/accept-invite/${invite?.code} to accept.`
   });
 };

@@ -10,8 +10,16 @@ import {
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string) => {
-  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
-  return party;
+  try {
+    const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+    if (!party) {
+      throw new Error('Party not found');
+    }
+    return party;
+  } catch (error) {
+    console.error('Error fetching party', error);
+    throw error;
+  }
 };
 
 export const getPartyFromName = async (partyName: string) => {
