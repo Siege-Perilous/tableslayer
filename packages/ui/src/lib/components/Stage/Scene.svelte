@@ -6,6 +6,7 @@
   import type { StageProps } from './types';
   import MapLayer from './layers/Map/MapLayer.svelte';
   import GridLayer from './layers/Grid/GridLayer.svelte';
+  import WeatherLayer from './layers/Weather/WeatherLayer.svelte';
   import type { StageFunctions } from './types';
 
   let { props, functions }: { props: StageProps; functions: StageFunctions } = $props();
@@ -43,3 +44,4 @@
 
 <MapLayer {functions} mapProps={props.map} fogOfWarProps={props.fogOfWar} containerSize={$size} />
 <GridLayer props={props.grid} {composer} />
+<WeatherLayer props={props.weather} {composer} />

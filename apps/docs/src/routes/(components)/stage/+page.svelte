@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { ScaleMode, GridType, Stage, type StageProps, DrawMode, ToolType } from '@tableslayer/ui';
+  import { ScaleMode, GridType, Stage, type StageProps, DrawMode, ToolType, WeatherType } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
   const stageProps: StageProps = $state(StageDefaultProps);
@@ -27,6 +27,12 @@
     None: ScaleMode.Custom,
     Fill: ScaleMode.Fill,
     Fit: ScaleMode.Fit
+  };
+
+  const weatherTypeOptions: ListOptions<number> = {
+    Rain: WeatherType.Rain,
+    Snow: WeatherType.Snow,
+    Leaves: WeatherType.Leaves
   };
 
   function centerCamera() {
@@ -93,6 +99,16 @@
     <Slider bind:value={stageProps.grid.shadowIntensity} label="Shadow Intensity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.shadowSize} label="Shadow Size" min={1} max={5} step={0.01} />
     <Color bind:value={stageProps.grid.shadowColor} label="Shadow Color" />
+  </Folder>
+
+  <Folder title="Weather">
+    <List bind:value={stageProps.weather.weatherType} label="Type" options={weatherTypeOptions} />
+    <Color bind:value={stageProps.weather.color} label="Color" />
+    <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.weather.angle} label="Angle" min={-180} max={180} step={0.1} />
+    <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
+    <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
+    <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
   </Folder>
 </Pane>
 
