@@ -6,14 +6,15 @@
   import { Tool, type DrawingTool } from './tools/types';
   import type { StageFunctions } from '../Stage/types';
   import { textureToBase64 } from '../../helpers/utils';
+  import LayerInput from '../LayerInput/LayerInput.svelte';
 
   let {
     props,
-    imageSize,
+    mapSize,
     functions
   }: {
     props: FogOfWarProps;
-    imageSize: Size;
+    mapSize: Size;
     functions: StageFunctions;
   } = $props();
 
@@ -24,18 +25,14 @@
     toBase64
   };
 
-  const { camera, renderer, size } = useThrelte();
-
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
   let imageData: ImageData;
-  let raycaster: THREE.Raycaster;
 
-  let fogQuad = $state(new THREE.Mesh());
+  let layerQuad = $state(new THREE.Mesh());
   let fogMaterial = $state(new THREE.MeshBasicMaterial());
   let fogTexture: THREE.CanvasTexture;
 
-  let mouse = new THREE.Vector2();
   let drawing: boolean = false;
   let activeTool: DrawingTool;
 
@@ -45,21 +42,13 @@
   let resetPos = false;
 
   onMount(() => {
-    raycaster = new THREE.Raycaster();
-
-    // Event listeners for mouse interaction
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mouseenter', onMouseMove);
-
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
   });
 
   $effect(() => {
-    console.log(`Resetting fog of war canvas to ${imageSize.width}x${imageSize.height}`);
+    console.log(`Resetting fog of war canvas to ${mapSize.width}x${mapSize.height}`);
 
     // If texture already exists, dispose of existing one
     if (fogTexture) {
@@ -81,8 +70,8 @@
       };
     } else if (canvas.width > 0 && canvas.height > 0) {
       // Otherwise, start with a blank canvas
-      canvas.width = imageSize.width;
-      canvas.height = imageSize.height;
+      canvas.width = mapSize.width;
+      canvas.height = mapSize.height;
       resetFog();
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     }
@@ -106,17 +95,13 @@
     }
   });
 
-  function onMouseDown(e: MouseEvent): void {
-    const p = getCanvasCoords(e);
-    if (p) {
-      drawing = true;
-      activeTool.origin = p;
-    }
+  function onMouseDown(p: THREE.Vector2 | null): void {
+    if (!p) return;
+    drawing = true;
+    activeTool.origin = p;
   }
 
-  function onMouseUp(e: MouseEvent): void {
-    const p = getCanvasCoords(e);
-
+  function onMouseUp(p: THREE.Vector2 | null): void {
     if (p) {
       if (props.drawMode === DrawMode.Erase) {
         configureClearMode();
@@ -132,10 +117,9 @@
     drawing = false;
   }
 
-  function onMouseMove(e: MouseEvent): void {
+  function onMouseMove(p: THREE.Vector2 | null): void {
     if (!activeTool) return;
 
-    const p = getCanvasCoords(e);
     if (!p) {
       // Mouse is outside canvas, reset the start position
       resetPos = true;
@@ -206,28 +190,6 @@
     }
   }
 
-  /**
-   * Converts mouse coordinates into canvas coordinates. If mouse is not currently over
-   * the fog of war layer, returns null
-   * @param e
-   */
-  function getCanvasCoords(e: MouseEvent): THREE.Vector2 | null {
-    mouse.x = (e.offsetX / $size.width) * 2 - 1;
-    mouse.y = -(e.offsetY / $size.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, $camera);
-    const intersects = raycaster.intersectObject(fogQuad);
-
-    if (intersects.length > 0) {
-      const { point } = intersects[0];
-      const localPoint = fogQuad.worldToLocal(point);
-      const canvasPoint = new THREE.Vector2(canvas.width * (localPoint.x + 0.5), canvas.height * (-localPoint.y + 0.5));
-      return canvasPoint;
-    } else {
-      return null;
-    }
-  }
-
   function persistChanges() {
     if (canvas && canvas.width > 0 && canvas.height > 0) {
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -267,7 +229,16 @@
   }
 </script>
 
-<T.Mesh bind:ref={fogQuad} name="FogOfWar" position={[0, 0, -3]}>
+<LayerInput
+  isActive={true}
+  layerSize={mapSize}
+  {layerQuad}
+  onmousedown={onMouseDown}
+  onmousemove={onMouseMove}
+  onmouseup={onMouseUp}
+/>
+
+<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, -3]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

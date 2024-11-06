@@ -21,8 +21,7 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  let imageSize: Size = $state({ width: 0, height: 0 });
-  let scale = $state(new THREE.Vector3(1, 1, 1));
+  let mapSize: Size = $state({ width: 0, height: 0 });
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
@@ -36,18 +35,10 @@
     };
   });
 
-  function onImageLoaded(size: Size) {
-    imageSize = size;
-  }
-
   $effect(() => {
     renderPass.mainCamera = $camera;
     composer.setSize($size.width, $size.height);
     renderer.setClearColor(new THREE.Color(props.backgroundColor));
-  });
-
-  $effect(() => {
-    scale = getImageScale(imageSize, $size, props.scene.scaleMode, props.scene.customScale);
   });
 
   useTask(
@@ -64,10 +55,10 @@
 <T.Object3D
   position={props.scene.scaleMode === ScaleMode.Custom ? [props.scene.offset.x, -props.scene.offset.y, -5] : [0, 0, -5]}
   rotation.z={(props.scene.rotation / 180.0) * Math.PI}
-  scale={[scale.x, scale.y, scale.z]}
+  scale={getImageScale(mapSize, $size, props.scene.scaleMode, props.scene.customScale)}
 >
   <WeatherLayer props={props.weather} {composer} />
   <GridLayer props={props.grid} {composer} />
-  <FogOfWarLayer props={props.fogOfWar} {functions} {imageSize} />
-  <MapLayer props={props.map} onimageloaded={onImageLoaded} />
+  <FogOfWarLayer props={props.fogOfWar} {mapSize} {functions} />
+  <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
 </T.Object3D>
