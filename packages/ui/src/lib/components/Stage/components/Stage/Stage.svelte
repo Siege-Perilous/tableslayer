@@ -4,6 +4,15 @@
   import Scene from '../Scene/Scene.svelte';
   import type { StageFunctions } from './types';
 
+  interface Props {
+    props: StageProps;
+    onpan: (dx: number, dy: number) => void;
+    onzoom: (dx: number) => void;
+    onrotate: (dx: number) => void;
+  }
+
+  let { props, onpan, onzoom, onrotate }: Props = $props();
+
   export const functions: StageFunctions = $state({
     fogOfWar: {
       resetFog: () => {},
@@ -13,10 +22,8 @@
       }
     }
   });
-
-  let { props }: { props: StageProps } = $props();
 </script>
 
 <Canvas>
-  <Scene {props} {functions} />
+  <Scene {props} {functions} {onpan} {onrotate} {onzoom} />
 </Canvas>

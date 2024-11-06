@@ -1,4 +1,4 @@
-import { DrawMode, GridType, ScaleMode, ToolType, type StageProps } from '@tableslayer/ui';
+import { DrawMode, GridType, MapLayerType, ScaleMode, ToolType, type StageProps } from '@tableslayer/ui';
 import mapUrl from './dungeon.png';
 import { fogOfWarData } from './fogOfWarData';
 
@@ -27,13 +27,17 @@ export const StageDefaultProps: StageProps = {
     url: mapUrl
   },
   scene: {
+    activeLayer: MapLayerType.None,
+    minZoom: 0.1,
+    maxZoom: 10,
     rotation: 0,
     offset: {
       x: 0,
       y: 0
     },
     scaleMode: ScaleMode.Custom,
-    customScale: 0.4
+    zoom: 0.4,
+    zoomSensitivity: 0.0005
   },
   weather: {
     color: { r: 173, g: 227, b: 255 },

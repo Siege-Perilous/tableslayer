@@ -1,10 +1,24 @@
 <script lang="ts">
   import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { ScaleMode, GridType, Stage, type StageProps, DrawMode, ToolType, WeatherType } from '@tableslayer/ui';
+  import {
+    ScaleMode,
+    GridType,
+    Stage,
+    type StageProps,
+    DrawMode,
+    ToolType,
+    WeatherType,
+    MapLayerType
+  } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage;
+
+  const layerTypeOptions: ListOptions<number> = {
+    None: MapLayerType.None,
+    FogOfWar: MapLayerType.FogOfWar
+  };
 
   const toolTypeOptions: ListOptions<number> = {
     RoundBrush: ToolType.RoundBrush,
@@ -33,38 +47,43 @@
     Rain: WeatherType.Rain
   };
 
-  function centerCamera() {
+  function autocenterMap() {
     stageProps.scene.offset = {
       x: 0,
       y: 0
     };
   }
+
+  function onPan(dx: number, dy: number) {
+    stageProps.scene.offset.x += dx;
+    stageProps.scene.offset.y += dy;
+  }
+
+  function onRotate(dx: number) {
+    stageProps.scene.rotation += dx;
+  }
+
+  function onZoom(dy: number) {
+    stageProps.scene.zoom += dy;
+    stageProps.scene.zoom = Math.max(
+      stageProps.scene.minZoom,
+      Math.min(stageProps.scene.zoom, stageProps.scene.maxZoom)
+    );
+  }
 </script>
 
 <div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} />
+  <Stage bind:this={stage} props={stageProps} onpan={onPan} onrotate={onRotate} onzoom={onZoom} />
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <Folder title="Scene">
+    <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
     <Color bind:value={stageProps.backgroundColor} label="Color" />
     <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} />
     <List bind:value={stageProps.scene.scaleMode} label="Fill Mode" options={scaleModeOptions} />
-    <Binding
-      bind:object={stageProps.scene}
-      key={'offset'}
-      label="Offset"
-      disabled={stageProps.scene.scaleMode !== ScaleMode.Custom}
-    />
-    <Slider
-      bind:value={stageProps.scene.customScale}
-      label="Scale"
-      min={0.1}
-      max={2}
-      disabled={stageProps.scene.scaleMode !== ScaleMode.Custom}
-    />
-    <Button on:click={centerCamera} title="Re-Center Map" />
+    <Button on:click={autocenterMap} title="Re-Center Map" />
   </Folder>
 
   <Folder title="Fog of War">

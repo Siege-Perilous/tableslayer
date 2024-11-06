@@ -1,22 +1,22 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, type Size, useThrelte } from '@threlte/core';
+  import { T, type Size } from '@threlte/core';
   import { DrawMode, ToolType, type FogOfWarProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
   import type { StageFunctions } from '../Stage/types';
   import { textureToBase64 } from '../../helpers/utils';
   import LayerInput from '../LayerInput/LayerInput.svelte';
+  import { MapLayerType } from '../MapLayer/types';
 
-  let {
-    props,
-    mapSize,
-    functions
-  }: {
+  interface Props {
+    activeLayer: MapLayerType;
     props: FogOfWarProps;
     mapSize: Size;
     functions: StageFunctions;
-  } = $props();
+  }
+
+  let { activeLayer, props, mapSize, functions }: Props = $props();
 
   // Bind functions
   functions.fogOfWar = {
@@ -230,7 +230,7 @@
 </script>
 
 <LayerInput
-  isActive={true}
+  isActive={activeLayer === MapLayerType.FogOfWar}
   layerSize={mapSize}
   {layerQuad}
   onmousedown={onMouseDown}
