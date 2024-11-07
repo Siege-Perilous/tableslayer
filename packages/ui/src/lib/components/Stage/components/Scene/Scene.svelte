@@ -25,6 +25,8 @@
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   let mapSize: Size = $state({ width: 0, height: 0 });
+  let sceneScale: number = $state(1);
+  let scenePosition: [x: number, y: number, z: number] = $state([0, 0, 0]);
   let leftMouseDown = false;
 
   const composer = new EffectComposer(renderer);
@@ -73,8 +75,12 @@
   }
 
   function onMouseMove(e: MouseEvent) {
+    // When control key is pressed, pan the entire scene
+    if (e.ctrlKey) {
+      scenePosition = [scenePosition[0] + e.movementX, scenePosition[1] + e.movementY, 0];
+    }
     // Only allow movement if no map layers are currently being edited
-    if (leftMouseDown && props.scene.activeLayer === MapLayerType.None) {
+    else if (leftMouseDown && props.scene.activeLayer === MapLayerType.None) {
       onpan(e.movementX, e.movementY);
     }
   }
@@ -100,13 +106,18 @@
 
 <T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
 
-<T.Object3D
-  position={props.scene.scaleMode === ScaleMode.Custom ? [props.scene.offset.x, -props.scene.offset.y, -5] : [0, 0, -5]}
-  rotation.z={(props.scene.rotation / 180.0) * Math.PI}
-  scale={getImageScale(mapSize, $size, props.scene.scaleMode, props.scene.zoom)}
->
-  <WeatherLayer props={props.weather} {composer} />
-  <GridLayer props={props.grid} {composer} />
-  <FogOfWarLayer activeLayer={props.scene.activeLayer} props={props.fogOfWar} {mapSize} {functions} />
-  <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
+<T.Object3D position={scenePosition} scale={sceneScale}>
+  <T.Object3D
+    position={props.scene.scaleMode === ScaleMode.Custom
+      ? [props.scene.offset.x, -props.scene.offset.y, -5]
+      : [0, 0, -5]}
+    rotation.z={(props.scene.rotation / 180.0) * Math.PI}
+    scale={getImageScale(mapSize, $size, props.scene.scaleMode, props.scene.zoom)}
+  >
+    <WeatherLayer props={props.weather} {composer} />
+
+    <FogOfWarLayer activeLayer={props.scene.activeLayer} props={props.fogOfWar} {mapSize} {functions} />
+    <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
+  </T.Object3D>
+  <GridLayer props={props.grid} resolution={props.scene.displayResolution} />
 </T.Object3D>

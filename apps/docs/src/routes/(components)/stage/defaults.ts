@@ -28,6 +28,7 @@ export const StageDefaultProps: StageProps = {
   },
   scene: {
     activeLayer: MapLayerType.None,
+    displayResolution: { x: 1920, y: 1080 },
     minZoom: 0.1,
     maxZoom: 10,
     rotation: 0,

@@ -1,21 +1,33 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { useThrelte } from '@threlte/core';
-  import { EffectComposer, EffectPass } from 'postprocessing';
-  import { GridEffect } from '../../effects/GridEffect';
-  import type { GridProps } from './types';
+  import { T, useThrelte } from '@threlte/core';
+  import { type GridProps } from './types';
+  import { GridMaterial } from '../../materials/GridMaterial';
+  import { onMount } from 'svelte';
 
-  let { props, composer }: { props: GridProps; composer: EffectComposer } = $props();
+  interface Props {
+    props: GridProps;
+    resolution: { x: number; y: number };
+  }
 
-  const { camera, size } = useThrelte();
+  const { props, resolution }: Props = $props();
+  const { size } = useThrelte();
 
-  const gridEffect = new GridEffect(props);
-  let gridPass = $state(new EffectPass(undefined, gridEffect));
-  composer.addPass(gridPass);
+  let quad: THREE.Mesh;
+  let gridMaterial = new GridMaterial(props);
+
+  onMount(() => {
+    if (quad) {
+      quad.material = gridMaterial;
+    }
+  });
 
   $effect(() => {
-    gridEffect.resolution = new THREE.Vector2($size.width, $size.height);
-    gridPass.mainCamera = $camera;
-    gridEffect.updateProps(props);
+    gridMaterial.resolution = new THREE.Vector2($size.width, $size.height);
+    gridMaterial.updateProps(props);
   });
 </script>
+
+<T.Mesh bind:ref={quad} position={[0, 0, -1]} scale={[resolution.x, resolution.y, 1]}>
+  <T.PlaneGeometry />
+</T.Mesh>

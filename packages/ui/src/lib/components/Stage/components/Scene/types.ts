@@ -16,6 +16,11 @@ export type SceneProps = {
   activeLayer: MapLayerType;
 
   /**
+   * The resolution of the display the scene is displayed on
+   */
+  displayResolution: { x: number; y: number };
+
+  /**
    * Maximum zoom level
    */
   maxZoom: number;
