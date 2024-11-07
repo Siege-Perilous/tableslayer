@@ -14,7 +14,7 @@ import { ScaleMode } from '../components/Scene/types';
  */
 export function getImageScale(
   imageSize: Size,
-  canvasSize: Size,
+  resolution: { x: number; y: number },
   scaleMode: ScaleMode,
   customScale: number
 ): [x: number, y: number, z: number] {
@@ -26,7 +26,10 @@ export function getImageScale(
   }
 
   const imageAspectRatio = imageSize.width / imageSize.height;
-  const containerAspectRatio = canvasSize.width / canvasSize.height;
+  const containerAspectRatio = resolution.x / resolution.y;
+
+  scaledSize[0] = resolution.x;
+  scaledSize[1] = resolution.y;
 
   scaledSize[0] = canvasSize.width;
   scaledSize[1] = canvasSize.height;
@@ -34,16 +37,16 @@ export function getImageScale(
   if (scaleMode === ScaleMode.Fill) {
     // Scale to fill the entire container (image may be cropped)
     if (imageAspectRatio < containerAspectRatio) {
-      scaledSize[1] = canvasSize.width / imageAspectRatio;
+      scaledSize[1] = resolution.x / imageAspectRatio;
     } else {
-      scaledSize[0] = canvasSize.height * imageAspectRatio;
+      scaledSize[0] = resolution.y * imageAspectRatio;
     }
   } else if (scaleMode === ScaleMode.Fit) {
     // Scale to fit the entire image within the container (image will be letterboxed/pillarboxed)
     if (imageAspectRatio > containerAspectRatio) {
-      scaledSize[1] = canvasSize.width / imageAspectRatio;
+      scaledSize[1] = resolution.x / imageAspectRatio;
     } else {
-      scaledSize[0] = canvasSize.height * imageAspectRatio;
+      scaledSize[0] = resolution.y * imageAspectRatio;
     }
   }
 

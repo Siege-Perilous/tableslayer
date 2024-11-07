@@ -23,7 +23,7 @@
   });
 
   $effect(() => {
-    gridMaterial.resolution = new THREE.Vector2($size.width, $size.height);
+    gridMaterial.resolution = new THREE.Vector2(resolution.x, resolution.y);
     gridMaterial.updateProps(props);
   });
 </script>

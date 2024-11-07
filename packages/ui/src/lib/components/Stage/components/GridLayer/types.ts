@@ -15,9 +15,12 @@ export type GridProps = {
   opacity: number;
 
   /**
-   * The grid spacing
+   * The number of subdivisions in each axis
    */
-  spacing: number;
+  divisions: {
+    x: number;
+    y: number;
+  };
 
   /**
    * Offset of the grid origin

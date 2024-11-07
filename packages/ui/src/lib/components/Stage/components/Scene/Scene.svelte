@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { onDestroy, onMount } from 'svelte';
   import { type Size, T, useThrelte, useTask } from '@threlte/core';
-  import { EffectComposer, RenderPass } from 'postprocessing';
+  import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
   import type { StageFunctions } from '../Stage/types';
   import { ScaleMode } from './types';
@@ -24,14 +24,20 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  let mapSize: Size = $state({ width: 0, height: 0 });
+  // The translation and zoom of the entire scene relative to the stage
   let sceneScale: number = $state(1);
   let scenePosition: [x: number, y: number, z: number] = $state([0, 0, 0]);
+
+  // The size of the map image
+  let mapSize: Size = $state({ width: 0, height: 0 });
+
   let leftMouseDown = false;
 
+  // TODO: Add post-processing effects
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
   composer.addPass(renderPass);
+  composer.addPass(new EffectPass($camera, new VignetteEffect({ offset: 0.2 })));
 
   onMount(() => {
     renderer.domElement.addEventListener('mousedown', onMouseDown);
@@ -75,18 +81,25 @@
   }
 
   function onMouseMove(e: MouseEvent) {
+    if (!leftMouseDown) return;
+
     // When control key is pressed, pan the entire scene
-    if (e.ctrlKey) {
-      scenePosition = [scenePosition[0] + e.movementX, scenePosition[1] + e.movementY, 0];
+    if (e.shiftKey) {
+      scenePosition = [scenePosition[0] + e.movementX, scenePosition[1] - e.movementY, 0];
     }
     // Only allow movement if no map layers are currently being edited
-    else if (leftMouseDown && props.scene.activeLayer === MapLayerType.None) {
+    else if (props.scene.activeLayer === MapLayerType.None) {
       onpan(e.movementX, e.movementY);
     }
   }
 
   function onWheel(e: WheelEvent) {
-    onzoom(-e.deltaY * props.scene.zoomSensitivity);
+    // If shift key is pressed, zoom the entire scene, otherwis zoom the map
+    if (e.shiftKey) {
+      sceneScale -= e.deltaY * props.scene.zoomSensitivity;
+    } else {
+      onzoom(-e.deltaY * props.scene.zoomSensitivity);
+    }
   }
 
   $effect(() => {
@@ -112,7 +125,7 @@
       ? [props.scene.offset.x, -props.scene.offset.y, -5]
       : [0, 0, -5]}
     rotation.z={(props.scene.rotation / 180.0) * Math.PI}
-    scale={getImageScale(mapSize, $size, props.scene.scaleMode, props.scene.zoom)}
+    scale={getImageScale(mapSize, props.scene.displayResolution, props.scene.scaleMode, props.scene.zoom)}
   >
     <WeatherLayer props={props.weather} {composer} />
 

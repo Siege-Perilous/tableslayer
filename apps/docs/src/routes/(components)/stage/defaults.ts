@@ -15,10 +15,10 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     opacity: 1,
-    spacing: 50,
+    divisions: { x: 20, y: 10 },
     offset: { x: 0, y: 0 },
     lineColor: { r: 230, g: 230, b: 230 },
-    lineThickness: 2,
+    lineThickness: 0.01,
     shadowIntensity: 1,
     shadowColor: { r: 0, g: 0, b: 0 },
     shadowSize: 2

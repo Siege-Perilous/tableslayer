@@ -15,7 +15,7 @@ export class GridMaterial extends THREE.ShaderMaterial {
       uniforms: {
         gridType: new THREE.Uniform(props.gridType),
         opacity: new THREE.Uniform(props.opacity),
-        spacing: new THREE.Uniform(props.spacing),
+        divisions: new THREE.Uniform(props.divisions),
         offset: new THREE.Uniform(props.offset),
         lineThickness: new THREE.Uniform(props.lineThickness),
         lineColor: new THREE.Uniform(props.lineColor),
@@ -30,7 +30,7 @@ export class GridMaterial extends THREE.ShaderMaterial {
   updateProps(props: GridProps) {
     this.uniforms.gridType!.value = props.gridType;
     this.uniforms.opacity!.value = props.opacity;
-    this.uniforms.spacing!.value = props.spacing;
+    this.uniforms.divisions!.value = props.divisions;
     this.uniforms.offset!.value = props.offset;
     this.uniforms.lineThickness!.value = props.lineThickness;
     this.uniforms.lineColor!.value = props.lineColor;

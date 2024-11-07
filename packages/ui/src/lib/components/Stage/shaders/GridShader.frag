@@ -1,6 +1,6 @@
 uniform int gridType; // 0 for square, 1 for hex
 uniform float opacity;
-uniform float spacing;
+uniform vec2 divisions;
 uniform vec2 offset;
 uniform float lineThickness;
 uniform vec3 lineColor;
@@ -16,10 +16,10 @@ const vec2 s = vec2(1.0, 1.7320508); // For hexagonal grid calculations
 
 // Function to create a square grid
 // Returns floating point value between 0 and 1
-float squareGrid(vec2 p, float spacing, float thickness) {
+float squareGrid(vec2 p, vec2 spacing, float thickness) {
   vec2 gridPos = mod(p, spacing);
-  float distToLineX = min(gridPos.x, spacing - gridPos.x);
-  float distToLineY = min(gridPos.y, spacing - gridPos.y);
+  float distToLineX = min(gridPos.x, spacing.x - gridPos.x);
+  float distToLineY = min(gridPos.y, spacing.y - gridPos.y);
   float lineDist = min(distToLineX, distToLineY);
 
   // As distance to line decreases, increase the line intensity
@@ -44,10 +44,11 @@ vec2 getHex(vec2 p) {
 
 void main() {
   // Scale UV coords by the render target size
-  vec2 p = vUv * uResolution + (offset * spacing);
+  vec2 p = vUv * 10.0 + offset;
 
   float grid = 0.0;
   float shadow = 0.0;
+  vec2 spacing = 10.0 / divisions;
   if(gridType == 0) { // Square grid
     grid = squareGrid(p, spacing, lineThickness);
     shadow = squareGrid(p, spacing, lineThickness * shadowSize);
