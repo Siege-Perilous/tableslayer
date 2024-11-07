@@ -17,34 +17,33 @@ export function getImageScale(
   canvasSize: Size,
   scaleMode: ScaleMode,
   customScale: number
-): THREE.Vector3 {
-  const scaledSize = new THREE.Vector3(imageSize.width, imageSize.height, 1);
+): [x: number, y: number, z: number] {
+  const scaledSize: [x: number, y: number, z: number] = [imageSize.width, imageSize.height, 1];
 
   if (scaleMode === ScaleMode.Custom) {
     // If no scaling, use the custom scale value
-    return scaledSize.multiplyScalar(customScale);
+    return [customScale * imageSize.width, customScale * imageSize.height, 1];
   }
 
   const imageAspectRatio = imageSize.width / imageSize.height;
   const containerAspectRatio = canvasSize.width / canvasSize.height;
 
+  scaledSize[0] = canvasSize.width;
+  scaledSize[1] = canvasSize.height;
+
   if (scaleMode === ScaleMode.Fill) {
     // Scale to fill the entire container (image may be cropped)
     if (imageAspectRatio < containerAspectRatio) {
-      scaledSize.x = canvasSize.width;
-      scaledSize.y = canvasSize.width / imageAspectRatio;
+      scaledSize[1] = canvasSize.width / imageAspectRatio;
     } else {
-      scaledSize.x = canvasSize.height * imageAspectRatio;
-      scaledSize.y = canvasSize.height;
+      scaledSize[0] = canvasSize.height * imageAspectRatio;
     }
   } else if (scaleMode === ScaleMode.Fit) {
     // Scale to fit the entire image within the container (image will be letterboxed/pillarboxed)
     if (imageAspectRatio > containerAspectRatio) {
-      scaledSize.x = canvasSize.width;
-      scaledSize.y = canvasSize.width / imageAspectRatio;
+      scaledSize[1] = canvasSize.width / imageAspectRatio;
     } else {
-      scaledSize.x = canvasSize.height * imageAspectRatio;
-      scaledSize.y = canvasSize.height;
+      scaledSize[0] = canvasSize.height * imageAspectRatio;
     }
   }
 
