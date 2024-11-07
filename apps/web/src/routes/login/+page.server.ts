@@ -13,7 +13,7 @@ import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
-    return redirect(302, '/');
+    return redirect(302, '/profile');
   }
   const loginForm = await superValidate(zod(loginSchema));
   return { loginForm };
@@ -52,6 +52,6 @@ export const actions: Actions = {
     await createSession(token, existingUser.id.toString());
     setSessionTokenCookie(event, token);
 
-    return message(loginForm, { type: 'success', text: 'Login successful, redirecting...' }), redirect(302, '/');
+    return message(loginForm, { type: 'success', text: 'Login successful, redirecting...' }), redirect(302, '/profile');
   }
 };

@@ -4,6 +4,7 @@ import { signupSchema } from '$lib/schemas';
 import {
   createSession,
   generateSessionToken,
+  getGravatarDisplayName,
   getGravatarUrl,
   getUser,
   sendSingleEmail,
@@ -54,9 +55,10 @@ export const actions: Actions = {
     const userId = uuidv4();
 
     try {
+      const name = await getGravatarDisplayName('dave.snider@gmail.com');
       await db.insert(usersTable).values({
         id: userId,
-        name: '',
+        name,
         email: email,
         passwordHash: passwordHash
       });

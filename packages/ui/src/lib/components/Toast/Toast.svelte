@@ -33,7 +33,7 @@
 </script>
 
 <script lang="ts">
-  import { checkToastCookie } from './';
+  import { checkToastCookie } from './toastCookie';
   $effect(() => {
     if ($page.url) {
       checkToastCookie();
