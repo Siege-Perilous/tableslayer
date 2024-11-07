@@ -8,10 +8,9 @@
     props: StageProps;
     onpan: (dx: number, dy: number) => void;
     onzoom: (dx: number) => void;
-    onrotate: (dx: number) => void;
   }
 
-  let { props, onpan, onzoom, onrotate }: Props = $props();
+  let { props, onpan, onzoom }: Props = $props();
 
   export const functions: StageFunctions = $state({
     fogOfWar: {
@@ -25,5 +24,5 @@
 </script>
 
 <Canvas>
-  <Scene {props} {functions} {onpan} {onrotate} {onzoom} />
+  <Scene {props} {functions} {onpan} {onzoom} />
 </Canvas>

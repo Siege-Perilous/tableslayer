@@ -18,15 +18,14 @@
     functions: StageFunctions;
     onpan: (dx: number, dy: number) => void;
     onzoom: (dx: number) => void;
-    onrotate: (dx: number) => void;
   }
 
-  let { props, functions, onpan, onzoom, onrotate }: Props = $props();
+  let { props, functions, onpan, onzoom }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   let mapSize: Size = $state({ width: 0, height: 0 });
-  let mouseDown = false;
+  let leftMouseDown = false;
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
@@ -56,20 +55,26 @@
   });
 
   function onMouseDown(e: MouseEvent) {
-    mouseDown = true;
+    // Left mouse button
+    if (e.button === 0) {
+      leftMouseDown = true;
+    }
   }
 
   function onMouseUp(e: MouseEvent) {
-    mouseDown = false;
+    // Left mouse button
+    if (e.button === 0) {
+      leftMouseDown = false;
+    }
   }
 
-  function onMouseLeave(e: MouseEvent) {
-    mouseDown = false;
+  function onMouseLeave() {
+    leftMouseDown = false;
   }
 
   function onMouseMove(e: MouseEvent) {
     // Only allow movement if no map layers are currently being edited
-    if (mouseDown && props.scene.activeLayer === MapLayerType.None) {
+    if (leftMouseDown && props.scene.activeLayer === MapLayerType.None) {
       onpan(e.movementX, e.movementY);
     }
   }

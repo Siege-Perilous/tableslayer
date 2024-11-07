@@ -7,7 +7,7 @@ export const StageDefaultProps: StageProps = {
   fogOfWar: {
     data: fogOfWarData,
     fogColor: '#303030',
-    opacity: 0.5,
+    opacity: 0.8,
     toolType: ToolType.RoundBrush,
     drawMode: DrawMode.Erase,
     brushSize: 200

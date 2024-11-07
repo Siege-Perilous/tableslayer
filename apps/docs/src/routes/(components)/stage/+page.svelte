@@ -59,10 +59,6 @@
     stageProps.scene.offset.y += dy;
   }
 
-  function onRotate(dx: number) {
-    stageProps.scene.rotation += dx;
-  }
-
   function onZoom(dy: number) {
     stageProps.scene.zoom += dy;
     stageProps.scene.zoom = Math.max(
@@ -73,36 +69,47 @@
 </script>
 
 <div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} onpan={onPan} onrotate={onRotate} onzoom={onZoom} />
+  <Stage bind:this={stage} props={stageProps} onpan={onPan} onzoom={onZoom} />
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <Folder title="Scene">
-    <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
-    <Color bind:value={stageProps.backgroundColor} label="Color" />
-    <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} />
+    <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <List bind:value={stageProps.scene.scaleMode} label="Fill Mode" options={scaleModeOptions} />
-    <Button on:click={autocenterMap} title="Re-Center Map" />
-  </Folder>
+    <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
+    <Folder title="Map">
+      <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} />
+      <Button on:click={autocenterMap} title="Re-Center Map" />
+    </Folder>
+    <Folder title="Fog of War">
+      <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
+      <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
+      <Slider
+        bind:value={stageProps.fogOfWar.brushSize}
+        label="Brush Size"
+        min={1}
+        max={500}
+        step={1}
+        disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
+          stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
+      />
+      <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
+      <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+      <Button on:click={() => stage!.functions.fogOfWar.resetFog()} title="Reset Fog" />
+      <Button on:click={() => stage!.functions.fogOfWar.revealAll()} title="Reveal All" />
+      <Button on:click={() => console.log(stage!.functions.fogOfWar.toBase64())} title="Export" />
+    </Folder>
 
-  <Folder title="Fog of War">
-    <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
-    <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
-    <Slider
-      bind:value={stageProps.fogOfWar.brushSize}
-      label="Brush Size"
-      min={1}
-      max={500}
-      step={1}
-      disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
-        stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
-    />
-    <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
-    <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Button on:click={() => stage!.functions.fogOfWar.resetFog()} title="Reset Fog" />
-    <Button on:click={() => stage!.functions.fogOfWar.revealAll()} title="Reveal All" />
-    <Button on:click={() => console.log(stage!.functions.fogOfWar.toBase64())} title="Export" />
+    <Folder title="Weather">
+      <List bind:value={stageProps.weather.weatherType} label="Type" options={weatherTypeOptions} />
+      <Color bind:value={stageProps.weather.color} label="Color" />
+      <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
+      <Slider bind:value={stageProps.weather.angle} label="Angle" min={-180} max={180} step={0.1} />
+      <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
+      <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
+      <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
+    </Folder>
   </Folder>
 
   <Folder title="Grid">
@@ -116,16 +123,6 @@
     <Slider bind:value={stageProps.grid.shadowIntensity} label="Shadow Intensity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.shadowSize} label="Shadow Size" min={1} max={5} step={0.01} />
     <Color bind:value={stageProps.grid.shadowColor} label="Shadow Color" />
-  </Folder>
-
-  <Folder title="Weather">
-    <List bind:value={stageProps.weather.weatherType} label="Type" options={weatherTypeOptions} />
-    <Color bind:value={stageProps.weather.color} label="Color" />
-    <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.weather.angle} label="Angle" min={-180} max={180} step={0.1} />
-    <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
-    <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
-    <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
   </Folder>
 </Pane>
 
