@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { type Size, T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
-  import backgroundImageUrl from './dungeon.png';
+  import backgroundImageUrl from './mansion.jpeg';
   import { type MapProps } from './types';
 
   interface Props {
