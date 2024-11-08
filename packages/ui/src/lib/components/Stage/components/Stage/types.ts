@@ -50,4 +50,9 @@ export interface StageExports {
     fill: () => void;
     center: () => void;
   };
+  scene: {
+    fit: () => void;
+    fill: () => void;
+    center: () => void;
+  };
 }

@@ -55,8 +55,11 @@
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <Folder title="Scene">
-    <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
+    <Color bind:value={stageProps.backgroundColor} label="Background Color" />
+    <Button on:click={() => stage.scene.center()} title="Center" />
+    <Button on:click={() => stage.scene.fill()} title="Fill" />
+    <Button on:click={() => stage.scene.fit()} title="Fit" />
     <Folder title="Map">
       <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
       <Button on:click={() => stage.map.center()} title="Center" />

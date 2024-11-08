@@ -10,21 +10,28 @@
   }
 
   let { props, onMapUpdate }: Props = $props();
-  let scene: SceneExports;
+
+  let sceneRef: SceneExports;
 
   export const map = {
-    fill: () => scene.fillMapToScreen(),
-    fit: () => scene.fitMapToScreen(),
-    center: () => scene.centerMap()
+    center: () => sceneRef.map.center(),
+    fill: () => sceneRef.map.fill(),
+    fit: () => sceneRef.map.fit()
   };
 
   export const fogOfWar = {
-    clear: () => scene.clearFog(),
-    reset: () => scene.resetFog(),
-    toBase64: () => scene.exportFogToBase64()
+    clear: () => sceneRef.fogOfWar.clear(),
+    reset: () => sceneRef.fogOfWar.reset(),
+    toBase64: () => sceneRef.fogOfWar.toBase64()
+  };
+
+  export const scene = {
+    center: () => sceneRef.centerScene(),
+    fill: () => sceneRef.fillSceneToCanvas(),
+    fit: () => sceneRef.fitSceneToCanvas()
   };
 </script>
 
 <Canvas>
-  <Scene bind:this={scene} {props} {onMapUpdate} />
+  <Scene bind:this={sceneRef} {props} {onMapUpdate} />
 </Canvas>

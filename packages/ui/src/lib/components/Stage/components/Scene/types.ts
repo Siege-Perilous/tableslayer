@@ -13,10 +13,19 @@ export interface SceneLayerProps {
 }
 
 export interface SceneExports {
-  centerMap: () => void;
-  fillMapToScreen: () => void;
-  fitMapToScreen: () => void;
-  resetFog: () => void;
-  clearFog: () => void;
-  exportFogToBase64: () => string;
+  fillSceneToCanvas: () => void;
+  fitSceneToCanvas: () => void;
+  centerScene: () => void;
+
+  fogOfWar: {
+    clear: () => void;
+    reset: () => void;
+    toBase64: () => string;
+  };
+
+  map: {
+    fit: () => void;
+    fill: () => void;
+    center: () => void;
+  };
 }

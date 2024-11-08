@@ -20,7 +20,7 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  let fogOfWar: FogOfWarExports;
+  let fogOfWarLayer: FogOfWarExports;
 
   // The translation and zoom of the entire scene relative to the stage
   let sceneScale: number = $state(1);
@@ -112,11 +112,37 @@
     }
   }
 
-  export function centerMap() {
+  export function centerScene() {
+    scenePosition = [0, 0, 0];
+  }
+
+  export function fillSceneToCanvas() {
+    const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    if (sceneAspectRatio > canvasAspectRatio) {
+      sceneScale = renderer.domElement.height / props.scene.resolution.y;
+    } else {
+      sceneScale = renderer.domElement.width / props.scene.resolution.x;
+    }
+  }
+
+  export function fitSceneToCanvas() {
+    const canvasAspectRatio = $size.width / $size.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    if (sceneAspectRatio > canvasAspectRatio) {
+      sceneScale = $size.width / props.scene.resolution.x;
+    } else {
+      sceneScale = $size.height / props.scene.resolution.y;
+    }
+  }
+
+  function centerMap() {
     onMapUpdate({ x: 0, y: 0 }, props.map.zoom);
   }
 
-  export function fillMapToScreen() {
+  function fillMapToScene() {
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
@@ -130,7 +156,7 @@
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
 
-  export function fitMapToScreen() {
+  function fitMapToScene() {
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
@@ -143,10 +169,6 @@
 
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
-
-  export const clearFog = () => fogOfWar.clearFog();
-  export const resetFog = () => fogOfWar.resetFog();
-  export const exportFogToBase64 = () => fogOfWar.toBase64();
 
   $effect(() => {
     renderPass.mainCamera = $camera;
@@ -161,6 +183,18 @@
     },
     { stage: renderStage }
   );
+
+  export const map = {
+    center: () => centerMap(),
+    fill: () => fillMapToScene(),
+    fit: () => fitMapToScene()
+  };
+
+  export const fogOfWar = {
+    clear: () => fogOfWarLayer.clearFog(),
+    reset: () => fogOfWarLayer.resetFog(),
+    toBase64: () => fogOfWarLayer.toBase64()
+  };
 </script>
 
 <T.OrthographicCamera makeDefault near={0.1} far={1000} position={100}></T.OrthographicCamera>
@@ -175,7 +209,7 @@
   >
     <!-- Map layers that scale with the map -->
     <FogOfWarLayer
-      bind:this={fogOfWar}
+      bind:this={fogOfWarLayer}
       isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
       props={props.fogOfWar}
       {mapSize}
