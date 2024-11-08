@@ -96,7 +96,7 @@
   function onWheel(e: WheelEvent) {
     // If shift key is pressed, zoom the entire scene, otherwis zoom the map
     if (e.shiftKey) {
-      sceneScale -= e.deltaY * props.scene.zoomSensitivity;
+      sceneScale -= e.deltaX * props.scene.zoomSensitivity;
     } else {
       onzoom(-e.deltaY * props.scene.zoomSensitivity);
     }
