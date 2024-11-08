@@ -15,7 +15,7 @@
 </script>
 
 <Panel class="panel--signup">
-  <Title as="h1" size="lg">Create an account</Title>
+  <Title as="h1" size="md">Create an account</Title>
   <Spacer size={2} />
   <p>Already have an account? <Link href="/login">Sign in</Link>.</p>
   <Spacer size={8} />

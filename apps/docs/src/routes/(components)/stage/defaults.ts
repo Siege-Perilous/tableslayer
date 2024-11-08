@@ -27,7 +27,7 @@ export const StageDefaultProps: StageProps = {
     url: mapUrl
   },
   scene: {
-    activeLayer: MapLayerType.None,
+    activeLayer: MapLayerType.FogOfWar,
     minZoom: 0.1,
     maxZoom: 10,
     rotation: 0,
