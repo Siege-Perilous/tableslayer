@@ -14,6 +14,7 @@ export { default as PropsTable } from './PropsTable/PropsTable.svelte';
 export * from './Spacer';
 export * from './Stage';
 export * from './Table';
+export * from './Text';
 export * from './Title';
 export * from './Toast';
 export * from './ToolTip';
