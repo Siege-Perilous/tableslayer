@@ -8,12 +8,12 @@ import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
 import { usersTable } from '$lib/db/app/schema';
-import { verifyHash } from '$lib/utils';
 import { eq } from 'drizzle-orm';
+import { verifyHash } from '../../lib/utils/hash';
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
-    return redirect(302, '/');
+    return redirect(302, '/profile');
   }
   const loginForm = await superValidate(zod(loginSchema));
   return { loginForm };
@@ -52,6 +52,6 @@ export const actions: Actions = {
     await createSession(token, existingUser.id.toString());
     setSessionTokenCookie(event, token);
 
-    return message(loginForm, { type: 'success', text: 'Login successful, redirecting...' }), redirect(302, '/');
+    return message(loginForm, { type: 'success', text: 'Login successful, redirecting...' }), redirect(302, '/profile');
   }
 };

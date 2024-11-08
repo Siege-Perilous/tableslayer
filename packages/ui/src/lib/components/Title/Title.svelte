@@ -2,16 +2,17 @@
   import classNames from 'classnames';
   import type { TitleProps } from './types';
   let { children, as = 'p', size, style, ...restProps }: TitleProps = $props();
-  const titleClasses = classNames('title', `title-${size}`);
+  const titleClasses = classNames('title', `title-${size}`, restProps.class ?? '');
 </script>
 
-<svelte:element this={as} class={titleClasses} {style} {...restProps}>
+<svelte:element this={as} {...restProps} class={titleClasses} {style}>
   {@render children()}
 </svelte:element>
 
 <style>
   .title {
     font-family: var(--font-serif);
+    font-weight: 900;
   }
 
   .title-xs {
@@ -32,7 +33,7 @@
   }
 
   .title-xl {
-    font-size: var(--font-size-9);
+    font-size: var(--font-size-10);
     font-feature-settings: 'ss02' 1;
   }
 </style>

@@ -28,6 +28,7 @@
     { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
+    { name: 'Text', path: '/text' },
     { name: 'Title', path: '/title' },
     { name: 'Toast', path: '/toast' },
     { name: 'ToolTip', path: '/tooltip' }
@@ -42,7 +43,7 @@
       <IconButton variant="ghost" title="Toggle menu" onclick={toggleMenu}>
         <Icon Icon={IconMenu2} size={16} stroke={2} />
       </IconButton>
-      <Title as="h2" size="sm">Components</Title>
+      <Title as="h2" size="xs">Components</Title>
     </div>
     <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
       <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
@@ -71,7 +72,7 @@
 <style>
   header {
     background: var(--bg);
-    padding: var(--size-4);
+    padding: var(--size-2);
     border-bottom: var(--borderThin);
   }
   .headerContainer {

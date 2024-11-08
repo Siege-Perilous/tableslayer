@@ -16,10 +16,10 @@ test.describe('Login Page Tests', () => {
     await page.getByTestId('loginSubmit').click();
 
     // Wait for any form validation or login response
-    await page.waitForURL('/');
+    await page.waitForURL('/profile');
 
     // Assuming successful login redirects to a dashboard or similar page
-    expect(page.url()).toContain('/');
+    expect(page.url()).toContain('/profile');
   });
 
   test('should display validation error for empty fields', async ({ page }) => {
