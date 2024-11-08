@@ -6,10 +6,11 @@
 
   interface Props {
     props: MapLayerProps;
+    z: number;
     onmaploaded: (size: Size) => void;
   }
 
-  let { props, onmaploaded }: Props = $props();
+  let { props, z, onmaploaded }: Props = $props();
 
   const loader = useLoader(TextureLoader);
   let image = loader.load(props.url, {
@@ -29,7 +30,7 @@
   });
 </script>
 
-<T.Mesh position={[0, 0, -4]}>
+<T.Mesh position={[0, 0, z]}>
   <T.MeshBasicMaterial map={$image} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

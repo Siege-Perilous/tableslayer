@@ -127,6 +127,8 @@
     } else {
       sceneScale = renderer.domElement.width / props.scene.resolution.x;
     }
+
+    centerScene();
   }
 
   export function fitSceneToCanvas() {
@@ -138,6 +140,8 @@
     } else {
       sceneScale = $size.height / props.scene.resolution.y;
     }
+
+    centerScene();
   }
 
   function centerMap() {
@@ -202,24 +206,25 @@
 <T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 
 <!-- Scene -->
-<T.Object3D position={scenePosition} scale={sceneScale}>
+<T.Object3D position={scenePosition} scale={[sceneScale, sceneScale, 1]}>
   <!-- Map -->
   <T.Object3D
-    position={[props.map.offset.x, props.map.offset.y, -30]}
+    position={[props.map.offset.x, props.map.offset.y, 0]}
     rotation.z={(props.map.rotation / 180.0) * Math.PI}
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >
+    <!-- <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} /> -->
     <!-- Map layers that scale with the map -->
     <FogOfWarLayer
       bind:this={fogOfWarLayer}
-      isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
       props={props.fogOfWar}
+      isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
+      z={10}
       {mapSize}
     />
-    <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
   </T.Object3D>
 
-  <!-- Map overlays that scale with the scene -->
-  <GridLayer props={props.grid} resolution={props.scene.resolution} {sceneScale} />
-  <WeatherLayer props={props.weather} resolution={props.scene.resolution} />
+  <!-- Map overlays that scale with the scene 
+  <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} {sceneScale} />
+  <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} /> -->
 </T.Object3D>

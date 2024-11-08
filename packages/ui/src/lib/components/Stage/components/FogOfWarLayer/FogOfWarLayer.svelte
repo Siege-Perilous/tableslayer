@@ -6,22 +6,22 @@
   import { Tool, type DrawingTool } from './tools/types';
   import { textureToBase64 } from '../../helpers/utils';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import { MapLayerType } from '../MapLayer/types';
 
   interface Props {
-    isActive: boolean;
     props: FogOfWarLayerProps;
+    isActive: boolean;
+    z: number;
     mapSize: Size;
   }
 
-  let { isActive, props, mapSize }: Props = $props();
+  let { props, isActive, z, mapSize }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
   let imageData: ImageData;
 
-  let layerQuad = $state(new THREE.Mesh());
-  let fogMaterial = $state(new THREE.MeshBasicMaterial());
+  let layerQuad: THREE.Mesh;
+  let fogMaterial: THREE.MeshBasicMaterial;
   let fogTexture: THREE.CanvasTexture;
 
   let drawing: boolean = false;
@@ -36,16 +36,6 @@
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
-  });
-
-  $effect(() => {
-    // If texture already exists, dispose of existing one
-    if (fogTexture) {
-      fogTexture.dispose();
-    }
-
-    fogTexture = new THREE.CanvasTexture(canvas);
-    fogMaterial.map = fogTexture;
 
     if (props.data) {
       // If the props contains initial fog of war data, initialize the canvas to that data
@@ -64,6 +54,13 @@
       resetFog();
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     }
+  });
+
+  $effect(() => {
+    if (!fogMaterial) return;
+    fogTexture = new THREE.CanvasTexture(canvas);
+    fogMaterial.map = fogTexture;
+    fogMaterial.needsUpdate = true;
   });
 
   // Update the active tool when the tool type changes
@@ -227,7 +224,7 @@
   onmouseup={onMouseUp}
 />
 
-<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, -3]}>
-  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
+<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, z]}>
+  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} />
   <T.PlaneGeometry />
 </T.Mesh>

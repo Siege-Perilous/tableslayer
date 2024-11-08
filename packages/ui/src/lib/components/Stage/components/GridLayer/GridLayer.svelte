@@ -7,11 +7,12 @@
 
   interface Props {
     props: GridLayerProps;
+    z: number;
     resolution: { x: number; y: number };
     sceneScale: number;
   }
 
-  const { props, resolution, sceneScale }: Props = $props();
+  const { props, z, resolution, sceneScale }: Props = $props();
 
   let quad: THREE.Mesh;
   let gridMaterial = new GridMaterial(props);
@@ -29,6 +30,6 @@
   });
 </script>
 
-<T.Mesh bind:ref={quad} position={[0, 0, -20]} scale={[resolution.x, resolution.y, 1]}>
+<T.Mesh bind:ref={quad} position={[0, 0, z]} scale={[resolution.x, resolution.y, 1]}>
   <T.PlaneGeometry />
 </T.Mesh>
