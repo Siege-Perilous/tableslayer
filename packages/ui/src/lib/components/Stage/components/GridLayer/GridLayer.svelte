@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useThrelte } from '@threlte/core';
+  import { T } from '@threlte/core';
   import { type GridProps } from './types';
   import { GridMaterial } from '../../materials/GridMaterial';
   import { onMount } from 'svelte';
@@ -8,10 +8,10 @@
   interface Props {
     props: GridProps;
     resolution: { x: number; y: number };
+    sceneScale: number;
   }
 
-  const { props, resolution }: Props = $props();
-  const { size } = useThrelte();
+  const { props, resolution, sceneScale }: Props = $props();
 
   let quad: THREE.Mesh;
   let gridMaterial = new GridMaterial(props);
@@ -23,7 +23,8 @@
   });
 
   $effect(() => {
-    gridMaterial.resolution = new THREE.Vector2(resolution.x, resolution.y);
+    gridMaterial.uniforms.uResolution.value = new THREE.Vector2(resolution.x, resolution.y);
+    gridMaterial.uniforms.sceneScale.value = sceneScale;
     gridMaterial.updateProps(props);
   });
 </script>

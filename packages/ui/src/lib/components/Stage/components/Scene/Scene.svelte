@@ -117,13 +117,11 @@
   );
 </script>
 
-<T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
+<T.OrthographicCamera makeDefault near={0.1} far={1000} position={100}></T.OrthographicCamera>
 
 <T.Object3D position={scenePosition} scale={sceneScale}>
   <T.Object3D
-    position={props.scene.scaleMode === ScaleMode.Custom
-      ? [props.scene.offset.x, -props.scene.offset.y, -5]
-      : [0, 0, -5]}
+    position={props.scene.scaleMode === ScaleMode.Custom ? [props.scene.offset.x, -props.scene.offset.y, 0] : [0, 0, 0]}
     rotation.z={(props.scene.rotation / 180.0) * Math.PI}
     scale={getImageScale(mapSize, props.scene.displayResolution, props.scene.scaleMode, props.scene.zoom)}
   >
@@ -132,5 +130,5 @@
     <FogOfWarLayer activeLayer={props.scene.activeLayer} props={props.fogOfWar} {mapSize} {functions} />
     <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
   </T.Object3D>
-  <GridLayer props={props.grid} resolution={props.scene.displayResolution} />
+  <GridLayer props={props.grid} resolution={props.scene.displayResolution} {sceneScale} />
 </T.Object3D>

@@ -7,6 +7,7 @@ uniform vec3 lineColor;
 uniform float shadowIntensity;
 uniform float shadowSize;
 uniform vec3 shadowColor;
+uniform float sceneScale;
 uniform vec2 uResolution;
 
 varying vec2 vUv;
@@ -23,7 +24,7 @@ float squareGrid(vec2 p, vec2 spacing, float thickness) {
   float lineDist = min(distToLineX, distToLineY);
 
   // As distance to line decreases, increase the line intensity
-  return smoothstep(thickness, 0.0, lineDist);
+  return smoothstep(thickness / 100.0, 0.0, lineDist);
 }
 
 // This function helps define the shape of a hexagon by transforming a 
@@ -50,13 +51,13 @@ void main() {
   float shadow = 0.0;
   vec2 spacing = 10.0 / divisions;
   if(gridType == 0) { // Square grid
-    grid = squareGrid(p, spacing, lineThickness);
-    shadow = squareGrid(p, spacing, lineThickness * shadowSize);
+    grid = squareGrid(p, spacing, lineThickness / sceneScale);
+    shadow = squareGrid(p, spacing, lineThickness * shadowSize / sceneScale);
   } else { // Hex grid
     vec2 hexUv = getHex(p / spacing);
     float hexValue = hex(hexUv) + 0.5; // Outputs 0 to 1
-    grid = smoothstep(1.0 - lineThickness / 100.0, 1.0, hexValue);
-    shadow = smoothstep(1.0 - lineThickness / 100.0 * shadowSize, 1.0, hexValue);
+    grid = smoothstep(1.0 - lineThickness / 70.0 / sceneScale, 1.0, hexValue);
+    shadow = smoothstep(1.0 - lineThickness * shadowSize / 70.0 / sceneScale, 1.0, hexValue);
   }
 
   vec4 shadedScene = vec4(shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity);

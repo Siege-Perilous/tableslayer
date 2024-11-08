@@ -119,7 +119,7 @@
     <Slider bind:value={stageProps.grid.divisions.y} label="Subdivisions Y" min={1} max={50} step={1} />
     <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={0} max={1000} step={1} />
     <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={0} max={1000} step={1} />
-    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={0.005} max={0.025} />
+    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={1} max={10} />
     <Color bind:value={stageProps.grid.lineColor} label="Line Color" />
     <Slider bind:value={stageProps.grid.shadowIntensity} label="Shadow Intensity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.shadowSize} label="Shadow Size" min={1} max={5} step={0.01} />

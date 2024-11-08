@@ -6,8 +6,6 @@ import vertexShader from '../shaders/GridShader.vert?raw';
 
 export class GridMaterial extends THREE.ShaderMaterial {
   constructor(props: GridProps) {
-    console.log(fragmentShader);
-    console.log(vertexShader);
     super({
       transparent: true,
       vertexShader,
@@ -22,6 +20,7 @@ export class GridMaterial extends THREE.ShaderMaterial {
         shadowIntensity: new THREE.Uniform(props.shadowIntensity),
         shadowSize: new THREE.Uniform(props.shadowSize),
         shadowColor: new THREE.Uniform(props.shadowColor),
+        sceneScale: new THREE.Uniform(1),
         uResolution: new THREE.Uniform(new THREE.Vector2(0, 0))
       }
     });
@@ -37,13 +36,5 @@ export class GridMaterial extends THREE.ShaderMaterial {
     this.uniforms.shadowIntensity!.value = props.shadowIntensity;
     this.uniforms.shadowSize!.value = props.shadowSize;
     this.uniforms.shadowColor!.value = props.shadowColor;
-  }
-
-  get resolution(): THREE.Vector2 {
-    return this.uniforms.uResolution!.value;
-  }
-
-  set resolution(value) {
-    this.uniforms.uResolution!.value = value;
   }
 }
