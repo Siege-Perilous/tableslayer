@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { GridProps } from '../components/GridLayer/types';
 
 import fragmentShader from '../shaders/GridShader.frag?raw';
-import vertexShader from '../shaders/GridShader.vert?raw';
+import vertexShader from '../shaders/default.vert?raw';
 
 export class GridMaterial extends THREE.ShaderMaterial {
   constructor(props: GridProps) {
@@ -27,14 +27,14 @@ export class GridMaterial extends THREE.ShaderMaterial {
   }
 
   updateProps(props: GridProps) {
-    this.uniforms.gridType!.value = props.gridType;
-    this.uniforms.opacity!.value = props.opacity;
-    this.uniforms.divisions!.value = props.divisions;
-    this.uniforms.offset!.value = props.offset;
-    this.uniforms.lineThickness!.value = props.lineThickness;
-    this.uniforms.lineColor!.value = props.lineColor;
-    this.uniforms.shadowIntensity!.value = props.shadowIntensity;
-    this.uniforms.shadowSize!.value = props.shadowSize;
-    this.uniforms.shadowColor!.value = props.shadowColor;
+    this.uniforms.gridType.value = props.gridType;
+    this.uniforms.opacity.value = props.opacity;
+    this.uniforms.divisions.value = props.divisions;
+    this.uniforms.offset.value = props.offset;
+    this.uniforms.lineThickness.value = props.lineThickness;
+    this.uniforms.lineColor.value = props.lineColor;
+    this.uniforms.shadowIntensity.value = props.shadowIntensity;
+    this.uniforms.shadowSize.value = props.shadowSize;
+    this.uniforms.shadowColor.value = props.shadowColor;
   }
 }

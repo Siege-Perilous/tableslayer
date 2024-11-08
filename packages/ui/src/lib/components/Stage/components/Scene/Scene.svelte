@@ -125,10 +125,9 @@
     rotation.z={(props.scene.rotation / 180.0) * Math.PI}
     scale={getImageScale(mapSize, props.scene.displayResolution, props.scene.scaleMode, props.scene.zoom)}
   >
-    <WeatherLayer props={props.weather} {composer} />
-
     <FogOfWarLayer activeLayer={props.scene.activeLayer} props={props.fogOfWar} {mapSize} {functions} />
     <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
   </T.Object3D>
   <GridLayer props={props.grid} resolution={props.scene.displayResolution} {sceneScale} />
+  <WeatherLayer props={props.weather} resolution={props.scene.displayResolution} />
 </T.Object3D>
