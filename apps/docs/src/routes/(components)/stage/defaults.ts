@@ -1,6 +1,6 @@
 import { DrawMode, GridType, MapLayerType, ScaleMode, ToolType, type StageProps } from '@tableslayer/ui';
+import mapUrl from './dungeon.png';
 import { fogOfWarData } from './fogOfWarData';
-import mapUrl from './mansion.jpeg';
 
 export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
