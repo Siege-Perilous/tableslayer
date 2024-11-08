@@ -31,9 +31,6 @@ export function getImageScale(
   scaledSize[0] = resolution.x;
   scaledSize[1] = resolution.y;
 
-  scaledSize[0] = canvasSize.width;
-  scaledSize[1] = canvasSize.height;
-
   if (scaleMode === ScaleMode.Fill) {
     // Scale to fill the entire container (image may be cropped)
     if (imageAspectRatio < containerAspectRatio) {
