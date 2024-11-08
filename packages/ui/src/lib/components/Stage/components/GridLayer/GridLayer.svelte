@@ -1,12 +1,12 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T } from '@threlte/core';
-  import { type GridProps } from './types';
+  import { type GridLayerProps } from './types';
   import { GridMaterial } from '../../materials/GridMaterial';
   import { onMount } from 'svelte';
 
   interface Props {
-    props: GridProps;
+    props: GridLayerProps;
     resolution: { x: number; y: number };
     sceneScale: number;
   }

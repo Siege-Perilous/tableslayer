@@ -1,16 +1,8 @@
-import type { FogOfWarProps } from '../FogOfWarLayer/types';
-import type { GridProps } from '../GridLayer/types';
-import type { MapProps } from '../MapLayer/types';
-import type { SceneProps } from '../Scene/types';
+import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
+import type { GridLayerProps } from '../GridLayer/types';
+import type { MapLayerProps } from '../MapLayer/types';
+import type { SceneLayerProps } from '../Scene/types';
 import type { WeatherProps } from '../WeatherLayer/types';
-
-export interface StageFunctions {
-  fogOfWar: {
-    resetFog: () => void;
-    revealAll: () => void;
-    toBase64: () => string;
-  };
-}
 
 /**
  * Properties for the Stage component
@@ -24,25 +16,38 @@ export type StageProps = {
   /**
    * Properties for the fog of war layer
    */
-  fogOfWar: FogOfWarProps;
+  fogOfWar: FogOfWarLayerProps;
 
   /**
    * Properties for the grid layer
    */
-  grid: GridProps;
+  grid: GridLayerProps;
 
   /**
    * Properties for the map layer
    */
-  map: MapProps;
+  map: MapLayerProps;
 
   /**
    * Properties for the overall scene
    */
-  scene: SceneProps;
+  scene: SceneLayerProps;
 
   /**
    * Properties of the weather layer
    */
   weather: WeatherProps;
 };
+
+export interface StageExports {
+  fogOfWar: {
+    clear: () => void;
+    reset: () => void;
+    toBase64: () => string;
+  };
+  map: {
+    fit: () => void;
+    fill: () => void;
+    center: () => void;
+  };
+}

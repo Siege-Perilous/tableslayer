@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import type { GridProps } from '../components/GridLayer/types';
+import type { GridLayerProps } from '../components/GridLayer/types';
 
 import fragmentShader from '../shaders/GridShader.frag?raw';
 import vertexShader from '../shaders/default.vert?raw';
 
 export class GridMaterial extends THREE.ShaderMaterial {
-  constructor(props: GridProps) {
+  constructor(props: GridLayerProps) {
     super({
       transparent: true,
       vertexShader,
@@ -26,7 +26,7 @@ export class GridMaterial extends THREE.ShaderMaterial {
     });
   }
 
-  updateProps(props: GridProps) {
+  updateProps(props: GridLayerProps) {
     this.uniforms.gridType.value = props.gridType;
     this.uniforms.opacity.value = props.opacity;
     this.uniforms.divisions.value = props.divisions;

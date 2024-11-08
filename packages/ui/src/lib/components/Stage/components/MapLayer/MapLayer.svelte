@@ -2,10 +2,10 @@
   import * as THREE from 'three';
   import { type Size, T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
-  import { type MapProps } from './types';
+  import { type MapLayerProps } from './types';
 
   interface Props {
-    props: MapProps;
+    props: MapLayerProps;
     onmaploaded: (size: Size) => void;
   }
 

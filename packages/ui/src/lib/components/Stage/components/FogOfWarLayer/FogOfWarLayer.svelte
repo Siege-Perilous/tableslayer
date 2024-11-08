@@ -1,29 +1,20 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
-  import { DrawMode, ToolType, type FogOfWarProps } from './types';
+  import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
-  import type { StageFunctions } from '../Stage/types';
   import { textureToBase64 } from '../../helpers/utils';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import { MapLayerType } from '../MapLayer/types';
 
   interface Props {
-    activeLayer: MapLayerType;
-    props: FogOfWarProps;
+    isActive: boolean;
+    props: FogOfWarLayerProps;
     mapSize: Size;
-    functions: StageFunctions;
   }
 
-  let { activeLayer, props, mapSize, functions }: Props = $props();
-
-  // Bind functions
-  functions.fogOfWar = {
-    resetFog,
-    revealAll,
-    toBase64
-  };
+  let { isActive, props, mapSize }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
@@ -203,7 +194,7 @@
   /**
    * Clears all fog, revealing the entire map underneath
    */
-  function revealAll() {
+  export function clearFog() {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
     persistChanges();
@@ -213,7 +204,7 @@
   /**
    * Resets the fog to fill the entire layer
    */
-  function resetFog() {
+  export function resetFog() {
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
     persistChanges();
@@ -224,13 +215,13 @@
    * Serializes the fog of war image data into a base-64 string
    * @return A base-64 string
    */
-  function toBase64(): string {
+  export function toBase64(): string {
     return textureToBase64(fogTexture);
   }
 </script>
 
 <LayerInput
-  isActive={activeLayer === MapLayerType.FogOfWar}
+  {isActive}
   layerSize={mapSize}
   {layerQuad}
   onmousedown={onMouseDown}

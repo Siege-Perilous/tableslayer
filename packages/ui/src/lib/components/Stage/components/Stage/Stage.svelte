@@ -2,27 +2,29 @@
   import { Canvas } from '@threlte/core';
   import type { StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
-  import type { StageFunctions } from './types';
+  import type { SceneExports } from '../Scene/types';
 
   interface Props {
     props: StageProps;
-    onpan: (dx: number, dy: number) => void;
-    onzoom: (dx: number) => void;
+    onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   }
 
-  let { props, onpan, onzoom }: Props = $props();
+  let { props, onMapUpdate }: Props = $props();
+  let scene: SceneExports;
 
-  export const functions: StageFunctions = $state({
-    fogOfWar: {
-      resetFog: () => {},
-      revealAll: () => {},
-      toBase64: () => {
-        return '';
-      }
-    }
-  });
+  export const map = {
+    fill: () => scene.fillMapToScreen(),
+    fit: () => scene.fitMapToScreen(),
+    center: () => scene.centerMap()
+  };
+
+  export const fogOfWar = {
+    clear: () => scene.clearFog(),
+    reset: () => scene.resetFog(),
+    toBase64: () => scene.exportFogToBase64()
+  };
 </script>
 
 <Canvas>
-  <Scene {props} {functions} {onpan} {onzoom} />
+  <Scene bind:this={scene} {props} {onMapUpdate} />
 </Canvas>
