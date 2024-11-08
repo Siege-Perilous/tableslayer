@@ -1,5 +1,4 @@
 export * from './Avatar';
-export * from './Board';
 export * from './Button';
 export * from './CodeBlock';
 export * from './ColorMode';
