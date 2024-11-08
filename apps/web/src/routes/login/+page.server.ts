@@ -8,8 +8,8 @@ import type { Actions, PageServerLoad } from './$types';
 
 // Import the users table schema
 import { usersTable } from '$lib/db/app/schema';
-import { verifyHash } from '$lib/utils';
 import { eq } from 'drizzle-orm';
+import { verifyHash } from '../../lib/utils/hash';
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {

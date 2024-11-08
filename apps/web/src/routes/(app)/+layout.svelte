@@ -8,8 +8,6 @@
   import { page } from '$app/stores';
   import classNames from 'classnames';
 
-  console.log(user);
-
   let menuItems = $derived(
     parties.map((party) => ({
       label: party.name,

@@ -13,12 +13,12 @@ import {
 } from '$lib/server';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
 import { createGameSessionDb } from '$lib/server/turso';
-import { createHash } from '$lib/utils';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
+import { createHash } from '../../lib/utils/hash';
 import type { Actions, PageServerLoad } from './$types';
 
 // Define a custom type for database errors

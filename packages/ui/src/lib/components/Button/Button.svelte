@@ -99,6 +99,7 @@
     border-color: transparent;
     font-family: var(--font-serif);
     font-weight: 700;
+    white-space: nowrap;
   }
 
   .btn--sm {
