@@ -1,15 +1,6 @@
 <script lang="ts">
   import { ColorMode, Icon, Popover } from '@tableslayer/ui';
-  import {
-    IconGrid4x4,
-    IconSettings,
-    IconShadow,
-    IconSelector,
-    IconMap,
-    IconCloud,
-    IconUmbrella,
-    IconCloudSnow
-  } from '@tabler/icons-svelte';
+  import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
   const sceneControlArray = [
     {
       icon: IconMap,
