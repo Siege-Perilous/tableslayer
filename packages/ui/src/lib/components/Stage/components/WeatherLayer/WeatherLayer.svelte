@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte } from '@threlte/core';
+  import { T, useTask } from '@threlte/core';
   import { type WeatherProps } from './types';
   import { WeatherMaterial } from '../../materials/WeatherMaterial';
   import { onMount } from 'svelte';
@@ -13,6 +13,8 @@
 
   const { props, z, resolution }: Props = $props();
   let time = $state(0);
+
+  // svelte-ignore non_reactive_update
   let quad: THREE.Mesh;
   let material = new WeatherMaterial(props);
 

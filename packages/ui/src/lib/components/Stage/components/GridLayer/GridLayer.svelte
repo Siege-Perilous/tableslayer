@@ -14,6 +14,7 @@
 
   const { props, z, resolution, sceneScale }: Props = $props();
 
+  // svelte-ignore non_reactive_update
   let quad: THREE.Mesh;
   let gridMaterial = new GridMaterial(props);
 
