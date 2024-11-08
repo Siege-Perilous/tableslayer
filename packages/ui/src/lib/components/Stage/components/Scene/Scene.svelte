@@ -51,6 +51,8 @@
     let before = autoRender.current;
     autoRender.set(false);
 
+    fitSceneToCanvas();
+
     return () => {
       autoRender.set(before);
     };
@@ -104,7 +106,7 @@
   function onWheel(e: WheelEvent) {
     // If shift key is pressed, zoom the entire scene, otherwis zoom the map
     if (e.shiftKey) {
-      sceneScale = Math.max(minZoom, Math.min(sceneScale + e.deltaX * zoomSensitivity, maxZoom));
+      sceneScale = Math.max(minZoom, Math.min(sceneScale - e.deltaX * zoomSensitivity, maxZoom));
     } else if (props.scene.activeLayer === MapLayerType.None) {
       let newZoom = props.map.zoom - e.deltaY * zoomSensitivity;
       newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
@@ -197,13 +199,13 @@
   };
 </script>
 
-<T.OrthographicCamera makeDefault near={0.1} far={1000} position={100}></T.OrthographicCamera>
+<T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 
 <!-- Scene -->
 <T.Object3D position={scenePosition} scale={sceneScale}>
   <!-- Map -->
   <T.Object3D
-    position={[props.map.offset.x, props.map.offset.y, 0]}
+    position={[props.map.offset.x, props.map.offset.y, -30]}
     rotation.z={(props.map.rotation / 180.0) * Math.PI}
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >

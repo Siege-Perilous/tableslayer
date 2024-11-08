@@ -39,8 +39,6 @@
   });
 
   $effect(() => {
-    console.log(`Resetting fog of war canvas to ${mapSize.width}x${mapSize.height}`);
-
     // If texture already exists, dispose of existing one
     if (fogTexture) {
       fogTexture.dispose();

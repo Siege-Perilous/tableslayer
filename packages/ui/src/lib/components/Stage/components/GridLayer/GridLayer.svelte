@@ -29,6 +29,6 @@
   });
 </script>
 
-<T.Mesh bind:ref={quad} position={[0, 0, -1]} scale={[resolution.x, resolution.y, 1]}>
+<T.Mesh bind:ref={quad} position={[0, 0, -20]} scale={[resolution.x, resolution.y, 1]}>
   <T.PlaneGeometry />
 </T.Mesh>
