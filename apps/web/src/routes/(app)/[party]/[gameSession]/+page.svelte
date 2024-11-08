@@ -1,6 +1,6 @@
 <script lang="ts">
-  let { data } = $props();
-  const { gameSession } = $derived(data);
+  //  let { data } = $props();
+  //  const { gameSession } = $derived(data);
   import { Stage, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
@@ -9,7 +9,9 @@
   let stage;
   const stageProps: StageProps = $state(StageDefaultProps);
 
+  // @ts-expect-error undefined for now
   let scenesPane: PaneAPI = $state(undefined);
+  // @ts-expect-error undefined for now
   let controlsPane: PaneAPI = $state(undefined);
   let isScenesCollapsed = $state(false);
   let isControlsCollapsed = $state(false);
@@ -31,6 +33,19 @@
       controlsPane.collapse();
     }
   };
+
+  function onPan(dx: number, dy: number) {
+    stageProps.scene.offset.x += dx;
+    stageProps.scene.offset.y += dy;
+  }
+
+  function onZoom(dy: number) {
+    stageProps.scene.zoom += dy;
+    stageProps.scene.zoom = Math.max(
+      stageProps.scene.minZoom,
+      Math.min(stageProps.scene.zoom, stageProps.scene.maxZoom)
+    );
+  }
 </script>
 
 <div class="container">
@@ -56,12 +71,12 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper">
         <div class="stage">
-          <Stage bind:this={stage} props={stageProps} />
+          <Stage bind:this={stage} props={stageProps} onpan={onPan} onzoom={onZoom} />
         </div>
         <SceneControls />
       </div>
     </Pane>
-    <PaneResizer class="resizer" bind:pane={controlsPane}>
+    <PaneResizer class="resizer">
       <button
         class="resizer__handle resizer__hander--right"
         aria-label="Collapse controls column"
