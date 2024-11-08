@@ -213,7 +213,7 @@
     rotation.z={(props.map.rotation / 180.0) * Math.PI}
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >
-    <!-- <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} /> -->
+    <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} />
     <!-- Map layers that scale with the map -->
     <FogOfWarLayer
       bind:this={fogOfWarLayer}
@@ -224,7 +224,7 @@
     />
   </T.Object3D>
 
-  <!-- Map overlays that scale with the scene 
+  <!-- Map overlays that scale with the scene -->
   <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} {sceneScale} />
-  <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} /> -->
+  <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} />
 </T.Object3D>

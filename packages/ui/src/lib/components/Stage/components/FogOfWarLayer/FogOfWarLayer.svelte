@@ -20,8 +20,8 @@
   let context: CanvasRenderingContext2D;
   let imageData: ImageData;
 
-  let layerQuad: THREE.Mesh;
-  let fogMaterial: THREE.MeshBasicMaterial;
+  let layerQuad = $state(new THREE.Mesh());
+  let fogMaterial = $state(new THREE.MeshBasicMaterial());
   let fogTexture: THREE.CanvasTexture;
 
   let drawing: boolean = false;
@@ -36,6 +36,7 @@
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
+    fogTexture = new THREE.CanvasTexture(canvas);
 
     if (props.data) {
       // If the props contains initial fog of war data, initialize the canvas to that data
@@ -46,21 +47,18 @@
         canvas.height = image.height;
         context.drawImage(image, 0, 0);
         imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        fogMaterial.map = fogTexture;
+        fogMaterial.needsUpdate = true;
       };
-    } else if (canvas.width > 0 && canvas.height > 0) {
+    } else {
       // Otherwise, start with a blank canvas
       canvas.width = mapSize.width;
       canvas.height = mapSize.height;
       resetFog();
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      fogMaterial.map = fogTexture;
+      fogMaterial.needsUpdate = true;
     }
-  });
-
-  $effect(() => {
-    if (!fogMaterial) return;
-    fogTexture = new THREE.CanvasTexture(canvas);
-    fogMaterial.map = fogTexture;
-    fogMaterial.needsUpdate = true;
   });
 
   // Update the active tool when the tool type changes
@@ -225,6 +223,6 @@
 />
 
 <T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, z]}>
-  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} />
+  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
