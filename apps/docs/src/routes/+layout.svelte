@@ -28,6 +28,7 @@
     { name: 'Popover', path: '/popover' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
+    { name: 'Text', path: '/text' },
     { name: 'Title', path: '/title' },
     { name: 'Toast', path: '/toast' },
     { name: 'ToolTip', path: '/tooltip' }
