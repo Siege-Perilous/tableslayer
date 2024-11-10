@@ -15,7 +15,7 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     opacity: 0.2,
-    divisions: { x: 20, y: 10 },
+    divisions: 20,
     offset: { x: 0, y: 0 },
     lineColor: { r: 230, g: 230, b: 230 },
     lineThickness: 1,
@@ -34,7 +34,12 @@ export const StageDefaultProps: StageProps = {
   },
   scene: {
     activeLayer: MapLayerType.None,
-    resolution: { x: 1920, y: 1080 }
+    offset: {
+      x: 0,
+      y: 0
+    },
+    resolution: { x: 1920, y: 1080 },
+    zoom: 0.4
   },
   weather: {
     color: { r: 173, g: 227, b: 255 },

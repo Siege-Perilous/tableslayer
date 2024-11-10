@@ -15,12 +15,9 @@ export interface GridLayerProps {
   opacity: number;
 
   /**
-   * The number of subdivisions in each axis
+   * The number of subdivisions along the x-axis of the scene
    */
-  divisions: {
-    x: number;
-    y: number;
-  };
+  divisions: number;
 
   /**
    * Offset of the grid origin

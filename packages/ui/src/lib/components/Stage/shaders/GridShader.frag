@@ -1,6 +1,6 @@
 uniform int gridType; // 0 for square, 1 for hex
 uniform float opacity;
-uniform vec2 divisions;
+uniform float divisions;
 uniform vec2 offset;
 uniform float lineThickness;
 uniform vec3 lineColor;
@@ -24,7 +24,7 @@ float squareGrid(vec2 p, vec2 spacing, float thickness) {
   float lineDist = min(distToLineX, distToLineY);
 
   // As distance to line decreases, increase the line intensity
-  return smoothstep(thickness / 100.0, 0.0, lineDist);
+  return smoothstep(thickness, 0.0, lineDist);
 }
 
 // This function helps define the shape of a hexagon by transforming a 
@@ -45,11 +45,11 @@ vec2 getHex(vec2 p) {
 
 void main() {
   // Scale UV coords by the render target size
-  vec2 p = vUv * 10.0 + offset;
+  vec2 p = vUv * uResolution + offset;
 
   float grid = 0.0;
   float shadow = 0.0;
-  vec2 spacing = 10.0 / divisions;
+  vec2 spacing = vec2(uResolution.x / divisions, uResolution.x / divisions);
   if(gridType == 0) { // Square grid
     grid = squareGrid(p, spacing, lineThickness / sceneScale);
     shadow = squareGrid(p, spacing, lineThickness * shadowSize / sceneScale);

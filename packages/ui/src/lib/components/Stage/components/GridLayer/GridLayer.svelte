@@ -26,6 +26,7 @@
 
   $effect(() => {
     gridMaterial.uniforms.uResolution.value = new THREE.Vector2(resolution.x, resolution.y);
+    // The line widths scale inversely with the scene scale so they always appear the same width
     gridMaterial.uniforms.sceneScale.value = sceneScale;
     gridMaterial.updateProps(props);
   });

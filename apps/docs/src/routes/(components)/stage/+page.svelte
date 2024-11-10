@@ -46,10 +46,16 @@
     stageProps.map.offset.y = offset.y;
     stageProps.map.zoom = zoom;
   }
+
+  function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
+    stageProps.scene.offset.x = offset.x;
+    stageProps.scene.offset.y = offset.y;
+    stageProps.scene.zoom = zoom;
+  }
 </script>
 
 <div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onMapUpdate} />
+  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} />
 </div>
 
 <!-- DEBUG UI -->
@@ -57,8 +63,7 @@
   <Folder title="Grid">
     <List bind:value={stageProps.grid.gridType} label="Type" options={gridTypeOptions} />
     <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.grid.divisions.x} label="Subdivisions X" min={1} max={50} step={1} />
-    <Slider bind:value={stageProps.grid.divisions.y} label="Subdivisions Y" min={1} max={50} step={1} />
+    <Slider bind:value={stageProps.grid.divisions} label="Subdivisions" min={1} max={50} step={1} />
     <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={0} max={1000} step={1} />
     <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={0} max={1000} step={1} />
     <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={1} max={10} />

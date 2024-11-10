@@ -14,18 +14,15 @@
   interface Props {
     props: StageProps;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   }
 
-  let { props, onMapUpdate }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   let fogOfWarLayer: FogOfWarExports;
 
-  // The translation and zoom of the entire scene relative to the stage
-  let sceneScale: number = $state(1);
-  // The position of the scene relative to the stage
-  let scenePosition: [x: number, y: number, z: number] = $state([0, 0, 0]);
   // The size of the map image
   let mapSize: Size = $state({ width: 0, height: 0 });
 
@@ -89,59 +86,76 @@
 
     // When control key is pressed, pan the entire scene
     if (e.shiftKey) {
-      scenePosition = [scenePosition[0] + e.movementX, scenePosition[1] - e.movementY, 0];
+      const newOffset = {
+        x: props.scene.offset.x + e.movementX,
+        y: props.scene.offset.y - e.movementY
+      };
+
+      onSceneUpdate(newOffset, props.scene.zoom);
     }
     // Only allow movement if no map layers are currently being edited
     else if (props.scene.activeLayer === MapLayerType.None) {
-      onMapUpdate(
-        {
-          x: props.map.offset.x + e.movementX,
-          y: props.map.offset.y - e.movementY
-        },
-        props.map.zoom
-      );
+      // Scale offset by scene zoom level so map moves pixel-per-pixel with the mouse
+      const newOffset = {
+        x: props.map.offset.x + e.movementX / props.scene.zoom,
+        y: props.map.offset.y - e.movementY / props.scene.zoom
+      };
+
+      onMapUpdate(newOffset, props.map.zoom);
     }
   }
 
   function onWheel(e: WheelEvent) {
+    // On MacOS, SHIFT + Scroll results in horizontal scroll
+    let scrollDelta;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      scrollDelta = e.deltaX * zoomSensitivity;
+    } else {
+      scrollDelta = e.deltaY * zoomSensitivity;
+    }
+
     // If shift key is pressed, zoom the entire scene, otherwis zoom the map
     if (e.shiftKey) {
-      sceneScale = Math.max(minZoom, Math.min(sceneScale - e.deltaX * zoomSensitivity, maxZoom));
+      let newZoom = props.scene.zoom - scrollDelta;
+      newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+      onSceneUpdate(props.scene.offset, newZoom);
     } else if (props.scene.activeLayer === MapLayerType.None) {
-      let newZoom = props.map.zoom - e.deltaY * zoomSensitivity;
+      let newZoom = props.map.zoom - scrollDelta;
       newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
       onMapUpdate(props.map.offset, newZoom);
     }
   }
 
   export function centerScene() {
-    scenePosition = [0, 0, 0];
+    onSceneUpdate({ x: 0, y: 0 }, props.scene.zoom);
   }
 
   export function fillSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
+    let newZoom: number;
     if (sceneAspectRatio > canvasAspectRatio) {
-      sceneScale = renderer.domElement.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.height / props.scene.resolution.y;
     } else {
-      sceneScale = renderer.domElement.width / props.scene.resolution.x;
+      newZoom = renderer.domElement.width / props.scene.resolution.x;
     }
 
-    centerScene();
+    onSceneUpdate(props.map.offset, newZoom);
   }
 
   export function fitSceneToCanvas() {
     const canvasAspectRatio = $size.width / $size.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
-    if (sceneAspectRatio > canvasAspectRatio) {
-      sceneScale = $size.width / props.scene.resolution.x;
+    let newZoom: number;
+    if (sceneAspectRatio < canvasAspectRatio) {
+      newZoom = renderer.domElement.height / props.scene.resolution.y;
     } else {
-      sceneScale = $size.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.width / props.scene.resolution.x;
     }
 
-    centerScene();
+    onSceneUpdate(props.map.offset, newZoom);
   }
 
   function centerMap() {
@@ -206,7 +220,7 @@
 <T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 
 <!-- Scene -->
-<T.Object3D position={scenePosition} scale={[sceneScale, sceneScale, 1]}>
+<T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
   <!-- Map -->
   <T.Object3D
     position={[props.map.offset.x, props.map.offset.y, 0]}
@@ -225,6 +239,6 @@
   </T.Object3D>
 
   <!-- Map overlays that scale with the scene -->
-  <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} {sceneScale} />
+  <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} sceneScale={props.scene.zoom} />
   <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} />
 </T.Object3D>

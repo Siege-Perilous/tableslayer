@@ -7,9 +7,10 @@
   interface Props {
     props: StageProps;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   }
 
-  let { props, onMapUpdate }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate }: Props = $props();
 
   let sceneRef: SceneExports;
 
@@ -33,5 +34,5 @@
 </script>
 
 <Canvas>
-  <Scene bind:this={sceneRef} {props} {onMapUpdate} />
+  <Scene bind:this={sceneRef} {props} {onMapUpdate} {onSceneUpdate} />
 </Canvas>
