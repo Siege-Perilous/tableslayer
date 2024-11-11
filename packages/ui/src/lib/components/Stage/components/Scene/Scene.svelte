@@ -126,10 +126,6 @@
     }
   }
 
-  export function centerScene() {
-    onSceneUpdate({ x: 0, y: 0 }, props.scene.zoom);
-  }
-
   export function fillSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
@@ -156,10 +152,6 @@
     }
 
     onSceneUpdate(props.map.offset, newZoom);
-  }
-
-  function centerMap() {
-    onMapUpdate({ x: 0, y: 0 }, props.map.zoom);
   }
 
   function fillMapToScene() {
