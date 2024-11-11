@@ -25,7 +25,6 @@ export interface SceneLayerProps {
 export interface SceneExports {
   fillSceneToCanvas: () => void;
   fitSceneToCanvas: () => void;
-  centerScene: () => void;
 
   fogOfWar: {
     clear: () => void;
@@ -36,6 +35,5 @@ export interface SceneExports {
   map: {
     fit: () => void;
     fill: () => void;
-    center: () => void;
   };
 }

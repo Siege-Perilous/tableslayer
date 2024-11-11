@@ -8,14 +8,14 @@
     props: StageProps;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onMapUpdate, onSceneUpdate }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
 
   export const map = {
-    center: () => sceneRef.map.center(),
     fill: () => sceneRef.map.fill(),
     fit: () => sceneRef.map.fit()
   };
@@ -27,12 +27,11 @@
   };
 
   export const scene = {
-    center: () => sceneRef.centerScene(),
     fill: () => sceneRef.fillSceneToCanvas(),
     fit: () => sceneRef.fitSceneToCanvas()
   };
 </script>
 
 <Canvas>
-  <Scene bind:this={sceneRef} {props} {onMapUpdate} {onSceneUpdate} />
+  <Scene bind:this={sceneRef} {props} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
 </Canvas>

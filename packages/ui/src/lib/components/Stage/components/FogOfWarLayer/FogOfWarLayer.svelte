@@ -20,7 +20,7 @@
   let context: CanvasRenderingContext2D;
   let imageData: ImageData;
 
-  let layerQuad = $state(new THREE.Mesh());
+  let mesh = $state(new THREE.Mesh());
   let fogMaterial = $state(new THREE.MeshBasicMaterial());
   let fogTexture: THREE.CanvasTexture;
 
@@ -216,13 +216,13 @@
 <LayerInput
   {isActive}
   layerSize={mapSize}
-  {layerQuad}
+  target={mesh}
   onmousedown={onMouseDown}
   onmousemove={onMouseMove}
   onmouseup={onMouseUp}
 />
 
-<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, z]}>
+<T.Mesh bind:ref={mesh} name="FogOfWar" position={[0, 0, z]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
