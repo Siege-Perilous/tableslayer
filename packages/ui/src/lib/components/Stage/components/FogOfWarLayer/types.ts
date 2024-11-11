@@ -10,7 +10,7 @@ export enum DrawMode {
   Draw = 1
 }
 
-export type FogOfWarProps = {
+export interface FogOfWarLayerProps {
   /**
    * Initial texture data used to populate the fog of war layer
    */
@@ -40,4 +40,10 @@ export type FogOfWarProps = {
    * Controls the opacity of the entire fog of war layer
    */
   opacity: number;
-};
+}
+
+export interface FogOfWarExports {
+  clearFog: () => void;
+  resetFog: () => void;
+  toBase64: () => string;
+}

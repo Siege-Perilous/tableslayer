@@ -2,34 +2,41 @@
   import * as THREE from 'three';
   import { onDestroy, onMount } from 'svelte';
   import { type Size, T, useThrelte, useTask } from '@threlte/core';
-  import { EffectComposer, RenderPass } from 'postprocessing';
+  import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
-  import type { StageFunctions } from '../Stage/types';
-  import { ScaleMode } from './types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import { getImageScale } from '../../helpers/utils';
   import { MapLayerType } from '../MapLayer/types';
+  import type { FogOfWarExports } from '../FogOfWarLayer/types';
 
   interface Props {
     props: StageProps;
-    functions: StageFunctions;
-    onpan: (dx: number, dy: number) => void;
-    onzoom: (dx: number) => void;
+    onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   }
 
-  let { props, functions, onpan, onzoom }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
+  let fogOfWarLayer: FogOfWarExports;
+
+  // The size of the map image
   let mapSize: Size = $state({ width: 0, height: 0 });
+
   let leftMouseDown = false;
 
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.0005;
+
+  // TODO: Add post-processing effects
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene);
   composer.addPass(renderPass);
+  composer.addPass(new EffectPass($camera, new VignetteEffect({ offset: 0.2 })));
 
   onMount(() => {
     renderer.domElement.addEventListener('mousedown', onMouseDown);
@@ -40,6 +47,8 @@
 
     let before = autoRender.current;
     autoRender.set(false);
+
+    fitSceneToCanvas();
 
     return () => {
       autoRender.set(before);
@@ -73,14 +82,112 @@
   }
 
   function onMouseMove(e: MouseEvent) {
+    if (!leftMouseDown) return;
+
+    // When control key is pressed, pan the entire scene
+    if (e.shiftKey) {
+      const newOffset = {
+        x: props.scene.offset.x + e.movementX,
+        y: props.scene.offset.y - e.movementY
+      };
+
+      onSceneUpdate(newOffset, props.scene.zoom);
+    }
     // Only allow movement if no map layers are currently being edited
-    if (leftMouseDown && props.scene.activeLayer === MapLayerType.None) {
-      onpan(e.movementX, e.movementY);
+    else if (props.scene.activeLayer === MapLayerType.None) {
+      // Scale offset by scene zoom level so map moves pixel-per-pixel with the mouse
+      const newOffset = {
+        x: props.map.offset.x + e.movementX / props.scene.zoom,
+        y: props.map.offset.y - e.movementY / props.scene.zoom
+      };
+
+      onMapUpdate(newOffset, props.map.zoom);
     }
   }
 
   function onWheel(e: WheelEvent) {
-    onzoom(-e.deltaY * props.scene.zoomSensitivity);
+    // On MacOS, SHIFT + Scroll results in horizontal scroll
+    let scrollDelta;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      scrollDelta = e.deltaX * zoomSensitivity;
+    } else {
+      scrollDelta = e.deltaY * zoomSensitivity;
+    }
+
+    // If shift key is pressed, zoom the entire scene, otherwis zoom the map
+    if (e.shiftKey) {
+      let newZoom = props.scene.zoom - scrollDelta;
+      newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+      onSceneUpdate(props.scene.offset, newZoom);
+    } else if (props.scene.activeLayer === MapLayerType.None) {
+      let newZoom = props.map.zoom - scrollDelta;
+      newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+      onMapUpdate(props.map.offset, newZoom);
+    }
+  }
+
+  export function centerScene() {
+    onSceneUpdate({ x: 0, y: 0 }, props.scene.zoom);
+  }
+
+  export function fillSceneToCanvas() {
+    const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    let newZoom: number;
+    if (sceneAspectRatio > canvasAspectRatio) {
+      newZoom = renderer.domElement.height / props.scene.resolution.y;
+    } else {
+      newZoom = renderer.domElement.width / props.scene.resolution.x;
+    }
+
+    onSceneUpdate(props.map.offset, newZoom);
+  }
+
+  export function fitSceneToCanvas() {
+    const canvasAspectRatio = $size.width / $size.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    let newZoom: number;
+    if (sceneAspectRatio < canvasAspectRatio) {
+      newZoom = renderer.domElement.height / props.scene.resolution.y;
+    } else {
+      newZoom = renderer.domElement.width / props.scene.resolution.x;
+    }
+
+    onSceneUpdate(props.map.offset, newZoom);
+  }
+
+  function centerMap() {
+    onMapUpdate({ x: 0, y: 0 }, props.map.zoom);
+  }
+
+  function fillMapToScene() {
+    const imageAspectRatio = mapSize.width / mapSize.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    let newZoom: number;
+    if (imageAspectRatio > sceneAspectRatio) {
+      newZoom = props.scene.resolution.y / mapSize.height;
+    } else {
+      newZoom = props.scene.resolution.x / mapSize.width;
+    }
+
+    onMapUpdate({ x: 0, y: 0 }, newZoom);
+  }
+
+  function fitMapToScene() {
+    const imageAspectRatio = mapSize.width / mapSize.height;
+    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+
+    let newZoom: number;
+    if (imageAspectRatio > sceneAspectRatio) {
+      newZoom = props.scene.resolution.x / mapSize.width;
+    } else {
+      newZoom = props.scene.resolution.y / mapSize.height;
+    }
+
+    onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
 
   $effect(() => {
@@ -96,17 +203,42 @@
     },
     { stage: renderStage }
   );
+
+  export const map = {
+    center: () => centerMap(),
+    fill: () => fillMapToScene(),
+    fit: () => fitMapToScene()
+  };
+
+  export const fogOfWar = {
+    clear: () => fogOfWarLayer.clearFog(),
+    reset: () => fogOfWarLayer.resetFog(),
+    toBase64: () => fogOfWarLayer.toBase64()
+  };
 </script>
 
-<T.OrthographicCamera makeDefault near={0.1} far={10}></T.OrthographicCamera>
+<T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 
-<T.Object3D
-  position={props.scene.scaleMode === ScaleMode.Custom ? [props.scene.offset.x, -props.scene.offset.y, -5] : [0, 0, -5]}
-  rotation.z={(props.scene.rotation / 180.0) * Math.PI}
-  scale={getImageScale(mapSize, $size, props.scene.scaleMode, props.scene.zoom)}
->
-  <WeatherLayer props={props.weather} {composer} />
-  <GridLayer props={props.grid} {composer} />
-  <FogOfWarLayer activeLayer={props.scene.activeLayer} props={props.fogOfWar} {mapSize} {functions} />
-  <MapLayer props={props.map} onmaploaded={(size: Size) => (mapSize = size)} />
+<!-- Scene -->
+<T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
+  <!-- Map -->
+  <T.Object3D
+    position={[props.map.offset.x, props.map.offset.y, 0]}
+    rotation.z={(props.map.rotation / 180.0) * Math.PI}
+    scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
+  >
+    <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} />
+    <!-- Map layers that scale with the map -->
+    <FogOfWarLayer
+      bind:this={fogOfWarLayer}
+      props={props.fogOfWar}
+      isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
+      z={10}
+      {mapSize}
+    />
+  </T.Object3D>
+
+  <!-- Map overlays that scale with the scene -->
+  <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} sceneScale={props.scene.zoom} />
+  <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} />
 </T.Object3D>

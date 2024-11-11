@@ -1,21 +1,37 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { useThrelte } from '@threlte/core';
-  import { EffectComposer, EffectPass } from 'postprocessing';
-  import { GridEffect } from '../../effects/GridEffect';
-  import type { GridProps } from './types';
+  import { T } from '@threlte/core';
+  import { type GridLayerProps } from './types';
+  import { GridMaterial } from '../../materials/GridMaterial';
+  import { onMount } from 'svelte';
 
-  let { props, composer }: { props: GridProps; composer: EffectComposer } = $props();
+  interface Props {
+    props: GridLayerProps;
+    z: number;
+    resolution: { x: number; y: number };
+    sceneScale: number;
+  }
 
-  const { camera, size } = useThrelte();
+  const { props, z, resolution, sceneScale }: Props = $props();
 
-  const gridEffect = new GridEffect(props);
-  let gridPass = $state(new EffectPass(undefined, gridEffect));
-  composer.addPass(gridPass);
+  // svelte-ignore non_reactive_update
+  let quad: THREE.Mesh;
+  let gridMaterial = new GridMaterial(props);
+
+  onMount(() => {
+    if (quad) {
+      quad.material = gridMaterial;
+    }
+  });
 
   $effect(() => {
-    gridEffect.resolution = new THREE.Vector2($size.width, $size.height);
-    gridPass.mainCamera = $camera;
-    gridEffect.updateProps(props);
+    gridMaterial.uniforms.uResolution.value = new THREE.Vector2(resolution.x, resolution.y);
+    // The line widths scale inversely with the scene scale so they always appear the same width
+    gridMaterial.uniforms.sceneScale.value = sceneScale;
+    gridMaterial.updateProps(props);
   });
 </script>
+
+<T.Mesh bind:ref={quad} position={[0, 0, z]} scale={[resolution.x, resolution.y, 1]}>
+  <T.PlaneGeometry />
+</T.Mesh>

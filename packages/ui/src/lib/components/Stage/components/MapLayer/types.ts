@@ -6,9 +6,27 @@ export enum MapLayerType {
 /**
  * Props for the Map layer
  */
-export type MapProps = {
+export interface MapLayerProps {
   /**
-   * URI
+   * The position of the map relative to the scene
+   */
+  offset: {
+    x: number;
+    y: number;
+  };
+
+  /**
+   * Rotation of the map relative to the scene
+   */
+  rotation: number;
+
+  /**
+   * Url for the map image
    */
   url: string;
-};
+
+  /**
+   * The scale of the map relative to the scene
+   */
+  zoom: number;
+}

@@ -1,4 +1,5 @@
 precision mediump float;
+uniform float uTime;
 uniform float uOpacity;
 uniform float uAngle;
 uniform float uSpeed;
@@ -6,6 +7,8 @@ uniform float uIntensity;
 uniform vec3 uColor;
 uniform vec2 uScale;
 uniform vec2 uResolution;
+
+varying vec2 vUv;
 
 // Simplex 2D noise
 //
@@ -44,13 +47,11 @@ vec2 rotate(vec2 v, float a) {
   return m * v;
 }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-  vec2 p = uResolution * rotate(uv, uAngle / 180.0 * 3.14159) / uScale;
+void main() {
+  vec2 p = uResolution * rotate(vUv, uAngle / 180.0 * 3.14159) / uScale;
 
-  float drop = snoise(p + vec2(0.0, time * uSpeed)) - 1.0 + uIntensity;
+  float drop = snoise(p + vec2(0.0, uTime * uSpeed)) - 1.0 + uIntensity;
   drop = clamp(smoothstep(0.0, 1.0, drop), 0.0, 1.0);
 
-  vec3 color = mix(inputColor.rgb, uColor / 255.0, drop * uOpacity);
-
-  outputColor = vec4(color, 1.0);
+  gl_FragColor = vec4(uColor / 255.0, drop * uOpacity);
 }
