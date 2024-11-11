@@ -1,29 +1,20 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
-  import { DrawMode, ToolType, type FogOfWarProps } from './types';
+  import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
-  import type { StageFunctions } from '../Stage/types';
   import { textureToBase64 } from '../../helpers/utils';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import { MapLayerType } from '../MapLayer/types';
 
   interface Props {
-    activeLayer: MapLayerType;
-    props: FogOfWarProps;
+    props: FogOfWarLayerProps;
+    isActive: boolean;
+    z: number;
     mapSize: Size;
-    functions: StageFunctions;
   }
 
-  let { activeLayer, props, mapSize, functions }: Props = $props();
-
-  // Bind functions
-  functions.fogOfWar = {
-    resetFog,
-    revealAll,
-    toBase64
-  };
+  let { props, isActive, z, mapSize }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
@@ -45,18 +36,7 @@
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
-  });
-
-  $effect(() => {
-    console.log(`Resetting fog of war canvas to ${mapSize.width}x${mapSize.height}`);
-
-    // If texture already exists, dispose of existing one
-    if (fogTexture) {
-      fogTexture.dispose();
-    }
-
     fogTexture = new THREE.CanvasTexture(canvas);
-    fogMaterial.map = fogTexture;
 
     if (props.data) {
       // If the props contains initial fog of war data, initialize the canvas to that data
@@ -67,13 +47,17 @@
         canvas.height = image.height;
         context.drawImage(image, 0, 0);
         imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        fogMaterial.map = fogTexture;
+        fogMaterial.needsUpdate = true;
       };
-    } else if (canvas.width > 0 && canvas.height > 0) {
+    } else {
       // Otherwise, start with a blank canvas
       canvas.width = mapSize.width;
       canvas.height = mapSize.height;
       resetFog();
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      fogMaterial.map = fogTexture;
+      fogMaterial.needsUpdate = true;
     }
   });
 
@@ -203,7 +187,7 @@
   /**
    * Clears all fog, revealing the entire map underneath
    */
-  function revealAll() {
+  export function clearFog() {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
     persistChanges();
@@ -213,7 +197,7 @@
   /**
    * Resets the fog to fill the entire layer
    */
-  function resetFog() {
+  export function resetFog() {
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
     persistChanges();
@@ -224,13 +208,13 @@
    * Serializes the fog of war image data into a base-64 string
    * @return A base-64 string
    */
-  function toBase64(): string {
+  export function toBase64(): string {
     return textureToBase64(fogTexture);
   }
 </script>
 
 <LayerInput
-  isActive={activeLayer === MapLayerType.FogOfWar}
+  {isActive}
   layerSize={mapSize}
   {layerQuad}
   onmousedown={onMouseDown}
@@ -238,7 +222,7 @@
   onmouseup={onMouseUp}
 />
 
-<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, -3]}>
+<T.Mesh bind:ref={layerQuad} name="FogOfWar" position={[0, 0, z]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

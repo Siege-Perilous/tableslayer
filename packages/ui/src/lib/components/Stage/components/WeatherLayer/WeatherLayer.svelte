@@ -1,21 +1,40 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { useThrelte } from '@threlte/core';
-  import { EffectComposer, EffectPass } from 'postprocessing';
-  import { WeatherEffect } from '../../effects/WeatherEffect';
-  import type { WeatherProps } from './types';
+  import { T, useTask } from '@threlte/core';
+  import { type WeatherProps } from './types';
+  import { WeatherMaterial } from '../../materials/WeatherMaterial';
+  import { onMount } from 'svelte';
 
-  let { props, composer }: { props: WeatherProps; composer: EffectComposer } = $props();
+  interface Props {
+    props: WeatherProps;
+    z: number;
+    resolution: { x: number; y: number };
+  }
 
-  const { camera, size } = useThrelte();
+  const { props, z, resolution }: Props = $props();
+  let time = $state(0);
 
-  const weatherEffect = new WeatherEffect(props);
-  let weatherPass = $state(new EffectPass(undefined, weatherEffect));
-  composer.addPass(weatherPass);
+  // svelte-ignore non_reactive_update
+  let quad: THREE.Mesh;
+  let material = new WeatherMaterial(props);
+
+  onMount(() => {
+    if (quad) {
+      quad.material = material;
+    }
+  });
 
   $effect(() => {
-    weatherEffect.resolution = new THREE.Vector2($size.width, $size.height);
-    weatherPass.mainCamera = $camera;
-    weatherEffect.updateProps(props);
+    material.uniforms.uResolution.value = new THREE.Vector2(resolution.x, resolution.y);
+    material.updateProps(props);
+  });
+
+  useTask((dt) => {
+    time += dt;
+    material.uniforms.uTime.value = time;
   });
 </script>
+
+<T.Mesh bind:ref={quad} position={[0, 0, z]} scale={[resolution.x, resolution.y, 1]}>
+  <T.PlaneGeometry />
+</T.Mesh>

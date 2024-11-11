@@ -2,14 +2,15 @@
   import * as THREE from 'three';
   import { type Size, T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
-  import { type MapProps } from './types';
+  import { type MapLayerProps } from './types';
 
   interface Props {
-    props: MapProps;
+    props: MapLayerProps;
+    z: number;
     onmaploaded: (size: Size) => void;
   }
 
-  let { props, onmaploaded }: Props = $props();
+  let { props, z, onmaploaded }: Props = $props();
 
   const loader = useLoader(TextureLoader);
   let image = loader.load(props.url, {
@@ -29,7 +30,7 @@
   });
 </script>
 
-<T.Mesh position={[0, 0, -4]}>
+<T.Mesh position={[0, 0, z]}>
   <T.MeshBasicMaterial map={$image} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

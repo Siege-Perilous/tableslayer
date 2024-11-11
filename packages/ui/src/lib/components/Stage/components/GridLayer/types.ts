@@ -3,7 +3,7 @@ export enum GridType {
   Hex = 1
 }
 
-export type GridProps = {
+export interface GridLayerProps {
   /**
    * The type of grid. 0 for square, 1 for hex
    */
@@ -15,9 +15,9 @@ export type GridProps = {
   opacity: number;
 
   /**
-   * The grid spacing
+   * The number of subdivisions along the x-axis of the scene
    */
-  spacing: number;
+  divisions: number;
 
   /**
    * Offset of the grid origin
@@ -51,4 +51,4 @@ export type GridProps = {
    * Line color
    */
   shadowColor: { r: number; g: number; b: number };
-};
+}
