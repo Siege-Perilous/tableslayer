@@ -553,8 +553,8 @@
     }}
     onchange={() => (color.isAdjustingHue = false)}
     aria-label="Hue Selector"
+    style="--thumbBG: hsl({displayHue()}, 100%, 50%)"
     class="colorPicker__slider colorPicker__slider--hue"
-    style="--slider-hue: {displayHue()};"
   />
 
   <!-- Opacity Slider -->
@@ -566,7 +566,7 @@
     bind:value={color.opacity}
     aria-label="Opacity Slider"
     class="colorPicker__slider colorPicker__slider--opacity"
-    style="--slider-hue: {displayHue()}; background: {getOpacityGradient()};"
+    style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
   />
 
   <!-- Format Selector -->
@@ -779,7 +779,7 @@
     height: 0.5rem;
     border-radius: 50%;
     border: 2px solid white;
-    background: hsl(var(--slider-hue), 100%, 50%);
+    background-color: var(--thumbBG);
   }
 
   .colorPicker__slider::-moz-range-thumb {
@@ -787,7 +787,7 @@
     height: 0.5rem;
     border-radius: 50%;
     border: 2px solid white;
-    background: hsl(var(--slider-hue), 100%, 50%);
+    background-color: var(--thumbBG);
   }
 
   .colorPicker__output {
