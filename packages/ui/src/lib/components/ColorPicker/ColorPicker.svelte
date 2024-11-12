@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Input } from '../';
+  import { Input } from '../'; // Assuming you have Input and Select components
 
   interface ColorState {
     hue: number;
@@ -19,16 +19,21 @@
   });
 
   let canvasElement: HTMLCanvasElement;
-  let hexInput = $state('');
-  let hexInputFocused = false;
+  let colorInputFocused = false;
+  let selectedFormat = $state<'hex' | 'rgb' | 'hsl' | 'hsv'>('hex');
 
-  const toHex = (color: { hue: number; saturation: number; value: number; opacity: number }): string => {
-    const { hue, saturation, value, opacity } = color;
-    const [r, g, b] = hsvToRgb(hue, saturation, value);
+  // Input fields for different color modes
+  let hexInput = $state('');
+  let rgbInputs = $state({ r: '', g: '', b: '', a: '' });
+  let hslInputs = $state({ h: '', s: '', l: '', a: '' });
+  let hsvInputs = $state({ h: '', s: '', v: '', a: '' });
+
+  const toHex = (color: ColorState): string => {
+    const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
     const rHex = r.toString(16).padStart(2, '0');
     const gHex = g.toString(16).padStart(2, '0');
     const bHex = b.toString(16).padStart(2, '0');
-    const alpha = Math.round((opacity / 100) * 255)
+    const alpha = Math.round((color.opacity / 100) * 255)
       .toString(16)
       .padStart(2, '0');
     return `#${rHex}${gHex}${bHex}${alpha}`;
@@ -66,33 +71,6 @@
     return [r, g, b];
   };
 
-  const hexToRgba = (hex: string): [number, number, number, number] | null => {
-    hex = hex.replace(/^#/, '');
-
-    if (hex.length === 3) {
-      hex = hex
-        .split('')
-        .map((char: string) => char + char)
-        .join('');
-    }
-
-    if (hex.length === 6) {
-      hex += 'FF';
-    }
-
-    if (hex.length !== 8) {
-      return null;
-    }
-
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 24) & 255;
-    const g = (bigint >> 16) & 255;
-    const b = (bigint >> 8) & 255;
-    const a = bigint & 255;
-
-    return [r, g, b, a];
-  };
-
   const rgbToHsv = (r: number, g: number, b: number): [number, number, number] => {
     r /= 255;
     g /= 255;
@@ -116,6 +94,50 @@
     }
 
     return [h % 360, s * 100, v * 100];
+  };
+
+  const hsvToHsl = (h: number, s: number, v: number): [number, number, number] => {
+    s /= 100;
+    v /= 100;
+    const l = v * (1 - s / 2);
+    const sl = l === 0 || l === 1 ? 0 : (v - l) / Math.min(l, 1 - l);
+    return [h, sl * 100, l * 100];
+  };
+
+  const hslToHsv = (h: number, s: number, l: number): [number, number, number] => {
+    s /= 100;
+    l /= 100;
+    const v = l + s * Math.min(l, 1 - l);
+    const sv = v === 0 ? 0 : 2 * (1 - l / v);
+    return [h, sv * 100, v * 100];
+  };
+
+  // Added hexToRgba function
+  const hexToRgba = (hex: string): [number, number, number, number] | null => {
+    hex = hex.replace(/^#/, '');
+
+    if (hex.length === 3) {
+      hex = hex
+        .split('')
+        .map((char: string) => char + char)
+        .join('');
+    }
+
+    if (hex.length === 6) {
+      hex += 'FF'; // Add full opacity if alpha is not specified
+    }
+
+    if (hex.length !== 8) {
+      return null; // Invalid hex color
+    }
+
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 24) & 255;
+    const g = (bigint >> 16) & 255;
+    const b = (bigint >> 8) & 255;
+    const a = bigint & 255;
+
+    return [r, g, b, a];
   };
 
   const drawSaturationValueGradient = (): void => {
@@ -186,35 +208,136 @@
     if (canvasElement) {
       drawSaturationValueGradient();
     }
-    // Initialize hexInput
-    hexInput = toHex(color);
+    // Initialize inputs
+    updateColorInputs();
   });
 
-  // Update hexInput when color changes, but not if input is focused
+  // Function to update color inputs based on selectedFormat and color state
+  const updateColorInputs = () => {
+    const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
+    switch (selectedFormat) {
+      case 'hex': {
+        hexInput = toHex(color);
+        break;
+      }
+      case 'rgb': {
+        rgbInputs.r = r.toString();
+        rgbInputs.g = g.toString();
+        rgbInputs.b = b.toString();
+        rgbInputs.a = (color.opacity / 100).toFixed(2);
+        break;
+      }
+      case 'hsl': {
+        const [h, s, l] = hsvToHsl(color.hue, color.saturation, color.value);
+        hslInputs.h = Math.round(h).toString();
+        hslInputs.s = Math.round(s).toString();
+        hslInputs.l = Math.round(l).toString();
+        hslInputs.a = (color.opacity / 100).toFixed(2);
+        break;
+      }
+      case 'hsv': {
+        hsvInputs.h = Math.round(color.hue).toString();
+        hsvInputs.s = Math.round(color.saturation).toString();
+        hsvInputs.v = Math.round(color.value).toString();
+        hsvInputs.a = (color.opacity / 100).toFixed(2);
+        break;
+      }
+    }
+  };
+
+  // Function to parse inputs and update color state
+  const parseColorInputs = () => {
+    try {
+      switch (selectedFormat) {
+        case 'hex': {
+          const hex = hexInput.trim();
+          if (hex) {
+            const rgba = hexToRgba(hex);
+            if (rgba) {
+              const [r, g, b, a] = rgba;
+              const [h, s, v] = rgbToHsv(r, g, b);
+              color.hue = h;
+              color.saturation = s;
+              color.value = v;
+              color.opacity = (a / 255) * 100;
+            }
+          }
+          break;
+        }
+        case 'rgb': {
+          const r = parseInt(rgbInputs.r);
+          const g = parseInt(rgbInputs.g);
+          const b = parseInt(rgbInputs.b);
+          const a = parseFloat(rgbInputs.a);
+          if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+            const [h, s, v] = rgbToHsv(r, g, b);
+            color.hue = h;
+            color.saturation = s;
+            color.value = v;
+            if (!isNaN(a)) {
+              color.opacity = a * 100;
+            }
+          }
+          break;
+        }
+        case 'hsl': {
+          const h = parseFloat(hslInputs.h);
+          const s = parseFloat(hslInputs.s);
+          const l = parseFloat(hslInputs.l);
+          const a = parseFloat(hslInputs.a);
+          if (!isNaN(h) && !isNaN(s) && !isNaN(l)) {
+            const [newH, newS, newV] = hslToHsv(h, s, l);
+            color.hue = newH;
+            color.saturation = newS;
+            color.value = newV;
+            if (!isNaN(a)) {
+              color.opacity = a * 100;
+            }
+          }
+          break;
+        }
+        case 'hsv': {
+          const h = parseFloat(hsvInputs.h);
+          const s = parseFloat(hsvInputs.s);
+          const v = parseFloat(hsvInputs.v);
+          const a = parseFloat(hsvInputs.a);
+          if (!isNaN(h) && !isNaN(s) && !isNaN(v)) {
+            color.hue = h;
+            color.saturation = s;
+            color.value = v;
+            if (!isNaN(a)) {
+              color.opacity = a * 100;
+            }
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      // Invalid input; reset inputs to current color
+      console.error(error);
+      updateColorInputs();
+    }
+  };
+
+  // Update inputs when color changes, but not if input is focused
   $effect(() => {
-    if (!hexInputFocused) {
-      hexInput = toHex(color);
+    if (!colorInputFocused) {
+      updateColorInputs();
     }
     drawSaturationValueGradient();
   });
 
-  // Handle hexInput changes on blur (when input loses focus)
-  const handleHexInputBlur = (): void => {
-    hexInputFocused = false;
-    const rgba = hexToRgba(hexInput);
-    if (rgba) {
-      const [r, g, b, a] = rgba;
-      const [h, s, v] = rgbToHsv(r, g, b);
-
-      color.hue = h;
-      color.saturation = s;
-      color.value = v;
-      color.opacity = (a / 255) * 100;
-    } else {
-      // If invalid, reset hexInput to current color
-      hexInput = toHex(color);
-    }
+  // Handle input changes on blur (when input loses focus)
+  const handleInputsBlur = (): void => {
+    colorInputFocused = false;
+    parseColorInputs();
+    updateColorInputs();
   };
+
+  // Update inputs when format changes
+  $effect(() => {
+    updateColorInputs();
+  });
 </script>
 
 <svelte:window on:mousemove={handleMouseMove} on:mouseup={handleMouseUp} />
@@ -253,15 +376,159 @@
     style="--slider-hue: {color.hue}; background: {getOpacityGradient()};"
   />
 
-  <!-- Color Display and Hex Input -->
+  <!-- Format Selector -->
+  <select bind:value={selectedFormat}>
+    <option value="hex">HEX</option>
+    <option value="rgb">RGB</option>
+    <option value="hsl">HSL</option>
+    <option value="hsv">HSV</option>
+  </select>
+
+  <!-- Color Display -->
   <div class="colorPicker__output" style="background-color: {toHex(color)};"></div>
-  <Input
-    type="text"
-    bind:value={hexInput}
-    aria-label="Hex Color Input"
-    onfocus={() => (hexInputFocused = true)}
-    onblur={handleHexInputBlur}
-  />
+
+  <!-- Inputs based on selected format -->
+  {#if selectedFormat === 'hex'}
+    <Input
+      type="text"
+      bind:value={hexInput}
+      aria-label="Hex Color Input"
+      onfocus={() => (colorInputFocused = true)}
+      onblur={handleInputsBlur}
+    />
+  {:else if selectedFormat === 'rgb'}
+    <div class="colorPicker__inputs">
+      <Input
+        type="number"
+        min="0"
+        max="255"
+        bind:value={rgbInputs.r}
+        aria-label="Red"
+        placeholder="R"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="255"
+        bind:value={rgbInputs.g}
+        aria-label="Green"
+        placeholder="G"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="255"
+        bind:value={rgbInputs.b}
+        aria-label="Blue"
+        placeholder="B"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={rgbInputs.a}
+        aria-label="Alpha"
+        placeholder="A"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+    </div>
+  {:else if selectedFormat === 'hsl'}
+    <div class="colorPicker__inputs">
+      <Input
+        type="number"
+        min="0"
+        max="360"
+        bind:value={hslInputs.h}
+        aria-label="Hue"
+        placeholder="H"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        bind:value={hslInputs.s}
+        aria-label="Saturation"
+        placeholder="S"
+        on:focus={() => (colorInputFocused = true)}
+        on:blur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        bind:value={hslInputs.l}
+        aria-label="Lightness"
+        placeholder="L"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={hslInputs.a}
+        aria-label="Alpha"
+        placeholder="A"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+    </div>
+  {:else if selectedFormat === 'hsv'}
+    <div class="colorPicker__inputs">
+      <Input
+        type="number"
+        min="0"
+        max="360"
+        bind:value={hsvInputs.h}
+        aria-label="Hue"
+        placeholder="H"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        bind:value={hsvInputs.s}
+        aria-label="Saturation"
+        placeholder="S"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        bind:value={hsvInputs.v}
+        aria-label="Value"
+        placeholder="V"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+      <Input
+        type="number"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={hsvInputs.a}
+        aria-label="Alpha"
+        placeholder="A"
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
+      />
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -334,5 +601,10 @@
     width: 50px;
     height: 50px;
     margin-top: 10px;
+  }
+
+  .colorPicker__inputs {
+    display: flex;
+    gap: 0.5rem;
   }
 </style>
