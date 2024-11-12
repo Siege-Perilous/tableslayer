@@ -25,6 +25,14 @@
   font-display: swap;
 }
 
+@font-face {
+  src: url('/BradleyDJRVariable-VF.woff2') format('woff2');
+  font-family: 'Bradley Variable';
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 .light {
   color-scheme: light;
   --bg: #e5e5e5;

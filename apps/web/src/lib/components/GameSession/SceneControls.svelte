@@ -1,39 +1,78 @@
 <script lang="ts">
   import { ColorMode, Icon, Popover } from '@tableslayer/ui';
   import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
-  const sceneControlArray = [
+  import { type StageProps, MapLayerType } from '@tableslayer/ui';
+  let {
+    onUpdateStage,
+    stageProps
+  }: { onUpdateStage: (newProps: Partial<StageProps>) => void; stageProps: StageProps } = $props();
+
+  let activeControl = $state('map');
+  let activeLayer = $state(0);
+
+  type SceneControl = {
+    id: string;
+    icon: any;
+    text: string;
+    mapLayer: number;
+  };
+
+  const sceneControlArray: SceneControl[] = [
     {
+      id: 'map',
       icon: IconMap,
       text: 'Map',
-      isActive: false
+      mapLayer: MapLayerType.None
     },
     {
+      id: 'fog',
       icon: IconShadow,
       text: 'Fog',
-      isActive: true
+      mapLayer: MapLayerType.FogOfWar
     },
     {
+      id: 'weather',
       icon: IconCloudSnow,
       text: 'Weather',
-      isActive: false
+      mapLayer: MapLayerType.None
     },
     {
+      id: 'grid',
       icon: IconGrid4x4,
       text: 'Grid',
-      isActive: false
+      mapLayer: MapLayerType.None
     }
   ];
+
+  const handleSelectLayer = (sceneControl: SceneControl) => {
+    if (activeControl === sceneControl.id) {
+      activeLayer = 0;
+      activeControl = '';
+    } else {
+      activeLayer = sceneControl.mapLayer;
+      activeControl = sceneControl.id;
+    }
+    onUpdateStage({
+      scene: {
+        ...stageProps.scene,
+        activeLayer
+      }
+    });
+  };
 </script>
 
 <ColorMode mode="dark">
   <div class="sceneControls">
     {#each sceneControlArray as scene}
       <div class="sceneControls__item">
-        <button class="sceneControls__layer {scene.isActive ? 'sceneControls__layer--isActive' : ''}">
+        <button
+          class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
+          onclick={() => handleSelectLayer(scene)}
+        >
           <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
           {scene.text}
         </button>
-        <Popover positioning={{ placement: 'top', gutter: 8 }}>
+        <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
           {#snippet trigger()}
             <div class="sceneControls__selectorBtn">
               <Icon Icon={IconSelector} size="0.85rem" class="sceneControls__selectorIcon" />
@@ -91,7 +130,7 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 3rem;
+    top: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;

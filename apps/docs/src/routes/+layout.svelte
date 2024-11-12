@@ -19,6 +19,7 @@
     { name: 'Panel', path: '/panel' },
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Color Mode', path: '/colormode' },
+    { name: 'ColorPicker', path: '/color-picker' },
     { name: 'Icons', path: '/icons' },
     { name: 'IconButton', path: '/icon-button' },
     { name: 'Input', path: '/input' },

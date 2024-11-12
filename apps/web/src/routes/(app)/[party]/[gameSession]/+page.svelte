@@ -1,13 +1,19 @@
 <script lang="ts">
   //  let { data } = $props();
   //  const { gameSession } = $derived(data);
-  import { Stage, type StageProps } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
   import { StageDefaultProps } from '../../../../lib/utils';
 
-  let stage;
   const stageProps: StageProps = $state(StageDefaultProps);
+  let stage: StageExports;
+
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    stageProps.map.offset.x = offset.x;
+    stageProps.map.offset.y = offset.y;
+    stageProps.map.zoom = zoom;
+  }
 
   // @ts-expect-error undefined for now
   let scenesPane: PaneAPI = $state(undefined);
@@ -34,18 +40,17 @@
     }
   };
 
-  function onPan(dx: number, dy: number) {
-    stageProps.scene.offset.x += dx;
-    stageProps.scene.offset.y += dy;
-  }
+  const updateStage = (newProps: Partial<StageProps>) => {
+    Object.assign(stageProps, newProps);
+  };
 
-  function onZoom(dy: number) {
-    stageProps.scene.zoom += dy;
-    stageProps.scene.zoom = Math.max(
-      stageProps.scene.minZoom,
-      Math.min(stageProps.scene.zoom, stageProps.scene.maxZoom)
-    );
-  }
+  const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
+    stageProps.scene.offset.x = offset.x;
+    stageProps.scene.offset.y = offset.y;
+    stageProps.scene.zoom = zoom;
+  };
+
+  $inspect(stageProps);
 </script>
 
 <div class="container">
@@ -71,9 +76,9 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper">
         <div class="stage">
-          <Stage bind:this={stage} props={stageProps} onpan={onPan} onzoom={onZoom} />
+          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} />
         </div>
-        <SceneControls />
+        <SceneControls {stageProps} onUpdateStage={updateStage} />
       </div>
     </Pane>
     <PaneResizer class="resizer">
@@ -140,8 +145,6 @@
   }
   .stage {
     width: 100%;
-    max-width: calc(100% - 64px);
-    margin: auto;
-    aspect-ratio: 16 / 9;
+    height: 100%;
   }
 </style>
