@@ -52,7 +52,6 @@
   let hsvInputs = $state({ h: '', s: '', v: '', a: '' });
 
   // Helper Functions
-
   const toHex = (color: ColorState): string => {
     const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
     const rHex = r.toString(16).padStart(2, '0');
@@ -76,7 +75,7 @@
       b1 = 0;
 
     if (isNaN(h)) {
-      h = lastValidHue; // Use last valid hue
+      h = lastValidHue;
     }
 
     if (h >= 0 && h < 60) {
@@ -157,7 +156,7 @@
     }
 
     if (hex.length !== 8) {
-      return null; // Invalid hex color
+      return null;
     }
 
     const bigint = parseInt(hex, 16);
@@ -179,14 +178,12 @@
     // Clear the canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Create saturation gradient
     const saturationGradient = ctx.createLinearGradient(0, 0, width, 0);
     saturationGradient.addColorStop(0, 'white');
     saturationGradient.addColorStop(1, `hsl(${displayHue()}, 100%, 50%)`);
     ctx.fillStyle = saturationGradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Create value gradient
     const valueGradient = ctx.createLinearGradient(0, 0, 0, height);
     valueGradient.addColorStop(0, 'rgba(0,0,0,0)');
     valueGradient.addColorStop(1, 'rgba(0,0,0,1)');
@@ -209,13 +206,13 @@
     e.preventDefault();
     saturationBoxRect = canvasElement.getBoundingClientRect();
     color.isSelecting = true;
-    color.isAdjustingSV = true; // Start adjusting SV
+    color.isAdjustingSV = true;
     updateSaturationValue(e);
   };
 
   const endSelection = (): void => {
     color.isSelecting = false;
-    color.isAdjustingSV = false; // End adjusting SV
+    color.isAdjustingSV = false;
   };
 
   const handleMouseMove = (e: MouseEvent): void => {
@@ -512,6 +509,44 @@
     updateColorInputs();
   });
 
+  // Keyboard event handler for adjusting saturation and value
+  const handleKeyDown = (e: KeyboardEvent): void => {
+    const step = 2; // Adjust this step size as needed for fine control
+
+    // Handle the arrow keys for movement
+    switch (e.key) {
+      case 'ArrowUp':
+        color.value = Math.min(100, color.value + step);
+        e.preventDefault(); // Prevent default scrolling
+        break;
+      case 'ArrowDown':
+        color.value = Math.max(0, color.value - step);
+        e.preventDefault(); // Prevent default scrolling
+        break;
+      case 'ArrowLeft':
+        color.saturation = Math.max(0, color.saturation - step);
+        e.preventDefault(); // Prevent default scrolling
+        break;
+      case 'ArrowRight':
+        color.saturation = Math.min(100, color.saturation + step);
+        e.preventDefault(); // Prevent default scrolling
+        break;
+      case 'Tab':
+        // Allow default behavior for Tab key to prevent focus lock
+        return;
+    }
+  };
+
+  // Function to start focusing and adjusting the saturation/value box
+  const startSaturationAdjustment = () => {
+    color.isAdjustingSV = true;
+  };
+
+  // Function to end focusing and adjusting the saturation/value box
+  const endSaturationAdjustment = () => {
+    color.isAdjustingSV = false;
+  };
+
   // onMount
   onMount(() => {
     if (canvasElement) {
@@ -529,7 +564,16 @@
 <div class="colorPicker">
   <!-- Saturation/Value Selector -->
   <div class="colorPicker__box">
-    <canvas class="colorPicker__canvas" bind:this={canvasElement} width="200" height="200" onmousedown={startSelection}
+    <canvas
+      class="colorPicker__canvas"
+      bind:this={canvasElement}
+      width="200"
+      height="200"
+      tabindex="0"
+      onmousedown={startSelection}
+      onfocus={startSaturationAdjustment}
+      onblur={endSaturationAdjustment}
+      onkeydown={handleKeyDown}
     ></canvas>
     <!-- Selection Indicator -->
     <div

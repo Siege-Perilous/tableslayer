@@ -49,8 +49,6 @@
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
   };
-
-  $inspect(stageProps);
 </script>
 
 <div class="container">
