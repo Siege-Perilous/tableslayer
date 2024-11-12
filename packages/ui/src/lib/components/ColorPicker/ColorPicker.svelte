@@ -1,13 +1,32 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Input } from '../'; // Assuming you have Input and Select components
+  import { Input } from '../'; // Adjust the import path based on your project structure
+  import type { RGBA, HSVA, HSLA } from './types';
 
+  // Bindable props with correct syntax and typings
+  let {
+    hex = $bindable<string>(''),
+    rgba = $bindable(),
+    hsva = $bindable(),
+    hsla = $bindable(),
+    onUpdate = () => {}
+  }: {
+    hex?: string;
+    rgba?: RGBA;
+    hsva?: HSVA;
+    hsla?: HSLA;
+    onUpdate?: (colorData: { hex: string; rgba: RGBA; hsva: HSVA; hsla: HSLA }) => void;
+  } = $props();
+
+  // Internal color state
   interface ColorState {
     hue: number;
     saturation: number;
     value: number;
     opacity: number;
     isSelecting: boolean;
+    isAdjustingSV: boolean;
+    isAdjustingHue: boolean;
   }
 
   const color = $state<ColorState>({
@@ -15,8 +34,12 @@
     saturation: 100,
     value: 100,
     opacity: 100,
-    isSelecting: false
+    isSelecting: false,
+    isAdjustingSV: false,
+    isAdjustingHue: false
   });
+
+  let lastValidHue = color.hue;
 
   let canvasElement: HTMLCanvasElement;
   let colorInputFocused = false;
@@ -27,6 +50,8 @@
   let rgbInputs = $state({ r: '', g: '', b: '', a: '' });
   let hslInputs = $state({ h: '', s: '', l: '', a: '' });
   let hsvInputs = $state({ h: '', s: '', v: '', a: '' });
+
+  // Helper Functions
 
   const toHex = (color: ColorState): string => {
     const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
@@ -49,6 +74,10 @@
     let r1 = 0,
       g1 = 0,
       b1 = 0;
+
+    if (isNaN(h)) {
+      h = lastValidHue; // Use last valid hue
+    }
 
     if (h >= 0 && h < 60) {
       [r1, g1, b1] = [c, x, 0];
@@ -78,10 +107,10 @@
 
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0;
     const v = max;
     const d = max - min;
     const s = max === 0 ? 0 : d / max;
+    let h = lastValidHue; // Initialize hue with last valid hue
 
     if (d !== 0) {
       if (max === r) {
@@ -91,9 +120,10 @@
       } else if (max === b) {
         h = ((r - g) / d + 4) * 60;
       }
+      h = h % 360;
     }
 
-    return [h % 360, s * 100, v * 100];
+    return [h, s * 100, v * 100];
   };
 
   const hsvToHsl = (h: number, s: number, v: number): [number, number, number] => {
@@ -112,7 +142,6 @@
     return [h, sv * 100, v * 100];
   };
 
-  // Added hexToRgba function
   const hexToRgba = (hex: string): [number, number, number, number] | null => {
     hex = hex.replace(/^#/, '');
 
@@ -153,7 +182,7 @@
     // Create saturation gradient
     const saturationGradient = ctx.createLinearGradient(0, 0, width, 0);
     saturationGradient.addColorStop(0, 'white');
-    saturationGradient.addColorStop(1, `hsl(${color.hue}, 100%, 50%)`);
+    saturationGradient.addColorStop(1, `hsl(${displayHue()}, 100%, 50%)`);
     ctx.fillStyle = saturationGradient;
     ctx.fillRect(0, 0, width, height);
 
@@ -180,11 +209,13 @@
     e.preventDefault();
     saturationBoxRect = canvasElement.getBoundingClientRect();
     color.isSelecting = true;
+    color.isAdjustingSV = true; // Start adjusting SV
     updateSaturationValue(e);
   };
 
   const endSelection = (): void => {
     color.isSelecting = false;
+    color.isAdjustingSV = false; // End adjusting SV
   };
 
   const handleMouseMove = (e: MouseEvent): void => {
@@ -200,16 +231,124 @@
   };
 
   const getOpacityGradient = (): string => {
-    const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
+    const [r, g, b] = hsvToRgb(displayHue(), color.saturation, color.value);
     return `linear-gradient(to right, rgba(${r}, ${g}, ${b}, 0), rgba(${r}, ${g}, ${b}, 1))`;
   };
 
-  onMount(() => {
-    if (canvasElement) {
-      drawSaturationValueGradient();
+  // Synchronize internal color state with bindable props
+  let updatingFromProps = false;
+
+  // Update internal color state when bindable props change
+  $effect(() => {
+    if (colorInputFocused || updatingFromProps) return;
+
+    updatingFromProps = true;
+
+    if (!color.isAdjustingSV) {
+      if (hex && hex.trim() && /^#?([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6,8})$/.test(hex.trim())) {
+        const parsedHex = hexToRgba(hex);
+        if (parsedHex) {
+          const [r, g, b, a] = parsedHex;
+          let [h, s, v] = rgbToHsv(r, g, b);
+
+          if (!isNaN(h)) {
+            color.hue = h;
+            lastValidHue = h;
+          } else {
+            color.hue = lastValidHue;
+          }
+
+          color.saturation = s;
+          color.value = v;
+          color.opacity = (a / 255) * 100;
+        }
+      } else if (rgba) {
+        const { r, g, b, a } = rgba;
+        if (typeof r === 'number' && typeof g === 'number' && typeof b === 'number') {
+          let [h, s, v] = rgbToHsv(r, g, b);
+
+          if (!isNaN(h)) {
+            color.hue = h;
+            lastValidHue = h;
+          } else {
+            color.hue = lastValidHue;
+          }
+
+          color.saturation = s;
+          color.value = v;
+          color.opacity = a * 100;
+        }
+      } else if (hsva) {
+        const { h, s, v, a } = hsva;
+        if (!isNaN(h)) {
+          color.hue = h;
+          lastValidHue = h;
+        } else {
+          color.hue = lastValidHue;
+        }
+        color.saturation = s;
+        color.value = v;
+        color.opacity = a * 100;
+      } else if (hsla) {
+        const { h, s, l, a } = hsla;
+        let [newH, newS, newV] = hslToHsv(h, s, l);
+
+        if (!isNaN(newH)) {
+          color.hue = newH;
+          lastValidHue = newH;
+        } else {
+          color.hue = lastValidHue;
+        }
+
+        color.saturation = newS;
+        color.value = newV;
+        color.opacity = a * 100;
+      }
     }
-    // Initialize inputs
-    updateColorInputs();
+
+    updatingFromProps = false;
+  });
+
+  // Update bindable props when internal color state changes
+  let previousColor = { ...color };
+
+  $effect(() => {
+    if (updatingFromProps) return;
+
+    const hueChanged = color.hue !== previousColor.hue && !isNaN(color.hue);
+    const satChanged = color.saturation !== previousColor.saturation;
+    const valChanged = color.value !== previousColor.value;
+    const opacityChanged = color.opacity !== previousColor.opacity;
+
+    if (hueChanged || satChanged || valChanged || opacityChanged) {
+      if (!color.isAdjustingSV) {
+        if (hueChanged) {
+          lastValidHue = color.hue;
+        }
+      } else {
+        // When adjusting SV, keep the hue constant
+        color.hue = lastValidHue;
+      }
+
+      // Compute color representations
+      const [r, g, b] = hsvToRgb(displayHue(), color.saturation, color.value);
+      const newHex = toHex(color);
+      const newRgba = { r, g, b, a: color.opacity / 100 };
+      const [hHSL, sHSL, lHSL] = hsvToHsl(displayHue(), color.saturation, color.value);
+      const newHsla = { h: hHSL, s: sHSL, l: lHSL, a: color.opacity / 100 };
+      const newHsva = { h: displayHue(), s: color.saturation, v: color.value, a: color.opacity / 100 };
+
+      // Update bindable props
+      hex = newHex;
+      rgba = newRgba;
+      hsla = newHsla;
+      hsva = newHsva;
+
+      // Call onUpdate
+      onUpdate({ hex: newHex, rgba: newRgba, hsva: newHsva, hsla: newHsla });
+
+      previousColor = { ...color };
+    }
   });
 
   // Function to update color inputs based on selectedFormat and color state
@@ -221,25 +360,31 @@
         break;
       }
       case 'rgb': {
-        rgbInputs.r = r.toString();
-        rgbInputs.g = g.toString();
-        rgbInputs.b = b.toString();
-        rgbInputs.a = (color.opacity / 100).toFixed(2);
+        rgbInputs = {
+          r: r.toString(),
+          g: g.toString(),
+          b: b.toString(),
+          a: (color.opacity / 100).toFixed(2)
+        };
         break;
       }
       case 'hsl': {
         const [h, s, l] = hsvToHsl(color.hue, color.saturation, color.value);
-        hslInputs.h = Math.round(h).toString();
-        hslInputs.s = Math.round(s).toString();
-        hslInputs.l = Math.round(l).toString();
-        hslInputs.a = (color.opacity / 100).toFixed(2);
+        hslInputs = {
+          h: Math.round(h).toString(),
+          s: Math.round(s).toString(),
+          l: Math.round(l).toString(),
+          a: (color.opacity / 100).toFixed(2)
+        };
         break;
       }
       case 'hsv': {
-        hsvInputs.h = Math.round(color.hue).toString();
-        hsvInputs.s = Math.round(color.saturation).toString();
-        hsvInputs.v = Math.round(color.value).toString();
-        hsvInputs.a = (color.opacity / 100).toFixed(2);
+        hsvInputs = {
+          h: Math.round(color.hue).toString(),
+          s: Math.round(color.saturation).toString(),
+          v: Math.round(color.value).toString(),
+          a: (color.opacity / 100).toFixed(2)
+        };
         break;
       }
     }
@@ -250,17 +395,26 @@
     try {
       switch (selectedFormat) {
         case 'hex': {
-          const hex = hexInput.trim();
-          if (hex) {
-            const rgba = hexToRgba(hex);
-            if (rgba) {
-              const [r, g, b, a] = rgba;
-              const [h, s, v] = rgbToHsv(r, g, b);
-              color.hue = h;
+          const hexValue = hexInput.trim();
+          if (/^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(hexValue)) {
+            const rgbaValue = hexToRgba(hexValue);
+            if (rgbaValue) {
+              const [r, g, b, a] = rgbaValue;
+              let [h, s, v] = rgbToHsv(r, g, b);
+
+              if (!isNaN(h)) {
+                color.hue = h;
+                lastValidHue = h;
+              } else {
+                color.hue = lastValidHue;
+              }
+
               color.saturation = s;
               color.value = v;
               color.opacity = (a / 255) * 100;
             }
+          } else {
+            console.error('Invalid hex code');
           }
           break;
         }
@@ -270,8 +424,15 @@
           const b = parseInt(rgbInputs.b);
           const a = parseFloat(rgbInputs.a);
           if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-            const [h, s, v] = rgbToHsv(r, g, b);
-            color.hue = h;
+            let [h, s, v] = rgbToHsv(r, g, b);
+
+            if (!isNaN(h)) {
+              color.hue = h;
+              lastValidHue = h;
+            } else {
+              color.hue = lastValidHue;
+            }
+
             color.saturation = s;
             color.value = v;
             if (!isNaN(a)) {
@@ -286,8 +447,15 @@
           const l = parseFloat(hslInputs.l);
           const a = parseFloat(hslInputs.a);
           if (!isNaN(h) && !isNaN(s) && !isNaN(l)) {
-            const [newH, newS, newV] = hslToHsv(h, s, l);
-            color.hue = newH;
+            let [newH, newS, newV] = hslToHsv(h, s, l);
+
+            if (!isNaN(newH)) {
+              color.hue = newH;
+              lastValidHue = newH;
+            } else {
+              color.hue = lastValidHue;
+            }
+
             color.saturation = newS;
             color.value = newV;
             if (!isNaN(a)) {
@@ -302,7 +470,12 @@
           const v = parseFloat(hsvInputs.v);
           const a = parseFloat(hsvInputs.a);
           if (!isNaN(h) && !isNaN(s) && !isNaN(v)) {
-            color.hue = h;
+            if (!isNaN(h)) {
+              color.hue = h;
+              lastValidHue = h;
+            } else {
+              color.hue = lastValidHue;
+            }
             color.saturation = s;
             color.value = v;
             if (!isNaN(a)) {
@@ -338,9 +511,20 @@
   $effect(() => {
     updateColorInputs();
   });
+
+  // onMount
+  onMount(() => {
+    if (canvasElement) {
+      drawSaturationValueGradient();
+    }
+    // Initialize inputs
+    updateColorInputs();
+  });
+
+  const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 </script>
 
-<svelte:window on:mousemove={handleMouseMove} on:mouseup={handleMouseUp} />
+<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
 
 <div class="colorPicker">
   <!-- Saturation/Value Selector -->
@@ -359,10 +543,18 @@
     type="range"
     min="0"
     max="360"
+    step="1"
     bind:value={color.hue}
+    onmousedown={() => (color.isAdjustingHue = true)}
+    onmouseup={() => (color.isAdjustingHue = false)}
+    oninput={() => {
+      color.isAdjustingHue = true;
+      lastValidHue = color.hue;
+    }}
+    onchange={() => (color.isAdjustingHue = false)}
     aria-label="Hue Selector"
     class="colorPicker__slider colorPicker__slider--hue"
-    style="--slider-hue: {color.hue};"
+    style="--slider-hue: {displayHue()};"
   />
 
   <!-- Opacity Slider -->
@@ -370,10 +562,11 @@
     type="range"
     min="0"
     max="100"
+    step="1"
     bind:value={color.opacity}
     aria-label="Opacity Slider"
     class="colorPicker__slider colorPicker__slider--opacity"
-    style="--slider-hue: {color.hue}; background: {getOpacityGradient()};"
+    style="--slider-hue: {displayHue()}; background: {getOpacityGradient()};"
   />
 
   <!-- Format Selector -->
@@ -459,8 +652,8 @@
         bind:value={hslInputs.s}
         aria-label="Saturation"
         placeholder="S"
-        on:focus={() => (colorInputFocused = true)}
-        on:blur={handleInputsBlur}
+        onfocus={() => (colorInputFocused = true)}
+        onblur={handleInputsBlur}
       />
       <Input
         type="number"
