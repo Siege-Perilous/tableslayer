@@ -12,6 +12,7 @@
 
   type SceneControl = {
     id: string;
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     icon: any;
     text: string;
     mapLayer: number;
