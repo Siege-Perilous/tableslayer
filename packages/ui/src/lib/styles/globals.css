@@ -26,9 +26,9 @@
 }
 
 @font-face {
-  src: url('/BradleyDJRVariable-VF.woff2') format('woff2');
-  font-family: 'Bradley Variable';
-  font-weight: 300 900;
+  src: url('/RavenHellVariableGX.woff2') format('woff2');
+  font-family: 'Raven Hell';
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }

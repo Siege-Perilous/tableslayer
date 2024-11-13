@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Input } from '../'; // Adjust the import path based on your project structure
+  import { Input, Select } from '../'; // Adjust the import path based on your project structure
   import type { RGBA, HSVA, HSLA } from './types';
 
   // Bindable props with correct syntax and typings
@@ -557,6 +557,19 @@
   });
 
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
+
+  const handleFormatChange = ({ next }) => {
+    selectedFormat = next.value as 'hex' | 'rgb' | 'hsl' | 'hsv';
+    updateColorInputs();
+    return next;
+  };
+
+  const formatOptions = [
+    { value: 'hex', label: 'HEX' },
+    { value: 'rgb', label: 'RGB' },
+    { value: 'hsl', label: 'HSL' },
+    { value: 'hsv', label: 'HSV' }
+  ];
 </script>
 
 <svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
@@ -614,12 +627,7 @@
   />
 
   <!-- Format Selector -->
-  <select bind:value={selectedFormat}>
-    <option value="hex">HEX</option>
-    <option value="rgb">RGB</option>
-    <option value="hsl">HSL</option>
-    <option value="hsv">HSV</option>
-  </select>
+  <Select defaultSelected={formatOptions[0]} options={formatOptions} onSelectedChange={handleFormatChange} />
 
   <!-- Color Display -->
   <div class="colorPicker__output" style="background-color: {toHex(color)};"></div>

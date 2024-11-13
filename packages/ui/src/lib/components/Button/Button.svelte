@@ -97,7 +97,7 @@
     cursor: pointer;
     border: var(--btn-border);
     border-color: transparent;
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     font-weight: 700;
     white-space: nowrap;
   }

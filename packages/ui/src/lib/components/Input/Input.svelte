@@ -11,7 +11,7 @@
 <style>
   .input {
     height: var(--size-8);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);

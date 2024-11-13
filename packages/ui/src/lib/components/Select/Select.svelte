@@ -14,7 +14,8 @@
     required,
     disabled,
     multiple = false,
-    onSelectedChange
+    onSelectedChange,
+    ...restProps
   }: SelectProps = $props();
 
   const {
@@ -33,22 +34,22 @@
   });
 </script>
 
-<div class="select">
+<div {...restProps} class="select">
   <button class="select__trigger" use:melt={$trigger} aria-label="Food">
-    {$selectedLabel || 'Select a flavor'}
+    {$selectedLabel || 'Select'}
     <Icon Icon={IconChevronDown} />
   </button>
   {#if $open}
     <div class="select__menu" use:melt={$menu}>
       {#if Array.isArray(options)}
         {#each options as item}
-          <div class="select__option" use:melt={$option({ value: item, label: item })}>
+          <div class="select__option" use:melt={$option({ value: item.value, label: item.label })}>
             <div class="select__space">
-              {#if $isSelected(item)}
+              {#if $isSelected(item.value)}
                 <div class="select__dot"></div>
               {/if}
             </div>
-            {item}
+            {item.label}
           </div>
         {/each}
       {:else}
@@ -60,14 +61,14 @@
             {#each arr as item}
               <div
                 class="select__option {$isSelected(item) ? 'select__option--selected' : ''}"
-                use:melt={$option({ value: item, label: item })}
+                use:melt={$option({ value: item.value, label: item.label })}
               >
                 <div class="select__space">
-                  {#if $isSelected(item)}
+                  {#if $isSelected(item.value)}
                     <div class="select__dot"></div>
                   {/if}
                 </div>
-                {item}
+                {item.label}
               </div>
             {/each}
           </div>

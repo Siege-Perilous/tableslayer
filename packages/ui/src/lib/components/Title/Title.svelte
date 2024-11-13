@@ -12,7 +12,10 @@
 <style>
   .title {
     font-family: var(--font-serif);
-    font-weight: 700;
+    font-variation-settings:
+      'wght' 700,
+      'TAIL' 100,
+      'ROUN' 50;
   }
 
   .title-xs {
@@ -29,11 +32,10 @@
 
   .title-lg {
     font-size: var(--font-size-7);
-    font-feature-settings: 'ss02' 1;
   }
 
   .title-xl {
     font-size: var(--font-size-10);
-    font-feature-settings: 'ss02' 1;
+    font-feature-settings: 'ss03' 1;
   }
 </style>
