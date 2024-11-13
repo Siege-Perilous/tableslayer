@@ -1,3 +1,4 @@
+import type { CreateRadioGroupProps } from '@melt-ui/svelte';
 import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
 import type { Snippet } from 'svelte';
 
@@ -7,7 +8,7 @@ export type RadioMenuItem = {
   href?: string;
 };
 
-export type RadioMenuProps = {
+export type RadioMenuProps = CreateRadioGroupProps & {
   trigger: Snippet;
   items: RadioMenuItem[];
   defaultItem: RadioMenuItem;

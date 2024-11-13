@@ -12,6 +12,7 @@ export { default as MyCounterButton } from './MyCounterButton.svelte';
 export * from './Panel';
 export * from './Popover';
 export { default as PropsTable } from './PropsTable/PropsTable.svelte';
+export * from './Select';
 export * from './Spacer';
 export * from './Stage';
 export * from './Table';

@@ -27,6 +27,7 @@
     { name: 'Loader', path: '/loading' },
     { name: 'Menu', path: '/menu' },
     { name: 'Popover', path: '/popover' },
+    { name: 'Select', path: '/select' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
     { name: 'Text', path: '/text' },

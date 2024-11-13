@@ -2,7 +2,7 @@
   import { createDropdownMenu, melt } from '@melt-ui/svelte';
   import type { RadioMenuProps } from './types';
   import { fly } from 'svelte/transition';
-  let { trigger, items, defaultItem, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
+  let { trigger, items, defaultItem, onValueChange, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
   import { goto } from '$app/navigation';
 
   const {
@@ -19,7 +19,8 @@
     elements: { radioGroup, radioItem },
     helpers: { isChecked }
   } = createMenuRadioGroup({
-    defaultValue: defaultItem.value
+    defaultValue: defaultItem.value,
+    onValueChange
   });
 
   const handleItemClick = (href?: string) => {
@@ -80,7 +81,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: var(--size-2) var(--size-4);
+    padding: var(--size-1) var(--size-4);
     gap: var(--size-4);
     border-radius: var(--radius-1);
     width: 100%;
