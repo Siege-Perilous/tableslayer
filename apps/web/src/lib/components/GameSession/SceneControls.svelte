@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { ColorMode, Icon, Popover } from '@tableslayer/ui';
+  import { ColorMode, Icon, Popover, ColorPicker, type ColorUpdatePayload } from '@tableslayer/ui';
   import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
   import { type StageProps, MapLayerType } from '@tableslayer/ui';
+
   let {
     onUpdateStage,
     stageProps
@@ -9,6 +10,14 @@
 
   let activeControl = $state('map');
   let activeLayer = $state(0);
+  let colorData: ColorUpdatePayload = $state({
+    hex: '#000000ff',
+    rgba: { r: 0, g: 0, b: 0, a: 1 },
+    hsva: { h: 0, s: 0, v: 0, a: 1 },
+    hsla: { h: 0, s: 0, l: 0, a: 1 }
+  });
+  let gridHex = $state('#ff0000ff');
+  let fogHex = $state('#000000ff');
 
   type SceneControl = {
     id: string;
@@ -60,7 +69,40 @@
       }
     });
   };
+
+  // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
+  const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
+    colorData = cd;
+    onUpdateStage({
+      fogOfWar: {
+        ...stageProps.fogOfWar,
+        fogColor: colorData.hex.slice(0, -2), // Remove last two characters (opacity)
+        opacity: colorData.rgba.a
+      }
+    });
+  };
+
+  // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
+  const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
+    colorData = cd;
+    gridHex = colorData.hex;
+    onUpdateStage({
+      grid: {
+        ...stageProps.grid,
+        lineColor: { r: colorData.rgba.r, g: colorData.rgba.g, b: colorData.rgba.b },
+        opacity: colorData.rgba.a
+      }
+    });
+  };
 </script>
+
+<!-- Usage of ColorPicker -->
+{#snippet gridControls()}
+  <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+{/snippet}
+{#snippet fogControls()}
+  <ColorPicker bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
+{/snippet}
 
 <ColorMode mode="dark">
   <div class="sceneControls">
@@ -80,7 +122,11 @@
             </div>
           {/snippet}
           {#snippet content()}
-            <p>Popover content</p>
+            {#if scene.id === 'grid'}
+              {@render gridControls()}
+            {:else if scene.id === 'fog'}
+              {@render fogControls()}
+            {/if}
           {/snippet}
         </Popover>
       </div>
