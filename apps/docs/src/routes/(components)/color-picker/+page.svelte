@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ColorPicker, Input } from '@tableslayer/ui';
+  import { ColorPicker, ColorPickerSwatch, Input } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import { onMount } from 'svelte';
   let hex = $state('#ff0000ff');
@@ -27,9 +27,22 @@
 </script>
 
 <Example title="ColorPicker" propsName="ColorPicker" layout="column">
-  <Input type="text" bind:value={hexInputValue} onblur={handleHexInputBlur} />
-  {#if hexInputError}
-    <small>{hexInputError}</small>
-  {/if}
-  <ColorPicker bind:hex onUpdate={handleColorUpdate} />
+  <div>
+    <div class="cpExample">
+      <ColorPickerSwatch color={hex} />
+      <Input type="text" bind:value={hexInputValue} onblur={handleHexInputBlur} />
+    </div>
+    {#if hexInputError}
+      <small>{hexInputError}</small>
+    {/if}
+    <ColorPicker bind:hex onUpdate={handleColorUpdate} />
+  </div>
 </Example>
+
+<style>
+  .cpExample {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+</style>

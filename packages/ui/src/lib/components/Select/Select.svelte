@@ -3,6 +3,7 @@
   import { IconChevronDown } from '@tabler/icons-svelte';
   import type { SelectProps } from '../';
   import { Icon } from '../';
+  import classNames from 'classnames';
 
   let {
     options,
@@ -15,6 +16,7 @@
     disabled,
     multiple = false,
     onSelectedChange,
+    variant = 'default',
     ...restProps
   }: SelectProps = $props();
 
@@ -32,9 +34,11 @@
     portal: null,
     onSelectedChange
   });
+
+  const selectClasses = classNames('select', variant && `select--${variant}`);
 </script>
 
-<div {...restProps} class="select">
+<div {...restProps} class={selectClasses}>
   <button class="select__trigger" use:melt={$trigger} aria-label="Food">
     {$selectedLabel || 'Select'}
     <Icon Icon={IconChevronDown} />
@@ -83,6 +87,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+  .select--transparent .select__trigger {
+    border-color: transparent;
+    background: transparent;
+    &:hover {
+      border-color: var(--inputBorderColor);
+    }
   }
 
   .select__trigger {

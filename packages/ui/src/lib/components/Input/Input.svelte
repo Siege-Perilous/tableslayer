@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { InputProps } from './types';
-  let { value = $bindable(), ...restProps }: InputProps = $props();
+  let { value = $bindable(), variant = 'default', ...restProps }: InputProps = $props();
   import classNames from 'classnames';
 
-  const inputClasses = classNames('input', restProps.class ?? '');
+  const inputClasses = classNames('input', variant && `input--${variant}`, restProps.class ?? '');
 </script>
 
 <input bind:value {...restProps} class={inputClasses} />
@@ -21,6 +21,13 @@
       outline: none;
       border-color: var(--fg);
       background: var(--inputFocusBg);
+    }
+  }
+  .input--transparent {
+    border-color: transparent;
+    background: transparent;
+    &:hover {
+      border-color: var(--inputBorderColor);
     }
   }
   [data-fs-error] {

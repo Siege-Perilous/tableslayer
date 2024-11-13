@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Input, Select } from '../'; // Adjust the import path based on your project structure
-  import type { RGBA, HSVA, HSLA } from './types';
+  import type { ColorState, ColorPickerFormats, ColorPickerProps } from './types';
 
   // Bindable props with correct syntax and typings
   let {
@@ -9,25 +9,9 @@
     rgba = $bindable(),
     hsva = $bindable(),
     hsla = $bindable(),
+    showInputs = false,
     onUpdate = () => {}
-  }: {
-    hex?: string;
-    rgba?: RGBA;
-    hsva?: HSVA;
-    hsla?: HSLA;
-    onUpdate?: (colorData: { hex: string; rgba: RGBA; hsva: HSVA; hsla: HSLA }) => void;
-  } = $props();
-
-  // Internal color state
-  interface ColorState {
-    hue: number;
-    saturation: number;
-    value: number;
-    opacity: number;
-    isSelecting: boolean;
-    isAdjustingSV: boolean;
-    isAdjustingHue: boolean;
-  }
+  }: ColorPickerProps = $props();
 
   const color = $state<ColorState>({
     hue: 0,
@@ -43,7 +27,7 @@
 
   let canvasElement: HTMLCanvasElement;
   let colorInputFocused = false;
-  let selectedFormat = $state<'hex' | 'rgb' | 'hsl' | 'hsv'>('hex');
+  let selectedFormat = $state<ColorPickerFormats>('hex');
 
   // Input fields for different color modes
   let hexInput = $state('');
@@ -559,7 +543,7 @@
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
   const handleFormatChange = ({ next }) => {
-    selectedFormat = next.value as 'hex' | 'rgb' | 'hsl' | 'hsv';
+    selectedFormat = next.value;
     updateColorInputs();
     return next;
   };
@@ -626,152 +610,153 @@
     style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
   />
 
-  <!-- Format Selector -->
-  <Select defaultSelected={formatOptions[0]} options={formatOptions} onSelectedChange={handleFormatChange} />
+  {#if showInputs}
+    <div class="colorPicker__inputs">
+      <!-- Format Selector -->
+      <Select defaultSelected={formatOptions[0]} options={formatOptions} onSelectedChange={handleFormatChange} />
 
-  <!-- Color Display -->
-  <div class="colorPicker__output" style="background-color: {toHex(color)};"></div>
-
-  <!-- Inputs based on selected format -->
-  {#if selectedFormat === 'hex'}
-    <Input
-      type="text"
-      bind:value={hexInput}
-      aria-label="Hex Color Input"
-      onfocus={() => (colorInputFocused = true)}
-      onblur={handleInputsBlur}
-    />
-  {:else if selectedFormat === 'rgb'}
-    <div class="colorPicker__inputs">
-      <Input
-        type="number"
-        min="0"
-        max="255"
-        bind:value={rgbInputs.r}
-        aria-label="Red"
-        placeholder="R"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="255"
-        bind:value={rgbInputs.g}
-        aria-label="Green"
-        placeholder="G"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="255"
-        bind:value={rgbInputs.b}
-        aria-label="Blue"
-        placeholder="B"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={rgbInputs.a}
-        aria-label="Alpha"
-        placeholder="A"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-    </div>
-  {:else if selectedFormat === 'hsl'}
-    <div class="colorPicker__inputs">
-      <Input
-        type="number"
-        min="0"
-        max="360"
-        bind:value={hslInputs.h}
-        aria-label="Hue"
-        placeholder="H"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="100"
-        bind:value={hslInputs.s}
-        aria-label="Saturation"
-        placeholder="S"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="100"
-        bind:value={hslInputs.l}
-        aria-label="Lightness"
-        placeholder="L"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={hslInputs.a}
-        aria-label="Alpha"
-        placeholder="A"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-    </div>
-  {:else if selectedFormat === 'hsv'}
-    <div class="colorPicker__inputs">
-      <Input
-        type="number"
-        min="0"
-        max="360"
-        bind:value={hsvInputs.h}
-        aria-label="Hue"
-        placeholder="H"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="100"
-        bind:value={hsvInputs.s}
-        aria-label="Saturation"
-        placeholder="S"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="100"
-        bind:value={hsvInputs.v}
-        aria-label="Value"
-        placeholder="V"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
-      <Input
-        type="number"
-        min="0"
-        max="1"
-        step="0.01"
-        bind:value={hsvInputs.a}
-        aria-label="Alpha"
-        placeholder="A"
-        onfocus={() => (colorInputFocused = true)}
-        onblur={handleInputsBlur}
-      />
+      <!-- Inputs based on selected format -->
+      {#if selectedFormat === 'hex'}
+        <Input
+          type="text"
+          bind:value={hexInput}
+          aria-label="Hex Color Input"
+          onfocus={() => (colorInputFocused = true)}
+          onblur={handleInputsBlur}
+        />
+      {:else if selectedFormat === 'rgb'}
+        <div>
+          <Input
+            type="number"
+            min="0"
+            max="255"
+            bind:value={rgbInputs.r}
+            aria-label="Red"
+            placeholder="R"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="255"
+            bind:value={rgbInputs.g}
+            aria-label="Green"
+            placeholder="G"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="255"
+            bind:value={rgbInputs.b}
+            aria-label="Blue"
+            placeholder="B"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={rgbInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        </div>
+      {:else if selectedFormat === 'hsl'}
+        <div class="colorPicker__inputs">
+          <Input
+            type="number"
+            min="0"
+            max="360"
+            bind:value={hslInputs.h}
+            aria-label="Hue"
+            placeholder="H"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            bind:value={hslInputs.s}
+            aria-label="Saturation"
+            placeholder="S"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            bind:value={hslInputs.l}
+            aria-label="Lightness"
+            placeholder="L"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={hslInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        </div>
+      {:else if selectedFormat === 'hsv'}
+        <div class="colorPicker__inputs">
+          <Input
+            type="number"
+            min="0"
+            max="360"
+            bind:value={hsvInputs.h}
+            aria-label="Hue"
+            placeholder="H"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            bind:value={hsvInputs.s}
+            aria-label="Saturation"
+            placeholder="S"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            bind:value={hsvInputs.v}
+            aria-label="Value"
+            placeholder="V"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={hsvInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -780,13 +765,12 @@
   .colorPicker {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    align-items: center;
+    gap: 0.25rem;
   }
 
   .colorPicker__box {
     width: 8rem;
-    height: 4rem;
+    height: 8rem;
     position: relative;
     cursor: crosshair;
   }
@@ -840,12 +824,6 @@
     border-radius: 50%;
     border: 2px solid white;
     background-color: var(--thumbBG);
-  }
-
-  .colorPicker__output {
-    width: 50px;
-    height: 50px;
-    margin-top: 10px;
   }
 
   .colorPicker__inputs {
