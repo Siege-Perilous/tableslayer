@@ -51,11 +51,6 @@
     margin-top: var(--size-8);
   }
   :global(.heroTitle) {
-    display: inline-block;
-    padding: 2rem;
-    background-color: var(--primary-600);
     letter-spacing: 0.2rem;
-    color: var(--fg);
-    text-shadow: 4px 4px 0px var(--primary-900);
   }
 </style>
