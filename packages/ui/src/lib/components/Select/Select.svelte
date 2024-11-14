@@ -17,6 +17,7 @@
     multiple = false,
     onSelectedChange,
     variant = 'default',
+    ids,
     ...restProps
   }: SelectProps = $props();
 
@@ -32,6 +33,7 @@
     required,
     disabled,
     portal: null,
+    ids,
     onSelectedChange
   });
 

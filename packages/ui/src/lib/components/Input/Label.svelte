@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { Label } from 'formsnap';
   import type { LabelProps } from './types';
   import classNames from 'classnames';
   let { children, ...restProps }: LabelProps = $props();
 
   const labelClasses = classNames('label', restProps.class ?? '');
+  console.log('restProps', restProps);
 </script>
 
-<Label asChild let:labelAttrs>
-  <label {...labelAttrs} {...restProps} class={labelClasses}>
-    {@render children()}
-  </label>
-</Label>
+<label {...restProps} class={labelClasses}>
+  {@render children()}
+</label>
 
 <style>
   .label {

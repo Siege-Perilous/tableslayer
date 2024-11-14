@@ -1,7 +1,16 @@
 <script lang="ts">
-  import { ColorMode, Icon, Popover, ColorPicker, type ColorUpdatePayload } from '@tableslayer/ui';
+  import {
+    ColorMode,
+    Icon,
+    Popover,
+    ColorPicker,
+    type ColorUpdatePayload,
+    Label,
+    Select,
+    Control
+  } from '@tableslayer/ui';
   import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
-  import { type StageProps, MapLayerType } from '@tableslayer/ui';
+  import { type StageProps, MapLayerType, Input } from '@tableslayer/ui';
 
   let {
     onUpdateStage,
@@ -16,8 +25,9 @@
     hsva: { h: 0, s: 0, v: 0, a: 1 },
     hsla: { h: 0, s: 0, l: 0, a: 1 }
   });
-  let gridHex = $state('#ff0000ff');
-  let fogHex = $state('#000000ff');
+  let gridHex = $state('#ffffff80');
+  let fogHex = $state('#00000080');
+  let tvDiagnalSize = $state(40);
 
   type SceneControl = {
     id: string;
@@ -94,10 +104,20 @@
       }
     });
   };
+
+  const tvResolutionOptions = [
+    { label: '720p', value: '720p', width: 1280, height: 720 },
+    { label: '1080p', value: '1080p', width: 1920, height: 1080 },
+    { label: '1440p', value: '1440p', width: 2560, height: 1440 },
+    { label: '4K', value: '4K', width: 3840, height: 2160 }
+  ];
+  const selectTvResolutionOptions = tvResolutionOptions.map(({ label, value }) => ({ label, value }));
 </script>
 
 <!-- Usage of ColorPicker -->
 {#snippet gridControls()}
+  <Label isFormSnap={false} for="gridDivisions">Squares</Label>
+  <Input id="gridDivisions" bind:value={stageProps.grid.divisions} />
   <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
 {/snippet}
 {#snippet fogControls()}
@@ -132,7 +152,22 @@
       </div>
     {/each}
     <div class="sceneControls__settings">
-      <Icon Icon={IconSettings} size="1.5rem" stroke={2} />
+      <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
+        {#snippet trigger()}
+          <Icon Icon={IconSettings} size="1.5rem" stroke={2} />
+        {/snippet}
+        {#snippet content()}
+          <div class="sceneControls__settingsPopover">
+            <Control label="Resolution">
+              <Select
+                defaultSelected={selectTvResolutionOptions[0]}
+                onSelect={(selected) => console.log(selected)}
+                options={selectTvResolutionOptions}
+              />
+            </Control>
+          </div>
+        {/snippet}
+      </Popover>
     </div>
   </div>
 </ColorMode>
@@ -213,5 +248,8 @@
     justify-content: center;
     border-left: var(--borderThin);
     height: 2rem;
+  }
+  .sceneControls__settingsPopover {
+    width: 12rem;
   }
 </style>

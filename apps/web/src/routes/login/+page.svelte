@@ -4,7 +4,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug from 'sveltekit-superforms';
   import { loginSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, Control, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.loginForm, {
@@ -21,20 +21,20 @@
   <Spacer size={8} />
   <form method="POST" action="?/login" use:enhance>
     <Field {form} name="email">
-      <Control label="Email">
+      <FSControl label="Email">
         {#snippet children({ attrs })}
           <Input {...attrs} type="email" bind:value={$formData.email} />
         {/snippet}
-      </Control>
+      </FSControl>
       <FieldErrors />
     </Field>
     <Spacer />
     <Field {form} name="password">
-      <Control label="Password">
+      <FSControl label="Password">
         {#snippet children({ attrs })}
           <Input type="password" {...attrs} bind:value={$formData.password} />
         {/snippet}
-      </Control>
+      </FSControl>
       <FieldErrors />
     </Field>
     {#if $message}

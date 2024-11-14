@@ -1,6 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
-  import { Field, Control, Label, FieldErrors } from 'formsnap';
+  import { Field } from 'formsnap';
+  import { FSControl, Input, FieldErrors } from '@tableslayer/ui/';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
@@ -22,17 +23,16 @@
 {#if isPartyAdmin}
   <form method="post" action="?/inviteMember" use:enhanceInviteMember>
     <Field form={inviteMemberForm} name="email">
-      <Control let:attrs>
-        <Label>Email</Label>
-        <input {...attrs} type="email" bind:value={$inviteMemberData.email} />
-      </Control>
+      <FSControl label="Email">
+        <Input type="email" bind:value={$inviteMemberData.email} />
+      </FSControl>
       <FieldErrors />
     </Field>
     <Field form={inviteMemberForm} name="email">
-      <Control let:attrs>
-        <input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
+      <FSControl>
+        <Input type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
         <button type="submit">Invite</button>
-      </Control>
+      </FSControl>
       <FieldErrors />
     </Field>
     {#if $inviteMemberMessage}
