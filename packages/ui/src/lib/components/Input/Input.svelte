@@ -17,6 +17,7 @@
     border-radius: var(--radius-2);
     padding: 0 var(--size-3);
     background: var(--inputBg);
+    width: 100%;
     &:focus-visible {
       outline: none;
       border-color: var(--fg);

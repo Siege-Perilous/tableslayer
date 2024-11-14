@@ -4,7 +4,6 @@
   let { children, ...restProps }: LabelProps = $props();
 
   const labelClasses = classNames('label', restProps.class ?? '');
-  console.log('restProps', restProps);
 </script>
 
 <label {...restProps} class={labelClasses}>

@@ -769,7 +769,7 @@
   }
 
   .colorPicker__box {
-    width: 8rem;
+    width: 100%;
     height: 8rem;
     position: relative;
     cursor: crosshair;
@@ -793,7 +793,7 @@
   .colorPicker__slider {
     -webkit-appearance: none;
     appearance: none;
-    width: 8rem;
+    width: 100%;
     height: 0.25rem;
     margin-top: 0.5rem;
     cursor: pointer;

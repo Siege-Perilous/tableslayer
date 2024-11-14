@@ -7,7 +7,8 @@
     type ColorUpdatePayload,
     Label,
     Select,
-    Control
+    Control,
+    Spacer
   } from '@tableslayer/ui';
   import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
   import { type StageProps, MapLayerType, Input } from '@tableslayer/ui';
@@ -105,6 +106,13 @@
     });
   };
 
+  type TvResolution = {
+    label: string;
+    value: string;
+    width: number;
+    height: number;
+  };
+
   const tvResolutionOptions = [
     { label: '720p', value: '720p', width: 1280, height: 720 },
     { label: '1080p', value: '1080p', width: 1920, height: 1080 },
@@ -112,13 +120,67 @@
     { label: '4K', value: '4K', width: 3840, height: 2160 }
   ];
   const selectTvResolutionOptions = tvResolutionOptions.map(({ label, value }) => ({ label, value }));
+
+  const calculateHorizontalInches = (diagonalSize: number) => {
+    const aspectRatioWidth = 16;
+    const aspectRatioHeight = 9;
+    const ratioFactor = Math.sqrt(aspectRatioWidth ** 2 + aspectRatioHeight ** 2);
+    const horizontalSize = (diagonalSize * aspectRatioWidth) / ratioFactor;
+    return Math.floor(horizontalSize);
+  };
+
+  const handleSelectedResolution = (selected: TvResolution) => {
+    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value);
+    onUpdateStage({
+      scene: {
+        ...stageProps.scene,
+        resolution: {
+          x: selectedResolution.width,
+          y: selectedResolution.height
+        }
+      }
+    });
+    return selectedResolution;
+  };
+
+  const handleTvSizeChange = (diagonalSize: number) => {
+    console.log('update tv size');
+    const horizontalInches = calculateHorizontalInches(diagonalSize);
+    onUpdateStage({
+      grid: {
+        ...stageProps.grid,
+        divisions: horizontalInches
+      }
+    });
+  };
+
+  $inspect(stageProps);
 </script>
 
 <!-- Usage of ColorPicker -->
 {#snippet gridControls()}
-  <Label isFormSnap={false} for="gridDivisions">Squares</Label>
-  <Input id="gridDivisions" bind:value={stageProps.grid.divisions} />
-  <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Television size">
+      <Input
+        type="number"
+        min={10}
+        step={1}
+        bind:value={tvDiagnalSize}
+        oninput={() => handleTvSizeChange(tvDiagnalSize)}
+      />
+    </Control>
+    <Control label="Resolution">
+      <Select
+        onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+        options={selectTvResolutionOptions}
+      />
+    </Control>
+  </div>
+  <Spacer />
+  <Control label="Grid Color">
+    <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+  </Control>
+  <Spacer />
 {/snippet}
 {#snippet fogControls()}
   <ColorPicker bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
@@ -158,10 +220,19 @@
         {/snippet}
         {#snippet content()}
           <div class="sceneControls__settingsPopover">
+            <Control label="TV Size">
+              <Input
+                type="number"
+                min={10}
+                step={1}
+                bind:value={tvDiagnalSize}
+                oninput={() => handleTvSizeChange(tvDiagnalSize)}
+              />
+            </Control>
+            <Spacer />
             <Control label="Resolution">
               <Select
-                defaultSelected={selectTvResolutionOptions[0]}
-                onSelect={(selected) => console.log(selected)}
+                onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
                 options={selectTvResolutionOptions}
               />
             </Control>
@@ -250,6 +321,9 @@
     height: 2rem;
   }
   .sceneControls__settingsPopover {
-    width: 12rem;
+    width: 16rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
   }
 </style>
