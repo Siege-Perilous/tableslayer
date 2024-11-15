@@ -89,6 +89,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    width: 100%;
   }
   .select--transparent .select__trigger {
     border-color: transparent;

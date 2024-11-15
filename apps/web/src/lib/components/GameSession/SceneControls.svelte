@@ -5,12 +5,29 @@
     Popover,
     ColorPicker,
     type ColorUpdatePayload,
-    Label,
     Select,
     Control,
-    Spacer
+    Spacer,
+    DropdownRadioMenu,
+    DrawMode,
+    ToolType
   } from '@tableslayer/ui';
-  import { IconGrid4x4, IconSettings, IconShadow, IconSelector, IconMap, IconCloudSnow } from '@tabler/icons-svelte';
+  import {
+    IconGrid4x4,
+    IconLayersSelectedBottom,
+    IconLayersSelected,
+    IconEraser,
+    IconShadow,
+    IconPaint,
+    IconTexture,
+    IconShadowOff,
+    IconCircleDashed,
+    IconCircleFilled,
+    IconSelector,
+    IconMap,
+    IconCloudSnow,
+    IconEraserOff
+  } from '@tabler/icons-svelte';
   import { type StageProps, MapLayerType, Input } from '@tableslayer/ui';
 
   let {
@@ -18,7 +35,7 @@
     stageProps
   }: { onUpdateStage: (newProps: Partial<StageProps>) => void; stageProps: StageProps } = $props();
 
-  let activeControl = $state('map');
+  let activeControl = $state('none');
   let activeLayer = $state(0);
   let colorData: ColorUpdatePayload = $state({
     hex: '#000000ff',
@@ -49,7 +66,7 @@
       id: 'fog',
       icon: IconShadow,
       text: 'Fog',
-      mapLayer: MapLayerType.FogOfWar
+      mapLayer: MapLayerType.None
     },
     {
       id: 'weather',
@@ -65,13 +82,13 @@
     }
   ];
 
-  const handleSelectLayer = (sceneControl: SceneControl) => {
-    if (activeControl === sceneControl.id) {
-      activeLayer = 0;
-      activeControl = '';
+  const handleSelectActiveControl = (control: string) => {
+    if (control === activeControl) {
+      activeControl = 'none';
+      activeLayer = MapLayerType.None;
     } else {
-      activeLayer = sceneControl.mapLayer;
-      activeControl = sceneControl.id;
+      activeControl = control;
+      activeLayer = MapLayerType.FogOfWar;
     }
     onUpdateStage({
       scene: {
@@ -154,13 +171,55 @@
     });
   };
 
+  const eraseOptions = [
+    {
+      label: 'Erase fog',
+      value: 'eraseBrush',
+      icon: IconEraser,
+      toolType: ToolType.RoundBrush,
+      drawMode: DrawMode.Erase
+    },
+    { label: 'Add fog', value: 'addBrush', icon: IconTexture, toolType: ToolType.RoundBrush, drawMode: DrawMode.Draw },
+    {
+      label: 'Erase fog area',
+      value: 'areaErase',
+      icon: IconLayersSelectedBottom,
+      toolType: ToolType.Rectangle,
+      drawMode: DrawMode.Erase
+    },
+    {
+      label: 'Add fog area',
+      value: 'areaAdd',
+      icon: IconLayersSelected,
+      toolType: ToolType.Rectangle,
+      drawMode: DrawMode.Draw
+    }
+  ];
+
+  let selectedFogTool = $state(eraseOptions[0]);
+
+  const handleSelectedFogTool = (selected: string) => {
+    const selectedOption = eraseOptions.find((option) => option.value === selected);
+    selectedFogTool = selectedOption;
+    activeControl = 'erase';
+    activeLayer = MapLayerType.FogOfWar;
+    onUpdateStage({
+      fogOfWar: {
+        ...stageProps.fogOfWar,
+        toolType: selectedOption.toolType,
+        drawMode: selectedOption.drawMode
+      }
+    });
+    return selectedOption.value;
+  };
+
   $inspect(stageProps);
 </script>
 
 <!-- Usage of ColorPicker -->
 {#snippet gridControls()}
   <div class="sceneControls__settingsPopover">
-    <Control label="Television size">
+    <Control label="TV size">
       <Input
         type="number"
         min={10}
@@ -168,6 +227,9 @@
         bind:value={tvDiagnalSize}
         oninput={() => handleTvSizeChange(tvDiagnalSize)}
       />
+      {#snippet end()}
+        in.
+      {/snippet}
     </Control>
     <Control label="Resolution">
       <Select
@@ -188,19 +250,36 @@
 
 <ColorMode mode="dark">
   <div class="sceneControls">
+    <div class="sceneControls__item sceneControls__item--primary">
+      <button
+        class="sceneControls__layer {activeControl === 'erase' && 'sceneControls__layer--isActive'}"
+        onclick={() => handleSelectActiveControl('erase')}
+      >
+        <Icon Icon={selectedFogTool.icon} size="1.5rem" />
+        {selectedFogTool.label}
+      </button>
+      <DropdownRadioMenu
+        defaultItem={eraseOptions[0]}
+        items={eraseOptions}
+        positioning={{ placement: 'bottom', gutter: 8 }}
+        onValueChange={(selected) => handleSelectedFogTool(selected.next)}
+      >
+        {#snippet trigger()}
+          <div class="sceneControls__selectorBtn">
+            <Icon Icon={IconSelector} size="0.85rem" class="sceneControls__selectorIcon" />
+          </div>
+        {/snippet}
+      </DropdownRadioMenu>
+    </div>
     {#each sceneControlArray as scene}
       <div class="sceneControls__item">
-        <button
-          class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
-          onclick={() => handleSelectLayer(scene)}
-        >
-          <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
-          {scene.text}
-        </button>
         <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
           {#snippet trigger()}
-            <div class="sceneControls__selectorBtn">
-              <Icon Icon={IconSelector} size="0.85rem" class="sceneControls__selectorIcon" />
+            <div class="sceneControls__trigger">
+              <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
+                <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
+                {scene.text}
+              </div>
             </div>
           {/snippet}
           {#snippet content()}
@@ -213,33 +292,6 @@
         </Popover>
       </div>
     {/each}
-    <div class="sceneControls__settings">
-      <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
-        {#snippet trigger()}
-          <Icon Icon={IconSettings} size="1.5rem" stroke={2} />
-        {/snippet}
-        {#snippet content()}
-          <div class="sceneControls__settingsPopover">
-            <Control label="TV Size">
-              <Input
-                type="number"
-                min={10}
-                step={1}
-                bind:value={tvDiagnalSize}
-                oninput={() => handleTvSizeChange(tvDiagnalSize)}
-              />
-            </Control>
-            <Spacer />
-            <Control label="Resolution">
-              <Select
-                onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-                options={selectTvResolutionOptions}
-              />
-            </Control>
-          </div>
-        {/snippet}
-      </Popover>
-    </div>
   </div>
 </ColorMode>
 
@@ -287,7 +339,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1rem;
   }
   .sceneControls__item {
     display: flex;
@@ -296,6 +348,11 @@
     font-weight: 700;
     gap: 0.125rem;
   }
+
+  .sceneControls__item--primary {
+    border-right: var(--borderThin);
+    padding-right: 1rem;
+  }
   .sceneControls__layer {
     display: flex;
     align-items: center;
@@ -303,6 +360,7 @@
     padding: 0.125rem 0.5rem;
     border-radius: var(--radius-2);
     border: var(--sceneControlItemBorder);
+    cursor: pointer;
   }
   .sceneControls__layer:hover:not(.sceneControls__layer--isActive) {
     cursor: pointer;
@@ -319,6 +377,10 @@
     justify-content: center;
     border-left: var(--borderThin);
     height: 2rem;
+  }
+  .sceneControls__trigger {
+    display: flex;
+    align-items: center;
   }
   .sceneControls__settingsPopover {
     width: 16rem;

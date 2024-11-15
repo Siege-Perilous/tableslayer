@@ -1,33 +1,21 @@
 <script lang="ts">
+  import { Control } from 'formsnap';
+  import { Control as StyledControl } from './';
   import type { Snippet } from 'svelte';
-  import { Control, type ControlProps } from 'formsnap';
-  import { FSLabel } from './index';
 
-  type Props = Omit<ControlProps, 'children'> & {
-    children: Snippet<[{ attrs: Record<string, unknown> }]>;
+  type ControlProps = {
+    children: Snippet<[{ attrs?: Record<string, unknown> }]>;
     label?: string;
+    start?: Snippet;
+    end?: Snippet;
+    attrs?: Record<string, unknown>;
   };
 
-  let { children, label }: Props = $props();
+  let { children, label, start, end }: ControlProps = $props();
 </script>
 
 <Control let:attrs>
-  <div class="control">
-    {#if label}
-      <FSLabel class="control__label">{label}</FSLabel>
-    {/if}
+  <StyledControl {label} {start} {end}>
     {@render children({ attrs })}
-  </div>
+  </StyledControl>
 </Control>
-
-<style>
-  .control {
-    display: flex;
-    flex-direction: column;
-    gap: var(--size-1);
-  }
-
-  :global(.control .control__label) {
-    display: block;
-  }
-</style>

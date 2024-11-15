@@ -6,6 +6,8 @@ export type RadioMenuItem = {
   label: string;
   value: string;
   href?: string;
+  onclick?: () => void;
+  icon?: any;
 };
 
 export type RadioMenuProps = CreateRadioGroupProps & {

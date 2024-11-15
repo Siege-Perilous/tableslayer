@@ -15,3 +15,15 @@
     <Input placeholder="Dave" type="text" />
   </Control>
 </Example>
+
+<Example title="Input with start / end props" propsName="Label">
+  <Control label="First Name">
+    {#snippet start()}
+      start
+    {/snippet}
+    <Input placeholder="Dave" type="text" />
+    {#snippet end()}
+      end
+    {/snippet}
+  </Control>
+</Example>
