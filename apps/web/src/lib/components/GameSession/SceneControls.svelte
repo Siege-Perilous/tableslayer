@@ -201,9 +201,13 @@
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected);
     selectedFogTool = selectedOption;
-    activeControl = 'erase';
     activeLayer = MapLayerType.FogOfWar;
+    activeControl = 'erase';
     onUpdateStage({
+      scene: {
+        ...stageProps.scene,
+        activeLayer
+      },
       fogOfWar: {
         ...stageProps.fogOfWar,
         toolType: selectedOption.toolType,
