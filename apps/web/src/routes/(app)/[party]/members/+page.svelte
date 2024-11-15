@@ -1,7 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
-  import { FSControl, Input, FieldErrors } from '@tableslayer/ui/';
+  import { FSControl, Input, FieldErrors } from '@tableslayer/ui';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { inviteMemberSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';

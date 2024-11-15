@@ -10,7 +10,10 @@
     Spacer,
     DropdownRadioMenu,
     DrawMode,
-    ToolType
+    ToolType,
+    type StageProps,
+    MapLayerType,
+    Input
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -23,7 +26,6 @@
     IconMap,
     IconCloudSnow
   } from '@tabler/icons-svelte';
-  import { type StageProps, MapLayerType, Input } from '@tableslayer/ui';
 
   let {
     onUpdateStage,

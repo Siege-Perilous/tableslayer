@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { Label, FSLabel } from './index';
+  import { Label, FSLabel } from './';
   import classNames from 'classnames';
 
   type Props = {

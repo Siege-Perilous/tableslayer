@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Control } from 'formsnap';
-  import { Control as StyledControl } from './';
+  import { Control as StyledControl } from './index';
   import type { Snippet } from 'svelte';
 
   type ControlProps = {
