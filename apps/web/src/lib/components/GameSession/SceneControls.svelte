@@ -18,15 +18,10 @@
     IconLayersSelected,
     IconEraser,
     IconShadow,
-    IconPaint,
     IconTexture,
-    IconShadowOff,
-    IconCircleDashed,
-    IconCircleFilled,
     IconSelector,
     IconMap,
-    IconCloudSnow,
-    IconEraserOff
+    IconCloudSnow
   } from '@tabler/icons-svelte';
   import { type StageProps, MapLayerType, Input } from '@tableslayer/ui';
 
