@@ -7,9 +7,10 @@ test.describe('Login Page Tests', () => {
 
     // Verify the page title and UI elements
     await expect(page.getByTestId('signInHeading')).toBeVisible();
+    await page.waitForTimeout(500);
 
     // Fill in the email and password fields
-    /* await page.getByLabel('Email').fill('dave@test.com');
+    await page.getByLabel('Email').fill('dave@test.com');
     await page.getByLabel('Password').fill('testtest');
 
     // Click on the sign-in button
@@ -19,7 +20,7 @@ test.describe('Login Page Tests', () => {
     await page.waitForURL('/profile');
 
     // Assuming successful login redirects to a dashboard or similar page
-    expect(page.url()).toContain('/profile'); */
+    expect(page.url()).toContain('/profile');
   });
 
   test('should display validation error for empty fields', async ({ page }) => {
