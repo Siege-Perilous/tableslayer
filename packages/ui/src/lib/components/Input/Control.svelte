@@ -1,30 +1,88 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { Control, type ControlProps } from 'formsnap';
-  import { Label } from './index';
+  import { Label, FSLabel } from './';
+  import classNames from 'classnames';
 
-  type Props = Omit<ControlProps, 'children'> & {
-    children: Snippet<[{ attrs: Record<string, unknown> }]>;
+  type Props = {
+    children: Snippet<[{ attrs?: Record<string, unknown> }]>;
     label?: string;
+    start?: Snippet;
+    end?: Snippet;
+    attrs?: Record<string, unknown>;
   };
 
-  let { children, label }: Props = $props();
+  let { children, label, start, end, attrs }: Props = $props();
+
+  const inputWrapperClasses = classNames('control__inputWrapper', {
+    'control__inputWrapper--start': start,
+    'control__inputWrapper--end': end
+  });
 </script>
 
-<Control let:attrs>
-  <div class="control">
-    {#if label}
-      <Label class="control__label">{label}</Label>
+<div class="control">
+  {#if label && attrs}
+    <FSLabel class="control__label">{label}</FSLabel>
+  {:else if label}
+    <Label class="control__label">{label}</Label>
+  {/if}
+  <div class={inputWrapperClasses}>
+    {#if start}
+      <div class="control__start">{@render start()}</div>
     {/if}
-    {@render children({ attrs })}
+    {#if attrs}
+      {@render children({ attrs })}
+    {:else}
+      {@render children({})}
+    {/if}
+    {#if end}
+      <div class="control__end">{@render end()}</div>
+    {/if}
   </div>
-</Control>
+</div>
 
 <style>
+  /* global required for children */
+  :global {
+    .control__inputWrapper--start input.input {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+    .control__inputWrapper--end input.input {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
   .control {
     display: flex;
     flex-direction: column;
     gap: var(--size-1);
+    width: 100%;
+  }
+  .control__inputWrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  .control__start,
+  .control__end {
+    display: flex;
+    align-items: center;
+    height: var(--size-8);
+    border: var(--borderThin);
+    border-color: var(--inputBorderColor);
+    padding: 0 var(--size-3);
+    background: var(--contrastLow);
+    color: var(--fgMuted);
+  }
+  .control__start {
+    border-top-left-radius: var(--radius-2);
+    border-bottom-left-radius: var(--radius-2);
+    border-right: none;
+  }
+  .control__end {
+    border-top-right-radius: var(--radius-2);
+    border-bottom-right-radius: var(--radius-2);
+    border-left: none;
   }
 
   :global(.control .control__label) {

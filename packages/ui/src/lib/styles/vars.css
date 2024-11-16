@@ -1,7 +1,7 @@
 :where(html) {
-  font-size: 16px;
-  --font-sans: 'Chikki Variable';
-  --font-serif: 'Chikki Variable';
+  font-size: 14px;
+  --font-sans: 'Inter';
+  --font-serif: 'Raven Hell';
   --font-mono: Dank Mono, Operator Mono, Inconsolata, Fira Mono, ui-monospace, SF Mono, Monaco, Droid Sans Mono,
     Source Code Pro, monospace;
   --font-weight-1: 100;

@@ -7,6 +7,7 @@ test.describe('Login Page Tests', () => {
 
     // Verify the page title and UI elements
     await expect(page.getByTestId('signInHeading')).toBeVisible();
+    await page.waitForTimeout(500);
 
     // Fill in the email and password fields
     await page.getByLabel('Email').fill('dave@test.com');

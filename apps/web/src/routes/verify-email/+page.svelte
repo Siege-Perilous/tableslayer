@@ -1,6 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
-  import { Field, Control, Label, FieldErrors } from 'formsnap';
+  import { Field } from 'formsnap';
+  import { FSControl, FieldErrors, Input } from '@tableslayer/ui';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
@@ -34,10 +35,9 @@
   {:else if data.isWithinExpiration}
     <form method="post" action="?/verify" use:enhanceVerify>
       <Field form={verifyCodeForm} name="code">
-        <Control let:attrs>
-          <Label>Verify code</Label>
-          <input {...attrs} type="text" bind:value={$verifyData.code} />
-        </Control>
+        <FSControl label="Verify code">
+          <Input type="text" bind:value={$verifyData.code} />
+        </FSControl>
         <FieldErrors />
       </Field>
       <button>Verify</button>
@@ -57,10 +57,9 @@
 {:else}
   <form method="post" action="?/changeEmail" use:enhanceChangeEmail>
     <Field form={changeEmailForm} name="email">
-      <Control let:attrs>
-        <Label>New email</Label>
-        <input {...attrs} type="email" bind:value={$changeEmailData.email} />
-      </Control>
+      <FSControl label="New email">
+        <Input type="email" bind:value={$changeEmailData.email} />
+      </FSControl>
       <FieldErrors />
     </Field>
     <button>Change email</button>
