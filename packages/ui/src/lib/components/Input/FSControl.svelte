@@ -8,7 +8,6 @@
     label?: string;
     start?: Snippet;
     end?: Snippet;
-    attrs?: Record<string, unknown>;
   };
 
   let { children, label, start, end }: ControlProps = $props();
