@@ -15,7 +15,7 @@
 </script>
 
 <Control let:attrs>
-  <StyledControl {label} {start} {end}>
+  <StyledControl {label} {start} {end} {attrs}>
     {@render children({ attrs })}
   </StyledControl>
 </Control>
