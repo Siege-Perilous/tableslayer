@@ -193,7 +193,7 @@
   $effect(() => {
     renderPass.mainCamera = $camera;
     composer.setSize($size.width, $size.height);
-    renderer.setClearColor(new THREE.Color(props.backgroundColor));
+    renderer.setClearColor(new THREE.Color(props.backgroundColor), 0);
   });
 
   useTask(

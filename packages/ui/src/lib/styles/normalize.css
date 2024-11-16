@@ -2,3 +2,8 @@
   outline: solid 2px var(--fg);
   outline-offset: 2px;
 }
+
+html {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'zero';
+}
