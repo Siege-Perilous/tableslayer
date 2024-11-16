@@ -1,6 +1,7 @@
 <script lang="ts">
   import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { Field, Control, FieldErrors } from 'formsnap';
+  import { Field } from 'formsnap';
+  import { Input, FieldErrors, FSControl } from '@tableslayer/ui';
   import { resendInviteSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
 
@@ -17,11 +18,11 @@
 
 <form method="post" action="?/resendInvite" use:enhance>
   <Field {form} name="email">
-    <Control let:attrs>
-      <input {...attrs} type="hidden" name="email" bind:value={email} />
-      <input {...attrs} type="hidden" name="partyId" bind:value={partyId} />
+    <FSControl>
+      <Input type="hidden" name="email" bind:value={email} />
+      <Input type="hidden" name="partyId" bind:value={partyId} />
       <button type="submit">Resend</button>
-    </Control>
+    </FSControl>
     <FieldErrors />
   </Field>
   {#if $message}

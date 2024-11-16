@@ -7,7 +7,7 @@
 
 <div class="container">
   <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
-  <Spacer size={4} />
+  <Spacer size={8} />
   <Text size="xl">Tools to build animated battle maps<br /> for your digital tabletop.</Text>
   <div class="flex">
     {#if dev}
@@ -49,5 +49,8 @@
     display: flex;
     gap: var(--size-4);
     margin-top: var(--size-8);
+  }
+  :global(.heroTitle) {
+    letter-spacing: 0.2rem;
   }
 </style>
