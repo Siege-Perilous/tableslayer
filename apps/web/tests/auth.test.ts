@@ -9,8 +9,8 @@ test.describe('Login Page Tests', () => {
     await expect(page.getByTestId('signInHeading')).toBeVisible();
 
     // Fill in the email and password fields
-    await page.getByLabel('Email').fill('dave@test.com');
-    await page.getByLabel('Password').fill('testtest');
+    await page.getByTestId('loginEmail').fill('dave@test.com');
+    await page.getByTestId('loginPassword').fill('testtest');
 
     // Click on the sign-in button
     await page.getByTestId('loginSubmit').click();

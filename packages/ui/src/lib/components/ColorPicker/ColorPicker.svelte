@@ -542,11 +542,13 @@
 
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
-  const handleFormatChange = ({ next }) => {
+  const handleFormatChange = ({ next }: { next: FormatOption }) => {
     selectedFormat = next.value;
     updateColorInputs();
     return next;
   };
+
+  type FormatOption = { value: ColorPickerFormats; label: string };
 
   const formatOptions = [
     { value: 'hex', label: 'HEX' },
