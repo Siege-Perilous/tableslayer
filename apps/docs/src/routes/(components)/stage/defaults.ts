@@ -1,4 +1,4 @@
-import { DrawMode, GridType, MapLayerType, ToolType, type StageProps } from '@tableslayer/ui';
+import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StageProps } from '@tableslayer/ui';
 import mapUrl from './dungeon.png';
 import { fogOfWarData } from './fogOfWarData';
 
@@ -29,11 +29,26 @@ export const StageDefaultProps: StageProps = {
       x: 0,
       y: 0
     },
-    zoom: 0.4,
+    zoom: 1.0,
     url: mapUrl
   },
+  ping: {
+    color: { r: 20, g: 200, b: 255 },
+    editMode: PingEditMode.Add,
+    locations: [
+      { x: 0.16162790697674412, y: 0.2954545454545454 },
+      { x: 0.46976744186046515, y: 0.5742424242424242 },
+      { x: 0.616279069767442, y: 0.23939393939393938 }
+    ],
+    markerSize: 70,
+    opacity: 1.0,
+    pulseAmplitude: 0.2,
+    pulseSpeed: 3.0,
+    sharpness: 0.95,
+    thickness: 0.1
+  },
   scene: {
-    activeLayer: MapLayerType.None,
+    activeLayer: MapLayerType.Ping,
     offset: {
       x: 0,
       y: 0
