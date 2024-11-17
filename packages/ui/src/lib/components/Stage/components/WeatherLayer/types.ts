@@ -2,7 +2,7 @@ export enum WeatherType {
   Rain = 0
 }
 
-export type WeatherProps = {
+export interface WeatherProps {
   /**
    * The selected weather type
    */
@@ -40,4 +40,4 @@ export type WeatherProps = {
     x: number;
     y: number;
   };
-};
+}

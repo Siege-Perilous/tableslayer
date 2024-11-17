@@ -8,7 +8,8 @@
     DrawMode,
     ToolType,
     WeatherType,
-    MapLayerType
+    MapLayerType,
+    PingEditMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
 
@@ -17,7 +18,8 @@
 
   const layerTypeOptions: ListOptions<number> = {
     None: MapLayerType.None,
-    FogOfWar: MapLayerType.FogOfWar
+    'Fog of War': MapLayerType.FogOfWar,
+    Ping: MapLayerType.Ping
   };
 
   const toolTypeOptions: ListOptions<number> = {
@@ -52,15 +54,40 @@
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
   }
+
+  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
+    stageProps.ping.locations = updatedLocations;
+  }
 </script>
 
 <div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} />
+  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <Folder title="Grid">
+  <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
+
+  <Folder title="Fog of War" expanded={false}>
+    <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
+    <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
+    <Slider
+      bind:value={stageProps.fogOfWar.brushSize}
+      label="Brush Size"
+      min={1}
+      max={500}
+      step={1}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
+        stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
+    />
+    <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
+    <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog" />
+    <Button on:click={() => stage.fogOfWar.clear()} title="Reveal All" />
+    <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
+  </Folder>
+
+  <Folder title="Grid" expanded={false}>
     <List bind:value={stageProps.grid.gridType} label="Type" options={gridTypeOptions} />
     <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.divisions} label="Subdivisions" min={1} max={50} step={1} />
@@ -73,7 +100,32 @@
     <Color bind:value={stageProps.grid.shadowColor} label="Shadow Color" />
   </Folder>
 
-  <Folder title="Weather">
+  <Folder title="Map" expanded={false}>
+    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
+    <Button on:click={() => (stageProps.map.offset = { x: 0, y: 0 })} title="Center" />
+    <Button on:click={() => stage.map.fill()} title="Fill" />
+    <Button on:click={() => stage.map.fit()} title="Fit" />
+  </Folder>
+
+  <Folder title="Ping">
+    <Color bind:value={stageProps.ping.color} label="Color" />
+    <Slider bind:value={stageProps.ping.markerSize} label="Marker Size" min={1} max={500} step={1} />
+    <Slider bind:value={stageProps.ping.thickness} label="Thickness" min={0} max={1} />
+    <Slider bind:value={stageProps.ping.sharpness} label="Edge Sharpness" min={0} max={1} />
+    <Slider bind:value={stageProps.ping.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
+    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Add)} title="Add Ping" />
+    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Remove)} title="Remove Ping" />
+  </Folder>
+
+  <Folder title="Scene" expanded={false}>
+    <Color bind:value={stageProps.backgroundColor} label="Background Color" />
+    <Button on:click={() => (stageProps.scene.offset = { x: 0, y: 0 })} title="Center" />
+    <Button on:click={() => stage.scene.fill()} title="Fill" />
+    <Button on:click={() => stage.scene.fit()} title="Fit" />
+  </Folder>
+
+  <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.weatherType} label="Type" options={weatherTypeOptions} />
     <Color bind:value={stageProps.weather.color} label="Color" />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
@@ -81,38 +133,6 @@
     <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
     <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
     <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
-  </Folder>
-
-  <Folder title="Scene">
-    <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
-    <Color bind:value={stageProps.backgroundColor} label="Background Color" />
-    <Button on:click={() => stage.scene.center()} title="Center" />
-    <Button on:click={() => stage.scene.fill()} title="Fill" />
-    <Button on:click={() => stage.scene.fit()} title="Fit" />
-    <Folder title="Map">
-      <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
-      <Button on:click={() => stage.map.center()} title="Center" />
-      <Button on:click={() => stage.map.fill()} title="Fill" />
-      <Button on:click={() => stage.map.fit()} title="Fit" />
-    </Folder>
-    <Folder title="Fog of War">
-      <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
-      <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
-      <Slider
-        bind:value={stageProps.fogOfWar.brushSize}
-        label="Brush Size"
-        min={1}
-        max={500}
-        step={1}
-        disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
-          stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
-      />
-      <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
-      <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
-      <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog" />
-      <Button on:click={() => stage.fogOfWar.clear()} title="Reveal All" />
-      <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
-    </Folder>
   </Folder>
 </Pane>
 

@@ -10,14 +10,16 @@
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import { MapLayerType } from '../MapLayer/types';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
+  import PingLayer from '../PingLayer/PingLayer.svelte';
 
   interface Props {
     props: StageProps;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onMapUpdate, onSceneUpdate }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -47,8 +49,6 @@
 
     let before = autoRender.current;
     autoRender.set(false);
-
-    fitSceneToCanvas();
 
     return () => {
       autoRender.set(before);
@@ -126,10 +126,6 @@
     }
   }
 
-  export function centerScene() {
-    onSceneUpdate({ x: 0, y: 0 }, props.scene.zoom);
-  }
-
   export function fillSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
@@ -156,10 +152,6 @@
     }
 
     onSceneUpdate(props.map.offset, newZoom);
-  }
-
-  function centerMap() {
-    onMapUpdate({ x: 0, y: 0 }, props.map.zoom);
   }
 
   function fillMapToScene() {
@@ -205,11 +197,12 @@
   );
 
   export const map = {
-    center: () => centerMap(),
     fill: () => fillMapToScene(),
     fit: () => fitMapToScene()
   };
 
+  // References to the layer doesn't exist until the component is mounted,
+  // so we need create these wrapper functions
   export const fogOfWar = {
     clear: () => fogOfWarLayer.clearFog(),
     reset: () => fogOfWarLayer.resetFog(),
@@ -228,13 +221,19 @@
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >
     <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} />
-    <!-- Map layers that scale with the map -->
     <FogOfWarLayer
       bind:this={fogOfWarLayer}
       props={props.fogOfWar}
       isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
       z={10}
       {mapSize}
+    />
+    <PingLayer
+      props={props.ping}
+      isActive={props.scene.activeLayer === MapLayerType.Ping}
+      z={20}
+      {mapSize}
+      {onPingsUpdated}
     />
   </T.Object3D>
 
