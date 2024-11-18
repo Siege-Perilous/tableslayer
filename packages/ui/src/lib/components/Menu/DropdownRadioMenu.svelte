@@ -21,6 +21,7 @@
     helpers: { isChecked }
   } = createMenuRadioGroup({
     defaultValue: defaultItem.value,
+    // @ts-expect-error typing issue with unknown type
     onValueChange
   });
 
