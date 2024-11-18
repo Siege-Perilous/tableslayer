@@ -542,7 +542,8 @@
 
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
-  const handleFormatChange = ({ next }: { next: FormatOption }) => {
+  // @ts-expect-error Can't figure out how to type this to FormatOption
+  const handleFormatChange = ({ next }) => {
     selectedFormat = next.value;
     updateColorInputs();
     return next;
@@ -614,8 +615,11 @@
 
   {#if showInputs}
     <div class="colorPicker__inputs colorPicker__inputs--{selectedFormat}">
-      <!-- Format Selector -->
-      <Select defaultSelected={formatOptions[0]} options={formatOptions} onSelectedChange={handleFormatChange} />
+      <Select
+        defaultSelected={formatOptions[0] as FormatOption}
+        options={formatOptions}
+        onSelectedChange={handleFormatChange}
+      />
 
       <!-- Inputs based on selected format -->
       {#if selectedFormat === 'hex'}
