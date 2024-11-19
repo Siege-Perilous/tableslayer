@@ -1,0 +1,37 @@
+<script lang="ts">
+  import { Canvas } from '@threlte/core';
+  import type { StageProps } from './types';
+  import Scene from '../Scene/Scene.svelte';
+  import type { SceneExports } from '../Scene/types';
+
+  interface Props {
+    props: StageProps;
+    onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+  }
+
+  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+
+  let sceneRef: SceneExports;
+
+  export const map = {
+    fill: () => sceneRef.map.fill(),
+    fit: () => sceneRef.map.fit()
+  };
+
+  export const fogOfWar = {
+    clear: () => sceneRef.fogOfWar.clear(),
+    reset: () => sceneRef.fogOfWar.reset(),
+    toBase64: () => sceneRef.fogOfWar.toBase64()
+  };
+
+  export const scene = {
+    fill: () => sceneRef.fillSceneToCanvas(),
+    fit: () => sceneRef.fitSceneToCanvas()
+  };
+</script>
+
+<Canvas>
+  <Scene bind:this={sceneRef} {props} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+</Canvas>

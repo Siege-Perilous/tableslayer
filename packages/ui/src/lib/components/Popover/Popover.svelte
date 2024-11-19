@@ -16,6 +16,8 @@
     ...restProps
   }: PopoverProps & HTMLBaseAttributes = $props();
 
+  console.log('positioning', positioning);
+
   const {
     elements: { trigger: triggerAction, content: contentAction, close },
     states
@@ -53,7 +55,7 @@
     cursor: pointer;
   }
   .popContent {
-    padding: var(--size-1) var(--size-2);
+    padding: var(--size-2);
     background: var(--bg);
     color: var(--fg);
     border: var(--borderThin);

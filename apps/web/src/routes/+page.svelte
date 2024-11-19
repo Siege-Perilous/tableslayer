@@ -1,22 +1,56 @@
 <script lang="ts">
-  import { MyCounterButton } from '@tableslayer/ui';
-  import { createUsersQuery } from '$lib/queries/users';
-
-  const usersQuery = createUsersQuery();
+  import { dev } from '$app/environment';
+  import { Title, Text, Spacer, Button } from '@tableslayer/ui';
+  let { data } = $props();
+  const { user } = data;
 </script>
 
-<h1>Web</h1>
-<MyCounterButton />
+<div class="container">
+  <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
+  <Spacer size={8} />
+  <Text size="xl">Tools to build animated battle maps<br /> for your digital tabletop.</Text>
+  <div class="flex">
+    {#if dev}
+      {#if user}
+        <Button href="/profile" class="btn">Dashboard</Button>
+      {:else}
+        <Button href="/login" class="btn">Log in</Button>
+        <Button href="/signup" class="btn">Sign up</Button>
+      {/if}
+    {/if}
+  </div>
+</div>
 
-{#if $usersQuery.isLoading}
-  <p>Loading...</p>
-{:else if $usersQuery.isError}
-  <p>{$usersQuery.error}</p>
-{:else if $usersQuery.isSuccess}
-  <h2>Users fetched</h2>
-  <ul>
-    {#each $usersQuery.data as user}
-      <li>{user.name} ({user.email})</li>
-    {/each}
-  </ul>
-{/if}
+<style>
+  :global(.title.heroTitle) {
+    font-size: 5rem;
+    line-height: 1;
+    font-weight: 900;
+    width: fit-content;
+    /*  color: transparent;  */
+    /*  background-clip: text;  */
+    /*  background-image: linear-gradient(0deg, rgba(122, 5, 5, 1) 0%, rgba(223, 5, 5, 1) 35%, rgba(255, 0, 50, 1) 100%);  */
+    /*  text-shadow:  */
+    /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
+    /*  -1px 0 0 rgba(255, 255, 255, 1);  */
+  }
+  :global(.btn) {
+    width: 100px;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 20% auto 0 auto;
+    max-width: var(--contain-desktop);
+    padding-left: var(--size-12);
+  }
+  .flex {
+    display: flex;
+    gap: var(--size-4);
+    margin-top: var(--size-8);
+  }
+  :global(.heroTitle) {
+    letter-spacing: 0.2rem;
+  }
+</style>

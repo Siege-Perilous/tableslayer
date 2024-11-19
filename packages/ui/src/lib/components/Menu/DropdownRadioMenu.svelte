@@ -1,9 +1,10 @@
 <script lang="ts">
   import { createDropdownMenu, melt } from '@melt-ui/svelte';
-  import type { RadioMenuProps } from './types';
+  import type { RadioMenuProps, RadioMenuItem } from './types';
   import { fly } from 'svelte/transition';
-  let { trigger, items, defaultItem, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
+  let { trigger, items, defaultItem, onValueChange, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
   import { goto } from '$app/navigation';
+  import { Icon } from '../';
 
   const {
     elements: { trigger: triggerAction, menu: menuAction },
@@ -19,12 +20,17 @@
     elements: { radioGroup, radioItem },
     helpers: { isChecked }
   } = createMenuRadioGroup({
-    defaultValue: defaultItem.value
+    defaultValue: defaultItem.value,
+    // @ts-expect-error typing issue with unknown type
+    onValueChange
   });
 
-  const handleItemClick = (href?: string) => {
-    if (href) {
-      goto(href);
+  const handleItemClick = (item: RadioMenuItem) => {
+    if (item.href) {
+      goto(item.href);
+    }
+    if (item.onclick) {
+      item.onclick();
     }
   };
 </script>
@@ -40,7 +46,7 @@
         <button
           class="menuItem"
           use:melt={$radioItem({ value: item.value })}
-          onclick={() => handleItemClick(item.href)}
+          onclick={() => handleItemClick(item)}
           data-testid="menuItem"
         >
           <div class="menuSpace">
@@ -48,6 +54,9 @@
               <div class="menuDot"></div>
             {/if}
           </div>
+          {#if item.icon}
+            <Icon Icon={item.icon} size="1.5rem" />
+          {/if}
           {item.label}
         </button>
       {/each}
@@ -80,7 +89,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: var(--size-2) var(--size-4);
+    padding: var(--size-1) var(--size-4);
     gap: var(--size-4);
     border-radius: var(--radius-1);
     width: 100%;

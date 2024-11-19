@@ -13,7 +13,7 @@
     <Spacer size={4} />
     <p>The code {$page.params.code} does not exist or has already been accepted.</p>
   {:else if user && invite}
-    <Title as="h1" size="lg">Hero, aceept the call!</Title>
+    <Title as="h1" size="md">Hero, aceept the call!</Title>
     <Spacer size={4} />
     <p class="name">
       <strong>{invite.invite.email}</strong>,
@@ -23,7 +23,7 @@
     <Spacer size={2} />
     <div class="invitedBy">
       <Avatar src={invite.invitedByUser.avatarThumb.resizedUrl || invite.invitedByUser.avatarThumb.url} />
-      {invite.invitedByUser.email}
+      {invite.invitedByUser.name} - {invite.invitedByUser.email}
     </div>
     <Spacer size={6} />
     <p>They ask you to join</p>
@@ -50,7 +50,7 @@
   :global(.panel.panelInvite) {
     display: flex;
     flex-direction: column;
-    max-width: var(--contain-smallForm);
+    max-width: var(--contain-mobile);
     padding: var(--size-8);
     margin: 20vh auto auto auto;
   }

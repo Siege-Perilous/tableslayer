@@ -1,11 +1,42 @@
 @import 'reset.css';
 @import 'normalize.css';
 @import 'vars.css';
+@import 'utilities.css';
+
+/* license
+* Mota Italic Order# 23530
+*
+* The fonts listed in this notice are subject to the End User License
+* Agreement(s) entered into by the website owner. The fonts may not be
+* downloaded, linked to, or used (on or offline) by any other party.
+*
+* You may obtain a valid license directly at Mota Italic.
+*
+* Webfonts: Chikki
+* URL: http://www.motaitalic.com/product/chikki/
+* Copyright: Copyright 2015 Mota Italic. All rights reserved.
+*/
 
 @font-face {
-  src: url('/BlackChorola-Regular.woff') format('woff');
-  font-family: 'BlackChorola';
-  font-weight: normal;
+  src: url('/Chikki-Variable.woff2') format('woff2');
+  font-family: 'Chikki Variable';
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  src: url('/RavenHellVariableGX.woff2') format('woff2');
+  font-family: 'Raven Hell';
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  src: url('/InterVariable.woff2') format('woff2');
+  font-family: 'Inter';
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }

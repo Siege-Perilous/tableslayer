@@ -1,5 +1,7 @@
-export { DrawMode, ToolType } from './layers/FogOfWar/types';
-export { GridType } from './layers/Grid/types';
-export { ScaleMode } from './layers/Map/types';
-export { default as Stage } from './Stage.svelte';
-export * from './types';
+export { DrawMode, ToolType } from './components/FogOfWarLayer/types';
+export { GridType } from './components/GridLayer/types';
+export { MapLayerType } from './components/MapLayer/types';
+export { PingEditMode } from './components/PingLayer/types';
+export { default as Stage } from './components/Stage/Stage.svelte';
+export * from './components/Stage/types';
+export { WeatherType } from './components/WeatherLayer/types';

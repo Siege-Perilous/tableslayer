@@ -95,10 +95,11 @@
     justify-content: center;
     gap: var(--size-2);
     cursor: pointer;
-    font-weight: var(--font-weight-5);
     border: var(--btn-border);
     border-color: transparent;
-    font-weight: var(--font-weight-6);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    white-space: nowrap;
   }
 
   .btn--sm {

@@ -6,6 +6,7 @@
   const { user, parties } = data;
   import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
+  import classNames from 'classnames';
 
   let menuItems = $derived(
     parties.map((party) => ({
@@ -15,14 +16,16 @@
     }))
   );
   let selectedParty = $derived(parties.find((party) => party.slug === $page.params.party));
+  const gameSession = $derived($page.data.gameSession);
+  let headerContainerClasses = $derived(classNames('header_container', gameSession && 'header_container--isSession'));
 </script>
 
 <header>
-  <div class="header_container">
+  <div class={headerContainerClasses}>
     <div class="header_container__section">
       <a href="/">
         <div class="logo">
-          <Title as="p" size="sm" style="margin-top: 4px;">TS</Title>
+          <Title as="p" size="sm">TS</Title>
         </div>
       </a>
 
@@ -42,6 +45,9 @@
           </DropdownRadioMenu>
         </div>
       {/if}
+      {#if gameSession && selectedParty}
+        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg">{gameSession.name}</Link>
+      {/if}
     </div>
 
     <div class="header_container__section">
@@ -51,7 +57,7 @@
       <AvatarPopover src={user.avatarThumb.resizedUrl || user.avatarThumb.url}>
         {#snippet content()}
           <div class="dropdown">
-            <Link href="/profile">{user.email}</Link>
+            <Link href="/profile">{user.name || user.email}</Link>
             <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
         {/snippet}
@@ -74,6 +80,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+  .header_container--isSession {
+    justify-content: space-between;
+    max-width: 100%;
   }
   .header_container__section {
     display: flex;

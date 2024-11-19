@@ -8,3 +8,6 @@ export const sceneTable = sqliteTable('scene', {
     .$default(() => uuidv4()),
   name: text('name').notNull().default('New Scene')
 });
+
+export const SelectScene = typeof sceneTable.$inferSelect;
+export const InsertScene = typeof sceneTable.$inferInsert;

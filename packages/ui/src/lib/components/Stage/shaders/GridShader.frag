@@ -1,23 +1,26 @@
 uniform int gridType; // 0 for square, 1 for hex
 uniform float opacity;
-uniform float spacing;
+uniform float divisions;
 uniform vec2 offset;
 uniform float lineThickness;
 uniform vec3 lineColor;
 uniform float shadowIntensity;
 uniform float shadowSize;
 uniform vec3 shadowColor;
+uniform float sceneScale;
 uniform vec2 uResolution;
+
+varying vec2 vUv;
 
 #define PI 3.141592653589793
 const vec2 s = vec2(1.0, 1.7320508); // For hexagonal grid calculations
 
 // Function to create a square grid
 // Returns floating point value between 0 and 1
-float squareGrid(vec2 p, float spacing, float thickness) {
+float squareGrid(vec2 p, vec2 spacing, float thickness) {
   vec2 gridPos = mod(p, spacing);
-  float distToLineX = min(gridPos.x, spacing - gridPos.x);
-  float distToLineY = min(gridPos.y, spacing - gridPos.y);
+  float distToLineX = min(gridPos.x, spacing.x - gridPos.x);
+  float distToLineY = min(gridPos.y, spacing.y - gridPos.y);
   float lineDist = min(distToLineX, distToLineY);
 
   // As distance to line decreases, increase the line intensity
@@ -40,24 +43,25 @@ vec2 getHex(vec2 p) {
   return dot(h.xy, h.xy) < dot(h.zw, h.zw) ? h.xy : h.zw;
 }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+void main() {
   // Scale UV coords by the render target size
-  vec2 p = uv * uResolution + (offset * spacing);
+  vec2 p = vUv * uResolution + offset;
 
   float grid = 0.0;
   float shadow = 0.0;
+  vec2 spacing = vec2(uResolution.x / divisions, uResolution.x / divisions);
   if(gridType == 0) { // Square grid
-    grid = squareGrid(p, spacing, lineThickness);
-    shadow = squareGrid(p, spacing, lineThickness * shadowSize);
+    grid = squareGrid(p, spacing, lineThickness / sceneScale);
+    shadow = squareGrid(p, spacing, lineThickness * shadowSize / sceneScale);
   } else { // Hex grid
     vec2 hexUv = getHex(p / spacing);
     float hexValue = hex(hexUv) + 0.5; // Outputs 0 to 1
-    grid = smoothstep(1.0 - lineThickness / 100.0, 1.0, hexValue);
-    shadow = smoothstep(1.0 - lineThickness / 100.0 * shadowSize, 1.0, hexValue);
+    grid = smoothstep(1.0 - lineThickness / 70.0 / sceneScale, 1.0, hexValue);
+    shadow = smoothstep(1.0 - lineThickness * shadowSize / 70.0 / sceneScale, 1.0, hexValue);
   }
 
-  vec4 shadedScene = vec4(mix(inputColor.rgb, shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity), 1.0);
-  vec4 finalColor = vec4(mix(shadedScene.rgb, lineColor.rgb / 255.0, grid * opacity), 1.0);
+  vec4 shadedScene = vec4(shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity);
+  vec4 finalColor = mix(shadedScene, vec4(lineColor.rgb / 255.0, opacity), grid);
 
-  outputColor = finalColor;
+  gl_FragColor = finalColor;
 }

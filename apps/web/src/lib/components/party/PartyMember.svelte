@@ -2,7 +2,8 @@
   import { type SelectUser, VALID_PARTY_ROLES } from '$lib/db/app/schema';
   import { type PartyRole } from '$lib/db/app/schema';
   import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { Control, Field } from 'formsnap';
+  import { FSControl } from '@tableslayer/ui';
+  import { Field } from 'formsnap';
   import { changeRoleSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
 
@@ -30,15 +31,15 @@
 
 <form method="POST" action="?/changeRole" use:enhance>
   <Field {form} name="role">
-    <Control let:attrs>
-      <select {...attrs} name="role" bind:value={$form.role} onselectstart={() => ($formId = member.id)}>
+    <FSControl>
+      <select name="role" bind:value={$form.role} onselectstart={() => ($formId = member.id)}>
         {#each VALID_PARTY_ROLES as role}
           <option value={role}>{role}</option>
         {/each}
       </select>
       <input type="hidden" name="userId" bind:value={$form.userId} />
       <input type="hidden" name="partyId" bind:value={$form.partyId} />
-    </Control>
+    </FSControl>
   </Field>
   <button>Sumbit</button>
 </form>
