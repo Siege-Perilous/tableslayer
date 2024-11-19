@@ -24,15 +24,12 @@
 
   const handleToggleScenes = () => {
     if (isScenesCollapsed) {
-      console.log('expand scenes');
       scenesPane.expand();
     } else {
-      console.log('collapse scenes');
       scenesPane.collapse();
     }
   };
   const handleToggleControls = () => {
-    console.log('handleToggleControls');
     if (isControlsCollapsed) {
       controlsPane.expand();
     } else {
