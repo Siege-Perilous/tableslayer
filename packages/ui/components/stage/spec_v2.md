@@ -1,12 +1,14 @@
 ## Summary
 
-This stage has three primary goals:
+This stage has the following primary goals:
 
 - Polish and provide variety to the effects.
-- Provide a "selected layer" concept, and provide documentation patterns for how to pass down prop state based on mouse / click patterns.
-- Provide helper functions for sensible prop defaults
+- Keymapping / function exposure
+- Allow for scene rotation and test full-screen usage
+- Allow for MP4s in place of image backgrounds.
+- Integration requests
 
-## Effects
+### Effects
 
 Please be creative and add your expertise. The list below is suggestive, rather than specific. Follow your artistic fancies.
 
@@ -27,54 +29,28 @@ Please be creative and add your expertise. The list below is suggestive, rather 
     - High noon
     - ...etc?
 
-## Selected layer / Documentation of event -> prop passdown
+### Keymapping / function exposure
 
-At the prop level we should likely have a concept of a "Selected Layer". I'm unsure if this event system should live outside of the `Stage` and just provide passdown (probably?), or if they should be built in abilities to the component itself (seems less flexible?).
+As the integration matures, I'm pretty sure there are going to be times where I will need more of the functions exposed with callbacks. Generally speaking, everything at the prop layer are things I can building keymapping around in the application, but I bet we'll run into things I'll need.
 
-As an example you might have the following scenarios.
+### Rotation of scene / fullscreen
 
-#### Dealing with Fog
+We'll need a way to rotate the scene presented within the stage. Although the stage will be presented horizontally as far as the screen is concerned, the DM might think of the map vertically (players move "up" rather than "across"). We'll need a new prop to allow for this in editing mode, that will likely be ignored in the player view.
 
-- Selected layer is Fog of war
-  - Left click erases
-  - Shift click adds back
-  - Scroll up / down increase size of brush
-  - (likely something I should do with other components)
-    - Right click provides context menu, allowing selection of brush type, reset, and reveal buttons...etc.
+As we wire up the app, we'll need to consider how to do full screen. I THINK it'll just be fullscreening the browser itself, but I'd allot some time to issues that might come up between the two modes.
 
-#### Background layer
+### MP4s as backgrounds
 
-- Selected layer is background
-  - Scroll up / down scales
-  - Left mouse drag pans
+There is already a small community of MP4 mapmakers. Although Table Slayer allows you to build animating composite maps, players might still want to utilize MP4s. These would work exactly like the background images, but would loop.
 
-#### Grid
+### Integration requests
 
-- Selected layer is Grid
-  - Left mouse drag sets offset
-  - Scroll up / down sets scale
-
-### Weather Layer
-
-- Selected layer is weather
-  - Scroll up / down for scale
-  - Shift scroll up / down for speed ...etc
-
-## Helper functions for defaults
-
-A lot of the prop layer should come with sensible defaults that can be calculated from the screen dimensions and size. Given screen size and resolution, we can calculate the scales of most everything.
-
-- Grid scale (presets and defaults 1 inch, 1.5 inch...etc)
-- Grid alignment
-- Fog of war effect scale
-- Weather scale
-- Ping size...etc
+As I integrate the component into the app there are likely to be more integration requests. Things like "removing flicker during resize".
 
 ## Preview to v3 work
 
 These are some features that I see happening in the next stage. They are not as important for a fully working system, so I mention them only for awareness as you set up your code.
 
-- MP4s as a background layer
 - NPC Cards (Character cards you "drop" on the map temporarily).
 - Transition animations
 - Loading animations
