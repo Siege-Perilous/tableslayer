@@ -16,8 +16,6 @@
     ...restProps
   }: PopoverProps & HTMLBaseAttributes = $props();
 
-  console.log('positioning', positioning);
-
   const {
     elements: { trigger: triggerAction, content: contentAction, close },
     states
