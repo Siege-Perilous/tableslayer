@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Input, Select } from '../'; // Adjust the import path based on your project structure
   import type { ColorState, ColorPickerFormats, ColorPickerProps } from './types';
+  import chroma from 'chroma-js';
 
   // Bindable props with correct syntax and typings
   let {
@@ -35,121 +36,15 @@
   let hslInputs = $state({ h: '', s: '', l: '', a: '' });
   let hsvInputs = $state({ h: '', s: '', v: '', a: '' });
 
-  // Helper Functions
+  // Helper Functions using chroma-js
   const toHex = (color: ColorState): string => {
-    const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
-    const rHex = r.toString(16).padStart(2, '0');
-    const gHex = g.toString(16).padStart(2, '0');
-    const bHex = b.toString(16).padStart(2, '0');
-    const alpha = Math.round((color.opacity / 100) * 255)
+    const alpha = color.opacity / 100;
+    const chromaColor = chroma.hsv(color.hue, color.saturation / 100, color.value / 100).alpha(alpha);
+    const hexWithoutAlpha = chromaColor.hex().substring(1); // Remove '#' from hex code
+    const alphaHex = Math.round(alpha * 255)
       .toString(16)
       .padStart(2, '0');
-    return `#${rHex}${gHex}${bHex}${alpha}`;
-  };
-
-  const hsvToRgb = (h: number, s: number, v: number): [number, number, number] => {
-    h = h % 360;
-    s /= 100;
-    v /= 100;
-    const c = v * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = v - c;
-    let r1 = 0,
-      g1 = 0,
-      b1 = 0;
-
-    if (isNaN(h)) {
-      h = lastValidHue;
-    }
-
-    if (h >= 0 && h < 60) {
-      [r1, g1, b1] = [c, x, 0];
-    } else if (h >= 60 && h < 120) {
-      [r1, g1, b1] = [x, c, 0];
-    } else if (h >= 120 && h < 180) {
-      [r1, g1, b1] = [0, c, x];
-    } else if (h >= 180 && h < 240) {
-      [r1, g1, b1] = [0, x, c];
-    } else if (h >= 240 && h < 300) {
-      [r1, g1, b1] = [x, 0, c];
-    } else {
-      [r1, g1, b1] = [c, 0, x];
-    }
-
-    const r = Math.round((r1 + m) * 255);
-    const g = Math.round((g1 + m) * 255);
-    const b = Math.round((b1 + m) * 255);
-
-    return [r, g, b];
-  };
-
-  const rgbToHsv = (r: number, g: number, b: number): [number, number, number] => {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const v = max;
-    const d = max - min;
-    const s = max === 0 ? 0 : d / max;
-    let h = lastValidHue; // Initialize hue with last valid hue
-
-    if (d !== 0) {
-      if (max === r) {
-        h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
-      } else if (max === g) {
-        h = ((b - r) / d + 2) * 60;
-      } else if (max === b) {
-        h = ((r - g) / d + 4) * 60;
-      }
-      h = h % 360;
-    }
-
-    return [h, s * 100, v * 100];
-  };
-
-  const hsvToHsl = (h: number, s: number, v: number): [number, number, number] => {
-    s /= 100;
-    v /= 100;
-    const l = v * (1 - s / 2);
-    const sl = l === 0 || l === 1 ? 0 : (v - l) / Math.min(l, 1 - l);
-    return [h, sl * 100, l * 100];
-  };
-
-  const hslToHsv = (h: number, s: number, l: number): [number, number, number] => {
-    s /= 100;
-    l /= 100;
-    const v = l + s * Math.min(l, 1 - l);
-    const sv = v === 0 ? 0 : 2 * (1 - l / v);
-    return [h, sv * 100, v * 100];
-  };
-
-  const hexToRgba = (hex: string): [number, number, number, number] | null => {
-    hex = hex.replace(/^#/, '');
-
-    if (hex.length === 3) {
-      hex = hex
-        .split('')
-        .map((char: string) => char + char)
-        .join('');
-    }
-
-    if (hex.length === 6) {
-      hex += 'FF'; // Add full opacity if alpha is not specified
-    }
-
-    if (hex.length !== 8) {
-      return null;
-    }
-
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 24) & 255;
-    const g = (bigint >> 16) & 255;
-    const b = (bigint >> 8) & 255;
-    const a = bigint & 255;
-
-    return [r, g, b, a];
+    return `#${hexWithoutAlpha}${alphaHex}`;
   };
 
   const drawSaturationValueGradient = (): void => {
@@ -212,8 +107,11 @@
   };
 
   const getOpacityGradient = (): string => {
-    const [r, g, b] = hsvToRgb(displayHue(), color.saturation, color.value);
-    return `linear-gradient(to right, rgba(${r}, ${g}, ${b}, 0), rgba(${r}, ${g}, ${b}, 1))`;
+    const chromaColor = chroma.hsv(displayHue(), color.saturation / 100, color.value / 100);
+    const [r, g, b] = chromaColor.rgb();
+    const rgba0 = `rgba(${r}, ${g}, ${b}, 0)`;
+    const rgba1 = `rgba(${r}, ${g}, ${b}, 1)`;
+    return `linear-gradient(to right, ${rgba0}, ${rgba1})`;
   };
 
   // Synchronize internal color state with bindable props
@@ -226,38 +124,38 @@
     updatingFromProps = true;
 
     if (!color.isAdjustingSV) {
-      if (hex && hex.trim() && /^#?([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6,8})$/.test(hex.trim())) {
-        const parsedHex = hexToRgba(hex);
-        if (parsedHex) {
-          const [r, g, b, a] = parsedHex;
-          let [h, s, v] = rgbToHsv(r, g, b);
-
+      if (hex && hex.trim()) {
+        try {
+          const chromaColor = chroma(hex.trim());
+          const [h, s, v] = chromaColor.hsv();
+          const alpha = chromaColor.alpha();
           if (!isNaN(h)) {
             color.hue = h;
             lastValidHue = h;
           } else {
             color.hue = lastValidHue;
           }
-
-          color.saturation = s;
-          color.value = v;
-          color.opacity = (a / 255) * 100;
+          color.saturation = s * 100;
+          color.value = v * 100;
+          color.opacity = alpha * 100;
+        } catch (error) {
+          console.log(error);
+          // Invalid hex code
         }
       } else if (rgba) {
         const { r, g, b, a } = rgba;
         if (typeof r === 'number' && typeof g === 'number' && typeof b === 'number') {
-          let [h, s, v] = rgbToHsv(r, g, b);
-
+          const chromaColor = chroma.rgb(r, g, b).alpha(a);
+          const [h, s, v] = chromaColor.hsv();
           if (!isNaN(h)) {
             color.hue = h;
             lastValidHue = h;
           } else {
             color.hue = lastValidHue;
           }
-
-          color.saturation = s;
-          color.value = v;
-          color.opacity = a * 100;
+          color.saturation = s * 100;
+          color.value = v * 100;
+          color.opacity = chromaColor.alpha() * 100;
         }
       } else if (hsva) {
         const { h, s, v, a } = hsva;
@@ -272,18 +170,17 @@
         color.opacity = a * 100;
       } else if (hsla) {
         const { h, s, l, a } = hsla;
-        let [newH, newS, newV] = hslToHsv(h, s, l);
-
-        if (!isNaN(newH)) {
-          color.hue = newH;
-          lastValidHue = newH;
+        const chromaColor = chroma.hsl(h, s / 100, l / 100).alpha(a);
+        const [h2, s2, v] = chromaColor.hsv();
+        if (!isNaN(h2)) {
+          color.hue = h2;
+          lastValidHue = h2;
         } else {
           color.hue = lastValidHue;
         }
-
-        color.saturation = newS;
-        color.value = newV;
-        color.opacity = a * 100;
+        color.saturation = s2 * 100;
+        color.value = v * 100;
+        color.opacity = chromaColor.alpha() * 100;
       }
     }
 
@@ -311,13 +208,22 @@
         color.hue = lastValidHue;
       }
 
-      // Compute color representations
-      const [r, g, b] = hsvToRgb(displayHue(), color.saturation, color.value);
-      const newHex = toHex(color);
-      const newRgba = { r, g, b, a: color.opacity / 100 };
-      const [hHSL, sHSL, lHSL] = hsvToHsl(displayHue(), color.saturation, color.value);
-      const newHsla = { h: hHSL, s: sHSL, l: lHSL, a: color.opacity / 100 };
-      const newHsva = { h: displayHue(), s: color.saturation, v: color.value, a: color.opacity / 100 };
+      // Compute color representations using chroma-js
+      const chromaColor = chroma
+        .hsv(displayHue(), color.saturation / 100, color.value / 100)
+        .alpha(color.opacity / 100);
+
+      const [r, g, b] = chromaColor.rgb();
+      const hexWithoutAlpha = chromaColor.hex().substring(1);
+      const alphaHex = Math.round(chromaColor.alpha() * 255)
+        .toString(16)
+        .padStart(2, '0');
+      const newHex = `#${hexWithoutAlpha}${alphaHex}`;
+      const newRgba = { r, g, b, a: chromaColor.alpha() };
+      const [hHSL, sHSL, lHSL] = chromaColor.hsl();
+      const newHsla = { h: hHSL, s: sHSL * 100, l: lHSL * 100, a: chromaColor.alpha() };
+      const [hHSV, sHSV, vHSV] = chromaColor.hsv();
+      const newHsva = { h: hHSV, s: sHSV * 100, v: vHSV * 100, a: chromaColor.alpha() };
 
       // Update bindable props
       hex = newHex;
@@ -334,37 +240,40 @@
 
   // Function to update color inputs based on selectedFormat and color state
   const updateColorInputs = () => {
-    const [r, g, b] = hsvToRgb(color.hue, color.saturation, color.value);
+    const chromaColor = chroma.hsv(color.hue, color.saturation / 100, color.value / 100).alpha(color.opacity / 100);
+
     switch (selectedFormat) {
       case 'hex': {
         hexInput = toHex(color);
         break;
       }
       case 'rgb': {
+        const [r, g, b] = chromaColor.rgb();
         rgbInputs = {
           r: r.toString(),
           g: g.toString(),
           b: b.toString(),
-          a: (color.opacity / 100).toFixed(2)
+          a: chromaColor.alpha().toFixed(2)
         };
         break;
       }
       case 'hsl': {
-        const [h, s, l] = hsvToHsl(color.hue, color.saturation, color.value);
+        const [h, s, l] = chromaColor.hsl();
         hslInputs = {
           h: Math.round(h).toString(),
-          s: Math.round(s).toString(),
-          l: Math.round(l).toString(),
-          a: (color.opacity / 100).toFixed(2)
+          s: Math.round(s * 100).toString(),
+          l: Math.round(l * 100).toString(),
+          a: chromaColor.alpha().toFixed(2)
         };
         break;
       }
       case 'hsv': {
+        const [h, s, v] = chromaColor.hsv();
         hsvInputs = {
-          h: Math.round(color.hue).toString(),
-          s: Math.round(color.saturation).toString(),
-          v: Math.round(color.value).toString(),
-          a: (color.opacity / 100).toFixed(2)
+          h: Math.round(h).toString(),
+          s: Math.round(s * 100).toString(),
+          v: Math.round(v * 100).toString(),
+          a: chromaColor.alpha().toFixed(2)
         };
         break;
       }
@@ -378,22 +287,17 @@
         case 'hex': {
           const hexValue = hexInput.trim();
           if (/^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(hexValue)) {
-            const rgbaValue = hexToRgba(hexValue);
-            if (rgbaValue) {
-              const [r, g, b, a] = rgbaValue;
-              let [h, s, v] = rgbToHsv(r, g, b);
-
-              if (!isNaN(h)) {
-                color.hue = h;
-                lastValidHue = h;
-              } else {
-                color.hue = lastValidHue;
-              }
-
-              color.saturation = s;
-              color.value = v;
-              color.opacity = (a / 255) * 100;
+            const chromaColor = chroma(hexValue);
+            const [h, s, v] = chromaColor.hsv();
+            if (!isNaN(h)) {
+              color.hue = h;
+              lastValidHue = h;
+            } else {
+              color.hue = lastValidHue;
             }
+            color.saturation = s * 100;
+            color.value = v * 100;
+            color.opacity = chromaColor.alpha() * 100;
           } else {
             console.error('Invalid hex code');
           }
@@ -405,17 +309,16 @@
           const b = parseInt(rgbInputs.b);
           const a = parseFloat(rgbInputs.a);
           if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-            let [h, s, v] = rgbToHsv(r, g, b);
-
+            const chromaColor = chroma.rgb(r, g, b).alpha(a);
+            const [h, s, v] = chromaColor.hsv();
             if (!isNaN(h)) {
               color.hue = h;
               lastValidHue = h;
             } else {
               color.hue = lastValidHue;
             }
-
-            color.saturation = s;
-            color.value = v;
+            color.saturation = s * 100;
+            color.value = v * 100;
             if (!isNaN(a)) {
               color.opacity = a * 100;
             }
@@ -428,17 +331,16 @@
           const l = parseFloat(hslInputs.l);
           const a = parseFloat(hslInputs.a);
           if (!isNaN(h) && !isNaN(s) && !isNaN(l)) {
-            let [newH, newS, newV] = hslToHsv(h, s, l);
-
-            if (!isNaN(newH)) {
-              color.hue = newH;
-              lastValidHue = newH;
+            const chromaColor = chroma.hsl(h, s / 100, l / 100).alpha(a);
+            const [h2, s2, v] = chromaColor.hsv();
+            if (!isNaN(h2)) {
+              color.hue = h2;
+              lastValidHue = h2;
             } else {
               color.hue = lastValidHue;
             }
-
-            color.saturation = newS;
-            color.value = newV;
+            color.saturation = s2 * 100;
+            color.value = v * 100;
             if (!isNaN(a)) {
               color.opacity = a * 100;
             }
