@@ -67,6 +67,24 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
 });
 
+export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
+  id: text('id')
+    .primaryKey()
+    .notNull()
+    .$default(() => uuidv4()),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  code: text('code')
+    .notNull()
+    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+  expiresAt: integer('expires_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(strftime('%s', 'now') + 60 * 15)`)
+});
+
 export const partyTable = sqliteTable('party', {
   id: text('id')
     .primaryKey()
@@ -112,10 +130,7 @@ export const partyInviteTable = sqliteTable('party_invite', {
   invitedBy: text('invited_by')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  code: text('code')
-    .notNull()
-    .unique()
-    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+  code: text('code').notNull().unique(),
   email: text('email').notNull(),
   role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });

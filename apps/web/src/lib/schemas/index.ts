@@ -23,6 +23,10 @@ export const changeUserEmailSchema = z.object({
   email: z.string().email()
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email()
+});
+
 export const resendVerificationCodeSchema = z.object({});
 
 export const verificationCodeSchema = z.object({
