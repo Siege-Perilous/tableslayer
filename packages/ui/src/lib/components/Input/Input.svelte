@@ -4,7 +4,6 @@
   import classNames from 'classnames';
 
   const inputClasses = classNames('input', variant && `input--${variant}`, restProps.class ?? '');
-  console.log('restProps', restProps);
 </script>
 
 <input bind:value {...restProps} class={inputClasses} />
