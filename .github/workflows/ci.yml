@@ -18,7 +18,7 @@ jobs:
   format-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/shared
 
       - run: pnpm format-check
@@ -26,7 +26,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/shared
       # Use --quiet to suppress warnings which show up in PRs
       - run: pnpm lint -- --quiet
@@ -34,7 +34,7 @@ jobs:
   tsc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/shared
 
       - run: pnpm tsc
@@ -49,7 +49,7 @@ jobs:
           - app: web
     name: ${{ matrix.app }} tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/shared
       - name: Set Vercel Project ID
         id: set-vercel-id
