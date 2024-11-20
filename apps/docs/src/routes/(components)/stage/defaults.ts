@@ -17,10 +17,10 @@ export const StageDefaultProps: StageProps = {
     opacity: 0.2,
     divisions: 20,
     offset: { x: 0, y: 0 },
-    lineColor: { r: 230, g: 230, b: 230 },
+    lineColor: '#E6E6E6',
     lineThickness: 1,
     shadowIntensity: 1,
-    shadowColor: { r: 0, g: 0, b: 0 },
+    shadowColor: '#000000',
     shadowSize: 2
   },
   map: {
@@ -33,7 +33,7 @@ export const StageDefaultProps: StageProps = {
     url: mapUrl
   },
   ping: {
-    color: { r: 20, g: 200, b: 255 },
+    color: '#ff0000',
     editMode: PingEditMode.Add,
     locations: [
       { x: 0.16162790697674412, y: 0.2954545454545454 },
@@ -57,7 +57,7 @@ export const StageDefaultProps: StageProps = {
     zoom: 0.4
   },
   weather: {
-    color: { r: 173, g: 227, b: 255 },
+    color: '#ADE3FF',
     angle: 20,
     opacity: 0.2,
     intensity: 0.5,

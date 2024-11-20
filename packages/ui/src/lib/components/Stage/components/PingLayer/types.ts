@@ -5,9 +5,9 @@ export enum PingEditMode {
 
 export interface PingLayerProps {
   /**
-   * Color of the pign icons
+   * Color of the ping icons represented as a hex string (e.g. 0x60A3FE)
    */
-  color: { r: number; g: number; b: number };
+  color: string;
 
   /**
    * The current edit mode for the ping layer (add or remove pings)

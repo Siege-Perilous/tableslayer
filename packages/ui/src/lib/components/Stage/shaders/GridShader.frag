@@ -60,8 +60,8 @@ void main() {
     shadow = smoothstep(1.0 - lineThickness * shadowSize / 70.0 / sceneScale, 1.0, hexValue);
   }
 
-  vec4 shadedScene = vec4(shadowColor.rgb / 255.0, shadow * shadowIntensity * opacity);
-  vec4 finalColor = mix(shadedScene, vec4(lineColor.rgb / 255.0, opacity), grid);
+  vec4 shadedScene = vec4(shadowColor.rgb, shadow * shadowIntensity * opacity);
+  vec4 finalColor = mix(shadedScene, vec4(lineColor.rgb, opacity), grid);
 
   gl_FragColor = finalColor;
 }

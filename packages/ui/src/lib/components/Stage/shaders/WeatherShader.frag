@@ -53,5 +53,5 @@ void main() {
   float drop = snoise(p + vec2(0.0, uTime * uSpeed)) - 1.0 + uIntensity;
   drop = clamp(smoothstep(0.0, 1.0, drop), 0.0, 1.0);
 
-  gl_FragColor = vec4(uColor / 255.0, drop * uOpacity);
+  gl_FragColor = vec4(uColor, drop * uOpacity);
 }
