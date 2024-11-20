@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { type Size, T, useLoader } from '@threlte/core';
+  import { type AsyncWritable, type Size, T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
   import { type MapLayerProps } from './types';
 
@@ -11,22 +11,24 @@
   }
 
   let { props, z, onMapLoaded }: Props = $props();
+  let image: AsyncWritable<THREE.Texture> | undefined = $state();
 
   const loader = useLoader(TextureLoader);
-  let image = loader.load(props.url, {
-    transform: (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      return texture;
-    }
-  });
 
   $effect(() => {
-    if ($image) {
-      onMapLoaded({
-        width: $image.source.data.width ?? 0,
-        height: $image.source.data.height ?? 0
-      });
-    }
+    // Update the image whenever the URL is changed
+    image = loader.load(props.url, {
+      transform: (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        onMapLoaded({
+          width: texture.source.data.width ?? 0,
+          height: texture.source.data.height ?? 0
+        });
+
+        return texture;
+      }
+    });
   });
 </script>
 
