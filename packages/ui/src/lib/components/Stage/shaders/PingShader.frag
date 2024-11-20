@@ -30,5 +30,5 @@ void main() {
   float ring = smoothstep(innerRadius - falloff, innerRadius, r) -
     smoothstep(outerRadius - falloff, outerRadius, r);
 
-  gl_FragColor = vec4(uColor / 255.0, ring);
+  gl_FragColor = vec4(uColor, ring);
 }

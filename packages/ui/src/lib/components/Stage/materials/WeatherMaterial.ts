@@ -17,7 +17,7 @@ export class WeatherMaterial extends THREE.ShaderMaterial {
         uSpeed: new THREE.Uniform(props.speed),
         uIntensity: new THREE.Uniform(props.intensity),
         uScale: new THREE.Uniform(props.scale),
-        uColor: new THREE.Uniform(props.color),
+        uColor: new THREE.Uniform(new THREE.Color(props.color)),
         uResolution: new THREE.Uniform(new THREE.Vector2(0, 0))
       }
     });
@@ -29,6 +29,6 @@ export class WeatherMaterial extends THREE.ShaderMaterial {
     this.uniforms.uSpeed.value = props.speed;
     this.uniforms.uScale.value = props.scale;
     this.uniforms.uIntensity.value = props.intensity;
-    this.uniforms.uColor.value = props.color;
+    this.uniforms.uColor.value = new THREE.Color(props.color);
   }
 }

@@ -33,9 +33,9 @@ export interface GridLayerProps {
   lineThickness: number;
 
   /**
-   * Line color
+   * Line color represented as a hex string (e.g. 0x60A3FE)
    */
-  lineColor: { r: number; g: number; b: number };
+  lineColor: string;
 
   /**
    * Line thickness
@@ -43,12 +43,12 @@ export interface GridLayerProps {
   shadowIntensity: number;
 
   /**
-   * Line thickness
+   * Size of the shadow
    */
   shadowSize: number;
 
   /**
-   * Line color
+   * Shadow represented as a hex string (e.g. 0x60A3FE)
    */
-  shadowColor: { r: number; g: number; b: number };
+  shadowColor: string;
 }

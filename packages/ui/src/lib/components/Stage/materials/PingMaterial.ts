@@ -12,7 +12,7 @@ export class PingMaterial extends THREE.ShaderMaterial {
       fragmentShader,
       uniforms: {
         uTime: new THREE.Uniform(0),
-        uColor: new THREE.Uniform(props.color),
+        uColor: new THREE.Uniform(new THREE.Color(props.color)),
         uOpacity: new THREE.Uniform(props.opacity),
         uPulseSpeed: new THREE.Uniform(props.pulseSpeed),
         uPulseAmplitude: new THREE.Uniform(props.pulseAmplitude),
@@ -26,7 +26,7 @@ export class PingMaterial extends THREE.ShaderMaterial {
   }
 
   updateProps(props: PingLayerProps, clippingPlanes: THREE.Plane[]) {
-    this.uniforms.uColor.value = props.color;
+    this.uniforms.uColor.value = new THREE.Color(props.color);
     this.uniforms.uOpacity.value = props.opacity;
     this.uniforms.uPulseSpeed.value = props.pulseSpeed;
     this.uniforms.uPulseAmplitude.value = props.pulseAmplitude;
