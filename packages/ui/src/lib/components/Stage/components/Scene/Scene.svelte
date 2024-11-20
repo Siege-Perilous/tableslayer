@@ -190,6 +190,11 @@
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
 
+  function onMapLoaded(size: Size) {
+    mapSize = size;
+    fitMapToScene();
+  }
+
   $effect(() => {
     // Whenever the scene is translated/zoomed, update the clipping planes
     const { x, y } = props.scene.offset;
@@ -247,7 +252,7 @@
     rotation.z={(props.map.rotation / 180.0) * Math.PI}
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >
-    <MapLayer props={props.map} z={0} onMapLoaded={(size: Size) => (mapSize = size)} />
+    <MapLayer props={props.map} z={0} {onMapLoaded} />
     <FogOfWarLayer
       bind:this={fogOfWarLayer}
       props={props.fogOfWar}
