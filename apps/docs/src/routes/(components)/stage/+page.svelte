@@ -57,6 +57,7 @@
 
   function updateMapUrl() {
     stageProps.map.url = mapUrl;
+    stageProps.fogOfWar.data = null;
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
