@@ -7,10 +7,11 @@
   interface Props {
     props: MapLayerProps;
     z: number;
-    onmaploaded: (size: Size) => void;
+    onMapLoaded: (size: Size) => void;
   }
 
-  let { props, z, onmaploaded }: Props = $props();
+  let { props, z, onMapLoaded }: Props = $props();
+  let clippingPlanes: THREE.Plane[] = $state([]);
 
   const loader = useLoader(TextureLoader);
   let image = loader.load(props.url, {
@@ -22,15 +23,23 @@
 
   $effect(() => {
     if ($image) {
-      onmaploaded({
-        width: $image.source.data.width ?? 0,
-        height: $image.source.data.height ?? 0
-      });
+      const width = $image.source.data.width ?? 0;
+      const height = $image.source.data.height ?? 0;
+
+      clippingPlanes = [
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 100),
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 100)
+        /*
+        new THREE.Plane(new THREE.Vector3(0, 0, 0), -height / 2),
+        new THREE.Plane(new THREE.Vector3(0, 0, 0), height / 2)*/
+      ];
+
+      onMapLoaded({ width, height });
     }
   });
 </script>
 
 <T.Mesh position={[0, 0, z]}>
-  <T.MeshBasicMaterial map={$image} transparent={true} />
+  <T.MeshBasicMaterial map={$image} transparent={true} {clippingPlanes} />
   <T.PlaneGeometry />
 </T.Mesh>
