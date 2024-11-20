@@ -15,7 +15,6 @@ export const load: PageServerLoad = async (event) => {
   const inviteResponseForm = await superValidate(zod(inviteResponseSchema));
 
   const invites = await getPartyInvitesForEmail(email);
-  console.log('invites', invites);
 
   return {
     invites,

@@ -50,10 +50,7 @@ export const sessionTable = sqliteTable('session', {
 });
 
 export const emailVerificationCodesTable = sqliteTable('email_verification_codes', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
+  id: text('id').primaryKey().notNull(),
   userId: text('user_id')
     .notNull()
     .unique()
@@ -65,10 +62,7 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
 });
 
 export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
+  id: text('id').primaryKey().notNull(),
   userId: text('user_id')
     .notNull()
     .unique()
