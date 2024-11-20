@@ -48,7 +48,7 @@ export const StageDefaultProps: StageProps = {
     thickness: 0.1
   },
   scene: {
-    activeLayer: MapLayerType.Ping,
+    activeLayer: MapLayerType.None,
     offset: {
       x: 0,
       y: 0

@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import { type Size, T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
@@ -27,6 +27,14 @@
 
   // The size of the map image
   let mapSize: Size = $state({ width: 0, height: 0 });
+
+  // Add clipping planes to prevent map content from leaking outside of the scene area
+  let clippingPlanes = $state([
+    new THREE.Plane(new THREE.Vector3(-1, 0, 0)),
+    new THREE.Plane(new THREE.Vector3(1, 0, 0)),
+    new THREE.Plane(new THREE.Vector3(0, 1, 0)),
+    new THREE.Plane(new THREE.Vector3(0, -1, 0))
+  ]);
 
   let leftMouseDown = false;
 
@@ -127,28 +135,28 @@
   }
 
   export function fillSceneToCanvas() {
-    const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
+    const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio > canvasAspectRatio) {
-      newZoom = renderer.domElement.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
     } else {
-      newZoom = renderer.domElement.width / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
   }
 
   export function fitSceneToCanvas() {
-    const canvasAspectRatio = $size.width / $size.height;
+    const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio < canvasAspectRatio) {
-      newZoom = renderer.domElement.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
     } else {
-      newZoom = renderer.domElement.width / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
@@ -181,6 +189,25 @@
 
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
+
+  $effect(() => {
+    // Whenever the scene is translated/zoomed, update the clipping planes
+    const { x, y } = props.scene.offset;
+    const worldExtents = {
+      x: props.scene.zoom * (props.scene.resolution.x / 2),
+      y: props.scene.zoom * (props.scene.resolution.y / 2)
+    };
+
+    // Avoid re-triggering this effect when updating the clipping planes
+    untrack(() => {
+      clippingPlanes[0].constant = worldExtents.x + x;
+      clippingPlanes[1].constant = worldExtents.x - x;
+      clippingPlanes[2].constant = worldExtents.y - y;
+      clippingPlanes[3].constant = worldExtents.y + y;
+      clippingPlanes = [...clippingPlanes];
+      renderer.clippingPlanes = clippingPlanes;
+    });
+  });
 
   $effect(() => {
     renderPass.mainCamera = $camera;
@@ -220,7 +247,7 @@
     rotation.z={(props.map.rotation / 180.0) * Math.PI}
     scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
   >
-    <MapLayer props={props.map} z={0} onmaploaded={(size: Size) => (mapSize = size)} />
+    <MapLayer props={props.map} z={0} onMapLoaded={(size: Size) => (mapSize = size)} />
     <FogOfWarLayer
       bind:this={fogOfWarLayer}
       props={props.fogOfWar}
@@ -232,6 +259,7 @@
       props={props.ping}
       isActive={props.scene.activeLayer === MapLayerType.Ping}
       z={20}
+      {clippingPlanes}
       {mapSize}
       {onPingsUpdated}
     />
