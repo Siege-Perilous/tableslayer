@@ -135,28 +135,28 @@
   }
 
   export function fillSceneToCanvas() {
-    const canvasAspectRatio = renderer.domElement.width / renderer.domElement.height;
+    const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio > canvasAspectRatio) {
-      newZoom = renderer.domElement.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
     } else {
-      newZoom = renderer.domElement.width / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
   }
 
   export function fitSceneToCanvas() {
-    const canvasAspectRatio = $size.width / $size.height;
+    const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio < canvasAspectRatio) {
-      newZoom = renderer.domElement.height / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
     } else {
-      newZoom = renderer.domElement.width / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
