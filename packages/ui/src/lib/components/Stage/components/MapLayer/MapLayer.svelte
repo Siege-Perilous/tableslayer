@@ -7,10 +7,10 @@
   interface Props {
     props: MapLayerProps;
     z: number;
-    onmaploaded: (size: Size) => void;
+    onMapLoaded: (size: Size) => void;
   }
 
-  let { props, z, onmaploaded }: Props = $props();
+  let { props, z, onMapLoaded }: Props = $props();
 
   const loader = useLoader(TextureLoader);
   let image = loader.load(props.url, {
@@ -22,7 +22,7 @@
 
   $effect(() => {
     if ($image) {
-      onmaploaded({
+      onMapLoaded({
         width: $image.source.data.width ?? 0,
         height: $image.source.data.height ?? 0
       });
