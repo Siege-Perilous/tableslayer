@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { Button, Binding, Color, Pane, List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
+  import {
+    Button,
+    Binding,
+    Color,
+    Folder,
+    List,
+    type ListOptions,
+    Pane,
+    Slider,
+    Text,
+    Separator
+  } from 'svelte-tweakpane-ui';
   import {
     GridType,
     Stage,
@@ -15,6 +26,7 @@
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
+  let mapUrl = $state(stageProps.map.url);
 
   const layerTypeOptions: ListOptions<number> = {
     None: MapLayerType.None,
@@ -42,6 +54,10 @@
   const weatherTypeOptions: ListOptions<number> = {
     Rain: WeatherType.Rain
   };
+
+  function updateMapUrl() {
+    stageProps.map.url = mapUrl;
+  }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.map.offset.x = offset.x;
@@ -101,6 +117,9 @@
   </Folder>
 
   <Folder title="Map" expanded={false}>
+    <Text bind:value={mapUrl} label="URL" />
+    <Button on:click={() => updateMapUrl()} title="Load" />
+    <Separator />
     <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
     <Button on:click={() => (stageProps.map.offset = { x: 0, y: 0 })} title="Center" />
     <Button on:click={() => stage.map.fill()} title="Fill" />
