@@ -35,7 +35,5 @@ export class PingMaterial extends THREE.ShaderMaterial {
     this.uniforms.uClippingPlanes.value = clippingPlanes.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
-
-    console.log(this.uniforms.uClippingPlanes);
   }
 }

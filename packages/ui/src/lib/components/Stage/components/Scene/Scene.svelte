@@ -28,8 +28,7 @@
   // The size of the map image
   let mapSize: Size = $state({ width: 0, height: 0 });
 
-  // Add clipping planes to prevent map content from leaking outside of
-  // the scene area
+  // Add clipping planes to prevent map content from leaking outside of the scene area
   let clippingPlanes = $state([
     new THREE.Plane(new THREE.Vector3(-1, 0, 0)),
     new THREE.Plane(new THREE.Vector3(1, 0, 0)),
@@ -50,9 +49,6 @@
   composer.addPass(new EffectPass($camera, new VignetteEffect({ offset: 0.2 })));
 
   onMount(() => {
-    // Enables clipping planes so map content is not rendered beyond its bounds
-    renderer.clippingPlanes;
-
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     renderer.domElement.addEventListener('mouseup', onMouseUp);
     renderer.domElement.addEventListener('mouseleave', onMouseLeave);
@@ -202,6 +198,7 @@
       y: props.scene.zoom * (props.scene.resolution.y / 2)
     };
 
+    // Avoid re-triggering this effect when updating the clipping planes
     untrack(() => {
       clippingPlanes[0].constant = worldExtents.x + x;
       clippingPlanes[1].constant = worldExtents.x - x;
