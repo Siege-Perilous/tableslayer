@@ -3,6 +3,7 @@ import { emailVerificationCodesTable, usersTable } from '$lib/db/app/schema';
 import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
 import { getUser, sendVerificationEmail } from '$lib/server';
 import { isWithinExpirationDate } from '$lib/utils';
+import { createSha256Hash } from '$lib/utils/hash';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -91,15 +92,26 @@ export const actions: Actions = {
     if (!verifyForm.valid)
       return message(verifyForm, { type: 'error', text: 'Invalid verification code' }, { status: 400 });
 
+    console.log('verifyForm', verifyForm.data);
+
     const userId = event.locals.user.id;
     const { code } = verifyForm.data;
+    const hashedCode = await createSha256Hash(code);
     const verificationCode = await db
       .select()
       .from(emailVerificationCodesTable)
       .where(eq(emailVerificationCodesTable.userId, userId))
       .get();
-
-    if (!verificationCode || !isWithinExpirationDate(verificationCode.expiresAt) || verificationCode.code !== code) {
+    console.log({
+      codeFromForm: code,
+      hashedCode: hashedCode,
+      dbCode: verificationCode?.code
+    });
+    if (
+      !verificationCode ||
+      !isWithinExpirationDate(verificationCode.expiresAt) ||
+      verificationCode.code !== hashedCode
+    ) {
       return message(verifyForm, { type: 'error', text: 'Invalid verification code' }, { status: 400 });
     }
 

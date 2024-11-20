@@ -1,7 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
-  import { FSControl, FieldErrors, Input } from '@tableslayer/ui';
+  import { Button, FSControl, FieldErrors, Input } from '@tableslayer/ui';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
@@ -36,11 +36,13 @@
     <form method="post" action="?/verify" use:enhanceVerify>
       <Field form={verifyCodeForm} name="code">
         <FSControl label="Verify code">
-          <Input type="text" bind:value={$verifyData.code} />
+          {#snippet children({ attrs })}
+            <Input {...attrs} type="text" bind:value={$verifyData.code} />
+          {/snippet}
         </FSControl>
         <FieldErrors />
       </Field>
-      <button>Verify</button>
+      <Button type="submit">Verify</Button>
       {#if $verifyMessage}
         <p>{$verifyMessage.text}</p>
       {/if}
@@ -58,7 +60,9 @@
   <form method="post" action="?/changeEmail" use:enhanceChangeEmail>
     <Field form={changeEmailForm} name="email">
       <FSControl label="New email">
-        <Input type="email" bind:value={$changeEmailData.email} />
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="email" bind:value={$changeEmailData.email} />
+        {/snippet}
       </FSControl>
       <FieldErrors />
     </Field>

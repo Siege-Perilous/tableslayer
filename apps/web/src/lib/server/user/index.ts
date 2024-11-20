@@ -1,5 +1,5 @@
 import { db } from '$lib/db/app';
-import { usersTable, type SelectUser } from '$lib/db/app/schema';
+import { resetPasswordCodesTable, usersTable, type SelectUser } from '$lib/db/app/schema';
 import { getFile, transformImage } from '$lib/server';
 import { eq } from 'drizzle-orm';
 
@@ -38,6 +38,25 @@ export const checkIfEmailInUserTable = async (email: string) => {
     return isExistingUser;
   } catch (error) {
     console.error('Error checking if email is in user table', error);
+    throw error;
+  }
+};
+
+export const getUserByResetPasswordCode = async (code: string) => {
+  console.log('code', code);
+  try {
+    const resetPasswordCodeRow = await db
+      .select()
+      .from(resetPasswordCodesTable)
+      .where(eq(resetPasswordCodesTable.code, code))
+      .get();
+    if (!resetPasswordCodeRow) {
+      throw new Error('Reset code not found');
+    }
+    const user = await getUser(resetPasswordCodeRow.userId);
+    return user;
+  } catch (error) {
+    console.error('Error getting user by reset password code', error);
     throw error;
   }
 };

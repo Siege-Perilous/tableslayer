@@ -9,7 +9,7 @@ import type { Actions, PageServerLoad } from './$types';
 // Import the users table schema
 import { usersTable } from '$lib/db/app/schema';
 import { eq } from 'drizzle-orm';
-import { verifyHash } from '../../lib/utils/hash';
+import { verifyArgonHash } from '../../lib/utils/hash';
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
@@ -33,7 +33,7 @@ export const actions: Actions = {
       return message(loginForm, { type: 'error', text: 'Incorrect email or password' }, { status: 400 });
     }
 
-    const validPassword = await verifyHash(existingUser.passwordHash, password);
+    const validPassword = await verifyArgonHash(existingUser.passwordHash, password);
 
     if (!validPassword) {
       // NOTE:

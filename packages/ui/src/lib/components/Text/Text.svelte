@@ -1,7 +1,7 @@
 <script lang="ts">
   import classNames from 'classnames';
   import type { TextProps } from './types';
-  let { children, as = 'p', size, style, ...restProps }: TextProps = $props();
+  let { children, as = 'p', size = 'md', style, ...restProps }: TextProps = $props();
   const titleClasses = classNames('text', `text-${size}`, restProps.class ?? '');
 </script>
 

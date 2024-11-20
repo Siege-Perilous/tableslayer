@@ -4,7 +4,18 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug from 'sveltekit-superforms';
   import { loginSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
+  import {
+    Input,
+    MessageError,
+    Button,
+    FSControl,
+    FieldErrors,
+    Title,
+    Link,
+    Text,
+    Spacer,
+    Panel
+  } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.loginForm, {
@@ -17,7 +28,9 @@
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>
   <Spacer size={2} />
-  <p>Don't have an account? <Link href="/signup">Create an account</Link>.</p>
+  <Text>
+    <Link href="/signup">Create a new account</Link> or <Link href="/forgot-password">recover your password</Link>.
+  </Text>
   <Spacer size={8} />
   <form method="POST" action="?/login" use:enhance>
     <Field {form} name="email">

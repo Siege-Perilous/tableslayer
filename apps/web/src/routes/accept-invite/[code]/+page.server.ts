@@ -10,6 +10,7 @@ import {
   getUserByEmail,
   setSessionTokenCookie
 } from '$lib/server';
+import { createSha256Hash } from '$lib/utils/hash';
 import type { Actions } from '@sveltejs/kit';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
@@ -19,10 +20,11 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
   const inviteCode = event.params.code;
+  const hashedInviteCode = await createSha256Hash(inviteCode);
   const inviteResponseForm = await superValidate(zod(inviteResponseSchema));
 
   try {
-    const invite = await getPartyInvitesForCode(inviteCode);
+    const invite = await getPartyInvitesForCode(hashedInviteCode);
     const { user } = await event.parent();
 
     if (!invite) {

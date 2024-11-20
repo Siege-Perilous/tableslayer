@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { alphabet, generateRandomString } from 'oslo/crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 export const usersTable = sqliteTable('users', {
@@ -51,17 +50,25 @@ export const sessionTable = sqliteTable('session', {
 });
 
 export const emailVerificationCodesTable = sqliteTable('email_verification_codes', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
+  id: text('id').primaryKey().notNull(),
   userId: text('user_id')
     .notNull()
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  code: text('code')
+  code: text('code').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' })
     .notNull()
-    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+    .default(sql`(strftime('%s', 'now') + 60 * 15)`)
+});
+
+export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
+  id: text('id').primaryKey().notNull(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  code: text('code').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
@@ -112,10 +119,7 @@ export const partyInviteTable = sqliteTable('party_invite', {
   invitedBy: text('invited_by')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  code: text('code')
-    .notNull()
-    .unique()
-    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+  code: text('code').notNull().unique(),
   email: text('email').notNull(),
   role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });

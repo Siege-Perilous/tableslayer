@@ -24,16 +24,20 @@
   <form method="post" action="?/inviteMember" use:enhanceInviteMember>
     <Field form={inviteMemberForm} name="email">
       <FSControl label="Email">
-        <Input type="email" bind:value={$inviteMemberData.email} />
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="email" bind:value={$inviteMemberData.email} />
+        {/snippet}
       </FSControl>
       <FieldErrors />
     </Field>
     <Field form={inviteMemberForm} name="email">
       <FSControl>
-        <Input type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
-        <button type="submit">Invite</button>
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
+        {/snippet}
       </FSControl>
       <FieldErrors />
+      <button type="submit">Invite</button>
     </Field>
     {#if $inviteMemberMessage}
       <p>{$inviteMemberMessage.text}</p>
