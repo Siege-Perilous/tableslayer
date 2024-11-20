@@ -1,4 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
+import crypto from 'crypto';
 
 const hashOptions = {
   memoryCost: 19456,
@@ -7,12 +8,22 @@ const hashOptions = {
   parallelism: 1
 };
 
-export const createHash = async (token: string) => {
+export const createArgonHash = async (token: string) => {
   const hashedToken = await hash(token, hashOptions);
   return hashedToken;
 };
 
-export const verifyHash = async (storedToken: string, providedToken: string) => {
+export const verifyArgonHash = async (storedToken: string, providedToken: string) => {
   const isValid = await verify(storedToken, providedToken, hashOptions);
+  return isValid;
+};
+
+export const createSha256Hash = async (token: string) => {
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  return hashedToken;
+};
+
+export const verifySha256Hash = async (storedToken: string, providedToken: string) => {
+  const isValid = storedToken === providedToken;
   return isValid;
 };

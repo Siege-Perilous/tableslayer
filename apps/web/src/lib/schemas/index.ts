@@ -27,6 +27,17 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email()
 });
 
+export const resetPasswordSchema = z
+  .object({
+    userId: z.string(),
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8)
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword']
+  });
+
 export const resendVerificationCodeSchema = z.object({});
 
 export const verificationCodeSchema = z.object({

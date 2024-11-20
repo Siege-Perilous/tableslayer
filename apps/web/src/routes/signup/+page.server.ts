@@ -18,7 +18,7 @@ import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
-import { createHash } from '../../lib/utils/hash';
+import { createArgonHash } from '../../lib/utils/hash';
 import type { Actions, PageServerLoad } from './$types';
 
 // Define a custom type for database errors
@@ -51,7 +51,7 @@ export const actions: Actions = {
 
     const { email, password } = signupForm.data;
 
-    const passwordHash = await createHash(password);
+    const passwordHash = await createArgonHash(password);
     const userId = uuidv4();
 
     try {

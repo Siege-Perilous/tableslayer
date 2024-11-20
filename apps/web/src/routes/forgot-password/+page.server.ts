@@ -2,8 +2,9 @@ import { db } from '$lib/db/app';
 import { resetPasswordCodesTable, usersTable } from '$lib/db/app/schema';
 import { forgotPasswordSchema } from '$lib/schemas';
 import { sendSingleEmail } from '$lib/server';
-import { createHash } from '$lib/utils/hash';
-import { redirect } from '@sveltejs/kit';
+import { createSha256Hash } from '$lib/utils/hash';
+import { isRedirect, redirect } from '@sveltejs/kit';
+import { setToastCookie } from '@tableslayer/ui';
 import { eq } from 'drizzle-orm';
 import { alphabet, generateRandomString } from 'oslo/crypto';
 import { message, superValidate } from 'sveltekit-superforms';
@@ -31,12 +32,22 @@ export const actions: Actions = {
 
     const { email } = forgotPasswordForm.data;
     const randomString = generateRandomString(32, alphabet('0-9', 'A-Z'));
-    const resetPasswordHash = await createHash(randomString);
+    const resetPasswordHash = await createSha256Hash(randomString);
     try {
       const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+      const existingResetCode = await db
+        .select()
+        .from(resetPasswordCodesTable)
+        .where(eq(resetPasswordCodesTable.email, email))
+        .get();
+
+      if (existingResetCode) {
+        await db.delete(resetPasswordCodesTable).where(eq(resetPasswordCodesTable.email, email)).run();
+      }
       if (!existingUser) {
         return message(forgotPasswordForm, { type: 'success', text: 'Check your email for a password reset link' });
       }
+
       await db.insert(resetPasswordCodesTable).values({
         email,
         code: resetPasswordHash,
@@ -49,10 +60,22 @@ export const actions: Actions = {
         html: `Visit ${baseURL}/reset-password/${randomString} to reset your password. If you did not make this request, ignore this email. No futher steps are required.`
       });
 
-      return message(forgotPasswordForm, { type: 'success', text: 'Check your email for a password reset link' });
+      setToastCookie(event, {
+        title: 'Check your email for a password reset link',
+        type: 'success'
+      });
+
+      return (
+        message(forgotPasswordForm, { type: 'success', text: 'Check your email for a password reset link' }),
+        redirect(303, '/forgot-password/confirm')
+      );
     } catch (error) {
-      console.error(error);
-      return message(forgotPasswordForm, { type: 'error', text: 'An error occurred' }, { status: 500 });
+      if (isRedirect(error)) {
+        throw error;
+      } else {
+        console.error(error);
+        return message(forgotPasswordForm, { type: 'error', text: 'An error occurred' }, { status: 500 });
+      }
     }
   }
 };
