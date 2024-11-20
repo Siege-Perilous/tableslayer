@@ -27,3 +27,13 @@ export const verifySha256Hash = async (storedToken: string, providedToken: strin
   const isValid = storedToken === providedToken;
   return isValid;
 };
+
+export const createShortCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    result += chars[randomIndex];
+  }
+  return result;
+};

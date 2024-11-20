@@ -13,12 +13,12 @@ import {
 } from '$lib/server';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
 import { createGameSessionDb } from '$lib/server/turso';
+import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
-import { createArgonHash } from '../../lib/utils/hash';
 import type { Actions, PageServerLoad } from './$types';
 
 // Define a custom type for database errors
@@ -53,9 +53,11 @@ export const actions: Actions = {
 
     const passwordHash = await createArgonHash(password);
     const userId = uuidv4();
+    const randomShortCode = createShortCode();
+    const emailVerificationHash = await createSha256Hash(randomShortCode);
 
     try {
-      const name = await getGravatarDisplayName('dave.snider@gmail.com');
+      const name = await getGravatarDisplayName(email);
       await db.insert(usersTable).values({
         id: userId,
         name,
@@ -86,10 +88,11 @@ export const actions: Actions = {
       await createGameSessionDb(party.id);
 
       // Create an email verification code
-      const emailVerificationCode = await db
+      await db
         .insert(emailVerificationCodesTable)
         .values({
-          userId
+          userId,
+          code: emailVerificationHash
         })
         .returning()
         .get();
@@ -98,7 +101,7 @@ export const actions: Actions = {
       await sendSingleEmail({
         to: email,
         subject: 'Verify your email',
-        html: `Your verification code is: ${emailVerificationCode.code}`
+        html: `Your verification code is: ${randomShortCode}`
       });
 
       const token = generateSessionToken();

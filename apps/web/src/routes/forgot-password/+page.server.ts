@@ -6,9 +6,9 @@ import { createSha256Hash } from '$lib/utils/hash';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
 import { eq } from 'drizzle-orm';
-import { alphabet, generateRandomString } from 'oslo/crypto';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
+import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:5174';
@@ -31,7 +31,7 @@ export const actions: Actions = {
     }
 
     const { email } = forgotPasswordForm.data;
-    const randomString = generateRandomString(32, alphabet('0-9', 'A-Z'));
+    const randomString = uuidv4();
     const resetPasswordHash = await createSha256Hash(randomString);
     try {
       const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();

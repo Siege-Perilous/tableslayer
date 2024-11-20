@@ -9,9 +9,12 @@ import {
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
 } from '$lib/server';
+import { createSha256Hash } from '$lib/utils/hash';
 import { setToastCookie } from '@tableslayer/ui';
+import { eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
+import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -62,6 +65,8 @@ export const actions: Actions = {
       throw new Error('Party or user not found');
     }
     const userId = event.locals.user.id;
+    const inviteCode = uuidv4();
+    const hashedInviteCode = await createSha256Hash(inviteCode);
 
     const alreadyInParty = await isUserByEmailInPartyAlready(email, partyId);
     if (alreadyInParty) {
@@ -86,10 +91,11 @@ export const actions: Actions = {
         partyId,
         email,
         role: 'viewer',
-        invitedBy: userId
+        invitedBy: userId,
+        code: hashedInviteCode
       });
 
-      await sendPartyInviteEmail(partyId, email);
+      await sendPartyInviteEmail(partyId, email, inviteCode);
 
       setToastCookie(event, {
         title: `An invite has been sent to ${email}`,
@@ -114,7 +120,17 @@ export const actions: Actions = {
 
     try {
       console.log('Resending invite');
-      await sendPartyInviteEmail(partyId, email);
+
+      const inviteCode = uuidv4();
+      const hashedInviteCode = await createSha256Hash(inviteCode);
+
+      await db
+        .update(partyInviteTable)
+        .set({ code: hashedInviteCode })
+        .where(eq(partyInviteTable.email, email))
+        .execute();
+
+      await sendPartyInviteEmail(partyId, email, inviteCode);
       setToastCookie(event, {
         title: `An invite has been sent to ${email}`,
         type: 'success'

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
-  import { FSControl, FieldErrors, Input } from '@tableslayer/ui';
+  import { Button, FSControl, FieldErrors, Input } from '@tableslayer/ui';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
   import SuperDebug from 'sveltekit-superforms';
@@ -40,7 +40,7 @@
         </FSControl>
         <FieldErrors />
       </Field>
-      <button>Verify</button>
+      <Button type="submit">Verify</Button>
       {#if $verifyMessage}
         <p>{$verifyMessage.text}</p>
       {/if}

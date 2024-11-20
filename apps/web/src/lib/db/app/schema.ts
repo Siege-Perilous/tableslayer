@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { alphabet, generateRandomString } from 'oslo/crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 export const usersTable = sqliteTable('users', {
@@ -59,9 +58,7 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
     .notNull()
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  code: text('code')
-    .notNull()
-    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+  code: text('code').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
@@ -77,9 +74,7 @@ export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
-  code: text('code')
-    .notNull()
-    .$default(() => generateRandomString(6, alphabet('0-9', 'A-Z'))),
+  code: text('code').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
