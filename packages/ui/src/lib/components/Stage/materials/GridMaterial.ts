@@ -16,10 +16,10 @@ export class GridMaterial extends THREE.ShaderMaterial {
         divisions: new THREE.Uniform(props.divisions),
         offset: new THREE.Uniform(props.offset),
         lineThickness: new THREE.Uniform(props.lineThickness),
-        lineColor: new THREE.Uniform(props.lineColor),
+        lineColor: new THREE.Uniform(new THREE.Color(props.lineColor)),
         shadowIntensity: new THREE.Uniform(props.shadowIntensity),
         shadowSize: new THREE.Uniform(props.shadowSize),
-        shadowColor: new THREE.Uniform(props.shadowColor),
+        shadowColor: new THREE.Uniform(new THREE.Color(props.shadowColor)),
         sceneScale: new THREE.Uniform(1),
         uResolution: new THREE.Uniform(new THREE.Vector2(0, 0))
       }
@@ -32,9 +32,9 @@ export class GridMaterial extends THREE.ShaderMaterial {
     this.uniforms.divisions.value = props.divisions;
     this.uniforms.offset.value = props.offset;
     this.uniforms.lineThickness.value = props.lineThickness;
-    this.uniforms.lineColor.value = props.lineColor;
+    this.uniforms.lineColor.value = new THREE.Color(props.lineColor);
     this.uniforms.shadowIntensity.value = props.shadowIntensity;
     this.uniforms.shadowSize.value = props.shadowSize;
-    this.uniforms.shadowColor.value = props.shadowColor;
+    this.uniforms.shadowColor.value = new THREE.Color(props.shadowColor);
   }
 }

@@ -9,9 +9,9 @@ export interface WeatherProps {
   weatherType: WeatherType;
 
   /**
-   * Color of the weather effect
+   * Tint color applied to the weather effect, represented as a hex string (e.g. 0x60A3FE)
    */
-  color: { r: number; g: number; b: number };
+  color: string;
 
   /**
    * The angle that the weather is falling down
