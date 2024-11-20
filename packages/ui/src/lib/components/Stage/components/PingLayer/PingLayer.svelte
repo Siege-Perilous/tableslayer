@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte, type Size } from '@threlte/core';
+  import { T, useTask, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import { PingMaterial } from '../../materials/PingMaterial';
   import { onMount } from 'svelte';

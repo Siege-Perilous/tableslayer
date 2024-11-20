@@ -22,9 +22,10 @@
 
   $effect(() => {
     if ($image) {
-      const width = $image.source.data.width ?? 0;
-      const height = $image.source.data.height ?? 0;
-      onMapLoaded({ width, height });
+      onMapLoaded({
+        width: $image.source.data.width ?? 0,
+        height: $image.source.data.height ?? 0
+      });
     }
   });
 </script>
