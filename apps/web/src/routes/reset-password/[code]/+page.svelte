@@ -45,10 +45,12 @@
     <Spacer />
     <Field {form} name="userId">
       <FSControl>
-        <Input type="hidden" name="userId" value={userDesiringReset.id} />
-        <Button type="submit">Submit</Button>
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="hidden" name="userId" value={userDesiringReset.id} />
+        {/snippet}
       </FSControl>
     </Field>
+    <Button type="submit">Submit</Button>
     <Spacer />
   </form>
 </Panel>

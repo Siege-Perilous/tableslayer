@@ -36,7 +36,9 @@
     <form method="post" action="?/verify" use:enhanceVerify>
       <Field form={verifyCodeForm} name="code">
         <FSControl label="Verify code">
-          <Input type="text" bind:value={$verifyData.code} />
+          {#snippet children({ attrs })}
+            <Input {...attrs} type="text" bind:value={$verifyData.code} />
+          {/snippet}
         </FSControl>
         <FieldErrors />
       </Field>
@@ -58,7 +60,9 @@
   <form method="post" action="?/changeEmail" use:enhanceChangeEmail>
     <Field form={changeEmailForm} name="email">
       <FSControl label="New email">
-        <Input type="email" bind:value={$changeEmailData.email} />
+        {#snippet children({ attrs })}
+          <Input {...attrs} type="email" bind:value={$changeEmailData.email} />
+        {/snippet}
       </FSControl>
       <FieldErrors />
     </Field>
