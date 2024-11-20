@@ -18,7 +18,7 @@
 <Panel class="panel--signup">
   <Title as="h1" size="md">Reset your password</Title>
   <Spacer size={2} />
-  <p>Already have an account? <Link href="/login">Sign in</Link>.</p>
+  <p>You will be logged in after successfully resetting your password</p>
   <Spacer size={8} />
   <form method="post" use:enhance>
     <Field {form} name="password">

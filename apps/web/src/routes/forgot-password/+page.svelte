@@ -4,7 +4,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug from 'sveltekit-superforms';
   import { forgotPasswordSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Spacer, Panel } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.forgotPasswordForm, {
