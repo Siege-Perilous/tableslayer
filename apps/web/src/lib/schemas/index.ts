@@ -68,3 +68,4 @@ export const changeRoleSchema = z.object({
   partyId: z.string()
 });
 export type ChangeRoleSchema = typeof changeRoleSchema;
+export type ChangeRoleFormType = z.infer<typeof changeRoleSchema>;

@@ -1,50 +1,59 @@
 <script lang="ts">
-  import { type SelectUser, VALID_PARTY_ROLES } from '$lib/db/app/schema';
-  import { type PartyRole } from '$lib/db/app/schema';
-  import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { FSControl } from '@tableslayer/ui';
+  import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
+  import { FSControl, Select } from '@tableslayer/ui';
   import { Field } from 'formsnap';
-  import { changeRoleSchema } from '$lib/schemas';
+  import { type SuperForm } from 'sveltekit-superforms/client';
+  import { type ChangeRoleFormType, changeRoleSchema } from '$lib/schemas';
+  import { superForm } from 'sveltekit-superforms/client';
   import { zodClient } from 'sveltekit-superforms/adapters';
 
-  type PartyMemberProps = SelectUser & {
+  type PartyMember = SelectUser & {
     role: PartyRole;
     partyId: string;
   };
 
-  let { member }: { member: PartyMemberProps } = $props();
+  type PartyMemberProps = {
+    member: PartyMember;
+    changeMemberRoleForm: SuperForm<ChangeRoleFormType>;
+  };
 
-  const { id: userId, role, partyId } = member;
+  let { member, changeMemberRoleForm }: PartyMemberProps = $props();
 
-  const changeRoleForm = superForm(
-    { userId, partyId, role },
-    {
-      validators: zodClient(changeRoleSchema),
-      invalidateAll: 'force',
-      resetForm: false
-    }
-  );
-  const { form, enhance, message, formId } = changeRoleForm;
+  const form = superForm(changeMemberRoleForm, {
+    id: member.id,
+    validators: zodClient(changeRoleSchema),
+    resetForm: true
+  });
+
+  const { form: memberForm, enhance, message } = form;
+
+  console.log('memberForm', $memberForm);
+
+  $memberForm.userId = member.id;
+  $memberForm.role = member.role;
+  $memberForm.partyId = member.partyId;
+  console.log('memberForm', $memberForm);
+
+  const roleOptions = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
+  const defaultRole = roleOptions.find((role) => role.value === $memberForm.role);
 </script>
 
-<p>{member.email} - {member.role} - {partyId}</p>
+<p>{member.email} - {member.role} - {member.partyId}</p>
 
 <form method="POST" action="?/changeRole" use:enhance>
+  <!-- Bind directly to the form field -->
   <Field {form} name="role">
     <FSControl>
-      <select name="role" bind:value={$form.role} onselectstart={() => ($formId = member.id)}>
-        {#each VALID_PARTY_ROLES as role}
-          <option value={role}>{role}</option>
-        {/each}
-      </select>
-      <input type="hidden" name="userId" bind:value={$form.userId} />
-      <input type="hidden" name="partyId" bind:value={$form.partyId} />
+      {#snippet children({ attrs })}
+        <Select {...attrs} options={roleOptions} name="role" defaultSelected={defaultRole} />
+      {/snippet}
     </FSControl>
+    <input type="hidden" name="userId" value={$memberForm.userId} />
+    <input type="hidden" name="partyId" value={$memberForm.partyId} />
   </Field>
-  <button>Sumbit</button>
+  <button type="submit">Submit</button>
 </form>
 
 {#if $message}
   <p>{$message.text}</p>
 {/if}
-<SuperDebug label="Change role form" data={form} />

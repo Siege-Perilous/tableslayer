@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { Link, Panel, Title } from '@tableslayer/ui';
+  import { Button, Link, Panel, Title } from '@tableslayer/ui';
+  import { PartyMember } from '$lib/components';
 
   let { data } = $props();
   const { party, gameSessions, members } = $derived(data);
+
+  const partyId = data.party.id as string;
 </script>
 
 <div class="container">
@@ -13,14 +16,20 @@
         {#each gameSessions as session}
           <Panel class="sessionPanel">
             <Link href={`${party.slug}/${session.slug}`}>{session.name}</Link>
+            <Button>Delete</Button>
           </Panel>
         {/each}
       </div>
     </main>
     <aside>
       <Link href={`${party.slug}/members`}>Members</Link>
+      <h2>Invite new member</h2>
+
+      <h2>Members of {party?.name}</h2>
       {#each members as member}
-        {member.email}
+        <PartyMember {member} changeMemberRoleForm={data.changeMemberRoleForm} />
+      {:else}
+        <p>No members found.</p>
       {/each}
     </aside>
   </div>

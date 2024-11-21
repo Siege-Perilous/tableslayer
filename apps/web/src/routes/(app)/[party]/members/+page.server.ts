@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ parent }) => {
   });
 
   const resendInviteSchemaWithPartyId = inviteMemberSchema.extend({
-    partyId: inviteMemberSchema.shape.partyId.default(party.id)
+    partyId: resendInviteSchema.shape.partyId.default(party.id)
   });
 
   const changeRoleSchemeWithPartyId = changeRoleSchema.extend({
