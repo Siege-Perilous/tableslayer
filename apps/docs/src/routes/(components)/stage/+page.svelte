@@ -1,16 +1,5 @@
 <script lang="ts">
-  import {
-    Button,
-    Binding,
-    Color,
-    Folder,
-    List,
-    type ListOptions,
-    Pane,
-    Slider,
-    Text,
-    Separator
-  } from 'svelte-tweakpane-ui';
+  import { Button, Binding, Color, Folder, List, type ListOptions, Pane, Slider, Separator } from 'svelte-tweakpane-ui';
   import {
     GridType,
     Stage,
@@ -27,6 +16,21 @@
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
   let mapUrl = $state(stageProps.map.url);
+
+  const mapOptions: ListOptions<string> = {
+    'Map 1': 'https://files.tableslayer.com/maps/01.jpeg',
+    'Map 2': 'https://files.tableslayer.com/maps/02.jpeg',
+    'Map 3': 'https://files.tableslayer.com/maps/03.jpeg',
+    'Map 4': 'https://files.tableslayer.com/maps/04.jpeg',
+    'Map 5': 'https://files.tableslayer.com/maps/05.jpeg',
+    'Map 6': 'https://files.tableslayer.com/maps/06.jpeg',
+    'Map 7': 'https://files.tableslayer.com/maps/07.jpeg',
+    'Map 8': 'https://files.tableslayer.com/maps/08.jpeg',
+    'Map 9': 'https://files.tableslayer.com/maps/09.jpeg',
+    'Map 10': 'https://files.tableslayer.com/maps/10.jpeg',
+    'Map 11': 'https://files.tableslayer.com/maps/11.jpeg',
+    'Map 12': 'https://files.tableslayer.com/maps/12.jpeg'
+  };
 
   const layerTypeOptions: ListOptions<number> = {
     None: MapLayerType.None,
@@ -57,6 +61,9 @@
 
   function updateMapUrl() {
     stageProps.map.url = mapUrl;
+    // Reset fog of war data and ping locations
+    stageProps.fogOfWar.data = null;
+    stageProps.ping.locations = [];
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
@@ -117,7 +124,7 @@
   </Folder>
 
   <Folder title="Map" expanded={false}>
-    <Text bind:value={mapUrl} label="URL" />
+    <List bind:value={mapUrl} label="Map" options={mapOptions} />
     <Button on:click={() => updateMapUrl()} title="Load" />
     <Separator />
     <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
