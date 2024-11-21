@@ -36,28 +36,34 @@
     // Create a canvas element to draw on
     canvas = document.createElement('canvas');
     context = canvas.getContext('2d')!;
-    fogTexture = new THREE.CanvasTexture(canvas);
+  });
+
+  $effect(() => {
+    if (!canvas) return;
+
+    // Dispose of the existing fog texture if there is one
+    fogTexture?.dispose();
 
     if (props.data) {
-      // If the props contains initial fog of war data, initialize the canvas to that data
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
         canvas.width = image.width;
         canvas.height = image.height;
-        context.drawImage(image, 0, 0);
-        imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        fogTexture = new THREE.CanvasTexture(canvas);
         fogMaterial.map = fogTexture;
-        fogMaterial.needsUpdate = true;
+
+        context.drawImage(image, 0, 0);
+        persistChanges();
       };
-    } else {
+    } else if (mapSize.width > 0 && mapSize.height > 0) {
       // Otherwise, start with a blank canvas
       canvas.width = mapSize.width;
       canvas.height = mapSize.height;
-      resetFog();
-      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      fogTexture = new THREE.CanvasTexture(canvas);
       fogMaterial.map = fogTexture;
-      fogMaterial.needsUpdate = true;
+
+      resetFog();
     }
   });
 
@@ -143,8 +149,6 @@
         activeTool.drawOutline(p);
       }
     }
-
-    fogTexture.needsUpdate = true;
   }
 
   function configureDrawMode() {
@@ -177,11 +181,13 @@
   function persistChanges() {
     if (canvas && canvas.width > 0 && canvas.height > 0) {
       imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      fogTexture.needsUpdate = true;
     }
   }
 
   function revertChanges() {
     context.putImageData(imageData, 0, 0);
+    persistChanges();
   }
 
   /**
@@ -191,7 +197,6 @@
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
     persistChanges();
-    fogTexture.needsUpdate = true;
   }
 
   /**
@@ -201,7 +206,6 @@
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
     persistChanges();
-    fogTexture.needsUpdate = true;
   }
 
   /**
