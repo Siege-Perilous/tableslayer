@@ -1,16 +1,5 @@
 <script lang="ts">
-  import {
-    Button,
-    Binding,
-    Color,
-    Folder,
-    List,
-    type ListOptions,
-    Pane,
-    Slider,
-    Text,
-    Separator
-  } from 'svelte-tweakpane-ui';
+  import { Button, Binding, Color, Folder, List, type ListOptions, Pane, Slider, Separator } from 'svelte-tweakpane-ui';
   import {
     GridType,
     Stage,
