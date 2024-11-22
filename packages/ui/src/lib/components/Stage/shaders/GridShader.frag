@@ -1,67 +1,80 @@
-uniform int gridType; // 0 for square, 1 for hex
-uniform float opacity;
-uniform float divisions;
-uniform vec2 offset;
-uniform float lineThickness;
-uniform vec3 lineColor;
-uniform float shadowIntensity;
-uniform float shadowSize;
-uniform vec3 shadowColor;
-uniform float sceneScale;
-uniform vec2 uResolution;
+uniform int uGridType;
+uniform float uSpacing_in;
+uniform float uOpacity;
+uniform vec2 uPadding_px;
+uniform float uLineThickness;
+uniform vec3 uLineColor;
+uniform float uShadowIntensity;
+uniform float uShadowSize;
+uniform vec3 uShadowColor;
+uniform float uSceneScale;
+uniform vec2 uResolution_px;
+uniform vec2 uDisplaySize_in;
 
 varying vec2 vUv;
 
-#define PI 3.141592653589793
-const vec2 s = vec2(1.0, 1.7320508); // For hexagonal grid calculations
+/**
+  Returns 0 or 1 to indicate if this fragment is a grid line
 
-// Function to create a square grid
-// Returns floating point value between 0 and 1
-float squareGrid(vec2 p, vec2 spacing, float thickness) {
-  vec2 gridPos = mod(p, spacing);
-  float distToLineX = min(gridPos.x, spacing.x - gridPos.x);
-  float distToLineY = min(gridPos.y, spacing.y - gridPos.y);
-  float lineDist = min(distToLineX, distToLineY);
+  Params
+    - coords: The coordinates of the fragment relative to the grid origin
+    - spacing: The grid spacing in pixels
+*/
+float squareGrid(vec2 coords, vec2 spacing) {
+    // Use modulus to compute the locations of the nearest grid lines
+  vec2 gridLine_px = mod(coords, spacing);
 
-  // As distance to line decreases, increase the line intensity
-  return smoothstep(thickness, 0.0, lineDist);
-}
+  // Compute distance to the grid line and modulate opacity based on line thickness
+  vec2 distanceToLine_px = gridLine_px - coords;
+  vec2 grid = 1.0 - step(vec2(uLineThickness / 2.0), gridLine_px);
 
-// This function helps define the shape of a hexagon by transforming a 
-// 2D coordinate and determining whether the point falls inside the
-// boundaries of a hexagonal cell.
-float hex(vec2 p) {
-  p = abs(p);
-  return max(dot(p, s * 0.5), p.x); // Hexagon shape
-}
-
-// This function maps a 2D point p to its corresponding hexagonal grid 
-// coordinates and returns information about the hexagonal cell it's in.
-vec2 getHex(vec2 p) {
-  vec4 hC = floor(vec4(p, p - vec2(0.5, 1.0)) / s.xyxy) + 0.5;
-  vec4 h = vec4(p - hC.xy * s, p - (hC.zw + 0.5) * s);
-  return dot(h.xy, h.xy) < dot(h.zw, h.zw) ? h.xy : h.zw;
+  return ceil((grid.x + grid.y) / 2.0);
 }
 
 void main() {
-  // Scale UV coords by the render target size
-  vec2 p = vUv * uResolution + offset;
+  // NOTE: To make it easier to determine what units a variable is, the _px suffix is used
+  // for values measured in pixels and the _in suffix is for inches. 
+
+  // Convert UV coordinates to pixels and get the coordinates of this fragment in pixels
+  vec2 displayCoord_px = vUv * uResolution_px;
+
+  // Compute the pixel pitch
+  vec2 pixelPitch_in = uDisplaySize_in / uResolution_px;
+
+  // Compute the nominal grid size in pixels and determine the maximum
+  // number of grid squares that can fit inside the safe zone
+  vec2 safeZoneSize_px = uResolution_px - uPadding_px * 2.0 - uLineThickness;
+  vec2 gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
+  vec2 gridCount = floor(safeZoneSize_px / gridSpacing_px);
+
+  // Compute the total grid size in pixels, then compute the position of the fragment
+  // relative to the origin (lower left)
+  vec2 gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
+  vec2 gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
+  vec2 gridCoords_px = displayCoord_px - gridOrigin_px;
 
   float grid = 0.0;
-  float shadow = 0.0;
-  vec2 spacing = vec2(uResolution.x / divisions, uResolution.x / divisions);
-  if(gridType == 0) { // Square grid
-    grid = squareGrid(p, spacing, lineThickness / sceneScale);
-    shadow = squareGrid(p, spacing, lineThickness * shadowSize / sceneScale);
-  } else { // Hex grid
-    vec2 hexUv = getHex(p / spacing);
-    float hexValue = hex(hexUv) + 0.5; // Outputs 0 to 1
-    grid = smoothstep(1.0 - lineThickness / 70.0 / sceneScale, 1.0, hexValue);
-    shadow = smoothstep(1.0 - lineThickness * shadowSize / 70.0 / sceneScale, 1.0, hexValue);
+  if(uGridType == 0) {
+    grid = squareGrid(gridCoords_px, gridSpacing_px);
+  } else {
+    grid = squareGrid(gridCoords_px, gridSpacing_px);
   }
 
-  vec4 shadedScene = vec4(shadowColor.rgb, shadow * shadowIntensity * opacity);
-  vec4 finalColor = mix(shadedScene, vec4(lineColor.rgb, opacity), grid);
+  /* Uncomment these lines to visualize the area outside the safe zone
+  float outsideSafeZone = step(uPadding_px.x, p.x) - step((uResolution_px.x - uPadding_px.x), p.x);
+  outsideSafeZone *= step(uPadding_px.y, p.y) - step((uResolution_px.y - uPadding_px.y), p.y);
+  vec4 exclusionZoneColor = vec4(1.0, 0, 0, 1.0 - outsideSafeZone);
+  */
 
-  gl_FragColor = finalColor;
+  // Exclude anything outside of the grid
+  vec2 o = gridOrigin_px;
+  vec2 s = gridSize_px;
+  vec2 p = displayCoord_px;
+
+  float insideGrid = step(o.x, p.x) - step((o.x + s.x), p.x);
+  insideGrid *= step(o.y, p.y) - step((o.y + s.y), p.y);
+
+  vec4 lineColor = vec4(uLineColor, grid * insideGrid * uOpacity);
+
+  gl_FragColor = lineColor;
 }
