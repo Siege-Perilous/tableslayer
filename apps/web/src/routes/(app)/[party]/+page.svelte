@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-    Avatar,
     Button,
     Icon,
     IconButton,
