@@ -58,6 +58,14 @@ export const resendInviteSchema = z.object({
 export type ResendInviteSchema = typeof resendInviteSchema;
 export type ResendInviteFormType = z.infer<typeof resendInviteSchema>;
 
+export const deleteInviteSchema = z.object({
+  email: z.string().email(),
+  partyId: z.string()
+});
+
+export type DeleteInviteSchema = typeof deleteInviteSchema;
+export type DeleteInviteFormType = z.infer<typeof deleteInviteSchema>;
+
 export const inviteResponseSchema = z.object({
   code: z.string()
 });

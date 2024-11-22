@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
 import { partyInviteTable } from '$lib/db/app/schema';
-import { changeRoleSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
+import { changeRoleSchema, deleteInviteSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
 import {
   changePartyRole,
   getEmailsInvitedToParty,
@@ -11,7 +11,7 @@ import {
   sendPartyInviteEmail
 } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,18 +35,24 @@ export const load: PageServerLoad = async ({ parent }) => {
     partyId: changeRoleSchema.shape.partyId.default(party.id)
   });
 
+  const removeInviteSchemaWithPartyId = deleteInviteSchema.extend({
+    partyId: deleteInviteSchema.shape.partyId.default(party.id)
+  });
+
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   const inviteMemberForm = await superValidate(zod(inviteMemberSchemaWithPartyId));
   const resendInviteForm = await superValidate(zod(resendInviteSchemaWithPartyId));
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
+  const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
 
   return {
     members,
     invitedEmails,
     changeMemberRoleForm,
     inviteMemberForm,
-    resendInviteForm
+    resendInviteForm,
+    removeInviteForm
   };
 };
 
@@ -156,6 +162,26 @@ export const actions: Actions = {
     } catch (error) {
       console.log('Error resending invite', error);
       return message(resendInviteForm, { type: 'error', text: 'Error resending invite' }, { status: 500 });
+    }
+  },
+  removeInvite: async (event) => {
+    const removeInviteForm = await superValidate(event.request, zod(resendInviteSchema));
+    if (!removeInviteForm.valid) {
+      return message(removeInviteForm, { type: 'error', text: 'Invalid email address' }, { status: 400 });
+    }
+
+    const { email, partyId } = removeInviteForm.data;
+
+    try {
+      await db
+        .delete(partyInviteTable)
+        .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+        .execute();
+
+      return message(removeInviteForm, { type: 'success', text: `${email} is no longer invited` });
+    } catch (error) {
+      console.log('Error removing invite', error);
+      return message(removeInviteForm, { type: 'error', text: 'Error removing invite' }, { status: 500 });
     }
   }
 };
