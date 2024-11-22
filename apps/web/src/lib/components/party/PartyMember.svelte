@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
-  import { FSControl, Text, Avatar, Select, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
+  import { FSControl, Hr, Text, Avatar, Select, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { Field } from 'formsnap';
   import { type SuperValidated } from 'sveltekit-superforms/client';
   import { type ChangeRoleFormType, changeRoleSchema } from '$lib/schemas';
@@ -95,6 +95,8 @@
         <Text size="0.875rem" color="var(--fgMuted)"
           >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
         >
+        <Spacer size={4} />
+        <Hr />
         <Spacer size={4} />
         <Button variant="danger">Remove {member.name || member.email}</Button>
         <Spacer size={2} />

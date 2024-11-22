@@ -11,7 +11,8 @@
     Title,
     Text,
     MessageError,
-    Spacer
+    Spacer,
+    Hr
   } from '@tableslayer/ui';
   import { PartyMember, ResendInvite } from '$lib/components';
   import { superForm } from 'sveltekit-superforms/client';
@@ -55,44 +56,42 @@
           {:else}
             <p>No members found.</p>
           {/each}
-          {#if isPartyAdmin}
-            <Spacer size={1} />
-            <form method="post" action="?/inviteMember" use:enhanceInviteMember>
-              <div class="partyMember__inviteForm">
-                <div>
-                  <Field form={inviteMemberForm} name="email">
-                    <FSControl label="Invite new member">
-                      {#snippet children({ attrs })}
-                        <Input
-                          {...attrs}
-                          type="email"
-                          placeholder="email address"
-                          bind:value={$inviteMemberData.email}
-                        />
-                      {/snippet}
-                    </FSControl>
-                    <FieldErrors />
-                  </Field>
-                </div>
-
-                <IconButton type="submit" class="partyMember__inviteFormBtn">
-                  <Icon Icon={IconMail} />
-                </IconButton>
-              </div>
-              {#if $inviteMemberMessage}
-                <MessageError message={$inviteMemberMessage} />
-              {/if}
-              <Field form={inviteMemberForm} name="email">
-                <FSControl>
-                  {#snippet children({ attrs })}
-                    <Input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
-                  {/snippet}
-                </FSControl>
-              </Field>
-            </form>
-          {/if}
         </div>
+        <Spacer size={4} />
 
+        <Hr />
+
+        {#if isPartyAdmin}
+          <Spacer size={4} />
+          <form method="post" action="?/inviteMember" use:enhanceInviteMember>
+            <div class="partyMember__inviteForm">
+              <div>
+                <Field form={inviteMemberForm} name="email">
+                  <FSControl label="Invite new member">
+                    {#snippet children({ attrs })}
+                      <Input {...attrs} type="email" placeholder="email address" bind:value={$inviteMemberData.email} />
+                    {/snippet}
+                  </FSControl>
+                  <FieldErrors />
+                </Field>
+              </div>
+
+              <IconButton type="submit" class="partyMember__inviteFormBtn">
+                <Icon Icon={IconMail} />
+              </IconButton>
+            </div>
+            {#if $inviteMemberMessage}
+              <MessageError message={$inviteMemberMessage} />
+            {/if}
+            <Field form={inviteMemberForm} name="email">
+              <FSControl>
+                {#snippet children({ attrs })}
+                  <Input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
+                {/snippet}
+              </FSControl>
+            </Field>
+          </form>
+        {/if}
         <Spacer size={4} />
         <Text weight={600}>Pending invites</Text>
         <Spacer size={2} />

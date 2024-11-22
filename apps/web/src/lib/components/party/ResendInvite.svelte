@@ -1,11 +1,12 @@
 <script lang="ts">
   import { superForm } from 'sveltekit-superforms';
   import { Field } from 'formsnap';
-  import { Input, Avatar, FieldErrors, FSControl, MessageError } from '@tableslayer/ui';
+  import { FSControl, Hr, Text, Avatar, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { resendInviteSchema } from '$lib/schemas';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { type SuperValidated } from 'sveltekit-superforms/client';
   import { type ResendInviteFormType } from '$lib/schemas';
+  import { IconChevronDown } from '@tabler/icons-svelte';
 
   let {
     email,
@@ -24,30 +25,73 @@
   $resendForm.partyId = partyId;
 </script>
 
-<div class="resendInvite">
-  <Avatar initials="TS" />
-  {email}
-  {#if isPartyAdmin}
-    <form method="post" action="?/resendInvite" use:enhance>
-      <Field {form} name="email">
-        <FSControl>
-          <Input type="hidden" name="email" bind:value={$resendForm.email} />
-          <Input type="hidden" name="partyId" bind:value={$resendForm.partyId} />
-          <button type="submit">Resend</button>
-        </FSControl>
-        <FieldErrors />
-      </Field>
-      {#if $message}
-        <MessageError message={$message} />
+{#snippet resendInvite()}
+  <div class="resendInvite">
+    <div class="resendInvite__avatar">
+      <Avatar initials="TS" />
+      {#if isPartyAdmin}
+        <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="resendInvite__chevron" />
       {/if}
-    </form>
-  {/if}
-</div>
+    </div>
+    <p>{email}</p>
+  </div>
+{/snippet}
+
+{#if isPartyAdmin}
+  <Popover positioning={{ placement: 'bottom-start' }}>
+    {#snippet trigger()}
+      {@render resendInvite()}
+    {/snippet}
+    {#snippet content()}
+      <div class="resendInvite__popover">
+        <form method="post" action="?/resendInvite" use:enhance>
+          <Button type="submit">Resend invite</Button>
+          <Spacer size={2} />
+          <Field {form} name="email">
+            <FSControl>
+              <input type="hidden" name="email" bind:value={$resendForm.email} />
+              <input type="hidden" name="partyId" bind:value={$resendForm.partyId} />
+            </FSControl>
+          </Field>
+          <Text size="0.875rem" color="var(--fgMuted)"
+            >The previous email will be invalidated and a new one will be sent.</Text
+          >
+          {#if $message}
+            <MessageError message={$message} />
+          {/if}
+        </form>
+        <Spacer size={4} />
+        <Hr />
+        <Spacer size={4} />
+        <Button variant="danger">Cancel invite</Button>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)">Any previous email invites sent will no longer work</Text>
+      </div>
+    {/snippet}
+  </Popover>
+{:else}
+  {@render resendInvite()}
+{/if}
 
 <style>
   .resendInvite {
     display: flex;
     align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+  .resendInvite:hover {
+    text-decoration: underline;
+  }
+  .resendInvite__avatar {
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
+  }
+  :global(.resendInvite__chevron) {
+    justify-self: end;
+  }
+  .resendInvite__popover {
+    width: 16rem;
   }
 </style>
