@@ -77,7 +77,7 @@
   --contrastLowest: #111;
   --contrastEmpty: #000;
   --fgPrimary: var(--primary-500);
-  --fgMuted: #555;
+  --fgMuted: #777;
   --fgDanger: var(--yellow-200);
   --fgSuccess: var(--green-200);
   --borderThin: solid var(--borderWidthThin) var(--contrastMedium);

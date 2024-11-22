@@ -49,16 +49,19 @@
     font-size: var(--font-size-1);
     height: var(--size-6);
     width: var(--size-6);
+    min-width: var(--size-6);
   }
   .iconBtn--md {
     font-size: var(--font-size-1);
     height: var(--size-8);
     width: var(--size-8);
+    min-width: var(--size-8);
   }
   .iconBtn--lg {
     font-size: var(--font-size-2);
     height: var(--size-9);
     width: var(--size-9);
+    min-width: var(--size-9);
   }
   .iconBtn--primary {
     border-color: var(--fg);

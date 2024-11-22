@@ -50,10 +50,12 @@
 
 {#snippet partyMember()}
   <div class="partyMember">
-    <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
-    {#if isPartyAdmin}
-      <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="partyMember__chevron" />
-    {/if}
+    <div class="partyMember__avatar">
+      <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
+      {#if isPartyAdmin}
+        <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="partyMember__chevron" />
+      {/if}
+    </div>
     <p>{member.name || member.email}</p>
     {#if member.role === 'admin'}
       <Icon Icon={IconCrown} size="1.5rem" color="var(--fgPrimary)" />
@@ -68,7 +70,6 @@
     {/snippet}
     {#snippet content()}
       <div class="partyMember__popover">
-        <Text size="sm" color="">Admins can manage upgrades. Editors can edit and create new sessions.</Text>
         <Spacer size={2} />
         <form method="POST" action="?/changeRole" use:enhance>
           <!-- Bind directly to the form field -->
@@ -80,6 +81,7 @@
                   options={roleOptions}
                   name="role"
                   defaultSelected={defaultRole}
+                  selectedPrefix="Role: "
                   onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
                 />
               {/snippet}
@@ -89,12 +91,16 @@
             <input type="hidden" name="partyId" value={$memberForm.partyId} />
           </Field>
         </form>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)"
+          >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
+        >
         <Spacer size={4} />
-        <Text size="sm"
+        <Button variant="danger">Remove {member.name || member.email}</Button>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)"
           >A removed member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
         >
-        <Spacer size={2} />
-        <Button variant="danger">Remove {member.name || member.email}</Button>
       </div>
     {/snippet}
   </Popover>
@@ -112,6 +118,14 @@
     align-items: center;
     gap: 1rem;
     width: 100%;
+  }
+  .partyMember:hover {
+    text-decoration: underline;
+  }
+  .partyMember__avatar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   :global(.partyMember__chevron) {
     justify-self: end;

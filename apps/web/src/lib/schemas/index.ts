@@ -56,6 +56,7 @@ export const resendInviteSchema = z.object({
 });
 
 export type ResendInviteSchema = typeof resendInviteSchema;
+export type ResendInviteFormType = z.infer<typeof resendInviteSchema>;
 
 export const inviteResponseSchema = z.object({
   code: z.string()
