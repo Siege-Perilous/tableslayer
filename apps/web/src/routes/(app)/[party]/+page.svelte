@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Button, Link, Panel, Title } from '@tableslayer/ui';
+  import { Button, Link, Panel, Title, Text, Spacer } from '@tableslayer/ui';
   import { PartyMember } from '$lib/components';
 
   let { data } = $props();
-  const { party, gameSessions, members } = $derived(data);
+  const { party, gameSessions, members, isPartyAdmin } = $derived(data);
 
   const partyId = data.party.id as string;
 </script>
@@ -22,15 +22,15 @@
       </div>
     </main>
     <aside>
-      <Link href={`${party.slug}/members`}>Members</Link>
-      <h2>Invite new member</h2>
-
-      <h2>Members of {party?.name}</h2>
-      {#each members as member}
-        <PartyMember {member} changeMemberRoleForm={data.changeMemberRoleForm} />
-      {:else}
-        <p>No members found.</p>
-      {/each}
+      <Title as="h2" size="sm">Members</Title>
+      <Spacer />
+      <div class="partyMembers">
+        {#each members as member}
+          <PartyMember {member} {isPartyAdmin} changeMemberRoleForm={data.changeMemberRoleForm} />
+        {:else}
+          <p>No members found.</p>
+        {/each}
+      </div>
     </aside>
   </div>
 </div>
@@ -53,5 +53,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--size-4);
+  }
+  .partyMembers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 </style>

@@ -1,6 +1,5 @@
 import { changeRoleSchema } from '$lib/schemas';
-import { changePartyRole, getEmailsInvitedToParty } from '$lib/server';
-import { setToastCookie } from '@tableslayer/ui';
+import { changePartyRole, getEmailsInvitedToParty, getPartyMembers } from '$lib/server';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
@@ -38,13 +37,18 @@ export const actions: Actions = {
     console.log('form data', changeRoleForm.data);
 
     try {
+      const members = await getPartyMembers(partyId);
+
+      const currentAdmins = members.filter((member) => member.role === 'admin');
+      const isTargetAdmin = currentAdmins.some((admin) => admin.id === userId);
+
+      if (isTargetAdmin && role !== 'admin' && currentAdmins.length === 1) {
+        return message(changeRoleForm, { type: 'error', text: 'Cannot remove the last admin' }, { status: 400 });
+      }
+
       changePartyRole(userId, partyId, role);
 
-      setToastCookie(event, {
-        title: `Role changed to ${role}`,
-        type: 'success'
-      });
-      return message(changeRoleForm, { type: 'success', text: 'Role changed' });
+      return message(changeRoleForm, { type: 'success', text: `Role changed to ${role}` });
     } catch (error) {
       console.log('Error changing role', error);
       return message(changeRoleForm, { type: 'error', text: 'Error changing role' }, { status: 500 });

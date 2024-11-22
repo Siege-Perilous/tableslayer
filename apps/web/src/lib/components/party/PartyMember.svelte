@@ -1,23 +1,26 @@
 <script lang="ts">
   import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
-  import { FSControl, Select } from '@tableslayer/ui';
+  import { FSControl, Text, Avatar, Select, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { Field } from 'formsnap';
-  import { type SuperForm } from 'sveltekit-superforms/client';
+  import { type SuperValidated } from 'sveltekit-superforms/client';
   import { type ChangeRoleFormType, changeRoleSchema } from '$lib/schemas';
   import { superForm } from 'sveltekit-superforms/client';
   import { zodClient } from 'sveltekit-superforms/adapters';
+  import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
 
   type PartyMember = SelectUser & {
     role: PartyRole;
     partyId: string;
+    avatarThumb: { url: string; resizedUrl: string };
   };
 
   type PartyMemberProps = {
     member: PartyMember;
-    changeMemberRoleForm: SuperForm<ChangeRoleFormType>;
+    changeMemberRoleForm: SuperValidated<ChangeRoleFormType>;
+    isPartyAdmin: boolean;
   };
 
-  let { member, changeMemberRoleForm }: PartyMemberProps = $props();
+  let { member, changeMemberRoleForm, isPartyAdmin }: PartyMemberProps = $props();
 
   const form = superForm(changeMemberRoleForm, {
     id: member.id,
@@ -27,33 +30,93 @@
 
   const { form: memberForm, enhance, message } = form;
 
-  console.log('memberForm', $memberForm);
-
   $memberForm.userId = member.id;
   $memberForm.role = member.role;
   $memberForm.partyId = member.partyId;
-  console.log('memberForm', $memberForm);
 
-  const roleOptions = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
-  const defaultRole = roleOptions.find((role) => role.value === $memberForm.role);
+  type RoleOption = { value: PartyRole; label: string };
+
+  const roleOptions: RoleOption[] = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
+  let defaultRole = $state(roleOptions.find((role) => role.value === $memberForm.role));
+
+  const handleSelectedRole = (selected: RoleOption) => {
+    $memberForm.role = selected.value;
+    defaultRole = selected;
+    // delay for the form to update
+    setTimeout(() => form.submit(), 200);
+    return selected;
+  };
 </script>
 
-<p>{member.email} - {member.role} - {member.partyId}</p>
+{#snippet partyMember()}
+  <div class="partyMember">
+    <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
+    {#if isPartyAdmin}
+      <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="partyMember__chevron" />
+    {/if}
+    <p>{member.name || member.email}</p>
+    {#if member.role === 'admin'}
+      <Icon Icon={IconCrown} size="1.5rem" color="var(--fgPrimary)" />
+    {/if}
+  </div>
+{/snippet}
 
-<form method="POST" action="?/changeRole" use:enhance>
-  <!-- Bind directly to the form field -->
-  <Field {form} name="role">
-    <FSControl>
-      {#snippet children({ attrs })}
-        <Select {...attrs} options={roleOptions} name="role" defaultSelected={defaultRole} />
-      {/snippet}
-    </FSControl>
-    <input type="hidden" name="userId" value={$memberForm.userId} />
-    <input type="hidden" name="partyId" value={$memberForm.partyId} />
-  </Field>
-  <button type="submit">Submit</button>
-</form>
+{#if isPartyAdmin}
+  <Popover positioning={{ placement: 'bottom-start' }}>
+    {#snippet trigger()}
+      {@render partyMember()}
+    {/snippet}
+    {#snippet content()}
+      <div class="partyMember__popover">
+        <Text size="sm" color="">Admins can manage upgrades. Editors can edit and create new sessions.</Text>
+        <Spacer size={2} />
+        <form method="POST" action="?/changeRole" use:enhance>
+          <!-- Bind directly to the form field -->
+          <Field {form} name="role">
+            <FSControl>
+              {#snippet children({ attrs })}
+                <Select
+                  {...attrs}
+                  options={roleOptions}
+                  name="role"
+                  defaultSelected={defaultRole}
+                  onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
+                />
+              {/snippet}
+            </FSControl>
+            <input type="hidden" name="role" value={$memberForm.role} />
+            <input type="hidden" name="userId" value={$memberForm.userId} />
+            <input type="hidden" name="partyId" value={$memberForm.partyId} />
+          </Field>
+        </form>
+        <Spacer size={4} />
+        <Text size="sm"
+          >A removed member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
+        >
+        <Spacer size={2} />
+        <Button variant="danger">Remove {member.name || member.email}</Button>
+      </div>
+    {/snippet}
+  </Popover>
+{:else}
+  {@render partyMember()}
+{/if}
 
 {#if $message}
-  <p>{$message.text}</p>
+  <MessageError message={$message} />
 {/if}
+
+<style>
+  .partyMember {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+  :global(.partyMember__chevron) {
+    justify-self: end;
+  }
+  .partyMember__popover {
+    width: 16rem;
+  }
+</style>
