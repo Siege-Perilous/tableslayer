@@ -33,6 +33,7 @@
   .avatar--sm {
     width: var(--size-6);
     height: var(--size-6);
+    font-size: 0.875rem;
   }
   .avatar--md {
     width: var(--size-8);

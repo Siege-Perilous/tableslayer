@@ -107,7 +107,6 @@
               <ResendInvite
                 removeInviteForm={data.removeInviteForm}
                 resendInviteForm={data.resendInviteForm}
-                {user}
                 {email}
                 {partyId}
                 {isPartyAdmin}
