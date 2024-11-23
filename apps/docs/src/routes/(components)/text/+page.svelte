@@ -4,9 +4,6 @@
 </script>
 
 <Example title="Text" propsName="Text" layout="column">
-  <Text size="xs">xs text</Text>
-  <Text size="sm">sm text</Text>
-  <Text size="md">md text</Text>
-  <Text size="lg">lg text</Text>
-  <Text size="xl">xl text</Text>
+  <Text size="0.875rem">Smaller text</Text>
+  <Text weight={600} color="var(--fgDanger)">bold danger text</Text>
 </Example>

@@ -13,7 +13,7 @@
   .title {
     font-family: var(--font-serif);
     font-variation-settings:
-      'wght' 700,
+      'wght' 600,
       'TAIL' 100,
       'ROUN' 50;
   }

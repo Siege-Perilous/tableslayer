@@ -4,6 +4,8 @@ import type { HTMLAttributes } from 'svelte/elements';
 export type TextProps = {
   children: Snippet;
   as?: 'p' | 'span';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: string;
+  weight?: number;
+  color?: string;
   style?: string;
 } & HTMLAttributes<HTMLHeadingElement>;

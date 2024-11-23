@@ -19,7 +19,7 @@
   });
 </script>
 
-{#if message}
+{#if message.type === 'error'}
   <div class="messageError" data-testid="messageError">
     <Icon Icon={IconX} class="messageErrorIcon" />
     <p>{message.text}</p>

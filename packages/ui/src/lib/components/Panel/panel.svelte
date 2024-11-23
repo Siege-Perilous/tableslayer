@@ -13,7 +13,6 @@
   .panel {
     background: var(--contrastLowest);
     border: var(--borderThin);
-    border-color: var(--contrastEmpty);
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-1);
   }
