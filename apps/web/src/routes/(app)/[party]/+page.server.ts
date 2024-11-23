@@ -77,7 +77,6 @@ export const actions: Actions = {
     }
 
     const { userId, partyId, role } = changeRoleForm.data;
-    console.log('form data', changeRoleForm.data);
 
     try {
       const members = await getPartyMembers(partyId);
