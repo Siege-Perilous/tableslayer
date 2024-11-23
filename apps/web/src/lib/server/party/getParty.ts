@@ -7,6 +7,7 @@ import {
   type PartyRole,
   type SelectUser
 } from '$lib/db/app/schema';
+import { getFile, transformImage } from '$lib/server';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string) => {
@@ -52,7 +53,15 @@ export const getPartyMembers = async (
     .orderBy(partyMemberTable.role) // Works only because the roles naturally are alpha
     .all();
 
-  return memberRelations;
+  const memberWithThumbs = [];
+  for (const member of memberRelations) {
+    const file = await getFile(member.avatarFileId);
+    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const memberWithThumb = { ...member, avatarThumb: thumb };
+    memberWithThumbs.push(memberWithThumb);
+  }
+
+  return memberWithThumbs;
 };
 
 export const isUserByEmailInPartyAlready = async (email: string, partyId: string) => {
@@ -113,4 +122,18 @@ export const changePartyRole = async (userId: string, partyId: string, role: Par
     .set({ role: role })
     .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
     .run();
+};
+
+export const isUserInParty = async (userId: string, partyId: string) => {
+  try {
+    const partyMember = await db
+      .select()
+      .from(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .get();
+    return !!partyMember;
+  } catch (error) {
+    console.error('Error checking if user is in party', error);
+    return false;
+  }
 };

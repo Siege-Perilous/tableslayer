@@ -11,3 +11,13 @@ export const getPartyGameSessionFromSlug = async (slug: string) => {
   const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.slug, slug)).get();
   return gameSession;
 };
+
+export const deletePartyGameSession = async (id: string) => {
+  try {
+    await db.delete(gameSessionTable).where(eq(gameSessionTable.id, id)).run();
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
