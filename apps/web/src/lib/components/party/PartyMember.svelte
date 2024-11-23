@@ -59,7 +59,6 @@
     return selected;
   };
 
-  console.log('isSelf', member.id, user.id);
   const isSelf = member.id === user.id;
 </script>
 
