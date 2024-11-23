@@ -3,10 +3,11 @@
   import classNames from 'classnames';
   let { children, href, color = 'primary', ...restProps }: LinkProps = $props();
 
-  const linkClasses = classNames('link', `link--${color}`);
+  const linkClasses = classNames('link', `link--${color}`, ...(restProps.class ?? ''));
+  console.log('restProps', restProps);
 </script>
 
-<a {href} class={linkClasses} {...restProps}>{@render children()}</a>
+<a {href} {...restProps} class={linkClasses}>{@render children()}</a>
 
 <style>
   :global(.light) {

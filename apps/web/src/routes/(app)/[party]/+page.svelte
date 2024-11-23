@@ -12,6 +12,7 @@
     Text,
     MessageError,
     Spacer,
+    CardFan,
     Hr
   } from '@tableslayer/ui';
   import { PartyMember, ResendInvite } from '$lib/components';
@@ -30,6 +31,14 @@
   const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
 
   const partyId = data.party.id as string;
+
+  const images = [
+    'https://files.tableslayer.com/maps/01.jpeg',
+    'https://files.tableslayer.com/maps/02.jpeg',
+    'https://files.tableslayer.com/maps/03.jpeg',
+    'https://files.tableslayer.com/maps/04.jpeg',
+    'https://files.tableslayer.com/maps/12.jpeg'
+  ];
 </script>
 
 <div class="container">
@@ -37,19 +46,26 @@
   <div class="containerLayout">
     <main>
       <Title as="h2" size="sm">Sessions</Title>
+      <Spacer />
       <div class="sessionList">
+        <Panel class="sessionPanel">Create new session</Panel>
         {#each gameSessions as session}
           <Panel class="sessionPanel">
-            <Link href={`${party.slug}/${session.slug}`}>{session.name}</Link>
-            <Button>Delete</Button>
+            <CardFan {images} class="cardFan--sessionList" />
+            <div>
+              <Title as="h3" size="sm">
+                <Link href={`${party.slug}/${session.slug}`}>{session.name}</Link>
+              </Title>
+              <Text>Last edited: {new Date().toLocaleDateString()}</Text>
+            </div>
           </Panel>
         {/each}
       </div>
     </main>
     <aside>
+      <Title as="h2" size="sm">Party members</Title>
+      <Spacer />
       <Panel class="partyMembers__aside">
-        <Title as="h2" size="sm">Party members</Title>
-        <Spacer />
         <div class="partyMembers">
           {#each members as member}
             <PartyMember
@@ -125,12 +141,19 @@
   :global {
     .sessionPanel {
       padding: var(--size-4);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 2rem;
     }
     .partyMember__inviteFormBtn {
       margin-top: 1.5rem;
     }
     .partyMembers__aside {
       padding: 1rem;
+    }
+    .cardFan--sessionList {
+      margin: 0 auto;
     }
   }
   .container {
@@ -145,7 +168,7 @@
   }
   .sessionList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--size-4);
   }
   .partyMembers {
