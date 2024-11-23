@@ -33,7 +33,7 @@
 </script>
 
 {#snippet resendInvite()}
-  <div class="resendInvite">
+  <div class="resendInvite {isPartyAdmin && 'resendInvite--canEdit'}">
     <div class="resendInvite__avatar">
       <Avatar initials="TS" />
       {#if isPartyAdmin}
@@ -98,7 +98,7 @@
     gap: 1rem;
     width: 100%;
   }
-  .resendInvite:hover {
+  .resendInvite--canEdit:hover {
     text-decoration: underline;
   }
   .resendInvite__avatar {

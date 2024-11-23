@@ -1,11 +1,18 @@
 import { db } from '$lib/db/app';
-import { partyInviteTable } from '$lib/db/app/schema';
-import { changeRoleSchema, deleteInviteSchema, inviteMemberSchema, resendInviteSchema } from '$lib/schemas';
+import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
+import {
+  changeRoleSchema,
+  deleteInviteSchema,
+  inviteMemberSchema,
+  removePartyMemberSchema,
+  resendInviteSchema
+} from '$lib/schemas';
 import {
   changePartyRole,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
+  getUser,
   isEmailAlreadyInvitedToParty,
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
@@ -39,12 +46,17 @@ export const load: PageServerLoad = async ({ parent }) => {
     partyId: deleteInviteSchema.shape.partyId.default(party.id)
   });
 
+  const removeMemberSchemaWithPartyId = removePartyMemberSchema.extend({
+    partyId: removePartyMemberSchema.shape.partyId.default(party.id)
+  });
+
   const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
 
   const inviteMemberForm = await superValidate(zod(inviteMemberSchemaWithPartyId));
   const resendInviteForm = await superValidate(zod(resendInviteSchemaWithPartyId));
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
   const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
+  const removePartyMemberForm = await superValidate(zod(removeMemberSchemaWithPartyId));
 
   return {
     members,
@@ -52,7 +64,8 @@ export const load: PageServerLoad = async ({ parent }) => {
     changeMemberRoleForm,
     inviteMemberForm,
     resendInviteForm,
-    removeInviteForm
+    removeInviteForm,
+    removePartyMemberForm
   };
 };
 
@@ -182,6 +195,35 @@ export const actions: Actions = {
     } catch (error) {
       console.log('Error removing invite', error);
       return message(removeInviteForm, { type: 'error', text: 'Error removing invite' }, { status: 500 });
+    }
+  },
+  removePartyMember: async (event) => {
+    const removePartyMemberForm = await superValidate(event.request, zod(removePartyMemberSchema));
+    if (!removePartyMemberForm.valid) {
+      return message(
+        removePartyMemberForm,
+        { type: 'error', text: 'Unable to remove this party member' },
+        { status: 400 }
+      );
+    }
+
+    const { userId, partyId } = removePartyMemberForm.data;
+
+    const user = await getUser(userId);
+
+    try {
+      await db
+        .delete(partyMemberTable)
+        .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+        .execute();
+
+      return message(removePartyMemberForm, {
+        type: 'success',
+        text: `${user.name || user.email} removed from the party`
+      });
+    } catch (error) {
+      console.log('Error removing member', error);
+      return message(removePartyMemberForm, { type: 'error', text: 'Unable to remove party member' }, { status: 500 });
     }
   }
 };

@@ -3,7 +3,7 @@
   import { FSControl, Hr, Text, Avatar, Select, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { Field } from 'formsnap';
   import { type SuperValidated } from 'sveltekit-superforms/client';
-  import { type ChangeRoleFormType, changeRoleSchema } from '$lib/schemas';
+  import { type ChangeRoleFormType, type RemovePartyMemberFormType, changeRoleSchema } from '$lib/schemas';
   import { superForm } from 'sveltekit-superforms/client';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
@@ -17,22 +17,33 @@
   type PartyMemberProps = {
     member: PartyMember;
     changeMemberRoleForm: SuperValidated<ChangeRoleFormType>;
+    removePartyMemberForm: SuperValidated<RemovePartyMemberFormType>;
     isPartyAdmin: boolean;
   };
 
-  let { member, changeMemberRoleForm, isPartyAdmin }: PartyMemberProps = $props();
+  let { member, changeMemberRoleForm, removePartyMemberForm, isPartyAdmin }: PartyMemberProps = $props();
 
-  const form = superForm(changeMemberRoleForm, {
+  const changeMemberRoleSuperForm = superForm(changeMemberRoleForm, {
     id: member.id,
     validators: zodClient(changeRoleSchema),
     resetForm: true
   });
 
-  const { form: memberForm, enhance, message } = form;
+  const { form: memberForm, enhance: memberEnhance, message: memberMessage } = changeMemberRoleSuperForm;
 
   $memberForm.userId = member.id;
   $memberForm.role = member.role;
   $memberForm.partyId = member.partyId;
+
+  const removeMemberSuperForm = superForm(removePartyMemberForm, {
+    id: member.id,
+    resetForm: true
+  });
+
+  const { form: removeMemberForm, enhance: removeMemberEnhance, message: removeMemberMessage } = removeMemberSuperForm;
+
+  $removeMemberForm.userId = member.id;
+  $removeMemberForm.partyId = member.partyId;
 
   type RoleOption = { value: PartyRole; label: string };
 
@@ -43,13 +54,13 @@
     $memberForm.role = selected.value;
     defaultRole = selected;
     // delay for the form to update
-    setTimeout(() => form.submit(), 200);
+    setTimeout(() => changeMemberRoleSuperForm.submit(), 200);
     return selected;
   };
 </script>
 
 {#snippet partyMember()}
-  <div class="partyMember">
+  <div class="partyMember {isPartyAdmin && 'partyMember--canEdit'}">
     <div class="partyMember__avatar">
       <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
       {#if isPartyAdmin}
@@ -71,9 +82,9 @@
     {#snippet content()}
       <div class="partyMember__popover">
         <Spacer size={2} />
-        <form method="POST" action="?/changeRole" use:enhance>
+        <form method="POST" action="?/changeRole" use:memberEnhance>
           <!-- Bind directly to the form field -->
-          <Field {form} name="role">
+          <Field form={changeMemberRoleSuperForm} name="role">
             <FSControl>
               {#snippet children({ attrs })}
                 <Select
@@ -98,7 +109,15 @@
         <Spacer size={4} />
         <Hr />
         <Spacer size={4} />
-        <Button variant="danger">Remove {member.name || member.email}</Button>
+        <form method="POST" action="?/removePartyMember" use:removeMemberEnhance>
+          <Field form={removeMemberSuperForm} name="userId">
+            <FSControl>
+              <input type="hidden" name="userId" value={$removeMemberForm.userId} />
+              <input type="hidden" name="partyId" value={$removeMemberForm.partyId} />
+            </FSControl>
+          </Field>
+          <Button variant="danger" type="submit">Remove party member</Button>
+        </form>
         <Spacer size={2} />
         <Text size="0.875rem" color="var(--fgMuted)"
           >A removed member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
@@ -110,8 +129,11 @@
   {@render partyMember()}
 {/if}
 
-{#if $message}
-  <MessageError message={$message} />
+{#if $memberMessage}
+  <MessageError message={$memberMessage} />
+{/if}
+{#if $removeMemberMessage}
+  <MessageError message={$removeMemberMessage} />
 {/if}
 
 <style>
@@ -121,7 +143,7 @@
     gap: 1rem;
     width: 100%;
   }
-  .partyMember:hover {
+  .partyMember--canEdit:hover {
     text-decoration: underline;
   }
   .partyMember__avatar {

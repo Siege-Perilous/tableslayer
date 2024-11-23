@@ -78,3 +78,11 @@ export const changeRoleSchema = z.object({
 });
 export type ChangeRoleSchema = typeof changeRoleSchema;
 export type ChangeRoleFormType = z.infer<typeof changeRoleSchema>;
+
+export const removePartyMemberSchema = z.object({
+  userId: z.string(),
+  partyId: z.string()
+});
+
+export type RemovePartyMemberSchema = typeof removePartyMemberSchema;
+export type RemovePartyMemberFormType = z.infer<typeof removePartyMemberSchema>;

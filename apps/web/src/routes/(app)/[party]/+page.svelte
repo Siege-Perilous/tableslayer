@@ -52,7 +52,12 @@
         <Spacer />
         <div class="partyMembers">
           {#each members as member}
-            <PartyMember {member} {isPartyAdmin} changeMemberRoleForm={data.changeMemberRoleForm} />
+            <PartyMember
+              {member}
+              {isPartyAdmin}
+              removePartyMemberForm={data.removePartyMemberForm}
+              changeMemberRoleForm={data.changeMemberRoleForm}
+            />
           {:else}
             <p>No members found.</p>
           {/each}
