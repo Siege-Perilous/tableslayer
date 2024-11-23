@@ -123,3 +123,17 @@ export const changePartyRole = async (userId: string, partyId: string, role: Par
     .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
     .run();
 };
+
+export const isUserInParty = async (userId: string, partyId: string) => {
+  try {
+    const partyMember = await db
+      .select()
+      .from(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .get();
+    return !!partyMember;
+  } catch (error) {
+    console.error('Error checking if user is in party', error);
+    return false;
+  }
+};

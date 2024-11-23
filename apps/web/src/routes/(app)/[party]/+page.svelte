@@ -22,7 +22,7 @@
   import { IconMail } from '@tabler/icons-svelte';
 
   let { data } = $props();
-  const { party, gameSessions, members, isPartyAdmin, invitedEmails } = $derived(data);
+  const { party, gameSessions, members, isPartyAdmin, invitedEmails, user } = $derived(data);
   const inviteMemberForm = superForm(data.inviteMemberForm, {
     validators: zodClient(inviteMemberSchema)
   });
@@ -53,6 +53,7 @@
         <div class="partyMembers">
           {#each members as member}
             <PartyMember
+              {user}
               {member}
               {isPartyAdmin}
               removePartyMemberForm={data.removePartyMemberForm}
@@ -105,6 +106,7 @@
             <ResendInvite
               removeInviteForm={data.removeInviteForm}
               resendInviteForm={data.resendInviteForm}
+              {user}
               {email}
               {partyId}
               {isPartyAdmin}

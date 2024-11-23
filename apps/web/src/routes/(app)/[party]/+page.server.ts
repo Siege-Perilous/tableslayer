@@ -209,9 +209,8 @@ export const actions: Actions = {
 
     const { userId, partyId } = removePartyMemberForm.data;
 
-    const user = await getUser(userId);
-
     try {
+      const user = await getUser(userId);
       await db
         .delete(partyMemberTable)
         .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))

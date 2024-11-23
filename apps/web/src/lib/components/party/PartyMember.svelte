@@ -19,9 +19,10 @@
     changeMemberRoleForm: SuperValidated<ChangeRoleFormType>;
     removePartyMemberForm: SuperValidated<RemovePartyMemberFormType>;
     isPartyAdmin: boolean;
+    user: SelectUser;
   };
 
-  let { member, changeMemberRoleForm, removePartyMemberForm, isPartyAdmin }: PartyMemberProps = $props();
+  let { member, user, changeMemberRoleForm, removePartyMemberForm, isPartyAdmin }: PartyMemberProps = $props();
 
   const changeMemberRoleSuperForm = superForm(changeMemberRoleForm, {
     id: member.id,
@@ -57,10 +58,12 @@
     setTimeout(() => changeMemberRoleSuperForm.submit(), 200);
     return selected;
   };
+
+  const isSelf = member.id === user.id;
 </script>
 
 {#snippet partyMember()}
-  <div class="partyMember {isPartyAdmin && 'partyMember--canEdit'}">
+  <div class="partyMember {isPartyAdmin || (isSelf && 'partyMember--canEdit')}">
     <div class="partyMember__avatar">
       <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
       {#if isPartyAdmin}
@@ -74,41 +77,42 @@
   </div>
 {/snippet}
 
-{#if isPartyAdmin}
+{#if isPartyAdmin || isSelf}
   <Popover positioning={{ placement: 'bottom-start' }}>
     {#snippet trigger()}
       {@render partyMember()}
     {/snippet}
     {#snippet content()}
       <div class="partyMember__popover">
-        <Spacer size={2} />
-        <form method="POST" action="?/changeRole" use:memberEnhance>
-          <!-- Bind directly to the form field -->
-          <Field form={changeMemberRoleSuperForm} name="role">
-            <FSControl>
-              {#snippet children({ attrs })}
-                <Select
-                  {...attrs}
-                  options={roleOptions}
-                  name="role"
-                  defaultSelected={defaultRole}
-                  selectedPrefix="Role: "
-                  onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
-                />
-              {/snippet}
-            </FSControl>
-            <input type="hidden" name="role" value={$memberForm.role} />
-            <input type="hidden" name="userId" value={$memberForm.userId} />
-            <input type="hidden" name="partyId" value={$memberForm.partyId} />
-          </Field>
-        </form>
-        <Spacer size={2} />
-        <Text size="0.875rem" color="var(--fgMuted)"
-          >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
-        >
-        <Spacer size={4} />
-        <Hr />
-        <Spacer size={4} />
+        {#if isPartyAdmin}
+          <form method="POST" action="?/changeRole" use:memberEnhance>
+            <!-- Bind directly to the form field -->
+            <Field form={changeMemberRoleSuperForm} name="role">
+              <FSControl>
+                {#snippet children({ attrs })}
+                  <Select
+                    {...attrs}
+                    options={roleOptions}
+                    name="role"
+                    defaultSelected={defaultRole}
+                    selectedPrefix="Role: "
+                    onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
+                  />
+                {/snippet}
+              </FSControl>
+              <input type="hidden" name="role" value={$memberForm.role} />
+              <input type="hidden" name="userId" value={$memberForm.userId} />
+              <input type="hidden" name="partyId" value={$memberForm.partyId} />
+            </Field>
+          </form>
+          <Spacer size={2} />
+          <Text size="0.875rem" color="var(--fgMuted)"
+            >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
+          >
+          <Spacer size={4} />
+          <Hr />
+          <Spacer size={4} />
+        {/if}
         <form method="POST" action="?/removePartyMember" use:removeMemberEnhance>
           <Field form={removeMemberSuperForm} name="userId">
             <FSControl>
@@ -116,11 +120,11 @@
               <input type="hidden" name="partyId" value={$removeMemberForm.partyId} />
             </FSControl>
           </Field>
-          <Button variant="danger" type="submit">Remove party member</Button>
+          <Button variant="danger" type="submit">{isSelf ? 'Leave party' : 'Remove party member'}</Button>
         </form>
         <Spacer size={2} />
         <Text size="0.875rem" color="var(--fgMuted)"
-          >A removed member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
+          >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
         >
       </div>
     {/snippet}
