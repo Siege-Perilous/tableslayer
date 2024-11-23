@@ -98,23 +98,25 @@
             </Field>
           </form>
         {/if}
-        <Spacer size={4} />
-        <Text weight={600}>Pending invites</Text>
-        <Spacer size={2} />
-        <div class="partyMembers">
-          {#each invitedEmails as email (email)}
-            <ResendInvite
-              removeInviteForm={data.removeInviteForm}
-              resendInviteForm={data.resendInviteForm}
-              {user}
-              {email}
-              {partyId}
-              {isPartyAdmin}
-            />
-          {:else}
-            <Text>No pending invites</Text>
-          {/each}
-        </div>
+        {#if invitedEmails.length > 0}
+          <Spacer size={4} />
+          <Text weight={600}>Pending invites</Text>
+          <Spacer size={2} />
+          <div class="partyMembers">
+            {#each invitedEmails as email (email)}
+              <ResendInvite
+                removeInviteForm={data.removeInviteForm}
+                resendInviteForm={data.resendInviteForm}
+                {user}
+                {email}
+                {partyId}
+                {isPartyAdmin}
+              />
+            {:else}
+              <Text>No pending invites</Text>
+            {/each}
+          </div>
+        {/if}
       </Panel>
     </aside>
   </div>

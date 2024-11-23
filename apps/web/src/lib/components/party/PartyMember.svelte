@@ -59,14 +59,15 @@
     return selected;
   };
 
+  console.log('isSelf', member.id, user.id);
   const isSelf = member.id === user.id;
 </script>
 
 {#snippet partyMember()}
-  <div class="partyMember {isPartyAdmin || (isSelf && 'partyMember--canEdit')}">
+  <div class="partyMember {(isPartyAdmin || isSelf) && 'partyMember--canEdit'}">
     <div class="partyMember__avatar">
       <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
-      {#if isPartyAdmin}
+      {#if isPartyAdmin || isSelf}
         <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="partyMember__chevron" />
       {/if}
     </div>
