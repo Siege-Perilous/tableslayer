@@ -34,9 +34,6 @@
     /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
     /*  -1px 0 0 rgba(255, 255, 255, 1);  */
   }
-  :global(.btn) {
-    width: 100px;
-  }
   .container {
     display: flex;
     flex-direction: column;

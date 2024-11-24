@@ -18,6 +18,8 @@ import {
   sendPartyInviteEmail
 } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
+import { isRedirect, redirect } from '@sveltejs/kit';
+import { setToastCookie } from '@tableslayer/ui';
 import { and, eq } from 'drizzle-orm';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -215,13 +217,28 @@ export const actions: Actions = {
         .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
         .execute();
 
+      if (event.locals.user.id === userId) {
+        setToastCookie(event, {
+          title: `${user.name || user.email} removed from the party`,
+          type: 'success'
+        });
+        return redirect(303, `/profile`);
+      }
       return message(removePartyMemberForm, {
         type: 'success',
         text: `${user.name || user.email} removed from the party`
       });
     } catch (error) {
-      console.log('Error removing member', error);
-      return message(removePartyMemberForm, { type: 'error', text: 'Unable to remove party member' }, { status: 500 });
+      if (isRedirect(error)) {
+        throw error;
+      } else {
+        console.log('Error removing member', error);
+        return message(
+          removePartyMemberForm,
+          { type: 'error', text: 'Unable to remove party member' },
+          { status: 500 }
+        );
+      }
     }
   }
 };

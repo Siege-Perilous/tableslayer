@@ -1,5 +1,6 @@
 export * from './Avatar';
 export * from './Button';
+export * from './CardFan';
 export * from './CodeBlock';
 export * from './ColorMode';
 export * from './ColorPicker';
