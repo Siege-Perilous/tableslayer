@@ -65,7 +65,10 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
 });
 
 export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
-  id: text('id').primaryKey().notNull(),
+  id: text('id')
+    .primaryKey()
+    .notNull()
+    .$default(() => uuidv4()),
   userId: text('user_id')
     .notNull()
     .unique()
