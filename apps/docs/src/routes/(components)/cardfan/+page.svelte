@@ -10,6 +10,6 @@
   ];
 </script>
 
-<Example title="Avatar" propsName="Avatar">
+<Example title="CardFan" propsName="CardFan">
   <CardFan {images} />
 </Example>
