@@ -42,6 +42,11 @@
                 <Icon Icon={IconSelector} />
               </div>
             {/snippet}
+            {#snippet footer()}
+              <div class="partyDownDropdown__footer">
+                <Link href="/create-party">Create a new party</Link>
+              </div>
+            {/snippet}
           </DropdownRadioMenu>
         </div>
       {/if}
@@ -110,6 +115,9 @@
   .partyDropdown__icon:hover {
     background: var(--contrastLow);
     border-radius: var(--radius-2);
+  }
+  .partyDownDropdown__footer {
+    padding-left: 2.75rem;
   }
   .logo {
     background: var(--fgPrimary);
