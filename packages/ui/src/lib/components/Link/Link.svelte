@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { LinkProps } from './types';
   import classNames from 'classnames';
-  let { children, href, color = 'primary', ...restProps }: LinkProps = $props();
+  let { children, as = 'a', color = 'primary', ...restProps }: LinkProps = $props();
 
   const linkClasses = classNames('link', `link--${color}`, ...(restProps.class ?? ''));
-  console.log('restProps', restProps);
 </script>
 
-<a {href} {...restProps} class={linkClasses}>{@render children()}</a>
+<svelte:element this={as} {...restProps} class={linkClasses}>
+  {@render children()}
+</svelte:element>
 
 <style>
   :global(.light) {

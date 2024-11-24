@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { LinkBoxProps } from './types';
-  let { as, children }: LinkBoxProps = $props();
+  let { as = 'div', children }: LinkBoxProps = $props();
 </script>
 
 <svelte:element this={as} class="linkBox">

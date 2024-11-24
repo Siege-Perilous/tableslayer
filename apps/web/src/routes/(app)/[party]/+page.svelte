@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-    Button,
     Icon,
     IconButton,
     FSControl,
@@ -13,6 +12,8 @@
     MessageError,
     Spacer,
     CardFan,
+    LinkBox,
+    LinkOverlay,
     Hr
   } from '@tableslayer/ui';
   import { PartyMember, ResendInvite } from '$lib/components';
@@ -33,11 +34,11 @@
   const partyId = data.party.id as string;
 
   const images = [
-    'https://files.tableslayer.com/maps/01.jpeg',
-    'https://files.tableslayer.com/maps/02.jpeg',
-    'https://files.tableslayer.com/maps/03.jpeg',
-    'https://files.tableslayer.com/maps/04.jpeg',
-    'https://files.tableslayer.com/maps/12.jpeg'
+    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/01.jpeg',
+    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/02.jpeg',
+    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/03.jpeg',
+    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/04.jpeg',
+    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/12.jpeg'
   ];
 </script>
 
@@ -48,17 +49,32 @@
       <Title as="h2" size="sm">Sessions</Title>
       <Spacer />
       <div class="sessionList">
-        <Panel class="sessionPanel">Create new session</Panel>
-        {#each gameSessions as session}
-          <Panel class="sessionPanel">
-            <CardFan {images} class="cardFan--sessionList" />
-            <div>
-              <Title as="h3" size="sm">
-                <Link href={`${party.slug}/${session.slug}`}>{session.name}</Link>
-              </Title>
-              <Text>Last edited: {new Date().toLocaleDateString()}</Text>
-            </div>
+        <LinkBox>
+          <Panel class="sessionPanel sessionPanel--create">
+            <Title as="p" size="sm">Create new session</Title>
           </Panel>
+        </LinkBox>
+        {#each gameSessions as session}
+          <LinkBox>
+            <Panel class="sessionPanel">
+              <div
+                class="cardFan__image"
+                style="
+                background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url('https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,w=400/maps/01.jpeg');"
+              ></div>
+              <CardFan {images} class="cardFan--sessionList" />
+              <div>
+                <Title as="h3" size="sm">
+                  <LinkOverlay href={`${party.slug}/${session.slug}`}>
+                    <Link as="span">
+                      {session.name}
+                    </Link>
+                  </LinkOverlay>
+                </Title>
+                <Text>Last edited: {new Date().toLocaleDateString()}</Text>
+              </div>
+            </Panel>
+          </LinkBox>
         {/each}
       </div>
     </main>
@@ -79,11 +95,9 @@
             <p>No members found.</p>
           {/each}
         </div>
-        <Spacer size={4} />
-
-        <Hr />
-
         {#if isPartyAdmin}
+          <Spacer size={4} />
+          <Hr />
           <Spacer size={4} />
           <form method="post" action="?/inviteMember" use:enhanceInviteMember>
             <div class="partyMember__inviteForm">
@@ -139,12 +153,20 @@
 
 <style>
   :global {
-    .sessionPanel {
+    .panel.sessionPanel {
       padding: var(--size-4);
       display: flex;
       flex-direction: column;
       width: 100%;
       gap: 2rem;
+      height: 100%;
+    }
+    .panel.sessionPanel:hover {
+      border-color: var(--fgPrimary);
+    }
+    .panel.sessionPanel--create {
+      align-items: center;
+      justify-content: center;
     }
     .partyMember__inviteFormBtn {
       margin-top: 1.5rem;
@@ -155,6 +177,19 @@
     .cardFan--sessionList {
       margin: 0 auto;
     }
+  }
+  .cardFan__image {
+    background-size: cover;
+    background-position: center;
+    filter: grayscale(0.5);
+    opacity: 0.2;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    width: calc(100% - 32px);
+    border-radius: 4px;
+    height: calc(100% - 32px);
   }
   .container {
     max-width: var(--contain-desktop);

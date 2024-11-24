@@ -3,7 +3,7 @@
   import { Example } from '$lib/components';
 </script>
 
-<Example title="Avatar" propsName="Avatar">
+<Example title="LinkOverlay" propsName="LinkOverlay">
   <LinkBox as="div">
     <Panel class="panelLinkExample">
       <Title size="xs">
@@ -12,7 +12,7 @@
       <Spacer size={2} />
       <Text
         >The entire card is link to the above title href, but the link below can still be selected. Both can be tabbed
-        too.</Text
+        to.</Text
       >
       <Spacer />
       <Link href="#">Non overlay link</Link>
