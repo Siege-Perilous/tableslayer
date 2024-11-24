@@ -4,16 +4,25 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
   import { createPartySchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Spacer, Panel } from '@tableslayer/ui';
+  import {
+    Input,
+    FileInput,
+    MessageError,
+    Button,
+    FSControl,
+    FieldErrors,
+    Title,
+    Spacer,
+    Panel
+  } from '@tableslayer/ui';
 
   let { data } = $props();
   const form = superForm(data.createPartyForm, {
     validators: zodClient(createPartySchema),
-    resetForm: true
+    resetForm: false
   });
   const { form: formData, enhance, message } = form;
-  const file = fileProxy(formData, 'file');
-  $inspect(file);
+  let file = $state(fileProxy(formData, 'file'));
 </script>
 
 <Panel class="createPartyPanel">
@@ -32,7 +41,7 @@
     <Field {form} name="file">
       <FSControl label="Party avatar">
         {#snippet children({ attrs })}
-          <input {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
         {/snippet}
       </FSControl>
       <FieldErrors />
