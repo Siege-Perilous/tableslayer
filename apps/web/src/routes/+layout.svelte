@@ -19,7 +19,7 @@
   <div class="children">
     {@render children()}
   </div>
-  <!--  <div class="grid"></div>  -->
+  <div class="grid"></div>
 </QueryClientProvider>
 
 <Toast />
@@ -28,18 +28,18 @@
   :global(body) {
     background: var(--bg);
   }
-  /*  .grid {  */
-  /*  pointer-events: none;  */
-  /*  position: fixed;  */
-  /*  inset: 0;  */
-  /*  height: 100%;  */
-  /*  width: 100%;  */
-  /*  background-image: linear-gradient(to right, #80808012 1px, transparent 1px),  */
-  /*  linear-gradient(to bottom, #80808012 1px, transparent 1px);  */
-  /*  background-size: 28px 28px;  */
-  /*  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, transparent 100%);  */
-  /*  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, transparent 100%);  */
-  /*  }  */
+  .grid {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    background-image: linear-gradient(to right, #80808012 1px, transparent 1px),
+      linear-gradient(to bottom, #80808012 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, transparent 100%);
+  }
   .children {
     position: relative;
     z-index: 1;

@@ -164,6 +164,9 @@
     .panel.sessionPanel:hover {
       border-color: var(--fgPrimary);
     }
+    .panel.sessionPanel:hover .cardFan__image {
+      background-size: 105%;
+    }
     .panel.sessionPanel--create {
       align-items: center;
       justify-content: center;
@@ -179,17 +182,18 @@
     }
   }
   .cardFan__image {
-    background-size: cover;
+    background-size: 100%;
     background-position: center;
     filter: grayscale(0.5);
-    opacity: 0.2;
+    opacity: 0.3;
     position: absolute;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    width: calc(100% - 32px);
-    border-radius: 4px;
-    height: calc(100% - 32px);
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: calc(100% - 1rem);
+    border-radius: 0.25rem;
+    height: calc(100% - 1rem);
+    transition: background-size 0.2s var(--ease-in-2);
   }
   .container {
     max-width: var(--contain-desktop);
