@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
-import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { check, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
+import { protectedSlugs } from '../../constants';
 
 export const usersTable = sqliteTable('users', {
   id: text('id')
@@ -80,18 +81,26 @@ export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
 });
 
-export const partyTable = sqliteTable('party', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
-  name: text('name').notNull().unique(),
-  slug: text('slug').notNull().unique(),
-  avatarFileId: integer('avatar_file_id')
-    .references(() => filesTable.id, { onDelete: 'set default' })
-    .default(1)
-  // Neat way to computer  slug: text('slug').notNull().unique().generatedAlwaysAs((): SQL => sql`lower(replace(${partyTable.name}, ' ', '-'))`),
-});
+export const partyTable = sqliteTable(
+  'party',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    name: text('name').notNull().unique(),
+    slug: text('slug').notNull().unique(),
+    avatarFileId: integer('avatar_file_id')
+      .references(() => filesTable.id, { onDelete: 'set default' })
+      .default(1)
+  },
+  (table) => ({
+    protectedSlugCheck: check(
+      'protected_slug_check',
+      sql.raw(`${table.slug.name} NOT IN (${protectedSlugs.map((slug) => `'${slug}'`).join(', ')})`)
+    )
+  })
+);
 
 export const partyMemberTable = sqliteTable(
   'party_member',
