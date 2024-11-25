@@ -1,6 +1,6 @@
 import { createPartySchema } from '$lib/schemas';
 import { uploadFileFromInput } from '$lib/server';
-import { createNamedPartyForUser } from '$lib/server/party/createParty';
+import { createNamedPartyForUser, updatePartyAvatar } from '$lib/server/party/createParty';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -23,18 +23,36 @@ export const actions: Actions = {
       }
       const { name, file } = createPartyForm.data;
       console.log('Creating party', name, file);
+      const party = await createNamedPartyForUser(userId, name);
+      console.log('Created party', party);
       const uploadedFile = await uploadFileFromInput(file, userId, 'partyavatars');
       console.log('Uploaded file', uploadedFile);
-      const party = await createNamedPartyForUser(userId, name, uploadedFile.fileId);
-      console.log('Created party', party);
+      const partyWithAvatar = await updatePartyAvatar(party.id, uploadedFile.fileId);
+      console.log('Updated party with avatar', partyWithAvatar);
       message(createPartyForm, { type: 'success', text: 'Party created' });
-      return redirect(302, `/party/${party.slug}`);
+      return redirect(302, `/${partyWithAvatar.slug}`);
     } catch (error) {
       if (isRedirect(error)) {
         throw error;
       } else {
         console.error('Error creating party', error);
-        message(createPartyForm, { type: 'error', text: 'Error creating party' }, { status: 500 });
+
+        let errorMessage = 'An unknown error occurred';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+
+        if (errorMessage.includes('UNIQUE')) {
+          return message(createPartyForm, { type: 'error', text: 'Party name is already taken' }, { status: 400 });
+        } else {
+          return message(
+            createPartyForm,
+            { type: 'error', text: `Error creating party: ${errorMessage}` },
+            { status: 500 }
+          );
+        }
       }
     }
   }

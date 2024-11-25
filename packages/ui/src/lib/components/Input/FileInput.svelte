@@ -3,7 +3,7 @@
   import { onDestroy } from 'svelte';
   import classNames from 'classnames';
 
-  let { value = $bindable(), files, variant = 'default', ...restProps }: FileInputProps = $props();
+  let { value = $bindable(), files = $bindable(), variant = 'default', ...restProps }: FileInputProps = $props();
 
   const inputClasses = classNames('fileInput', variant && `fileInput--${variant}`, restProps.class ?? '');
 

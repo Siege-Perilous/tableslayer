@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import { partyMemberTable, partyTable, type SelectParty } from '$lib/db/app/schema';
 import { createRandomName, generateSlug } from '$lib/utils';
+import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CustomError extends Error {
@@ -57,7 +58,7 @@ export const createNamedPartyForUser = async (
         id: partyId,
         name: partyName,
         slug,
-        avatarFileId: avatarFileId || null
+        avatarFileId: avatarFileId || 1
       })
       .returning()
       .get();
@@ -79,5 +80,15 @@ export const createNamedPartyForUser = async (
     } else {
       throw error;
     }
+  }
+};
+
+export const updatePartyAvatar = async (partyId: string, avatarFileId: number): Promise<SelectParty> => {
+  try {
+    const party = await db.update(partyTable).set({ avatarFileId }).where(eq(partyTable.id, partyId)).returning().get();
+    return party;
+  } catch (error) {
+    console.error('Error updating party avatar', error);
+    throw error;
   }
 };
