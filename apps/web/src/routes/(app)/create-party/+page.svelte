@@ -41,7 +41,7 @@
     <Field {form} name="file">
       <FSControl label="Party avatar">
         {#snippet children({ attrs })}
-          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" files={$file} />
         {/snippet}
       </FSControl>
       <FieldErrors />
