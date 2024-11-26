@@ -18,6 +18,7 @@ import {
   isEmailAlreadyInvitedToParty,
   isUserAdminInParty,
   isUserByEmailInPartyAlready,
+  isUserOnlyAdminInParty,
   sendPartyInviteEmail
 } from '$lib/server';
 import { deleteParty, renameParty } from '$lib/server/party/createParty';
@@ -211,11 +212,15 @@ export const actions: Actions = {
         { status: 400 }
       );
     }
-
     const { userId, partyId } = removePartyMemberForm.data;
 
     try {
       const user = await getUser(userId);
+      const isOnlyAdmin = await isUserOnlyAdminInParty(userId, partyId);
+      if (isOnlyAdmin) {
+        console.log('User is the only admin');
+        return message(removePartyMemberForm, { type: 'error', text: 'Cannot remove the last admin' });
+      }
       await db
         .delete(partyMemberTable)
         .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))

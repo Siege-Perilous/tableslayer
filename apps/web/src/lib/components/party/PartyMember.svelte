@@ -104,11 +104,15 @@
               <input type="hidden" name="userId" value={$memberForm.userId} />
               <input type="hidden" name="partyId" value={$memberForm.partyId} />
             </Field>
+            <Spacer size={2} />
+            <Text size="0.875rem" color="var(--fgMuted)"
+              >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
+            >
+            <Spacer size={2} />
+            {#if $memberMessage}
+              <MessageError message={$memberMessage} />
+            {/if}
           </form>
-          <Spacer size={2} />
-          <Text size="0.875rem" color="var(--fgMuted)"
-            >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
-          >
           <Spacer size={4} />
           <Hr />
           <Spacer size={4} />
@@ -116,28 +120,31 @@
         <form method="POST" action="?/removePartyMember" use:removeMemberEnhance>
           <Field form={removeMemberSuperForm} name="userId">
             <FSControl>
-              <input type="hidden" name="userId" value={$removeMemberForm.userId} />
-              <input type="hidden" name="partyId" value={$removeMemberForm.partyId} />
+              {#snippet children({ attrs })}
+                <input {...attrs} type="hidden" name="userId" value={$removeMemberForm.userId} />
+              {/snippet}
+            </FSControl>
+            <FSControl>
+              {#snippet children({ attrs })}
+                <input {...attrs} type="hidden" name="partyId" value={$removeMemberForm.partyId} />
+              {/snippet}
             </FSControl>
           </Field>
           <Button variant="danger" type="submit">{isSelf ? 'Leave party' : 'Remove party member'}</Button>
+          <Spacer size={2} />
+          <Text size="0.875rem" color="var(--fgMuted)"
+            >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
+          >
+          {#if $removeMemberMessage}
+            <Spacer size={2} />
+            <MessageError message={$removeMemberMessage} />
+          {/if}
         </form>
-        <Spacer size={2} />
-        <Text size="0.875rem" color="var(--fgMuted)"
-          >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
-        >
       </div>
     {/snippet}
   </Popover>
 {:else}
   {@render partyMember()}
-{/if}
-
-{#if $memberMessage}
-  <MessageError message={$memberMessage} />
-{/if}
-{#if $removeMemberMessage}
-  <MessageError message={$removeMemberMessage} />
 {/if}
 
 <style>
