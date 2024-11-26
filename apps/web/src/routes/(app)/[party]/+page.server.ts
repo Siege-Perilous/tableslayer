@@ -3,8 +3,10 @@ import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
   deleteInviteSchema,
+  deletePartySchema,
   inviteMemberSchema,
   removePartyMemberSchema,
+  renamePartySchema,
   resendInviteSchema
 } from '$lib/schemas';
 import {
@@ -14,9 +16,12 @@ import {
   getPartyMembers,
   getUser,
   isEmailAlreadyInvitedToParty,
+  isUserAdminInParty,
   isUserByEmailInPartyAlready,
+  isUserOnlyAdminInParty,
   sendPartyInviteEmail
 } from '$lib/server';
+import { deleteParty, renameParty } from '$lib/server/party/createParty';
 import { createSha256Hash } from '$lib/utils/hash';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
@@ -207,11 +212,15 @@ export const actions: Actions = {
         { status: 400 }
       );
     }
-
     const { userId, partyId } = removePartyMemberForm.data;
 
     try {
       const user = await getUser(userId);
+      const isOnlyAdmin = await isUserOnlyAdminInParty(userId, partyId);
+      if (isOnlyAdmin) {
+        console.log('User is the only admin');
+        return message(removePartyMemberForm, { type: 'error', text: 'Cannot remove the last admin' });
+      }
       await db
         .delete(partyMemberTable)
         .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
@@ -239,6 +248,70 @@ export const actions: Actions = {
           { status: 500 }
         );
       }
+    }
+  },
+  deleteParty: async (event) => {
+    const deletePartyForm = await superValidate(event.request, zod(deletePartySchema));
+    if (!deletePartyForm.valid) {
+      return message(deletePartyForm, { type: 'error', text: 'Invalid delete operation' });
+    }
+    const { partyId } = deletePartyForm.data;
+    const userId = event.locals.user.id;
+    const isUserAdminInPartyResult = await isUserAdminInParty(userId, partyId);
+    console.log('isUserAdminInPartyResult', isUserAdminInPartyResult);
+
+    if (!isUserAdminInPartyResult) {
+      return message(deletePartyForm, { type: 'error', text: 'User is not admin in party' });
+    }
+
+    const isPartyDeleted = await deleteParty(partyId);
+
+    console.log('isPartyDeleted', isPartyDeleted);
+
+    if (!isPartyDeleted) {
+      return message(deletePartyForm, { type: 'error', text: 'Error deleting party' });
+    }
+
+    setToastCookie(event, {
+      title: 'Party deleted',
+      type: 'success'
+    });
+
+    return redirect(302, '/profile');
+  },
+  renameParty: async (event) => {
+    const renamePartyForm = await superValidate(event.request, zod(renamePartySchema));
+    const { partyId, name } = renamePartyForm.data;
+    const userId = event.locals.user.id;
+    if (!renamePartyForm.valid) {
+      return message(renamePartyForm, { type: 'error', text: 'Invalid party name' });
+    }
+    if (!isUserAdminInParty(userId, partyId)) {
+      return message(renamePartyForm, { type: 'error', text: 'User is not admin in party' });
+    }
+
+    try {
+      const party = await renameParty(partyId, name);
+      setToastCookie(event, {
+        title: `Party renamed to ${party.name}`,
+        type: 'success'
+      });
+      return redirect(302, `/${party.slug}`);
+    } catch (error) {
+      if (isRedirect(error)) {
+        throw error;
+      }
+      let errorMessage = 'An unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      if (errorMessage.includes('UNIQUE')) {
+        return message(renamePartyForm, { type: 'error', text: 'Party name is already taken' });
+      }
+      console.log('Error renaming party', error);
+      return message(renamePartyForm, { type: 'error', text: `Error renaming party: ${error}` });
     }
   }
 };

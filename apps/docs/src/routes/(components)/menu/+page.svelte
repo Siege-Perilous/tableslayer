@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DropdownRadioMenu, CodeBlock, Icon, Spacer } from '@tableslayer/ui';
+  import { DropdownRadioMenu, Link, CodeBlock, Icon, Spacer } from '@tableslayer/ui';
   import { IconChevronDown } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
   import { page } from '$app/stores';
@@ -32,6 +32,11 @@ $effect(() => {
     <div class="dropdown">
       <span>{selectedParty.label}</span>
       <Icon Icon={IconChevronDown} />
+    </div>
+  {/snippet}
+  {#snippet footer()}
+    <div class="dropdown__footer">
+      <Link>Create a new party</Link>
     </div>
   {/snippet}
 </DropdownRadioMenu>
@@ -72,6 +77,11 @@ $effect(() => {
         <Icon Icon={IconChevronDown} />
       </div>
     {/snippet}
+    {#snippet footer()}
+      <div class="dropdown__footer">
+        <Link>Create a new party</Link>
+      </div>
+    {/snippet}
   </DropdownRadioMenu>
 </Example>
 
@@ -83,5 +93,8 @@ $effect(() => {
     gap: var(--size-2);
     align-items: center;
     font-weight: var(--font-weight-6);
+  }
+  .dropdown__footer {
+    padding-left: 2.75rem;
   }
 </style>

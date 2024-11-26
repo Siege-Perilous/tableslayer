@@ -1,5 +1,6 @@
 export { default as Control } from './Control.svelte';
 export { default as FieldErrors } from './FieldErrors.svelte';
+export { default as FileInput } from './FileInput.svelte';
 export { default as FSControl } from './FSControl.svelte';
 export { default as FSLabel } from './FSLabel.svelte';
 export { default as Input } from './Input.svelte';

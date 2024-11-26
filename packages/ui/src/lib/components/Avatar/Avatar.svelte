@@ -7,14 +7,14 @@
   const avatarClasses = classNames('avatar', `avatar--${size}`, isLoading && 'isLoading');
 
   const {
-    elements: { image, fallback }
+    elements: { fallback }
   } = createAvatar({
     src: src || ''
   });
 </script>
 
 <div class={avatarClasses}>
-  <img use:melt={$image} {alt} class="avatar__image" />
+  <img {src} {alt} class="avatar__image" />
   <span use:melt={$fallback} class="avatar__text">{initials}</span>
 </div>
 
