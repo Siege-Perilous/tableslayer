@@ -6,6 +6,7 @@ import {
   deletePartySchema,
   inviteMemberSchema,
   removePartyMemberSchema,
+  renamePartySchema,
   resendInviteSchema
 } from '$lib/schemas';
 import {
@@ -19,7 +20,7 @@ import {
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
 } from '$lib/server';
-import { deleteParty } from '$lib/server/party/createParty';
+import { deleteParty, renameParty } from '$lib/server/party/createParty';
 import { createSha256Hash } from '$lib/utils/hash';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
@@ -272,5 +273,40 @@ export const actions: Actions = {
     });
 
     return redirect(302, '/profile');
+  },
+  renameParty: async (event) => {
+    const renamePartyForm = await superValidate(event.request, zod(renamePartySchema));
+    const { partyId, name } = renamePartyForm.data;
+    const userId = event.locals.user.id;
+    if (!renamePartyForm.valid) {
+      return message(renamePartyForm, { type: 'error', text: 'Invalid party name' });
+    }
+    if (!isUserAdminInParty(userId, partyId)) {
+      return message(renamePartyForm, { type: 'error', text: 'User is not admin in party' });
+    }
+
+    try {
+      const party = await renameParty(partyId, name);
+      setToastCookie(event, {
+        title: `Party renamed to ${party.name}`,
+        type: 'success'
+      });
+      return redirect(302, `/${party.slug}`);
+    } catch (error) {
+      if (isRedirect(error)) {
+        throw error;
+      }
+      let errorMessage = 'An unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      if (errorMessage.includes('UNIQUE')) {
+        return message(renamePartyForm, { type: 'error', text: 'Party name is already taken' });
+      }
+      console.log('Error renaming party', error);
+      return message(renamePartyForm, { type: 'error', text: `Error renaming party: ${error}` });
+    }
   }
 };

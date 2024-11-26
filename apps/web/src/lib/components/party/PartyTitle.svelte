@@ -5,6 +5,7 @@
   import type { SelectParty } from '$lib/db/app/schema';
   import type { AvatarThumb } from '$lib/server';
   import { IconChevronDown } from '@tabler/icons-svelte';
+  import { IconCheck } from '@tabler/icons-svelte';
   import {
     Avatar,
     Button,
@@ -16,7 +17,8 @@
     Icon,
     Popover,
     Title,
-    Text
+    Text,
+    IconButton
   } from '@tableslayer/ui';
   import { type SuperValidated } from 'sveltekit-superforms/client';
   import {
@@ -39,7 +41,8 @@
 
   const renameSuperForm = superForm(renamePartyForm, {
     validators: zodClient(renamePartySchema),
-    resetForm: true
+    resetForm: true,
+    invalidateAll: 'force'
   });
   const { form: renameForm, enhance: renameEnhance, message: renameMessage } = renameSuperForm;
 
@@ -51,7 +54,6 @@
   const { form: deleteForm, enhance: deleteEnhance, message: deleteMessage } = deleteSuperForm;
 
   $renameForm.partyId = party.id;
-  $renameForm.name = party.name;
   $deleteForm.partyId = party.id;
 </script>
 
@@ -75,18 +77,25 @@
     {#snippet content()}
       <div class="partyName__popoverContent">
         <form method="post" action="?/renameParty" use:renameEnhance>
-          <Field form={renameSuperForm} name="name">
-            <FSControl label="Rename party">
-              <input type="hidden" name="partyId" bind:value={$renameForm.partyId} />
-              <Input type="text" name="name" bind:value={$renameForm.name} autocomplete="off" />
-            </FSControl>
-          </Field>
+          <div class="partyName__renameField">
+            <div>
+              <Field form={renameSuperForm} name="name">
+                <FSControl label="Rename party">
+                  {#snippet children({ attrs })}
+                    <Input {...attrs} type="text" name="name" bind:value={$renameForm.name} autocomplete="off" />
+                  {/snippet}
+                </FSControl>
+                <input type="hidden" name="partyId" bind:value={$renameForm.partyId} />
+              </Field>
+            </div>
+            <IconButton type="submit" class="partyName__renameFieldBtn">
+              <Icon Icon={IconCheck} />
+            </IconButton>
+          </div>
           <Spacer size={2} />
           <Text size="0.875rem" color="var(--fgMuted)"
             >Renaming your party will change the URL and break all links.</Text
           >
-          <Spacer size={4} />
-          <Button type="submit">Rename party</Button>
         </form>
         {#if $renameMessage}
           <Spacer />
@@ -132,5 +141,15 @@
   }
   .partyName__popoverContent {
     width: 16rem;
+  }
+  .partyName__renameField {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  :global {
+    .partyName__renameFieldBtn {
+      margin-top: 1.5rem;
+    }
   }
 </style>

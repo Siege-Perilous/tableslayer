@@ -102,3 +102,14 @@ export const deleteParty = async (partyId: string): Promise<boolean> => {
     return false;
   }
 };
+
+export const renameParty = async (partyId: string, name: string): Promise<SelectParty> => {
+  try {
+    const slug = generateSlug(name);
+    const party = await db.update(partyTable).set({ name, slug }).where(eq(partyTable.id, partyId)).returning().get();
+    return party;
+  } catch (error) {
+    console.error('Error renaming party', error);
+    throw error;
+  }
+};
