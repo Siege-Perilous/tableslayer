@@ -9,7 +9,7 @@
   import classNames from 'classnames';
 
   let menuItems = $derived(
-    parties.map((party) => ({
+    parties?.map((party) => ({
       label: party.name,
       value: party.slug,
       href: `/${party.slug}`

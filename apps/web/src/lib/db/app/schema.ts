@@ -14,7 +14,7 @@ export const usersTable = sqliteTable('users', {
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   passwordHash: text('password_hash').notNull(),
   avatarFileId: integer('avatar_file_id')
-    .references(() => filesTable.id, { onDelete: 'set default' })
+    .references(() => filesTable.id, { onDelete: 'cascade' })
     .notNull()
     .default(1)
 });
@@ -91,7 +91,8 @@ export const partyTable = sqliteTable(
     name: text('name').notNull().unique(),
     slug: text('slug').notNull().unique(),
     avatarFileId: integer('avatar_file_id')
-      .references(() => filesTable.id, { onDelete: 'set default' })
+      .references(() => filesTable.id, { onDelete: 'cascade' })
+      .notNull()
       .default(1)
   },
   (table) => ({

@@ -92,3 +92,13 @@ export const updatePartyAvatar = async (partyId: string, avatarFileId: number): 
     throw error;
   }
 };
+
+export const deleteParty = async (partyId: string): Promise<boolean> => {
+  try {
+    await db.delete(partyTable).where(eq(partyTable.id, partyId)).execute();
+    return true;
+  } catch (error) {
+    console.error('Error deleting party', error);
+    return false;
+  }
+};

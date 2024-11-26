@@ -9,10 +9,6 @@
   import { Toast } from '@tableslayer/ui';
 </script>
 
-<svelte:head>
-  <link rel="preload" as="font" href="/Chikki-Variable.woff2" type="font/woff2" />
-</svelte:head>
-
 <QueryClientProvider client={queryClient}>
   <ModeWatcher darkClassNames={['dark']} lightClassNames={['light']} />
   <GlobalLoading />

@@ -96,3 +96,18 @@ export const createPartySchema = z.object({
 
 export type CreatePartySchema = typeof createPartySchema;
 export type CreatePartyFormType = z.infer<typeof createPartySchema>;
+
+export const deletePartySchema = z.object({
+  partyId: z.string()
+});
+
+export type DeletePartySchema = typeof deletePartySchema;
+export type DeletePartyFormType = z.infer<typeof deletePartySchema>;
+
+export const renamePartySchema = z.object({
+  partyId: z.string(),
+  name: z.string().min(3)
+});
+
+export type RenamePartySchema = typeof renamePartySchema;
+export type RenamePartyFormType = z.infer<typeof renamePartySchema>;

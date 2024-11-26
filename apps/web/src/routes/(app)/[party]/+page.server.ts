@@ -3,6 +3,7 @@ import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
   deleteInviteSchema,
+  deletePartySchema,
   inviteMemberSchema,
   removePartyMemberSchema,
   resendInviteSchema
@@ -14,9 +15,11 @@ import {
   getPartyMembers,
   getUser,
   isEmailAlreadyInvitedToParty,
+  isUserAdminInParty,
   isUserByEmailInPartyAlready,
   sendPartyInviteEmail
 } from '$lib/server';
+import { deleteParty } from '$lib/server/party/createParty';
 import { createSha256Hash } from '$lib/utils/hash';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
@@ -240,5 +243,34 @@ export const actions: Actions = {
         );
       }
     }
+  },
+  deleteParty: async (event) => {
+    const deletePartyForm = await superValidate(event.request, zod(deletePartySchema));
+    if (!deletePartyForm.valid) {
+      return message(deletePartyForm, { type: 'error', text: 'Invalid delete operation' });
+    }
+    const { partyId } = deletePartyForm.data;
+    const userId = event.locals.user.id;
+    const isUserAdminInPartyResult = await isUserAdminInParty(userId, partyId);
+    console.log('isUserAdminInPartyResult', isUserAdminInPartyResult);
+
+    if (!isUserAdminInPartyResult) {
+      return message(deletePartyForm, { type: 'error', text: 'User is not admin in party' });
+    }
+
+    const isPartyDeleted = await deleteParty(partyId);
+
+    console.log('isPartyDeleted', isPartyDeleted);
+
+    if (!isPartyDeleted) {
+      return message(deletePartyForm, { type: 'error', text: 'Error deleting party' });
+    }
+
+    setToastCookie(event, {
+      title: 'Party deleted',
+      type: 'success'
+    });
+
+    return redirect(302, '/profile');
   }
 };
