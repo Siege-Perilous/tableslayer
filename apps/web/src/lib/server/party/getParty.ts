@@ -5,37 +5,59 @@ import {
   partyTable,
   usersTable,
   type PartyRole,
+  type SelectParty,
   type SelectUser
 } from '$lib/db/app/schema';
-import { getFile, transformImage } from '$lib/server';
+import { getFile, transformImage, type AvatarThumb } from '$lib/server';
 import { and, eq, inArray } from 'drizzle-orm';
 
-export const getParty = async (partyId: string) => {
+export const getParty = async (partyId: string): Promise<SelectParty & AvatarThumb> => {
   try {
     const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
     if (!party) {
       throw new Error('Party not found');
     }
-    return party;
+    const file = await getFile(party.avatarFileId);
+    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const partyWithThumb = { ...party, avatarThumb: thumb };
+    return partyWithThumb;
   } catch (error) {
     console.error('Error fetching party', error);
     throw error;
   }
 };
 
-export const getPartyFromName = async (partyName: string) => {
+export const getPartyFromName = async (partyName: string): Promise<SelectParty & AvatarThumb> => {
   const party = await db.select().from(partyTable).where(eq(partyTable.name, partyName)).get();
-  return party;
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  const file = await getFile(party.avatarFileId);
+  const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+  const partyWithThumb = { ...party, avatarThumb: thumb };
+  return partyWithThumb;
 };
 
-export const getPartyFromSlug = async (partySlug: string) => {
+export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty & AvatarThumb> => {
+  //  console.time('getParty total time');
   const party = await db.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
-  return party;
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  const file = await getFile(party.avatarFileId);
+  const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+  const partyWithThumb = { ...party, avatarThumb: thumb };
+  //  console.timeEnd('getParty total time');
+  return partyWithThumb;
 };
 
 export const getPartyMembers = async (
   partyId: string
-): Promise<Array<SelectUser & { role: PartyRole; partyId: string }>> => {
+): Promise<Array<SelectUser & { role: PartyRole; partyId: string } & AvatarThumb>> => {
   const memberRelations = await db
     .select({
       id: partyMemberTable.userId,
@@ -94,14 +116,21 @@ export const getEmailsInvitedToParty = async (partyId: string) => {
   return emails;
 };
 
-export const getPartiesForUser = async (userId: string) => {
+export const getPartiesForUser = async (userId: string): Promise<Array<SelectParty & AvatarThumb>> => {
   const partyMembers = await db.select().from(partyMemberTable).where(eq(partyMemberTable.userId, userId)).all();
   if (partyMembers === undefined || partyMembers.length === 0) {
     return [];
   } else {
     const partyIds = partyMembers.map((member) => member.partyId);
     const parties = await db.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
-    return parties;
+    const partiesWithThumb = [];
+    for (const party of parties) {
+      const file = await getFile(party.avatarFileId);
+      const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+      const partyWithThumb = { ...party, avatarThumb: thumb };
+      partiesWithThumb.push(partyWithThumb);
+    }
+    return partiesWithThumb;
   }
 };
 

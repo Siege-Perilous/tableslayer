@@ -16,7 +16,7 @@
     LinkOverlay,
     Hr
   } from '@tableslayer/ui';
-  import { PartyMember, ResendInvite } from '$lib/components';
+  import { PartyMember, ResendInvite, PartyTitle } from '$lib/components';
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
   import { inviteMemberSchema } from '$lib/schemas';
@@ -43,7 +43,7 @@
 </script>
 
 <div class="container">
-  <Title as="h1" size="lg">{party.name}</Title>
+  <PartyTitle {isPartyAdmin} deletePartyForm={data.deletePartyForm} renamePartyForm={data.renamePartyForm} {party} />
   <div class="containerLayout">
     <main>
       <Title as="h2" size="sm">Sessions</Title>
@@ -160,6 +160,7 @@
       width: 100%;
       gap: 2rem;
       height: 100%;
+      transition: border-color 0.2s var(--ease-in-2);
     }
     .panel.sessionPanel:hover {
       border-color: var(--fgPrimary);
