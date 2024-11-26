@@ -18,7 +18,8 @@
 
   let { data } = $props();
   const form = superForm(data.createPartyForm, {
-    validators: zodClient(createPartySchema)
+    validators: zodClient(createPartySchema),
+    invalidateAll: 'force'
   });
   const { form: formData, enhance, message } = form;
   let file = $state(fileProxy(formData, 'file'));

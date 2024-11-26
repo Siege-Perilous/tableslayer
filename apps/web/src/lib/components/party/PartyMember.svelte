@@ -25,7 +25,7 @@
   let { member, user, changeMemberRoleForm, removePartyMemberForm, isPartyAdmin }: PartyMemberProps = $props();
 
   const changeMemberRoleSuperForm = superForm(changeMemberRoleForm, {
-    id: member.id,
+    id: `changeRole-${member.id}`,
     validators: zodClient(changeRoleSchema),
     resetForm: true
   });
@@ -37,7 +37,7 @@
   $memberForm.partyId = member.partyId;
 
   const removeMemberSuperForm = superForm(removePartyMemberForm, {
-    id: member.id,
+    id: `removeMember-${member.id}`,
     resetForm: true
   });
 

@@ -40,6 +40,7 @@
   } = $props();
 
   const renameSuperForm = superForm(renamePartyForm, {
+    id: `rename-${party.slug}`,
     validators: zodClient(renamePartySchema),
     resetForm: true,
     invalidateAll: 'force'
@@ -47,6 +48,7 @@
   const { form: renameForm, enhance: renameEnhance, message: renameMessage } = renameSuperForm;
 
   const deleteSuperForm = superForm(deletePartyForm, {
+    id: `delete-${party.id}`,
     validators: zodClient(deletePartySchema),
     resetForm: true,
     invalidateAll: 'force'
