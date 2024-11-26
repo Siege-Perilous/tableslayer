@@ -19,8 +19,5 @@ export const isUserOnlyAdminInParty = async (userId: string, partyId: string): P
     and(eq(partyMemberTable.role, 'admin'), eq(partyMemberTable.partyId, partyId))
   );
 
-  console.log('isAdmin', isAdmin);
-  console.log('adminsCount', adminsCount);
-
   return isAdmin && adminsCount === 1;
 };
