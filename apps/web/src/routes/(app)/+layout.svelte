@@ -3,10 +3,12 @@
   import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
-  const { user, parties } = data;
+  const { user } = data;
   import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
   import classNames from 'classnames';
+
+  let parties = $derived(data.parties);
 
   let menuItems = $derived(
     parties?.map((party) => ({

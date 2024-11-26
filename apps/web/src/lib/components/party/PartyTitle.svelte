@@ -45,7 +45,8 @@
 
   const deleteSuperForm = superForm(deletePartyForm, {
     validators: zodClient(deletePartySchema),
-    resetForm: true
+    resetForm: true,
+    invalidateAll: 'force'
   });
   const { form: deleteForm, enhance: deleteEnhance, message: deleteMessage } = deleteSuperForm;
 
