@@ -86,3 +86,28 @@ export const removePartyMemberSchema = z.object({
 
 export type RemovePartyMemberSchema = typeof removePartyMemberSchema;
 export type RemovePartyMemberFormType = z.infer<typeof removePartyMemberSchema>;
+
+export const createPartySchema = z.object({
+  name: z.string().min(3),
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
+    message: 'File size must be less than 5MB'
+  })
+});
+
+export type CreatePartySchema = typeof createPartySchema;
+export type CreatePartyFormType = z.infer<typeof createPartySchema>;
+
+export const deletePartySchema = z.object({
+  partyId: z.string()
+});
+
+export type DeletePartySchema = typeof deletePartySchema;
+export type DeletePartyFormType = z.infer<typeof deletePartySchema>;
+
+export const renamePartySchema = z.object({
+  partyId: z.string(),
+  name: z.string().min(3)
+});
+
+export type RenamePartySchema = typeof renamePartySchema;
+export type RenamePartyFormType = z.infer<typeof renamePartySchema>;

@@ -7,6 +7,10 @@ export type InputProps = {
   variant?: 'transparent' | 'default';
 } & HTMLInputAttributes;
 
+export type FileInputProps = {
+  files: FileList;
+} & InputProps;
+
 export type LabelProps = {
   children: Snippet;
 } & FormSnapLabelProps;
