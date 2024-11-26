@@ -266,8 +266,6 @@ export const actions: Actions = {
 
     const isPartyDeleted = await deleteParty(partyId);
 
-    console.log('isPartyDeleted', isPartyDeleted);
-
     if (!isPartyDeleted) {
       return message(deletePartyForm, { type: 'error', text: 'Error deleting party' });
     }
