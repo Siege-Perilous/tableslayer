@@ -158,8 +158,10 @@ jobs:
         name: Deploy to Vercel - Docs
         run: |
           vercel deploy apps/docs \
-            --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
+            --org-id ${{ env.VERCEL_ORG_ID }} \
+            --project-id ${{ env.VERCEL_DOCS_PROJECT_ID }} \
+            --no-wait \
             > deploy_url_docs.txt
 
       - name: Get Docs Deployment URL
@@ -172,9 +174,10 @@ jobs:
         name: Deploy to Vercel - Web (with Turso DB)
         run: |
           vercel deploy apps/web \
-            --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
-            --team ${{ secrets.VERCEL_TEAM_ID }} \
+            --org-id ${{ env.VERCEL_ORG_ID }} \
+            --project-id ${{ env.VERCEL_WEB_PROJECT_ID }} \
+            --no-wait \
             > deploy_url_web.txt
 
       - name: Get Web Deployment URL
