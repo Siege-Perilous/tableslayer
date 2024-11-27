@@ -125,7 +125,7 @@ jobs:
               fi
 
               # Set the output for the TURSO_GS_PARENT_DB_URL
-              echo "turso_db_url=$HOSTNAME" >> $GITHUB_OUTPUT
+              echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
               echo "HOSTNAME is $HOSTNAME"
 
   deploy:
