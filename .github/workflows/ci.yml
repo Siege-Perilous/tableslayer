@@ -153,7 +153,7 @@ jobs:
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          echo ${{ needs.create_database.outputs.turso_db_url }} | vercel env add TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          echo ${{ needs.create_database.outputs.turso_db_url }} | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Verify the Environment Variable before Deployment
       - name: Verify TURSO_APP_DB_URL Value
