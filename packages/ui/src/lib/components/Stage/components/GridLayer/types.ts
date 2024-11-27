@@ -15,17 +15,9 @@ export interface GridLayerProps {
   opacity: number;
 
   /**
-   * The number of subdivisions along the x-axis of the scene
+   * The grid spacing in inches
    */
-  divisions: number;
-
-  /**
-   * Offset of the grid origin
-   */
-  offset: {
-    x: number;
-    y: number;
-  };
+  spacing: number;
 
   /**
    * Line thickness
