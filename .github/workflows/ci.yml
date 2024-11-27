@@ -114,6 +114,7 @@ jobs:
           # Set the environment variable for the hostname
           echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
           echo "::set-output name=turso_db_url::$HOSTNAME" # Set the output for downstream jobs
+
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
@@ -125,15 +126,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - run: npm i -g vercel@latest
+      - uses: ./.github/shared
       - name: Link Vercel Project - Web
         working-directory: apps/web
         run: |
           vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
+
       # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Remove Environment Variable for Web Project in Vercel
         working-directory: apps/web
@@ -144,7 +142,6 @@ jobs:
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          # Set the environment variable specifically for the preview environment and this Git branch
           echo $TURSO_GS_PARENT_DB_URL | vercel env add TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Find the Existing PR Comment or Create Initial One
@@ -175,12 +172,14 @@ jobs:
 
             _Note: This comment will update automatically with new commits._
 
+      # Turbo Build for Docs and Deploy
       - id: deploy-docs
         name: Deploy to Vercel - Docs
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
         run: |
+          pnpm turbo run build --filter=docs...
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
@@ -201,12 +200,15 @@ jobs:
           echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
           echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
 
+      # Turbo Build for Web and Deploy
       - id: deploy-web
         name: Deploy to Vercel - Web (with Turso DB)
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          TURSO_GS_PARENT_DB_URL: ${{ env.TURSO_GS_PARENT_DB_URL }}
         run: |
+          pnpm turbo run build --filter=web...
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
@@ -245,6 +247,7 @@ jobs:
 
             _Note: This comment will update automatically with new commits._
 
+      # Alias Web Deployment
       - name: Alias Web Deployment
         run: |
           vercel alias \
