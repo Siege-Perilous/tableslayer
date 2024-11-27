@@ -125,9 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create_database]
     env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-      VERCEL_DOCS_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
-      VERCEL_WEB_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -156,11 +154,12 @@ jobs:
 
       - id: deploy-docs
         name: Deploy to Vercel - Docs
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
         run: |
           vercel deploy apps/docs \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ env.VERCEL_ORG_ID }} \
-            --name ${{ env.VERCEL_DOCS_PROJECT_ID }} \
+            --token ${{ env.VERCEL_TOKEN }} \
             --no-wait \
             > deploy_url_docs.txt
 
@@ -172,11 +171,12 @@ jobs:
 
       - id: deploy-web
         name: Deploy to Vercel - Web (with Turso DB)
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
         run: |
           vercel deploy apps/web \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ env.VERCEL_ORG_ID }} \
-            --name ${{ env.VERCEL_WEB_PROJECT_ID }} \
+            --token ${{ env.VERCEL_TOKEN }} \
             --no-wait \
             > deploy_url_web.txt
 
@@ -216,7 +216,7 @@ jobs:
       - name: Wait for Web Deployment
         run: |
           vercel inspect \
-            --token ${{ secrets.VERCEL_TOKEN }} \
+            --token ${{ env.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --wait \
             --timeout=10m \
@@ -225,7 +225,7 @@ jobs:
       - name: Alias Web Deployment
         run: |
           vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
+            --token ${{ env.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --yes \
             ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
