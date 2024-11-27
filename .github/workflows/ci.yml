@@ -55,7 +55,7 @@ jobs:
         with:
           organization_name: personal
           api_token: ${{ secrets.TURSO_API_TOKEN }}
-          existing_database_name: ts
+          existing_database_name: snide
           new_database_name: ${{ env.NEW_DB_NAME }}
 
       - name: Set Database URL for Vercel
