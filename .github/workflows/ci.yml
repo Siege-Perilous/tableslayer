@@ -178,7 +178,6 @@ jobs:
       - name: Update PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
-        needs: [deploy-docs, deploy-web]
         with:
           token: ${{ secrets.GIT_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
