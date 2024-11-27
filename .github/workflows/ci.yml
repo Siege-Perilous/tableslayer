@@ -134,6 +134,11 @@ jobs:
         working-directory: apps/web
         run: |
           vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
+      # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
+      - name: Remove Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          vercel env rm TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
 
       # Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Set Environment Variable for Web Project in Vercel
