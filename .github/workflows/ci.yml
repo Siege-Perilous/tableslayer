@@ -77,6 +77,9 @@ jobs:
             HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
             RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
 
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"  # Add this line to output the response
+
             if [ "$HTTP_STATUS" -eq 200 ]; then
               HOSTNAME=$(echo "$RESPONSE" | jq -r '.hostname')
               echo "Database exists. HOSTNAME: $HOSTNAME"
@@ -124,6 +127,8 @@ jobs:
             # Set the output for the TURSO_GS_PARENT_DB_URL
             echo "turso_db_url=$HOSTNAME" >> $GITHUB_OUTPUT
             echo "HOSTNAME is $HOSTNAME"
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
 
   deploy:
     name: Deploy to Vercel
