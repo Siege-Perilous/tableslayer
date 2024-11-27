@@ -132,6 +132,8 @@ jobs:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: [create_database]
+    env:
+      TURSO_GS_PARENT_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
