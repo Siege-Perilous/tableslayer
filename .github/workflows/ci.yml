@@ -24,7 +24,6 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    needs: [format-check]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
@@ -32,7 +31,6 @@ jobs:
 
   tsc:
     runs-on: ubuntu-latest
-    needs: [lint]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
@@ -41,7 +39,7 @@ jobs:
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
-    needs: [tsc]
+    needs: [format-check, lint, tsc] # Create database after all checks succeed, but checks run in parallel
     steps:
       - name: Set New Database Name
         id: set-db-name
@@ -66,6 +64,8 @@ jobs:
             DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
             if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
               HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
+              echo "Database already exists. Skipping creation."
+              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
             else
               echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
             fi
@@ -73,8 +73,7 @@ jobs:
             echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
           fi
 
-          if [ "${{ env.DATABASE_EXISTS }}" != "true" ]; then
-            # Create the database if it doesn't exist
+          if [ "${DATABASE_EXISTS}" != "true" ]; then
             RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
               -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
               -H "Content-Type: application/json" \
@@ -82,13 +81,18 @@ jobs:
               "https://api.turso.tech/v1/organizations/snide/databases")
 
             HTTP_STATUS=$RESPONSE
+            RESPONSE_BODY=$(cat /tmp/response.json)
+
             if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
+              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
               exit 1
             fi
+
             HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
           fi
 
           if [ -z "$HOSTNAME" ]; then
+            echo "Hostname not found in response"
             exit 1
           fi
 
@@ -174,6 +178,7 @@ jobs:
       - name: Update PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
+        needs: [deploy-docs, deploy-web]
         with:
           token: ${{ secrets.GIT_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
