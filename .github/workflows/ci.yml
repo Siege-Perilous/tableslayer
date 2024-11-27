@@ -160,7 +160,7 @@ jobs:
           vercel deploy apps/docs \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ env.VERCEL_ORG_ID }} \
-            --project-id ${{ env.VERCEL_DOCS_PROJECT_ID }} \
+            --name ${{ env.VERCEL_DOCS_PROJECT_ID }} \
             --no-wait \
             > deploy_url_docs.txt
 
@@ -176,7 +176,7 @@ jobs:
           vercel deploy apps/web \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ env.VERCEL_ORG_ID }} \
-            --project-id ${{ env.VERCEL_WEB_PROJECT_ID }} \
+            --name ${{ env.VERCEL_WEB_PROJECT_ID }} \
             --no-wait \
             > deploy_url_web.txt
 
