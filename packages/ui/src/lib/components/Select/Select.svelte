@@ -18,6 +18,7 @@
     onSelectedChange,
     variant = 'default',
     ids,
+    selectedPrefix,
     ...restProps
   }: SelectProps = $props();
 
@@ -42,6 +43,7 @@
 
 <div {...restProps} class={selectClasses}>
   <button class="select__trigger" use:melt={$trigger} aria-label="Food">
+    {selectedPrefix}
     {$selectedLabel || 'Select'}
     <Icon Icon={IconChevronDown} />
   </button>

@@ -2,7 +2,14 @@
   import { createDropdownMenu, melt } from '@melt-ui/svelte';
   import type { RadioMenuProps, RadioMenuItem } from './types';
   import { fly } from 'svelte/transition';
-  let { trigger, items, defaultItem, onValueChange, positioning = { placement: 'bottom' } }: RadioMenuProps = $props();
+  let {
+    trigger,
+    items,
+    footer,
+    defaultItem,
+    onValueChange,
+    positioning = { placement: 'bottom' }
+  }: RadioMenuProps = $props();
   import { goto } from '$app/navigation';
   import { Icon } from '../';
 
@@ -61,6 +68,11 @@
         </button>
       {/each}
     </div>
+    {#if footer}
+      <div class="menuFooter">
+        {@render footer()}
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -108,5 +120,10 @@
     height: var(--size-2);
     background: var(--fgPrimary);
     border-radius: 50%;
+  }
+  .menuFooter {
+    margin-top: 0.25rem;
+    border-top: var(--borderThin);
+    padding-top: 0.5rem;
   }
 </style>

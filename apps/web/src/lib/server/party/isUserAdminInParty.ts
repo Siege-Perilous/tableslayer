@@ -11,3 +11,13 @@ export const isUserAdminInParty = async (userId: string, partyId: string): Promi
 
   return (result && result.role === 'admin') || false;
 };
+
+export const isUserOnlyAdminInParty = async (userId: string, partyId: string): Promise<boolean> => {
+  const isAdmin = await isUserAdminInParty(userId, partyId);
+  const adminsCount = await db.$count(
+    partyMemberTable,
+    and(eq(partyMemberTable.role, 'admin'), eq(partyMemberTable.partyId, partyId))
+  );
+
+  return isAdmin && adminsCount === 1;
+};

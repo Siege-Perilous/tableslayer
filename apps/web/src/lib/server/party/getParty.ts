@@ -5,36 +5,59 @@ import {
   partyTable,
   usersTable,
   type PartyRole,
+  type SelectParty,
   type SelectUser
 } from '$lib/db/app/schema';
+import { getFile, transformImage, type AvatarThumb } from '$lib/server';
 import { and, eq, inArray } from 'drizzle-orm';
 
-export const getParty = async (partyId: string) => {
+export const getParty = async (partyId: string): Promise<SelectParty & AvatarThumb> => {
   try {
     const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
     if (!party) {
       throw new Error('Party not found');
     }
-    return party;
+    const file = await getFile(party.avatarFileId);
+    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const partyWithThumb = { ...party, avatarThumb: thumb };
+    return partyWithThumb;
   } catch (error) {
     console.error('Error fetching party', error);
     throw error;
   }
 };
 
-export const getPartyFromName = async (partyName: string) => {
+export const getPartyFromName = async (partyName: string): Promise<SelectParty & AvatarThumb> => {
   const party = await db.select().from(partyTable).where(eq(partyTable.name, partyName)).get();
-  return party;
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  const file = await getFile(party.avatarFileId);
+  const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+  const partyWithThumb = { ...party, avatarThumb: thumb };
+  return partyWithThumb;
 };
 
-export const getPartyFromSlug = async (partySlug: string) => {
+export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty & AvatarThumb> => {
+  //  console.time('getParty total time');
   const party = await db.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
-  return party;
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  const file = await getFile(party.avatarFileId);
+  const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+  const partyWithThumb = { ...party, avatarThumb: thumb };
+  //  console.timeEnd('getParty total time');
+  return partyWithThumb;
 };
 
 export const getPartyMembers = async (
   partyId: string
-): Promise<Array<SelectUser & { role: PartyRole; partyId: string }>> => {
+): Promise<Array<SelectUser & { role: PartyRole; partyId: string } & AvatarThumb>> => {
   const memberRelations = await db
     .select({
       id: partyMemberTable.userId,
@@ -52,7 +75,15 @@ export const getPartyMembers = async (
     .orderBy(partyMemberTable.role) // Works only because the roles naturally are alpha
     .all();
 
-  return memberRelations;
+  const memberWithThumbs = [];
+  for (const member of memberRelations) {
+    const file = await getFile(member.avatarFileId);
+    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const memberWithThumb = { ...member, avatarThumb: thumb };
+    memberWithThumbs.push(memberWithThumb);
+  }
+
+  return memberWithThumbs;
 };
 
 export const isUserByEmailInPartyAlready = async (email: string, partyId: string) => {
@@ -85,14 +116,21 @@ export const getEmailsInvitedToParty = async (partyId: string) => {
   return emails;
 };
 
-export const getPartiesForUser = async (userId: string) => {
+export const getPartiesForUser = async (userId: string): Promise<Array<SelectParty & AvatarThumb>> => {
   const partyMembers = await db.select().from(partyMemberTable).where(eq(partyMemberTable.userId, userId)).all();
   if (partyMembers === undefined || partyMembers.length === 0) {
     return [];
   } else {
     const partyIds = partyMembers.map((member) => member.partyId);
     const parties = await db.select().from(partyTable).where(inArray(partyTable.id, partyIds)).all();
-    return parties;
+    const partiesWithThumb = [];
+    for (const party of parties) {
+      const file = await getFile(party.avatarFileId);
+      const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+      const partyWithThumb = { ...party, avatarThumb: thumb };
+      partiesWithThumb.push(partyWithThumb);
+    }
+    return partiesWithThumb;
   }
 };
 
@@ -113,4 +151,18 @@ export const changePartyRole = async (userId: string, partyId: string, role: Par
     .set({ role: role })
     .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
     .run();
+};
+
+export const isUserInParty = async (userId: string, partyId: string) => {
+  try {
+    const partyMember = await db
+      .select()
+      .from(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .get();
+    return !!partyMember;
+  } catch (error) {
+    console.error('Error checking if user is in party', error);
+    return false;
+  }
 };

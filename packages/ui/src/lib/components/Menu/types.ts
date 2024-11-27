@@ -16,4 +16,5 @@ export type RadioMenuProps = CreateRadioGroupProps & {
   items: RadioMenuItem[];
   defaultItem: RadioMenuItem;
   positioning?: FloatingConfig;
+  footer?: Snippet;
 };

@@ -8,7 +8,7 @@
 <div class="container">
   <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="xl">Tools to build animated battle maps<br /> for your digital tabletop.</Text>
+  <Text size="2rem">Tools to build animated battle maps<br /> for your digital tabletop.</Text>
   <div class="flex">
     {#if dev}
       {#if user}
@@ -33,9 +33,6 @@
     /*  text-shadow:  */
     /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
     /*  -1px 0 0 rgba(255, 255, 255, 1);  */
-  }
-  :global(.btn) {
-    width: 100px;
   }
   .container {
     display: flex;

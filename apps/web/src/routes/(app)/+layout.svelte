@@ -3,13 +3,15 @@
   import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
-  const { user, parties } = data;
+  const { user } = data;
   import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/stores';
   import classNames from 'classnames';
 
+  let parties = $derived(data.parties);
+
   let menuItems = $derived(
-    parties.map((party) => ({
+    parties?.map((party) => ({
       label: party.name,
       value: party.slug,
       href: `/${party.slug}`
@@ -40,6 +42,11 @@
             {#snippet trigger()}
               <div class="partyDropdown__icon">
                 <Icon Icon={IconSelector} />
+              </div>
+            {/snippet}
+            {#snippet footer()}
+              <div class="partyDownDropdown__footer">
+                <Link href="/create-party">Create a new party</Link>
               </div>
             {/snippet}
           </DropdownRadioMenu>
@@ -110,6 +117,9 @@
   .partyDropdown__icon:hover {
     background: var(--contrastLow);
     border-radius: var(--radius-2);
+  }
+  .partyDownDropdown__footer {
+    padding-left: 2.75rem;
   }
   .logo {
     background: var(--fgPrimary);
