@@ -38,18 +38,48 @@ jobs:
       - uses: ./.github/shared
 
       - run: pnpm tsc
+
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
     steps:
+      - name: Set New Database Name
+        id: set-db-name
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref }}"
+          CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
+          NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
+          echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
+
       - name: Create Database
-        uses: tursodatabase/create-database-action@v1
-        with:
-          organization_name: snide
-          api_token: ${{ secrets.TURSO_API_TOKEN }}
-          existing_database_name: ts
-          new_database_name: test
-          group_name: default
+        run: |
+          GROUP_TO_USE=${GROUP_NAME:-default}
+
+          RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+            -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
+            "https://api.turso.tech/v1/organizations/snide/databases")
+
+          HTTP_STATUS=$RESPONSE
+              RESPONSE_BODY=$(cat /tmp/response.json)
+
+              echo "HTTP Response Code: $HTTP_STATUS"
+              echo "API Response: $RESPONSE_BODY"
+
+              if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
+                echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
+                exit 1
+              fi
+
+          - name: Verify Database Creation
+            run: |
+              HOSTNAME=$(echo $RESPONSE_BODY | jq -r '.database.hostname')
+              if [ -z "$HOSTNAME" ]; then
+                echo "Hostname not found in response"
+                exit 1
+              fi
+              echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
   tests:
     needs: [format-check, lint, tsc]
     runs-on: ubuntu-latest
