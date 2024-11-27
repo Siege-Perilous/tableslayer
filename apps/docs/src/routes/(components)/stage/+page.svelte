@@ -91,6 +91,15 @@
 <Pane position="draggable" title="Settings">
   <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
 
+  <Folder title="Display">
+    <Slider bind:value={stageProps.display.size.x} label="Width (in)" />
+    <Slider bind:value={stageProps.display.size.y} label="Height (in)" />
+    <Slider bind:value={stageProps.display.resolution.x} label="Resolution (X)" />
+    <Slider bind:value={stageProps.display.resolution.y} label="Resolution (Y)" />
+    <Slider bind:value={stageProps.display.padding.x} label="Padding (X)" min={0} />
+    <Slider bind:value={stageProps.display.padding.y} label="Padding (Y)" min={0} />
+  </Folder>
+
   <Folder title="Fog of War" expanded={false}>
     <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
     <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
@@ -110,13 +119,11 @@
     <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
   </Folder>
 
-  <Folder title="Grid" expanded={false}>
+  <Folder title="Grid" expanded={true}>
     <List bind:value={stageProps.grid.gridType} label="Type" options={gridTypeOptions} />
     <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.grid.divisions} label="Subdivisions" min={1} max={50} step={1} />
-    <Slider bind:value={stageProps.grid.offset.x} label="Offset X" min={0} max={1000} step={1} />
-    <Slider bind:value={stageProps.grid.offset.y} label="Offset Y" min={0} max={1000} step={1} />
-    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={1} max={10} />
+    <Slider bind:value={stageProps.grid.spacing} label="Spacing (in)" min={0.25} max={3} step={0.25} />
+    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={1} max={100} />
     <Color bind:value={stageProps.grid.lineColor} label="Line Color" />
     <Slider bind:value={stageProps.grid.shadowIntensity} label="Shadow Intensity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.grid.shadowSize} label="Shadow Size" min={1} max={5} step={0.01} />
@@ -133,7 +140,7 @@
     <Button on:click={() => stage.map.fit()} title="Fit" />
   </Folder>
 
-  <Folder title="Ping">
+  <Folder title="Ping" expanded={false}>
     <Color bind:value={stageProps.ping.color} label="Color" />
     <Slider bind:value={stageProps.ping.markerSize} label="Marker Size" min={1} max={500} step={1} />
     <Slider bind:value={stageProps.ping.thickness} label="Thickness" min={0} max={1} />

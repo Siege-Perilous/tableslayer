@@ -2,6 +2,11 @@ import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StagePro
 
 export const StageDefaultProps: StageProps = {
   backgroundColor: '#0b0b0c',
+  display: {
+    padding: { x: 16, y: 16 },
+    size: { x: 17.77, y: 10.0 },
+    resolution: { x: 1920, y: 1080 }
+  },
   fogOfWar: {
     data: null,
     fogColor: '#303030',
@@ -12,11 +17,10 @@ export const StageDefaultProps: StageProps = {
   },
   grid: {
     gridType: GridType.Square,
-    opacity: 0.2,
-    divisions: 20,
-    offset: { x: 0, y: 0 },
+    spacing: 1,
+    opacity: 0.4,
     lineColor: '#E6E6E6',
-    lineThickness: 1,
+    lineThickness: 20,
     shadowIntensity: 1,
     shadowColor: '#000000',
     shadowSize: 2
@@ -47,13 +51,12 @@ export const StageDefaultProps: StageProps = {
       x: 0,
       y: 0
     },
-    resolution: { x: 1920, y: 1080 },
-    zoom: 0.4
+    zoom: 1.0
   },
   weather: {
-    color: '#ADE3FF',
+    color: '#AD0000',
     angle: 20,
-    opacity: 0.2,
+    opacity: 0.9,
     intensity: 0.5,
     speed: 10.0,
     scale: {
