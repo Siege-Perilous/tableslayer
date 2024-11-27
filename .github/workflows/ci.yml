@@ -62,12 +62,14 @@ jobs:
         id: set-db-url
         run: |
           # Fetch the existing database information
-          RESPONSE=$(curl -s -X GET \
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
             "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
 
-          HTTP_STATUS=$?
-          if [ "$HTTP_STATUS" -eq 0 ]; then
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+          if [ "$HTTP_STATUS" -eq 200 ]; then
             DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
             if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
               HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
@@ -82,23 +84,23 @@ jobs:
 
           # Create the database if it doesn't exist
           if [ "${DATABASE_EXISTS}" != "true" ]; then
-            RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
               -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
               -H "Content-Type: application/json" \
               -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
               "https://api.turso.tech/v1/organizations/snide/databases")
 
-            HTTP_STATUS=$RESPONSE
-            RESPONSE_BODY=$(cat /tmp/response.json)
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
 
             if [ "$HTTP_STATUS" -eq 409 ]; then
               echo "Database already exists. Skipping creation."
-              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
             elif [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
-              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
+              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
               exit 1
             else
-              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
             fi
           fi
 
@@ -106,6 +108,12 @@ jobs:
             echo "Hostname not found in response"
             exit 1
           fi
+
+          # Inside the run block of the 'set-db-url' step
+          echo "HTTP_STATUS: $HTTP_STATUS"
+          echo "RESPONSE: $RESPONSE"
+          echo "DATABASE_EXISTS: $DATABASE_EXISTS"
+          echo "HOSTNAME: $HOSTNAME"
 
           # Set the output for the TURSO_GS_PARENT_DB_URL
           echo "turso_db_url=$HOSTNAME" >> $GITHUB_OUTPUT
