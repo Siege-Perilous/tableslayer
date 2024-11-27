@@ -14,6 +14,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   format-check:
     runs-on: ubuntu-latest
@@ -128,11 +132,23 @@ jobs:
 
       - run: npm i -g vercel@latest
 
-      - name: Initial PR Comment with Deployment Status
+      # Find the Existing PR Comment or Create Initial One
+      - name: Find PR Comment
+        uses: peter-evans/find-comment@v2
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+
+      - name: Create or Update Initial PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
@@ -178,3 +194,21 @@ jobs:
         run: |
           echo "Web Deploy URL: $(cat deploy_url_web.txt)"
           echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
+
+      # Update the Comment After Deployments Complete
+      - name: Update PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - Completed ✅
+
+            - [Docs Preview](${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }})
+            - [Web Preview (With Database)](${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }})
+
+            _Note: This comment will update automatically with new commits._
