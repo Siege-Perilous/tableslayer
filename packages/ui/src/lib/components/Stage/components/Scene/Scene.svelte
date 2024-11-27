@@ -136,13 +136,13 @@
 
   export function fillSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
-    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio > canvasAspectRatio) {
-      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.display.resolution.y;
     } else {
-      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
@@ -150,13 +150,13 @@
 
   export function fitSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
-    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
     let newZoom: number;
     if (sceneAspectRatio < canvasAspectRatio) {
-      newZoom = renderer.domElement.clientHeight / props.scene.resolution.y;
+      newZoom = renderer.domElement.clientHeight / props.display.resolution.y;
     } else {
-      newZoom = renderer.domElement.clientWidth / props.scene.resolution.x;
+      newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
     onSceneUpdate(props.map.offset, newZoom);
@@ -164,13 +164,13 @@
 
   function fillMapToScene() {
     const imageAspectRatio = mapSize.width / mapSize.height;
-    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
     let newZoom: number;
     if (imageAspectRatio > sceneAspectRatio) {
-      newZoom = props.scene.resolution.y / mapSize.height;
+      newZoom = props.display.resolution.y / mapSize.height;
     } else {
-      newZoom = props.scene.resolution.x / mapSize.width;
+      newZoom = props.display.resolution.x / mapSize.width;
     }
 
     onMapUpdate({ x: 0, y: 0 }, newZoom);
@@ -178,13 +178,13 @@
 
   function fitMapToScene() {
     const imageAspectRatio = mapSize.width / mapSize.height;
-    const sceneAspectRatio = props.scene.resolution.x / props.scene.resolution.y;
+    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
     let newZoom: number;
     if (imageAspectRatio > sceneAspectRatio) {
-      newZoom = props.scene.resolution.x / mapSize.width;
+      newZoom = props.display.resolution.x / mapSize.width;
     } else {
-      newZoom = props.scene.resolution.y / mapSize.height;
+      newZoom = props.display.resolution.y / mapSize.height;
     }
 
     onMapUpdate({ x: 0, y: 0 }, newZoom);
@@ -199,8 +199,8 @@
     // Whenever the scene is translated/zoomed, update the clipping planes
     const { x, y } = props.scene.offset;
     const worldExtents = {
-      x: props.scene.zoom * (props.scene.resolution.x / 2),
-      y: props.scene.zoom * (props.scene.resolution.y / 2)
+      x: props.scene.zoom * (props.display.resolution.x / 2),
+      y: props.scene.zoom * (props.display.resolution.y / 2)
     };
 
     // Avoid re-triggering this effect when updating the clipping planes
@@ -271,6 +271,6 @@
   </T.Object3D>
 
   <!-- Map overlays that scale with the scene -->
-  <GridLayer props={props.grid} z={30} resolution={props.scene.resolution} sceneScale={props.scene.zoom} />
-  <WeatherLayer props={props.weather} z={40} resolution={props.scene.resolution} />
+  <GridLayer props={props.grid} z={30} display={props.display} sceneScale={props.scene.zoom} />
+  <WeatherLayer props={props.weather} z={40} resolution={props.display.resolution} />
 </T.Object3D>

@@ -12,11 +12,6 @@ export interface SceneLayerProps {
   offset: { x: number; y: number };
 
   /**
-   * The resolution of the display the scene is displayed on
-   */
-  resolution: { x: number; y: number };
-
-  /**
    * The scale of the scene layer
    */
   zoom: number;
