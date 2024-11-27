@@ -135,11 +135,12 @@ jobs:
         run: |
           vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
 
-      # Set the TURSO_GS_PARENT_DB_URL environment variable for Vercel Web Project
+      # Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          echo $TURSO_GS_PARENT_DB_URL | vercel env add TURSO_GS_PARENT_DB_URL preview --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          # Set the environment variable specifically for the preview environment and this Git branch
+          echo $TURSO_GS_PARENT_DB_URL | vercel env add TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Find the Existing PR Comment or Create Initial One
       - name: Find PR Comment
