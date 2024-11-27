@@ -244,5 +244,6 @@ jobs:
         run: |
           vercel alias \
             --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
             ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
             web-preview-${{ github.event.pull_request.number }}.vercel.app
