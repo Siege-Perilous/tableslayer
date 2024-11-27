@@ -78,7 +78,7 @@ jobs:
           - name: Create Database if Not Exists
             if: env.DATABASE_EXISTS != 'true'
             run: |
-              GROUP_TO_USE=${GROUP_NAME:-default}
+              GROUP_TO_USE=default
 
               RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
                 -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
