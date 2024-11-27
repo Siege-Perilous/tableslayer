@@ -60,11 +60,14 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
             "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
 
-          HTTP_STATUS=$?
-          if [ "$HTTP_STATUS" -eq 0 ]; then
-            DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
+          # Extract HTTP status code to check for errors
+          HTTP_STATUS=$(echo "$RESPONSE" | jq -r '.status_code // empty')
+
+          if [ "$HTTP_STATUS" = "" ]; then
+            DATABASE_EXISTS=$(echo "$RESPONSE" | jq -r '.database.Name // empty')
+
             if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
-              HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
+              HOSTNAME=$(echo "$RESPONSE" | jq -r '.database.Hostname // empty')
               echo "Database already exists. Skipping creation."
               echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
             else
@@ -82,20 +85,20 @@ jobs:
               -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
               "https://api.turso.tech/v1/organizations/snide/databases")
 
-            HTTP_STATUS=$RESPONSE
+            HTTP_STATUS=$(tail -n 1 <<< "$RESPONSE")
             RESPONSE_BODY=$(cat /tmp/response.json)
 
             if [ "$HTTP_STATUS" -eq 409 ]; then
               # Handle the case where the database already exists
               echo "Database already exists. Skipping creation."
-              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              HOSTNAME=$(echo "$RESPONSE_BODY" | jq -r '.database.Hostname // empty')
             elif [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
               # Fail if there is an unexpected error
               echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
               exit 1
             else
               # Extract the hostname from the creation response
-              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              HOSTNAME=$(echo "$RESPONSE_BODY" | jq -r '.database.Hostname // empty')
             fi
           fi
 
