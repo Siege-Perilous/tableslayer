@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create_database]
     env:
-      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
       VERCEL_DOCS_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
       VERCEL_WEB_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
     steps:
@@ -148,8 +148,6 @@ jobs:
           vercel deploy apps/docs \
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
-            --team ${{ secrets.VERCEL_TEAM_ID }} \
-            --project-id ${{ secrets.VERCEL_DOCS_PROJECT_ID }} \
             > deploy_url_docs.txt
 
       - name: Get Docs Deployment URL
@@ -165,8 +163,6 @@ jobs:
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --team ${{ secrets.VERCEL_TEAM_ID }} \
-            --project-id ${{ secrets.VERCEL_WEB_PROJECT_ID }} \
-            --env TURSO_GS_PARENT_DB_URL=${{ env.TURSO_GS_PARENT_DB_URL }} \
             > deploy_url_web.txt
 
       - name: Get Web Deployment URL
