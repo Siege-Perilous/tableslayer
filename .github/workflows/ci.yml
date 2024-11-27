@@ -136,11 +136,24 @@ jobs:
 
       - run: npm i -g vercel@latest
 
+      # Step 1: Find the Existing PR Comment
+      - name: Find PR Comment
+        uses: peter-evans/find-comment@v2
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+
+      # Step 2: Create or Update Initial PR Comment Before Deployments Start
       - name: Initial PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
@@ -152,6 +165,7 @@ jobs:
 
             _Note: This comment will update automatically with new commits._
 
+      # Deploy Docs to Vercel
       - id: deploy-docs
         name: Deploy to Vercel - Docs
         env:
@@ -169,6 +183,7 @@ jobs:
           echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
           echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
 
+      # Deploy Web to Vercel
       - id: deploy-web
         name: Deploy to Vercel - Web (with Turso DB)
         env:
@@ -186,16 +201,26 @@ jobs:
           echo "Web Deploy URL: $(cat deploy_url_web.txt)"
           echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
 
-      - name: Find PR Comment
-        uses: peter-evans/find-comment@v2
-        if: github.event_name == 'pull_request'
-        id: find-comment
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+      # Wait for the Web Deployment
+      - name: Wait for Web Deployment
+        run: |
+          vercel inspect \
+            --token ${{ env.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            --wait \
+            --timeout=10m \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }}
 
+      # Alias the Web Deployment
+      - name: Alias Web Deployment
+        run: |
+          vercel alias \
+            --token ${{ env.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
+            web-preview-${{ github.event.pull_request.number }}.vercel.app
+
+      # Step 3: Update the PR Comment to Mark Deployment as Complete
       - name: Update PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
@@ -212,21 +237,3 @@ jobs:
             - [Web Preview (With Database)](${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }})
 
             _Note: This comment will update automatically with new commits._
-
-      - name: Wait for Web Deployment
-        run: |
-          vercel inspect \
-            --token ${{ env.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --wait \
-            --timeout=10m \
-            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }}
-
-      - name: Alias Web Deployment
-        run: |
-          vercel alias \
-            --token ${{ env.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --yes \
-            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
-            web-preview-${{ github.event.pull_request.number }}.vercel.app
