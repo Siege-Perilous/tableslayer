@@ -20,7 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-
       - run: pnpm format-check
 
   lint:
@@ -28,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      # Use --quiet to suppress warnings which show up in PRs
       - run: pnpm lint -- --quiet
 
   tsc:
@@ -36,8 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-
       - run: pnpm tsc
+
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
@@ -54,6 +52,7 @@ jobs:
         run: sudo apt-get install -y jq
 
       - name: Check if Database Exists
+        id: check-db
         run: |
           RESPONSE=$(curl -s -X GET \
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
@@ -68,6 +67,8 @@ jobs:
             if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
               echo "Database already exists. Skipping creation."
               echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
+              HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
+              echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
             else
               echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
             fi
@@ -78,7 +79,6 @@ jobs:
       - name: Create Database if Not Exists
         if: env.DATABASE_EXISTS != 'true'
         run: |
-          # Ensure GROUP_NAME has a valid value, default to "default" if unset
           if [ -z "$GROUP_NAME" ]; then
             GROUP_TO_USE="default"
           else
@@ -89,41 +89,28 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
-                "https://api.turso.tech/v1/organizations/snide/databases")
+            "https://api.turso.tech/v1/organizations/snide/databases")
 
-              HTTP_STATUS=$RESPONSE
-              RESPONSE_BODY=$(cat /tmp/response.json)
+          HTTP_STATUS=$RESPONSE
+          RESPONSE_BODY=$(cat /tmp/response.json)
 
-              echo "HTTP Response Code: $HTTP_STATUS"
-              echo "API Response: $RESPONSE_BODY"
+          echo "HTTP Response Code: $HTTP_STATUS"
+          echo "API Response: $RESPONSE_BODY"
 
-              if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
-                echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
-                exit 1
-              fi
+          if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
+            echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
+            exit 1
+          fi
 
-          - name: Set Hostname Output
-            run: |
-              if [ "${{ env.DATABASE_EXISTS }}" = "true" ]; then
-                # If the database already exists, fetch its details
-                RESPONSE=$(curl -s -X GET \
-                  -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
-                  "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
+          HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+          if [ -z "$HOSTNAME" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+          echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
 
-                HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
-              else
-                # Extract hostname from the creation response
-                HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
-              fi
-
-              if [ -z "$HOSTNAME" ]; then
-                echo "Hostname not found in response"
-                exit 1
-              fi
-
-              echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
   tests:
-    needs: [format-check, lint, tsc]
+    needs: [format-check, lint, tsc, create_database]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -153,6 +140,7 @@ jobs:
           vercel-project-id: ${{ env.VERCEL_PROJECT_ID }}
           github-branch: ${{ github.head_ref }}
           github-commit: ${{ github.event.pull_request.head.sha }}
+
       - name: Set BASE_URL
         id: set-base-url
         run: |
@@ -170,15 +158,19 @@ jobs:
 
       - name: Display deployment status
         run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
+
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
         run: pnpx playwright install --with-deps
+
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: '${{ env.BASE_URL }}'
+          TURSO_GS_PARENT_DB_URL: '${{ env.TURSO_GS_PARENT_DB_URL }}'
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
+          echo "Using database URL: $TURSO_GS_PARENT_DB_URL"
           pnpm run test
