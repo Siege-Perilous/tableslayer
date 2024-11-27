@@ -144,6 +144,12 @@ jobs:
         run: |
           echo $TURSO_GS_PARENT_DB_URL | vercel env add TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
+      # Verify the Environment Variable before Deployment
+      - name: Verify TURSO_GS_PARENT_DB_URL Value
+        working-directory: apps/web
+        run: |
+          echo "TURSO_GS_PARENT_DB_URL is set to: $TURSO_GS_PARENT_DB_URL"
+
       # Find the Existing PR Comment or Create Initial One
       - name: Find PR Comment
         uses: peter-evans/find-comment@v2
