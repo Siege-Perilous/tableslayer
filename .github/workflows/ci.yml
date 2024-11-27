@@ -70,6 +70,7 @@ jobs:
             # Database already exists, extract the hostname
             HOSTNAME=$(echo "$RESPONSE" | jq -r '.database.Hostname // empty')
             echo "Database already exists. Skipping creation."
+            echo "Extracted Hostname from GET Response: $HOSTNAME" # Added for debugging
             echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
           else
             echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
@@ -93,6 +94,7 @@ jobs:
             if [ "$HTTP_STATUS" -eq 409 ]; then
               # Handle the case where the database already exists
               echo "Database already exists. Skipping creation."
+              # Extract the hostname from the GET response again since it already existed
               HOSTNAME=$(echo "$RESPONSE_BODY" | jq -r '.database.Hostname // empty')
             elif [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
               # Fail if there is an unexpected error
@@ -104,6 +106,17 @@ jobs:
             fi
           fi
 
+          # Log the extracted hostname for debugging purposes
+          echo "Extracted Hostname: $HOSTNAME"
+
+          # Check if hostname is empty or not set properly
+          if [ -z "$HOSTNAME" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+
+          # Set the environment variable for the hostname
+          echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
           # Log the extracted hostname for debugging purposes
           echo "Extracted Hostname: $HOSTNAME"
 
