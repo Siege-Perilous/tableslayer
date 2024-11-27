@@ -168,8 +168,15 @@ jobs:
         run: |
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
-            --no-wait \
             > deploy_url_docs.txt
+
+      - name: Wait for Docs Deployment
+        run: |
+          vercel inspect \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --wait \
+            --timeout=10m \
+            $(cat deploy_url_docs.txt)
 
       - name: Get Docs Deployment URL
         id: get-url-docs
@@ -186,8 +193,17 @@ jobs:
         run: |
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
-            --no-wait \
+            --env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
+            --build-env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
             > deploy_url_web.txt
+
+      - name: Wait for Web Deployment
+        run: |
+          vercel inspect \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --wait \
+            --timeout=10m \
+            $(cat deploy_url_web.txt)
 
       - name: Get Web Deployment URL
         id: get-url-web
@@ -212,3 +228,10 @@ jobs:
             - [Web Preview (With Database)](${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }})
 
             _Note: This comment will update automatically with new commits._
+
+      - name: Alias Web Deployment
+        run: |
+          vercel alias \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
+            web-preview-${{ github.event.pull_request.number }}.vercel.app
