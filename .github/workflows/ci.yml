@@ -55,7 +55,7 @@ jobs:
           NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
-      - name: Check/Create Database and Set TURSO_GS_PARENT_DB_URL
+      - name: Check/Create Database and Set TURSO_APP_DB_URL
         id: set-db-url
         run: |
           set -e
@@ -124,7 +124,7 @@ jobs:
                 exit 1
               fi
 
-              # Set the output for the TURSO_GS_PARENT_DB_URL
+              # Set the output for the TURSO_APP_DB_URL
               echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
               echo "HOSTNAME is $HOSTNAME"
 
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create_database]
     env:
-      TURSO_GS_PARENT_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
+      TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -147,7 +147,7 @@ jobs:
       - name: Remove Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          vercel env rm TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
 
       # Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Set Environment Variable for Web Project in Vercel
@@ -156,10 +156,10 @@ jobs:
           echo ${{ needs.create_database.outputs.turso_db_url }} | vercel env add TURSO_GS_PARENT_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Verify the Environment Variable before Deployment
-      - name: Verify TURSO_GS_PARENT_DB_URL Value
+      - name: Verify TURSO_APP_DB_URL Value
         working-directory: apps/web
         run: |
-          echo "TURSO_GS_PARENT_DB_URL is set to: ${{ needs.create_database.outputs.turso_db_url }}"
+          echo "TURSO_APP_DB_URL is set to: ${{ needs.create_database.outputs.turso_db_url }}"
 
       # Find the Existing PR Comment or Create Initial One
       - name: Find PR Comment
