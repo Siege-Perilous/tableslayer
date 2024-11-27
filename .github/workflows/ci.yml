@@ -38,7 +38,6 @@ jobs:
       - uses: ./.github/shared
 
       - run: pnpm tsc
-
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
@@ -51,17 +50,21 @@ jobs:
           NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Create Database
         run: |
+          # Ensure GROUP_TO_USE has a valid value, default to "default"
           GROUP_TO_USE=${GROUP_NAME:-default}
 
-          RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
-            -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
-            "https://api.turso.tech/v1/organizations/snide/databases")
+              RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+                -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
+                "https://api.turso.tech/v1/organizations/snide/databases")
 
-          HTTP_STATUS=$RESPONSE
+              HTTP_STATUS=$RESPONSE
               RESPONSE_BODY=$(cat /tmp/response.json)
 
               echo "HTTP Response Code: $HTTP_STATUS"
@@ -74,11 +77,14 @@ jobs:
 
           - name: Verify Database Creation
             run: |
-              HOSTNAME=$(echo $RESPONSE_BODY | jq -r '.database.hostname')
+              # Extract hostname using jq
+              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+
               if [ -z "$HOSTNAME" ]; then
                 echo "Hostname not found in response"
                 exit 1
               fi
+
               echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
   tests:
     needs: [format-check, lint, tsc]
