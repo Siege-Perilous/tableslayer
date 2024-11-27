@@ -57,6 +57,7 @@ jobs:
           api_token: ${{ secrets.TURSO_API_TOKEN }}
           existing_database_name: ts
           new_database_name: ${{ env.NEW_DB_NAME }}
+          group_name: default
 
       - name: Set Database URL for Vercel
         id: set-db-url
