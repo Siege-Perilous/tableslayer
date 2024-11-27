@@ -53,9 +53,9 @@ jobs:
       - name: Create Database
         uses: tursodatabase/create-database-action@v1
         with:
-          organization_name: personal
+          organization_name: snide
           api_token: ${{ secrets.TURSO_API_TOKEN }}
-          existing_database_name: snide
+          existing_database_name: ts
           new_database_name: ${{ env.NEW_DB_NAME }}
 
       - name: Set Database URL for Vercel
