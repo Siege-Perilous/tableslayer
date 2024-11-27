@@ -114,7 +114,6 @@ jobs:
           # Set the environment variable for the hostname
           echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
           echo "::set-output name=turso_db_url::$HOSTNAME" # Set the output for downstream jobs
-
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
@@ -131,6 +130,12 @@ jobs:
           node-version: 18
 
       - run: npm i -g vercel@latest
+
+      # Set the TURSO_GS_PARENT_DB_URL environment variable for Vercel Web Project
+      - name: Set Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          echo $TURSO_GS_PARENT_DB_URL | vercel env add TURSO_GS_PARENT_DB_URL preview --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Find the Existing PR Comment or Create Initial One
       - name: Find PR Comment
@@ -191,13 +196,10 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          TURSO_GS_PARENT_DB_URL: ${{ env.TURSO_GS_PARENT_DB_URL }}
         run: |
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
-            --build-env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
             > deploy_url_web.txt
 
       - name: Wait for Web Deployment
