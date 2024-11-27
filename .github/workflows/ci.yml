@@ -60,19 +60,17 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
             "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
 
-          # Extract HTTP status code to check for errors
-          HTTP_STATUS=$(echo "$RESPONSE" | jq -r '.status_code // empty')
+          # Log the response for debugging purposes
+          echo "GET Response: $RESPONSE"
 
-          if [ "$HTTP_STATUS" = "" ]; then
-            DATABASE_EXISTS=$(echo "$RESPONSE" | jq -r '.database.Name // empty')
+          # Extract the database details if they exist
+          DATABASE_EXISTS=$(echo "$RESPONSE" | jq -r '.database.Name // empty')
 
-            if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
-              HOSTNAME=$(echo "$RESPONSE" | jq -r '.database.Hostname // empty')
-              echo "Database already exists. Skipping creation."
-              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
-            else
-              echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
-            fi
+          if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
+            # Database already exists, extract the hostname
+            HOSTNAME=$(echo "$RESPONSE" | jq -r '.database.Hostname // empty')
+            echo "Database already exists. Skipping creation."
+            echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
           else
             echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
           fi
@@ -88,6 +86,10 @@ jobs:
             HTTP_STATUS=$(tail -n 1 <<< "$RESPONSE")
             RESPONSE_BODY=$(cat /tmp/response.json)
 
+            # Log the response for debugging purposes
+            echo "POST Response Body: $RESPONSE_BODY"
+            echo "HTTP Status Code: $HTTP_STATUS"
+
             if [ "$HTTP_STATUS" -eq 409 ]; then
               # Handle the case where the database already exists
               echo "Database already exists. Skipping creation."
@@ -102,6 +104,17 @@ jobs:
             fi
           fi
 
+          # Log the extracted hostname for debugging purposes
+          echo "Extracted Hostname: $HOSTNAME"
+
+          # Check if hostname is empty or not set properly
+          if [ -z "$HOSTNAME" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+
+          # Set the environment variable for the hostname
+          echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
           # Check if hostname is empty or not set properly
           if [ -z "$HOSTNAME" ]; then
             echo "Hostname not found in response"
