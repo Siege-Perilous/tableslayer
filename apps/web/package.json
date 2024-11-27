@@ -24,7 +24,8 @@
     "gsDb:push": "drizzle-kit push --config drizzle.config.gs.ts",
     "gsDb:drop": "drizzle-kit drop --config drizzle.config.gs.ts",
     "gsDb:studio": "drizzle-kit studio --config drizzle.config.gs.ts",
-    "postinstall": "svelte-kit sync"
+    "postinstall": "svelte-kit sync",
+    "vercel": "vercel"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.699.0",
@@ -69,6 +70,7 @@
     "svelte-check": "^4.1.0",
     "tslib": "^2.8.1",
     "typescript": "^5.7.2",
+    "vercel": "^39.1.2",
     "vite": "^5.4.11",
     "vitest": "^2.1.5"
   }

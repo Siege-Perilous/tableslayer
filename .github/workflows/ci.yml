@@ -130,6 +130,10 @@ jobs:
           node-version: 18
 
       - run: npm i -g vercel@latest
+      - name: Link Vercel Project - Web
+        working-directory: apps/web
+        run: |
+          vercel link --token ${{ secrets.VERCEL_TOKEN }} --project-id ${{ secrets.VERCEL_WEB_PROJECT_ID }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Set the TURSO_GS_PARENT_DB_URL environment variable for Vercel Web Project
       - name: Set Environment Variable for Web Project in Vercel
