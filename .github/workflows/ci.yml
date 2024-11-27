@@ -130,7 +130,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
         with:
-          token: ${{ secrets.GIT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
@@ -176,7 +176,7 @@ jobs:
         if: github.event_name == 'pull_request'
         id: find-comment
         with:
-          token: ${{ secrets.GIT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
@@ -185,7 +185,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v2
         if: github.event_name == 'pull_request'
         with:
-          token: ${{ secrets.GIT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
