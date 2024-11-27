@@ -1,18 +1,18 @@
-name: CI
+name: Deploy Preview
 
 on:
-  push:
-    branches:
-      - main
-      - gh-readonly-queue/main/**
   pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build from'
+        default: 'main'
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-
-env:
-  FORCE_COLOR: 3
 
 jobs:
   format-check:
@@ -24,6 +24,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    needs: [format-check]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
@@ -31,6 +32,7 @@ jobs:
 
   tsc:
     runs-on: ubuntu-latest
+    needs: [lint]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
@@ -39,6 +41,7 @@ jobs:
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
+    needs: [tsc]
     steps:
       - name: Set New Database Name
         id: set-db-name
@@ -51,24 +54,18 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Check if Database Exists
-        id: check-db
+      - name: Check/Create Database and Set TURSO_GS_PARENT_DB_URL
+        id: set-db-url
         run: |
           RESPONSE=$(curl -s -X GET \
             -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
             "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
 
           HTTP_STATUS=$?
-          echo "HTTP Status: $HTTP_STATUS"
-          echo "API Response: $RESPONSE"
-
           if [ "$HTTP_STATUS" -eq 0 ]; then
             DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
             if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
-              echo "Database already exists. Skipping creation."
-              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
               HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
-              echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
             else
               echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
             fi
@@ -76,101 +73,135 @@ jobs:
             echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
           fi
 
-      - name: Create Database if Not Exists
-        if: env.DATABASE_EXISTS != 'true'
-        run: |
-          if [ -z "$GROUP_NAME" ]; then
-            GROUP_TO_USE="default"
-          else
-            GROUP_TO_USE="$GROUP_NAME"
+          if [ "${{ env.DATABASE_EXISTS }}" != "true" ]; then
+            # Create the database if it doesn't exist
+            RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+              -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
+              "https://api.turso.tech/v1/organizations/snide/databases")
+
+            HTTP_STATUS=$RESPONSE
+            if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
+              exit 1
+            fi
+            HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
           fi
 
-          RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
-            -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
-            "https://api.turso.tech/v1/organizations/snide/databases")
-
-          HTTP_STATUS=$RESPONSE
-          RESPONSE_BODY=$(cat /tmp/response.json)
-
-          echo "HTTP Response Code: $HTTP_STATUS"
-          echo "API Response: $RESPONSE_BODY"
-
-          if [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
-            echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
-            exit 1
-          fi
-
-          HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
           if [ -z "$HOSTNAME" ]; then
-            echo "Hostname not found in response"
             exit 1
           fi
+
           echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
 
-  tests:
-    needs: [format-check, lint, tsc, create_database]
+  deploy:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - app: docs
-          - app: web
-    name: ${{ matrix.app }} tests
+    needs: [create_database]
+    env:
+      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+      VERCEL_DOCS_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
+      VERCEL_WEB_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/shared
-      - name: Set Vercel Project ID
-        id: set-vercel-id
-        run: |
-          if [ "${{ matrix.app }}" = "docs" ]; then
-            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_DOCS_PROJECT_ID }}" >> $GITHUB_ENV
-          elif [ "${{ matrix.app }}" = "web" ]; then
-            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_WEB_PROJECT_ID }}" >> $GITHUB_ENV
-          fi
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Get Preview URL
-        if: ${{ github.ref != 'refs/heads/main' }}
-        uses: dlip/get-vercel-deployment-action@v1.0.2
-        id: get-vercel-deployment
+      - uses: actions/setup-node@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID }}
-          vercel-project-id: ${{ env.VERCEL_PROJECT_ID }}
-          github-branch: ${{ github.head_ref }}
-          github-commit: ${{ github.event.pull_request.head.sha }}
+          node-version: 18
 
-      - name: Set BASE_URL
-        id: set-base-url
+      - run: npm i -g vercel@latest
+
+      - name: Initial PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - In Progress 🚀
+
+            - Docs Deployment: In Progress...
+            - Web Deployment (With Database): In Progress...
+
+            _Note: This comment will update automatically with new commits._
+
+      - id: deploy-docs
+        name: Deploy to Vercel - Docs
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            # Set the BASE_URL to the predefined production URL if on the main branch
-            if [ "${{ matrix.app }}" = "docs" ]; then
-              echo "BASE_URL=${{ vars.VERCEL_DOCS_PRODUCTION_URL }}" >> $GITHUB_ENV
-            elif [ "${{ matrix.app }}" = "web" ]; then
-              echo "BASE_URL=${{ vars.VERCEL_WEB_PRODUCTION_URL }}" >> $GITHUB_ENV
-            fi
-          else
-            # Use the dynamically obtained preview URL
-            echo "BASE_URL=https://${{ steps.get-vercel-deployment.outputs.deployment-url }}" >> $GITHUB_ENV
-          fi
+          vercel deploy apps/docs \
+            --no-wait \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --team ${{ secrets.VERCEL_TEAM_ID }} \
+            --project-id ${{ secrets.VERCEL_DOCS_PROJECT_ID }} \
+            > deploy_url_docs.txt
 
-      - name: Display deployment status
-        run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
-
-      - name: Install Playwright Browsers
-        if: ${{ github.ref != 'refs/heads/main' }}
-        run: pnpx playwright install --with-deps
-
-      - name: Run Playwright Tests
-        if: ${{ github.ref != 'refs/heads/main' }}
-        working-directory: apps/${{ matrix.app }}
-        env:
-          BASE_URL: '${{ env.BASE_URL }}'
-          TURSO_GS_PARENT_DB_URL: '${{ env.TURSO_GS_PARENT_DB_URL }}'
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - name: Get Docs Deployment URL
+        id: get-url-docs
         run: |
-          echo "BASE_URL is ${{ env.BASE_URL }}"
-          echo "Using database URL: $TURSO_GS_PARENT_DB_URL"
-          pnpm run test
+          echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
+          echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
+
+      - id: deploy-web
+        name: Deploy to Vercel - Web (with Turso DB)
+        run: |
+          vercel deploy apps/web \
+            --no-wait \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --team ${{ secrets.VERCEL_TEAM_ID }} \
+            --project-id ${{ secrets.VERCEL_WEB_PROJECT_ID }} \
+            --env TURSO_GS_PARENT_DB_URL=${{ env.TURSO_GS_PARENT_DB_URL }} \
+            > deploy_url_web.txt
+
+      - name: Get Web Deployment URL
+        id: get-url-web
+        run: |
+          echo "Web Deploy URL: $(cat deploy_url_web.txt)"
+          echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
+
+      - name: Find PR Comment
+        uses: peter-evans/find-comment@v2
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+
+      - name: Update PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - Completed ✅
+
+            - [Docs Preview](${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }})
+            - [Web Preview (With Database)](${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }})
+
+            _Note: This comment will update automatically with new commits._
+
+      - name: Wait for Web Deployment
+        run: |
+          vercel inspect \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            --wait \
+            --timeout=10m \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }}
+
+      - name: Alias Web Deployment
+        run: |
+          vercel alias \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            --yes \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
+            web-preview-${{ github.event.pull_request.number }}.vercel.app
