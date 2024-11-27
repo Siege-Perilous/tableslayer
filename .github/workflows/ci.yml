@@ -63,27 +63,32 @@ jobs:
           echo "HTTP Status: $HTTP_STATUS"
           echo "API Response: $RESPONSE"
 
-              if [ "$HTTP_STATUS" -eq 0 ]; then
-                DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
-                if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
-                  echo "Database already exists. Skipping creation."
-                  echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
-                else
-                  echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
-                fi
-              else
-                echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
-              fi
+          if [ "$HTTP_STATUS" -eq 0 ]; then
+            DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
+            if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
+              echo "Database already exists. Skipping creation."
+              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
+            else
+              echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
+          fi
 
-          - name: Create Database if Not Exists
-            if: env.DATABASE_EXISTS != 'true'
-            run: |
-              GROUP_TO_USE=default
+      - name: Create Database if Not Exists
+        if: env.DATABASE_EXISTS != 'true'
+        run: |
+          # Ensure GROUP_NAME has a valid value, default to "default" if unset
+          if [ -z "$GROUP_NAME" ]; then
+            GROUP_TO_USE="default"
+          else
+            GROUP_TO_USE="$GROUP_NAME"
+          fi
 
-              RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
-                -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
-                -H "Content-Type: application/json" \
-                -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
+          RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
+            -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "'"${{ env.NEW_DB_NAME }}"'", "group": "'"$GROUP_TO_USE"'", "seed": {"type": "database", "name": "ts"} }' \
                 "https://api.turso.tech/v1/organizations/snide/databases")
 
               HTTP_STATUS=$RESPONSE
