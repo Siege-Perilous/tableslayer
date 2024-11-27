@@ -38,7 +38,30 @@ jobs:
       - uses: ./.github/shared
 
       - run: pnpm tsc
+  create_database:
+    name: 'Create Database'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set New Database Name
+        id: set-db-name
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref }}"
+          CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
+          NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
+          echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
+      - name: Create Database
+        uses: tursodatabase/create-database-action@v1
+        with:
+          organization_name: personal
+          api_token: ${{ secrets.TURSO_API_TOKEN }}
+          existing_database_name: ts
+          new_database_name: ${{ env.NEW_DB_NAME }}
+
+      - name: Set Database URL for Vercel
+        id: set-db-url
+        run: |
+          echo "TURSO_GS_PARENT_DB_URL=${NEW_DB_NAME}" >> $GITHUB_ENV
   tests:
     needs: [format-check, lint, tsc]
     runs-on: ubuntu-latest
