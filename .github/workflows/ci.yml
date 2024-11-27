@@ -168,12 +168,14 @@ jobs:
         run: |
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
             > deploy_url_docs.txt
 
       - name: Wait for Docs Deployment
         run: |
           vercel inspect \
             --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --wait \
             --timeout=10m \
             $(cat deploy_url_docs.txt)
@@ -193,6 +195,7 @@ jobs:
         run: |
           vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
             --build-env TURSO_GS_PARENT_DB_URL=$TURSO_GS_PARENT_DB_URL \
             > deploy_url_web.txt
@@ -201,6 +204,7 @@ jobs:
         run: |
           vercel inspect \
             --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --wait \
             --timeout=10m \
             $(cat deploy_url_web.txt)
