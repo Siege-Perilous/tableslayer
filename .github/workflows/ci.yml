@@ -53,10 +53,32 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Create Database
+      - name: Check if Database Exists
         run: |
-          # Ensure GROUP_TO_USE has a valid value, default to "default"
-          GROUP_TO_USE=${GROUP_NAME:-default}
+          RESPONSE=$(curl -s -X GET \
+            -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+            "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
+
+          HTTP_STATUS=$?
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "API Response: $RESPONSE"
+
+              if [ "$HTTP_STATUS" -eq 0 ]; then
+                DATABASE_EXISTS=$(echo $RESPONSE | jq -r '.database.Name')
+                if [ "$DATABASE_EXISTS" = "${{ env.NEW_DB_NAME }}" ]; then
+                  echo "Database already exists. Skipping creation."
+                  echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
+                else
+                  echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
+                fi
+              else
+                echo "DATABASE_EXISTS=false" >> $GITHUB_ENV
+              fi
+
+          - name: Create Database if Not Exists
+            if: env.DATABASE_EXISTS != 'true'
+            run: |
+              GROUP_TO_USE=${GROUP_NAME:-default}
 
               RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST \
                 -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
@@ -75,10 +97,19 @@ jobs:
                 exit 1
               fi
 
-          - name: Verify Database Creation
+          - name: Set Hostname Output
             run: |
-              # Extract hostname using jq
-              HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              if [ "${{ env.DATABASE_EXISTS }}" = "true" ]; then
+                # If the database already exists, fetch its details
+                RESPONSE=$(curl -s -X GET \
+                  -H "Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}" \
+                  "https://api.turso.tech/v1/organizations/snide/databases/${{ env.NEW_DB_NAME }}")
+
+                HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
+              else
+                # Extract hostname from the creation response
+                HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
+              fi
 
               if [ -z "$HOSTNAME" ]; then
                 echo "Hostname not found in response"
