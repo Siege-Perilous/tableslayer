@@ -43,9 +43,9 @@ jobs:
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
-    needs: [format-check, lint, tsc] # Create database after all checks succeed, but checks run in parallel
+    needs: [format-check, lint, tsc]
     outputs:
-      turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }} # Capture the output
+      turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
     steps:
       - name: Set New Database Name
         id: set-db-name
@@ -92,27 +92,22 @@ jobs:
             RESPONSE_BODY=$(cat /tmp/response.json)
 
             if [ "$HTTP_STATUS" -eq 409 ]; then
-              # Handle the case where the database already exists
               echo "Database already exists. Skipping creation."
               HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
             elif [ "$HTTP_STATUS" -ne 200 ] && [ "$HTTP_STATUS" -ne 201 ]; then
-              # Fail if there is an unexpected error
               echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE_BODY"
               exit 1
             else
-              # Extract the hostname from the creation response
               HOSTNAME=$(cat /tmp/response.json | jq -r '.database.Hostname')
             fi
           fi
 
-          # Check if hostname is empty or not set properly
           if [ -z "$HOSTNAME" ]; then
             echo "Hostname not found in response"
             exit 1
           fi
 
-          # Set the environment variable for the hostname and output it properly
-          echo "TURSO_GS_PARENT_DB_URL=$HOSTNAME" >> $GITHUB_ENV
+          # Set the output for the TURSO_GS_PARENT_DB_URL
           echo "turso_db_url=$HOSTNAME" >> $GITHUB_OUTPUT
 
   deploy:
@@ -122,7 +117,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - uses: ./.github/shared
       - name: Link Vercel Project - Web
         working-directory: apps/web
