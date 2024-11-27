@@ -158,7 +158,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
         run: |
-          vercel deploy apps/docs \
+          vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
             --no-wait \
             > deploy_url_docs.txt
@@ -175,7 +175,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
         run: |
-          vercel deploy apps/web \
+          vercel deploy \
             --token ${{ env.VERCEL_TOKEN }} \
             --no-wait \
             > deploy_url_web.txt
