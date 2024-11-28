@@ -163,7 +163,6 @@ jobs:
           vercel alias \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            -- yes \
             ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
             web-docs-${{ github.event.pull_request.number }}.vercel.app
 
@@ -201,13 +200,12 @@ jobs:
           vercel alias \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            -- yes \
             ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
             web-preview-${{ github.event.pull_request.number }}.vercel.app
 
       # Find the Existing PR Comment or Create Initial One
       - name: Find PR Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v3
         if: github.event_name == 'pull_request'
         id: find-comment
         with:
