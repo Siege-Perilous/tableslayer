@@ -16,7 +16,6 @@ jobs:
   create_database:
     name: 'Create Database'
     runs-on: ubuntu-latest
-    needs: [format-check, lint, tsc]
     outputs:
       turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
     steps:
