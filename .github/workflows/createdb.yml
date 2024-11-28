@@ -175,6 +175,7 @@ jobs:
         run: |
           #  pnpm pnpm run build
           vercel env pull \
+            --token ${{ secrets.VERCEL_TOKEN }} \
             -- yes \
             --environment=preview \
             --git-branch='${{ github.head_ref || github.ref }}'
