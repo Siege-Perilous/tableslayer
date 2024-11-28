@@ -2,7 +2,7 @@ name: Playwright
 
 on:
   workflow_run:
-    workflows: ['Preview DB']
+    workflows: ['Previews']
     types:
       - completed
 
