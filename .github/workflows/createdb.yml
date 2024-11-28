@@ -113,7 +113,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/shared
       - name: Install Vercel
-        run: npm install vercel@latest
+        run: pnpm install vercel@latest
       - name: Link Vercel Project - Web
         working-directory: apps/web
         run: |
