@@ -105,7 +105,7 @@ jobs:
 
       # Find the existing comment on the PR, if it exists
       - name: Find PR Comment
-        id: find-comment
+        id: find-comment-initial
         uses: peter-evans/find-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -200,7 +200,7 @@ jobs:
 
       # Find and Update PR Comment After Docs Deployment
       - name: Find PR Comment
-        id: find-comment
+        id: find-comment-docs
         uses: peter-evans/find-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -265,7 +265,7 @@ jobs:
 
       # Find and Update PR Comment After Web Deployment
       - name: Find PR Comment
-        id: find-comment
+        id: find-comment-web
         uses: peter-evans/find-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
