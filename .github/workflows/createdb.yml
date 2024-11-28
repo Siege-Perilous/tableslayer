@@ -6,6 +6,14 @@ on:
     types:
       - completed
 
+  # Trigger for PRs and branches
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  push:
+    branches:
+      - '*'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -18,6 +26,7 @@ jobs:
   create_database:
     name: 'Turso'
     runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
     outputs:
       turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
     steps:

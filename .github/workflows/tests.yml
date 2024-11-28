@@ -2,9 +2,17 @@ name: Playwright
 
 on:
   workflow_run:
-    workflows: ['Previews']
+    workflows: ['Linting']
     types:
       - completed
+
+  # Trigger for PRs and branches
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+  push:
+    branches:
+      - '*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
