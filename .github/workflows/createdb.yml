@@ -30,77 +30,21 @@ jobs:
       - name: Check/Create Database and Set TURSO_APP_DB_URL
         id: set-db-url
         run: |
-          set -e
-
-          # Define variables
-          API_BASE_URL="https://api.turso.tech/v1/organizations/snide/databases"
-          DB_NAME="${{ env.NEW_DB_NAME }}"
-          AUTH_HEADER="Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}"
-
-          # Function to fetch database details
-          fetch_database_details() {
-            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
-              -H "$AUTH_HEADER" \
-              "$API_BASE_URL/$DB_NAME")
-
-            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
-
-            echo "HTTP_STATUS: $HTTP_STATUS"
-            echo "RESPONSE: $RESPONSE"
-
-            if [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
-              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
-              echo "Database exists. HOSTNAME: $HOSTNAME"
-              DATABASE_EXISTS=true
-            else
-              DATABASE_EXISTS=false
-            fi
-          }
-
-          # Fetch existing database details
-          fetch_database_details
-
-          # Create the database if it doesn't exist
-          if [ "$DATABASE_EXISTS" != "true" ]; then
-            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-              -H "$AUTH_HEADER" \
-              -H "Content-Type: application/json" \
-              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
-              "$API_BASE_URL")
-
-            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
-
-            echo "HTTP_STATUS: $HTTP_STATUS"
-            echo "RESPONSE: $RESPONSE"
-
-            if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
-              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
-              echo "Database created successfully. HOSTNAME: $HOSTNAME"
-            elif [ "$HTTP_STATUS" -eq 409 ]; then
-              echo "Database already exists. Fetching details..."
-              fetch_database_details
-              if [ "$DATABASE_EXISTS" != "true" ]; then
-                echo "Failed to fetch database details after 409 error."
-                exit 1
-              fi
-            else
-              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
-              exit 1
-            fi
-          fi
-
-          if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
-            echo "Hostname not found in response"
-            exit 1
-          fi
-
-          # Set the output for the TURSO_APP_DB_URL
           echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
-          echo "HOSTNAME is $HOSTNAME"
+
+      - name: Create Initial PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v3
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - In Progress 🚀
+
+            - Docs Deployment is in progress...
+            - Web Deployment is in progress...
 
   deploy:
     name: Set Environment Variables for Vercel Previews
@@ -139,7 +83,6 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
         run: |
-          #  pnpm run build
           vercel deploy \
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
@@ -147,6 +90,7 @@ jobs:
             > deploy_url_docs.txt
 
       - name: Wait for Docs Deployment
+        id: wait-for-docs
         run: |
           vercel inspect \
             --token ${{ secrets.VERCEL_TOKEN }} \
@@ -157,31 +101,46 @@ jobs:
 
       - name: Get Docs Deployment URL
         id: get-url-docs
+        if: success()
         run: |
           echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
           echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
-      # Alias Web Deployment
-      - name: Alias Docs Deployment
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
-            web-docs-${{ github.event.pull_request.number }}.vercel.app
 
-      # Turbo Build for Web and Deploy
+      - name: Update PR Comment After Docs Deployment Success
+        uses: peter-evans/create-or-update-comment@v3
+        if: success() && github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - In Progress 🚀
+
+            - Docs Deployment completed successfully: [View Docs Deployment](${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }})
+            - Web Deployment is in progress...
+
+      - name: Update PR Comment After Docs Deployment Failure
+        uses: peter-evans/create-or-update-comment@v3
+        if: failure() && github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - Failed ❌
+
+            - Docs Deployment failed. Please [inspect deployment logs](https://vercel.com/deployments/$(cat deploy_url_docs.txt))
+
       - id: deploy-web
         name: Deploy to Vercel - Web (with Turso DB)
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
         run: |
-          #  pnpm pnpm run build
-          #  vercel env pull \
-            #  --token ${{ secrets.VERCEL_TOKEN }} \
-            #  -- yes \
-            #  --environment=preview \
-            #  --git-branch='${{ github.event.pull_request.head.ref }}'
           vercel deploy \
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
@@ -190,6 +149,7 @@ jobs:
             > deploy_url_web.txt
 
       - name: Wait for Web Deployment
+        id: wait-for-web
         run: |
           vercel inspect \
             --token ${{ secrets.VERCEL_TOKEN }} \
@@ -200,49 +160,15 @@ jobs:
 
       - name: Get Web Deployment URL
         id: get-url-web
+        if: success()
         run: |
           echo "Web Deploy URL: $(cat deploy_url_web.txt)"
           echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
 
-      # Alias Web Deployment
-      - name: Alias Web Deployment
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
-            web-preview-${{ github.event.pull_request.number }}.vercel.app
-
-      # Find the Existing PR Comment or Create Initial One
-      - name: Find PR Comment
-        uses: peter-evans/find-comment@v3
-        if: github.event_name == 'pull_request'
-        id: find-comment
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
-
-      - name: Create or Update Initial PR Comment with Deployment Status
+      # Update PR Comment After Web Deployment Success
+      - name: Update PR Comment After Web Deployment Success
         uses: peter-evans/create-or-update-comment@v3
-        if: github.event_name == 'pull_request'
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - In Progress 🚀
-
-            - Docs Deployment in progress https://vercel.com/deployments/${{ steps.get-url-docs.outputs.HOSTNAME }}?redirect=1
-            - Web Deployment in progress https://vercel.com/deployments/${{ steps.get-url-web.outputs.HOSTNAME }}?redirect=1
-
-      # Update the Comment After Deployments Complete
-      - name: Update PR Comment with Deployment Status
-        uses: peter-evans/create-or-update-comment@v3
-        if: github.event_name == 'pull_request'
+        if: success() && github.event_name == 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
@@ -252,5 +178,20 @@ jobs:
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - Completed ✅
 
-            - Web preview at https://web-preview-${{ github.event.pull_request.number }}.vercel.app
-            - Docs preview at https://docs-preview-${{ github.event.pull_request.number }}.vercel.app
+            - Docs preview at [Docs Preview](${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }})
+            - Web preview at [Web Preview](${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }})
+
+      # Update PR Comment After Web Deployment Failure
+      - name: Update PR Comment After Web Deployment Failure
+        uses: peter-evans/create-or-update-comment@v3
+        if: failure() && github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - Failed ❌
+
+            - Web Deployment failed. Please [inspect deployment logs](https://vercel.com/deployments/$(cat deploy_url_web.txt))
