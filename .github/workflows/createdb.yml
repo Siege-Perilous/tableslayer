@@ -102,7 +102,7 @@ jobs:
           echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
           echo "HOSTNAME is $HOSTNAME"
 
-  db_env_vars:
+  deploy:
     name: Set Environment Variables for Vercel Previews
     runs-on: ubuntu-latest
     needs: [create_database]
@@ -129,3 +129,121 @@ jobs:
         working-directory: apps/web
         run: |
           printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+
+      - id: deploy-docs
+        name: Deploy to Vercel - Docs
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
+        working-directory: apps/docs
+        run: |
+          #  pnpm run build
+          vercel deploy \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            > deploy_url_docs.txt
+
+      - name: Wait for Docs Deployment
+        run: |
+          vercel inspect \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            --wait \
+            --timeout=10m \
+            $(cat deploy_url_docs.txt)
+
+      - name: Get Docs Deployment URL
+        id: get-url-docs
+        run: |
+          echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
+          echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
+      # Alias Web Deployment
+      - name: Alias Docs Deployment
+        run: |
+          vercel alias \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            -- yes \
+            ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
+            web-docs-${{ github.event.pull_request.number }}.vercel.app
+
+      # Turbo Build for Web and Deploy
+      - id: deploy-web
+        name: Deploy to Vercel - Web (with Turso DB)
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+        working-directory: apps/web
+        run: |
+          #  pnpm pnpm run build
+          vercel deploy \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            > deploy_url_web.txt
+
+      - name: Wait for Web Deployment
+        run: |
+          vercel inspect \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            --wait \
+            --timeout=10m \
+            $(cat deploy_url_web.txt)
+
+      - name: Get Web Deployment URL
+        id: get-url-web
+        run: |
+          echo "Web Deploy URL: $(cat deploy_url_web.txt)"
+          echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
+
+      # Alias Web Deployment
+      - name: Alias Web Deployment
+        run: |
+          vercel alias \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_TEAM_ID }} \
+            -- yes \
+            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
+            web-preview-${{ github.event.pull_request.number }}.vercel.app
+
+      # Find the Existing PR Comment or Create Initial One
+      - name: Find PR Comment
+        uses: peter-evans/find-comment@v2
+        if: github.event_name == 'pull_request'
+        id: find-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+
+      - name: Create or Update Initial PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - In Progress 🚀
+
+            - Docs Deployment in progress https://vercel.com/deployments/${{ steps.get-url-docs.outputs.HOSTNAME }}?redirect=1
+            - Web Deployment in progress https://vercel.com/deployments/${{ steps.get-url-web.outputs.HOSTNAME }}?redirect=1
+
+      # Update the Comment After Deployments Complete
+      - name: Update PR Comment with Deployment Status
+        uses: peter-evans/create-or-update-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - Completed ✅
+
+            - Web preview at https://web-preview-${{ github.event.pull_request_number }}.vercel.app
+            - Docs preview at https://docs-preview-${{ github.event.pull_request_number }}.vercel.app
