@@ -112,7 +112,7 @@ jobs:
     steps:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
-        id: fc
+        id: fcinitial
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
@@ -123,7 +123,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
+          comment-id: ${{ steps.fcinitial.outputs.comment-id }}
           body: |
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - In Progress 🚀
@@ -131,6 +131,13 @@ jobs:
             - Docs Deployment is in progress...
             - Web Deployment is in progress...
           create-when-empty: true
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
