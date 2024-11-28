@@ -30,7 +30,79 @@ jobs:
       - name: Check/Create Database and Set TURSO_APP_DB_URL
         id: set-db-url
         run: |
-          echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
+          set -e
+
+          # Define variables
+          API_BASE_URL="https://api.turso.tech/v1/organizations/snide/databases"
+          DB_NAME="${{ env.NEW_DB_NAME }}"
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}"
+
+          # Function to fetch database details
+          fetch_database_details() {
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+              -H "$AUTH_HEADER" \
+              "$API_BASE_URL/$DB_NAME")
+
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              # Correctly parse hostname from the API response
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
+              echo "Database exists. HOSTNAME: $HOSTNAME"
+              DATABASE_EXISTS=true
+            else
+              DATABASE_EXISTS=false
+            fi
+          }
+
+          # Fetch existing database details
+          fetch_database_details
+
+          # Create the database if it doesn't exist
+          if [ "$DATABASE_EXISTS" != "true" ]; then
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "$AUTH_HEADER" \
+              -H "Content-Type: application/json" \
+              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
+              "$API_BASE_URL")
+
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
+
+            if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
+              echo "Database created successfully. HOSTNAME: $HOSTNAME"
+            elif [ "$HTTP_STATUS" -eq 409 ]; then
+              echo "Database already exists. Fetching details..."
+              fetch_database_details
+              if [ "$DATABASE_EXISTS" != "true" ]; then
+                echo "Failed to fetch database details after 409 error."
+                exit 1
+              fi
+            else
+              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
+              exit 1
+            fi
+          fi
+
+          if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+
+          # Set the output for the TURSO_APP_DB_URL
+          TURSO_APP_DB_URL="libsql://${HOSTNAME}"
+          echo "turso_db_url=$TURSO_APP_DB_URL" >> $GITHUB_OUTPUT
+          echo "TURSO_APP_DB_URL=${TURSO_APP_DB_URL}" >> $GITHUB_ENV
 
       # Find the existing comment on the PR, if it exists
       - name: Find PR Comment
