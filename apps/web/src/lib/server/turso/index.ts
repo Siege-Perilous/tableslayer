@@ -1,3 +1,4 @@
+import { TURSO_API_TOKEN } from '$env/static/private';
 import { db } from '$lib/db/app'; // Main application DB
 import { gameSessionTable } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
@@ -9,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const createGameSessionDb = async (partyId: string, gsName?: string) => {
   const turso = createClient({
     org: 'snide',
-    token: process.env.TURSO_API_TOKEN!
+    token: TURSO_API_TOKEN
   });
 
   try {
