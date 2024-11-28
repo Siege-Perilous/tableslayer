@@ -51,7 +51,7 @@
       <MessageError message={$message} />
     {/if}
     <Spacer />
-    <Button type="submit">Submit</Button>
+    <Button type="submit" data-testid="signupSubmit">Submit</Button>
   </form>
 </Panel>
 <SuperDebug data={$formData} display={false} />

@@ -1,4 +1,4 @@
-name: Turso DB in Vercel Preview
+name: Preview DB
 
 on:
   pull_request:
