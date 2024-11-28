@@ -1,0 +1,130 @@
+name: Turso DB in Vercel Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create_database:
+    name: 'Create Database'
+    runs-on: ubuntu-latest
+    outputs:
+      turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
+    steps:
+      - name: Set New Database Name
+        id: set-db-name
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref }}"
+          CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
+          NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
+          echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
+
+      - name: Check/Create Database and Set TURSO_APP_DB_URL
+        id: set-db-url
+        run: |
+          set -e
+
+          # Define variables
+          API_BASE_URL="https://api.turso.tech/v1/organizations/snide/databases"
+          DB_NAME="${{ env.NEW_DB_NAME }}"
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.TURSO_API_TOKEN }}"
+
+          # Function to fetch database details
+          fetch_database_details() {
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+              -H "$AUTH_HEADER" \
+              "$API_BASE_URL/$DB_NAME")
+
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
+              echo "Database exists. HOSTNAME: $HOSTNAME"
+              DATABASE_EXISTS=true
+            else
+              DATABASE_EXISTS=false
+            fi
+          }
+
+          # Fetch existing database details
+          fetch_database_details
+
+          # Create the database if it doesn't exist
+          if [ "$DATABASE_EXISTS" != "true" ]; then
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "$AUTH_HEADER" \
+              -H "Content-Type: application/json" \
+              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
+              "$API_BASE_URL")
+
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
+
+            if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
+              echo "Database created successfully. HOSTNAME: $HOSTNAME"
+            elif [ "$HTTP_STATUS" -eq 409 ]; then
+              echo "Database already exists. Fetching details..."
+              fetch_database_details
+              if [ "$DATABASE_EXISTS" != "true" ]; then
+                echo "Failed to fetch database details after 409 error."
+                exit 1
+              fi
+            else
+              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
+              exit 1
+            fi
+          fi
+
+          if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+
+          # Set the output for the TURSO_APP_DB_URL
+          echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "HOSTNAME is $HOSTNAME"
+
+  db_env_vars:
+    name: Set Environment Variables for Vercel Previews
+    runs-on: ubuntu-latest
+    needs: [create_database]
+    env:
+      TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: ./.github/shared
+      - name: Link Vercel Project - Web
+        working-directory: apps/web
+        run: |
+          vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
+
+      # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
+      - name: Remove Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+
+      # Set Environment Variable for Web Project in Vercel with Git Branch Scope
+      - name: Set Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}

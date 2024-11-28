@@ -1,3 +1,9 @@
+import {
+  CLOUDFLARE_ACCOUNT_ID,
+  CLOUDFLARE_R2_ACCESS_KEY,
+  CLOUDFLARE_R2_BUCKET_NAME,
+  CLOUDFLARE_R2_SECRET_KEY
+} from '$env/static/private';
 import { db } from '$lib/db/app';
 import { filesTable, userFilesTable } from '$lib/db/app/schema';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -8,16 +14,16 @@ import type { Readable } from 'stream';
 
 // Setup R2 Client
 export const r2 = new S3Client({
-  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY!,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY!
+    accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
+    secretAccessKey: CLOUDFLARE_R2_SECRET_KEY
   },
   region: 'auto',
   forcePathStyle: true
 });
 
-const CLOUDFLARE_BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+const CLOUDFLARE_BUCKET_NAME = CLOUDFLARE_R2_BUCKET_NAME;
 
 const generateRandomFileName = (originalName: string) => {
   const extensionMatch = originalName.match(/\.([a-zA-Z0-9]+)$/);
