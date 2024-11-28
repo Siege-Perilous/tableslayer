@@ -105,7 +105,7 @@ jobs:
 
       # Find the existing comment on the PR, if it exists
       - name: Find PR Comment
-        id: find-comment-initial
+        id: find-comment
         uses: peter-evans/find-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -116,7 +116,7 @@ jobs:
       # Create or update the PR comment with deployment status
       - name: Create or Update PR Comment with Deployment Status
         uses: peter-evans/create-or-update-comment@v3
-        if: github.event_name == 'pull_request'
+        if: steps.find-comment.outputs.comment-id != ''
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -198,19 +198,9 @@ jobs:
             ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
             docs-preview-${{ github.event.pull_request.number }}.vercel.app
 
-      # Find and Update PR Comment After Docs Deployment
-      - name: Find PR Comment
-        id: find-comment-docs
-        uses: peter-evans/find-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '### Vercel Preview Deployments'
-
       - name: Update PR Comment After Docs Deployment
         uses: peter-evans/create-or-update-comment@v3
-        if: github.event_name == 'pull_request'
+        if: steps.find-comment.outputs.comment-id != ''
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
@@ -263,19 +253,9 @@ jobs:
             ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
             web-preview-${{ github.event.pull_request.number }}.vercel.app
 
-      # Find and Update PR Comment After Web Deployment
-      - name: Find PR Comment
-        id: find-comment-web
-        uses: peter-evans/find-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '### Vercel Preview Deployments'
-
       - name: Update PR Comment After Web Deployment
         uses: peter-evans/create-or-update-comment@v3
-        if: github.event_name == 'pull_request'
+        if: steps.find-comment.outputs.comment-id != ''
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
@@ -286,3 +266,15 @@ jobs:
 
             - Docs preview at [Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
             - Web preview at [Web Preview](https://web-preview-${{ github.event.pull_request.number }}.vercel.app)
+      - name: Update PR Comment After Failure
+        if: failure()
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ### Vercel Preview Deployments - Failed ❌
+
+            - Deployment failed. Please check the logs for more details.
