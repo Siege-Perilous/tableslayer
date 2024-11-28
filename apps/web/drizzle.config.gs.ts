@@ -1,12 +1,14 @@
-import { TURSO_GS_PARENT_DB_AUTH_TOKEN, TURSO_GS_PARENT_DB_URL } from '$env/static/private';
+import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 
+config({ path: '.env' });
+
 export default defineConfig({
-  schema: './src/lib/db/gs',
-  out: './migrations/app/gs',
+  schema: './src/lib/db/app',
+  out: './migrations/app',
   dialect: 'turso',
   dbCredentials: {
-    url: TURSO_GS_PARENT_DB_URL!,
-    authToken: TURSO_GS_PARENT_DB_AUTH_TOKEN!
+    url: process.env.TURSO_APP_DB_URL!,
+    authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
   }
 });
