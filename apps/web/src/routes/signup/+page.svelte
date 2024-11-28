@@ -41,7 +41,7 @@
     <Field {form} name="confirmPassword">
       <FSControl label="Confirm Password">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.confirmPassword} />
+          <Input {...attrs} type="password" bind:value={$formData.confirmPassword} data-testid="confirmPassword" />
         {/snippet}
       </FSControl>
       <FieldErrors />
