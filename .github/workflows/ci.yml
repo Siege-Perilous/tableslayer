@@ -79,6 +79,7 @@ jobs:
 
             if [ "$HTTP_STATUS" -eq 200 ]; then
               HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
               echo "Database exists. HOSTNAME: $HOSTNAME"
               DATABASE_EXISTS=true
             else
@@ -94,39 +95,40 @@ jobs:
             HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
               -H "$AUTH_HEADER" \
               -H "Content-Type: application/json" \
-                  -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
-                  "$API_BASE_URL")
+              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
+              "$API_BASE_URL")
 
-                HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-                RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
 
-                echo "HTTP_STATUS: $HTTP_STATUS"
-                echo "RESPONSE: $RESPONSE"
+            echo "HTTP_STATUS: $HTTP_STATUS"
+            echo "RESPONSE: $RESPONSE"
 
-                if [ "$HTTP_STATUS" -eq 201 ]; then
-                  HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print(data.get("Hostname") or data.get("hostname") or "null")')
-                  echo "Database created successfully. HOSTNAME: $HOSTNAME"
-                elif [ "$HTTP_STATUS" -eq 409 ]; then
-                  echo "Database already exists. Fetching details..."
-                  fetch_database_details
-                  if [ "$DATABASE_EXISTS" != "true" ]; then
-                    echo "Failed to fetch database details after 409 error."
-                    exit 1
-                  fi
-                else
-                  echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
-                  exit 1
-                fi
-              fi
-
-              if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
-                echo "Hostname not found in response"
+            if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
+              echo "Database created successfully. HOSTNAME: $HOSTNAME"
+            elif [ "$HTTP_STATUS" -eq 409 ]; then
+              echo "Database already exists. Fetching details..."
+              fetch_database_details
+              if [ "$DATABASE_EXISTS" != "true" ]; then
+                echo "Failed to fetch database details after 409 error."
                 exit 1
               fi
+            else
+              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
+              exit 1
+            fi
+          fi
 
-              # Set the output for the TURSO_APP_DB_URL
-              echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
-              echo "HOSTNAME is $HOSTNAME"
+          if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
+            echo "Hostname not found in response"
+            exit 1
+          fi
+
+          # Set the output for the TURSO_APP_DB_URL
+          echo "turso_db_url=libsql://$HOSTNAME" >> $GITHUB_OUTPUT
+          echo "HOSTNAME is $HOSTNAME"
 
   deploy:
     name: Deploy to Vercel
