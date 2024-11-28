@@ -1,4 +1,4 @@
-name: Preview DB
+name: Previews
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   create_database:
-    name: 'Create Database'
+    name: 'Turso'
     runs-on: ubuntu-latest
     outputs:
       turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
@@ -104,7 +104,7 @@ jobs:
           echo "TURSO_APP_DB_URL=${TURSO_APP_DB_URL}" >> $GITHUB_ENV
 
   deploy:
-    name: Set Environment Variables for Vercel Previews
+    name: Vercel
     runs-on: ubuntu-latest
     needs: [create_database]
     env:
