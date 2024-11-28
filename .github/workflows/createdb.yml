@@ -141,6 +141,7 @@ jobs:
         run: |
           #  pnpm run build
           vercel deploy \
+            --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             > deploy_url_docs.txt
@@ -182,6 +183,7 @@ jobs:
             #  --environment=preview \
             #  --git-branch='${{ github.event.pull_request.head.ref }}'
           vercel deploy \
+            --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --env TURSO_APP_DB_URL='${{ needs.create_database.outputs.turso_db_url }}' \
@@ -223,7 +225,7 @@ jobs:
           body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
 
       - name: Create or Update Initial PR Comment with Deployment Status
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v3
         if: github.event_name == 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -239,7 +241,7 @@ jobs:
 
       # Update the Comment After Deployments Complete
       - name: Update PR Comment with Deployment Status
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v3
         if: github.event_name == 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -250,5 +252,5 @@ jobs:
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - Completed ✅
 
-            - Web preview at https://web-preview-${{ github.event.pull_request_number }}.vercel.app
-            - Docs preview at https://docs-preview-${{ github.event.pull_request_number }}.vercel.app
+            - Web preview at https://web-preview-${{ github.event.pull_request.number }}.vercel.app
+            - Docs preview at https://docs-preview-${{ github.event.pull_request.number }}.vercel.app
