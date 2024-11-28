@@ -78,7 +78,7 @@ jobs:
             echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print(data.get("Hostname") or data.get("hostname") or "null")')
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
               echo "Database exists. HOSTNAME: $HOSTNAME"
               DATABASE_EXISTS=true
             else
@@ -153,7 +153,7 @@ jobs:
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          echo ${{ needs.create_database.outputs.turso_db_url }} | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Verify the Environment Variable before Deployment
       - name: Verify TURSO_APP_DB_URL Value
