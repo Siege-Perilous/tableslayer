@@ -8,7 +8,7 @@ test.describe('Auth tests', () => {
     await page.getByLabel('Email').fill(uniqueEmail);
     await page.getByTestId('password').fill('testtest');
     await page.getByTestId('confirmPassword').fill('testtest');
-    await page.getByTestId('loginSubmit').click();
+    await page.getByTestId('signupSubmit').click();
     await page.waitForURL('/verify-email');
     expect(page.url()).toContain('/verify-email');
     await page.goto('/logout');
