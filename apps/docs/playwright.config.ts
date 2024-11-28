@@ -1,4 +1,4 @@
-import { BASE_URL, VERCEL_AUTOMATION_BYPASS_SECRET } from '$env/static/private';
+import { BASE_URL, VERCEL_AUTOMATION_BYPASS_SECRET } from '$env/dynamic/private';
 import type { PlaywrightTestConfig } from '@playwright/test';
 
 const baseURL = BASE_URL || 'http://localhost:5174';
