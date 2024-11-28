@@ -32,7 +32,7 @@
     <Field {form} name="password">
       <FSControl label="Password">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.password} />
+          <Input {...attrs} type="password" bind:value={$formData.password} data-testid="password" />
         {/snippet}
       </FSControl>
       <FieldErrors />

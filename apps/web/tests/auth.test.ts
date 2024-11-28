@@ -6,8 +6,8 @@ test.describe('Auth tests', () => {
   test('should successfully load the signup page and create a user', async ({ page }) => {
     await page.goto('/signup');
     await page.getByLabel('Email').fill(uniqueEmail);
-    await page.getByLabel('Password').fill('testtest');
-    await page.getByLabel('Confirm Password').fill('testtest');
+    await page.getByTestId('password').fill('testtest');
+    await page.getByTestId('confirmPassword').fill('testtest');
     await page.getByTestId('loginSubmit').click();
     await page.waitForURL('/verify-email');
     expect(page.url()).toContain('/verify-email');
