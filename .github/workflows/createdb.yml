@@ -103,21 +103,6 @@ jobs:
           echo "turso_db_url=$TURSO_APP_DB_URL" >> $GITHUB_OUTPUT
           echo "TURSO_APP_DB_URL=${TURSO_APP_DB_URL}" >> $GITHUB_ENV
 
-      # Find or Create PR Comment for Deployment Status
-      - name: Find or Create Initial PR Comment
-        id: find-or-create-comment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ### Vercel Preview Deployments - In Progress 🚀
-
-            - Docs Deployment is in progress...
-            - Web Deployment is in progress...
-          body-includes: '### Vercel Preview Deployments' # Unique identifier for the comment
-          create-when-empty: true
-
   deploy:
     name: Set Environment Variables for Vercel Previews
     runs-on: ubuntu-latest
@@ -125,6 +110,27 @@ jobs:
     env:
       TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
     steps:
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
+      - name: Find or Create Initial PR Comment
+        id: find-or-create-comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Vercel Preview Deployments - In Progress 🚀
+
+            - Docs Deployment is in progress...
+            - Web Deployment is in progress...
+          create-when-empty: true
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -180,10 +186,11 @@ jobs:
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.find-or-create-comment.outputs.comment-id }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - In Progress 🚀
 
             - Docs Deployment completed successfully: [View Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
@@ -233,10 +240,11 @@ jobs:
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.find-or-create-comment.outputs.comment-id }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - Completed ✅
 
             - Docs preview at [Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
@@ -248,10 +256,11 @@ jobs:
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.find-or-create-comment.outputs.comment-id }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Vercel Preview Deployments - Failed ❌
 
             - Deployment failed. Please check the logs for more details.
