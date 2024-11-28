@@ -59,7 +59,7 @@ jobs:
           echo "HTTP_STATUS: $HTTP_STATUS"
           echo "RESPONSE: $RESPONSE"
 
-          if [ "$HTTP_STATUS" -ne 204 ]; then
+          if [ "$HTTP_STATUS" -ne 204 ] && [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Failed to delete database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
             exit 1
           else
