@@ -22,7 +22,7 @@ jobs:
       - name: Set New Database Name
         id: set-db-name
         run: |
-          BRANCH_NAME="${{ github.head_ref || github.ref }}"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
           NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
@@ -111,6 +111,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./.github/shared
       - name: Install Vercel
         run: pnpm install -g vercel@latest
@@ -123,13 +125,13 @@ jobs:
       - name: Remove Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          vercel env rm TURSO_APP_DB_URL preview ${{ github.event.pull_request.head.ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
 
       # Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.event.pull_request.head.ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       - id: deploy-docs
         name: Deploy to Vercel - Docs
@@ -174,11 +176,11 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
         run: |
           #  pnpm pnpm run build
-          vercel env pull \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            -- yes \
-            --environment=preview \
-            --git-branch='${{ github.head_ref || github.ref }}'
+          #  vercel env pull \
+            #  --token ${{ secrets.VERCEL_TOKEN }} \
+            #  -- yes \
+            #  --environment=preview \
+            #  --git-branch='${{ github.event.pull_request.head.ref }}'
           vercel deploy \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
