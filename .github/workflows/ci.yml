@@ -249,12 +249,14 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          VERCEL_GIT_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
         run: |
           vercel deploy \
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --env TURSO_APP_DB_URL='${{ needs.create_database.outputs.turso_db_url }}' \
+            --env VERCEL_GIT_PULL_REQUEST_ID='${{ github.event.pull_request.number }}'
             > deploy_url_web.txt
 
       - name: Wait for Web Deployment
