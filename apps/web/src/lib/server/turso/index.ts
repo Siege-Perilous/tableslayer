@@ -1,5 +1,4 @@
-import { VERCEL_GIT_PULL_REQUEST_ID } from '$env/dynamic/private';
-import { TURSO_API_TOKEN, VERCEL_ENV } from '$env/static/private';
+import { TURSO_API_TOKEN, VERCEL_ENV, VERCEL_GIT_PULL_REQUEST_ID } from '$env/static/private';
 import { db } from '$lib/db/app'; // Main application DB
 import { gameSessionTable } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';

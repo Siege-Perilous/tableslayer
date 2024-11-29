@@ -18,11 +18,8 @@ declare global {
   }
 }
 
-declare module '$env/dynamic/private' {
-  export const VERCEL_GIT_PULL_REQUEST_ID: string;
-}
-
 declare module '$env/static/private' {
+  export const VERCEL_GIT_PULL_REQUEST_ID: string;
   export const TURSO_API_TOKEN: string;
   export const TURSO_APP_DB_URL: string;
   export const TURSO_APP_DB_AUTH_TOKEN: string;
