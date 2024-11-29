@@ -42,7 +42,7 @@ jobs:
 
           # Extract the PR number from GitHub Actions context
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          PREFIX="preview-pr-${PR_NUMBER}"
+          PREFIX="pr-${PR_NUMBER}"
 
           # Fetch and delete all databases related to the PR
           DATABASES=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL" | jq -r '.databases[] | select(.name | startswith("'"${PREFIX}"'")) | .name')

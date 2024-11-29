@@ -18,7 +18,7 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const name = gsName || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
     const prNumber = GITHUB_PR_NUMBER;
-    const prefix = VERCEL_ENV === 'preview' ? `preview-pr-${prNumber}-gs-child` : 'gs-child';
+    const prefix = VERCEL_ENV === 'preview' ? `pr-${prNumber}-gs-child` : 'gs-child';
 
     const database = await turso.databases.create(`${prefix}-${gameSessionId}`, {
       group: 'default',
