@@ -44,9 +44,7 @@ jobs:
       - name: Set New Database Name
         id: set-db-name
         run: |
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
-          CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
-          NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
+          NEW_DB_NAME="pr-${{ github.event.pull_request.number }}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
       - name: Check/Create Database and Set TURSO_APP_DB_URL
@@ -72,13 +70,32 @@ jobs:
             echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
               HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
               echo "Database exists. HOSTNAME: $HOSTNAME"
               DATABASE_EXISTS=true
             else
               DATABASE_EXISTS=false
             fi
+          }
+
+          # Function to retry fetching the database details until hostname is available
+          retry_fetch_until_hostname() {
+            MAX_RETRIES=5
+            RETRY_DELAY=5  # seconds
+
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              fetch_database_details
+              if [ "$DATABASE_EXISTS" = "true" ] && [ -n "$HOSTNAME" ] && [ "$HOSTNAME" != "null" ]; then
+                echo "Hostname successfully fetched: $HOSTNAME"
+                return 0
+              fi
+              echo "Hostname not yet available. Retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+              sleep $RETRY_DELAY
+            done
+
+            echo "Failed to fetch hostname after $MAX_RETRIES retries."
+            exit 1
           }
 
           # Fetch existing database details
@@ -99,9 +116,8 @@ jobs:
             echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
-              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
-              echo "Database created successfully. HOSTNAME: $HOSTNAME"
+              echo "Database created successfully."
+              retry_fetch_until_hostname  # Wait and retry fetching hostname if not available
             elif [ "$HTTP_STATUS" -eq 409 ]; then
               echo "Database already exists. Fetching details..."
               fetch_database_details
@@ -115,6 +131,7 @@ jobs:
             fi
           fi
 
+          # Check if hostname was successfully retrieved
           if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
             echo "Hostname not found in response"
             exit 1
@@ -172,6 +189,19 @@ jobs:
         working-directory: apps/web
         run: |
           vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
+      # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
+      - name: Remove Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          vercel env rm GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+
+      # Set Environment Variable for Web Project in Vercel with Git Branch Scope
+      - name: Set Environment Variable for Web Project in Vercel
+        working-directory: apps/web
+        run: |
+          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          printf '%s' "${{ github.event.pull_request.number }}" | vercel env add GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Deploy Docs
       - id: deploy-docs
@@ -232,12 +262,14 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          VERCEL_GIT_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
         run: |
           vercel deploy \
             --no-wait \
             --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_TEAM_ID }} \
             --env TURSO_APP_DB_URL='${{ needs.create_database.outputs.turso_db_url }}' \
+            --env VERCEL_GIT_PULL_REQUEST_ID='${{ github.event.pull_request.number }}' \
             > deploy_url_web.txt
 
       - name: Wait for Web Deployment

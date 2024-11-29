@@ -19,6 +19,7 @@ declare global {
 }
 
 declare module '$env/static/private' {
+  export const GITHUB_PR_NUMBER: string;
   export const TURSO_API_TOKEN: string;
   export const TURSO_APP_DB_URL: string;
   export const TURSO_APP_DB_AUTH_TOKEN: string;

@@ -8,6 +8,7 @@
     },
     "web#build": {
       "env": [
+        "GITHUB_PR_NUMBER",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",
