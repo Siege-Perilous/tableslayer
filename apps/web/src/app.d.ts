@@ -19,7 +19,7 @@ declare global {
 }
 
 declare module '$env/static/private' {
-  export const VERCEL_GIT_PULL_REQUEST_ID: string;
+  export const GITHUB_PR_NUMBER: string;
   export const TURSO_API_TOKEN: string;
   export const TURSO_APP_DB_URL: string;
   export const TURSO_APP_DB_AUTH_TOKEN: string;
