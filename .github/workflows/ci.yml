@@ -70,13 +70,32 @@ jobs:
             echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
+              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
               HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
               echo "Database exists. HOSTNAME: $HOSTNAME"
               DATABASE_EXISTS=true
             else
               DATABASE_EXISTS=false
             fi
+          }
+
+          # Function to retry fetching the database details until hostname is available
+          retry_fetch_until_hostname() {
+            MAX_RETRIES=5
+            RETRY_DELAY=5  # seconds
+
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              fetch_database_details
+              if [ "$DATABASE_EXISTS" = "true" ] && [ -n "$HOSTNAME" ] && [ "$HOSTNAME" != "null" ]; then
+                echo "Hostname successfully fetched: $HOSTNAME"
+                return 0
+              fi
+              echo "Hostname not yet available. Retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+              sleep $RETRY_DELAY
+            done
+
+            echo "Failed to fetch hostname after $MAX_RETRIES retries."
+            exit 1
           }
 
           # Fetch existing database details
@@ -97,9 +116,8 @@ jobs:
             echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
-              HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("hostname") or "null").strip())')
-              HOSTNAME=$(echo "$HOSTNAME" | tr -d '\r\n')
-              echo "Database created successfully. HOSTNAME: $HOSTNAME"
+              echo "Database created successfully."
+              retry_fetch_until_hostname  # Wait and retry fetching hostname if not available
             elif [ "$HTTP_STATUS" -eq 409 ]; then
               echo "Database already exists. Fetching details..."
               fetch_database_details
@@ -113,6 +131,7 @@ jobs:
             fi
           fi
 
+          # Check if hostname was successfully retrieved
           if [ -z "$HOSTNAME" ] || [ "$HOSTNAME" = "null" ]; then
             echo "Hostname not found in response"
             exit 1
