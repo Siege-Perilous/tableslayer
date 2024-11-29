@@ -13,6 +13,7 @@ jobs:
     name: Destroy Vercel Deployment and Turso Database
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/shared
       - name: Install Vercel
         run: pnpm install -g vercel@latest
