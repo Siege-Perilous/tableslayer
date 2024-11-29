@@ -34,7 +34,6 @@ jobs:
 
       # Inline deletion of databases for the pull request
       - name: Delete All Turso Databases for the Pull Request
-      - name: Delete All Turso Databases for the Pull Request
         run: |
           set -e
 
