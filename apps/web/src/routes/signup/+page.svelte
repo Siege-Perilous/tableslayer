@@ -23,7 +23,7 @@
     <Field {form} name="email">
       <FSControl label="Email">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="text" bind:value={$formData.email} />
+          <Input {...attrs} type="text" bind:value={$formData.email} data-testid="email" />
         {/snippet}
       </FSControl>
       <FieldErrors />
