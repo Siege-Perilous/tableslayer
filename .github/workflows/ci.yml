@@ -193,15 +193,15 @@ jobs:
       - name: Remove Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          vercel env rm TURSO_APP_DB_URL --environment=preview --git-branch=${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
-          vercel env rm GITHUB_PR_NUMBER --environment=preview --git-branch=${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          vercel env rm GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
 
       # Set Environment Variable for Web Project in Vercel with Git Branch Scope
       - name: Set Environment Variable for Web Project in Vercel
         working-directory: apps/web
         run: |
-          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL --environment=preview --get-branch=${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
-          printf '%s' "${{ github.event.pull_request.number }}" | vercel env add GITHUB_PR_NUMBER --environment=preview --get-branch=${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          printf '%s' "${{ github.event.pull_request.number }}" | vercel env add GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
 
       # Deploy Docs
       - id: deploy-docs
