@@ -44,7 +44,7 @@ jobs:
       - name: Set New Database Name
         id: set-db-name
         run: |
-          NEW_DB_NAME="preview-pr-${{ github.event.pull_request.number }}"
+          NEW_DB_NAME="pr-${{ github.event.pull_request.number }}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
       - name: Check/Create Database and Set TURSO_APP_DB_URL
