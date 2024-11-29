@@ -296,7 +296,7 @@ jobs:
             - Deployment failed. Please check the logs for more details.
 
   tests:
-    needs: [format-check, lint, tsc, create_database]
+    needs: [format-check, lint, tsc, create_database, deploy]
     runs-on: ubuntu-latest
     strategy:
       matrix:
