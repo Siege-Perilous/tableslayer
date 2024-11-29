@@ -44,9 +44,7 @@ jobs:
       - name: Set New Database Name
         id: set-db-name
         run: |
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
-          CLEAN_BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]-')
-          NEW_DB_NAME="preview-${CLEAN_BRANCH_NAME}"
+          NEW_DB_NAME="preview-pr-${{ github.event.pull_request.number }}"
           echo "NEW_DB_NAME=${NEW_DB_NAME}" >> $GITHUB_ENV
 
       - name: Check/Create Database and Set TURSO_APP_DB_URL
