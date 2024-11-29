@@ -36,7 +36,7 @@
     <Field {form} name="email">
       <FSControl label="Email">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="email" bind:value={$formData.email} />
+          <Input {...attrs} type="email" bind:value={$formData.email} data-testid="email" />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -45,7 +45,7 @@
     <Field {form} name="password">
       <FSControl label="Password">
         {#snippet children({ attrs })}
-          <Input type="password" {...attrs} bind:value={$formData.password} />
+          <Input type="password" {...attrs} bind:value={$formData.password} data-testid="password" />
         {/snippet}
       </FSControl>
       <FieldErrors />

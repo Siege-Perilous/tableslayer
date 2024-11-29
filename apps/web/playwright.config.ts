@@ -3,7 +3,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import { config as dconfig } from 'dotenv';
 
 dconfig({ path: '.env' });
-const baseURL = process.env.BASE_URL || 'http://localhost:5173';
+const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 const isVercel = process.env.BASE_URL && !process.env.BASE_URL.includes('localhost');
 
 const config: PlaywrightTestConfig = {

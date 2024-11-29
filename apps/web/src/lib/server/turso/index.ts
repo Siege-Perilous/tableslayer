@@ -1,4 +1,4 @@
-import { TURSO_API_TOKEN } from '$env/static/private';
+import { TURSO_API_TOKEN, VERCEL_ENV } from '$env/static/private';
 import { db } from '$lib/db/app'; // Main application DB
 import { gameSessionTable } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
@@ -17,8 +17,9 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const gameSessionId = uuidv4();
     const name = gsName || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
+    const prefix = VERCEL_ENV === 'preview' ? 'preview-gs-child' : 'gs-child';
 
-    const database = await turso.databases.create(`gs-child-${gameSessionId}`, {
+    const database = await turso.databases.create(`${prefix}-${gameSessionId}`, {
       group: 'default',
       schema: 'gs-parent-db'
     });
