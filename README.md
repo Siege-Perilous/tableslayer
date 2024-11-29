@@ -27,9 +27,10 @@ General CI operations look like this:
 - Format
 - Lint
 - TSC
-- Create Turso DB with the PR number
+- Create Turso DB prefixed with the PR number
 - Deploy Vercel previews (setting env vars to the Turso DB and PR number)
-- On PR merge, clean up the DBs made in the preview envs
+  - Any child DBs made in the preview (like game sessions) will also get prefixed names
+- On PR merge, clean up the DBs (with the prefix) made for / during the preview website
 
 ## Tests
 
