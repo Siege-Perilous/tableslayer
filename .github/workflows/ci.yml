@@ -1,4 +1,4 @@
-name: Linting
+name: PR
 
 on:
   pull_request:
@@ -316,7 +316,7 @@ jobs:
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: https://web-preview-${{ github.event.pull_request.number }}.vercel.app
+          BASE_URL: https://${{ matrix.app }}-preview-${{ github.event.pull_request.number }}.vercel.app
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
