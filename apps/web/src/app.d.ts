@@ -31,6 +31,7 @@ declare module '$env/static/private' {
   export const CLOUDFLARE_R2_ACCESS_KEY: string;
   export const CLOUDFLARE_R2_SECRET_KEY: string;
   export const CLOUDFLARE_R2_BUCKET_NAME: string;
+  export const VERCEL_ENV: string;
 }
 
 export {};

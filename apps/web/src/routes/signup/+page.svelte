@@ -23,7 +23,7 @@
     <Field {form} name="email">
       <FSControl label="Email">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="text" bind:value={$formData.email} />
+          <Input {...attrs} type="text" bind:value={$formData.email} data-testid="email" />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -32,7 +32,7 @@
     <Field {form} name="password">
       <FSControl label="Password">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.password} />
+          <Input {...attrs} type="password" bind:value={$formData.password} data-testid="password" />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -41,7 +41,7 @@
     <Field {form} name="confirmPassword">
       <FSControl label="Confirm Password">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.confirmPassword} />
+          <Input {...attrs} type="password" bind:value={$formData.confirmPassword} data-testid="confirmPassword" />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -51,7 +51,7 @@
       <MessageError message={$message} />
     {/if}
     <Spacer />
-    <Button type="submit">Submit</Button>
+    <Button type="submit" data-testid="signupSubmit">Submit</Button>
   </form>
 </Panel>
 <SuperDebug data={$formData} display={false} />
