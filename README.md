@@ -1,4 +1,4 @@
-# Table Slayer
+# TableSlayer
 
 Table Slayer provides tools for game masters to project animated battle maps on their digital tabletop.
 
@@ -21,6 +21,15 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 ## Linting, prettier and CI
 
 Because TypeScript, linting and prettier are provided globally within the repo, you'll need to make sure your IDE's project starts from the root of the monorepo to receive auto-fixes. During CI, Husky should check as you make commits.
+
+General CI operations look like this:
+
+- Format
+- Lint
+- TSC
+- Create Turso DB with the PR number
+- Deploy Vercel previews (setting env vars to the Turso DB and PR number)
+- On PR merge, clean up the DBs made in the preview envs
 
 ## Tests
 
