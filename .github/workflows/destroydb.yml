@@ -32,7 +32,9 @@ jobs:
         run: |
           vercel remove https://${{ steps.get-vercel-deployment.outputs.deployment-url }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
 
-      # Inline deletion of databases for the pull request
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Delete All Turso Databases for the Pull Request
         run: |
           set -e
@@ -45,24 +47,38 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PREFIX="pr-${PR_NUMBER}"
 
-          # Fetch databases related to the PR using curl and parse with awk/sed/grep
+          # Fetch databases related to the PR using curl and parse with jq
           RESPONSE=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
-          DATABASES=$(echo "$RESPONSE" | grep -o '"name":"[^"]*"' | sed 's/"name":"//g' | sed 's/"//g' | grep "^${PREFIX}")
+
+          # Output a message indicating response was received
+          echo "API response received."
+
+          # Extract database names using jq
+          DATABASES=$(echo "$RESPONSE" | jq -r '.databases[].name' | grep -F "^${PREFIX}")
+
+          # Check if there are any databases to delete
+          if [ -z "$(echo -n "$DATABASES")" ]; then
+            echo "No databases found for prefix ${PREFIX}."
+            exit 0
+          fi
+
+          echo "Databases found to be deleted:"
+          echo "$DATABASES"
+
+          # Set IFS to newline to handle database names safely
+          IFS=$'\n'
 
           # Delete each database
           for DB_NAME in $DATABASES; do
-            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+            echo "Attempting to delete database: $DB_NAME"
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
               -H "$AUTH_HEADER" \
               "$API_BASE_URL/$DB_NAME")
 
-            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
-
             echo "HTTP_STATUS (deleting $DB_NAME): $HTTP_STATUS"
-            echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -ne 204 ]; then
-              echo "Failed to delete database: $DB_NAME. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
+              echo "Failed to delete database: $DB_NAME. HTTP Status: $HTTP_STATUS."
             else
               echo "Database $DB_NAME deleted successfully."
             fi
