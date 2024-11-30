@@ -35,6 +35,7 @@ jobs:
       - run: pnpm tsc
 
   create_database:
+    if: github.event.pull_request.draft == false
     name: 'Turso'
     runs-on: ubuntu-latest
     needs: [format-check, lint, tsc]
@@ -143,6 +144,7 @@ jobs:
           echo "TURSO_APP_DB_URL=${TURSO_APP_DB_URL}" >> $GITHUB_ENV
 
   deploy:
+    if: github.event.pull_request.draft == false
     name: Vercel
     runs-on: ubuntu-latest
     needs: [create_database]
@@ -328,6 +330,7 @@ jobs:
             - Deployment failed. Please check the logs for more details.
 
   tests:
+    if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, deploy]
     runs-on: ubuntu-latest
     strategy:
