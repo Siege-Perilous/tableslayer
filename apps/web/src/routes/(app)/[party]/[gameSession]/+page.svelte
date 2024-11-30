@@ -41,11 +41,15 @@
     Object.assign(stageProps, newProps);
   };
 
-  const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
+  function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
-  };
+  }
+
+  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
+    stageProps.ping.locations = updatedLocations;
+  }
 </script>
 
 <div class="container">
@@ -71,7 +75,7 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper">
         <div class="stage">
-          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} />
+          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls {stageProps} onUpdateStage={updateStage} />
       </div>

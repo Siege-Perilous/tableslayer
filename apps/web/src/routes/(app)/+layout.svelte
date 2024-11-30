@@ -15,9 +15,9 @@
       label: party.name,
       value: party.slug,
       href: `/${party.slug}`
-    }))
+    })) || []
   );
-  let selectedParty = $derived(parties.find((party) => party.slug === $page.params.party));
+  let selectedParty = $derived(parties && parties.find((party) => party.slug === $page.params.party));
   const gameSession = $derived($page.data.gameSession);
   let headerContainerClasses = $derived(classNames('header_container', gameSession && 'header_container--isSession'));
 </script>
@@ -31,7 +31,7 @@
         </div>
       </a>
 
-      {#if parties.length > 0}
+      {#if parties && parties.length > 0}
         <div class="partyDropdown">
           {#if selectedParty !== undefined}
             <Link href={`/${selectedParty.slug}`} color="fg">{selectedParty.name}</Link>
@@ -44,9 +44,9 @@
                 <Icon Icon={IconSelector} />
               </div>
             {/snippet}
-            {#snippet footer()}
+            {#snippet footer({ close })}
               <div class="partyDownDropdown__footer">
-                <Link href="/create-party">Create a new party</Link>
+                <Link href="/create-party" onclick={close}>Create a new party</Link>
               </div>
             {/snippet}
           </DropdownRadioMenu>

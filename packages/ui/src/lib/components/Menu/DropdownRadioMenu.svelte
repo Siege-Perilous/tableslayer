@@ -18,7 +18,6 @@
     builders: { createMenuRadioGroup },
     states: { open }
   } = createDropdownMenu({
-    forceVisible: true,
     loop: true,
     positioning: positioning
   });
@@ -39,6 +38,10 @@
     if (item.onclick) {
       item.onclick();
     }
+  };
+
+  const handleClose = () => {
+    open.set(false);
   };
 </script>
 
@@ -70,7 +73,7 @@
     </div>
     {#if footer}
       <div class="menuFooter">
-        {@render footer()}
+        {@render footer({ close: handleClose })}
       </div>
     {/if}
   </div>
