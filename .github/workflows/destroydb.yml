@@ -45,9 +45,11 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PREFIX="pr-${PR_NUMBER}"
 
-          # Fetch and delete all databases related to the PR
-          DATABASES=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL" | jq -r '.databases[] | select(.name | startswith("'"${PREFIX}"'")) | .name')
+          # Fetch databases related to the PR using curl and parse with awk/sed/grep
+          RESPONSE=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
+          DATABASES=$(echo "$RESPONSE" | grep -o '"name":"[^"]*"' | sed 's/"name":"//g' | sed 's/"//g' | grep "^${PREFIX}")
 
+          # Delete each database
           for DB_NAME in $DATABASES; do
             HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
               -H "$AUTH_HEADER" \
