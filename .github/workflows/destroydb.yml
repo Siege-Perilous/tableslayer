@@ -47,13 +47,27 @@ jobs:
 
           # Fetch databases related to the PR using curl and parse with awk/sed/grep
           RESPONSE=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
-          DATABASES=$(echo "$RESPONSE" | grep -o '"name":"[^"]*"' | sed 's/"name":"//g' | sed 's/"//g' | grep "^${PREFIX}")
+
+          # Output the full response to verify the shape
+          echo "Full API Response: $RESPONSE"
+
+          # Extract database names using grep/sed
+          DATABASES=$(echo "$RESPONSE" | grep -o '"name":"[^"]*"' | sed -E 's/"name":"(.*)"/\1/' | grep "^${PREFIX}")
+
+          # Check if there are any databases to delete
+          if [ -z "$DATABASES" ]; then
+            echo "No databases found for prefix ${PREFIX}."
+            exit 0
+          fi
+
+          echo "Databases found to be deleted: $DATABASES"
 
           # Delete each database
           for DB_NAME in $DATABASES; do
+            echo "Attempting to delete database: $DB_NAME"
             HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
               -H "$AUTH_HEADER" \
-              "$API_BASE_URL/$DB_NAME")
+              "$API_BASE_URL/$DB_NAME" || true)
 
             HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
             RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
