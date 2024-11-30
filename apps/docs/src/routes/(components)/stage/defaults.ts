@@ -20,7 +20,7 @@ export const StageDefaultProps: StageProps = {
     spacing: 1,
     opacity: 0.4,
     lineColor: '#E6E6E6',
-    lineThickness: 5,
+    lineThickness: 20,
     shadowIntensity: 1,
     shadowColor: '#000000',
     shadowSize: 2
