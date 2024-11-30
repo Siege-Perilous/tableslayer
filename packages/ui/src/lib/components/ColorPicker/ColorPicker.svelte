@@ -40,11 +40,7 @@
   const toHex = (color: ColorState): string => {
     const alpha = color.opacity / 100;
     const chromaColor = chroma.hsv(color.hue, color.saturation / 100, color.value / 100).alpha(alpha);
-    const hexWithoutAlpha = chromaColor.hex().substring(1); // Remove '#' from hex code
-    const alphaHex = Math.round(alpha * 255)
-      .toString(16)
-      .padStart(2, '0');
-    return `#${hexWithoutAlpha}${alphaHex}`;
+    return chromaColor.hex();
   };
 
   const drawSaturationValueGradient = (): void => {
@@ -214,11 +210,7 @@
         .alpha(color.opacity / 100);
 
       const [r, g, b] = chromaColor.rgb();
-      const hexWithoutAlpha = chromaColor.hex().substring(1);
-      const alphaHex = Math.round(chromaColor.alpha() * 255)
-        .toString(16)
-        .padStart(2, '0');
-      const newHex = `#${hexWithoutAlpha}${alphaHex}`;
+      const newHex = chromaColor.hex();
       const newRgba = { r, g, b, a: chromaColor.alpha() };
       const [hHSL, sHSL, lHSL] = chromaColor.hsl();
       const newHsla = { h: hHSL, s: sHSL * 100, l: lHSL * 100, a: chromaColor.alpha() };

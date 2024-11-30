@@ -129,9 +129,15 @@ importers:
       '@tursodatabase/api':
         specifier: ^1.9.0
         version: 1.9.0
+      '@types/chroma-js':
+        specifier: ^2.4.4
+        version: 2.4.4
       axios:
         specifier: ^1.7.7
         version: 1.7.7
+      chroma-js:
+        specifier: ^3.1.2
+        version: 3.1.2
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
@@ -3009,6 +3015,7 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
