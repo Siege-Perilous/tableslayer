@@ -37,7 +37,7 @@ jobs:
 
       - name: Delete All Turso Databases for the Pull Request
         run: |
-          # set -e  # Disable during debugging
+          set -e
 
           # Define variables
           API_BASE_URL="https://api.turso.tech/v1/organizations/snide/databases"
@@ -56,7 +56,6 @@ jobs:
 
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Failed to fetch databases. HTTP Status: $HTTP_STATUS"
-            echo "Response Body: $RESPONSE_BODY"
             exit 1
           fi
 
@@ -65,12 +64,8 @@ jobs:
             exit 1
           fi
 
-          # Optionally, print the keys of the JSON response for debugging
-          echo "API Response Keys:"
-          echo "$RESPONSE_BODY" | jq 'keys'
-
-          # Extract database names using jq
-          DATABASES=$(echo "$RESPONSE_BODY" | jq -r '.databases[].name' 2>jq_error.log || true)
+          # Extract database names using the corrected jq command
+          DATABASES=$(echo "$RESPONSE_BODY" | jq -r '.databases[].Name' 2>jq_error.log || true)
 
           if [ -s jq_error.log ]; then
             echo "jq parsing error: $(cat jq_error.log)"
@@ -78,9 +73,9 @@ jobs:
           fi
 
           # Filter databases with the specific prefix
-          DATABASES=$(echo "$DATABASES" | grep -F "^${PREFIX}")
+          DATABASES=$(echo "$DATABASES" | grep "^${PREFIX}")
 
-          if [ -z "$DATABASES" ]; then
+          if [ -z "$(echo -n "$DATABASES")" ]; then
             echo "No databases found for prefix ${PREFIX}."
             exit 0
           fi
