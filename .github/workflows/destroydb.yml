@@ -37,7 +37,7 @@ jobs:
 
       - name: Delete All Turso Databases for the Pull Request
         run: |
-          set -e
+          # set -e  # Disable during debugging
 
           # Define variables
           API_BASE_URL="https://api.turso.tech/v1/organizations/snide/databases"
@@ -47,17 +47,40 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PREFIX="pr-${PR_NUMBER}"
 
-          # Fetch databases related to the PR using curl and parse with jq
-          RESPONSE=$(curl -s -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
+          # Fetch databases and capture HTTP status code
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
 
-          # Output a message indicating response was received
-          echo "API response received."
+          echo "HTTP Status Code: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Failed to fetch databases. HTTP Status: $HTTP_STATUS"
+            echo "Response Body: $RESPONSE_BODY"
+            exit 1
+          fi
+
+          if [ -z "$RESPONSE_BODY" ]; then
+            echo "Empty API response."
+            exit 1
+          fi
+
+          # Optionally, print the keys of the JSON response for debugging
+          echo "API Response Keys:"
+          echo "$RESPONSE_BODY" | jq 'keys'
 
           # Extract database names using jq
-          DATABASES=$(echo "$RESPONSE" | jq -r '.databases[].name' | grep -F "^${PREFIX}")
+          DATABASES=$(echo "$RESPONSE_BODY" | jq -r '.databases[].name' 2>jq_error.log || true)
 
-          # Check if there are any databases to delete
-          if [ -z "$(echo -n "$DATABASES")" ]; then
+          if [ -s jq_error.log ]; then
+            echo "jq parsing error: $(cat jq_error.log)"
+            exit 1
+          fi
+
+          # Filter databases with the specific prefix
+          DATABASES=$(echo "$DATABASES" | grep -F "^${PREFIX}")
+
+          if [ -z "$DATABASES" ]; then
             echo "No databases found for prefix ${PREFIX}."
             exit 0
           fi
@@ -65,20 +88,20 @@ jobs:
           echo "Databases found to be deleted:"
           echo "$DATABASES"
 
-          # Set IFS to newline to handle database names safely
+          # Set IFS to handle spaces in database names
           IFS=$'\n'
 
-          # Delete each database
           for DB_NAME in $DATABASES; do
             echo "Attempting to delete database: $DB_NAME"
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+
+            DELETE_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
               -H "$AUTH_HEADER" \
               "$API_BASE_URL/$DB_NAME")
 
-            echo "HTTP_STATUS (deleting $DB_NAME): $HTTP_STATUS"
+            DELETE_STATUS=$(echo "$DELETE_RESPONSE" | tail -n1)
 
-            if [ "$HTTP_STATUS" -ne 204 ]; then
-              echo "Failed to delete database: $DB_NAME. HTTP Status: $HTTP_STATUS."
+            if [ "$DELETE_STATUS" -ne 204 ]; then
+              echo "Failed to delete database: $DB_NAME. HTTP Status: $DELETE_STATUS."
             else
               echo "Database $DB_NAME deleted successfully."
             fi
