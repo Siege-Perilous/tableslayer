@@ -26,6 +26,7 @@
     IconMap,
     IconCloudSnow
   } from '@tabler/icons-svelte';
+  import chroma from 'chroma-js';
 
   let {
     onUpdateStage,
@@ -34,14 +35,8 @@
 
   let activeControl = $state('none');
   let activeLayer = $state(0);
-  let colorData: ColorUpdatePayload = $state({
-    hex: '#000000ff',
-    rgba: { r: 0, g: 0, b: 0, a: 1 },
-    hsva: { h: 0, s: 0, v: 0, a: 1 },
-    hsla: { h: 0, s: 0, l: 0, a: 1 }
-  });
-  let gridHex = $state('#ffffff80');
-  let fogHex = $state('#00000080');
+  let gridHex = $state(stageProps.grid.lineColor);
+  let fogHex = $state(stageProps.fogOfWar.fogColor);
   let tvDiagnalSize = $state(40);
 
   type SceneControl = {
@@ -97,25 +92,24 @@
 
   // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
-    colorData = cd;
+    const fogColor = chroma(cd.hex).hex('rgb');
     onUpdateStage({
       fogOfWar: {
         ...stageProps.fogOfWar,
-        fogColor: colorData.hex.slice(0, -2), // Remove last two characters (opacity)
-        opacity: colorData.rgba.a
+        fogColor: fogColor,
+        opacity: cd.rgba.a
       }
     });
   };
 
   // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
   const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
-    colorData = cd;
-    gridHex = colorData.hex;
+    const gridColor = chroma(cd.hex).hex('rgb');
     onUpdateStage({
       grid: {
         ...stageProps.grid,
-        lineColor: { r: colorData.rgba.r, g: colorData.rgba.g, b: colorData.rgba.b },
-        opacity: colorData.rgba.a
+        lineColor: gridColor,
+        opacity: cd.rgba.a
       }
     });
   };
@@ -135,19 +129,43 @@
   ];
   const selectTvResolutionOptions = tvResolutionOptions.map(({ label, value }) => ({ label, value }));
 
-  const calculateHorizontalInches = (diagonalSize: number) => {
-    const aspectRatioWidth = 16;
-    const aspectRatioHeight = 9;
-    const ratioFactor = Math.sqrt(aspectRatioWidth ** 2 + aspectRatioHeight ** 2);
-    const horizontalSize = (diagonalSize * aspectRatioWidth) / ratioFactor;
-    return Math.floor(horizontalSize);
+  const getTvDimensions = (
+    diagonalInches: number,
+    aspectRatio: { width: number; height: number } = { width: 16, height: 9 }
+  ): { width: number; height: number } => {
+    const { width: aspectRatioWidth, height: aspectRatioHeight } = aspectRatio;
+    // Calculate the diagonal factor using the Pythagorean theorem
+    const diagonalFactor = Math.sqrt(aspectRatioWidth ** 2 + aspectRatioHeight ** 2);
+    // Calculate height and width
+    const height = (diagonalInches * aspectRatioHeight) / diagonalFactor;
+    const width = (diagonalInches * aspectRatioWidth) / diagonalFactor;
+    return { width, height };
   };
+
+  // Example usage with default aspect ratio (16:9):
+  const diagonalSizeDefault = 55; // inches
+  const dimensionsDefault = getTvDimensions(diagonalSizeDefault);
+  console.log(
+    `Default Aspect Ratio (16:9) - Width: ${dimensionsDefault.width.toFixed(
+      2
+    )} inches, Height: ${dimensionsDefault.height.toFixed(2)} inches`
+  );
+
+  // Example usage with a custom aspect ratio (4:3):
+  const diagonalSizeCustom = 55; // inches
+  const customAspectRatio = { width: 4, height: 3 };
+  const dimensionsCustom = getTvDimensions(diagonalSizeCustom, customAspectRatio);
+  console.log(
+    `Custom Aspect Ratio (4:3) - Width: ${dimensionsCustom.width.toFixed(
+      2
+    )} inches, Height: ${dimensionsCustom.height.toFixed(2)} inches`
+  );
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value);
     onUpdateStage({
-      scene: {
-        ...stageProps.scene,
+      display: {
+        ...stageProps.display,
         resolution: {
           x: selectedResolution.width,
           y: selectedResolution.height
@@ -159,11 +177,14 @@
 
   const handleTvSizeChange = (diagonalSize: number) => {
     console.log('update tv size');
-    const horizontalInches = calculateHorizontalInches(diagonalSize);
+    const { width, height } = getTvDimensions(diagonalSize);
     onUpdateStage({
-      grid: {
-        ...stageProps.grid,
-        divisions: horizontalInches
+      display: {
+        ...stageProps.display,
+        size: {
+          x: width,
+          y: height
+        }
       }
     });
   };
