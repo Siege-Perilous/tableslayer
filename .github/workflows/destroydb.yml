@@ -95,9 +95,10 @@ jobs:
 
             DELETE_STATUS=$(echo "$DELETE_RESPONSE" | tail -n1)
 
-            if [ "$DELETE_STATUS" -ne 204 ]; then
-              echo "Failed to delete database: $DB_NAME. HTTP Status: $DELETE_STATUS."
-            else
+            if [ "$DELETE_STATUS" -eq 200 ] || [ "$DELETE_STATUS" -eq 204 ]; then
               echo "Database $DB_NAME deleted successfully."
+            else
+              echo "Failed to delete database: $DB_NAME. HTTP Status: $DELETE_STATUS."
+              echo "Response Body: $(echo "$DELETE_RESPONSE" | sed '$d')"
             fi
           done
