@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { HTMLAttributes } from 'svelte/elements';
-  import { Panel, Title, Input, FSControl, MessageError, Button, Icon, Spacer } from '@tableslayer/ui';
+  import { Panel, Title, Input, FSControl, MessageError, Button, Spacer } from '@tableslayer/ui';
   import { type SuperValidated } from 'sveltekit-superforms/client';
   import { type CreateGameSessionFormType } from '$lib/schemas';
   import { createGameSessionSchema } from '$lib/schemas';
