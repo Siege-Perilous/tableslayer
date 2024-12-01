@@ -25,7 +25,8 @@
   const createGameSessionSuperForm = superForm(createGameSessionForm, {
     id: 'createGameSession',
     resetForm: true,
-    validators: zodClient(createGameSessionSchema)
+    validators: zodClient(createGameSessionSchema),
+    invalidateAll: 'force'
   });
 
   const {
@@ -53,12 +54,13 @@
       <Spacer />
       <input type="hidden" name="partyId" value={$createGameSessionFormData.partyId} />
       <Button type="submit">Create</Button>
+      <Button type="button" variant="danger" onclick={() => (formIsOpen = false)}>Cancel</Button>
       {#if $createGameSessionMessage}
         <MessageError message={$createGameSessionMessage} />
       {/if}
     </form>
 
-    <SuperDebug data={$createGameSessionFormData} display={true} />
+    <SuperDebug data={$createGameSessionFormData} display={false} />
   </Panel>
 {/if}
 

@@ -331,12 +331,15 @@ export const actions: Actions = {
     const { partyId, name } = createGameSessionForm.data;
 
     try {
-      createGameSessionDb(partyId, name);
-
+      await createGameSessionDb(partyId, name);
       return message(createGameSessionForm, { type: 'success', text: 'Game session created' });
     } catch (error) {
-      console.log('Error creating game session', error);
-      return message(createGameSessionForm, { type: 'error', text: 'Error creating game session' });
+      if (error instanceof Error) {
+        return message(createGameSessionForm, { type: 'error', text: error.message });
+      } else {
+        console.log('Error creating game session', error);
+        return message(createGameSessionForm, { type: 'error', text: 'Error creating game session' });
+      }
     }
   }
 };

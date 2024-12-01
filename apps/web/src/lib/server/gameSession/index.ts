@@ -41,6 +41,12 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const prNumber = GITHUB_PR_NUMBER;
     const prefix = VERCEL_ENV === 'preview' ? `pr-${prNumber}-gs-child` : 'gs-child';
 
+    const existingGameSessions = await getPartyGameSessions(partyId);
+
+    if (existingGameSessions.some((gs) => gs.slug === slug)) {
+      throw new Error('Game session with that name already exists');
+    }
+
     const database = await turso.databases.create(`${prefix}-${gameSessionId}`, {
       group: 'default',
       schema: 'gs-parent-db'
@@ -57,6 +63,6 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     return database;
   } catch (error) {
     console.error(error);
-    throw new Error('Failed to create session database');
+    throw error;
   }
 };
