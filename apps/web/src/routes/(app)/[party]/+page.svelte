@@ -16,7 +16,7 @@
     LinkOverlay,
     Hr
   } from '@tableslayer/ui';
-  import { PartyMember, ResendInvite, PartyTitle } from '$lib/components';
+  import { PartyMember, ResendInvite, PartyTitle, CreateGameSession } from '$lib/components';
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
   import { inviteMemberSchema } from '$lib/schemas';
@@ -49,11 +49,7 @@
       <Title as="h2" size="sm">Sessions</Title>
       <Spacer />
       <div class="sessionList">
-        <LinkBox>
-          <Panel class="sessionPanel sessionPanel--create">
-            <Title as="p" size="sm">Create new session</Title>
-          </Panel>
-        </LinkBox>
+        <CreateGameSession {partyId} createGameSessionForm={data.creatGameSessionForm} />
         {#each gameSessions as session}
           <LinkBox>
             <Panel class="sessionPanel">

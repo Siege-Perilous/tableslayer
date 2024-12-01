@@ -2,6 +2,7 @@ import { db } from '$lib/db/app';
 import { emailVerificationCodesTable, partyMemberTable, usersTable } from '$lib/db/app/schema';
 import { signupSchema } from '$lib/schemas';
 import {
+  createGameSessionDb,
   createSession,
   generateSessionToken,
   getGravatarDisplayName,
@@ -12,7 +13,6 @@ import {
   uploadFileFromUrl
 } from '$lib/server';
 import { createRandomNamedParty } from '$lib/server/party/createParty';
-import { createGameSessionDb } from '$lib/server/turso';
 import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';

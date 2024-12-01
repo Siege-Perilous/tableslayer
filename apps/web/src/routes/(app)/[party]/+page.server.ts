@@ -2,15 +2,19 @@ import { db } from '$lib/db/app';
 import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
+  createGameSessionSchema,
+  deleteGameSessionSchema,
   deleteInviteSchema,
   deletePartySchema,
   inviteMemberSchema,
   removePartyMemberSchema,
+  renameGameSessionSchema,
   renamePartySchema,
   resendInviteSchema
 } from '$lib/schemas';
 import {
   changePartyRole,
+  createGameSessionDb,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
@@ -64,6 +68,9 @@ export const load: PageServerLoad = async ({ parent }) => {
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
   const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
   const removePartyMemberForm = await superValidate(zod(removeMemberSchemaWithPartyId));
+  const creatGameSessionForm = await superValidate(zod(createGameSessionSchema));
+  const deleteGameSessionForm = await superValidate(zod(deleteGameSessionSchema));
+  const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
   return {
     members,
@@ -72,7 +79,10 @@ export const load: PageServerLoad = async ({ parent }) => {
     inviteMemberForm,
     resendInviteForm,
     removeInviteForm,
-    removePartyMemberForm
+    removePartyMemberForm,
+    creatGameSessionForm,
+    deleteGameSessionForm,
+    renameGameSessionForm
   };
 };
 
@@ -310,6 +320,23 @@ export const actions: Actions = {
       }
       console.log('Error renaming party', error);
       return message(renamePartyForm, { type: 'error', text: `Error renaming party: ${error}` });
+    }
+  },
+  createGameSession: async (event) => {
+    const createGameSessionForm = await superValidate(event.request, zod(createGameSessionSchema));
+    if (!createGameSessionForm.valid) {
+      return message(createGameSessionForm, { type: 'error', text: 'Invalid game session name' });
+    }
+
+    const { partyId, name } = createGameSessionForm.data;
+
+    try {
+      createGameSessionDb(partyId, name);
+
+      return message(createGameSessionForm, { type: 'success', text: 'Game session created' });
+    } catch (error) {
+      console.log('Error creating game session', error);
+      return message(createGameSessionForm, { type: 'error', text: 'Error creating game session' });
     }
   }
 };
