@@ -129,6 +129,7 @@ export type DeleteGameSessionSchema = typeof deleteGameSessionSchema;
 export type DeleteGameSessionFormType = z.infer<typeof deleteGameSessionSchema>;
 
 export const renameGameSessionSchema = z.object({
+  partyId: z.string(),
   sessionId: z.string(),
   name: z.string().min(3)
 });

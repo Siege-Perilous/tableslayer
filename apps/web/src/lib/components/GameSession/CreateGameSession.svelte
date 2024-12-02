@@ -47,7 +47,7 @@
       <Field form={createGameSessionSuperForm} name="name">
         <FSControl label="Session name">
           {#snippet children({ attrs })}
-            <Input {...attrs} bind:value={$createGameSessionFormData.name} />
+            <Input {...attrs} bind:value={$createGameSessionFormData.name} autocomplete="off" />
           {/snippet}
         </FSControl>
       </Field>

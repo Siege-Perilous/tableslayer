@@ -39,7 +39,12 @@
       <div class="sessionList">
         <CreateGameSession {partyId} createGameSessionForm={data.creatGameSessionForm} />
         {#each gameSessions as session}
-          <GameSessionCard {party} {session} deleteGameSessionForm={data.deleteGameSessionForm} />
+          <GameSessionCard
+            {party}
+            {session}
+            deleteGameSessionForm={data.deleteGameSessionForm}
+            renameGameSessionForm={data.renameGameSessionForm}
+          />
         {/each}
       </div>
     </main>

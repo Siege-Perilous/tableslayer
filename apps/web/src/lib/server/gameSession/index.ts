@@ -75,3 +75,32 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     throw error;
   }
 };
+
+export const renameGameSession = async (partyId: string, gameSessionId: string, newName: string) => {
+  try {
+    const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.id, gameSessionId)).get();
+    const slug = slugify(newName, { lower: true });
+    if (!gameSession) {
+      throw new Error('Game session not found');
+    }
+
+    const existingGameSessions = await getPartyGameSessions(partyId);
+
+    if (existingGameSessions.some((gs) => gs.slug === slug)) {
+      throw new Error('Game session with that name already exists');
+    }
+
+    const renamedGameSession = await db
+      .update(gameSessionTable)
+      .set({
+        name: newName,
+        slug
+      })
+      .where(eq(gameSessionTable.id, gameSessionId))
+      .run();
+    return renamedGameSession;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

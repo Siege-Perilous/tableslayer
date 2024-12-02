@@ -15,6 +15,7 @@ import {
 import {
   changePartyRole,
   createGameSessionDb,
+  deletePartyGameSession,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
@@ -23,6 +24,7 @@ import {
   isUserAdminInParty,
   isUserByEmailInPartyAlready,
   isUserOnlyAdminInParty,
+  renameGameSession,
   sendPartyInviteEmail
 } from '$lib/server';
 import { deleteParty, renameParty } from '$lib/server/party/createParty';
@@ -339,6 +341,53 @@ export const actions: Actions = {
       } else {
         console.log('Error creating game session', error);
         return message(createGameSessionForm, { type: 'error', text: 'Error creating game session' });
+      }
+    }
+  },
+  deleteGameSession: async (event) => {
+    const deleteGameSessionForm = await superValidate(event.request, zod(deleteGameSessionSchema));
+    if (!deleteGameSessionForm.valid) {
+      return message(deleteGameSessionForm, { type: 'error', text: 'Invalid game session' });
+    }
+
+    const { sessionId } = deleteGameSessionForm.data;
+
+    try {
+      await deletePartyGameSession(sessionId);
+
+      setToastCookie(event, {
+        title: 'Game session deleted',
+        type: 'success'
+      });
+      return message(deleteGameSessionForm, { type: 'success', text: 'Game session deleted' });
+    } catch (error) {
+      if (error instanceof Error) {
+        return message(deleteGameSessionForm, { type: 'error', text: error.message });
+      } else {
+        console.log('Error deleting game session', error);
+        return message(deleteGameSessionForm, { type: 'error', text: 'Error deleting game session' });
+      }
+    }
+  },
+  renameGameSession: async (event) => {
+    const renameGameSessionForm = await superValidate(event.request, zod(renameGameSessionSchema));
+    if (!renameGameSessionForm.valid) {
+      return message(renameGameSessionForm, { type: 'error', text: 'Invalid game session name' });
+    }
+
+    const { sessionId, name, partyId } = renameGameSessionForm.data;
+
+    console.log('renameGameSession', sessionId, name, partyId);
+
+    try {
+      await renameGameSession(partyId, sessionId, name);
+      return message(renameGameSessionForm, { type: 'success', text: 'Game session renamed' });
+    } catch (error) {
+      if (error instanceof Error) {
+        return message(renameGameSessionForm, { type: 'error', text: error.message });
+      } else {
+        console.log('Error renaming game session', error);
+        return message(renameGameSessionForm, { type: 'error', text: 'Error renaming game session' });
       }
     }
   }
