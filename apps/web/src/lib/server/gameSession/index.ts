@@ -7,6 +7,11 @@ import { eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 
+const turso = createClient({
+  org: 'snide',
+  token: TURSO_API_TOKEN
+});
+
 export const getPartyGameSessions = async (partyId: string): Promise<SelectGameSession[]> => {
   const gameSessions = await db.select().from(gameSessionTable).where(eq(gameSessionTable.partyId, partyId)).all();
   return gameSessions;
@@ -19,7 +24,13 @@ export const getPartyGameSessionFromSlug = async (slug: string) => {
 
 export const deletePartyGameSession = async (id: string) => {
   try {
+    const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.id, id)).get();
+    if (!gameSession) {
+      throw new Error('Game session not found');
+    }
+    const databaseName = gameSession.dbName;
     await db.delete(gameSessionTable).where(eq(gameSessionTable.id, id)).run();
+    await turso.databases.delete(databaseName);
     return true;
   } catch (error) {
     console.error(error);
@@ -29,11 +40,6 @@ export const deletePartyGameSession = async (id: string) => {
 
 // Function to create a new project database
 export const createGameSessionDb = async (partyId: string, gsName?: string) => {
-  const turso = createClient({
-    org: 'snide',
-    token: TURSO_API_TOKEN
-  });
-
   try {
     const gameSessionId = uuidv4();
     const name = gsName || createRandomGameSessionName();
@@ -53,13 +59,16 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     });
 
     // Store the project and hashed token in the parent database
-    await db.insert(gameSessionTable).values({
-      id: gameSessionId,
-      name,
-      partyId,
-      slug,
-      dbName: database.name
-    });
+    await db
+      .insert(gameSessionTable)
+      .values({
+        id: gameSessionId,
+        name,
+        partyId,
+        slug,
+        dbName: database.name
+      })
+      .execute();
     return database;
   } catch (error) {
     console.error(error);
