@@ -377,8 +377,6 @@ export const actions: Actions = {
 
     const { sessionId, name, partyId } = renameGameSessionForm.data;
 
-    console.log('renameGameSession', sessionId, name, partyId);
-
     try {
       await renameGameSession(partyId, sessionId, name);
       return message(renameGameSessionForm, { type: 'success', text: 'Game session renamed' });
