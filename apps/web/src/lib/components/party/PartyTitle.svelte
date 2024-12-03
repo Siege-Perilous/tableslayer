@@ -55,6 +55,7 @@
   });
   const { form: deleteForm, enhance: deleteEnhance, message: deleteMessage } = deleteSuperForm;
 
+  $renameForm.name = party.name;
   $renameForm.partyId = party.id;
   $deleteForm.partyId = party.id;
 </script>
@@ -84,7 +85,7 @@
               <Field form={renameSuperForm} name="name">
                 <FSControl label="Rename party">
                   {#snippet children({ attrs })}
-                    <Input {...attrs} type="text" name="name" bind:value={$renameForm.name} autocomplete="off" />
+                    <Input {...attrs} type="text" name="name" bind:value={$renameForm.name} hideAutocomplete />
                   {/snippet}
                 </FSControl>
                 <input type="hidden" name="partyId" bind:value={$renameForm.partyId} />

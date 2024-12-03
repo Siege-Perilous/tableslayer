@@ -106,7 +106,7 @@
                     <Field form={renameGameSessionSuperForm} name="name">
                       <FSControl label="Rename session">
                         {#snippet children({ attrs })}
-                          <Input {...attrs} bind:value={$renameGameSessionFormData.name} autocomplete="off" />
+                          <Input {...attrs} bind:value={$renameGameSessionFormData.name} hideAutocomplete />
                         {/snippet}
                       </FSControl>
                     </Field>
