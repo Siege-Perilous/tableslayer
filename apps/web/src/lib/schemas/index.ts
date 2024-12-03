@@ -111,3 +111,28 @@ export const renamePartySchema = z.object({
 
 export type RenamePartySchema = typeof renamePartySchema;
 export type RenamePartyFormType = z.infer<typeof renamePartySchema>;
+
+export const createGameSessionSchema = z.object({
+  name: z.string().min(3),
+  partyId: z.string()
+});
+
+export type CreateGameSessionSchema = typeof createGameSessionSchema;
+export type CreateGameSessionFormType = z.infer<typeof createGameSessionSchema>;
+
+export const deleteGameSessionSchema = z.object({
+  partyId: z.string(),
+  sessionId: z.string()
+});
+
+export type DeleteGameSessionSchema = typeof deleteGameSessionSchema;
+export type DeleteGameSessionFormType = z.infer<typeof deleteGameSessionSchema>;
+
+export const renameGameSessionSchema = z.object({
+  partyId: z.string(),
+  sessionId: z.string(),
+  name: z.string().min(3)
+});
+
+export type RenameGameSessionSchema = typeof renameGameSessionSchema;
+export type RenameGameSessionFormType = z.infer<typeof renameGameSessionSchema>;

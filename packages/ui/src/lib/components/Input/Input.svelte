@@ -1,12 +1,19 @@
 <script lang="ts">
   import type { InputProps } from './types';
-  let { value = $bindable(), variant = 'default', ...restProps }: InputProps = $props();
+  let { value = $bindable(), variant = 'default', hideAutocomplete, ...restProps }: InputProps = $props();
   import classNames from 'classnames';
 
   const inputClasses = classNames('input', variant && `input--${variant}`, restProps.class ?? '');
+  let autoCompleteOffAttrs = hideAutocomplete
+    ? {
+        autocomplete: 'off' as const,
+        'data-1p-ignore': 'true' as const,
+        'data-lpignore': 'true' as const
+      }
+    : {};
 </script>
 
-<input bind:value {...restProps} class={inputClasses} />
+<input bind:value {...restProps} {...autoCompleteOffAttrs} class={inputClasses} />
 
 <style>
   .input {
