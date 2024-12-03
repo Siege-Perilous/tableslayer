@@ -32,7 +32,7 @@
     <Field {form} name="name">
       <FSControl label="Party name">
         {#snippet children({ attrs })}
-          <Input {...attrs} type="text" bind:value={$formData.name} />
+          <Input {...attrs} type="text" bind:value={$formData.name} hideAutocomplete />
         {/snippet}
       </FSControl>
       <FieldErrors />
