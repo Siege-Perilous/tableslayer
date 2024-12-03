@@ -37,9 +37,12 @@
       <Title as="h2" size="sm">Sessions</Title>
       <Spacer />
       <div class="sessionList">
-        <CreateGameSession {partyId} createGameSessionForm={data.creatGameSessionForm} />
+        {#if isPartyAdmin}
+          <CreateGameSession {partyId} createGameSessionForm={data.creatGameSessionForm} />
+        {/if}
         {#each gameSessions as session}
           <GameSessionCard
+            {isPartyAdmin}
             {party}
             {session}
             deleteGameSessionForm={data.deleteGameSessionForm}

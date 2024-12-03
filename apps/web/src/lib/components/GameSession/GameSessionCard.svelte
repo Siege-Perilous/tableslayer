@@ -35,12 +35,14 @@
     party,
     session,
     deleteGameSessionForm,
-    renameGameSessionForm
+    renameGameSessionForm,
+    isPartyAdmin
   }: {
     party: SelectParty & AvatarThumb;
     session: SelectGameSession;
     deleteGameSessionForm: SuperValidated<DeleteGameSessionFormType>;
     renameGameSessionForm: SuperValidated<RenameGameSessionFormType>;
+    isPartyAdmin: boolean;
   } = $props();
 
   const deleteGameSessionSuperForm = superForm(deleteGameSessionForm, {
@@ -90,68 +92,70 @@
       style="
       background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url('https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,w=400/maps/01.jpeg');"
     ></div>
-    <div class="gameSessionCard__popover">
-      <Popover positioning={{ placement: 'bottom-end' }}>
-        {#snippet trigger()}
-          <Icon Icon={IconChevronDown} />
-        {/snippet}
-        {#snippet content()}
-          <div class="gameSessionCard__popoverContent">
-            <form method="post" action="?/renameGameSession" use:renameGameSessionEnhance>
-              <div class="gameSessionCard__renameField">
-                <div>
-                  <Field form={renameGameSessionSuperForm} name="name">
-                    <FSControl label="Rename session">
-                      {#snippet children({ attrs })}
-                        <Input {...attrs} bind:value={$renameGameSessionFormData.name} autocomplete="off" />
-                      {/snippet}
-                    </FSControl>
-                  </Field>
-                  <input type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
-                  <input type="hidden" name="partyId" value={$renameGameSessionFormData.sessionId} />
+    {#if isPartyAdmin}
+      <div class="gameSessionCard__popover">
+        <Popover positioning={{ placement: 'bottom-end' }}>
+          {#snippet trigger()}
+            <Icon Icon={IconChevronDown} />
+          {/snippet}
+          {#snippet content()}
+            <div class="gameSessionCard__popoverContent">
+              <form method="post" action="?/renameGameSession" use:renameGameSessionEnhance>
+                <div class="gameSessionCard__renameField">
+                  <div>
+                    <Field form={renameGameSessionSuperForm} name="name">
+                      <FSControl label="Rename session">
+                        {#snippet children({ attrs })}
+                          <Input {...attrs} bind:value={$renameGameSessionFormData.name} autocomplete="off" />
+                        {/snippet}
+                      </FSControl>
+                    </Field>
+                    <input type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
+                    <input type="hidden" name="partyId" value={$renameGameSessionFormData.sessionId} />
+                  </div>
+                  <IconButton type="submit" class="gameSessionCard__renameFieldBtn">
+                    <Icon Icon={IconCheck} />
+                  </IconButton>
                 </div>
-                <IconButton type="submit" class="gameSessionCard__renameFieldBtn">
-                  <Icon Icon={IconCheck} />
-                </IconButton>
-              </div>
-              <Spacer size={2} />
-              <Text size="0.875rem" color="var(--fgMuted)"
-                >Renaming your game session will change the URL and break all links.</Text
-              >
-            </form>
-            {#if $renameGameSessionMessage}
-              <Spacer />
-              <MessageError message={$renameGameSessionMessage} />
-            {/if}
-            <SuperDebug data={$renameGameSessionFormData} display={false} />
-            <Spacer />
-            <Hr />
-            <Spacer />
-            <form method="post" action="?/deleteGameSession" use:deleteGameSessionEnhance>
-              <Field form={deleteGameSessionSuperForm} name="sessionId">
-                <FSControl>
-                  {#snippet children({ attrs })}
-                    <input {...attrs} type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
-                  {/snippet}
-                </FSControl>
-              </Field>
-              <Field form={deleteGameSessionSuperForm} name="partyId">
-                <FSControl>
-                  {#snippet children({ attrs })}
-                    <input {...attrs} type="hidden" name="partyId" value={$renameGameSessionFormData.partyId} />
-                  {/snippet}
-                </FSControl>
-              </Field>
-              {#if $deleteGameSessionMessage}
+                <Spacer size={2} />
+                <Text size="0.875rem" color="var(--fgMuted)"
+                  >Renaming your game session will change the URL and break all links.</Text
+                >
+              </form>
+              {#if $renameGameSessionMessage}
                 <Spacer />
-                <MessageError message={$deleteGameSessionMessage} />
+                <MessageError message={$renameGameSessionMessage} />
               {/if}
-              <Button type="submit" variant="danger">Delete party</Button>
-            </form>
-          </div>
-        {/snippet}
-      </Popover>
-    </div>
+              <SuperDebug data={$renameGameSessionFormData} display={false} />
+              <Spacer />
+              <Hr />
+              <Spacer />
+              <form method="post" action="?/deleteGameSession" use:deleteGameSessionEnhance>
+                <Field form={deleteGameSessionSuperForm} name="sessionId">
+                  <FSControl>
+                    {#snippet children({ attrs })}
+                      <input {...attrs} type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
+                    {/snippet}
+                  </FSControl>
+                </Field>
+                <Field form={deleteGameSessionSuperForm} name="partyId">
+                  <FSControl>
+                    {#snippet children({ attrs })}
+                      <input {...attrs} type="hidden" name="partyId" value={$renameGameSessionFormData.partyId} />
+                    {/snippet}
+                  </FSControl>
+                </Field>
+                {#if $deleteGameSessionMessage}
+                  <Spacer />
+                  <MessageError message={$deleteGameSessionMessage} />
+                {/if}
+                <Button type="submit" variant="danger">Delete party</Button>
+              </form>
+            </div>
+          {/snippet}
+        </Popover>
+      </div>
+    {/if}
     <CardFan {images} class="cardFan--sessionList" />
     <div>
       <Title as="h3" size="sm">
