@@ -5,6 +5,7 @@ import type { HTMLInputAttributes } from 'svelte/elements';
 export type InputProps = {
   isDisabled?: boolean;
   variant?: 'transparent' | 'default';
+  hideAutocomplete?: boolean;
 } & HTMLInputAttributes;
 
 export type FileInputProps = {
