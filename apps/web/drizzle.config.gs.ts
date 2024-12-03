@@ -8,7 +8,7 @@ export default defineConfig({
   out: './migrations/app',
   dialect: 'turso',
   dbCredentials: {
-    url: process.env.TURSO_APP_DB_URL!,
-    authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
+    url: process.env.TURSO_GS_PARENT_DB_URL!,
+    authToken: process.env.TURSO_GS_PARENT_DB_AUTH_TOKEN!
   }
 });
