@@ -136,3 +136,9 @@ export const renameGameSessionSchema = z.object({
 
 export type RenameGameSessionSchema = typeof renameGameSessionSchema;
 export type RenameGameSessionFormType = z.infer<typeof renameGameSessionSchema>;
+
+export const createSceneSchema = z.object({
+  name: z.string().min(3),
+  sessionId: z.string(),
+  order: z.number().int().positive()
+});

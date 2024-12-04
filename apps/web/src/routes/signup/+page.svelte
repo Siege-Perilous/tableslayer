@@ -14,6 +14,8 @@
   const { form: formData, enhance, message } = form;
 </script>
 
+<div class="signup__bg"></div>
+
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
   <Spacer size={2} />
@@ -62,6 +64,19 @@
     flex-direction: column;
     max-width: var(--contain-smallForm);
     padding: var(--size-8);
-    margin: 20vh auto auto auto;
+    margin: 20vh auto auto 10vh;
+    position: relative;
+    z-index: 1;
+  }
+  .signup__bg {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image: url('/signup01.jpeg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-blend-mode: multiply;
+    background-color: var(--bg);
+    inset: 0;
   }
 </style>

@@ -15,7 +15,6 @@
   <div class="children">
     {@render children()}
   </div>
-  <div class="grid"></div>
 </QueryClientProvider>
 
 <Toast />
