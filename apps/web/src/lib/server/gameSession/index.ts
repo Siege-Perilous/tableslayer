@@ -55,7 +55,7 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
 
     const database = await turso.databases.create(`${prefix}-${gameSessionId}`, {
       group: 'default',
-      schema: 'gs-parent-db'
+      schema: 'gs-parent'
     });
 
     // Store the project and hashed token in the parent database

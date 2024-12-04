@@ -1,10 +1,12 @@
-import { TURSO_GS_PARENT_DB_AUTH_TOKEN, TURSO_GS_PARENT_DB_URL } from '$env/static/private';
 import { createClient } from '@libsql/client';
+import { config } from 'dotenv';
 import { drizzle } from 'drizzle-orm/libsql';
 
+config({ path: '.env' });
+
 const client = createClient({
-  url: TURSO_GS_PARENT_DB_URL,
-  authToken: TURSO_GS_PARENT_DB_AUTH_TOKEN
+  url: process.env.TURSO_GS_PARENT_DB_URL!,
+  authToken: process.env.TURSO_GS_PARENT_DB_AUTH_TOKEN!
 });
 
 export const gsDb = drizzle(client);
