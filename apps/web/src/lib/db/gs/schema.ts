@@ -7,9 +7,8 @@ export const sceneTable = sqliteTable('scene', {
     .notNull()
     .$default(() => uuidv4()),
   name: text('name').notNull().default('New Scene'),
-  mapBlob: text('map_blob', { mode: 'json' }),
-  order: integer('order').notNull()
+  order: integer('order').notNull(),
+  mapLocation: text('mapLocation')
 });
 
-export const SelectScene = typeof sceneTable.$inferSelect;
-export const InsertScene = typeof sceneTable.$inferInsert;
+export type SelectScene = typeof sceneTable.$inferSelect;

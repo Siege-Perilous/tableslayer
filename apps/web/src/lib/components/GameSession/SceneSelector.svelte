@@ -1,51 +1,95 @@
 <script lang="ts">
-  import { Button, Icon } from '@tableslayer/ui';
+  import SuperDebug, { fileProxy } from 'sveltekit-superforms';
+  import { Button, FSControl, FileInput, Icon, Spacer, MessageError } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
-  import classNames from 'classnames';
-  const scenes = [
-    {
-      name: 'Vampire Mansion upstairs',
-      id: 1,
-      image: 'https://snid.es/2024NOV/cKVSvRcTv9cw5uWE.jpeg',
-      isActive: true,
-      isProjected: false
-    },
-    {
-      name: 'Cave of the Emerald Queen',
-      id: 2,
-      image: 'https://snid.es/2024NOV/7wSTPeSHK9JCm9qY.jpeg',
-      isActive: false,
-      isProjected: true
-    },
-    {
-      name: 'Fey Village',
-      id: 3,
-      image: 'https://snid.es/2024NOV/HM5T6JmcOGco5TF6.jpeg',
-      isActive: false,
-      isProjected: false
-    }
-  ];
+  import { type SelectScene } from '$lib/db/gs/schema';
+  import { createSceneSchema, type CreateSceneFormType } from '$lib/schemas';
+  import type { SuperValidated } from 'sveltekit-superforms';
+  import { superForm } from 'sveltekit-superforms';
+  import { zodClient } from 'sveltekit-superforms/adapters';
+  import type { SelectGameSession } from '$lib/db/app/schema';
+  import { Field } from 'formsnap';
+  import { type Thumb } from '$lib/server';
+
+  let {
+    scenes,
+    createSceneForm,
+    gameSession
+  }: {
+    scenes: (SelectScene | (SelectScene & Thumb))[];
+    createSceneForm: SuperValidated<CreateSceneFormType>;
+    gameSession: SelectGameSession;
+  } = $props();
+
+  const createSceneSuperForm = superForm(createSceneForm, {
+    id: 'createScene',
+    validators: zodClient(createSceneSchema),
+    resetForm: true,
+    invalidateAll: 'force'
+  });
+
+  const { form: createSceneData, enhance: createSceneEnhance, message: createSceneMessage } = createSceneSuperForm;
+
+  $createSceneData.name = 'test';
+  $createSceneData.dbName = gameSession.dbName;
+  $createSceneData.order = scenes.length + 1;
+
+  let file = $state(fileProxy(createSceneData, 'file'));
+
+  //  const scenes = [
+  //  {
+  //  name: 'Vampire Mansion upstairs',
+  //  id: 1,
+  //  image: 'https://snid.es/2024NOV/cKVSvRcTv9cw5uWE.jpeg',
+  //  isActive: true,
+  //  isProjected: false
+  //  },
+  //  {
+  //  name: 'Cave of the Emerald Queen',
+  //  id: 2,
+  //  image: 'https://snid.es/2024NOV/7wSTPeSHK9JCm9qY.jpeg',
+  //  isActive: false,
+  //  isProjected: true
+  //  },
+  //  {
+  //  name: 'Fey Village',
+  //  id: 3,
+  //  image: 'https://snid.es/2024NOV/HM5T6JmcOGco5TF6.jpeg',
+  //  isActive: false,
+  //  isProjected: false
+  //  }
+  //  ];
 </script>
 
 <div class="scenes">
-  <Button variant="ghost">
-    {#snippet start()}
-      <Icon Icon={IconPlus} />
-    {/snippet}
-    Add scene
-  </Button>
+  <form method="post" enctype="multipart/form-data" action="?/createScene" use:createSceneEnhance>
+    <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
+    <input type="hidden" name="order" bind:value={$createSceneData.order} />
+    <input type="hidden" name="name" bind:value={$createSceneData.name} />
+    <Field form={createSceneSuperForm} name="file">
+      <FSControl label="Party avatar">
+        {#snippet children({ attrs })}
+          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+        {/snippet}
+      </FSControl>
+    </Field>
+    <Button type="submit" variant="ghost">
+      {#snippet start()}
+        <Icon Icon={IconPlus} />
+      {/snippet}
+      Add scene
+    </Button>
+  </form>
+  <SuperDebug data={$createSceneData} display={false} />
+  {#if $createSceneMessage}
+    <Spacer />
+    <MessageError message={$createSceneMessage} />
+  {/if}
   {#each scenes as scene}
-    {@const sceneSelectorClasses = classNames(
-      'scene',
-      scene.isActive && 'scene--isActive',
-      scene.isProjected && 'scene--isProjected'
-    )}
-    <div class={sceneSelectorClasses} style={`background-image: url(${scene.image});`}>
-      {#if scene.isProjected}
-        <div class="scene__projectedIcon">
-          <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-        </div>
-      {/if}
+    <div class="scene" style={`background-image: url('${scene.thumb.resizedUrl}')`}>
+      <div class="scene__projectedIcon">
+        <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+      </div>
       <div class="scene__text">{scene.name}</div>
     </div>
   {/each}

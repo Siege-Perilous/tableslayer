@@ -1,6 +1,5 @@
 <script lang="ts">
   let { data } = $props();
-  const { scenes } = $derived(data);
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
@@ -50,7 +49,7 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
-  console.log('scenes', scenes);
+  console.log('scenes', data.scenes);
 </script>
 
 <div class="container">
@@ -64,7 +63,7 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector {scenes} />
+      <SceneSelector gameSession={data.gameSession} scenes={data.scenes} createSceneForm={data.createSceneForm} />
     </Pane>
     <PaneResizer class="resizer">
       <button

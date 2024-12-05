@@ -26,7 +26,7 @@
     type RenameGameSessionFormType
   } from '$lib/schemas';
   import type { SelectGameSession, SelectParty } from '$lib/db';
-  import type { AvatarThumb } from '$lib/server';
+  import type { Thumb } from '$lib/server';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
   import SuperDebug from 'sveltekit-superforms';
@@ -38,7 +38,7 @@
     renameGameSessionForm,
     isPartyAdmin
   }: {
-    party: SelectParty & AvatarThumb;
+    party: SelectParty & Thumb;
     session: SelectGameSession;
     deleteGameSessionForm: SuperValidated<DeleteGameSessionFormType>;
     renameGameSessionForm: SuperValidated<RenameGameSessionFormType>;
