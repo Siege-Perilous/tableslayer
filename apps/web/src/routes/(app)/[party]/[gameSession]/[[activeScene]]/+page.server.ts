@@ -4,13 +4,16 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ parent, params }) => {
   const { gameSession } = await parent();
+  let activeSceneNumber = Number(params.activeScene);
+  if (isNaN(activeSceneNumber)) {
+    activeSceneNumber = 1;
+  }
   const scenes = await getScenes(gameSession.dbName);
-
   const createSceneForm = await superValidate(zod(createSceneSchema));
 
-  return { createSceneForm, scenes };
+  return { createSceneForm, scenes, activeSceneNumber };
 };
 
 export const actions: Actions = {

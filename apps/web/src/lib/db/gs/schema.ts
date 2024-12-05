@@ -7,7 +7,7 @@ export const sceneTable = sqliteTable('scene', {
     .notNull()
     .$default(() => uuidv4()),
   name: text('name').notNull().default('New Scene'),
-  order: integer('order').notNull(),
+  order: integer('order').notNull().unique(),
   mapLocation: text('mapLocation')
 });
 

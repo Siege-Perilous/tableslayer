@@ -1,7 +1,7 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
   import { Button, FSControl, FileInput, Icon, Spacer, MessageError } from '@tableslayer/ui';
-  import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
+  import { IconPlus } from '@tabler/icons-svelte';
   import { type SelectScene } from '$lib/db/gs/schema';
   import { createSceneSchema, type CreateSceneFormType } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
@@ -10,15 +10,18 @@
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
+  import classNames from 'classnames';
 
   let {
     scenes,
     createSceneForm,
-    gameSession
+    gameSession,
+    activeSceneNumber
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     createSceneForm: SuperValidated<CreateSceneFormType>;
     gameSession: SelectGameSession;
+    activeSceneNumber: number;
   } = $props();
 
   const createSceneSuperForm = superForm(createSceneForm, {
@@ -36,29 +39,9 @@
 
   let file = $state(fileProxy(createSceneData, 'file'));
 
-  //  const scenes = [
-  //  {
-  //  name: 'Vampire Mansion upstairs',
-  //  id: 1,
-  //  image: 'https://snid.es/2024NOV/cKVSvRcTv9cw5uWE.jpeg',
-  //  isActive: true,
-  //  isProjected: false
-  //  },
-  //  {
-  //  name: 'Cave of the Emerald Queen',
-  //  id: 2,
-  //  image: 'https://snid.es/2024NOV/7wSTPeSHK9JCm9qY.jpeg',
-  //  isActive: false,
-  //  isProjected: true
-  //  },
-  //  {
-  //  name: 'Fey Village',
-  //  id: 3,
-  //  image: 'https://snid.es/2024NOV/HM5T6JmcOGco5TF6.jpeg',
-  //  isActive: false,
-  //  isProjected: false
-  //  }
-  //  ];
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)): scene is SelectScene & Thumb => {
+    return 'thumb' in scene;
+  };
 </script>
 
 <div class="scenes">
@@ -86,12 +69,19 @@
     <MessageError message={$createSceneMessage} />
   {/if}
   {#each scenes as scene}
-    <div class="scene" style={`background-image: url('${scene.thumb.resizedUrl}')`}>
+    {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
+    <a
+      href={`${scene.order}`}
+      class={sceneSelectorClasses}
+      style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+    >
+      <!--
       <div class="scene__projectedIcon">
         <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
       </div>
+      -->
       <div class="scene__text">{scene.name}</div>
-    </div>
+    </a>
   {/each}
 </div>
 
@@ -115,6 +105,7 @@
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
     cursor: pointer;
+    background-color: var(--contrastLow);
   }
   .scene:before {
     content: '';

@@ -3,7 +3,7 @@
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
-  import { StageDefaultProps } from '../../../../lib/utils';
+  import { StageDefaultProps } from '../../../../../lib/utils';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -50,6 +50,7 @@
     stageProps.ping.locations = updatedLocations;
   }
   console.log('scenes', data.scenes);
+  console.log('activeSceneNumber in page', data.activeSceneNumber);
 </script>
 
 <div class="container">
@@ -63,7 +64,12 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector gameSession={data.gameSession} scenes={data.scenes} createSceneForm={data.createSceneForm} />
+      <SceneSelector
+        activeSceneNumber={data.activeSceneNumber}
+        gameSession={data.gameSession}
+        scenes={data.scenes}
+        createSceneForm={data.createSceneForm}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button
