@@ -7,7 +7,7 @@
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
 
-  let { scenes, gameSession, activeSceneNumber, activeScene } = $derived(data);
+  let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm } = $derived(data);
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -77,7 +77,13 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector {activeSceneNumber} {gameSession} {scenes} createSceneForm={data.createSceneForm} />
+      <SceneSelector
+        {deleteSceneForm}
+        {activeSceneNumber}
+        {gameSession}
+        {scenes}
+        createSceneForm={data.createSceneForm}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button

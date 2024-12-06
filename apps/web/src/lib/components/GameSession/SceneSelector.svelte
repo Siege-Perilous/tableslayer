@@ -1,9 +1,9 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import { Button, FSControl, FileInput, Icon, Spacer, MessageError } from '@tableslayer/ui';
+  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu } from '@tableslayer/ui';
   import { IconPlus } from '@tabler/icons-svelte';
   import { type SelectScene } from '$lib/db/gs/schema';
-  import { createSceneSchema, type CreateSceneFormType } from '$lib/schemas';
+  import { createSceneSchema, type CreateSceneFormType, type DeleteSceneFormType } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
   import { superForm } from 'sveltekit-superforms';
   import { zodClient } from 'sveltekit-superforms/adapters';
@@ -16,10 +16,12 @@
     scenes,
     createSceneForm,
     gameSession,
-    activeSceneNumber
+    activeSceneNumber,
+    deleteSceneForm
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     createSceneForm: SuperValidated<CreateSceneFormType>;
+    deleteSceneForm: SuperValidated<DeleteSceneFormType>;
     gameSession: SelectGameSession;
     activeSceneNumber: number;
   } = $props();
@@ -31,7 +33,14 @@
     invalidateAll: 'force'
   });
 
+  const deleteSceneSuperForm = superForm(deleteSceneForm, {
+    id: 'deleteScene',
+    resetForm: true,
+    invalidateAll: 'force'
+  });
+
   const { form: createSceneData, enhance: createSceneEnhance, message: createSceneMessage } = createSceneSuperForm;
+  const { form: deleteSceneData, enhance: deleteSceneEnhance, message: deleteSceneMessage } = deleteSceneSuperForm;
 
   $createSceneData.name = 'test';
   $createSceneData.dbName = gameSession.dbName;
@@ -41,6 +50,13 @@
 
   const hasThumb = (scene: SelectScene | (SelectScene & Thumb)): scene is SelectScene & Thumb => {
     return 'thumb' in scene;
+  };
+
+  const onDeleteScene = (sceneId: string) => {
+    $deleteSceneData.sceneId = sceneId;
+    $deleteSceneData.dbName = gameSession.dbName;
+    console.log('deleteSceneData', $deleteSceneData);
+    setTimeout(() => deleteSceneSuperForm.submit(), 200);
   };
 </script>
 
@@ -70,19 +86,41 @@
   {/if}
   {#each scenes as scene}
     {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
-    <a
-      href={`${scene.order}`}
-      class={sceneSelectorClasses}
-      style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+    <ContextMenu
+      items={[
+        {
+          label: 'Delete',
+          onclick: () => {
+            onDeleteScene(scene.id);
+          }
+        },
+        { label: 'Add', onclick: () => console.log('add') }
+      ]}
     >
-      <!--
-      <div class="scene__projectedIcon">
-        <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-      </div>
-      -->
-      <div class="scene__text">{scene.name}</div>
-    </a>
+      {#snippet trigger()}
+        <a
+          href={`${scene.order}`}
+          class={sceneSelectorClasses}
+          style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        >
+          <!--
+          <div class="scene__projectedIcon">
+            <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+          </div>
+          -->
+          <div class="scene__text">{scene.name}</div>
+        </a>
+      {/snippet}
+    </ContextMenu>
   {/each}
+  <form id="deleteSceneForm" method="post" action="?/deleteScene" use:deleteSceneEnhance>
+    <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
+    <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
+  </form>
+  {#if $deleteSceneMessage}
+    <Spacer />
+    <MessageError message={$deleteSceneMessage} />
+  {/if}
 </div>
 
 <style>
@@ -105,6 +143,7 @@
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
     cursor: pointer;
+    display: block;
     background-color: var(--contrastLow);
   }
   .scene:before {

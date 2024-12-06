@@ -4,8 +4,8 @@ import { eq } from 'drizzle-orm';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
 export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
-  const db = gsChildDb(dbName);
-  const scenes = await db.select().from(sceneTable).orderBy(sceneTable.order).all();
+  const gsDb = gsChildDb(dbName);
+  const scenes = await gsDb.select().from(sceneTable).orderBy(sceneTable.order).all();
 
   if (!scenes || scenes.length === 0) {
     return [];
@@ -69,4 +69,15 @@ export const getSceneFromOrder = async (
   }
 
   return sceneWithThumb;
+};
+
+export const deleteScene = async (dbName: string, sceneId: string) => {
+  const gsdb = gsChildDb(dbName);
+
+  try {
+    await gsdb.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
+  } catch (error) {
+    console.error('Error deleting scene', error);
+    throw error;
+  }
 };

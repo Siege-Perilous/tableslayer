@@ -151,3 +151,11 @@ export const createSceneSchema = z.object({
 
 export type CreateSceneSchema = typeof createSceneSchema;
 export type CreateSceneFormType = z.infer<typeof createSceneSchema>;
+
+export const deleteSceneSchema = z.object({
+  dbName: z.string(),
+  sceneId: z.string()
+});
+
+export type DeleteSceneSchema = typeof deleteSceneSchema;
+export type DeleteSceneFormType = z.infer<typeof deleteSceneSchema>;

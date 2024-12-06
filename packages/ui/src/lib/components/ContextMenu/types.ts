@@ -5,7 +5,7 @@ export type ContextMenuItem = ContextMenuItemProps & {
   type?: 'divider';
   label: string;
   href?: string;
-  onclick?: () => void;
+  onclick?: (data: T) => void;
   end?: Snippet;
 };
 

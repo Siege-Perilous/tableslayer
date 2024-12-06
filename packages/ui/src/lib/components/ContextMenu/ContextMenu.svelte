@@ -71,11 +71,16 @@
     border: solid 2px transparent;
     justify-content: space-between;
   }
-  .cMenuItem:hover {
+  .cMenuItem:hover,
+  .cMenuItem:focus,
+  .cMenuItem:active {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
   }
   .cMenuItemEnd {
     justify-self: flex-end;
+  }
+  .cMenuTrigger {
+    display: block;
   }
 </style>
