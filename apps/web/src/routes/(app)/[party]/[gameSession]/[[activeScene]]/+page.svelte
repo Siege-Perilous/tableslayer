@@ -4,6 +4,10 @@
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
   import { StageDefaultProps } from '../../../../../lib/utils';
+  import type { SelectScene } from '$lib/db/gs/schema';
+  import type { Thumb } from '$lib/server';
+
+  let { scenes, gameSession, activeSceneNumber, activeScene } = $derived(data);
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -36,6 +40,16 @@
     }
   };
 
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)): scene is SelectScene & Thumb => {
+    return 'thumb' in scene;
+  };
+
+  $effect(() => {
+    if (hasThumb(activeScene)) {
+      stageProps.map.url = `${activeScene.thumb.resizedUrl}?cors=1`;
+    }
+  });
+
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
   };
@@ -49,8 +63,7 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
-  console.log('scenes', data.scenes);
-  console.log('activeSceneNumber in page', data.activeSceneNumber);
+  console.log('activeScene in page', data.activeScene);
 </script>
 
 <div class="container">
@@ -64,12 +77,7 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector
-        activeSceneNumber={data.activeSceneNumber}
-        gameSession={data.gameSession}
-        scenes={data.scenes}
-        createSceneForm={data.createSceneForm}
-      />
+      <SceneSelector {activeSceneNumber} {gameSession} {scenes} createSceneForm={data.createSceneForm} />
     </Pane>
     <PaneResizer class="resizer">
       <button

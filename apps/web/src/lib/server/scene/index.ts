@@ -1,5 +1,6 @@
 import { gsChildDb } from '$lib/db/gs';
 import { sceneTable, type SelectScene } from '$lib/db/gs/schema';
+import { eq } from 'drizzle-orm';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
 export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
@@ -46,4 +47,26 @@ export const createScene = async (dbName: string, userId: string, name?: string,
     console.error('Error creating scene', error);
     throw error;
   }
+};
+
+export const getSceneFromOrder = async (
+  dbName: string,
+  order: number
+): Promise<SelectScene | (SelectScene & Thumb)> => {
+  const db = gsChildDb(dbName);
+  const scene = await db.select().from(sceneTable).where(eq(sceneTable.order, order)).get();
+  if (!scene) {
+    throw new Error('Scene not found');
+  }
+
+  const thumb = scene.mapLocation
+    ? await transformImage(scene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    : null;
+  const sceneWithThumb = { ...scene, thumb };
+
+  if (!scene) {
+    throw new Error('Scene not found');
+  }
+
+  return sceneWithThumb;
 };
