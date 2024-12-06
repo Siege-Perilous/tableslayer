@@ -3,6 +3,18 @@ import { sceneTable, type SelectScene } from '$lib/db/gs/schema';
 import { eq } from 'drizzle-orm';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
+const reorderScenes = async (dbName: string) => {
+  const gsDb = gsChildDb(dbName);
+  const scenes = await gsDb.select().from(sceneTable).orderBy(sceneTable.order).all();
+
+  for (let i = 0; i < scenes.length; i++) {
+    const scene = scenes[i];
+    if (scene.order !== i) {
+      await gsDb.update(sceneTable).set({ order: i }).where(eq(sceneTable.id, scene.id)).execute();
+    }
+  }
+};
+
 export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
   const gsDb = gsChildDb(dbName);
   const scenes = await gsDb.select().from(sceneTable).orderBy(sceneTable.order).all();
@@ -34,19 +46,21 @@ export const createScene = async (dbName: string, userId: string, name?: string,
     const fileContent = await getFile(fileRow.fileId);
     fileLocation = fileContent.location;
   }
-  try {
-    await gsdb
-      .insert(sceneTable)
-      .values({
-        name,
-        order: order || 0,
-        mapLocation: fileLocation
-      })
-      .execute();
-  } catch (error) {
-    console.error('Error creating scene', error);
-    throw error;
-  }
+
+  // Insert with the given order, or default to a large number to append at the end
+  const initialOrder = order !== undefined ? order : 999999;
+
+  await gsdb
+    .insert(sceneTable)
+    .values({
+      name,
+      order: initialOrder,
+      mapLocation: fileLocation
+    })
+    .execute();
+
+  // After insertion, reorder all scenes
+  await reorderScenes(dbName);
 };
 
 export const getSceneFromOrder = async (
@@ -74,10 +88,23 @@ export const getSceneFromOrder = async (
 export const deleteScene = async (dbName: string, sceneId: string) => {
   const gsdb = gsChildDb(dbName);
 
-  try {
-    await gsdb.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
-  } catch (error) {
-    console.error('Error deleting scene', error);
-    throw error;
+  await gsdb.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
+
+  // After deletion, reorder all scenes
+  await reorderScenes(dbName);
+};
+
+export const adjustSceneOrder = async (dbName: string, sceneId: string, newOrder: number) => {
+  const gsDb = gsChildDb(dbName);
+
+  // First, update the target scene to the new order
+  const updated = await gsDb.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
+
+  if (updated.rowsAffected === 0) {
+    throw new Error('Scene not found');
   }
+
+  // Then reorder all scenes so that no two scenes share the same order
+  // and their ordering is consecutive
+  await reorderScenes(dbName);
 };

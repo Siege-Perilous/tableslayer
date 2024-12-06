@@ -94,7 +94,8 @@
             onDeleteScene(scene.id);
           }
         },
-        { label: 'Add', onclick: () => console.log('add') }
+        { label: 'New scene', onclick: () => console.log('add') },
+        { label: 'Duplicate scene', onclick: () => console.log('add') }
       ]}
     >
       {#snippet trigger()}
