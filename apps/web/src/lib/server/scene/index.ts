@@ -9,8 +9,9 @@ const reorderScenes = async (dbName: string) => {
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
-    if (scene.order !== i) {
-      await gsDb.update(sceneTable).set({ order: i }).where(eq(sceneTable.id, scene.id)).execute();
+    const desiredOrder = i + 1;
+    if (scene.order !== desiredOrder) {
+      await gsDb.update(sceneTable).set({ order: desiredOrder }).where(eq(sceneTable.id, scene.id)).execute();
     }
   }
 };

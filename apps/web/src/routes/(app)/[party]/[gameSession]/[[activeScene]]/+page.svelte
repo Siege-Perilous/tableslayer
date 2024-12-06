@@ -40,13 +40,16 @@
     }
   };
 
-  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)): scene is SelectScene & Thumb => {
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
     return 'thumb' in scene;
   };
 
   $effect(() => {
-    if (hasThumb(activeScene)) {
+    if (activeScene && hasThumb(activeScene) && activeScene.thumb) {
       stageProps.map.url = `${activeScene.thumb.resizedUrl}?cors=1`;
+    } else {
+      // You can clear or reset the map URL here when there's no thumb
+      stageProps.map.url = StageDefaultProps.map.url;
     }
   });
 

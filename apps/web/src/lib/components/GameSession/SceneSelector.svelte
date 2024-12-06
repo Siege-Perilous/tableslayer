@@ -11,6 +11,7 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
+  import { goto } from '$app/navigation';
 
   let {
     scenes,
@@ -48,16 +49,22 @@
 
   let file = $state(fileProxy(createSceneData, 'file'));
 
-  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)): scene is SelectScene & Thumb => {
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
     return 'thumb' in scene;
+  };
+
+  const onCreateScene = (order: number) => {
+    $createSceneData.order = order;
+    setTimeout(() => createSceneSuperForm.submit(), 200);
+    goto(`${order + 1}`);
   };
 
   const onDeleteScene = (sceneId: string) => {
     $deleteSceneData.sceneId = sceneId;
     $deleteSceneData.dbName = gameSession.dbName;
-    console.log('deleteSceneData', $deleteSceneData);
     setTimeout(() => deleteSceneSuperForm.submit(), 200);
   };
+  console.log('scenes', scenes);
 </script>
 
 <div class="scenes">
@@ -88,14 +95,15 @@
     {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
     <ContextMenu
       items={[
+        { label: 'New scene', onclick: () => onCreateScene(scene.order) },
         {
           label: 'Delete',
           onclick: () => {
             onDeleteScene(scene.id);
           }
         },
-        { label: 'New scene', onclick: () => console.log('add') },
-        { label: 'Duplicate scene', onclick: () => console.log('add') }
+        { label: 'Duplicate scene', onclick: () => console.log('add') },
+        { label: 'Make active scene', onclick: () => console.log('active') }
       ]}
     >
       {#snippet trigger()}
@@ -114,7 +122,7 @@
       {/snippet}
     </ContextMenu>
   {/each}
-  <form id="deleteSceneForm" method="post" action="?/deleteScene" use:deleteSceneEnhance>
+  <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
     <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
     <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
   </form>
