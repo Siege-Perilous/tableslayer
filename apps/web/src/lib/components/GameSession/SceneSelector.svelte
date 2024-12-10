@@ -2,7 +2,8 @@
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
   import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu } from '@tableslayer/ui';
   import { IconPlus } from '@tabler/icons-svelte';
-  import { type SelectScene } from '$lib/db/gs/schema';
+  import type { SelectScene } from '$lib/db/gs/schema';
+  import type { SelectParty } from '$lib/db/app/schema';
   import { createSceneSchema, type CreateSceneFormType, type DeleteSceneFormType } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
   import { superForm } from 'sveltekit-superforms';
@@ -18,13 +19,15 @@
     createSceneForm,
     gameSession,
     activeSceneNumber,
-    deleteSceneForm
+    deleteSceneForm,
+    party
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     createSceneForm: SuperValidated<CreateSceneFormType>;
     deleteSceneForm: SuperValidated<DeleteSceneFormType>;
     gameSession: SelectGameSession;
     activeSceneNumber: number;
+    party: SelectParty & Thumb;
   } = $props();
 
   const createSceneSuperForm = superForm(createSceneForm, {
@@ -108,7 +111,7 @@
     >
       {#snippet trigger()}
         <a
-          href={`${scene.order}`}
+          href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
           class={sceneSelectorClasses}
           style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
         >

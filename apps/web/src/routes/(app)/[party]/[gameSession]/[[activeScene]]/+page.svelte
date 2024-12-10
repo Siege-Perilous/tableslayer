@@ -7,7 +7,7 @@
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
 
-  let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm } = $derived(data);
+  let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -85,6 +85,7 @@
         {activeSceneNumber}
         {gameSession}
         {scenes}
+        {party}
         createSceneForm={data.createSceneForm}
       />
     </Pane>
