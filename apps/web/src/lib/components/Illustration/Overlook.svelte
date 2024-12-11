@@ -174,4 +174,10 @@
       transform: translateX(100%);
     }
   }
+
+  @media (max-width: 768px) {
+    .signup__fg {
+      display: none;
+    }
+  }
 </style>

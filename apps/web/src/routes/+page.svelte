@@ -1,27 +1,30 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Title, Text, Spacer, Button } from '@tableslayer/ui';
+  import { Title, Text, Spacer, Button, Panel } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
   import { IllustrationOverlook } from '$lib/components';
 </script>
 
 <IllustrationOverlook />
-<div class="container">
+
+<Panel class="panel--signup">
   <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="2rem">Tools to build animated battle maps<br /> for your digital tabletop.</Text>
+  <Text size="2rem">Create animated maps<br />for in-person tabletop games.</Text>
   <div class="flex">
-    {#if dev}
+    {#if !dev}
       {#if user}
         <Button href="/profile" class="btn">Dashboard</Button>
       {:else}
         <Button href="/login" class="btn">Log in</Button>
         <Button href="/signup" class="btn">Sign up</Button>
       {/if}
+    {:else}
+      <Text size="1.5rem">Coming soon...</Text>
     {/if}
   </div>
-</div>
+</Panel>
 
 <style>
   :global(.title.heroTitle) {
@@ -36,13 +39,12 @@
     /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
     /*  -1px 0 0 rgba(255, 255, 255, 1);  */
   }
-  .container {
+  :global(.panel.panel--signup) {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    margin: 20% auto 0 auto;
-    max-width: var(--contain-desktop);
-    padding-left: var(--size-12);
+    width: fit-content;
+    padding: var(--size-12);
+    margin: 20vh auto auto 10vh;
     position: relative;
     z-index: 5;
   }
@@ -53,5 +55,11 @@
   }
   :global(.heroTitle) {
     letter-spacing: 0.2rem;
+  }
+
+  @media (max-width: 768px) {
+    :global(.panel.panel--signup) {
+      margin: 20vh 3rem 0 3rem;
+    }
   }
 </style>

@@ -67,7 +67,6 @@
     $deleteSceneData.dbName = gameSession.dbName;
     setTimeout(() => deleteSceneSuperForm.submit(), 200);
   };
-  console.log('scenes', scenes);
 </script>
 
 <div class="scenes">

@@ -66,7 +66,6 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
-  console.log('activeScene in page', data.activeScene);
 </script>
 
 <div class="container">
