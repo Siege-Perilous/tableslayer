@@ -11,7 +11,7 @@
 <Panel class="panel--signup">
   <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="2rem">Create animated maps<br />for in-person tabletop games.</Text>
+  <Text size="2rem">Create digital playmats<br />for in-person tabletop games.</Text>
   <div class="flex">
     {#if dev}
       {#if user}
