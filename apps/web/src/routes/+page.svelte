@@ -3,8 +3,10 @@
   import { Title, Text, Spacer, Button } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
+  import { IllustrationOverlook } from '$lib/components';
 </script>
 
+<IllustrationOverlook />
 <div class="container">
   <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
@@ -41,6 +43,8 @@
     margin: 20% auto 0 auto;
     max-width: var(--contain-desktop);
     padding-left: var(--size-12);
+    position: relative;
+    z-index: 5;
   }
   .flex {
     display: flex;
