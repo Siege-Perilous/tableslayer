@@ -13,7 +13,7 @@
   <Spacer size={8} />
   <Text size="2rem">Create animated maps<br />for in-person tabletop games.</Text>
   <div class="flex">
-    {#if !dev}
+    {#if dev}
       {#if user}
         <Button href="/profile" class="btn">Dashboard</Button>
       {:else}
