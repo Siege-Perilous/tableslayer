@@ -39,7 +39,7 @@ export const actions: Actions = {
     }
   },
   deleteScene: async (event) => {
-    const userId = event.locals.user.id;
+    //  const userId = event.locals.user.id;
     const deleteSceneForm = await superValidate(event.request, zod(deleteSceneSchema));
     if (!deleteSceneForm.valid) {
       return message(deleteSceneForm, { type: 'error', text: 'Invalid scene data' }, { status: 400 });
