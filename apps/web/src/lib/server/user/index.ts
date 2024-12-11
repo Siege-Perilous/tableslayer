@@ -8,7 +8,7 @@ export const getUser = async (userId: string) => {
     const user = (await db.select().from(usersTable).where(eq(usersTable.id, userId)).get()) as SelectUser;
     const file = await getFile(user.avatarFileId);
     const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-    const userWithThumb = { ...user, avatarThumb: thumb };
+    const userWithThumb = { ...user, thumb: thumb };
     return userWithThumb;
   } catch (error) {
     console.error('Error getting user from table', error);
@@ -21,7 +21,7 @@ export const getUserByEmail = async (email: string) => {
     const user = (await db.select().from(usersTable).where(eq(usersTable.email, email)).get()) as SelectUser;
     const file = await getFile(user.avatarFileId);
     const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-    const userWithThumb = { ...user, avatarThumb: thumb };
+    const userWithThumb = { ...user, thumb: thumb };
     if (!userWithThumb) {
       throw new Error('User not found');
     }

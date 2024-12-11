@@ -13,6 +13,9 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}']
   },
+  optimizeDeps: {
+    exclude: ['@node-rs/argon2', '@node-rs/bcrypt']
+  },
   build: {
     commonjsOptions: {
       include: [/@tableslayer\/ui/, /node_modules/]

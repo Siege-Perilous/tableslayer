@@ -20,6 +20,7 @@
     { name: 'CardFan', path: '/cardfan' },
     { name: 'CodeBlock', path: '/codeblock' },
     { name: 'Color Mode', path: '/colormode' },
+    { name: 'Context Menu', path: '/contextmenu' },
     { name: 'ColorPicker', path: '/color-picker' },
     { name: 'Hr', path: '/hr' },
     { name: 'Icons', path: '/icons' },

@@ -3,7 +3,7 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { Field } from 'formsnap';
   import type { SelectParty } from '$lib/db/app/schema';
-  import type { AvatarThumb } from '$lib/server';
+  import type { Thumb } from '$lib/server';
   import { IconChevronDown } from '@tabler/icons-svelte';
   import { IconCheck } from '@tabler/icons-svelte';
   import {
@@ -33,7 +33,7 @@
     deletePartyForm,
     isPartyAdmin
   }: {
-    party: SelectParty & AvatarThumb;
+    party: SelectParty & Thumb;
     renamePartyForm: SuperValidated<RenamePartyFormType>;
     deletePartyForm: SuperValidated<DeletePartyFormType>;
     isPartyAdmin: boolean;
@@ -63,7 +63,7 @@
 {#snippet title()}
   <div class="partyName__popoverTrigger">
     <div class="partyName__popoverAvatar">
-      <Avatar size="lg" src={party.avatarThumb.resizedUrl} alt={party.name} />
+      <Avatar size="lg" src={party.thumb.resizedUrl} alt={party.name} />
       {#if isPartyAdmin}
         <Icon Icon={IconChevronDown} />
       {/if}

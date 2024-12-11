@@ -5,6 +5,7 @@
   import SuperDebug from 'sveltekit-superforms';
   import { signupSchema } from '$lib/schemas';
   import { Input, MessageError, Button, FSControl, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
+  import { IllustrationOverlook } from '$lib/components';
 
   let { data } = $props();
   const form = superForm(data.signupForm, {
@@ -13,6 +14,8 @@
 
   const { form: formData, enhance, message } = form;
 </script>
+
+<IllustrationOverlook />
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
@@ -62,6 +65,8 @@
     flex-direction: column;
     max-width: var(--contain-smallForm);
     padding: var(--size-8);
-    margin: 20vh auto auto auto;
+    margin: 20vh auto auto 10vh;
+    position: relative;
+    z-index: 5;
   }
 </style>
