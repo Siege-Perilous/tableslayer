@@ -4,6 +4,7 @@ export * from './CardFan';
 export * from './CodeBlock';
 export * from './ColorMode';
 export * from './ColorPicker';
+export * from './ContextMenu';
 export * from './Hr';
 export * from './Icon';
 export * from './Input';

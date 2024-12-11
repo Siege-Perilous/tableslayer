@@ -10,3 +10,18 @@ const client = createClient({
 });
 
 export const gsDb = drizzle(client);
+
+export const gsChildDb = (dbName: string) => {
+  const client = createClient({
+    url: `libsql://${dbName}-snide.turso.io`,
+    authToken: process.env.TURSO_GS_PARENT_DB_AUTH_TOKEN!
+  });
+
+  if (!client) {
+    throw new Error('Error creating client');
+  }
+
+  const gsChildDb = drizzle(client);
+
+  return gsChildDb;
+};

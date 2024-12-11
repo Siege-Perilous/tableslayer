@@ -1,54 +1,137 @@
 <script lang="ts">
-  import { Button, Icon } from '@tableslayer/ui';
-  import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
+  import SuperDebug, { fileProxy } from 'sveltekit-superforms';
+  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu } from '@tableslayer/ui';
+  import { IconPlus } from '@tabler/icons-svelte';
+  import type { SelectScene } from '$lib/db/gs/schema';
+  import type { SelectParty } from '$lib/db/app/schema';
+  import { createSceneSchema, type CreateSceneFormType, type DeleteSceneFormType } from '$lib/schemas';
+  import type { SuperValidated } from 'sveltekit-superforms';
+  import { superForm } from 'sveltekit-superforms';
+  import { zodClient } from 'sveltekit-superforms/adapters';
+  import type { SelectGameSession } from '$lib/db/app/schema';
+  import { Field } from 'formsnap';
+  import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
-  const scenes = [
-    {
-      name: 'Vampire Mansion upstairs',
-      id: 1,
-      image: 'https://snid.es/2024NOV/cKVSvRcTv9cw5uWE.jpeg',
-      isActive: true,
-      isProjected: false
-    },
-    {
-      name: 'Cave of the Emerald Queen',
-      id: 2,
-      image: 'https://snid.es/2024NOV/7wSTPeSHK9JCm9qY.jpeg',
-      isActive: false,
-      isProjected: true
-    },
-    {
-      name: 'Fey Village',
-      id: 3,
-      image: 'https://snid.es/2024NOV/HM5T6JmcOGco5TF6.jpeg',
-      isActive: false,
-      isProjected: false
-    }
-  ];
+  import { goto } from '$app/navigation';
+
+  let {
+    scenes,
+    createSceneForm,
+    gameSession,
+    activeSceneNumber,
+    deleteSceneForm,
+    party
+  }: {
+    scenes: (SelectScene | (SelectScene & Thumb))[];
+    createSceneForm: SuperValidated<CreateSceneFormType>;
+    deleteSceneForm: SuperValidated<DeleteSceneFormType>;
+    gameSession: SelectGameSession;
+    activeSceneNumber: number;
+    party: SelectParty & Thumb;
+  } = $props();
+
+  const createSceneSuperForm = superForm(createSceneForm, {
+    id: 'createScene',
+    validators: zodClient(createSceneSchema),
+    resetForm: true,
+    invalidateAll: 'force'
+  });
+
+  const deleteSceneSuperForm = superForm(deleteSceneForm, {
+    id: 'deleteScene',
+    resetForm: true,
+    invalidateAll: 'force'
+  });
+
+  const { form: createSceneData, enhance: createSceneEnhance, message: createSceneMessage } = createSceneSuperForm;
+  const { form: deleteSceneData, enhance: deleteSceneEnhance, message: deleteSceneMessage } = deleteSceneSuperForm;
+
+  $createSceneData.name = 'test';
+  $createSceneData.dbName = gameSession.dbName;
+  $createSceneData.order = scenes.length + 1;
+
+  let file = $state(fileProxy(createSceneData, 'file'));
+
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
+    return 'thumb' in scene;
+  };
+
+  const onCreateScene = (order: number) => {
+    $createSceneData.order = order;
+    setTimeout(() => createSceneSuperForm.submit(), 200);
+    goto(`${order + 1}`);
+  };
+
+  const onDeleteScene = (sceneId: string) => {
+    $deleteSceneData.sceneId = sceneId;
+    $deleteSceneData.dbName = gameSession.dbName;
+    setTimeout(() => deleteSceneSuperForm.submit(), 200);
+  };
 </script>
 
 <div class="scenes">
-  <Button variant="ghost">
-    {#snippet start()}
-      <Icon Icon={IconPlus} />
-    {/snippet}
-    Add scene
-  </Button>
+  <form method="post" enctype="multipart/form-data" action="?/createScene" use:createSceneEnhance>
+    <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
+    <input type="hidden" name="order" bind:value={$createSceneData.order} />
+    <input type="hidden" name="name" bind:value={$createSceneData.name} />
+    <Field form={createSceneSuperForm} name="file">
+      <FSControl label="Party avatar">
+        {#snippet children({ attrs })}
+          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+        {/snippet}
+      </FSControl>
+    </Field>
+    <Button type="submit" variant="ghost">
+      {#snippet start()}
+        <Icon Icon={IconPlus} />
+      {/snippet}
+      Add scene
+    </Button>
+  </form>
+  <SuperDebug data={$createSceneData} display={false} />
+  {#if $createSceneMessage}
+    <Spacer />
+    <MessageError message={$createSceneMessage} />
+  {/if}
   {#each scenes as scene}
-    {@const sceneSelectorClasses = classNames(
-      'scene',
-      scene.isActive && 'scene--isActive',
-      scene.isProjected && 'scene--isProjected'
-    )}
-    <div class={sceneSelectorClasses} style={`background-image: url(${scene.image});`}>
-      {#if scene.isProjected}
-        <div class="scene__projectedIcon">
-          <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-        </div>
-      {/if}
-      <div class="scene__text">{scene.name}</div>
-    </div>
+    {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
+    <ContextMenu
+      items={[
+        { label: 'New scene', onclick: () => onCreateScene(scene.order) },
+        {
+          label: 'Delete',
+          onclick: () => {
+            onDeleteScene(scene.id);
+          }
+        },
+        { label: 'Duplicate scene', onclick: () => console.log('add') },
+        { label: 'Make active scene', onclick: () => console.log('active') }
+      ]}
+    >
+      {#snippet trigger()}
+        <a
+          href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
+          class={sceneSelectorClasses}
+          style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        >
+          <!--
+          <div class="scene__projectedIcon">
+            <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+          </div>
+          -->
+          <div class="scene__text">{scene.name}</div>
+        </a>
+      {/snippet}
+    </ContextMenu>
   {/each}
+  <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
+    <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
+    <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
+  </form>
+  {#if $deleteSceneMessage}
+    <Spacer />
+    <MessageError message={$deleteSceneMessage} />
+  {/if}
 </div>
 
 <style>
@@ -71,6 +154,8 @@
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
     cursor: pointer;
+    display: block;
+    background-color: var(--contrastLow);
   }
   .scene:before {
     content: '';

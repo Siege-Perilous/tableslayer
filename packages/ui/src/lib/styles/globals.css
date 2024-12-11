@@ -17,13 +17,13 @@
 * Copyright: Copyright 2015 Mota Italic. All rights reserved.
 */
 
-@font-face {
-  src: url('/Chikki-Variable.woff2') format('woff2');
-  font-family: 'Chikki Variable';
-  font-weight: 300 900;
-  font-style: normal;
-  font-display: swap;
-}
+/*  @font-face {  */
+/*  src: url('/Chikki-Variable.woff2') format('woff2');  */
+/*  font-family: 'Chikki Variable';  */
+/*  font-weight: 300 900;  */
+/*  font-style: normal;  */
+/*  font-display: swap;  */
+/*  }  */
 
 @font-face {
   src: url('/RavenHellVariableGX.woff2') format('woff2');
