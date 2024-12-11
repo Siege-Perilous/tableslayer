@@ -22,7 +22,7 @@
     <p>Your presense was requested by</p>
     <Spacer size={2} />
     <div class="invitedBy">
-      <Avatar src={invite.invitedByUser.avatarThumb.resizedUrl || invite.invitedByUser.avatarThumb.url} />
+      <Avatar src={invite.invitedByUser.thumb.resizedUrl || invite.invitedByUser.thumb.url} />
       {invite.invitedByUser.name} - {invite.invitedByUser.email}
     </div>
     <Spacer size={6} />

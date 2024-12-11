@@ -11,7 +11,7 @@
   type PartyMember = SelectUser & {
     role: PartyRole;
     partyId: string;
-    avatarThumb: { url: string; resizedUrl: string };
+    thumb: { url: string; resizedUrl: string };
   };
 
   type PartyMemberProps = {
@@ -65,7 +65,7 @@
 {#snippet partyMember()}
   <div class="partyMember {(isPartyAdmin || isSelf) && 'partyMember--canEdit'}">
     <div class="partyMember__avatar">
-      <Avatar src={member.avatarThumb.resizedUrl || member.avatarThumb.url} alt={member.name || member.email} />
+      <Avatar src={member.thumb.resizedUrl || member.thumb.url} alt={member.name || member.email} />
       {#if isPartyAdmin || isSelf}
         <Icon Icon={IconChevronDown} color="var(--fgMuted)" class="partyMember__chevron" />
       {/if}

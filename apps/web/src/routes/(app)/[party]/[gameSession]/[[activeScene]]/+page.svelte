@@ -1,10 +1,13 @@
 <script lang="ts">
-  //  let { data } = $props();
-  //  const { gameSession } = $derived(data);
+  let { data } = $props();
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
-  import { StageDefaultProps } from '../../../../lib/utils';
+  import { StageDefaultProps } from '../../../../../lib/utils';
+  import type { SelectScene } from '$lib/db/gs/schema';
+  import type { Thumb } from '$lib/server';
+
+  let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -37,6 +40,19 @@
     }
   };
 
+  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
+    return 'thumb' in scene;
+  };
+
+  $effect(() => {
+    if (activeScene && hasThumb(activeScene) && activeScene.thumb) {
+      stageProps.map.url = `${activeScene.thumb.resizedUrl}?cors=1`;
+    } else {
+      // You can clear or reset the map URL here when there's no thumb
+      stageProps.map.url = StageDefaultProps.map.url;
+    }
+  });
+
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
   };
@@ -63,7 +79,14 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector />
+      <SceneSelector
+        {deleteSceneForm}
+        {activeSceneNumber}
+        {gameSession}
+        {scenes}
+        {party}
+        createSceneForm={data.createSceneForm}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button

@@ -61,7 +61,7 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={user.avatarThumb.resizedUrl || user.avatarThumb.url}>
+      <AvatarPopover src={user.thumb.resizedUrl || user.thumb.url}>
         {#snippet content()}
           <div class="dropdown">
             <Link href="/profile">{user.name || user.email}</Link>

@@ -136,3 +136,26 @@ export const renameGameSessionSchema = z.object({
 
 export type RenameGameSessionSchema = typeof renameGameSessionSchema;
 export type RenameGameSessionFormType = z.infer<typeof renameGameSessionSchema>;
+
+export const createSceneSchema = z.object({
+  dbName: z.string(),
+  name: z.string().min(3),
+  order: z.number().int().positive(),
+  file: z
+    .instanceof(File, { message: 'Please upload an image' })
+    .refine((file) => file.size < 5000000, {
+      message: 'File size must be less than 5MB'
+    })
+    .optional()
+});
+
+export type CreateSceneSchema = typeof createSceneSchema;
+export type CreateSceneFormType = z.infer<typeof createSceneSchema>;
+
+export const deleteSceneSchema = z.object({
+  dbName: z.string(),
+  sceneId: z.string()
+});
+
+export type DeleteSceneSchema = typeof deleteSceneSchema;
+export type DeleteSceneFormType = z.infer<typeof deleteSceneSchema>;

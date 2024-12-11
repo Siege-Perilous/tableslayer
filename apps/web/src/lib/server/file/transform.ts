@@ -15,8 +15,8 @@ export type BuildImageResult = {
   details: ImageDetails;
 };
 
-export type AvatarThumb = {
-  avatarThumb: BuildImageResult;
+export type Thumb = {
+  thumb: BuildImageResult;
 };
 
 export const getImageDetails = async (url: string): Promise<ImageDetails> => {
