@@ -4,7 +4,12 @@
   import { IconPlus } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
-  import { createSceneSchema, type CreateSceneFormType, type DeleteSceneFormType } from '$lib/schemas';
+  import {
+    createSceneSchema,
+    deleteSceneSchema,
+    type CreateSceneFormType,
+    type DeleteSceneFormType
+  } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
   import { superForm } from 'sveltekit-superforms';
   import { zodClient } from 'sveltekit-superforms/adapters';
@@ -12,7 +17,6 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
-  import { goto } from '$app/navigation';
 
   let {
     scenes,
@@ -31,24 +35,36 @@
   } = $props();
 
   const createSceneSuperForm = superForm(createSceneForm, {
-    id: 'createScene',
     validators: zodClient(createSceneSchema),
     resetForm: true,
     invalidateAll: 'force'
   });
 
   const deleteSceneSuperForm = superForm(deleteSceneForm, {
-    id: 'deleteScene',
     resetForm: true,
+    validators: zodClient(deleteSceneSchema),
     invalidateAll: 'force'
   });
 
-  const { form: createSceneData, enhance: createSceneEnhance, message: createSceneMessage } = createSceneSuperForm;
-  const { form: deleteSceneData, enhance: deleteSceneEnhance, message: deleteSceneMessage } = deleteSceneSuperForm;
+  const {
+    form: createSceneData,
+    enhance: createSceneEnhance,
+    message: createSceneMessage,
+    formId: createSceneFormId
+  } = createSceneSuperForm;
+  const {
+    form: deleteSceneData,
+    enhance: deleteSceneEnhance,
+    message: deleteSceneMessage,
+    formId: deleteSceneFormId
+  } = deleteSceneSuperForm;
 
-  $createSceneData.name = 'test';
-  $createSceneData.dbName = gameSession.dbName;
-  $createSceneData.order = scenes.length + 1;
+  $effect(() => {
+    $createSceneFormId = new Date().getTime().toString();
+    $createSceneData.name = 'test';
+    $createSceneData.dbName = gameSession.dbName;
+    $createSceneData.order = scenes.length + 1;
+  });
 
   let file = $state(fileProxy(createSceneData, 'file'));
 
@@ -57,15 +73,18 @@
   };
 
   const onCreateScene = (order: number) => {
+    $createSceneData.dbName = gameSession.dbName;
+    $createSceneData.name = 'test';
+    $createSceneFormId = `createScene-${order}`;
     $createSceneData.order = order;
-    setTimeout(() => createSceneSuperForm.submit(), 200);
-    goto(`${order + 1}`);
+    setTimeout(() => createSceneSuperForm.submit(), 50);
   };
 
   const onDeleteScene = (sceneId: string) => {
+    $deleteSceneFormId = sceneId;
     $deleteSceneData.sceneId = sceneId;
     $deleteSceneData.dbName = gameSession.dbName;
-    setTimeout(() => deleteSceneSuperForm.submit(), 200);
+    setTimeout(() => deleteSceneSuperForm.submit(), 50);
   };
 </script>
 
@@ -81,6 +100,11 @@
         {/snippet}
       </FSControl>
     </Field>
+    {#if $createSceneMessage}
+      <Spacer />
+      {$createSceneMessage.text}
+      <MessageError message={$createSceneMessage} />
+    {/if}
     <Button type="submit" variant="ghost">
       {#snippet start()}
         <Icon Icon={IconPlus} />
@@ -89,10 +113,6 @@
     </Button>
   </form>
   <SuperDebug data={$createSceneData} display={false} />
-  {#if $createSceneMessage}
-    <Spacer />
-    <MessageError message={$createSceneMessage} />
-  {/if}
   {#each scenes as scene}
     {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
     <ContextMenu
@@ -144,6 +164,7 @@
     height: 100%;
     width: 100%;
     background: var(--bg);
+    overflow-y: auto;
   }
   .scene {
     position: relative;

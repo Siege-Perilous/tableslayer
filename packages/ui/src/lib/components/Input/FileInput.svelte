@@ -34,9 +34,6 @@
     return [];
   });
 
-  $inspect('files', files);
-  $inspect('previewUrls', previewUrls);
-
   // Clean up the object URLs to prevent memory leaks when the component is destroyed
   onDestroy(() => {
     previousUrlsCleanup();

@@ -1,5 +1,6 @@
 import { createSceneSchema, deleteSceneSchema } from '$lib/schemas';
 import { createScene, deleteScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
+import { setToastCookie } from '@tableslayer/ui';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
@@ -29,10 +30,12 @@ export const actions: Actions = {
 
     try {
       const { name, file, order, dbName } = createSceneForm.data;
-
       await createScene(dbName, userId, name, order, file);
-
-      return message(createSceneForm, { type: 'success', text: 'Scene created' });
+      // Use cookie version because form resets
+      setToastCookie(event, {
+        title: 'Scene created',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error creating scene', error);
       return message(createSceneForm, { type: 'error', text: 'Error creating scene' }, { status: 500 });
