@@ -122,6 +122,7 @@
     renderer.setClearColor(new THREE.Color(props.backgroundColor), 0);
   });
 
+  // Whenever the scene or display properties change, update the clipping planes
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
@@ -150,7 +151,7 @@
 </script>
 
 <InputManager
-  isActive={props.scene.activeLayer === MapLayerType.Scene}
+  isActive={props.activeLayer === MapLayerType.Scene}
   {onMouseDown}
   {onMouseUp}
   {onMouseMove}

@@ -142,7 +142,7 @@
 </script>
 
 <InputManager
-  isActive={props.scene.activeLayer === MapLayerType.Map}
+  isActive={props.activeLayer === MapLayerType.Map}
   target={mapMesh}
   layerSize={mapSize}
   {onMouseDown}
@@ -166,16 +166,10 @@
   <FogOfWarLayer
     bind:this={fogOfWarLayer}
     props={props.fogOfWar}
-    isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
+    isActive={props.activeLayer === MapLayerType.FogOfWar}
     z={10}
     {mapSize}
   />
 
-  <PingLayer
-    props={props.ping}
-    isActive={props.scene.activeLayer === MapLayerType.Ping}
-    z={20}
-    {mapSize}
-    {onPingsUpdated}
-  />
+  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} z={20} {mapSize} {onPingsUpdated} />
 </T.Object3D>

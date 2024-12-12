@@ -1,11 +1,4 @@
-import type { MapLayerType } from '../MapLayer/types';
-
 export interface SceneLayerProps {
-  /**
-   * The layer that is currently active for editing
-   */
-  activeLayer: MapLayerType;
-
   /**
    * The position of the scene layer within the canvas
    */

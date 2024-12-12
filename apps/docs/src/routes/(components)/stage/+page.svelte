@@ -87,7 +87,7 @@
   document.addEventListener('keydown', (event) => {
     if (!(event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4' || event.key === '5'))
       return;
-    stageProps.scene.activeLayer = Number(event.key);
+    stageProps.activeLayer = Number(event.key);
   });
 </script>
 
@@ -97,7 +97,7 @@
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
+  <List bind:value={stageProps.activeLayer} label="Active Layer" options={layerTypeOptions} />
 
   <Folder title="Display">
     <Slider bind:value={stageProps.display.size.x} label="Width (in)" />
