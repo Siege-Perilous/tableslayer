@@ -6,6 +6,8 @@
   import { StageDefaultProps } from '../../../../../lib/utils';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
+  import { onMount } from 'svelte';
+  import classNames from 'classnames';
 
   let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
 
@@ -66,6 +68,18 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
+
+  let stageIsLoading = $state(true);
+  onMount(() => {
+    const interval = setInterval(() => {
+      if (stage) {
+        stageIsLoading = false;
+        stage.scene.fit();
+        clearInterval(interval);
+      }
+    }, 50);
+  });
+  let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 </script>
 
 <div class="container">
@@ -97,7 +111,7 @@
     </PaneResizer>
     <Pane defaultSize={70}>
       <div class="stageWrapper">
-        <div class="stage">
+        <div class={stageClasses}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls {stageProps} onUpdateStage={updateStage} />
@@ -168,5 +182,8 @@
   .stage {
     width: 100%;
     height: 100%;
+  }
+  .stage--loading {
+    visibility: hidden;
   }
 </style>
