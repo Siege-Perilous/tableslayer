@@ -42,3 +42,6 @@ https://www.reddit.com/r/sveltejs/comments/15fy5u8/best_way_to_refresh_apifetche
 
 Mailosaur email testing
 https://mailosaur.com/docs/email-testing/playwright
+
+Persistant store
+https://www.reddit.com/r/sveltejs/comments/1fqu85d/global_persistent_store_in_svelte_5/

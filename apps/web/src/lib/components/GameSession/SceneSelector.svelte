@@ -17,7 +17,6 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
-  import { onMount } from 'svelte';
 
   let {
     scenes,
@@ -101,6 +100,11 @@
         {/snippet}
       </FSControl>
     </Field>
+    {#if $createSceneMessage}
+      <Spacer />
+      {$createSceneMessage.text}
+      <MessageError message={$createSceneMessage} />
+    {/if}
     <Button type="submit" variant="ghost">
       {#snippet start()}
         <Icon Icon={IconPlus} />
@@ -109,10 +113,6 @@
     </Button>
   </form>
   <SuperDebug data={$createSceneData} display={false} />
-  {#if $createSceneMessage}
-    <Spacer />
-    <MessageError message={$createSceneMessage} />
-  {/if}
   {#each scenes as scene}
     {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
     <ContextMenu
