@@ -12,7 +12,6 @@
     PingEditMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
-  import { onMount } from 'svelte';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
@@ -82,15 +81,6 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
-
-  onMount(() => {
-    const interval = setInterval(() => {
-      if (stage) {
-        stage.scene.fit();
-        clearInterval(interval); // Stop checking once fit is called
-      }
-    }, 50); // Check every 100ms
-  });
 </script>
 
 <div class="stage-wrapper">
