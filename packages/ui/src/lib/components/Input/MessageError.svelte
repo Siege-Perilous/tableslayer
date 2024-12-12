@@ -8,6 +8,7 @@
 
   $effect(() => {
     if (message) {
+      console.log('message', message);
       addToast({
         data: {
           title: message.text,

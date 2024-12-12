@@ -98,6 +98,7 @@
     position: fixed;
     right: var(--size-8);
     bottom: var(--size-8);
+    z-index: 1;
   }
   .toast {
     position: fixed;

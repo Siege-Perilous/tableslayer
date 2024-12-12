@@ -234,8 +234,6 @@
     });
     return selectedOption.value;
   };
-
-  $inspect(stageProps);
 </script>
 
 <!-- Usage of ColorPicker -->
