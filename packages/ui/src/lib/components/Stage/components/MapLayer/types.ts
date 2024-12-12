@@ -1,7 +1,9 @@
 export enum MapLayerType {
   None = 0,
-  FogOfWar = 1,
-  Ping = 2
+  Scene = 1,
+  Map = 2,
+  FogOfWar = 3,
+  Ping = 4
 }
 
 /**

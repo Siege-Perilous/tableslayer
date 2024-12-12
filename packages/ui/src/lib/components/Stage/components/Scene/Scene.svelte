@@ -9,6 +9,7 @@
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
 
   interface Props {
     props: StageProps;
@@ -36,26 +37,12 @@
   composer.addPass(new EffectPass($camera, new VignetteEffect({ offset: 0.2 })));
 
   onMount(() => {
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('mouseleave', onMouseLeave);
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('wheel', onWheel);
-
     let before = autoRender.current;
     autoRender.set(false);
 
     return () => {
       autoRender.set(before);
     };
-  });
-
-  onDestroy(() => {
-    renderer.domElement.removeEventListener('mousedown', onMouseDown);
-    renderer.domElement.removeEventListener('mouseup', onMouseUp);
-    renderer.domElement.removeEventListener('mouseleave', onMouseLeave);
-    renderer.domElement.removeEventListener('mousemove', onMouseMove);
-    renderer.domElement.removeEventListener('wheel', onWheel);
   });
 
   function onMouseDown(e: MouseEvent) {
@@ -79,25 +66,12 @@
   function onMouseMove(e: MouseEvent) {
     if (!leftMouseDown) return;
 
-    // When control key is pressed, pan the entire scene
-    if (e.shiftKey) {
-      const newOffset = {
-        x: props.scene.offset.x + e.movementX,
-        y: props.scene.offset.y - e.movementY
-      };
+    const newOffset = {
+      x: props.scene.offset.x + e.movementX,
+      y: props.scene.offset.y - e.movementY
+    };
 
-      onSceneUpdate(newOffset, props.scene.zoom);
-    }
-    // Only allow movement if no map layers are currently being edited
-    else if (props.scene.activeLayer === MapLayerType.None) {
-      // Scale offset by scene zoom level so map moves pixel-per-pixel with the mouse
-      const newOffset = {
-        x: props.map.offset.x + e.movementX / props.scene.zoom,
-        y: props.map.offset.y - e.movementY / props.scene.zoom
-      };
-
-      onMapUpdate(newOffset, props.map.zoom);
-    }
+    onSceneUpdate(newOffset, props.scene.zoom);
   }
 
   function onWheel(e: WheelEvent) {
@@ -109,16 +83,9 @@
       scrollDelta = e.deltaY * zoomSensitivity;
     }
 
-    // If shift key is pressed, zoom the entire scene, otherwis zoom the map
-    if (e.shiftKey) {
-      let newZoom = props.scene.zoom - scrollDelta;
-      newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
-      onSceneUpdate(props.scene.offset, newZoom);
-    } else if (props.scene.activeLayer === MapLayerType.None) {
-      let newZoom = props.map.zoom - scrollDelta;
-      newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
-      onMapUpdate(props.map.offset, newZoom);
-    }
+    let newZoom = props.scene.zoom - scrollDelta;
+    newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+    onSceneUpdate(props.scene.offset, newZoom);
   }
 
   export function fillSceneToCanvas() {
@@ -181,6 +148,15 @@
     toBase64: () => mapLayer.fogOfWar.toBase64()
   };
 </script>
+
+<InputManager
+  isActive={props.scene.activeLayer === MapLayerType.Scene}
+  {onMouseDown}
+  {onMouseUp}
+  {onMouseMove}
+  {onMouseLeave}
+  {onWheel}
+/>
 
 <T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 

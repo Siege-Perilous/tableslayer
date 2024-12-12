@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
   import { textureToBase64 } from '../../helpers/utils';
-  import LayerInput from '../LayerInput/LayerInput.svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -85,13 +85,13 @@
     }
   });
 
-  function onMouseDown(p: THREE.Vector2 | null): void {
+  function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!p) return;
     drawing = true;
     activeTool.origin = p;
   }
 
-  function onMouseUp(p: THREE.Vector2 | null): void {
+  function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (p) {
       if (props.drawMode === DrawMode.Erase) {
         configureClearMode();
@@ -107,7 +107,7 @@
     drawing = false;
   }
 
-  function onMouseMove(p: THREE.Vector2 | null): void {
+  function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!activeTool) return;
 
     if (!p) {
@@ -217,14 +217,7 @@
   }
 </script>
 
-<LayerInput
-  {isActive}
-  layerSize={mapSize}
-  target={mesh}
-  onmousedown={onMouseDown}
-  onmousemove={onMouseMove}
-  onmouseup={onMouseUp}
-/>
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar" position={[0, 0, z]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />

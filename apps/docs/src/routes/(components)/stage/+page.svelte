@@ -34,6 +34,8 @@
 
   const layerTypeOptions: ListOptions<number> = {
     None: MapLayerType.None,
+    Scene: MapLayerType.Scene,
+    Map: MapLayerType.Map,
     'Fog of War': MapLayerType.FogOfWar,
     Ping: MapLayerType.Ping
   };
@@ -81,6 +83,12 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
+
+  document.addEventListener('keydown', (event) => {
+    if (!(event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4' || event.key === '5'))
+      return;
+    stageProps.scene.activeLayer = Number(event.key);
+  });
 </script>
 
 <div class="stage-wrapper">

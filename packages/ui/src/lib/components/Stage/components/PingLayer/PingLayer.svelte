@@ -4,7 +4,7 @@
   import { PingEditMode, type PingLayerProps } from './types';
   import { PingMaterial } from '../../materials/PingMaterial';
   import { onMount } from 'svelte';
-  import LayerInput from '../LayerInput/LayerInput.svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
@@ -37,8 +37,6 @@
     time += dt;
     material.uniforms.uTime.value = time;
   });
-
-  $inspect(clippingPlaneStore);
 
   $effect(() => {
     console.log('Updating PingLayer material');
@@ -97,7 +95,7 @@
     pingMesh.geometry = geometry;
   });
 
-  function onMouseDown(coords: THREE.Vector2 | null) {
+  function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
     if (props.editMode === PingEditMode.Add) {
@@ -126,7 +124,7 @@
   }
 </script>
 
-<LayerInput {isActive} target={inputMesh} layerSize={mapSize} onmousedown={onMouseDown} />
+<InputManager {isActive} target={inputMesh} layerSize={mapSize} {onMouseDown} />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
 <T.Mesh bind:ref={inputMesh} position={[0, 0, z]}>
