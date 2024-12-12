@@ -1,16 +1,14 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { onDestroy, onMount, untrack } from 'svelte';
-  import { type Size, T, useThrelte, useTask } from '@threlte/core';
+  import { T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
-  import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import { MapLayerType } from '../MapLayer/types';
-  import type { FogOfWarExports } from '../FogOfWarLayer/types';
-  import PingLayer from '../PingLayer/PingLayer.svelte';
+  import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
+  import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
     props: StageProps;
@@ -23,18 +21,7 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  let fogOfWarLayer: FogOfWarExports;
-
-  // The size of the map image
-  let mapSize: Size = $state({ width: 0, height: 0 });
-
-  // Add clipping planes to prevent map content from leaking outside of the scene area
-  let clippingPlanes = $state([
-    new THREE.Plane(new THREE.Vector3(-1, 0, 0)),
-    new THREE.Plane(new THREE.Vector3(1, 0, 0)),
-    new THREE.Plane(new THREE.Vector3(0, 1, 0)),
-    new THREE.Plane(new THREE.Vector3(0, -1, 0))
-  ]);
+  let mapLayer: MapLayerExports;
 
   let leftMouseDown = false;
 
@@ -145,7 +132,7 @@
       newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
-    onSceneUpdate(props.map.offset, newZoom);
+    onSceneUpdate(props.scene.offset, newZoom);
   }
 
   export function fitSceneToCanvas() {
@@ -159,65 +146,18 @@
       newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
-    onSceneUpdate(props.map.offset, newZoom);
+    onSceneUpdate(props.scene.offset, newZoom);
   }
-
-  function fillMapToScene() {
-    const imageAspectRatio = mapSize.width / mapSize.height;
-    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
-
-    let newZoom: number;
-    if (imageAspectRatio > sceneAspectRatio) {
-      newZoom = props.display.resolution.y / mapSize.height;
-    } else {
-      newZoom = props.display.resolution.x / mapSize.width;
-    }
-
-    onMapUpdate({ x: 0, y: 0 }, newZoom);
-  }
-
-  function fitMapToScene() {
-    const imageAspectRatio = mapSize.width / mapSize.height;
-    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
-
-    let newZoom: number;
-    if (imageAspectRatio > sceneAspectRatio) {
-      newZoom = props.display.resolution.x / mapSize.width;
-    } else {
-      newZoom = props.display.resolution.y / mapSize.height;
-    }
-
-    onMapUpdate({ x: 0, y: 0 }, newZoom);
-  }
-
-  function onMapLoaded(size: Size) {
-    mapSize = size;
-    fitMapToScene();
-  }
-
-  $effect(() => {
-    // Whenever the scene is translated/zoomed, update the clipping planes
-    const { x, y } = props.scene.offset;
-    const worldExtents = {
-      x: props.scene.zoom * (props.display.resolution.x / 2),
-      y: props.scene.zoom * (props.display.resolution.y / 2)
-    };
-
-    // Avoid re-triggering this effect when updating the clipping planes
-    untrack(() => {
-      clippingPlanes[0].constant = worldExtents.x + x;
-      clippingPlanes[1].constant = worldExtents.x - x;
-      clippingPlanes[2].constant = worldExtents.y - y;
-      clippingPlanes[3].constant = worldExtents.y + y;
-      clippingPlanes = [...clippingPlanes];
-      renderer.clippingPlanes = clippingPlanes;
-    });
-  });
 
   $effect(() => {
     renderPass.mainCamera = $camera;
     composer.setSize($size.width, $size.height);
     renderer.setClearColor(new THREE.Color(props.backgroundColor), 0);
+  });
+
+  $effect(() => {
+    updateClippingPlanes(props.scene, props.display);
+    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
   useTask(
@@ -229,16 +169,16 @@
   );
 
   export const map = {
-    fill: () => fillMapToScene(),
-    fit: () => fitMapToScene()
+    fill: () => mapLayer.map.fill(),
+    fit: () => mapLayer.map.fit()
   };
 
   // References to the layer doesn't exist until the component is mounted,
   // so we need create these wrapper functions
   export const fogOfWar = {
-    clear: () => fogOfWarLayer.clearFog(),
-    reset: () => fogOfWarLayer.resetFog(),
-    toBase64: () => fogOfWarLayer.toBase64()
+    clear: () => mapLayer.fogOfWar.clear(),
+    reset: () => mapLayer.fogOfWar.reset(),
+    toBase64: () => mapLayer.fogOfWar.toBase64()
   };
 </script>
 
@@ -246,29 +186,7 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <!-- Map -->
-  <T.Object3D
-    position={[props.map.offset.x, props.map.offset.y, 0]}
-    rotation.z={(props.map.rotation / 180.0) * Math.PI}
-    scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
-  >
-    <MapLayer props={props.map} z={0} {onMapLoaded} />
-    <FogOfWarLayer
-      bind:this={fogOfWarLayer}
-      props={props.fogOfWar}
-      isActive={props.scene.activeLayer === MapLayerType.FogOfWar}
-      z={10}
-      {mapSize}
-    />
-    <PingLayer
-      props={props.ping}
-      isActive={props.scene.activeLayer === MapLayerType.Ping}
-      z={20}
-      {clippingPlanes}
-      {mapSize}
-      {onPingsUpdated}
-    />
-  </T.Object3D>
+  <MapLayer bind:this={mapLayer} {props} z={0} {onMapUpdate} {onPingsUpdated} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer props={props.grid} z={30} display={props.display} sceneScale={props.scene.zoom} />

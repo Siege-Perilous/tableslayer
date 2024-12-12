@@ -1,30 +1,31 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import { PingMaterial } from '../../materials/PingMaterial';
   import { onMount } from 'svelte';
   import LayerInput from '../LayerInput/LayerInput.svelte';
+  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
     props: PingLayerProps;
     isActive: boolean;
     z: number;
-    clippingPlanes: THREE.Plane[];
     mapSize: Size;
     // Note: Pings are passed in as a prop for initialization, but can also be added via
     // mouse input if `isActive` is set to true.
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  const { props, isActive, z, clippingPlanes, mapSize, onPingsUpdated }: Props = $props();
+  const { props, isActive, z, mapSize, onPingsUpdated }: Props = $props();
+  const { renderer } = useThrelte();
 
   let time = $state(0);
 
   // svelte-ignore non_reactive_update
   let pingMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
-  let material = new PingMaterial(props, clippingPlanes);
+  let material = new PingMaterial(props, renderer.clippingPlanes);
 
   onMount(() => {
     if (pingMesh) {
@@ -37,8 +38,11 @@
     material.uniforms.uTime.value = time;
   });
 
+  $inspect(clippingPlaneStore);
+
   $effect(() => {
-    material.updateProps(props, clippingPlanes);
+    console.log('Updating PingLayer material');
+    material.updateProps(props, clippingPlaneStore.value);
   });
 
   // Regenerate buffer geometry each time ping array is updated
