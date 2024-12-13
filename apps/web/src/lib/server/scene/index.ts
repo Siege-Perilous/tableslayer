@@ -118,16 +118,40 @@ export const deleteScene = async (dbName: string, sceneId: string) => {
 export const adjustSceneOrder = async (dbName: string, sceneId: string, newOrder: number) => {
   const gsDb = gsChildDb(dbName);
 
-  // First, update the target scene to the new order
-  const updated = await gsDb.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
+  const currentScene = await gsDb
+    .select({ currentOrder: sceneTable.order })
+    .from(sceneTable)
+    .where(eq(sceneTable.id, sceneId))
+    .get();
 
-  if (updated.rowsAffected === 0) {
+  if (!currentScene) {
     throw new Error('Scene not found');
   }
 
-  // Then reorder all scenes so that no two scenes share the same order
-  // and their ordering is consecutive
-  await reorderScenes(dbName);
+  const { currentOrder } = currentScene;
+
+  if (currentOrder === newOrder) {
+    return;
+  }
+
+  if (newOrder > currentOrder) {
+    // If moving down, decrement `order` for rows between `currentOrder + 1` and `newOrder`
+    await gsDb
+      .update(sceneTable)
+      .set({ order: sql`${sceneTable.order} - 1` })
+      .where(sql`${sceneTable.order} > ${currentOrder} AND ${sceneTable.order} <= ${newOrder}`)
+      .execute();
+  } else {
+    // If moving up, increment `order` for rows between `newOrder` and `currentOrder - 1`
+    await gsDb
+      .update(sceneTable)
+      .set({ order: sql`${sceneTable.order} + 1` })
+      .where(sql`${sceneTable.order} >= ${newOrder} AND ${sceneTable.order} < ${currentOrder}`)
+      .execute();
+  }
+
+  // Update the target scene's order to the new order
+  await gsDb.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
 };
 
 export const updateScene = async (
