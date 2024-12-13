@@ -22,7 +22,6 @@
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.0005;
-  let mouseDown = false;
 
   const mapOptions: ListOptions<string> = {
     'Map 1': 'https://files.tableslayer.com/maps/01.jpeg',
@@ -62,8 +61,6 @@
 
   onMount(() => {
     if (stageElement) {
-      stageElement.addEventListener('mousedown', () => (mouseDown = true));
-      stageElement.addEventListener('mouseup', () => (mouseDown = false));
       stageElement.addEventListener('mousemove', onMouseMove);
       stageElement.addEventListener('wheel', onWheel);
 
@@ -157,7 +154,7 @@
   }
 
   function onMouseMove(e: MouseEvent) {
-    if (!mouseDown) return;
+    if (!(e.buttons === 1 || e.buttons === 2)) return;
 
     if (e.shiftKey) {
       stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
@@ -199,6 +196,10 @@
       <li>E - Reset Fog</li>
       <li>p - Remove Ping</li>
       <li>P - Add Ping</li>
+      <li>SHIFT + Mouse Down - Pan Map</li>
+      <li>SHIFT + Wheel - Zoom Map</li>
+      <li>CONTROL + Mouse Down - Pan Scene</li>
+      <li>CONTROL + Wheel - Zoom Scene</li>
     </ul>
   </div>
 </div>

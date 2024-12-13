@@ -49,7 +49,7 @@
       newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
-    onSceneUpdate(props.scene.offset, newZoom);
+    onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
 
   export function fit() {
@@ -63,7 +63,7 @@
       newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
     }
 
-    onSceneUpdate(props.scene.offset, newZoom);
+    onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
 
   $effect(() => {

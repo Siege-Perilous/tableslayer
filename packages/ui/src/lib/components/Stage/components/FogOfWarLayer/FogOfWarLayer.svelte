@@ -153,7 +153,6 @@
 
   function onWheel(e: WheelEvent) {
     const newBrushSize = props.brushSize + e.deltaY;
-    console.log(newBrushSize);
     onBrushSizeUpdated(newBrushSize);
   }
 
