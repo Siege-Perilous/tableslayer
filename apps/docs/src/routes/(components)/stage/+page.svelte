@@ -12,10 +12,16 @@
     PingEditMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
+  import { onMount } from 'svelte';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
+  let stageElement: HTMLDivElement | undefined = $state();
   let mapUrl = $state(stageProps.map.url);
+
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.0005;
 
   const mapOptions: ListOptions<string> = {
     'Map 1': 'https://files.tableslayer.com/maps/01.jpeg',
@@ -30,12 +36,6 @@
     'Map 10': 'https://files.tableslayer.com/maps/10.jpeg',
     'Map 11': 'https://files.tableslayer.com/maps/11.jpeg',
     'Map 12': 'https://files.tableslayer.com/maps/12.jpeg'
-  };
-
-  const layerTypeOptions: ListOptions<number> = {
-    None: MapLayerType.None,
-    'Fog of War': MapLayerType.FogOfWar,
-    Ping: MapLayerType.Ping
   };
 
   const toolTypeOptions: ListOptions<number> = {
@@ -59,11 +59,82 @@
     Rain: WeatherType.Rain
   };
 
+  onMount(() => {
+    if (stageElement) {
+      stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('wheel', onWheel, { passive: false });
+
+      stageElement.addEventListener(
+        'contextmenu',
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+    }
+
+    document.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'e':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          break;
+        case 'E':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          break;
+        case 'f':
+          stage.fogOfWar.clear();
+          break;
+        case 'F':
+          stage.fogOfWar.reset();
+          break;
+        case 'o':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          break;
+        case 'O':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          break;
+        case 'p':
+          stageProps.activeLayer = MapLayerType.Ping;
+          stageProps.ping.editMode = PingEditMode.Remove;
+          break;
+        case 'P':
+          stageProps.activeLayer = MapLayerType.Ping;
+          stageProps.ping.editMode = PingEditMode.Add;
+          break;
+        case 'r':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          break;
+        case 'R':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          break;
+        case 'Escape':
+          stageProps.activeLayer = MapLayerType.None;
+          break;
+      }
+    });
+  });
+
   function updateMapUrl() {
     stageProps.map.url = mapUrl;
     // Reset fog of war data and ping locations
     stageProps.fogOfWar.data = null;
     stageProps.ping.locations = [];
+  }
+
+  function onBrushSizeUpdated(brushSize: number) {
+    stageProps.fogOfWar.brushSize = brushSize;
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
@@ -81,16 +152,61 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
+
+  function onMouseMove(e: MouseEvent) {
+    if (!(e.buttons === 1 || e.buttons === 2)) return;
+
+    if (e.shiftKey) {
+      stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
+      stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
+    } else if (e.ctrlKey) {
+      stageProps.scene.offset.x += e.movementX;
+      stageProps.scene.offset.y -= e.movementY;
+    }
+  }
+
+  function onWheel(e: WheelEvent) {
+    let scrollDelta;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      scrollDelta = e.deltaX * zoomSensitivity;
+    } else {
+      scrollDelta = e.deltaY * zoomSensitivity;
+    }
+
+    if (e.shiftKey) {
+      stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    } else if (e.ctrlKey) {
+      e.preventDefault();
+      stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    }
+  }
 </script>
 
-<div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+<div bind:this={stageElement} class="stage-wrapper">
+  <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <div>
+    <h1>Keybindings</h1>
+    <ul>
+      <li>e - Erase Fog (Round Brush)</li>
+      <li>o - Erase Fog (Ellipse)</li>
+      <li>r - Erase Fog (Rectangle)</li>
+      <li>E - Draw Fog (Round Brush)</li>
+      <li>O - Draw Fog (Ellipse)</li>
+      <li>R - Draw Fog (Rectangle)</li>
+      <li>f - Clear Fog</li>
+      <li>E - Reset Fog</li>
+      <li>p - Remove Ping</li>
+      <li>P - Add Ping</li>
+      <li>SHIFT + Mouse Down - Pan Map</li>
+      <li>SHIFT + Wheel - Zoom Map</li>
+      <li>CONTROL + Mouse Down - Pan Scene</li>
+      <li>CONTROL + Wheel - Zoom Scene</li>
+    </ul>
+  </div>
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <List bind:value={stageProps.scene.activeLayer} label="Active Layer" options={layerTypeOptions} />
-
   <Folder title="Display">
     <Slider bind:value={stageProps.display.size.x} label="Width (in)" />
     <Slider bind:value={stageProps.display.size.y} label="Height (in)" />
@@ -147,8 +263,6 @@
     <Slider bind:value={stageProps.ping.sharpness} label="Edge Sharpness" min={0} max={1} />
     <Slider bind:value={stageProps.ping.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
-    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Add)} title="Add Ping" />
-    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Remove)} title="Remove Ping" />
   </Folder>
 
   <Folder title="Scene" expanded={false}>

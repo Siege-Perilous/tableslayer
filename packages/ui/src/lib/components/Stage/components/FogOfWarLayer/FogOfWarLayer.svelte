@@ -2,19 +2,21 @@
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
   import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
-  import { onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
   import { textureToBase64 } from '../../helpers/utils';
-  import LayerInput from '../LayerInput/LayerInput.svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
+  import type { Callbacks } from '../Stage/types';
 
   interface Props {
     props: FogOfWarLayerProps;
     isActive: boolean;
-    z: number;
     mapSize: Size;
   }
 
-  let { props, isActive, z, mapSize }: Props = $props();
+  const { props, isActive, mapSize }: Props = $props();
+
+  const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
@@ -85,13 +87,13 @@
     }
   });
 
-  function onMouseDown(p: THREE.Vector2 | null): void {
+  function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!p) return;
     drawing = true;
     activeTool.origin = p;
   }
 
-  function onMouseUp(p: THREE.Vector2 | null): void {
+  function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (p) {
       if (props.drawMode === DrawMode.Erase) {
         configureClearMode();
@@ -107,7 +109,7 @@
     drawing = false;
   }
 
-  function onMouseMove(p: THREE.Vector2 | null): void {
+  function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!activeTool) return;
 
     if (!p) {
@@ -149,6 +151,11 @@
         activeTool.drawOutline(p);
       }
     }
+  }
+
+  function onWheel(e: WheelEvent) {
+    const newBrushSize = props.brushSize + e.deltaY;
+    onBrushSizeUpdated(newBrushSize);
   }
 
   function configureDrawMode() {
@@ -217,16 +224,9 @@
   }
 </script>
 
-<LayerInput
-  {isActive}
-  layerSize={mapSize}
-  target={mesh}
-  onmousedown={onMouseDown}
-  onmousemove={onMouseMove}
-  onmouseup={onMouseUp}
-/>
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
 
-<T.Mesh bind:ref={mesh} name="FogOfWar" position={[0, 0, z]}>
+<T.Mesh bind:ref={mesh} name="FogOfWar">
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
