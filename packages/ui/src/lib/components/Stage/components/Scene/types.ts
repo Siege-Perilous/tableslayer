@@ -1,11 +1,4 @@
-import type { MapLayerType } from '../MapLayer/types';
-
 export interface SceneLayerProps {
-  /**
-   * The layer that is currently active for editing
-   */
-  activeLayer: MapLayerType;
-
   /**
    * The position of the scene layer within the canvas
    */
@@ -18,8 +11,8 @@ export interface SceneLayerProps {
 }
 
 export interface SceneExports {
-  fillSceneToCanvas: () => void;
-  fitSceneToCanvas: () => void;
+  fill: () => void;
+  fit: () => void;
 
   fogOfWar: {
     clear: () => void;

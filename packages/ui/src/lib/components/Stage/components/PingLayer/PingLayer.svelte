@@ -1,30 +1,30 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import { PingMaterial } from '../../materials/PingMaterial';
-  import { onMount } from 'svelte';
-  import LayerInput from '../LayerInput/LayerInput.svelte';
+  import { getContext, onMount } from 'svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
+  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
+  import type { Callbacks } from '../Stage/types';
 
   interface Props {
     props: PingLayerProps;
     isActive: boolean;
-    z: number;
-    clippingPlanes: THREE.Plane[];
     mapSize: Size;
-    // Note: Pings are passed in as a prop for initialization, but can also be added via
-    // mouse input if `isActive` is set to true.
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  const { props, isActive, z, clippingPlanes, mapSize, onPingsUpdated }: Props = $props();
+  const { props, isActive, mapSize }: Props = $props();
+  const { renderer } = useThrelte();
+
+  const onPingsUpdated = getContext<Callbacks>('callbacks').onPingsUpdated;
 
   let time = $state(0);
 
   // svelte-ignore non_reactive_update
   let pingMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
-  let material = new PingMaterial(props, clippingPlanes);
+  let material = new PingMaterial(props, renderer.clippingPlanes);
 
   onMount(() => {
     if (pingMesh) {
@@ -37,9 +37,8 @@
     material.uniforms.uTime.value = time;
   });
 
-  $effect(() => {
-    material.updateProps(props, clippingPlanes);
-  });
+  // When ping layer props or the clipping planes are updated, pass the new values into the shader
+  $effect(() => material.updateProps(props, clippingPlaneStore.value));
 
   // Regenerate buffer geometry each time ping array is updated
   $effect(() => {
@@ -93,7 +92,7 @@
     pingMesh.geometry = geometry;
   });
 
-  function onMouseDown(coords: THREE.Vector2 | null) {
+  function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
     if (props.editMode === PingEditMode.Add) {
@@ -122,13 +121,13 @@
   }
 </script>
 
-<LayerInput {isActive} target={inputMesh} layerSize={mapSize} onmousedown={onMouseDown} />
+<InputManager {isActive} target={inputMesh} layerSize={mapSize} {onMouseDown} />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} position={[0, 0, z]}>
+<T.Mesh bind:ref={inputMesh} position={[0, 0, 0]}>
   <T.MeshBasicMaterial opacity={0} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, z]} />
+<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]} />

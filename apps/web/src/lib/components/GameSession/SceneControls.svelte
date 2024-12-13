@@ -83,9 +83,9 @@
       activeLayer = MapLayerType.FogOfWar;
     }
     onUpdateStage({
+      activeLayer,
       scene: {
-        ...stageProps.scene,
-        activeLayer
+        ...stageProps.scene
       }
     });
   };
@@ -222,9 +222,9 @@
     activeLayer = MapLayerType.FogOfWar;
     activeControl = 'erase';
     onUpdateStage({
+      activeLayer,
       scene: {
-        ...stageProps.scene,
-        activeLayer
+        ...stageProps.scene
       },
       fogOfWar: {
         ...stageProps.fogOfWar,
