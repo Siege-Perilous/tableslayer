@@ -1,6 +1,6 @@
 import { gsChildDb } from '$lib/db/gs';
 import { sceneTable, type SelectScene } from '$lib/db/gs/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
 const reorderScenes = async (dbName: string) => {
@@ -40,7 +40,9 @@ export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectS
 };
 
 export const createScene = async (dbName: string, userId: string, name?: string, order?: number, file?: File) => {
-  const gsdb = gsChildDb(dbName);
+  const gsDb = gsChildDb(dbName);
+
+  // Handle file upload
   let fileLocation = null;
   if (file) {
     const fileRow = await uploadFileFromInput(file, userId, 'map');
@@ -48,20 +50,38 @@ export const createScene = async (dbName: string, userId: string, name?: string,
     fileLocation = fileContent.location;
   }
 
-  // Insert with the given order, or default to a large number to append at the end
-  const initialOrder = order !== undefined ? order : 999999;
+  if (order === undefined) {
+    const maxOrderScene = await gsDb
+      .select({ maxOrder: sql<number>`MAX(${sceneTable.order})` })
+      .from(sceneTable)
+      .get();
 
-  await gsdb
+    order = (maxOrderScene?.maxOrder ?? 0) + 1; // Default to the next available order
+  }
+
+  const scenesToShift = await gsDb
+    .select({ id: sceneTable.id, currentOrder: sceneTable.order })
+    .from(sceneTable)
+    .where(sql`${sceneTable.order} >= ${order}`)
+    .orderBy(sql`${sceneTable.order} DESC`) // Process from highest order to lowest
+    .all();
+
+  for (const { id, currentOrder } of scenesToShift) {
+    await gsDb
+      .update(sceneTable)
+      .set({ order: currentOrder + 1 }) // Increment order
+      .where(eq(sceneTable.id, id))
+      .execute();
+  }
+
+  await gsDb
     .insert(sceneTable)
     .values({
       name,
-      order: initialOrder,
+      order,
       mapLocation: fileLocation
     })
     .execute();
-
-  // After insertion, reorder all scenes
-  await reorderScenes(dbName);
 };
 
 export const getSceneFromOrder = async (
@@ -108,4 +128,40 @@ export const adjustSceneOrder = async (dbName: string, sceneId: string, newOrder
   // Then reorder all scenes so that no two scenes share the same order
   // and their ordering is consecutive
   await reorderScenes(dbName);
+};
+
+export const updateScene = async (
+  dbName: string,
+  userId: string,
+  sceneId: string,
+  details: Partial<Record<keyof (typeof sceneTable)['_']['columns'], unknown>> & { file?: File }
+) => {
+  const gsDb = gsChildDb(dbName);
+  const scene = await gsDb.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
+
+  if (!scene) {
+    throw new Error('Scene not found');
+  }
+
+  let fileLocation = scene.mapLocation;
+  if (details.file) {
+    const fileRow = await uploadFileFromInput(details.file, userId, 'map');
+    const fileContent = await getFile(fileRow.fileId);
+    fileLocation = fileContent.location;
+
+    // Include the map location in details
+    details.mapLocation = fileLocation;
+  }
+
+  // Construct update object dynamically
+  const updateData: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(details)) {
+    if (value !== undefined) {
+      updateData[key] = value;
+    }
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await gsDb.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
+  }
 };

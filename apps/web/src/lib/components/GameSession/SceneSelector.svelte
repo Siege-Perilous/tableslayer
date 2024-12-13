@@ -117,7 +117,7 @@
     {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
     <ContextMenu
       items={[
-        { label: 'New scene', onclick: () => onCreateScene(scene.order) },
+        { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
         {
           label: 'Delete',
           onclick: () => {
