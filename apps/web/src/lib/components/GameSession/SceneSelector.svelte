@@ -131,6 +131,11 @@
       scene.order === activeSceneNumber && 'scene--isActive',
       $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
     )}
+    {@const sceneSelectorSkelClasses = classNames(
+      'scene',
+      scene.order === activeSceneNumber && 'scene--isActive',
+      $createSceneData.order === scene.order + 1 && 'scene--isLoading'
+    )}
     <ContextMenu
       items={[
         { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
@@ -155,10 +160,15 @@
             <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
           </div>
           -->
-          <div class="scene__text">{scene.name}</div>
+          <div class="scene__text">{scene.name} - {scene.order} / {$createSceneData.order}</div>
         </a>
       {/snippet}
     </ContextMenu>
+    {#if $createSceneDelayed && $createSceneData.order === scene.order + 1}
+      <div class={sceneSelectorSkelClasses}>
+        <div class="scene__text">Creating</div>
+      </div>
+    {/if}
   {/each}
   <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
     <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
@@ -213,6 +223,26 @@
   }
   .scene--isLoading {
     opacity: 0.5;
+  }
+  .scene--isLoading::after {
+    position: absolute;
+    content: '';
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(
+      135deg,
+      transparent 10%,
+      transparent 10%,
+      transparent 50%,
+      var(--bg) 50%,
+      var(--contrastMedium) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    background-size: 14.14px 14.14px;
   }
   .scene__text {
     position: absolute;
