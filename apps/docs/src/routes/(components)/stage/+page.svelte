@@ -41,8 +41,6 @@
 
   const layerTypeOptions: ListOptions<number> = {
     None: MapLayerType.None,
-    Scene: MapLayerType.Scene,
-    Map: MapLayerType.Map,
     'Fog of War': MapLayerType.FogOfWar,
     Ping: MapLayerType.Ping
   };
@@ -96,7 +94,11 @@
     stageProps.fogOfWar.brushSize = brushSize;
   }
 
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {}
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    stageProps.map.offset.x = offset.x;
+    stageProps.map.offset.y = offset.y;
+    stageProps.map.zoom = zoom;
+  }
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.offset.x = offset.x;
@@ -115,7 +117,6 @@
       stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
       stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
     } else if (e.ctrlKey) {
-      console.log('hey');
       stageProps.scene.offset.x += e.movementX;
       stageProps.scene.offset.y -= e.movementY;
     }

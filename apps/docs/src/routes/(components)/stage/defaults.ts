@@ -1,7 +1,7 @@
 import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StageProps } from '@tableslayer/ui';
 
 export const StageDefaultProps: StageProps = {
-  activeLayer: MapLayerType.Scene,
+  activeLayer: MapLayerType.None,
   backgroundColor: '#0b0b0c',
   display: {
     padding: { x: 16, y: 16 },

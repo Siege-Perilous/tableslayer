@@ -40,14 +40,14 @@
           width: image?.source.data.width ?? 0,
           height: image?.source.data.height ?? 0
         };
-        fitMapToScene();
+        fit();
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));
       });
   });
 
-  function fillMapToScene() {
+  export function fill() {
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -61,7 +61,7 @@
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
 
-  function fitMapToScene() {
+  export function fit() {
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -74,11 +74,6 @@
 
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
-
-  export const map = {
-    fill: () => fillMapToScene(),
-    fit: () => fitMapToScene()
-  };
 
   // References to the layer doesn't exist until the component is mounted,
   // so we need create these wrapper functions

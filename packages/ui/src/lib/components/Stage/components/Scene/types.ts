@@ -11,8 +11,8 @@ export interface SceneLayerProps {
 }
 
 export interface SceneExports {
-  fillSceneToCanvas: () => void;
-  fitSceneToCanvas: () => void;
+  fill: () => void;
+  fit: () => void;
 
   fogOfWar: {
     clear: () => void;

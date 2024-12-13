@@ -1,9 +1,7 @@
 export enum MapLayerType {
   None = 0,
-  Scene = 1,
-  Map = 2,
-  FogOfWar = 3,
-  Ping = 4
+  FogOfWar = 1,
+  Ping = 2
 }
 
 /**
@@ -35,14 +33,11 @@ export interface MapLayerProps {
 }
 
 export interface MapLayerExports {
+  fit: () => void;
+  fill: () => void;
   fogOfWar: {
     clear: () => void;
     reset: () => void;
     toBase64: () => string;
-  };
-
-  map: {
-    fit: () => void;
-    fill: () => void;
   };
 }

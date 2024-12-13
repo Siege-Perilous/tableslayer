@@ -1,15 +1,14 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { onDestroy, onMount, untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
   import type { StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
+  import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-  import InputManager from '../InputManager/InputManager.svelte';
 
   interface Props {
     props: StageProps;
@@ -34,13 +33,13 @@
   onMount(() => {
     let before = autoRender.current;
     autoRender.set(false);
-
+    fit();
     return () => {
       autoRender.set(before);
     };
   });
 
-  export function fillSceneToCanvas() {
+  export function fill() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -54,7 +53,7 @@
     onSceneUpdate(props.scene.offset, newZoom);
   }
 
-  export function fitSceneToCanvas() {
+  export function fit() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -89,8 +88,8 @@
   );
 
   export const map = {
-    fill: () => mapLayer.map.fill(),
-    fit: () => mapLayer.map.fit()
+    fill: () => mapLayer.fill(),
+    fit: () => mapLayer.fit()
   };
 
   // References to the layer doesn't exist until the component is mounted,

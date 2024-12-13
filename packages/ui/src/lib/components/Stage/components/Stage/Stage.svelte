@@ -22,14 +22,14 @@
   };
 
   export const fogOfWar = {
-    clear: () => sceneRef.fogOfWar.clear(),
-    reset: () => sceneRef.fogOfWar.reset(),
+    clear: () => sceneRef?.fogOfWar.clear(),
+    reset: () => sceneRef?.fogOfWar.reset(),
     toBase64: () => sceneRef.fogOfWar.toBase64()
   };
 
   export const scene = {
-    fill: () => sceneRef.fillSceneToCanvas(),
-    fit: () => sceneRef.fitSceneToCanvas()
+    fill: () => sceneRef?.fill(),
+    fit: () => sceneRef?.fit()
   };
 </script>
 
