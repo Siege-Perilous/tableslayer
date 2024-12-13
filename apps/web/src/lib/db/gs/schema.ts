@@ -46,4 +46,9 @@ export const sceneTable = sqliteTable(
   })
 );
 
+export const settingsTable = sqliteTable('settings', {
+  id: text('id').primaryKey().notNull().default('settings'),
+  activeSceneId: text('activeSceneId').references(() => sceneTable.id, { onDelete: 'set null' })
+});
+
 export type SelectScene = typeof sceneTable.$inferSelect;
