@@ -62,7 +62,7 @@
   onMount(() => {
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
-      stageElement.addEventListener('wheel', onWheel);
+      stageElement.addEventListener('wheel', onWheel, { passive: false });
 
       stageElement.addEventListener(
         'contextmenu',
