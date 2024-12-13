@@ -3,7 +3,7 @@
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
-  import { StageDefaultProps } from '../../../../../lib/utils';
+  import { StageDefaultProps, buildSceneProps } from '$lib/utils';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
   import { onMount } from 'svelte';
@@ -11,7 +11,10 @@
 
   let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
 
-  const stageProps: StageProps = $state(StageDefaultProps);
+  let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
+  $effect(() => {
+    stageProps = buildSceneProps(data.activeScene);
+  });
   let stage: StageExports;
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {

@@ -1,3 +1,4 @@
+export * from './buildSceneProps';
 export * from './createRandomNames';
 export * from './defaultMapState';
 export * from './generateSlug';
