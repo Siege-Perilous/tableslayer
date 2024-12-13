@@ -10,14 +10,13 @@
   interface Props {
     props: PingLayerProps;
     isActive: boolean;
-    z: number;
     mapSize: Size;
     // Note: Pings are passed in as a prop for initialization, but can also be added via
     // mouse input if `isActive` is set to true.
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  const { props, isActive, z, mapSize, onPingsUpdated }: Props = $props();
+  const { props, isActive, mapSize, onPingsUpdated }: Props = $props();
   const { renderer } = useThrelte();
 
   let time = $state(0);
@@ -125,10 +124,10 @@
 <InputManager {isActive} target={inputMesh} layerSize={mapSize} {onMouseDown} />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} position={[0, 0, z]}>
+<T.Mesh bind:ref={inputMesh} position={[0, 0, 0]}>
   <T.MeshBasicMaterial opacity={0} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, z]} />
+<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]} />

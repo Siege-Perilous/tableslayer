@@ -26,6 +26,8 @@ export interface DisplayProps {
   resolution: { x: number; y: number };
 }
 
+export enum StageLayerZ {}
+
 /**
  * Properties for the Stage component
  */

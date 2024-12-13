@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { Button, Binding, Color, Folder, List, type ListOptions, Pane, Slider, Separator } from 'svelte-tweakpane-ui';
+  import {
+    Button,
+    Binding,
+    Color,
+    Folder,
+    List,
+    type ListOptions,
+    Pane,
+    Slider,
+    Separator,
+    Blade
+  } from 'svelte-tweakpane-ui';
   import {
     GridType,
     Stage,
@@ -39,12 +50,6 @@
     'Map 12': 'https://files.tableslayer.com/maps/12.jpeg'
   };
 
-  const layerTypeOptions: ListOptions<number> = {
-    None: MapLayerType.None,
-    'Fog of War': MapLayerType.FogOfWar,
-    Ping: MapLayerType.Ping
-  };
-
   const toolTypeOptions: ListOptions<number> = {
     RoundBrush: ToolType.RoundBrush,
     SquareBrush: ToolType.SquareBrush,
@@ -81,6 +86,58 @@
         false
       );
     }
+
+    document.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'e':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          break;
+        case 'E':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          break;
+        case 'f':
+          stage.fogOfWar.clear();
+          break;
+        case 'F':
+          stage.fogOfWar.reset();
+          break;
+        case 'o':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          break;
+        case 'O':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          break;
+        case 'p':
+          stageProps.activeLayer = MapLayerType.Ping;
+          stageProps.ping.editMode = PingEditMode.Remove;
+          break;
+        case 'P':
+          stageProps.activeLayer = MapLayerType.Ping;
+          stageProps.ping.editMode = PingEditMode.Add;
+          break;
+        case 'r':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Erase;
+          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          break;
+        case 'R':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.drawMode = DrawMode.Draw;
+          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          break;
+        case 'Escape':
+          stageProps.activeLayer = MapLayerType.None;
+          break;
+      }
+    });
   });
 
   function updateMapUrl() {
@@ -136,65 +193,29 @@
       stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
     }
   }
-
-  document.addEventListener('keydown', (event) => {
-    switch (event.key) {
-      case 'e':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Erase;
-        stageProps.fogOfWar.toolType = ToolType.RoundBrush;
-        break;
-      case 'E':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Draw;
-        stageProps.fogOfWar.toolType = ToolType.RoundBrush;
-        break;
-      case 'f':
-        stage.fogOfWar.clear();
-        break;
-      case 'F':
-        stage.fogOfWar.reset();
-        break;
-      case 'o':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Erase;
-        stageProps.fogOfWar.toolType = ToolType.Ellipse;
-        break;
-      case 'O':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Draw;
-        stageProps.fogOfWar.toolType = ToolType.Ellipse;
-        break;
-      case 'p':
-        stageProps.activeLayer = MapLayerType.Ping;
-        stageProps.ping.editMode = PingEditMode.Remove;
-        break;
-      case 'P':
-        stageProps.activeLayer = MapLayerType.Ping;
-        stageProps.ping.editMode = PingEditMode.Add;
-        break;
-      case 'r':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Erase;
-        stageProps.fogOfWar.toolType = ToolType.Rectangle;
-        break;
-      case 'R':
-        stageProps.activeLayer = MapLayerType.FogOfWar;
-        stageProps.fogOfWar.drawMode = DrawMode.Draw;
-        stageProps.fogOfWar.toolType = ToolType.Rectangle;
-        break;
-    }
-  });
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
   <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <div>
+    <h1>Keybindings</h1>
+    <ul>
+      <li>e - Erase Fog (Round Brush)</li>
+      <li>o - Erase Fog (Ellipse)</li>
+      <li>r - Erase Fog (Rectangle)</li>
+      <li>E - Draw Fog (Round Brush)</li>
+      <li>O - Draw Fog (Ellipse)</li>
+      <li>R - Draw Fog (Rectangle)</li>
+      <li>f - Clear Fog</li>
+      <li>E - Reset Fog</li>
+      <li>p - Remove Ping</li>
+      <li>P - Add Ping</li>
+    </ul>
+  </div>
 </div>
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <List bind:value={stageProps.activeLayer} label="Active Layer" options={layerTypeOptions} />
-
   <Folder title="Display">
     <Slider bind:value={stageProps.display.size.x} label="Width (in)" />
     <Slider bind:value={stageProps.display.size.y} label="Height (in)" />

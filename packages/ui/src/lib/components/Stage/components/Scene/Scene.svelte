@@ -70,7 +70,6 @@
   $effect(() => {
     renderPass.mainCamera = $camera;
     composer.setSize($size.width, $size.height);
-    renderer.setClearColor(new THREE.Color(props.backgroundColor), 0);
   });
 
   // Whenever the scene or display properties change, update the clipping planes

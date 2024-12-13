@@ -91,7 +91,7 @@
   scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh position={[0, 0, z]}>
+  <T.Mesh>
     <T.MeshBasicMaterial map={image} transparent={true} />
     <T.PlaneGeometry />
   </T.Mesh>
@@ -100,10 +100,9 @@
     bind:this={fogOfWarLayer}
     props={props.fogOfWar}
     isActive={props.activeLayer === MapLayerType.FogOfWar}
-    z={10}
     {mapSize}
     {onBrushSizeUpdated}
   />
 
-  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} z={20} {mapSize} {onPingsUpdated} />
+  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} {mapSize} {onPingsUpdated} />
 </T.Object3D>

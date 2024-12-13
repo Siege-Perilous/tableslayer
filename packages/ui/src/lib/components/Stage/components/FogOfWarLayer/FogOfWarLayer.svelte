@@ -10,12 +10,11 @@
   interface Props {
     props: FogOfWarLayerProps;
     isActive: boolean;
-    z: number;
     mapSize: Size;
     onBrushSizeUpdated: (brushSize: number) => void;
   }
 
-  let { props, isActive, z, mapSize, onBrushSizeUpdated }: Props = $props();
+  let { props, isActive, mapSize, onBrushSizeUpdated }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
@@ -226,7 +225,7 @@
 
 <InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
 
-<T.Mesh bind:ref={mesh} name="FogOfWar" position={[0, 0, z]}>
+<T.Mesh bind:ref={mesh} name="FogOfWar">
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
   <T.PlaneGeometry />
 </T.Mesh>

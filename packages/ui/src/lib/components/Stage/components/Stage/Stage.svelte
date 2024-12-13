@@ -33,6 +33,8 @@
   };
 </script>
 
-<Canvas>
-  <Scene bind:this={sceneRef} {props} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
-</Canvas>
+<div style="background-color: {props.backgroundColor}; height: 100%; width: 100%;">
+  <Canvas>
+    <Scene bind:this={sceneRef} {props} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  </Canvas>
+</div>
