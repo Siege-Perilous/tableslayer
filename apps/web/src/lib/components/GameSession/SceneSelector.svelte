@@ -37,26 +37,36 @@
   const createSceneSuperForm = superForm(createSceneForm, {
     validators: zodClient(createSceneSchema),
     resetForm: true,
-    invalidateAll: 'force'
+    invalidateAll: 'force',
+    delayMs: 500,
+    onResult: (result) => {
+      if (result) {
+        createSceneReset();
+      }
+    }
   });
 
   const deleteSceneSuperForm = superForm(deleteSceneForm, {
     resetForm: true,
     validators: zodClient(deleteSceneSchema),
-    invalidateAll: 'force'
+    invalidateAll: 'force',
+    delayMs: 500
   });
 
   const {
     form: createSceneData,
     enhance: createSceneEnhance,
     message: createSceneMessage,
-    formId: createSceneFormId
+    formId: createSceneFormId,
+    reset: createSceneReset,
+    delayed: createSceneDelayed
   } = createSceneSuperForm;
   const {
     form: deleteSceneData,
     enhance: deleteSceneEnhance,
     message: deleteSceneMessage,
-    formId: deleteSceneFormId
+    formId: deleteSceneFormId,
+    delayed: deleteSceneDelayed
   } = deleteSceneSuperForm;
 
   $effect(() => {
@@ -93,28 +103,34 @@
     <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
     <input type="hidden" name="order" bind:value={$createSceneData.order} />
     <input type="hidden" name="name" bind:value={$createSceneData.name} />
-    <Field form={createSceneSuperForm} name="file">
-      <FSControl label="Party avatar">
-        {#snippet children({ attrs })}
-          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+    {#if !$createSceneDelayed}
+      <Field form={createSceneSuperForm} name="file">
+        <FSControl label="Scene background">
+          {#snippet children({ attrs })}
+            <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+          {/snippet}
+        </FSControl>
+      </Field>
+      {#if $createSceneMessage}
+        <Spacer />
+        {$createSceneMessage.text}
+        <MessageError message={$createSceneMessage} />
+      {/if}
+      <Button type="submit" variant="ghost">
+        {#snippet start()}
+          <Icon Icon={IconPlus} />
         {/snippet}
-      </FSControl>
-    </Field>
-    {#if $createSceneMessage}
-      <Spacer />
-      {$createSceneMessage.text}
-      <MessageError message={$createSceneMessage} />
+        Add scene
+      </Button>
     {/if}
-    <Button type="submit" variant="ghost">
-      {#snippet start()}
-        <Icon Icon={IconPlus} />
-      {/snippet}
-      Add scene
-    </Button>
   </form>
   <SuperDebug data={$createSceneData} display={false} />
   {#each scenes as scene}
-    {@const sceneSelectorClasses = classNames('scene', scene.order === activeSceneNumber && 'scene--isActive')}
+    {@const sceneSelectorClasses = classNames(
+      'scene',
+      scene.order === activeSceneNumber && 'scene--isActive',
+      $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
+    )}
     <ContextMenu
       items={[
         { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
@@ -194,6 +210,9 @@
   .scene--isActive {
     border-width: 2px;
     border-color: var(--fgPrimary);
+  }
+  .scene--isLoading {
+    opacity: 0.5;
   }
   .scene__text {
     position: absolute;
