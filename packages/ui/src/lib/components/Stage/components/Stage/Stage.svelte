@@ -6,12 +6,13 @@
 
   interface Props {
     props: StageProps;
+    onBrushSizeUpdated: (brushSize: number) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props, onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
 
@@ -33,5 +34,5 @@
 </script>
 
 <Canvas>
-  <Scene bind:this={sceneRef} {props} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Scene bind:this={sceneRef} {props} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
 </Canvas>

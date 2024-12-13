@@ -13,22 +13,17 @@
 
   interface Props {
     props: StageProps;
+    onBrushSizeUpdated: (brushSize: number) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props, onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   let mapLayer: MapLayerExports;
-
-  let leftMouseDown = false;
-
-  const minZoom = 0.1;
-  const maxZoom = 10;
-  const zoomSensitivity = 0.0005;
 
   // TODO: Add post-processing effects
   const composer = new EffectComposer(renderer);
@@ -44,49 +39,6 @@
       autoRender.set(before);
     };
   });
-
-  function onMouseDown(e: MouseEvent) {
-    // Left mouse button
-    if (e.button === 0) {
-      leftMouseDown = true;
-    }
-  }
-
-  function onMouseUp(e: MouseEvent) {
-    // Left mouse button
-    if (e.button === 0) {
-      leftMouseDown = false;
-    }
-  }
-
-  function onMouseLeave() {
-    leftMouseDown = false;
-  }
-
-  function onMouseMove(e: MouseEvent) {
-    if (!leftMouseDown) return;
-
-    const newOffset = {
-      x: props.scene.offset.x + e.movementX,
-      y: props.scene.offset.y - e.movementY
-    };
-
-    onSceneUpdate(newOffset, props.scene.zoom);
-  }
-
-  function onWheel(e: WheelEvent) {
-    // On MacOS, SHIFT + Scroll results in horizontal scroll
-    let scrollDelta;
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-      scrollDelta = e.deltaX * zoomSensitivity;
-    } else {
-      scrollDelta = e.deltaY * zoomSensitivity;
-    }
-
-    let newZoom = props.scene.zoom - scrollDelta;
-    newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
-    onSceneUpdate(props.scene.offset, newZoom);
-  }
 
   export function fillSceneToCanvas() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
@@ -150,20 +102,11 @@
   };
 </script>
 
-<InputManager
-  isActive={props.activeLayer === MapLayerType.Scene}
-  {onMouseDown}
-  {onMouseUp}
-  {onMouseMove}
-  {onMouseLeave}
-  {onWheel}
-/>
-
 <T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} z={0} {onMapUpdate} {onPingsUpdated} />
+  <MapLayer bind:this={mapLayer} {props} z={0} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer props={props.grid} z={30} display={props.display} sceneScale={props.scene.zoom} />

@@ -38,10 +38,8 @@
     material.uniforms.uTime.value = time;
   });
 
-  $effect(() => {
-    console.log('Updating PingLayer material');
-    material.updateProps(props, clippingPlaneStore.value);
-  });
+  // When ping layer props or the clipping planes are updated, pass the new values into the shader
+  $effect(() => material.updateProps(props, clippingPlaneStore.value));
 
   // Regenerate buffer geometry each time ping array is updated
   $effect(() => {

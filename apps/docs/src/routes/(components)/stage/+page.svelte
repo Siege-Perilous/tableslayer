@@ -12,10 +12,17 @@
     PingEditMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
+  import { onMount } from 'svelte';
 
   const stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
+  let stageElement: HTMLDivElement | undefined = $state();
   let mapUrl = $state(stageProps.map.url);
+
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.0005;
+  let mouseDown = false;
 
   const mapOptions: ListOptions<string> = {
     'Map 1': 'https://files.tableslayer.com/maps/01.jpeg',
@@ -61,6 +68,23 @@
     Rain: WeatherType.Rain
   };
 
+  onMount(() => {
+    if (stageElement) {
+      stageElement.addEventListener('mousedown', () => (mouseDown = true));
+      stageElement.addEventListener('mouseup', () => (mouseDown = false));
+      stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('wheel', onWheel);
+
+      stageElement.addEventListener(
+        'contextmenu',
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+    }
+  });
+
   function updateMapUrl() {
     stageProps.map.url = mapUrl;
     // Reset fog of war data and ping locations
@@ -68,11 +92,11 @@
     stageProps.ping.locations = [];
   }
 
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
+  function onBrushSizeUpdated(brushSize: number) {
+    stageProps.fogOfWar.brushSize = brushSize;
   }
+
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {}
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.offset.x = offset.x;
@@ -84,15 +108,86 @@
     stageProps.ping.locations = updatedLocations;
   }
 
+  function onMouseMove(e: MouseEvent) {
+    if (!mouseDown) return;
+
+    if (e.shiftKey) {
+      stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
+      stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
+    } else if (e.ctrlKey) {
+      console.log('hey');
+      stageProps.scene.offset.x += e.movementX;
+      stageProps.scene.offset.y -= e.movementY;
+    }
+  }
+
+  function onWheel(e: WheelEvent) {
+    let scrollDelta;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      scrollDelta = e.deltaX * zoomSensitivity;
+    } else {
+      scrollDelta = e.deltaY * zoomSensitivity;
+    }
+
+    if (e.shiftKey) {
+      stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    } else if (e.ctrlKey) {
+      stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    }
+  }
+
   document.addEventListener('keydown', (event) => {
-    if (!(event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4' || event.key === '5'))
-      return;
-    stageProps.activeLayer = Number(event.key);
+    switch (event.key) {
+      case 'e':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Erase;
+        stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+        break;
+      case 'E':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Draw;
+        stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+        break;
+      case 'f':
+        stage.fogOfWar.clear();
+        break;
+      case 'F':
+        stage.fogOfWar.reset();
+        break;
+      case 'o':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Erase;
+        stageProps.fogOfWar.toolType = ToolType.Ellipse;
+        break;
+      case 'O':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Draw;
+        stageProps.fogOfWar.toolType = ToolType.Ellipse;
+        break;
+      case 'p':
+        stageProps.activeLayer = MapLayerType.Ping;
+        stageProps.ping.editMode = PingEditMode.Remove;
+        break;
+      case 'P':
+        stageProps.activeLayer = MapLayerType.Ping;
+        stageProps.ping.editMode = PingEditMode.Add;
+        break;
+      case 'r':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Erase;
+        stageProps.fogOfWar.toolType = ToolType.Rectangle;
+        break;
+      case 'R':
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.drawMode = DrawMode.Draw;
+        stageProps.fogOfWar.toolType = ToolType.Rectangle;
+        break;
+    }
   });
 </script>
 
-<div class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+<div bind:this={stageElement} class="stage-wrapper">
+  <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
 </div>
 
 <!-- DEBUG UI -->

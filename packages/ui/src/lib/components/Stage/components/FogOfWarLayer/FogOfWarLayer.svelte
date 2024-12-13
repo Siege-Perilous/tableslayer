@@ -12,9 +12,10 @@
     isActive: boolean;
     z: number;
     mapSize: Size;
+    onBrushSizeUpdated: (brushSize: number) => void;
   }
 
-  let { props, isActive, z, mapSize }: Props = $props();
+  let { props, isActive, z, mapSize, onBrushSizeUpdated }: Props = $props();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
@@ -151,6 +152,12 @@
     }
   }
 
+  function onWheel(e: WheelEvent) {
+    const newBrushSize = props.brushSize + e.deltaY;
+    console.log(newBrushSize);
+    onBrushSizeUpdated(newBrushSize);
+  }
+
   function configureDrawMode() {
     context.globalAlpha = 1.0;
     context.globalCompositeOperation = 'source-over';
@@ -217,7 +224,7 @@
   }
 </script>
 
-<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} />
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar" position={[0, 0, z]}>
   <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
