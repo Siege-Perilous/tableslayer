@@ -6,17 +6,18 @@
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';
-  import type { StageProps } from '../Stage/types';
+  import type { Callbacks, StageProps } from '../Stage/types';
+  import { getContext } from 'svelte';
 
   interface Props {
     props: StageProps;
     z: number;
-    onBrushSizeUpdated: (brushSize: number) => void;
-    onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onBrushSizeUpdated, onMapUpdate, onPingsUpdated }: Props = $props();
+  const { props }: Props = $props();
+
+  const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
+
   let image: THREE.Texture | undefined = $state();
   const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
@@ -100,8 +101,7 @@
     props={props.fogOfWar}
     isActive={props.activeLayer === MapLayerType.FogOfWar}
     {mapSize}
-    {onBrushSizeUpdated}
   />
 
-  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} {mapSize} {onPingsUpdated} />
+  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} {mapSize} />
 </T.Object3D>

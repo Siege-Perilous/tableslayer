@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { getContext, onMount, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
-  import type { StageProps } from '../Stage/types';
+  import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
@@ -11,15 +11,13 @@
 
   interface Props {
     props: StageProps;
-    onBrushSizeUpdated: (brushSize: number) => void;
-    onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
+
+  const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
 
   let mapLayer: MapLayerExports;
 
@@ -103,7 +101,7 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} z={0} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
+  <MapLayer bind:this={mapLayer} {props} z={0} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer props={props.grid} z={30} display={props.display} sceneScale={props.scene.zoom} />

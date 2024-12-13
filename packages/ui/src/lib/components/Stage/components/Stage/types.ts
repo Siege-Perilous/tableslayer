@@ -5,6 +5,13 @@ import type { PingLayerProps } from '../PingLayer/types';
 import type { SceneLayerProps } from '../Scene/types';
 import type { WeatherProps } from '../WeatherLayer/types';
 
+export interface Callbacks {
+  onBrushSizeUpdated: (brushSize: number) => void;
+  onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+  onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+  onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+}
+
 export interface DisplayProps {
   /**
    * The minimum padding around the grid relative to the edge of the scene.

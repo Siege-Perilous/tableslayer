@@ -2,19 +2,21 @@
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
   import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
-  import { onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
   import { textureToBase64 } from '../../helpers/utils';
   import InputManager from '../InputManager/InputManager.svelte';
+  import type { Callbacks } from '../Stage/types';
 
   interface Props {
     props: FogOfWarLayerProps;
     isActive: boolean;
     mapSize: Size;
-    onBrushSizeUpdated: (brushSize: number) => void;
   }
 
-  let { props, isActive, mapSize, onBrushSizeUpdated }: Props = $props();
+  const { props, isActive, mapSize }: Props = $props();
+
+  const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;

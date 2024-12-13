@@ -3,6 +3,7 @@
   import type { StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
   import type { SceneExports } from '../Scene/types';
+  import { setContext } from 'svelte';
 
   interface Props {
     props: StageProps;
@@ -15,6 +16,8 @@
   let { props, onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
+
+  setContext('callbacks', { onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated });
 
   export const map = {
     fill: () => sceneRef.map.fill(),
@@ -35,6 +38,6 @@
 
 <div style="background-color: {props.backgroundColor}; height: 100%; width: 100%;">
   <Canvas>
-    <Scene bind:this={sceneRef} {props} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+    <Scene bind:this={sceneRef} {props} />
   </Canvas>
 </div>

@@ -3,21 +3,21 @@
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import { PingMaterial } from '../../materials/PingMaterial';
-  import { onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
+  import type { Callbacks } from '../Stage/types';
 
   interface Props {
     props: PingLayerProps;
     isActive: boolean;
     mapSize: Size;
-    // Note: Pings are passed in as a prop for initialization, but can also be added via
-    // mouse input if `isActive` is set to true.
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  const { props, isActive, mapSize, onPingsUpdated }: Props = $props();
+  const { props, isActive, mapSize }: Props = $props();
   const { renderer } = useThrelte();
+
+  const onPingsUpdated = getContext<Callbacks>('callbacks').onPingsUpdated;
 
   let time = $state(0);
 
