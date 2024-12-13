@@ -14,6 +14,15 @@
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   $effect(() => {
     stageProps = buildSceneProps(data.activeScene);
+    stageIsLoading = true;
+
+    const interval = setInterval(() => {
+      if (stage) {
+        stageIsLoading = false;
+        stage.scene.fit();
+        clearInterval(interval);
+      }
+    }, 50);
   });
   let stage: StageExports;
 

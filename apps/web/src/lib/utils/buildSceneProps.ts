@@ -51,7 +51,7 @@ export const buildSceneProps = (activeScene: SelectScene): StageProps => {
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY
       },
-      zoom: activeScene.sceneZoom,
+      zoom: 1,
       activeLayer: MapLayerType.None
     },
     ping: {

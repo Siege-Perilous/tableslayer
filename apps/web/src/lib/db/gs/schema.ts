@@ -35,8 +35,7 @@ export const sceneTable = sqliteTable(
     gridShadowColor: text('gridShadowColor').notNull().default('#000000'),
     gridShadowSize: integer('gridShadowSize').notNull().default(2),
     sceneOffsetX: integer('sceneOffsetX').notNull().default(0),
-    sceneOffsetY: integer('sceneOffsetY').notNull().default(0),
-    sceneZoom: integer('sceneZoom').notNull().default(1)
+    sceneOffsetY: integer('sceneOffsetY').notNull().default(0)
   },
   (table) => ({
     checkFogOfWarOpacityCheck: check(
