@@ -262,8 +262,6 @@
     <Slider bind:value={stageProps.ping.sharpness} label="Edge Sharpness" min={0} max={1} />
     <Slider bind:value={stageProps.ping.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
-    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Add)} title="Add Ping" />
-    <Button on:click={() => (stageProps.ping.editMode = PingEditMode.Remove)} title="Remove Ping" />
   </Folder>
 
   <Folder title="Scene" expanded={false}>
