@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as THREE from 'three';
   import { onMount, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';

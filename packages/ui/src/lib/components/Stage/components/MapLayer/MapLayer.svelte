@@ -2,12 +2,11 @@
   import * as THREE from 'three';
   import { type Size, T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
-  import { MapLayerType, type MapLayerProps } from './types';
+  import { MapLayerType } from './types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { StageProps } from '../Stage/types';
-  import InputManager from '../InputManager/InputManager.svelte';
 
   interface Props {
     props: StageProps;
@@ -17,7 +16,7 @@
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, z, onBrushSizeUpdated, onMapUpdate, onPingsUpdated }: Props = $props();
+  let { props, onBrushSizeUpdated, onMapUpdate, onPingsUpdated }: Props = $props();
   let image: THREE.Texture | undefined = $state();
   const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
