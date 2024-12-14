@@ -17,6 +17,7 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
+  import { flip } from 'svelte/animate';
 
   let {
     scenes,
@@ -96,6 +97,11 @@
     $deleteSceneData.dbName = gameSession.dbName;
     setTimeout(() => deleteSceneSuperForm.submit(), 50);
   };
+
+  const sceneInputClasses = classNames(
+    'scene',
+    $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
+  );
 </script>
 
 <div class="scenes">
@@ -104,35 +110,27 @@
       <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
       <input type="hidden" name="order" bind:value={$createSceneData.order} />
       <input type="hidden" name="name" bind:value={$createSceneData.name} />
-      {#if !$createSceneDelayed}
-        <div class="scene">
-          <Field form={createSceneSuperForm} name="file">
-            <FSControl>
-              {#snippet children({ attrs })}
-                <FileInput
-                  {...attrs}
-                  variant="dropzone"
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  bind:files={$file}
-                />
-              {/snippet}
-            </FSControl>
-          </Field>
-        </div>
-        {#if $createSceneMessage}
-          <Spacer />
-          {$createSceneMessage.text}
-          <MessageError message={$createSceneMessage} />
-        {/if}
+      <div class="scene">
+        <Field form={createSceneSuperForm} name="file">
+          <FSControl>
+            {#snippet children({ attrs })}
+              <FileInput {...attrs} variant="dropzone" type="file" accept="image/png, image/jpeg" bind:files={$file} />
+            {/snippet}
+          </FSControl>
+        </Field>
+      </div>
+      {#if $createSceneMessage}
         <Spacer />
-        <Button type="submit" variant="ghost" class="scene__inputBtn">
-          {#snippet start()}
-            <Icon Icon={IconPlus} />
-          {/snippet}
-          Add scene
-        </Button>
+        {$createSceneMessage.text}
+        <MessageError message={$createSceneMessage} />
       {/if}
+      <Spacer />
+      <Button type="submit" variant="ghost" class="scene__inputBtn">
+        {#snippet start()}
+          <Icon Icon={IconPlus} />
+        {/snippet}
+        Add new scene
+      </Button>
     </form>
     <SuperDebug data={$createSceneData} display={false} />
   </div>
