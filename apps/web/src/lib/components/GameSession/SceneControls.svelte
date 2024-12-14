@@ -19,12 +19,19 @@
     IconGrid4x4,
     IconLayersSelectedBottom,
     IconLayersSelected,
+    IconBoxMultiple,
+    IconBoxMultipleFilled,
     IconEraser,
     IconShadow,
     IconTexture,
     IconSelector,
     IconMap,
-    IconCloudSnow
+    IconCloudSnow,
+    IconCircle,
+    IconCircleFilled,
+    IconSquareDot,
+    IconSquare,
+    IconSquareFilled
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
 
@@ -180,38 +187,44 @@
 
   const eraseOptions = [
     {
-      label: 'Erase fog',
+      label: 'Freehand erase',
       value: 'eraseBrush',
-      icon: IconEraser,
+      icon: IconBoxMultiple,
       toolType: ToolType.RoundBrush,
       drawMode: DrawMode.Erase
     },
-    { label: 'Add fog', value: 'addBrush', icon: IconTexture, toolType: ToolType.RoundBrush, drawMode: DrawMode.Draw },
     {
-      label: 'Erase fog rectangle',
+      label: 'Freehand add',
+      value: 'addBrush',
+      icon: IconBoxMultipleFilled,
+      toolType: ToolType.RoundBrush,
+      drawMode: DrawMode.Draw
+    },
+    {
+      label: 'Erase rectangle',
       value: 'areaErase',
-      icon: IconLayersSelectedBottom,
+      icon: IconSquare,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Erase
     },
     {
-      label: 'Add fog rectangle',
+      label: 'Add rectangle',
       value: 'areaAdd',
-      icon: IconLayersSelected,
+      icon: IconSquareFilled,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Draw
     },
     {
-      label: 'Erase fog ellipse',
-      value: 'polygonErase',
-      icon: IconLayersSelectedBottom,
+      label: 'Erase ellipse',
+      value: 'ellipseErase',
+      icon: IconCircle,
       toolType: ToolType.Ellipse,
       drawMode: DrawMode.Erase
     },
     {
-      label: 'Add fog ellipse',
-      value: 'polygonAdd',
-      icon: IconLayersSelected,
+      label: 'Add ellipse',
+      value: 'ellipsAdd',
+      icon: IconCircleFilled,
       toolType: ToolType.Ellipse,
       drawMode: DrawMode.Draw
     }
