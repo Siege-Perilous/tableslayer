@@ -4,6 +4,7 @@ import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, T
 // Map activeScene properties to StageProps
 export const buildSceneProps = (activeScene: SelectScene): StageProps => {
   return {
+    activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
     display: {
       padding: {
@@ -51,8 +52,7 @@ export const buildSceneProps = (activeScene: SelectScene): StageProps => {
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY
       },
-      zoom: 1,
-      activeLayer: MapLayerType.None
+      zoom: 1
     },
     ping: {
       color: '#ff0000',
