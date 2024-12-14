@@ -188,22 +188,47 @@
     },
     { label: 'Add fog', value: 'addBrush', icon: IconTexture, toolType: ToolType.RoundBrush, drawMode: DrawMode.Draw },
     {
-      label: 'Erase fog area',
+      label: 'Erase fog rectangle',
       value: 'areaErase',
       icon: IconLayersSelectedBottom,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Erase
     },
     {
-      label: 'Add fog area',
+      label: 'Add fog rectangle',
       value: 'areaAdd',
       icon: IconLayersSelected,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Draw
+    },
+    {
+      label: 'Erase fog ellipse',
+      value: 'polygonErase',
+      icon: IconLayersSelectedBottom,
+      toolType: ToolType.Ellipse,
+      drawMode: DrawMode.Erase
+    },
+    {
+      label: 'Add fog ellipse',
+      value: 'polygonAdd',
+      icon: IconLayersSelected,
+      toolType: ToolType.Ellipse,
+      drawMode: DrawMode.Draw
     }
   ];
 
-  let selectedFogTool = $state(eraseOptions[0]);
+  // Set initial state based on current stageProps matching the toolType and drawMode
+  let selectedFogTool = $state(
+    eraseOptions.find(
+      (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+    )
+  );
+
+  $effect(() => {
+    selectedFogTool = eraseOptions.find(
+      (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+    );
+  });
 
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected);
