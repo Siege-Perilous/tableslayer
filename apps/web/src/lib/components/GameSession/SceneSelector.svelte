@@ -160,7 +160,7 @@
             <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
           </div>
           -->
-          <div class="scene__text">{scene.name} - {scene.order} / {$createSceneData.order}</div>
+          <div class="scene__text">{scene.order} - {scene.name}</div>
         </a>
       {/snippet}
     </ContextMenu>
