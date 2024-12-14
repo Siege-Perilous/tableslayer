@@ -2,10 +2,9 @@
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
-  import { PingMaterial } from '../../materials/PingMaterial';
-  import { getContext, onMount } from 'svelte';
+  import PingMaterial from '../../materials/PingMaterial.svelte';
+  import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
-  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import type { Callbacks } from '../Stage/types';
 
   interface Props {
@@ -15,30 +14,12 @@
   }
 
   const { props, isActive, mapSize }: Props = $props();
-  const { renderer } = useThrelte();
 
   const onPingsUpdated = getContext<Callbacks>('callbacks').onPingsUpdated;
-
-  let time = $state(0);
 
   // svelte-ignore non_reactive_update
   let pingMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
-  let material = new PingMaterial(props, renderer.clippingPlanes);
-
-  onMount(() => {
-    if (pingMesh) {
-      pingMesh.material = material;
-    }
-  });
-
-  useTask((dt) => {
-    time += dt;
-    material.uniforms.uTime.value = time;
-  });
-
-  // When ping layer props or the clipping planes are updated, pass the new values into the shader
-  $effect(() => material.updateProps(props, clippingPlaneStore.value));
 
   // Regenerate buffer geometry each time ping array is updated
   $effect(() => {
@@ -97,7 +78,6 @@
 
     if (props.editMode === PingEditMode.Add) {
       const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };
-      console.log(location);
       onPingsUpdated([...props.locations, location]);
     } else {
       // Find the ping that is closest to the mouse down point. The test point
@@ -130,4 +110,6 @@
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]} />
+<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]}>
+  <PingMaterial {props} />
+</T.Mesh>
