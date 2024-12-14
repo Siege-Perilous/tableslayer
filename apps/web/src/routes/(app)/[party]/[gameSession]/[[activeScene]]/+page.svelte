@@ -21,6 +21,18 @@
 
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageElement: HTMLDivElement | undefined = $state();
+  let activeControl = $state('none');
+
+  const handleSelectActiveControl = (control: string) => {
+    if (control === activeControl) {
+      activeControl = 'none';
+      stageProps.activeLayer = MapLayerType.None;
+    } else {
+      activeControl = control;
+      stageProps.activeLayer = MapLayerType.FogOfWar;
+    }
+  };
+
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.0005;
@@ -39,9 +51,7 @@
   });
   let stage: StageExports;
 
-  // @ts-expect-error undefined for now
   let scenesPane: PaneAPI = $state(undefined);
-  // @ts-expect-error undefined for now
   let controlsPane: PaneAPI = $state(undefined);
   let isScenesCollapsed = $state(false);
   let isControlsCollapsed = $state(false);
@@ -148,53 +158,121 @@
         false
       );
     }
-
     document.addEventListener('keydown', (event) => {
+      const { activeLayer, fogOfWar, ping } = stageProps;
+
       switch (event.key) {
         case 'e':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.RoundBrush
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.RoundBrush;
+            activeControl = 'erase';
+          }
           break;
+
         case 'E':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.RoundBrush
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.RoundBrush;
+          }
           break;
+
         case 'f':
           stage.fogOfWar.clear();
           break;
+
         case 'F':
           stage.fogOfWar.reset();
           break;
+
         case 'o':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.Ellipse
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.Ellipse;
+          }
           break;
+
         case 'O':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.Ellipse
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.Ellipse;
+          }
           break;
+
         case 'p':
-          stageProps.activeLayer = MapLayerType.Ping;
-          stageProps.ping.editMode = PingEditMode.Remove;
+          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Remove) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.Ping;
+            ping.editMode = PingEditMode.Remove;
+          }
           break;
+
         case 'P':
-          stageProps.activeLayer = MapLayerType.Ping;
-          stageProps.ping.editMode = PingEditMode.Add;
+          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Add) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.Ping;
+            ping.editMode = PingEditMode.Add;
+          }
           break;
+
         case 'r':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.Rectangle
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.Rectangle;
+          }
           break;
+
         case 'R':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.Rectangle
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.Rectangle;
+          }
           break;
+
         case 'Escape':
           stageProps.activeLayer = MapLayerType.None;
           break;
@@ -243,7 +321,7 @@
             {onPingsUpdated}
           />
         </div>
-        <SceneControls {stageProps} onUpdateStage={updateStage} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
       </div>
     </Pane>
     <PaneResizer class="resizer">

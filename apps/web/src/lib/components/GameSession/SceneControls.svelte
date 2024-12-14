@@ -30,11 +30,16 @@
 
   let {
     onUpdateStage,
+    handleSelectActiveControl,
+    activeControl = 'none',
     stageProps
-  }: { onUpdateStage: (newProps: Partial<StageProps>) => void; stageProps: StageProps } = $props();
+  }: {
+    onUpdateStage: (newProps: Partial<StageProps>) => void;
+    handleSelectActiveControl: (control: string) => void;
+    activeControl: string;
+    stageProps: StageProps;
+  } = $props();
 
-  let activeControl = $state('none');
-  let activeLayer = $state(0);
   let gridHex = $state(stageProps.grid.lineColor);
   let fogHex = $state(stageProps.fogOfWar.fogColor);
   let tvDiagnalSize = $state(40);
@@ -73,22 +78,6 @@
       mapLayer: MapLayerType.None
     }
   ];
-
-  const handleSelectActiveControl = (control: string) => {
-    if (control === activeControl) {
-      activeControl = 'none';
-      activeLayer = MapLayerType.None;
-    } else {
-      activeControl = control;
-      activeLayer = MapLayerType.FogOfWar;
-    }
-    onUpdateStage({
-      activeLayer,
-      scene: {
-        ...stageProps.scene
-      }
-    });
-  };
 
   // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
@@ -219,10 +208,9 @@
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected);
     selectedFogTool = selectedOption;
-    activeLayer = MapLayerType.FogOfWar;
     activeControl = 'erase';
     onUpdateStage({
-      activeLayer,
+      activeLayer: MapLayerType.FogOfWar,
       scene: {
         ...stageProps.scene
       },
@@ -272,7 +260,8 @@
   <div class="sceneControls">
     <div class="sceneControls__item sceneControls__item--primary">
       <button
-        class="sceneControls__layer {activeControl === 'erase' && 'sceneControls__layer--isActive'}"
+        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
+          'sceneControls__layer--isActive'}"
         onclick={() => handleSelectActiveControl('erase')}
       >
         <Icon Icon={selectedFogTool.icon} size="1.5rem" />
