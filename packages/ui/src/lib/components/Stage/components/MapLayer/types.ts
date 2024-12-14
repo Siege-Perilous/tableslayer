@@ -31,3 +31,13 @@ export interface MapLayerProps {
    */
   zoom: number;
 }
+
+export interface MapLayerExports {
+  fit: () => void;
+  fill: () => void;
+  fogOfWar: {
+    clear: () => void;
+    reset: () => void;
+    toBase64: () => string;
+  };
+}
