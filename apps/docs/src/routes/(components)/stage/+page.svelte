@@ -207,7 +207,7 @@
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
-  <Folder title="Display">
+  <Folder title="Display" expanded={false}>
     <Slider bind:value={stageProps.display.size.x} label="Width (in)" />
     <Slider bind:value={stageProps.display.size.y} label="Height (in)" />
     <Slider bind:value={stageProps.display.resolution.x} label="Resolution (X)" />
@@ -235,15 +235,18 @@
     <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
   </Folder>
 
-  <Folder title="Grid" expanded={true}>
+  <Folder title="Grid" expanded={false}>
     <List bind:value={stageProps.grid.gridType} label="Type" options={gridTypeOptions} />
-    <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.grid.spacing} label="Spacing (in)" min={0.25} max={3} step={0.25} />
-    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={1} max={100} />
     <Color bind:value={stageProps.grid.lineColor} label="Line Color" />
-    <Slider bind:value={stageProps.grid.shadowIntensity} label="Shadow Intensity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.grid.shadowSize} label="Shadow Size" min={1} max={5} step={0.01} />
     <Color bind:value={stageProps.grid.shadowColor} label="Shadow Color" />
+    <Slider bind:value={stageProps.grid.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.grid.lineThickness} label="Line Thickness" min={0} max={100} />
+    <Slider bind:value={stageProps.grid.spacing} label="Spacing (in)" min={0.25} max={3} step={0.25} />
+    <Folder title="Drop Shadow" expanded={false}>
+      <Slider bind:value={stageProps.grid.shadowOpacity} label="Shadow Opacity" min={0} max={1} step={0.01} />
+      <Slider bind:value={stageProps.grid.shadowBlur} label="Shadow Blur" min={0} max={1} step={0.01} />
+      <Slider bind:value={stageProps.grid.shadowSpread} label="Shadow Spread" min={1} max={10} step={0.01} />
+    </Folder>
   </Folder>
 
   <Folder title="Map" expanded={false}>

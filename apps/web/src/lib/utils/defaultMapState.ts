@@ -19,12 +19,13 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     spacing: 1,
-    opacity: 0.4,
+    opacity: 0.05,
     lineColor: '#E6E6E6',
-    lineThickness: 16,
-    shadowIntensity: 1,
+    lineThickness: 1.0,
+    shadowOpacity: 0.4,
+    shadowBlur: 0.5,
     shadowColor: '#000000',
-    shadowSize: 2
+    shadowSpread: 2
   },
   map: {
     rotation: 0,
