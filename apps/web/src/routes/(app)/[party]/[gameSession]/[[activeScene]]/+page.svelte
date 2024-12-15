@@ -51,8 +51,8 @@
   });
   let stage: StageExports;
 
-  let scenesPane: PaneAPI = $state(undefined);
-  let controlsPane: PaneAPI = $state(undefined);
+  let scenesPane: PaneAPI = $state(undefined)!;
+  let controlsPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let isControlsCollapsed = $state(false);
 

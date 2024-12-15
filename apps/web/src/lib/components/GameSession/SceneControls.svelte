@@ -29,6 +29,7 @@
     IconSquareFilled
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
+  import { writable } from 'svelte/store';
 
   let {
     onUpdateStage,
@@ -153,7 +154,7 @@
   );
 
   const handleSelectedResolution = (selected: TvResolution) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value);
+    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
     onUpdateStage({
       display: {
         ...stageProps.display,
@@ -229,18 +230,25 @@
   let selectedFogTool = $state(
     eraseOptions.find(
       (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
-    )
+    ) || eraseOptions[0]
   );
 
+  let selectedFogToolValue = writable(eraseOptions[0].value);
+
   $effect(() => {
-    selectedFogTool = eraseOptions.find(
-      (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
-    );
+    selectedFogTool =
+      eraseOptions.find(
+        (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+      ) || eraseOptions[0];
+  });
+
+  $effect(() => {
+    selectedFogToolValue.set(selectedFogTool.value);
   });
 
   const handleSelectedFogTool = (selected: string) => {
-    const selectedOption = eraseOptions.find((option) => option.value === selected);
-    selectedFogTool = selectedOption;
+    const selectedOption = eraseOptions.find((option) => option.value === selected)!;
+    selectedFogTool = selectedOption!;
     activeControl = 'erase';
     onUpdateStage({
       activeLayer: MapLayerType.FogOfWar,
@@ -304,6 +312,7 @@
         defaultItem={eraseOptions[0]}
         items={eraseOptions}
         positioning={{ placement: 'bottom', gutter: 8 }}
+        value={selectedFogToolValue}
         onValueChange={(selected) => handleSelectedFogTool(selected.next)}
       >
         {#snippet trigger()}
