@@ -11,8 +11,6 @@
   }
 
   const { grid, display, sceneZoom }: Props = $props();
-
-  $inspect(sceneZoom);
 </script>
 
 <T.Mesh scale={[display.resolution.x, display.resolution.y, 1]}>
