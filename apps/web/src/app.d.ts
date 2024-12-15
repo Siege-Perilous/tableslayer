@@ -27,12 +27,12 @@ declare module '$env/static/private' {
   export const TURSO_GS_PARENT_DB_AUTH_TOKEN: string;
   export const RESEND_TOKEN: string;
   export const DEV_EMAIL: string;
-  export const BASE_URL: string;
+  export const CF_PAGES_URL: string;
   export const CLOUDFLARE_ACCOUNT_ID: string;
   export const CLOUDFLARE_R2_ACCESS_KEY: string;
   export const CLOUDFLARE_R2_SECRET_KEY: string;
   export const CLOUDFLARE_R2_BUCKET_NAME: string;
-  export const VERCEL_ENV: string;
+  export const CF_PAGES_BRANCH: string;
 }
 
 export {};

@@ -1,10 +1,10 @@
-import { BASE_URL } from '$env/static/private';
+import { CF_PAGES_URL } from '$env/static/private';
 import { getParty, sendSingleEmail } from '$lib/server';
 import { isValidEmail } from '$lib/utils';
 
 export const sendPartyInviteEmail = async (partyId: string, email: string, code: string) => {
   const party = await getParty(partyId);
-  const baseURL = BASE_URL || 'http://localhost:5174';
+  const baseURL = CF_PAGES_URL || 'http://localhost:5174';
 
   if (!party) {
     throw new Error('Party not found, cannot send invite email.');

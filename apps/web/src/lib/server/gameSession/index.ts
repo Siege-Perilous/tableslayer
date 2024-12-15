@@ -1,4 +1,4 @@
-import { GITHUB_PR_NUMBER, TURSO_API_TOKEN, VERCEL_ENV } from '$env/static/private';
+import { CF_PAGES_BRANCH, TURSO_API_TOKEN } from '$env/static/private';
 import { db } from '$lib/db/app';
 import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
@@ -44,8 +44,7 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const gameSessionId = uuidv4();
     const name = gsName || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
-    const prNumber = GITHUB_PR_NUMBER;
-    const prefix = VERCEL_ENV === 'preview' ? `pr-${prNumber}-gs-child` : 'gs-child';
+    const prefix = CF_PAGES_BRANCH !== 'main' ? `pr-${CF_PAGES_BRANCH}-gs-child` : 'gs-child';
 
     const existingGameSessions = await getPartyGameSessions(partyId);
 
