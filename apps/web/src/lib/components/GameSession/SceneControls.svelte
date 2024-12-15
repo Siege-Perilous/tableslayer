@@ -134,25 +134,6 @@
     return { width, height };
   };
 
-  // Example usage with default aspect ratio (16:9):
-  const diagonalSizeDefault = 55; // inches
-  const dimensionsDefault = getTvDimensions(diagonalSizeDefault);
-  console.log(
-    `Default Aspect Ratio (16:9) - Width: ${dimensionsDefault.width.toFixed(
-      2
-    )} inches, Height: ${dimensionsDefault.height.toFixed(2)} inches`
-  );
-
-  // Example usage with a custom aspect ratio (4:3):
-  const diagonalSizeCustom = 55; // inches
-  const customAspectRatio = { width: 4, height: 3 };
-  const dimensionsCustom = getTvDimensions(diagonalSizeCustom, customAspectRatio);
-  console.log(
-    `Custom Aspect Ratio (4:3) - Width: ${dimensionsCustom.width.toFixed(
-      2
-    )} inches, Height: ${dimensionsCustom.height.toFixed(2)} inches`
-  );
-
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
     onUpdateStage({
