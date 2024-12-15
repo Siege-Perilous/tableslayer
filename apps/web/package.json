@@ -29,6 +29,7 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
+    "-": "^0.0.1",
     "@aws-sdk/client-s3": "^3.703.0",
     "@libsql/client": "^0.14.0",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
@@ -36,11 +37,13 @@
     "@node-rs/argon2": "^2.0.0",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
+    "@sveltejs/adapter-cloudflare": "^4.8.0",
     "@tabler/icons-svelte": "^3.23.0",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.62.0",
     "@tursodatabase/api": "^1.9.0",
     "@types/chroma-js": "^2.4.4",
+    "D": "^1.0.0",
     "axios": "^1.7.8",
     "chroma-js": "^3.1.2",
     "classnames": "^2.5.1",
