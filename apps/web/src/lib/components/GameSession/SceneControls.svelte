@@ -17,19 +17,14 @@
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
-    IconLayersSelectedBottom,
-    IconLayersSelected,
     IconBoxMultiple,
     IconBoxMultipleFilled,
-    IconEraser,
     IconShadow,
-    IconTexture,
     IconSelector,
     IconMap,
     IconCloudSnow,
     IconCircle,
     IconCircleFilled,
-    IconSquareDot,
     IconSquare,
     IconSquareFilled
   } from '@tabler/icons-svelte';

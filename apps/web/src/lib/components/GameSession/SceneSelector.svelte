@@ -17,7 +17,6 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
-  import { flip } from 'svelte/animate';
 
   let {
     scenes,
@@ -39,9 +38,10 @@
     validators: zodClient(createSceneSchema),
     resetForm: true,
     invalidateAll: 'force',
-    delayMs: 500,
+    delayMs: 50,
     onResult: (result) => {
       if (result) {
+        console.log('scene createed', result, $createSceneData);
         createSceneReset();
       }
     }
@@ -98,10 +98,7 @@
     setTimeout(() => deleteSceneSuperForm.submit(), 50);
   };
 
-  const sceneInputClasses = classNames(
-    'scene',
-    $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
-  );
+  const sceneInputClasses = classNames('scene', $createSceneDelayed && 'scene--isLoading');
 </script>
 
 <div class="scenes">
@@ -110,7 +107,7 @@
       <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
       <input type="hidden" name="order" bind:value={$createSceneData.order} />
       <input type="hidden" name="name" bind:value={$createSceneData.name} />
-      <div class="scene">
+      <div class={sceneInputClasses}>
         <Field form={createSceneSuperForm} name="file">
           <FSControl>
             {#snippet children({ attrs })}
@@ -162,6 +159,7 @@
         {#snippet trigger()}
           <a
             href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
+            id={`scene-${scene.order}`}
             class={sceneSelectorClasses}
             style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
           >
@@ -206,6 +204,7 @@
     border: var(--borderThick);
     border-radius: var(--radius-2);
     aspect-ratio: 16 / 9;
+    width: 100%;
     overflow: hidden;
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
@@ -242,6 +241,7 @@
     bottom: 0;
     width: 100%;
     height: 100%;
+    z-index: 3;
     background-image: linear-gradient(
       135deg,
       transparent 10%,
