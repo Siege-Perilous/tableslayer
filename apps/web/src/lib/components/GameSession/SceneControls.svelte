@@ -17,8 +17,8 @@
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
-    IconBoxMultiple,
-    IconBoxMultipleFilled,
+    IconPaint,
+    IconPaintFilled,
     IconShadow,
     IconSelector,
     IconMap,
@@ -185,14 +185,14 @@
     {
       label: 'Freehand erase',
       value: 'eraseBrush',
-      icon: IconBoxMultiple,
+      icon: IconPaint,
       toolType: ToolType.RoundBrush,
       drawMode: DrawMode.Erase
     },
     {
       label: 'Freehand add',
       value: 'addBrush',
-      icon: IconBoxMultipleFilled,
+      icon: IconPaintFilled,
       toolType: ToolType.RoundBrush,
       drawMode: DrawMode.Draw
     },
