@@ -10,6 +10,8 @@
       "env": [
         "GITHUB_PR_NUMBER",
         "RAILWAY_GIT_BRANCH",
+        "RAILWAY_ENVIROMENT_NAME",
+        "RAILWAY_PUBLIC_DOMAIN",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",
@@ -30,6 +32,8 @@
       "env": [
         "GITHUB_PR_NUMBER",
         "RAILWAY_GIT_BRANCH",
+        "RAILWAY_ENVIROMENT_NAME",
+        "RAILWAY_PUBLIC_DOMAIN",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",

@@ -1,4 +1,4 @@
-import { RAILWAY_ENVIRONMENT_NAME, RAILWAY_GIT_BRANCH, TURSO_API_TOKEN } from '$env/static/private';
+import { RAILWAY_GIT_BRANCH, TURSO_API_TOKEN } from '$env/static/private';
 import { db } from '$lib/db/app';
 import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
@@ -45,7 +45,7 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const name = gsName || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
     const prBranch = RAILWAY_GIT_BRANCH;
-    const prefix = RAILWAY_ENVIRONMENT_NAME === 'preview' ? `pr-${prBranch}-gs-child` : 'gs-child';
+    const prefix = process.env.RAILWAY_ENVIRONMENT_NAME! === 'preview' ? `pr-${prBranch}-gs-child` : 'gs-child';
 
     const existingGameSessions = await getPartyGameSessions(partyId);
 
