@@ -9,7 +9,7 @@
     "web#build": {
       "env": [
         "GITHUB_PR_NUMBER",
-        "GITHUB_PR_BRANCH",
+        "RAILWAY_GIT_BRANCH",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",
@@ -29,7 +29,7 @@
     "web#start": {
       "env": [
         "GITHUB_PR_NUMBER",
-        "GITHUB_PR_BRANCH",
+        "RAILWAY_GIT_BRANCH",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",
