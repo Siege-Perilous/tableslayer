@@ -4,17 +4,19 @@
   import type { Snippet } from 'svelte';
 
   type ControlProps = {
-    children: Snippet<[{ attrs?: Record<string, unknown> }]>;
+    content: Snippet<[{ props?: Record<string, unknown> }]>;
     label?: string;
     start?: Snippet;
     end?: Snippet;
   };
 
-  let { children, label, start, end }: ControlProps = $props();
+  let { content, label, start, end }: ControlProps = $props();
 </script>
 
-<Control let:attrs>
-  <StyledControl {label} {start} {end} {attrs}>
-    {@render children({ attrs })}
-  </StyledControl>
+<Control>
+  {#snippet children({ props })}
+    <StyledControl {label} {start} {end} {props}>
+      {@render content({ props })}
+    </StyledControl>
+  {/snippet}
 </Control>

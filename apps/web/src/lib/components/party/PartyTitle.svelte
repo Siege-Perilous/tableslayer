@@ -84,8 +84,8 @@
             <div>
               <Field form={renameSuperForm} name="name">
                 <FSControl label="Rename party">
-                  {#snippet children({ attrs })}
-                    <Input {...attrs} type="text" name="name" bind:value={$renameForm.name} hideAutocomplete />
+                  {#snippet content({ props })}
+                    <Input {...props} type="text" name="name" bind:value={$renameForm.name} hideAutocomplete />
                   {/snippet}
                 </FSControl>
                 <input type="hidden" name="partyId" bind:value={$renameForm.partyId} />
@@ -110,7 +110,9 @@
         <form method="post" action="?/deleteParty" use:deleteEnhance>
           <Field form={deleteSuperForm} name="partyId">
             <FSControl>
-              <input type="hidden" name="partyId" value={$deleteForm.partyId} />
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="partyId" bind:value={$deleteForm.partyId} />
+              {/snippet}
             </FSControl>
           </Field>
           <Button type="submit" variant="danger">Delete party</Button>
