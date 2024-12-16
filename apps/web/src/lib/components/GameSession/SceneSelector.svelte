@@ -122,7 +122,7 @@
         <Field form={createSceneSuperForm} name="file">
           <FSControl>
             {#snippet content({ props })}
-              <FileInput {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+              <FileInput variant="dropzone" {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
             {/snippet}
           </FSControl>
         </Field>
