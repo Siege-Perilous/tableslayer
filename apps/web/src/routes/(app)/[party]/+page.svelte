@@ -77,8 +77,8 @@
               <div>
                 <Field form={inviteMemberForm} name="email">
                   <FSControl label="Invite new member">
-                    {#snippet children({ attrs })}
-                      <Input {...attrs} type="email" placeholder="email address" bind:value={$inviteMemberData.email} />
+                    {#snippet content({ props })}
+                      <Input {...props} type="email" placeholder="email address" bind:value={$inviteMemberData.email} />
                     {/snippet}
                   </FSControl>
                   <FieldErrors />
@@ -94,8 +94,8 @@
             {/if}
             <Field form={inviteMemberForm} name="email">
               <FSControl>
-                {#snippet children({ attrs })}
-                  <Input {...attrs} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
+                {#snippet content({ props })}
+                  <Input {...props} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
                 {/snippet}
               </FSControl>
             </Field>

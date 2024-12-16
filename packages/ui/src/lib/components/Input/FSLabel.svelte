@@ -8,8 +8,10 @@
   const labelClasses = classNames('label', restProps.class ?? '');
 </script>
 
-<Label asChild let:labelAttrs>
-  <StyledLabel {...labelAttrs} {...restProps} class={labelClasses}>
-    {@render children()}
-  </StyledLabel>
+<Label>
+  {#snippet child(props)}
+    <StyledLabel {...props} {...restProps} class={labelClasses}>
+      {@render children()}
+    </StyledLabel>
+  {/snippet}
 </Label>

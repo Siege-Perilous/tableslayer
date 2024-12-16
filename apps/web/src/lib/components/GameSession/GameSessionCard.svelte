@@ -105,8 +105,8 @@
                   <div>
                     <Field form={renameGameSessionSuperForm} name="name">
                       <FSControl label="Rename session">
-                        {#snippet children({ attrs })}
-                          <Input {...attrs} bind:value={$renameGameSessionFormData.name} hideAutocomplete />
+                        {#snippet content({ props })}
+                          <Input {...props} bind:value={$renameGameSessionFormData.name} hideAutocomplete />
                         {/snippet}
                       </FSControl>
                     </Field>
@@ -133,15 +133,15 @@
               <form method="post" action="?/deleteGameSession" use:deleteGameSessionEnhance>
                 <Field form={deleteGameSessionSuperForm} name="sessionId">
                   <FSControl>
-                    {#snippet children({ attrs })}
-                      <input {...attrs} type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
+                    {#snippet content({ props })}
+                      <input {...props} type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
                     {/snippet}
                   </FSControl>
                 </Field>
                 <Field form={deleteGameSessionSuperForm} name="partyId">
                   <FSControl>
-                    {#snippet children({ attrs })}
-                      <input {...attrs} type="hidden" name="partyId" value={$renameGameSessionFormData.partyId} />
+                    {#snippet content({ props })}
+                      <input {...props} type="hidden" name="partyId" value={$renameGameSessionFormData.partyId} />
                     {/snippet}
                   </FSControl>
                 </Field>
