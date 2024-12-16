@@ -105,7 +105,7 @@
       addToast({
         data: {
           title: 'Building scene',
-          type: 'info'
+          type: 'loading'
         }
       });
     }
