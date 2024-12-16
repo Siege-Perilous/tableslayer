@@ -32,7 +32,7 @@ float squareGrid(vec2 coords, vec2 spacing, float thickness, float sharpness) {
   // Compute distance to the grid line and modulate opacity based on line thickness
   vec2 distanceToLine_px = abs(coords - gridLine_px);
 
-  vec2 grid = 1.0 - smoothstep(vec2(thickness / 2.0) - 50.0 * sharpness, vec2(thickness / 2.0) + 50.0 * sharpness, distanceToLine_px);
+  vec2 grid = 1.0 - smoothstep(vec2(thickness / 4.0) - 50.0 * sharpness, vec2(thickness / 4.0) + 50.0 * sharpness, distanceToLine_px);
 
   return max(grid.x, grid.y);
 }
@@ -101,15 +101,15 @@ void main() {
 
   float grid = 0.0;
   float shadow = 0.0;
+  float t = uLineThickness * uSceneScale < 2.0 ? 2.0 / uSceneScale : uLineThickness;
 
   if(uGridType == 0) {
-    float t = uLineThickness * uSceneScale < 2.0 ? 2.0 / uSceneScale : uLineThickness;
-    grid = squareGrid(gridCoords_px - uLineThickness / 4.0, gridSpacing_px, t, 0.0);
-    shadow = squareGrid(gridCoords_px - uLineThickness / 4.0, gridSpacing_px, t * uShadowSpread, uShadowBlur);
+    grid = squareGrid(gridCoords_px - t / 4.0, gridSpacing_px, t, 0.0);
+    shadow = squareGrid(gridCoords_px - t / 4.0, gridSpacing_px, t * uShadowSpread, uShadowBlur);
   } else {
     // Subtract half the grid size so the hex grid is symmetrical on the edges
-    grid = hexGrid((gridCoords_px - (gridSize_px / 2.0)), gridSpacing_px, max(uLineThickness / uSceneScale, 1.0), 0.0);
-    shadow = hexGrid((gridCoords_px - (gridSize_px / 2.0)), gridSpacing_px, max(uLineThickness / uSceneScale, 1.0) * uShadowSpread, 1.0 - uShadowBlur);
+    grid = hexGrid((gridCoords_px - (gridSize_px / 2.0)), gridSpacing_px, t, 0.0);
+    shadow = hexGrid((gridCoords_px - (gridSize_px / 2.0)), gridSpacing_px, t * uShadowSpread, uShadowBlur);
   }
 
   // Add border
@@ -117,10 +117,10 @@ void main() {
   vec2 bottomLeft = displayCoord_px - gridOrigin_px;
 
     // If any coordinates are inside the border zone, set isBorder to true
-  bool isBorder = (topRight.x < uLineThickness / 2.0) ||
-    (topRight.y < uLineThickness / 2.0) ||
-    (bottomLeft.x < uLineThickness / 2.0) ||
-    (bottomLeft.y < uLineThickness / 2.0);
+  bool isBorder = (topRight.x < t / 2.0) ||
+    (topRight.y < t / 2.0) ||
+    (bottomLeft.x < t / 2.0) ||
+    (bottomLeft.y < t / 2.0);
 
   grid = max(grid, float(isBorder));
   shadow = max(shadow, float(isBorder));
