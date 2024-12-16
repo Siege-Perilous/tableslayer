@@ -30,14 +30,19 @@ export interface GridLayerProps {
   lineColor: string;
 
   /**
-   * Line thickness
+   * Opacity of the drop shadow
    */
-  shadowIntensity: number;
+  shadowOpacity: number;
 
   /**
-   * Size of the shadow
+   * Blur factor for the drop shadow
    */
-  shadowSize: number;
+  shadowBlur: number;
+
+  /**
+   * Spread amount for the drop shadow
+   */
+  shadowSpread: number;
 
   /**
    * Shadow represented as a hex string (e.g. 0x60A3FE)
