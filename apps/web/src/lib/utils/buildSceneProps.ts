@@ -34,9 +34,10 @@ export const buildSceneProps = (activeScene: SelectScene): StageProps => {
       opacity: activeScene.gridOpacity,
       lineColor: activeScene.gridLineColor,
       lineThickness: activeScene.gridLineThickness,
-      shadowIntensity: activeScene.gridShadowIntensity,
       shadowColor: activeScene.gridShadowColor,
-      shadowSize: activeScene.gridShadowSize
+      shadowOpacity: activeScene.gridShadowOpacity,
+      shadowBlur: activeScene.gridShadowBlur,
+      shadowSpread: activeScene.gridShadowSpread
     },
     map: {
       rotation: activeScene.mapRotation,
