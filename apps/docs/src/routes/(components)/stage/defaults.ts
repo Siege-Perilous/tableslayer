@@ -19,12 +19,13 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     spacing: 1,
-    opacity: 0.4,
+    opacity: 0.05,
     lineColor: '#E6E6E6',
-    lineThickness: 20,
-    shadowIntensity: 1,
+    lineThickness: 1.0,
+    shadowOpacity: 0.4,
+    shadowBlur: 0.5,
     shadowColor: '#000000',
-    shadowSize: 2
+    shadowSpread: 2
   },
   map: {
     rotation: 0,
@@ -54,10 +55,10 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#AD0000',
+    color: '#a0a0f0',
     angle: 20,
-    opacity: 0.9,
-    intensity: 0.5,
+    opacity: 0.7,
+    intensity: 0.3,
     speed: 10.0,
     scale: {
       x: 5.0,

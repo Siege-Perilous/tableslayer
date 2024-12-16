@@ -104,6 +104,6 @@
   <MapLayer bind:this={mapLayer} {props} z={0} />
 
   <!-- Map overlays that scale with the scene -->
-  <GridLayer props={props.grid} z={30} display={props.display} sceneScale={props.scene.zoom} />
+  <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
   <WeatherLayer props={props.weather} z={40} resolution={props.display.resolution} />
 </T.Object3D>
