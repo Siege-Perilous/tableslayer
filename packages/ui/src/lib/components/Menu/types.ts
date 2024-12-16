@@ -1,6 +1,7 @@
 import type { CreateRadioGroupProps } from '@melt-ui/svelte';
 import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
 import type { Snippet } from 'svelte';
+import type { Writable } from 'svelte/store';
 
 export type RadioMenuItem = {
   label: string;
@@ -16,5 +17,6 @@ export type RadioMenuProps = CreateRadioGroupProps & {
   items: RadioMenuItem[];
   defaultItem: RadioMenuItem;
   positioning?: FloatingConfig;
+  customValue?: Writable<string>;
   footer?: Snippet<[{ close: () => void }]>;
 };

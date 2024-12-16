@@ -19,6 +19,7 @@
     variant = 'default',
     ids,
     selectedPrefix,
+    selected,
     ...restProps
   }: SelectProps = $props();
 
@@ -29,6 +30,7 @@
   } = createSelect({
     forceVisible: true,
     positioning,
+    selected,
     defaultSelected,
     multiple,
     required,

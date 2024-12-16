@@ -4,7 +4,7 @@ import type { HTMLInputAttributes } from 'svelte/elements';
 
 export type InputProps = {
   isDisabled?: boolean;
-  variant?: 'transparent' | 'default';
+  variant?: 'transparent' | 'default' | 'dropzone';
   hideAutocomplete?: boolean;
 } & HTMLInputAttributes;
 
@@ -14,4 +14,5 @@ export type FileInputProps = {
 
 export type LabelProps = {
   children: Snippet;
+  props?: Record<string, unknown>;
 } & FormSnapLabelProps;

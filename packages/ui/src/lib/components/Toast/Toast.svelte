@@ -4,7 +4,7 @@
   import { fly } from 'svelte/transition';
   import classNames from 'classnames';
   import { IconX } from '@tabler/icons-svelte';
-  import { Icon } from '../';
+  import { Icon, Loader } from '../';
   import { page } from '$app/stores';
   const {
     elements: { content, title, description, close },
@@ -68,7 +68,11 @@
           <p use:melt={$title(id)} class="toast__titleText">
             {data.title}
           </p>
-          <div class={classNames('toast__titleDot', `toast__titleDot--${data.type}`)}></div>
+          {#if data.type === 'loading'}
+            <Loader />
+          {:else}
+            <div class={classNames('toast__titleDot', `toast__titleDot--${data.type}`)}></div>
+          {/if}
         </div>
         {#if data.body}
           <div use:melt={$description(id)}>
