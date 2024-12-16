@@ -14,4 +14,5 @@ export type FileInputProps = {
 
 export type LabelProps = {
   children: Snippet;
+  props?: Record<string, unknown>;
 } & FormSnapLabelProps;

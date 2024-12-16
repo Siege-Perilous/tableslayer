@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { LabelProps } from './types';
   import classNames from 'classnames';
-  let { children, ...restProps }: LabelProps = $props();
+  let { children, props, ...restProps }: LabelProps = $props();
 
   const labelClasses = classNames('label', restProps.class ?? '');
 </script>
 
-<label {...restProps} class={labelClasses}>
+<label {...props} {...restProps} class={labelClasses}>
   {@render children()}
 </label>
 

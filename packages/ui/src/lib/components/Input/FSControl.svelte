@@ -15,7 +15,7 @@
 
 <Control>
   {#snippet children({ props })}
-    <StyledControl {label} {start} {end} {props}>
+    <StyledControl {label} {start} {end} props={{ ...props }}>
       {@render content({ props })}
     </StyledControl>
   {/snippet}

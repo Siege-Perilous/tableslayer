@@ -1,6 +1,6 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu } from '@tableslayer/ui';
+  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast } from '@tableslayer/ui';
   import { IconPlus } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
@@ -99,6 +99,17 @@
   };
 
   const sceneInputClasses = classNames('scene', $createSceneDelayed && 'scene--isLoading');
+
+  $effect(() => {
+    if ($createSceneDelayed) {
+      addToast({
+        data: {
+          title: 'Building scene',
+          type: 'info'
+        }
+      });
+    }
+  });
 </script>
 
 <div class="scenes">
@@ -138,11 +149,6 @@
         scene.order === activeSceneNumber && 'scene--isActive',
         $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
       )}
-      {@const sceneSelectorSkelClasses = classNames(
-        'scene',
-        scene.order === activeSceneNumber && 'scene--isActive',
-        $createSceneData.order === scene.order + 1 && 'scene--isLoading'
-      )}
       <ContextMenu
         items={[
           { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
@@ -172,11 +178,6 @@
           </a>
         {/snippet}
       </ContextMenu>
-      {#if $createSceneDelayed && $createSceneData.order === scene.order + 1}
-        <div class={sceneSelectorSkelClasses}>
-          <div class="scene__text">Creating</div>
-        </div>
-      {/if}
     {/each}
   </div>
   <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
