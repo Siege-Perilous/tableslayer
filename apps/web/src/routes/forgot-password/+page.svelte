@@ -20,8 +20,8 @@
   <form method="post" use:enhance>
     <Field {form} name="email">
       <FSControl label="Email">
-        {#snippet children({ attrs })}
-          <Input {...attrs} type="text" bind:value={$formData.email} />
+        {#snippet content({ props })}
+          <Input {...props} type="text" bind:value={$formData.email} />
         {/snippet}
       </FSControl>
       <FieldErrors />

@@ -95,8 +95,8 @@
     <input type="hidden" name="name" bind:value={$createSceneData.name} />
     <Field form={createSceneSuperForm} name="file">
       <FSControl label="Party avatar">
-        {#snippet children({ attrs })}
-          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+        {#snippet content({ props })}
+          <FileInput {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
         {/snippet}
       </FSControl>
     </Field>

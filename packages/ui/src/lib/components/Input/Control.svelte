@@ -4,14 +4,14 @@
   import classNames from 'classnames';
 
   type Props = {
-    children: Snippet<[{ attrs?: Record<string, unknown> }]>;
+    children: Snippet<[{ props?: Record<string, unknown> }]>;
     label?: string;
     start?: Snippet;
     end?: Snippet;
-    attrs?: Record<string, unknown>;
+    props?: Record<string, unknown>;
   };
 
-  let { children, label, start, end, attrs }: Props = $props();
+  let { children, label, start, end, props }: Props = $props();
 
   const inputWrapperClasses = classNames('control__inputWrapper', {
     'control__inputWrapper--start': start,
@@ -20,7 +20,7 @@
 </script>
 
 <div class="control">
-  {#if label && attrs}
+  {#if label && props}
     <FSLabel class="control__label">{label}</FSLabel>
   {:else if label}
     <Label class="control__label">{label}</Label>
@@ -29,8 +29,8 @@
     {#if start}
       <div class="control__start">{@render start()}</div>
     {/if}
-    {#if attrs}
-      {@render children({ attrs })}
+    {#if props}
+      {@render children({ ...props })}
     {:else}
       {@render children({})}
     {/if}

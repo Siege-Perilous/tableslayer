@@ -23,8 +23,8 @@
   <form method="post" use:enhance>
     <Field {form} name="password">
       <FSControl label="Password">
-        {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.password} />
+        {#snippet content({ props })}
+          <Input {...props} type="password" bind:value={$formData.password} />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -32,8 +32,8 @@
     <Spacer />
     <Field {form} name="confirmPassword">
       <FSControl label="Confirm password">
-        {#snippet children({ attrs })}
-          <Input {...attrs} type="password" bind:value={$formData.confirmPassword} />
+        {#snippet content({ props })}
+          <Input {...props} type="password" bind:value={$formData.confirmPassword} />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -45,8 +45,8 @@
     <Spacer />
     <Field {form} name="userId">
       <FSControl>
-        {#snippet children({ attrs })}
-          <Input {...attrs} type="hidden" name="userId" value={userDesiringReset.id} />
+        {#snippet content({ props })}
+          <Input {...props} type="hidden" name="userId" value={userDesiringReset.id} />
         {/snippet}
       </FSControl>
     </Field>
