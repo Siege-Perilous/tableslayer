@@ -9,6 +9,7 @@
     "web#build": {
       "env": [
         "GITHUB_PR_NUMBER",
+        "GITHUB_PR_BRANCH",
         "TURSO_API_TOKEN",
         "TURSO_APP_DB_URL",
         "TURSO_APP_DB_AUTH_TOKEN",
@@ -24,6 +25,27 @@
         "CLOUDFLARE_R2_BUCKET_NAME"
       ],
       "outputs": [".svelte-kit/**", ".vercel/**"]
+    },
+    "web#start": {
+      "env": [
+        "GITHUB_PR_NUMBER",
+        "GITHUB_PR_BRANCH",
+        "TURSO_API_TOKEN",
+        "TURSO_APP_DB_URL",
+        "TURSO_APP_DB_AUTH_TOKEN",
+        "RESEND_TOKEN",
+        "TURSO_GS_PARENT_DB_URL",
+        "TURSO_GS_PARENT_DB_AUTH_TOKEN",
+        "DEV_EMAIL",
+        "BASE_URL",
+        "VERCEL_AUTOMATION_BYPASS_SECRET",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_R2_ACCESS_KEY",
+        "CLOUDFLARE_R2_SECRET_KEY",
+        "CLOUDFLARE_R2_BUCKET_NAME"
+      ],
+      "persistent": true,
+      "cache": false
     },
     "docs#build": {
       "env": ["BASE_URL", "VERCEL_AUTOMATION_BYPASS_SECRET"],

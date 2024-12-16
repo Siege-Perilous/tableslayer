@@ -3,8 +3,8 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import { config as dconfig } from 'dotenv';
 
 dconfig({ path: '.env' });
-const baseURL = process.env.BASE_URL || 'http://localhost:5174';
-const isVercel = process.env.BASE_URL && !process.env.BASE_URL.includes('localhost');
+const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN || 'http://localhost:5174';
+const isVercel = process.env.RAILWAY_PUBLIC_DOMAIN && !process.env.RAILWAY_PUBLIC_DOMAIN.includes('localhost');
 
 const config: PlaywrightTestConfig = {
   // @ts-expect-error typing

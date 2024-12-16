@@ -20,6 +20,7 @@ declare global {
 
 declare module '$env/static/private' {
   export const GITHUB_PR_NUMBER: string;
+  export const GITHUB_PR_BRANCH: string;
   export const TURSO_API_TOKEN: string;
   export const TURSO_APP_DB_URL: string;
   export const TURSO_APP_DB_AUTH_TOKEN: string;
@@ -28,11 +29,12 @@ declare module '$env/static/private' {
   export const RESEND_TOKEN: string;
   export const DEV_EMAIL: string;
   export const BASE_URL: string;
+  export const RAILWAY_PUBLIC_DOMAIN: string;
   export const CLOUDFLARE_ACCOUNT_ID: string;
   export const CLOUDFLARE_R2_ACCESS_KEY: string;
   export const CLOUDFLARE_R2_SECRET_KEY: string;
   export const CLOUDFLARE_R2_BUCKET_NAME: string;
-  export const VERCEL_ENV: string;
+  export const RAILWAY_ENVIRONMENT_NAME: string;
 }
 
 export {};

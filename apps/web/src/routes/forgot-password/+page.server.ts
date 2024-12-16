@@ -11,7 +11,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { v4 as uuidv4 } from 'uuid';
 import type { Actions, PageServerLoad } from './$types';
 
-const baseURL = process.env.BASE_URL || 'http://localhost:5174';
+const baseURL = process.env.RAILWAY_PUBLIC_DOMAIN || 'http://localhost:5174';
 
 export const load: PageServerLoad = async (event) => {
   if (event.locals.user) {
