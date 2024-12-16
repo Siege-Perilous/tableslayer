@@ -31,8 +31,8 @@
   <form method="POST" enctype="multipart/form-data" action="?/createParty" use:enhance>
     <Field {form} name="name">
       <FSControl label="Party name">
-        {#snippet children({ attrs })}
-          <Input {...attrs} type="text" bind:value={$formData.name} hideAutocomplete />
+        {#snippet content({ props })}
+          <Input {...props} type="text" bind:value={$formData.name} hideAutocomplete />
         {/snippet}
       </FSControl>
       <FieldErrors />
@@ -40,8 +40,8 @@
     <Spacer />
     <Field {form} name="file">
       <FSControl label="Party avatar">
-        {#snippet children({ attrs })}
-          <FileInput {...attrs} type="file" accept="image/png, image/jpeg" bind:files={$file} />
+        {#snippet content({ props })}
+          <FileInput {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
         {/snippet}
       </FSControl>
       <FieldErrors />

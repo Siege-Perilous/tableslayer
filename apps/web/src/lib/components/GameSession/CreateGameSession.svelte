@@ -46,8 +46,8 @@
     <form method="POST" action="?/createGameSession" use:createGameSessionEnhance>
       <Field form={createGameSessionSuperForm} name="name">
         <FSControl label="Session name">
-          {#snippet children({ attrs })}
-            <Input {...attrs} bind:value={$createGameSessionFormData.name} autocomplete="off" />
+          {#snippet content({ props })}
+            <Input {...props} bind:value={$createGameSessionFormData.name} autocomplete="off" />
           {/snippet}
         </FSControl>
       </Field>

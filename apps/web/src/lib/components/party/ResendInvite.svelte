@@ -56,8 +56,16 @@
           <Spacer size={2} />
           <Field form={resendSuperForm} name="email">
             <FSControl>
-              <input type="hidden" name="email" bind:value={$resendForm.email} />
-              <input type="hidden" name="partyId" bind:value={$resendForm.partyId} />
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="email" bind:value={$resendForm.email} />
+              {/snippet}
+            </FSControl>
+          </Field>
+          <Field form={resendSuperForm} name="partyId">
+            <FSControl>
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="partyId" bind:value={$resendForm.partyId} />
+              {/snippet}
             </FSControl>
           </Field>
           <Text size="0.875rem" color="var(--fgMuted)"
@@ -75,8 +83,16 @@
           <Spacer size={2} />
           <Field form={removeSuperForm} name="email">
             <FSControl>
-              <input type="hidden" name="email" bind:value={$removeForm.email} />
-              <input type="hidden" name="partyId" bind:value={$removeForm.partyId} />
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="email" bind:value={$removeForm.email} />
+              {/snippet}
+            </FSControl>
+          </Field>
+          <Field form={removeSuperForm} name="partyId">
+            <FSControl>
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="partyId" bind:value={$removeForm.partyId} />
+              {/snippet}
             </FSControl>
           </Field>
           <Text size="0.875rem" color="var(--fgMuted)">Any previous email invites sent will no longer work</Text>

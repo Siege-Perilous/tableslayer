@@ -4,15 +4,17 @@
   import { Icon } from '../';
 </script>
 
-<FieldErrors asChild let:errors let:errorAttrs>
-  <ul class="fieldErrors" {...errorAttrs}>
-    {#each errors as err}
-      <li class="fieldError" {...errorAttrs}>
-        <Icon Icon={IconX} class="fieldErrorIcon" />
-        {err}
-      </li>
-    {/each}
-  </ul>
+<FieldErrors>
+  {#snippet children({ errors, errorProps })}
+    <ul class="fieldErrors">
+      {#each errors as err}
+        <li class="fieldError" {...errorProps}>
+          <Icon Icon={IconX} class="fieldErrorIcon" />
+          {err}
+        </li>
+      {/each}
+    </ul>
+  {/snippet}
 </FieldErrors>
 
 <style>

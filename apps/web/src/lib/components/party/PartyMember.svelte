@@ -89,9 +89,9 @@
             <!-- Bind directly to the form field -->
             <Field form={changeMemberRoleSuperForm} name="role">
               <FSControl>
-                {#snippet children({ attrs })}
+                {#snippet content({ props })}
                   <Select
-                    {...attrs}
+                    {...props}
                     options={roleOptions}
                     name="role"
                     defaultSelected={defaultRole}
@@ -120,13 +120,13 @@
         <form method="POST" action="?/removePartyMember" use:removeMemberEnhance>
           <Field form={removeMemberSuperForm} name="userId">
             <FSControl>
-              {#snippet children({ attrs })}
-                <input {...attrs} type="hidden" name="userId" value={$removeMemberForm.userId} />
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="userId" value={$removeMemberForm.userId} />
               {/snippet}
             </FSControl>
             <FSControl>
-              {#snippet children({ attrs })}
-                <input {...attrs} type="hidden" name="partyId" value={$removeMemberForm.partyId} />
+              {#snippet content({ props })}
+                <input {...props} type="hidden" name="partyId" value={$removeMemberForm.partyId} />
               {/snippet}
             </FSControl>
           </Field>
