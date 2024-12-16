@@ -1,8 +1,7 @@
 import { dev } from '$app/environment';
-import { DEV_EMAIL, RESEND_TOKEN } from '$env/static/private';
 import { Resend } from 'resend';
 
-const resend = new Resend(RESEND_TOKEN);
+const resend = new Resend(process.env.RESEND_TOKEN!);
 
 interface EmailOptions {
   to: string;
@@ -12,7 +11,7 @@ interface EmailOptions {
 }
 
 export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, subject, html }: EmailOptions) => {
-  const recipient = dev ? DEV_EMAIL : to;
+  const recipient = dev ? process.env.DEV_EMAIL! : to;
   console.log('Sending email to', recipient, 'from', from);
   try {
     await resend.emails.send({

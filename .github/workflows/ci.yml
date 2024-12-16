@@ -33,7 +33,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
       - run: pnpm tsc
-
   create_database:
     if: github.event.pull_request.draft == false
     name: 'Turso'
@@ -143,13 +142,23 @@ jobs:
           echo "turso_db_url=$TURSO_APP_DB_URL" >> $GITHUB_OUTPUT
           echo "TURSO_APP_DB_URL=${TURSO_APP_DB_URL}" >> $GITHUB_ENV
 
-  deploy:
+  fly_deploy:
     if: github.event.pull_request.draft == false
-    name: Vercel
     runs-on: ubuntu-latest
     needs: [create_database]
+
     env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_REGION: ${{ secrets.FLY_REGION }}
+      FLY_ORG: ${{ secrets.FLY_ORG }}
       TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
+
+    # Only run one deployment at a time per PR.
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}
+
+    # Create a GitHub deployment environment per staging app so it shows up
+    # in the pull request UI.
     steps:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
@@ -168,10 +177,10 @@ jobs:
           edit-mode: replace
           body: |
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - In Progress 🚀
+            ### Fly Preview Deployments - In Progress 🚀
 
-            - Docs Deployment is in progress...
-            - Web Deployment is in progress...
+            - Docs preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring)
+            - Web preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring)
           create-when-empty: true
       - name: Find Comment
         uses: peter-evans/find-comment@v3
@@ -180,126 +189,31 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
-      - name: Checkout repository
-        uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+      - name: Generate .env File
+        run: |
+          cat <<EOF > apps/web/.env
+          TURSO_APP_DB_URL=${{ needs.create_database.outputs.turso_db_url }}
+          TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }}
+          TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
+          TURSO_GS_PARENT_DB_URL=${{ secrets.TURSO_GS_PARENT_DB_URL }}
+          TURSO_GS_PARENT_DB_AUTH_TOKEN=${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
+          RESEND_TOKEN=${{ secrets.RESEND_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+          CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+          CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          ENV_NAME=preview
+          GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
+          EOF
+      - name: Deploy docs
+        id: deploydocs
+        uses: superfly/fly-pr-review-apps@1.3.0
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-      - uses: ./.github/shared
-      - name: Install Vercel
-        run: pnpm install -g vercel@latest
-      - name: Link Vercel Project - Web
-        working-directory: apps/web
-        run: |
-          vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
-      # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
-      - name: Remove Environment Variable for Web Project in Vercel
-        working-directory: apps/web
-        run: |
-          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
-          vercel env rm GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
-
-      # Set Environment Variable for Web Project in Vercel with Git Branch Scope
-      - name: Set Environment Variable for Web Project in Vercel
-        working-directory: apps/web
-        run: |
-          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
-          printf '%s' "${{ github.event.pull_request.number }}" | vercel env add GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
-
-      # Deploy Docs
-      - id: deploy-docs
-        name: Deploy to Vercel - Docs
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
-        run: |
-          vercel deploy \
-            --no-wait \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            > deploy_url_docs.txt
-
-      - name: Wait for Docs Deployment
-        id: wait-for-docs
-        run: |
-          vercel inspect \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --wait \
-            --timeout=10m \
-            $(cat deploy_url_docs.txt)
-
-      - name: Get Docs Deployment URL
-        id: get-url-docs
-        if: success()
-        run: |
-          echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
-          echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
-
-      - name: Alias Docs Deployment
-        if: success()
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
-            docs-preview-${{ github.event.pull_request.number }}.vercel.app
-
-      - name: Update PR Comment After Docs Deployment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - In Progress 🚀
-
-            - Docs Deployment completed successfully: [View Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
-            - Web Deployment is in progress...
-
-      # Deploy Web
-      - id: deploy-web
-        name: Deploy to Vercel - Web (with Turso DB)
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          VERCEL_GIT_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
-        run: |
-          vercel deploy \
-            --no-wait \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --env TURSO_APP_DB_URL='${{ needs.create_database.outputs.turso_db_url }}' \
-            --env VERCEL_GIT_PULL_REQUEST_ID='${{ github.event.pull_request.number }}' \
-            > deploy_url_web.txt
-
-      - name: Wait for Web Deployment
-        id: wait-for-web
-        run: |
-          vercel inspect \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --wait \
-            --timeout=10m \
-            $(cat deploy_url_web.txt)
-
-      - name: Get Web Deployment URL
-        id: get-url-web
-        if: success()
-        run: |
-          echo "Web Deploy URL: $(cat deploy_url_web.txt)"
-          echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
-
-      - name: Alias Web Deployment
-        if: success()
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
-            web-preview-${{ github.event.pull_request.number }}.vercel.app
-
+          #  secrets: TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }} TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }} TURSO_APP_DB_URL=${{ needs.create_database.outputs.turso_db_url }} TURSO_GS_PARENT_DB_URL=${{ secrets.TURSO_GS_PARENT_DB_URL }} TURSO_GS_PARENT_DB_AUTH_TOKEN=${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }} RESEND_TOKEN=${{ secrets.RESEND_TOKEN }} CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }} CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }} CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }} CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }} ENV_NAME=preview BASE_URL=${{ steps.deploy.outputs.url }} GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
+          name: pr-${{ github.event.pull_request.number }}-docs
+          config: fly.docs.toml
       - name: Update PR Comment After Web Deployment
         uses: peter-evans/create-or-update-comment@v3
         with:
@@ -309,11 +223,30 @@ jobs:
           edit-mode: replace
           body: |
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - Completed ✅
+            ### Fly Preview Deployments - Completed ✅
 
-            - Docs preview at [Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
-            - Web preview at [Web Preview](https://web-preview-${{ github.event.pull_request.number }}.vercel.app)
+            - [Docs preview](https://pr-${{ github.event.pull_request.number }}-docs.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
+            - Web preview is in progress...
+      - name: Deploy Web
+        id: deployweb
+        uses: superfly/fly-pr-review-apps@1.3.0
+        with:
+          #  secrets: TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }} TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }} TURSO_APP_DB_URL=${{ needs.create_database.outputs.turso_db_url }} TURSO_GS_PARENT_DB_URL=${{ secrets.TURSO_GS_PARENT_DB_URL }} TURSO_GS_PARENT_DB_AUTH_TOKEN=${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }} RESEND_TOKEN=${{ secrets.RESEND_TOKEN }} CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }} CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }} CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }} CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }} ENV_NAME=preview BASE_URL=${{ steps.deploy.outputs.url }} GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
+          name: pr-${{ github.event.pull_request.number }}-web
+          config: fly.web.toml
+      - name: Update PR Comment After Web Deployment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
+            ### Fly Preview Deployments - Completed ✅
 
+            - [Docs preview](https://pr-${{ github.event.pull_request.number }}-docs.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring)
+            - [Web preview](https://pr-${{ github.event.pull_request.number }}-web.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring)
       # Update PR Comment After Failure
       - name: Update PR Comment After Failure
         if: failure()
@@ -325,13 +258,14 @@ jobs:
           edit-mode: replace
           body: |
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - Failed ❌
+            ### Fly Preview Deployments - Failed ❌
 
-            - Deployment failed. Please check the logs for more details.
+            - [Inspect docs preview](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring).
+            - [Inspect web preview](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring).
 
   tests:
     if: github.event.pull_request.draft == false
-    needs: [format-check, lint, tsc, create_database, deploy]
+    needs: [format-check, lint, tsc, create_database, fly_deploy]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -342,8 +276,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Display deployment status
-        run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
         run: pnpx playwright install --with-deps
@@ -351,8 +283,7 @@ jobs:
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: https://${{ matrix.app }}-preview-${{ github.event.pull_request.number }}.vercel.app
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          BASE_URL: https://pr-${{ github.event.pull_request.number }}-${{ matrix.app }}.fly.dev
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
           pnpm run test

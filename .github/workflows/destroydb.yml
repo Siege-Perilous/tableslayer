@@ -10,28 +10,11 @@ permissions:
 
 jobs:
   destroy_resources:
-    name: Destroy Vercel Deployment and Turso Database
+    name: Destroy Turso Database
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Install Vercel
-        run: pnpm install -g vercel@latest
-      - name: Get Preview URL
-        uses: dlip/get-vercel-deployment-action@v1.0.2
-        id: get-vercel-deployment
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          github-branch: ${{ github.head_ref }}
-          github-commit: ${{ github.event.pull_request.head.sha }}
-
-      - name: Destroy Vercel Deployment
-        working-directory: apps/web
-        run: |
-          vercel remove https://${{ steps.get-vercel-deployment.outputs.deployment-url }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
-
       - name: Install jq
         run: sudo apt-get install -y jq
 

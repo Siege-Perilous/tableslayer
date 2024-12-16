@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import { verifyArgonHash } from '../../lib/utils/hash';
 
 export const load: PageServerLoad = async (event) => {
+  console.log('Turso url is: ' + process.env.TURSO_APP_DB_URL);
   if (event.locals.user) {
     return redirect(302, '/profile');
   }
