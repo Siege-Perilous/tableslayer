@@ -15,6 +15,11 @@ export const load: PageServerLoad = async ({ parent, params }) => {
   const scenes = await getScenes(gameSession.dbName);
   const createSceneForm = await superValidate(zod(createSceneSchema));
   const deleteSceneForm = await superValidate(zod(deleteSceneSchema));
+
+  // check if activeSceneNumber is valid
+  if (activeSceneNumber < 1 || activeSceneNumber > scenes.length) {
+    activeSceneNumber = 1;
+  }
   const activeScene = await getSceneFromOrder(gameSession.dbName, activeSceneNumber);
 
   return { createSceneForm, scenes, activeSceneNumber, activeScene, deleteSceneForm };

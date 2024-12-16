@@ -1,9 +1,17 @@
 <script lang="ts">
   let { data } = $props();
-  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
+  import {
+    Stage,
+    type StageExports,
+    type StageProps,
+    DrawMode,
+    ToolType,
+    MapLayerType,
+    PingEditMode
+  } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
-  import { StageDefaultProps } from '../../../../../lib/utils';
+  import { StageDefaultProps, buildSceneProps } from '$lib/utils';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
   import { onMount } from 'svelte';
@@ -11,19 +19,40 @@
 
   let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
 
-  const stageProps: StageProps = $state(StageDefaultProps);
+  let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
+  let stageElement: HTMLDivElement | undefined = $state();
+  let activeControl = $state('none');
+
+  const handleSelectActiveControl = (control: string) => {
+    if (control === activeControl) {
+      activeControl = 'none';
+      stageProps.activeLayer = MapLayerType.None;
+    } else {
+      activeControl = control;
+      stageProps.activeLayer = MapLayerType.FogOfWar;
+    }
+  };
+
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.0005;
+
+  $effect(() => {
+    stageProps = buildSceneProps(data.activeScene);
+    stageIsLoading = true;
+
+    const interval = setInterval(() => {
+      if (stage) {
+        stageIsLoading = false;
+        stage.scene.fit();
+        clearInterval(interval);
+      }
+    }, 50);
+  });
   let stage: StageExports;
 
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
-  }
-
-  // @ts-expect-error undefined for now
-  let scenesPane: PaneAPI = $state(undefined);
-  // @ts-expect-error undefined for now
-  let controlsPane: PaneAPI = $state(undefined);
+  let scenesPane: PaneAPI = $state(undefined)!;
+  let controlsPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let isControlsCollapsed = $state(false);
 
@@ -59,6 +88,16 @@
     Object.assign(stageProps, newProps);
   };
 
+  function onBrushSizeUpdated(brushSize: number) {
+    stageProps.fogOfWar.brushSize = brushSize;
+  }
+
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    stageProps.map.offset.x = offset.x;
+    stageProps.map.offset.y = offset.y;
+    stageProps.map.zoom = zoom;
+  }
+
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
@@ -67,6 +106,34 @@
 
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
+  }
+
+  function onMouseMove(e: MouseEvent) {
+    if (!(e.buttons === 1 || e.buttons === 2)) return;
+
+    if (e.shiftKey) {
+      stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
+      stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
+    } else if (e.ctrlKey) {
+      stageProps.scene.offset.x += e.movementX;
+      stageProps.scene.offset.y -= e.movementY;
+    }
+  }
+
+  function onWheel(e: WheelEvent) {
+    let scrollDelta;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      scrollDelta = e.deltaX * zoomSensitivity;
+    } else {
+      scrollDelta = e.deltaY * zoomSensitivity;
+    }
+
+    if (e.shiftKey) {
+      stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    } else if (e.ctrlKey) {
+      e.preventDefault();
+      stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    }
   }
 
   let stageIsLoading = $state(true);
@@ -78,6 +145,139 @@
         clearInterval(interval);
       }
     }, 50);
+
+    if (stageElement) {
+      stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('wheel', onWheel, { passive: false });
+
+      stageElement.addEventListener(
+        'contextmenu',
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+    }
+    document.addEventListener('keydown', (event) => {
+      const { activeLayer, fogOfWar, ping } = stageProps;
+
+      switch (event.key) {
+        case 'e':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.RoundBrush
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.RoundBrush;
+            activeControl = 'erase';
+          }
+          break;
+
+        case 'E':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.RoundBrush
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.RoundBrush;
+          }
+          break;
+
+        case 'f':
+          stage.fogOfWar.clear();
+          break;
+
+        case 'F':
+          stage.fogOfWar.reset();
+          break;
+
+        case 'o':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.Ellipse
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.Ellipse;
+          }
+          break;
+
+        case 'O':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.Ellipse
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.Ellipse;
+          }
+          break;
+
+        case 'p':
+          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Remove) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.Ping;
+            ping.editMode = PingEditMode.Remove;
+          }
+          break;
+
+        case 'P':
+          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Add) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.Ping;
+            ping.editMode = PingEditMode.Add;
+          }
+          break;
+
+        case 'r':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Erase &&
+            fogOfWar.toolType === ToolType.Rectangle
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Erase;
+            fogOfWar.toolType = ToolType.Rectangle;
+          }
+          break;
+
+        case 'R':
+          if (
+            activeLayer === MapLayerType.FogOfWar &&
+            fogOfWar.drawMode === DrawMode.Draw &&
+            fogOfWar.toolType === ToolType.Rectangle
+          ) {
+            stageProps.activeLayer = MapLayerType.None;
+          } else {
+            stageProps.activeLayer = MapLayerType.FogOfWar;
+            fogOfWar.drawMode = DrawMode.Draw;
+            fogOfWar.toolType = ToolType.Rectangle;
+          }
+          break;
+
+        case 'Escape':
+          stageProps.activeLayer = MapLayerType.None;
+          break;
+      }
+    });
   });
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 </script>
@@ -111,10 +311,17 @@
     </PaneResizer>
     <Pane defaultSize={70}>
       <div class="stageWrapper">
-        <div class={stageClasses}>
-          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+        <div class={stageClasses} bind:this={stageElement}>
+          <Stage
+            bind:this={stage}
+            props={stageProps}
+            {onBrushSizeUpdated}
+            {onMapUpdate}
+            {onSceneUpdate}
+            {onPingsUpdated}
+          />
         </div>
-        <SceneControls {stageProps} onUpdateStage={updateStage} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
       </div>
     </Pane>
     <PaneResizer class="resizer">

@@ -7,6 +7,7 @@
     items,
     footer,
     defaultItem,
+    value,
     onValueChange,
     positioning = { placement: 'bottom' }
   }: RadioMenuProps = $props();
@@ -28,7 +29,8 @@
   } = createMenuRadioGroup({
     defaultValue: defaultItem.value,
     // @ts-expect-error typing issue with unknown type
-    onValueChange
+    onValueChange,
+    value
   });
 
   const handleItemClick = (item: RadioMenuItem) => {

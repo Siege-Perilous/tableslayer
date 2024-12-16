@@ -17,24 +17,32 @@
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
-    IconLayersSelectedBottom,
-    IconLayersSelected,
-    IconEraser,
+    IconPaint,
+    IconPaintFilled,
     IconShadow,
-    IconTexture,
     IconSelector,
     IconMap,
-    IconCloudSnow
+    IconCloudSnow,
+    IconCircle,
+    IconCircleFilled,
+    IconSquare,
+    IconSquareFilled
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
+  import { writable } from 'svelte/store';
 
   let {
     onUpdateStage,
+    handleSelectActiveControl,
+    activeControl = 'none',
     stageProps
-  }: { onUpdateStage: (newProps: Partial<StageProps>) => void; stageProps: StageProps } = $props();
+  }: {
+    onUpdateStage: (newProps: Partial<StageProps>) => void;
+    handleSelectActiveControl: (control: string) => void;
+    activeControl: string;
+    stageProps: StageProps;
+  } = $props();
 
-  let activeControl = $state('none');
-  let activeLayer = $state(0);
   let gridHex = $state(stageProps.grid.lineColor);
   let fogHex = $state(stageProps.fogOfWar.fogColor);
   let tvDiagnalSize = $state(40);
@@ -73,22 +81,6 @@
       mapLayer: MapLayerType.None
     }
   ];
-
-  const handleSelectActiveControl = (control: string) => {
-    if (control === activeControl) {
-      activeControl = 'none';
-      activeLayer = MapLayerType.None;
-    } else {
-      activeControl = control;
-      activeLayer = MapLayerType.FogOfWar;
-    }
-    onUpdateStage({
-      activeLayer,
-      scene: {
-        ...stageProps.scene
-      }
-    });
-  };
 
   // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
@@ -142,27 +134,8 @@
     return { width, height };
   };
 
-  // Example usage with default aspect ratio (16:9):
-  const diagonalSizeDefault = 55; // inches
-  const dimensionsDefault = getTvDimensions(diagonalSizeDefault);
-  console.log(
-    `Default Aspect Ratio (16:9) - Width: ${dimensionsDefault.width.toFixed(
-      2
-    )} inches, Height: ${dimensionsDefault.height.toFixed(2)} inches`
-  );
-
-  // Example usage with a custom aspect ratio (4:3):
-  const diagonalSizeCustom = 55; // inches
-  const customAspectRatio = { width: 4, height: 3 };
-  const dimensionsCustom = getTvDimensions(diagonalSizeCustom, customAspectRatio);
-  console.log(
-    `Custom Aspect Ratio (4:3) - Width: ${dimensionsCustom.width.toFixed(
-      2
-    )} inches, Height: ${dimensionsCustom.height.toFixed(2)} inches`
-  );
-
   const handleSelectedResolution = (selected: TvResolution) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value);
+    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
     onUpdateStage({
       display: {
         ...stageProps.display,
@@ -191,38 +164,75 @@
 
   const eraseOptions = [
     {
-      label: 'Erase fog',
+      label: 'Freehand erase',
       value: 'eraseBrush',
-      icon: IconEraser,
+      icon: IconPaint,
       toolType: ToolType.RoundBrush,
       drawMode: DrawMode.Erase
     },
-    { label: 'Add fog', value: 'addBrush', icon: IconTexture, toolType: ToolType.RoundBrush, drawMode: DrawMode.Draw },
     {
-      label: 'Erase fog area',
+      label: 'Freehand add',
+      value: 'addBrush',
+      icon: IconPaintFilled,
+      toolType: ToolType.RoundBrush,
+      drawMode: DrawMode.Draw
+    },
+    {
+      label: 'Erase rectangle',
       value: 'areaErase',
-      icon: IconLayersSelectedBottom,
+      icon: IconSquare,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Erase
     },
     {
-      label: 'Add fog area',
+      label: 'Add rectangle',
       value: 'areaAdd',
-      icon: IconLayersSelected,
+      icon: IconSquareFilled,
       toolType: ToolType.Rectangle,
+      drawMode: DrawMode.Draw
+    },
+    {
+      label: 'Erase ellipse',
+      value: 'ellipseErase',
+      icon: IconCircle,
+      toolType: ToolType.Ellipse,
+      drawMode: DrawMode.Erase
+    },
+    {
+      label: 'Add ellipse',
+      value: 'ellipsAdd',
+      icon: IconCircleFilled,
+      toolType: ToolType.Ellipse,
       drawMode: DrawMode.Draw
     }
   ];
 
-  let selectedFogTool = $state(eraseOptions[0]);
+  // Set initial state based on current stageProps matching the toolType and drawMode
+  let selectedFogTool = $state(
+    eraseOptions.find(
+      (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+    ) || eraseOptions[0]
+  );
+
+  let selectedFogToolValue = writable(eraseOptions[0].value);
+
+  $effect(() => {
+    selectedFogTool =
+      eraseOptions.find(
+        (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+      ) || eraseOptions[0];
+  });
+
+  $effect(() => {
+    selectedFogToolValue.set(selectedFogTool.value);
+  });
 
   const handleSelectedFogTool = (selected: string) => {
-    const selectedOption = eraseOptions.find((option) => option.value === selected);
-    selectedFogTool = selectedOption;
-    activeLayer = MapLayerType.FogOfWar;
+    const selectedOption = eraseOptions.find((option) => option.value === selected)!;
+    selectedFogTool = selectedOption!;
     activeControl = 'erase';
     onUpdateStage({
-      activeLayer,
+      activeLayer: MapLayerType.FogOfWar,
       scene: {
         ...stageProps.scene
       },
@@ -272,7 +282,8 @@
   <div class="sceneControls">
     <div class="sceneControls__item sceneControls__item--primary">
       <button
-        class="sceneControls__layer {activeControl === 'erase' && 'sceneControls__layer--isActive'}"
+        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
+          'sceneControls__layer--isActive'}"
         onclick={() => handleSelectActiveControl('erase')}
       >
         <Icon Icon={selectedFogTool.icon} size="1.5rem" />
@@ -282,6 +293,7 @@
         defaultItem={eraseOptions[0]}
         items={eraseOptions}
         positioning={{ placement: 'bottom', gutter: 8 }}
+        value={selectedFogToolValue}
         onValueChange={(selected) => handleSelectedFogTool(selected.next)}
       >
         {#snippet trigger()}

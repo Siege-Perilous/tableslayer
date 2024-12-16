@@ -41,6 +41,9 @@
 </script>
 
 <div class={inputClasses}>
+  {#if variant === 'dropzone'}
+    <label class="fileInput__dropZoneLabel" for={restProps.id}><div>Select an image</div></label>
+  {/if}
   <!-- File input for selecting images -->
   <input bind:files {...restProps} type="file" class="fileInput__input" accept="image/png, image/jpeg" />
 
@@ -79,5 +82,42 @@
     max-height: 8rem;
     margin-top: 1rem;
     margin-right: 0.5rem;
+  }
+  .fileInput--dropzone {
+    width: 100%;
+    max-width: 100%;
+    cursor: pointer;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .fileInput--dropzone .fileInput__preview {
+    margin: 0;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+  }
+  .fileInput--dropzone input {
+    visibility: hidden;
+    display: none;
+  }
+  .fileInput--dropzone .fileInput__dropZoneLabel {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    top: 0;
+    left: 0;
+  }
+  .fileInput--dropzone .fileInput__dropZoneLabel div {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-1);
+    font-size: 0.85rem;
   }
 </style>
