@@ -145,7 +145,7 @@ jobs:
 
   deploy:
     if: github.event.pull_request.draft == false
-    name: Vercel
+    name: Railway
     runs-on: ubuntu-latest
     needs: [create_database]
     env:
@@ -168,7 +168,7 @@ jobs:
           edit-mode: replace
           body: |
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - In Progress 🚀
+            ### Railway Preview Deployments - In Progress 🚀
 
             - Docs Deployment is in progress...
             - Web Deployment is in progress...
@@ -186,65 +186,59 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./.github/shared
       - name: Install Vercel
-        run: pnpm install -g vercel@latest
-      - name: Link Vercel Project - Web
-        working-directory: apps/web
+        run: pnpm install -g railway@latest
+      - name: Railway Login
         run: |
-          vercel link --token ${{ secrets.VERCEL_TOKEN }} --yes --scope ${{ secrets.VERCEL_TEAM_ID }}
-      # Remove and Set Environment Variable for Web Project in Vercel with Git Branch Scope
-      - name: Remove Environment Variable for Web Project in Vercel
-        working-directory: apps/web
+          railway auth login --token ${{ secrets.RAILWAY_TOKEN }}
+      - name: Create/Retrieve PR Environment
         run: |
-          vercel env rm TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
-          vercel env rm GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }} --yes || true
+          # Create an environment named pr-<PR_NUMBER> if it doesn't exist
+          # Check if environment exists
+          railway project connect ${{ secrets.RAILWAY_PROJECT_ID }}
+          ENV_NAME="pr-${{ github.event.pull_request.number }}"
+          if ! railway environment list | grep -q "$ENV_NAME"; then
+            railway environment create "$ENV_NAME"
+          fi
+          railway environment switch "$ENV_NAME"
 
-      # Set Environment Variable for Web Project in Vercel with Git Branch Scope
-      - name: Set Environment Variable for Web Project in Vercel
-        working-directory: apps/web
+      - name: Set environment variables
         run: |
-          printf '%s' "${{ needs.create_database.outputs.turso_db_url }}" | vercel env add TURSO_APP_DB_URL preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
-          printf '%s' "${{ github.event.pull_request.number }}" | vercel env add GITHUB_PR_NUMBER preview ${{ github.head_ref }} --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_ID }}
+          railway variables set TURSO_APP_DB_URL=${{ env.TURSO_APP_DB_URL }}
+          railway variables set GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
 
-      # Deploy Docs
-      - id: deploy-docs
-        name: Deploy to Vercel - Docs
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
+      - name: Build and Deploy to Railway
+        # This assumes your build/start scripts are as stated:
+        # `pnpm turbo run web#build` and `pnpm turbo run web#start` internally.
         run: |
-          vercel deploy \
-            --no-wait \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            > deploy_url_docs.txt
+          # If you need to build before deploying, do it here, or rely on Railway's build step.
+          # Typically Railway automatically builds via your Dockerfile or Railway.toml.
+          # If you rely on a build step:
+          pnpm install --frozen-lockfile
+          pnpm turbo run web#build
+          # Deploy
+          railway up --detach --no-confirm
 
-      - name: Wait for Docs Deployment
-        id: wait-for-docs
+      - name: Wait for Deployment to be Ready
+        # Simple polling logic:
         run: |
-          vercel inspect \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --wait \
-            --timeout=10m \
-            $(cat deploy_url_docs.txt)
+          set -e
+          for i in {1..30}; do
+            STATUS=$(railway status | grep "Domain:" || true)
+            if [ -n "$STATUS" ]; then
+              echo "$STATUS"
+              break
+            fi
+            echo "Waiting for domain..."
+            sleep 10
+          done
+          if [ -z "$STATUS" ]; then
+            echo "Deployment not ready in time."
+            exit 1
+          fi
+          DOMAIN=$(echo "$STATUS" | awk '{print $2}')
+          echo "RAILWAY_PUBLIC_DOMAIN=$DOMAIN" >> $GITHUB_OUTPUT
 
-      - name: Get Docs Deployment URL
-        id: get-url-docs
-        if: success()
-        run: |
-          echo "Docs Deploy URL: $(cat deploy_url_docs.txt)"
-          echo "DOCS_DEPLOYMENT_URL=$(cat deploy_url_docs.txt)" >> $GITHUB_OUTPUT
-
-      - name: Alias Docs Deployment
-        if: success()
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-docs.outputs.DOCS_DEPLOYMENT_URL }} \
-            docs-preview-${{ github.event.pull_request.number }}.vercel.app
-
-      - name: Update PR Comment After Docs Deployment
+      - name: Update PR Comment After Deployment
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -252,69 +246,11 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - In Progress 🚀
+            [x]:eyAiYXBwIjogInJhaWx3YXktcHJldmlldyIgfQ==
+            ### Railway Preview Deployment - Completed ✅
 
-            - Docs Deployment completed successfully: [View Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
-            - Web Deployment is in progress...
+            - Preview at [${{ steps.wait-for-deployment.outputs.RAILWAY_PUBLIC_DOMAIN }}](https://${{ steps.wait-for-deployment.outputs.RAILWAY_PUBLIC_DOMAIN }})
 
-      # Deploy Web
-      - id: deploy-web
-        name: Deploy to Vercel - Web (with Turso DB)
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          VERCEL_GIT_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
-        run: |
-          vercel deploy \
-            --no-wait \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --env TURSO_APP_DB_URL='${{ needs.create_database.outputs.turso_db_url }}' \
-            --env VERCEL_GIT_PULL_REQUEST_ID='${{ github.event.pull_request.number }}' \
-            > deploy_url_web.txt
-
-      - name: Wait for Web Deployment
-        id: wait-for-web
-        run: |
-          vercel inspect \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            --wait \
-            --timeout=10m \
-            $(cat deploy_url_web.txt)
-
-      - name: Get Web Deployment URL
-        id: get-url-web
-        if: success()
-        run: |
-          echo "Web Deploy URL: $(cat deploy_url_web.txt)"
-          echo "WEB_DEPLOYMENT_URL=$(cat deploy_url_web.txt)" >> $GITHUB_OUTPUT
-
-      - name: Alias Web Deployment
-        if: success()
-        run: |
-          vercel alias \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }} \
-            ${{ steps.get-url-web.outputs.WEB_DEPLOYMENT_URL }} \
-            web-preview-${{ github.event.pull_request.number }}.vercel.app
-
-      - name: Update PR Comment After Web Deployment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - Completed ✅
-
-            - Docs preview at [Docs Preview](https://docs-preview-${{ github.event.pull_request.number }}.vercel.app)
-            - Web preview at [Web Preview](https://web-preview-${{ github.event.pull_request.number }}.vercel.app)
-
-      # Update PR Comment After Failure
       - name: Update PR Comment After Failure
         if: failure()
         uses: peter-evans/create-or-update-comment@v3
@@ -324,8 +260,8 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Vercel Preview Deployments - Failed ❌
+            [x]:eyAiYXBwIjogInJhaWx3YXktcHJldmlldyIgfQ==
+            ### Railway Preview Deployment - Failed ❌
 
             - Deployment failed. Please check the logs for more details.
 
@@ -342,17 +278,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Display deployment status
-        run: 'echo "The deployment URL is https://${{ steps.get-vercel-deployment.outputs.deployment-url }}"'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Retrieve Railway Domain
+        # If you need the domain from the deploy job:
+        run: |
+          echo "Domain: ${{ needs.deploy.outputs.RAILWAY_PUBLIC_DOMAIN }}"
+
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
         run: pnpx playwright install --with-deps
+
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
-          BASE_URL: https://${{ matrix.app }}-preview-${{ github.event.pull_request.number }}.vercel.app
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          BASE_URL: 'https://${{ needs.deploy.outputs.RAILWAY_PUBLIC_DOMAIN }}'
         run: |
-          echo "BASE_URL is ${{ env.BASE_URL }}"
+          echo "BASE_URL is $BASE_URL"
           pnpm run test
