@@ -1,6 +1,6 @@
 # TableSlayer
 
-Table Slayer provides tools for game masters to project animated battle maps on their digital tabletop. Test
+Table Slayer provides tools for game masters to project animated battle maps on their digital tabletop.
 
 ## Development
 
