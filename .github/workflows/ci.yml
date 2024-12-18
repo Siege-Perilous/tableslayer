@@ -192,18 +192,13 @@ jobs:
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
           # Check if environment exists
-          railway login --browserless
-          railway link -p ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
-          ENV_NAME="pr-${{ github.event.pull_request.number }}"
-          if ! railway environment list | grep -q "$ENV_NAME"; then
-            railway environment create "$ENV_NAME"
-          fi
-          railway environment switch "$ENV_NAME"
+          railway service tableslayer
+          railway up -e ${{ secrets.RAILWAY_WEB_ENV_ID}}
 
       - name: Set environment variables
         run: |
-          railway variables set TURSO_APP_DB_URL=${{ env.TURSO_APP_DB_URL }}
-          railway variables set GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
+          railway variables --set "TURSO_APP_DB_URL=${{ env.TURSO_APP_DB_URL }}"
+          railway variables set "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}"
 
       - name: Build and Deploy to Railway
         run: |
