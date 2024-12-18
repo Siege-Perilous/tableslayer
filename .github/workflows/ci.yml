@@ -187,7 +187,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./.github/shared
       - name: Install Railway
-        run: pnpm install -g railway/cli@latest
+        run: pnpm install -g @railway/cli@latest
       - name: Create/Retrieve PR Environment
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
