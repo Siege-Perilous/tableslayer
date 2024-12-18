@@ -20,7 +20,7 @@ export class Ellipse implements DrawingTool {
     this.context.fill();
   }
 
-  drawOutline(p: THREE.Vector2) {
+  updateOverlay(e: MouseEvent, p: THREE.Vector2) {
     if (!this.origin) return;
 
     const r = this.getRadius(p);

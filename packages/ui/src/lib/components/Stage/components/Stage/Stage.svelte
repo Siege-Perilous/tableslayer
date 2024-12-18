@@ -40,4 +40,15 @@
   <Canvas>
     <Scene bind:this={sceneRef} {props} />
   </Canvas>
+  <div class="fog-tool-overlay"></div>
 </div>
+
+<style scoped>
+  .fog-tool-overlay {
+    position: absolute;
+    background-color: red;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+  }
+</style>

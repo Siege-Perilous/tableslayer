@@ -16,7 +16,7 @@ export class SquareBrush implements DrawingTool, Brush {
     this.context.fillRect(p.x - this.size / 2, p.y - this.size / 2, this.size, this.size);
   }
 
-  drawOutline(p: THREE.Vector2) {
+  updateOverlay(e: MouseEvent, p: THREE.Vector2) {
     this.context.fillRect(p.x - this.size / 2, p.y - this.size / 2, this.size, this.size);
   }
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
   import { getContext, onMount } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
@@ -17,16 +17,16 @@
   const { props, isActive, mapSize }: Props = $props();
 
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
+  const { mainStage, renderStage } = useThrelte();
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D;
-  let imageData: ImageData;
 
   let mesh = $state(new THREE.Mesh());
   let fogMaterial = $state(new THREE.MeshBasicMaterial());
   let fogTexture: THREE.CanvasTexture;
 
-  let drawing: boolean = false;
+  let drawing = false;
   let activeTool: DrawingTool;
 
   // If mouse leaves the drawing area, we need to reset the start position
@@ -56,7 +56,7 @@
         fogMaterial.map = fogTexture;
 
         context.drawImage(image, 0, 0);
-        persistChanges();
+        fogTexture.needsUpdate = true;
       };
     } else if (mapSize.width > 0 && mapSize.height > 0) {
       // Otherwise, start with a blank canvas
@@ -104,7 +104,6 @@
     }
 
     // Save off the image state
-    persistChanges();
     fogTexture.needsUpdate = true;
     drawing = false;
   }
@@ -120,12 +119,7 @@
 
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
-      if (drawing) {
-        // Restore the previous draw state, effectively clearing the outline from the previous frame
-        revertChanges();
-        configureOutlineMode();
-        activeTool.drawOutline(p);
-      }
+      // TODO
     } else {
       // Otherwise, we are using a brush. Paint with the brush when the mouse button is
       // held down and show the outline when the mouse button is up
@@ -143,12 +137,9 @@
         }
 
         activeTool.draw(p);
-        persistChanges();
+        fogTexture.needsUpdate = true;
       } else {
-        // Restore the previous draw state, effectively clearing the outline from the previous frame
-        revertChanges();
-        configureOutlineMode();
-        activeTool.drawOutline(p);
+        activeTool.updateOverlay(e, p);
       }
     }
   }
@@ -172,38 +163,13 @@
     context.strokeStyle = 'black';
   }
 
-  function configureOutlineMode() {
-    context.globalAlpha = 0.5;
-    if (props.drawMode === DrawMode.Draw) {
-      context.globalCompositeOperation = 'source-over';
-      context.fillStyle = 'white';
-      context.strokeStyle = 'white';
-    } else {
-      context.globalCompositeOperation = 'destination-out';
-      context.fillStyle = 'white';
-      context.strokeStyle = 'white';
-    }
-  }
-
-  function persistChanges() {
-    if (canvas && canvas.width > 0 && canvas.height > 0) {
-      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      fogTexture.needsUpdate = true;
-    }
-  }
-
-  function revertChanges() {
-    context.putImageData(imageData, 0, 0);
-    persistChanges();
-  }
-
   /**
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
-    persistChanges();
+    fogTexture.needsUpdate = true;
   }
 
   /**
@@ -212,7 +178,7 @@
   export function resetFog() {
     configureDrawMode();
     context.fillRect(0, 0, canvas.width, canvas.height);
-    persistChanges();
+    fogTexture.needsUpdate = true;
   }
 
   /**

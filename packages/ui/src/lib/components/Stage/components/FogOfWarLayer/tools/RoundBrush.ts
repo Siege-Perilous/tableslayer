@@ -28,9 +28,12 @@ export class RoundBrush implements DrawingTool, Brush {
     this.origin.copy(p);
   }
 
-  drawOutline(p: THREE.Vector2) {
-    this.context.beginPath();
-    this.context.ellipse(p.x, p.y, this.size / 2, this.size / 2, 0, 0, 2 * Math.PI);
-    this.context.fill();
+  updateOverlay(e: MouseEvent) {
+    const toolOverlay: HTMLDivElement | null = document.querySelector('.fog-tool-overlay');
+
+    if (toolOverlay) {
+      toolOverlay.style.left = `${e.clientX}px`;
+      toolOverlay.style.top = `${e.clientY}px`;
+    }
   }
 }

@@ -8,7 +8,7 @@ export interface DrawingTool {
   context: CanvasRenderingContext2D;
   origin?: THREE.Vector2;
   draw(p: THREE.Vector2): void;
-  drawOutline(p: THREE.Vector2): void;
+  updateOverlay(e: MouseEvent, p: THREE.Vector2): void;
 }
 
 export interface Brush {
