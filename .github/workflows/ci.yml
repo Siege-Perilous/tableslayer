@@ -150,7 +150,7 @@ jobs:
     needs: [create_database]
     env:
       TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
@@ -192,7 +192,7 @@ jobs:
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
           # Check if environment exists
-          RAILWAY_TOKEN=${{ secrets.RAILWAY_WEB_PROJECT_ID }} railway link -p ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
+          railway link -p ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
           ENV_NAME="pr-${{ github.event.pull_request.number }}"
           if ! railway environment list | grep -q "$ENV_NAME"; then
             railway environment create "$ENV_NAME"
