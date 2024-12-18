@@ -161,10 +161,13 @@ jobs:
           railway_api_token: ${{ secrets.RAILWAY_API_TOKEN }}
           project_id: ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
           environment_name: 'production'
+          environment_id: ${{ secrets.RAILWAY_WEB_ENV_ID }}
           preview_environment_name: 'pr-${{ github.event.pull_request.number }}'
           environment_variables: '{"TURSO_APP_DB_URL": ${{ env.TURSO_APP_DB_URL }}}'
           branch_name: ${{ github.head_ref }}
           cleanup: 'true'
+      - name: Post deployment info
+        run: echo "Preview deployed at ${{ steps.deploy.outputs.service_domain }}"
   tests:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, deploy]
