@@ -187,12 +187,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./.github/shared
       - name: Install Railway
-        run: pnpm install -g railway@latest
+        run: pnpm install -g railway/cli@latest
       - name: Create/Retrieve PR Environment
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
           # Check if environment exists
-          railway link ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
+          railway link -p ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
           ENV_NAME="pr-${{ github.event.pull_request.number }}"
           if ! railway environment list | grep -q "$ENV_NAME"; then
             railway environment create "$ENV_NAME"
