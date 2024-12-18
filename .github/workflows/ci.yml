@@ -185,7 +185,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
       - uses: ./.github/shared
-      - name: Install Vercel
+      - name: Install Railway
         run: pnpm install -g railway@latest
       - name: Railway Login
         run: |
@@ -207,15 +207,7 @@ jobs:
           railway variables set GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
 
       - name: Build and Deploy to Railway
-        # This assumes your build/start scripts are as stated:
-        # `pnpm turbo run web#build` and `pnpm turbo run web#start` internally.
         run: |
-          # If you need to build before deploying, do it here, or rely on Railway's build step.
-          # Typically Railway automatically builds via your Dockerfile or Railway.toml.
-          # If you rely on a build step:
-          pnpm install --frozen-lockfile
-          pnpm turbo run web#build
-          # Deploy
           railway up --detach --no-confirm
 
       - name: Wait for Deployment to be Ready
