@@ -150,6 +150,7 @@ jobs:
     needs: [create_database]
     env:
       TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
@@ -187,9 +188,6 @@ jobs:
       - uses: ./.github/shared
       - name: Install Railway
         run: pnpm install -g railway@latest
-      - name: Railway Login
-        run: |
-          railway auth login --token ${{ secrets.RAILWAY_TOKEN }}
       - name: Create/Retrieve PR Environment
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
