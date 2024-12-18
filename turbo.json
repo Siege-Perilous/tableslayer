@@ -51,6 +51,11 @@
       "persistent": true,
       "cache": false
     },
+    "docs#start": {
+      "env": ["BASE_URL", "VERCEL_AUTOMATION_BYPASS_SECRET"],
+      "persistent": true,
+      "cache": false
+    },
     "docs#build": {
       "env": ["BASE_URL", "VERCEL_AUTOMATION_BYPASS_SECRET"],
       "outputs": [".svelte-kit/**", ".vercel/**"]
