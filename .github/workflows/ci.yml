@@ -152,105 +152,19 @@ jobs:
       TURSO_APP_DB_URL: ${{ needs.create_database.outputs.turso_db_url }}
       RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fcinitial
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
-      - name: Find or Create Initial PR Comment
-        id: find-or-create-comment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-id: ${{ steps.fcinitial.outputs.comment-id }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
-            ### Railway Preview Deployments - In Progress 🚀
-
-            - Docs Deployment is in progress...
-            - Web Deployment is in progress...
-          create-when-empty: true
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Railway Preview Deploy
+        uses: ayungavis/railway-preview-deploy@v1.0.1
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-      - uses: ./.github/shared
-      - name: Install Railway
-        run: pnpm install -g @railway/cli@latest
-      - name: Create/Retrieve PR Environment
-        run: |
-          # Create an environment named pr-<PR_NUMBER> if it doesn't exist
-          # Check if environment exists
-          railway service tableslayer
-          railway up -e ${{ secrets.RAILWAY_WEB_ENV_ID}}
-
-      - name: Set environment variables
-        run: |
-          railway variables --set "TURSO_APP_DB_URL=${{ env.TURSO_APP_DB_URL }}"
-          railway variables set "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}"
-
-      - name: Build and Deploy to Railway
-        run: |
-          railway up --detach --no-confirm
-
-      - name: Wait for Deployment to be Ready
-        # Simple polling logic:
-        run: |
-          set -e
-          for i in {1..30}; do
-            STATUS=$(railway status | grep "Domain:" || true)
-            if [ -n "$STATUS" ]; then
-              echo "$STATUS"
-              break
-            fi
-            echo "Waiting for domain..."
-            sleep 10
-          done
-          if [ -z "$STATUS" ]; then
-            echo "Deployment not ready in time."
-            exit 1
-          fi
-          DOMAIN=$(echo "$STATUS" | awk '{print $2}')
-          echo "RAILWAY_PUBLIC_DOMAIN=$DOMAIN" >> $GITHUB_OUTPUT
-
-      - name: Update PR Comment After Deployment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogInJhaWx3YXktcHJldmlldyIgfQ==
-            ### Railway Preview Deployment - Completed ✅
-
-            - Preview at [${{ steps.wait-for-deployment.outputs.RAILWAY_PUBLIC_DOMAIN }}](https://${{ steps.wait-for-deployment.outputs.RAILWAY_PUBLIC_DOMAIN }})
-
-      - name: Update PR Comment After Failure
-        if: failure()
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            [x]:eyAiYXBwIjogInJhaWx3YXktcHJldmlldyIgfQ==
-            ### Railway Preview Deployment - Failed ❌
-
-            - Deployment failed. Please check the logs for more details.
-
+          railway_api_token: ${{ secrets.RAILWAY_API_TOKEN }}
+          project_id: ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
+          environment_name: 'production'
+          preview_environment_name: 'pr-${{ github.event.pull_request.number }}'
+          environment_variables: '{"TURSO_APP_DB_URL": ${{ env.TURSO_APP_DB_URL }}}'
+          branch_name: ${{ github.head_ref }}
+          cleanup: 'true'
   tests:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, deploy]
