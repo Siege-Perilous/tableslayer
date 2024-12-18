@@ -194,7 +194,7 @@ jobs:
         run: |
           # Create an environment named pr-<PR_NUMBER> if it doesn't exist
           # Check if environment exists
-          railway project connect ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway project connect ${{ secrets.RAILWAY_WEB_PROJECT_ID }}
           ENV_NAME="pr-${{ github.event.pull_request.number }}"
           if ! railway environment list | grep -q "$ENV_NAME"; then
             railway environment create "$ENV_NAME"
