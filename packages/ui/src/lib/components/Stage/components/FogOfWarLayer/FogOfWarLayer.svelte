@@ -19,12 +19,9 @@
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
   const { renderer } = useThrelte();
 
-  let canvas: OffscreenCanvas;
-  let context: OffscreenCanvasRenderingContext2D;
-
   let mesh = $state(new THREE.Mesh());
   let fogMaterial = $state(new THREE.MeshBasicMaterial());
-  let fogTexture: THREE.CanvasTexture;
+  let fogTexture: THREE.DataTexture;
 
   let drawing = false;
   let activeTool: DrawingTool;
@@ -39,18 +36,22 @@
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
-        canvas = new OffscreenCanvas(image.width, image.height);
-        context = canvas.getContext('2d')!;
-        fogTexture = new THREE.CanvasTexture(canvas);
+        fogTexture = new THREE.DataTexture(
+          new Uint8Array(image.width * image.height * 4).fill(255),
+          image.width,
+          image.height,
+          THREE.RGBAFormat
+        );
         fogMaterial.map = fogTexture;
-        context.drawImage(image, 0, 0);
         fogTexture.needsUpdate = true;
       };
     } else if (mapSize.width > 0 && mapSize.height > 0) {
-      canvas = new OffscreenCanvas(mapSize.width, mapSize.height);
-      context = canvas.getContext('2d')!;
-      fogTexture = new THREE.CanvasTexture(canvas);
-      fogTexture.flipY = false;
+      fogTexture = new THREE.DataTexture(
+        new Uint8Array(mapSize.width * mapSize.height * 4).fill(255),
+        mapSize.width,
+        mapSize.height,
+        THREE.RGBAFormat
+      );
       fogTexture.needsUpdate = true;
       fogMaterial.map = fogTexture;
 
@@ -82,15 +83,9 @@
     activeTool.origin = p;
   }
 
-  function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
+  async function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): Promise<void> {
     if (p) {
-      if (props.drawMode === DrawMode.Erase) {
-        configureClearMode();
-      } else if (props.drawMode === DrawMode.Draw) {
-        configureDrawMode();
-      }
-
-      getTextureData(fogTexture);
+      await getTextureData(fogTexture);
       fogTexture.needsUpdate = true;
     }
 
@@ -99,9 +94,10 @@
   }
 
   // Retrieve modified texture data from GPU
-  function getTextureData(texture: THREE.Texture) {
-    const renderTarget = new THREE.WebGLRenderTarget(texture.image.width, texture.image.height);
-    renderTarget.texture.format = THREE.RGBAFormat;
+  async function getTextureData(texture: THREE.Texture) {
+    const renderTarget = new THREE.WebGLRenderTarget(texture.image.width, texture.image.height, {
+      format: THREE.RGBAFormat
+    });
 
     // Render the texture to the render target
     const quadScene = new THREE.Scene();
@@ -116,10 +112,10 @@
 
     // Read pixels from the render target
     const readData = new Uint8Array(texture.image.width * texture.image.height * 4);
-    renderer.readRenderTargetPixels(renderTarget, 0, 0, texture.image.width, texture.image.height, readData);
+    await renderer.readRenderTargetPixelsAsync(renderTarget, 0, 0, texture.image.width, texture.image.height, readData);
+    fogTexture.image.data = readData;
 
-    const imageData = new ImageData(new Uint8ClampedArray(readData), texture.image.width, texture.image.height);
-    context.putImageData(imageData, 0, 0);
+    console.log(textureToBase64(fogTexture));
   }
 
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -144,12 +140,6 @@
           activeTool.origin = p;
         }
 
-        if (props.drawMode === DrawMode.Erase) {
-          configureClearMode();
-        } else if (props.drawMode === DrawMode.Draw) {
-          configureDrawMode();
-        }
-
         const coords = new THREE.Vector2(p.x - activeTool.size! / 2, mapSize.height - (p.y + activeTool.size! / 2));
 
         renderer.copyTextureToTexture(activeTool.brushTexture!, fogTexture, null, coords);
@@ -163,36 +153,18 @@
     const newBrushSize = props.brushSize + e.deltaY;
     onBrushSizeUpdated(newBrushSize);
   }
-
-  function configureDrawMode() {
-    context.globalAlpha = 1.0;
-    context.globalCompositeOperation = 'source-over';
-    context.fillStyle = 'white';
-    context.strokeStyle = 'white';
-  }
-
-  function configureClearMode() {
-    context.globalAlpha = 1.0;
-    context.globalCompositeOperation = 'destination-out';
-    context.fillStyle = 'black';
-    context.strokeStyle = 'black';
-  }
-
   /**
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
-    configureClearMode();
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    // TODO
   }
 
   /**
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    configureDrawMode();
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    fogTexture.needsUpdate = true;
+    // TODO
   }
 
   /**

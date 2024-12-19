@@ -10,7 +10,14 @@ export class RoundBrush implements DrawingTool, Brush {
     this.size = size;
 
     const brushData = new Uint8Array(size * size * 4);
-    brushData.fill(0);
+
+    for (let i = 0; i < size * size * 4; i += 4) {
+      brushData[i] = 0;
+      brushData[i + 1] = 0;
+      brushData[i + 2] = 0;
+      brushData[i + 3] = 255;
+    }
+
     this.brushTexture = new THREE.DataTexture(
       brushData,
       size,

@@ -10,7 +10,7 @@ export class SquareBrush implements DrawingTool, Brush {
 
     const brushData = new Uint8Array(size * size);
     brushData.fill(255);
-    this.brushTexture = new THREE.DataTexture(brushData, size, size, THREE.RedFormat, THREE.UnsignedByteType);
+    this.brushTexture = new THREE.DataTexture(brushData, size, size, THREE.RGBAFormat, THREE.UnsignedByteType);
   }
 
   updateOverlay(e: MouseEvent) {
