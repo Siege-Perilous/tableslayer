@@ -52,7 +52,11 @@
   });
 </script>
 
+{#snippet attachMaterial()}
+  {material}
+{/snippet}
+
 <!-- Export the material to be used in the parent component -->
 <T is={material} {fragmentShader} {vertexShader} transparent={true} depthTest={false}>
-  <slot ref={material} />
+  {@render attachMaterial()}
 </T>
