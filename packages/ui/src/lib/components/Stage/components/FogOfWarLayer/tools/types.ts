@@ -5,9 +5,9 @@ import { RoundBrush } from './RoundBrush';
 import { SquareBrush } from './SquareBrush';
 
 export interface DrawingTool {
-  context: CanvasRenderingContext2D;
   origin?: THREE.Vector2;
-  draw(p: THREE.Vector2): void;
+  size?: number;
+  brushTexture?: THREE.Texture;
   updateOverlay(e: MouseEvent, p: THREE.Vector2): void;
 }
 

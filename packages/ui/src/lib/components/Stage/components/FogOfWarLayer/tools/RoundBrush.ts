@@ -3,37 +3,32 @@ import type { Brush, DrawingTool } from './types';
 
 export class RoundBrush implements DrawingTool, Brush {
   size: number;
-  context: CanvasRenderingContext2D;
   origin?: THREE.Vector2;
+  brushTexture?: THREE.Texture | undefined;
 
-  constructor(size: number, context: CanvasRenderingContext2D) {
+  constructor(size: number) {
     this.size = size;
-    this.context = context;
-  }
 
-  draw(p: THREE.Vector2) {
-    this.context.lineWidth = this.size;
-    this.context.lineCap = 'round';
+    const brushData = new Uint8Array(size * size * 4);
+    brushData.fill(0);
+    this.brushTexture = new THREE.DataTexture(
+      brushData,
+      size,
+      size,
+      THREE.RGBAFormat,
+      THREE.UnsignedByteType,
+      THREE.Texture.DEFAULT_MAPPING
+    );
 
-    if (!this.origin) {
-      this.origin = p;
-    }
-
-    this.context.beginPath();
-    this.context.moveTo(this.origin.x, this.origin.y);
-    this.context.lineTo(p.x, p.y);
-    this.context.stroke();
-    this.context.closePath();
-
-    this.origin.copy(p);
+    console.log(this.brushTexture);
   }
 
   updateOverlay(e: MouseEvent) {
     const toolOverlay: HTMLDivElement | null = document.querySelector('.fog-tool-overlay');
 
     if (toolOverlay) {
-      toolOverlay.style.left = `${e.clientX}px`;
-      toolOverlay.style.top = `${e.clientY}px`;
+      toolOverlay.style.left = `${e.clientX - this.size / 2}px`;
+      toolOverlay.style.top = `${e.clientY - this.size / 2}px`;
     }
   }
 }

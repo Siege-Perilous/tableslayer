@@ -17,10 +17,10 @@
   const { props, isActive, mapSize }: Props = $props();
 
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
-  const { mainStage, renderStage } = useThrelte();
+  const { renderer } = useThrelte();
 
-  let canvas: HTMLCanvasElement;
-  let context: CanvasRenderingContext2D;
+  let canvas: OffscreenCanvas;
+  let context: OffscreenCanvasRenderingContext2D;
 
   let mesh = $state(new THREE.Mesh());
   let fogMaterial = $state(new THREE.MeshBasicMaterial());
@@ -34,35 +34,24 @@
   // to the new point
   let resetPos = false;
 
-  onMount(() => {
-    // Create a canvas element to draw on
-    canvas = document.createElement('canvas');
-    context = canvas.getContext('2d')!;
-  });
-
   $effect(() => {
-    if (!canvas) return;
-
-    // Dispose of the existing fog texture if there is one
-    fogTexture?.dispose();
-
     if (props.data) {
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
-        canvas.width = image.width;
-        canvas.height = image.height;
+        canvas = new OffscreenCanvas(image.width, image.height);
+        context = canvas.getContext('2d')!;
         fogTexture = new THREE.CanvasTexture(canvas);
         fogMaterial.map = fogTexture;
-
         context.drawImage(image, 0, 0);
         fogTexture.needsUpdate = true;
       };
     } else if (mapSize.width > 0 && mapSize.height > 0) {
-      // Otherwise, start with a blank canvas
-      canvas.width = mapSize.width;
-      canvas.height = mapSize.height;
+      canvas = new OffscreenCanvas(mapSize.width, mapSize.height);
+      context = canvas.getContext('2d')!;
       fogTexture = new THREE.CanvasTexture(canvas);
+      fogTexture.flipY = false;
+      fogTexture.needsUpdate = true;
       fogMaterial.map = fogTexture;
 
       resetFog();
@@ -73,16 +62,16 @@
   $effect(() => {
     switch (props.toolType) {
       case ToolType.RoundBrush:
-        activeTool = new Tool.RoundBrush(props.brushSize, context);
+        activeTool = new Tool.RoundBrush(props.brushSize);
         break;
       case ToolType.SquareBrush:
-        activeTool = new Tool.SquareBrush(props.brushSize, context);
+        activeTool = new Tool.SquareBrush(props.brushSize);
         break;
       case ToolType.Rectangle:
-        activeTool = new Tool.Rectangle(context);
+        activeTool = new Tool.Rectangle();
         break;
       case ToolType.Ellipse:
-        activeTool = new Tool.Ellipse(context);
+        activeTool = new Tool.Ellipse();
         break;
     }
   });
@@ -100,12 +89,37 @@
       } else if (props.drawMode === DrawMode.Draw) {
         configureDrawMode();
       }
-      activeTool.draw(p);
+
+      getTextureData(fogTexture);
+      fogTexture.needsUpdate = true;
     }
 
     // Save off the image state
-    fogTexture.needsUpdate = true;
     drawing = false;
+  }
+
+  // Retrieve modified texture data from GPU
+  function getTextureData(texture: THREE.Texture) {
+    const renderTarget = new THREE.WebGLRenderTarget(texture.image.width, texture.image.height);
+    renderTarget.texture.format = THREE.RGBAFormat;
+
+    // Render the texture to the render target
+    const quadScene = new THREE.Scene();
+    const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const quadMaterial = new THREE.MeshBasicMaterial({ map: texture });
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), quadMaterial);
+    quadScene.add(quad);
+
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(quadScene, quadCamera);
+    renderer.setRenderTarget(null);
+
+    // Read pixels from the render target
+    const readData = new Uint8Array(texture.image.width * texture.image.height * 4);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, texture.image.width, texture.image.height, readData);
+
+    const imageData = new ImageData(new Uint8ClampedArray(readData), texture.image.width, texture.image.height);
+    context.putImageData(imageData, 0, 0);
   }
 
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -136,8 +150,9 @@
           configureDrawMode();
         }
 
-        activeTool.draw(p);
-        fogTexture.needsUpdate = true;
+        const coords = new THREE.Vector2(p.x - activeTool.size! / 2, mapSize.height - (p.y + activeTool.size! / 2));
+
+        renderer.copyTextureToTexture(activeTool.brushTexture!, fogTexture, null, coords);
       } else {
         activeTool.updateOverlay(e, p);
       }
@@ -169,7 +184,6 @@
   export function clearFog() {
     configureClearMode();
     context.clearRect(0, 0, canvas.width, canvas.height);
-    fogTexture.needsUpdate = true;
   }
 
   /**

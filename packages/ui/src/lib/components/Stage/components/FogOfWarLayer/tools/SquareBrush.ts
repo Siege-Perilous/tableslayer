@@ -3,20 +3,22 @@ import type { Brush, DrawingTool } from './types';
 
 export class SquareBrush implements DrawingTool, Brush {
   size: number;
-  context: CanvasRenderingContext2D;
+  brushTexture: THREE.DataTexture;
 
-  constructor(size: number, context: CanvasRenderingContext2D) {
+  constructor(size: number) {
     this.size = size;
-    this.context = context;
+
+    const brushData = new Uint8Array(size * size);
+    brushData.fill(255);
+    this.brushTexture = new THREE.DataTexture(brushData, size, size, THREE.RedFormat, THREE.UnsignedByteType);
   }
 
-  reset() {}
+  updateOverlay(e: MouseEvent) {
+    const toolOverlay: HTMLDivElement | null = document.querySelector('.fog-tool-overlay');
 
-  draw(p: THREE.Vector2) {
-    this.context.fillRect(p.x - this.size / 2, p.y - this.size / 2, this.size, this.size);
-  }
-
-  updateOverlay(e: MouseEvent, p: THREE.Vector2) {
-    this.context.fillRect(p.x - this.size / 2, p.y - this.size / 2, this.size, this.size);
+    if (toolOverlay) {
+      toolOverlay.style.left = `${e.clientX}px`;
+      toolOverlay.style.top = `${e.clientY}px`;
+    }
   }
 }
