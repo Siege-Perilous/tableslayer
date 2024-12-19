@@ -1,12 +1,12 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte, type Size } from '@threlte/core';
-  import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
-  import { getContext, onMount } from 'svelte';
+  import { T, type Size } from '@threlte/core';
+  import { ToolType, type FogOfWarLayerProps } from './types';
+  import { getContext } from 'svelte';
   import { Tool, type DrawingTool } from './tools/types';
-  import { textureToBase64 } from '../../helpers/utils';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
+  import FogOfWarMaterial from '../../materials/FogOfWarMaterial.svelte';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -17,47 +17,17 @@
   const { props, isActive, mapSize }: Props = $props();
 
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
-  const { renderer } = useThrelte();
 
-  let mesh = $state(new THREE.Mesh());
-  let fogMaterial = $state(new THREE.MeshBasicMaterial());
-  let fogTexture: THREE.DataTexture;
-
+  let mesh: THREE.Mesh | undefined = $state();
+  let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
   let activeTool: DrawingTool;
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
   // to the new point
+  let lastPos: THREE.Vector2 | null = null;
   let resetPos = false;
-
-  $effect(() => {
-    if (props.data) {
-      const image = new Image();
-      image.src = props.data;
-      image.onload = () => {
-        fogTexture = new THREE.DataTexture(
-          new Uint8Array(image.width * image.height * 4).fill(255),
-          image.width,
-          image.height,
-          THREE.RGBAFormat
-        );
-        fogMaterial.map = fogTexture;
-        fogTexture.needsUpdate = true;
-      };
-    } else if (mapSize.width > 0 && mapSize.height > 0) {
-      fogTexture = new THREE.DataTexture(
-        new Uint8Array(mapSize.width * mapSize.height * 4).fill(255),
-        mapSize.width,
-        mapSize.height,
-        THREE.RGBAFormat
-      );
-      fogTexture.needsUpdate = true;
-      fogMaterial.map = fogTexture;
-
-      resetFog();
-    }
-  });
 
   // Update the active tool when the tool type changes
   $effect(() => {
@@ -79,47 +49,21 @@
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!p) return;
+
     drawing = true;
     activeTool.origin = p;
   }
 
   async function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): Promise<void> {
-    if (p) {
-      await getTextureData(fogTexture);
-      fogTexture.needsUpdate = true;
-    }
+    if (!p || !material) return;
 
-    // Save off the image state
+    await material.persistChanges();
+    lastPos = null;
     drawing = false;
   }
 
-  // Retrieve modified texture data from GPU
-  async function getTextureData(texture: THREE.Texture) {
-    const renderTarget = new THREE.WebGLRenderTarget(texture.image.width, texture.image.height, {
-      format: THREE.RGBAFormat
-    });
-
-    // Render the texture to the render target
-    const quadScene = new THREE.Scene();
-    const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const quadMaterial = new THREE.MeshBasicMaterial({ map: texture });
-    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), quadMaterial);
-    quadScene.add(quad);
-
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(quadScene, quadCamera);
-    renderer.setRenderTarget(null);
-
-    // Read pixels from the render target
-    const readData = new Uint8Array(texture.image.width * texture.image.height * 4);
-    await renderer.readRenderTargetPixelsAsync(renderTarget, 0, 0, texture.image.width, texture.image.height, readData);
-    fogTexture.image.data = readData;
-
-    console.log(textureToBase64(fogTexture));
-  }
-
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!activeTool) return;
+    if (!activeTool || !material) return;
 
     if (!p) {
       // Mouse is outside canvas, reset the start position
@@ -142,7 +86,13 @@
 
         const coords = new THREE.Vector2(p.x - activeTool.size! / 2, mapSize.height - (p.y + activeTool.size! / 2));
 
-        renderer.copyTextureToTexture(activeTool.brushTexture!, fogTexture, null, coords);
+        if (!lastPos) {
+          lastPos = coords;
+        }
+
+        material.drawPath(activeTool, lastPos, coords);
+
+        lastPos = coords;
       } else {
         activeTool.updateOverlay(e, p);
       }
@@ -172,13 +122,14 @@
    * @return A base-64 string
    */
   export function toBase64(): string {
-    return textureToBase64(fogTexture);
+    // TODO
+    return '';
   }
 </script>
 
 <InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar">
-  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
+  <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

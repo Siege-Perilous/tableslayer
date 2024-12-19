@@ -26,8 +26,6 @@ export class RoundBrush implements DrawingTool, Brush {
       THREE.UnsignedByteType,
       THREE.Texture.DEFAULT_MAPPING
     );
-
-    console.log(this.brushTexture);
   }
 
   updateOverlay(e: MouseEvent) {
