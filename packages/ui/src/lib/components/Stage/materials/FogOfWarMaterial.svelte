@@ -3,6 +3,7 @@
   import { T, useThrelte, type Size } from '@threlte/core';
   import type { FogOfWarLayerProps } from '../components/FogOfWarLayer/types';
   import type { DrawingTool } from '../components/FogOfWarLayer/tools/types';
+  import { onDestroy } from 'svelte';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -12,96 +13,179 @@
   const { props, mapSize }: Props = $props();
   const { renderer } = useThrelte();
 
+  // Create render targets for ping-pong buffer
+  class BufferManager {
+    private renderTargetA: THREE.WebGLRenderTarget;
+    private renderTargetB: THREE.WebGLRenderTarget;
+    private currentTarget: THREE.WebGLRenderTarget;
+    private previousTarget: THREE.WebGLRenderTarget;
+
+    constructor(width: number, height: number) {
+      const options = {
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        wrapS: THREE.ClampToEdgeWrapping,
+        wrapT: THREE.ClampToEdgeWrapping
+      };
+
+      this.renderTargetA = new THREE.WebGLRenderTarget(width, height, options);
+      this.renderTargetB = new THREE.WebGLRenderTarget(width, height, options);
+      this.currentTarget = this.renderTargetA;
+      this.previousTarget = this.renderTargetB;
+    }
+
+    swap() {
+      const temp = this.currentTarget;
+      this.currentTarget = this.previousTarget;
+      this.previousTarget = temp;
+    }
+
+    get current() {
+      return this.currentTarget;
+    }
+    get previous() {
+      return this.previousTarget;
+    }
+
+    resize(width: number, height: number) {
+      this.renderTargetA.setSize(width, height);
+      this.renderTargetB.setSize(width, height);
+    }
+
+    dispose() {
+      this.renderTargetA.dispose();
+      this.renderTargetB.dispose();
+    }
+  }
+
+  // Create drawing shader
+  const drawingShader = new THREE.ShaderMaterial({
+    uniforms: {
+      previousState: { value: null },
+      brushTexture: { value: null },
+      lineStart: { value: new THREE.Vector2() },
+      lineEnd: { value: new THREE.Vector2() },
+      brushSize: { value: 1.0 },
+      textureSize: { value: new THREE.Vector2() },
+      brushColor: { value: new THREE.Color() }
+    },
+    vertexShader: `
+          varying vec2 vUv;
+          void main() {
+              vUv = uv;
+              gl_Position = vec4(position, 1.0);
+          }
+      `,
+    fragmentShader: `
+          uniform sampler2D previousState;
+          uniform vec2 lineStart;
+          uniform vec2 lineEnd;
+          uniform float brushSize;
+          uniform vec2 textureSize;
+          uniform vec3 brushColor;
+          
+          varying vec2 vUv;
+          
+          float distanceToLine(vec2 p, vec2 a, vec2 b) {
+              vec2 pa = p - a;
+              vec2 ba = b - a;
+              float t = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+              return length(pa - ba * t);
+          }
+          
+          void main() {
+              vec2 pixelPos = vUv * textureSize;
+              vec4 prevColor = texture2D(previousState, vUv);
+              
+              float dist = distanceToLine(pixelPos, lineStart, lineEnd);
+              float brushMask = step(dist, brushSize);
+              
+              vec4 brushColorWithAlpha = vec4(brushColor, brushMask);
+              
+              // Alpha blending
+              float finalAlpha = brushColorWithAlpha.a + prevColor.a * (1.0 - brushColorWithAlpha.a);
+              vec3 finalColor = (brushColorWithAlpha.rgb * brushColorWithAlpha.a + 
+                               prevColor.rgb * prevColor.a * (1.0 - brushColorWithAlpha.a)) / 
+                               max(finalAlpha, 0.0001);
+              
+              gl_FragColor = vec4(finalColor, finalAlpha);
+          }
+      `,
+    transparent: true
+  });
+
+  // Initialize state
+  let bufferManager: BufferManager;
+  let drawingScene: THREE.Scene;
+  let drawingCamera: THREE.OrthographicCamera;
   let material = new THREE.MeshBasicMaterial({
     transparent: true,
     color: props.fogColor,
     opacity: props.opacity
   });
 
-  const renderTarget = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, {
-    format: THREE.RGBAFormat
-  });
+  // Setup scenes
+  const setupScenes = () => {
+    bufferManager = new BufferManager(mapSize.width, mapSize.height);
 
-  // Render the texture to the render target
-  const quadScene = new THREE.Scene();
-  const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-  quadScene.add(quad);
+    // Setup drawing scene
+    drawingScene = new THREE.Scene();
+    drawingCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const drawingQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawingShader);
+    drawingScene.add(drawingQuad);
 
+    // Update material with initial render target
+    material.map = bufferManager.current.texture;
+  };
+
+  // Initialize on mount
   $effect(() => {
     if (props.data) {
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
-        material.map = renderTarget.texture;
-        renderTarget.width = image.width;
-        renderTarget.height = image.height;
+        setupScenes();
+        bufferManager.resize(image.width, image.height);
       };
     } else if (mapSize.width > 0 && mapSize.height > 0) {
-      material.map = renderTarget.texture;
-      renderTarget.width = mapSize.width;
-      renderTarget.height = mapSize.height;
+      setupScenes();
+      bufferManager.resize(mapSize.width, mapSize.height);
     }
   });
 
+  // Drawing function
   export function drawPath(tool: DrawingTool, start: THREE.Vector2, end: THREE.Vector2) {
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(quadScene, quadCamera);
+    // Update shader uniforms
+    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    drawingShader.uniforms.lineStart.value.copy(start);
+    drawingShader.uniforms.lineEnd.value.copy(end);
+    drawingShader.uniforms.brushSize.value = tool.size! / 2;
+    drawingShader.uniforms.textureSize.value.set(mapSize.width, mapSize.height);
+    drawingShader.uniforms.brushColor.value.set(props.fogColor || '#ffffff');
+
+    // Render to current target
+    renderer.setRenderTarget(bufferManager.current);
+    renderer.render(drawingScene, drawingCamera);
     renderer.setRenderTarget(null);
 
-    const brushRadius = tool.size! / 2;
+    // Update material's texture
+    material.map = bufferManager.current.texture;
 
-    // Define the target rectangle on the texture, accounting for the brush radius
-    const minX = Math.floor(Math.min(start.x, end.x) - 1.1 * brushRadius);
-    const minY = Math.floor(Math.min(start.y, end.y) - 1.1 * brushRadius);
-    const width = Math.ceil(Math.abs(end.x - start.x) + 2.2 * brushRadius);
-    const height = Math.ceil(Math.abs(end.y - start.y) + 2.2 * brushRadius);
-
-    // Create a temp canvas for the brush operations
-    const tempCanvas = new OffscreenCanvas(width, height);
-    const context = tempCanvas.getContext('2d')!;
-
-    // Read the current sub-rect into the texture
-    const sourceSubRect = new Uint8ClampedArray(width * height * 4);
-    renderer.readRenderTargetPixels(renderTarget, minX, minY, width, height, sourceSubRect);
-
-    const imageData = new ImageData(sourceSubRect, width, height);
-    context.putImageData(imageData, 0, 0);
-
-    // Set the drawing style (brush, color, etc.)
-    context.globalCompositeOperation = 'source-over';
-    context.strokeStyle = 'white'; // Example color; adjust as needed
-    context.lineCap = 'round';
-    context.lineWidth = tool.size!;
-
-    // Translate context so the brush center aligns with the texture region
-    context.translate(0, 0);
-
-    // Draw the stroke
-    context.beginPath();
-    context.moveTo(start.x - minX, start.y - minY); // Start relative to the rect
-    context.lineTo(end.x - minX, end.y - minY); // End relative to the rect
-    context.stroke();
-
-    // Convert the canvas to a Three.js texture
-    const texture = new THREE.CanvasTexture(tempCanvas);
-
-    // Copy the modified section back to the render target
-    renderer.copyTextureToTexture(
-      texture,
-      renderTarget.texture,
-      null,
-      new THREE.Vector2(Math.floor(minX), Math.floor(minY))
-    );
-
-    // Clean up
-    texture.dispose();
+    // Swap buffers for next frame
+    bufferManager.swap();
   }
 
-  // Retrieve modified texture data from GPU
+  // Cleanup on destroy
+  onDestroy(() => {
+    bufferManager?.dispose();
+  });
+
+  // Export persist function (if needed)
   export async function persistChanges() {
-    renderTarget.texture.needsUpdate = true;
-    console.log('persisted');
+    // No need to call needsUpdate anymore
+    console.log('Changes are already persistent in GPU memory');
   }
 </script>
 
@@ -109,7 +193,6 @@
   {material}
 {/snippet}
 
-<!-- Export the material to be used in the parent component -->
 <T is={material} transparent={true} depthTest={false}>
   {@render attachMaterial()}
 </T>
