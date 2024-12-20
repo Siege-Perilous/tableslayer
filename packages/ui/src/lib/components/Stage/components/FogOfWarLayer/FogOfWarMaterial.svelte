@@ -51,6 +51,9 @@
   function setupScenes() {
     bufferManager = new BufferManager(mapSize.width, mapSize.height);
 
+    // Update material with initial render target
+    material.map = bufferManager.current.texture;
+
     // Setup drawing scene
     drawingScene = new THREE.Scene();
     drawingCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -58,11 +61,7 @@
     drawingScene.add(drawingQuad);
 
     // Fill twice, so both buffers are initialized
-    fill(false);
-    fill(false);
-
-    // Update material with initial render target
-    material.map = bufferManager.current.texture;
+    reset();
   }
 
   // Initialize on mount
@@ -80,35 +79,42 @@
     }
   });
 
-  // Simplified reset function
-  export function fill(clear: boolean = false) {
+  /**
+   * Resets the fog of war to fill the entire layer
+   */
+  export function reset() {
     if (!bufferManager) return;
-
-    if (clear) {
-      drawingShader.uniforms.isClearOperation.value = true;
-    } else {
-      drawingShader.uniforms.isResetOperation.value = true;
-    }
-
-    // Render to both buffers
+    drawingShader.uniforms.isResetOperation.value = true;
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    renderer.setRenderTarget(bufferManager.current);
-    renderer.render(drawingScene, drawingCamera);
-
-    bufferManager.swap();
-
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    renderer.setRenderTarget(bufferManager.current);
-    renderer.render(drawingScene, drawingCamera);
-
-    renderer.setRenderTarget(null);
-
-    drawingShader.uniforms.isClearOperation.value = false;
+    bufferManager.render(renderer, drawingScene, drawingCamera, true);
     drawingShader.uniforms.isResetOperation.value = false;
+
+    // Update material with initial render target
+    material.map = bufferManager.current.texture;
+  }
+
+  /**
+   * Clears the fog of war to reveal the entire map underneath
+   */
+  export function clear() {
+    if (!bufferManager) return;
+    drawingShader.uniforms.isClearOperation.value = true;
+    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    bufferManager.render(renderer, drawingScene, drawingCamera, true);
+    drawingShader.uniforms.isClearOperation.value = false;
+
+    // Update material with initial render target
+    material.map = bufferManager.current.texture;
   }
 
   // Drawing function
-  export function drawPath(start: THREE.Vector2, end: THREE.Vector2, size: number, mode: DrawMode) {
+  export function drawPath(
+    start: THREE.Vector2,
+    end: THREE.Vector2,
+    size: number,
+    mode: DrawMode,
+    persist: boolean = false
+  ) {
     // Update shader uniforms
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
     drawingShader.uniforms.lineStart.value.copy(start);
@@ -123,25 +129,17 @@
       drawingShader.uniforms.brushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
-    // Render to current target
-    renderer.setRenderTarget(bufferManager.current);
-    renderer.render(drawingScene, drawingCamera);
-    renderer.setRenderTarget(null);
+    // Always render to show preview
+    bufferManager.render(renderer, drawingScene, drawingCamera, persist);
 
-    // Swap buffers for next frame
-    bufferManager.swap();
+    // Update material with initial render target
+    material.map = bufferManager.current.texture;
   }
 
   // Cleanup on destroy
   onDestroy(() => {
     bufferManager?.dispose();
   });
-
-  // Export persist function (if needed)
-  export async function persistChanges() {
-    // No need to call needsUpdate anymore
-    console.log('Changes are already persistent in GPU memory');
-  }
 </script>
 
 {#snippet attachMaterial()}

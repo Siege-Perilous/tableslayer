@@ -29,16 +29,12 @@
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     if (!p) return;
     drawing = true;
+    drawBrush(p);
   }
 
   async function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): Promise<void> {
     lastPos = null;
     drawing = false;
-  }
-
-  function onMouseLeave(e: MouseEvent, p: THREE.Vector2 | null): void {
-    lastPos = null;
-    console.log('onMouseLeave');
   }
 
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -51,24 +47,26 @@
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
       // TODO
     } else {
-      // Otherwise, we are using a brush. Paint with the brush when the mouse button is
-      // held down and show the outline when the mouse button is up
-      if (!drawing) return;
+      drawBrush(p);
+    }
+  }
 
-      // Flip the y-coordinate to match the canvas coordinate system
-      const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
+  function drawBrush(p: THREE.Vector2) {
+    if (!material) return;
 
-      // If this is the first time the mouse has moved, set the last position to the current position
-      if (!lastPos) {
-        lastPos = coords;
-      }
+    // Flip the y-coordinate to match the canvas coordinate system
+    const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
 
-      // Draw the path between the last position and the current position
-      material.drawPath(lastPos, coords, props.brushSize, props.drawMode);
-
-      // Update the last position to the current position
+    // If this is the first time the mouse has moved, set the last position to the current position
+    if (!lastPos) {
       lastPos = coords;
     }
+
+    // Draw the path between the last position and the current position
+    material.drawPath(lastPos, coords, props.brushSize, props.drawMode, drawing);
+
+    // Update the last position to the current position
+    lastPos = coords;
   }
 
   function onWheel(e: WheelEvent) {
@@ -80,8 +78,7 @@
    */
   export function clearFog() {
     if (!material) return;
-    material.fill(true);
-    material.fill(true);
+    material.clear();
   }
 
   /**
@@ -89,8 +86,7 @@
    */
   export function resetFog() {
     if (!material) return;
-    material.fill(false);
-    material.fill(false);
+    material.reset();
   }
 
   /**
@@ -103,16 +99,7 @@
   }
 </script>
 
-<InputManager
-  {isActive}
-  layerSize={mapSize}
-  target={mesh}
-  {onMouseDown}
-  {onMouseMove}
-  {onMouseLeave}
-  {onMouseUp}
-  {onWheel}
-/>
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar">
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
