@@ -1,4 +1,3 @@
-import { GITHUB_PR_NUMBER, TURSO_API_TOKEN, VERCEL_ENV } from '$env/static/private';
 import { db } from '$lib/db/app';
 import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
@@ -9,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const turso = createClient({
   org: 'snide',
-  token: TURSO_API_TOKEN
+  token: process.env.TURSO_API_TOKEN!
 });
 
 export const getPartyGameSessions = async (partyId: string): Promise<SelectGameSession[]> => {
@@ -44,8 +43,8 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
     const gameSessionId = uuidv4();
     const name = gsName || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
-    const prNumber = GITHUB_PR_NUMBER;
-    const prefix = VERCEL_ENV === 'preview' ? `pr-${prNumber}-gs-child` : 'gs-child';
+    const prBranch = process.env.GITHUB_PR_NUMBER!;
+    const prefix = process.env.ENV_NAME! === 'preview' ? `pr-${prBranch}-gs-child` : 'gs-child';
 
     const existingGameSessions = await getPartyGameSessions(partyId);
 

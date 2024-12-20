@@ -7,6 +7,10 @@
   import { ModeWatcher } from 'mode-watcher';
   import { GlobalLoading } from '$lib/components';
   import { Toast } from '@tableslayer/ui';
+  import { navigating } from '$app/state';
+  if (navigating) {
+    console.log('navigating');
+  }
 </script>
 
 <QueryClientProvider client={queryClient}>
