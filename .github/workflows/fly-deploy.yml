@@ -15,6 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Generate .env File
+        run: |
+          cat <<EOF > apps/web/.env
+          TURSO_APP_DB_URL=${{ secrets.TURSO_APP_DB_URL }}
+          TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }}
+          TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
+          TURSO_GS_PARENT_DB_URL=${{ secrets.TURSO_GS_PARENT_DB_URL }}
+          TURSO_GS_PARENT_DB_AUTH_TOKEN=${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
+          RESEND_TOKEN=${{ secrets.RESEND_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+          CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
+          CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          ENV_NAME=production
+          GITHUB_PR_NUMBER=0
+          EOF
       - name: Deploy fly productions
         run: |
           flyctl deploy --remote-only --config fly.web.toml
