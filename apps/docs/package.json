@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "test:integration": "playwright test",
     "test:unit": "vitest",
-    "postinstall": "svelte-kit sync && pnpm run package"
+    "postinstall": "svelte-kit sync"
   },
   "dependencies": {
     "@tabler/icons-svelte": "^3.26.0",
