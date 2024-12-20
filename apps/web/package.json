@@ -54,8 +54,11 @@
     "paneforge": "^0.0.6",
     "resend": "^4.0.1",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "sveltekit-superforms": "^2.22.0",
     "uuid": "^11.0.3",
+    "vite-sveltekit-node-ws": "^0.0.8",
     "zod": "^3.24.1"
   },
   "devDependencies": {
