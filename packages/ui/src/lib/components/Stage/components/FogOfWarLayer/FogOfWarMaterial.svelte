@@ -1,11 +1,11 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useThrelte, type Size } from '@threlte/core';
-  import { DrawMode, type FogOfWarLayerProps } from '../components/FogOfWarLayer/types';
+  import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy } from 'svelte';
-  import { BufferManager } from './BufferManager';
-  import vertexShader from '../shaders/Drawing.vert?raw';
-  import fragmentShader from '../shaders/Drawing.frag?raw';
+  import { BufferManager } from '../../helpers/BufferManager';
+  import vertexShader from '../../shaders/Drawing.vert?raw';
+  import fragmentShader from '../../shaders/Drawing.frag?raw';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -13,7 +13,7 @@
   }
 
   const { props, mapSize }: Props = $props();
-  const { renderer, invalidate } = useThrelte();
+  const { renderer } = useThrelte();
 
   // Create drawing shader
   const drawingShader = new THREE.ShaderMaterial({
@@ -24,15 +24,12 @@
       lineEnd: { value: new THREE.Vector2() },
       brushSize: { value: 1.0 },
       textureSize: { value: new THREE.Vector2() },
-      brushColor: { value: new THREE.Color() },
+      brushColor: { value: new THREE.Vector4() },
       isClearOperation: { value: false },
-      isResetOperation: { value: false },
-      fogColor: { value: new THREE.Color(props.fogColor) },
-      opacity: { value: props.opacity }
+      isResetOperation: { value: false }
     },
     vertexShader,
-    fragmentShader,
-    transparent: true
+    fragmentShader
   });
 
   // Initialize state
@@ -46,15 +43,8 @@
   });
 
   $effect(() => {
-    drawingShader.uniforms.opacity.value = props.opacity;
-    drawingShader.uniforms.fogColor.value = new THREE.Color(props.fogColor);
-    drawingShader.uniforms.textureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
-    drawingShader.uniforms.isClearOperation.value = false;
-    drawingShader.uniforms.isResetOperation.value = false;
-
-    console.log(props.opacity);
-
-    invalidate();
+    material.color = new THREE.Color(props.fogColor);
+    material.opacity = props.opacity;
   });
 
   // Setup scenes
@@ -94,26 +84,29 @@
   export function fill(clear: boolean = false) {
     if (!bufferManager) return;
 
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-
     if (clear) {
       drawingShader.uniforms.isClearOperation.value = true;
     } else {
       drawingShader.uniforms.isResetOperation.value = true;
     }
 
-    console.log(drawingShader.uniforms.isClearOperation.value, drawingShader.uniforms.isResetOperation.value);
-
     // Render to both buffers
+    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
     renderer.setRenderTarget(bufferManager.current);
     renderer.render(drawingScene, drawingCamera);
+
+    bufferManager.swap();
+
+    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    renderer.setRenderTarget(bufferManager.current);
+    renderer.render(drawingScene, drawingCamera);
+
     renderer.setRenderTarget(null);
 
     drawingShader.uniforms.isClearOperation.value = false;
     drawingShader.uniforms.isResetOperation.value = false;
 
     material.map = bufferManager.current.texture;
-    bufferManager.swap();
   }
 
   // Drawing function
@@ -127,9 +120,9 @@
 
     // Set color based on mode - transparent for erase, fog color for draw
     if (mode === DrawMode.Erase) {
-      drawingShader.uniforms.brushColor.value.set('#000000');
+      drawingShader.uniforms.brushColor.value.set(new THREE.Vector4(0, 0, 0, 0));
     } else {
-      drawingShader.uniforms.brushColor.value.set(props.fogColor || '#ffffff');
+      drawingShader.uniforms.brushColor.value.set(new THREE.Vector4(1, 1, 1, 1));
     }
 
     // Render to current target
@@ -160,6 +153,6 @@
   {material}
 {/snippet}
 
-<T is={material} transparent={true} depthTest={false}>
+<T is={material}>
   {@render attachMaterial()}
 </T>

@@ -3,11 +3,9 @@ uniform vec2 lineStart;
 uniform vec2 lineEnd;
 uniform float brushSize;
 uniform vec2 textureSize;
-uniform vec3 brushColor;
+uniform vec4 brushColor;
 uniform bool isClearOperation;
 uniform bool isResetOperation;
-uniform vec3 fogColor;
-uniform float opacity;
 
 varying vec2 vUv;
 
@@ -21,9 +19,9 @@ float distanceToLine(vec2 p, vec2 a, vec2 b) {
 void main() {
   // If clearing, output transparent
   if(isClearOperation) {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
   } else if(isResetOperation) {
-    gl_FragColor = vec4(fogColor, 1.0);
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
     vec2 pixelPos = vUv * textureSize;
     vec4 prevColor = texture2D(previousState, vUv);
@@ -31,14 +29,14 @@ void main() {
     float dist = distanceToLine(pixelPos, lineStart, lineEnd);
     float brushMask = step(dist, brushSize);
 
-    vec4 brushColorWithAlpha = vec4(brushColor, brushMask);
+    vec4 brushColorWithAlpha = vec4(brushColor.rgb, brushMask * brushColor.a);
 
-  // Alpha blending
+    // Alpha blending
     float finalAlpha = brushColorWithAlpha.a + prevColor.a * (1.0 - brushColorWithAlpha.a);
     vec3 finalColor = (brushColorWithAlpha.rgb * brushColorWithAlpha.a +
       prevColor.rgb * prevColor.a * (1.0 - brushColorWithAlpha.a)) /
       max(finalAlpha, 0.0001);
 
-    gl_FragColor = vec4(finalColor, finalAlpha * opacity);
+    gl_FragColor = vec4(finalColor, finalAlpha);
   }
 }

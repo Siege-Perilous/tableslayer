@@ -14,7 +14,9 @@ export class BufferManager {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       wrapS: THREE.ClampToEdgeWrapping,
-      wrapT: THREE.ClampToEdgeWrapping
+      wrapT: THREE.ClampToEdgeWrapping,
+      depthBuffer: false,
+      alpha: true
     };
 
     this.renderTargetA = new THREE.WebGLRenderTarget(width, height, options);

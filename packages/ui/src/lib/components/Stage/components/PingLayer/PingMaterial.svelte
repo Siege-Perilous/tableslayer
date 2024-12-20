@@ -2,10 +2,10 @@
   import * as THREE from 'three';
   import { T, useTask, useThrelte } from '@threlte/core';
   import { onDestroy } from 'svelte';
-  import vertexShader from '../shaders/PingShader.vert?raw';
-  import fragmentShader from '../shaders/PingShader.frag?raw';
-  import type { PingLayerProps } from '../components/PingLayer/types';
-  import { clippingPlaneStore } from '../helpers/clippingPlaneStore.svelte';
+  import vertexShader from '../../shaders/PingShader.vert?raw';
+  import fragmentShader from '../../shaders/PingShader.frag?raw';
+  import type { PingLayerProps } from './types';
+  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
     props: PingLayerProps;

@@ -5,7 +5,7 @@
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
-  import FogOfWarMaterial from '../../materials/FogOfWarMaterial.svelte';
+  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -38,10 +38,14 @@
 
   function onMouseLeave(e: MouseEvent, p: THREE.Vector2 | null): void {
     lastPos = null;
+    console.log('onMouseLeave');
   }
 
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!material || !p) return;
+    if (!material || !p) {
+      lastPos = null;
+      return;
+    }
 
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
@@ -77,6 +81,7 @@
   export function clearFog() {
     if (!material) return;
     material.fill(true);
+    material.fill(true);
   }
 
   /**
@@ -84,6 +89,7 @@
    */
   export function resetFog() {
     if (!material) return;
+    material.fill(false);
     material.fill(false);
   }
 
