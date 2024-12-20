@@ -37,3 +37,6 @@ yarn-error.log*
 
 # turbo
 .turbo
+
+# embedded dbs
+*.db*
