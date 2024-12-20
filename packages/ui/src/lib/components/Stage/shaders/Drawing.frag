@@ -29,14 +29,6 @@ void main() {
     float dist = distanceToLine(pixelPos, lineStart, lineEnd);
     float brushMask = step(dist, brushSize);
 
-    vec4 brushColorWithAlpha = vec4(brushColor.rgb, brushMask * brushColor.a);
-
-    // Alpha blending
-    float finalAlpha = brushColorWithAlpha.a + prevColor.a * (1.0 - brushColorWithAlpha.a);
-    vec3 finalColor = (brushColorWithAlpha.rgb * brushColorWithAlpha.a +
-      prevColor.rgb * prevColor.a * (1.0 - brushColorWithAlpha.a)) /
-      max(finalAlpha, 0.0001);
-
-    gl_FragColor = vec4(finalColor, finalAlpha);
+    gl_FragColor = mix(prevColor, brushColor, brushMask);
   }
 }

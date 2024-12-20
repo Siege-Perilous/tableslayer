@@ -43,7 +43,7 @@
   });
 
   $effect(() => {
-    material.color = new THREE.Color(props.fogColor);
+    // material.color = new THREE.Color(props.fogColor);
     material.opacity = props.opacity;
   });
 
@@ -105,8 +105,6 @@
 
     drawingShader.uniforms.isClearOperation.value = false;
     drawingShader.uniforms.isResetOperation.value = false;
-
-    material.map = bufferManager.current.texture;
   }
 
   // Drawing function
@@ -116,22 +114,19 @@
     drawingShader.uniforms.lineStart.value.copy(start);
     drawingShader.uniforms.lineEnd.value.copy(end);
     drawingShader.uniforms.brushSize.value = size / 2;
-    drawingShader.uniforms.textureSize.value.set(mapSize.width, mapSize.height);
+    drawingShader.uniforms.textureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
 
     // Set color based on mode - transparent for erase, fog color for draw
     if (mode === DrawMode.Erase) {
-      drawingShader.uniforms.brushColor.value.set(new THREE.Vector4(0, 0, 0, 0));
+      drawingShader.uniforms.brushColor.value = new THREE.Vector4(0, 0, 0, 0);
     } else {
-      drawingShader.uniforms.brushColor.value.set(new THREE.Vector4(1, 1, 1, 1));
+      drawingShader.uniforms.brushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
     // Render to current target
     renderer.setRenderTarget(bufferManager.current);
     renderer.render(drawingScene, drawingCamera);
     renderer.setRenderTarget(null);
-
-    // Update material's texture
-    material.map = bufferManager.current.texture;
 
     // Swap buffers for next frame
     bufferManager.swap();
