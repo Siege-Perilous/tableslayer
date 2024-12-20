@@ -15,8 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
+      - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Install jq
         run: sudo apt-get install -y jq
+      - name: Delete fly instances
+        run: |
+          flyctl destroy pr-${{ github.event.pull_request.number }}-web --yes
+          flyctl destroy pr-${{ github.event.pull_request.number }}-docs --yes
 
       - name: Delete All Turso Databases for the Pull Request
         run: |
