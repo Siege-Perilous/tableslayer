@@ -20,8 +20,10 @@ jobs:
         run: sudo apt-get install -y jq
       - name: Delete fly instances
         run: |
-          flyctl destroy pr-${{ github.event.pull_request.number }}-web --yes
-          flyctl destroy pr-${{ github.event.pull_request.number }}-docs --yes
+          flyctl apps destroy pr-${{ github.event.pull_request.number }}-web --yes
+          flyctl apps destroy pr-${{ github.event.pull_request.number }}-docs --yes
+          env:
+            FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Delete All Turso Databases for the Pull Request
         run: |
