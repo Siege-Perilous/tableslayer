@@ -1,9 +1,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import ws from 'vite-sveltekit-node-ws';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   // @ts-expect-error https://github.com/sveltejs/cli/issues/341
-  plugins: [sveltekit()],
+  plugins: [sveltekit(), ws()],
   server: {
     port: 5174,
     strictPort: false
