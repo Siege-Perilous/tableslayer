@@ -1,9 +1,11 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useThrelte, type Size } from '@threlte/core';
-  import type { FogOfWarLayerProps } from '../components/FogOfWarLayer/types';
-  import type { DrawingTool } from '../components/FogOfWarLayer/tools/types';
+  import { DrawMode, type FogOfWarLayerProps } from '../components/FogOfWarLayer/types';
   import { onDestroy } from 'svelte';
+  import { BufferManager } from './BufferManager';
+  import vertexShader from '../shaders/Drawing.vert?raw';
+  import fragmentShader from '../shaders/Drawing.frag?raw';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -11,54 +13,7 @@
   }
 
   const { props, mapSize }: Props = $props();
-  const { renderer } = useThrelte();
-
-  // Create render targets for ping-pong buffer
-  class BufferManager {
-    private renderTargetA: THREE.WebGLRenderTarget;
-    private renderTargetB: THREE.WebGLRenderTarget;
-    private currentTarget: THREE.WebGLRenderTarget;
-    private previousTarget: THREE.WebGLRenderTarget;
-
-    constructor(width: number, height: number) {
-      const options = {
-        format: THREE.RGBAFormat,
-        type: THREE.UnsignedByteType,
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        wrapS: THREE.ClampToEdgeWrapping,
-        wrapT: THREE.ClampToEdgeWrapping
-      };
-
-      this.renderTargetA = new THREE.WebGLRenderTarget(width, height, options);
-      this.renderTargetB = new THREE.WebGLRenderTarget(width, height, options);
-      this.currentTarget = this.renderTargetA;
-      this.previousTarget = this.renderTargetB;
-    }
-
-    swap() {
-      const temp = this.currentTarget;
-      this.currentTarget = this.previousTarget;
-      this.previousTarget = temp;
-    }
-
-    get current() {
-      return this.currentTarget;
-    }
-    get previous() {
-      return this.previousTarget;
-    }
-
-    resize(width: number, height: number) {
-      this.renderTargetA.setSize(width, height);
-      this.renderTargetB.setSize(width, height);
-    }
-
-    dispose() {
-      this.renderTargetA.dispose();
-      this.renderTargetB.dispose();
-    }
-  }
+  const { renderer, invalidate } = useThrelte();
 
   // Create drawing shader
   const drawingShader = new THREE.ShaderMaterial({
@@ -69,50 +24,14 @@
       lineEnd: { value: new THREE.Vector2() },
       brushSize: { value: 1.0 },
       textureSize: { value: new THREE.Vector2() },
-      brushColor: { value: new THREE.Color() }
+      brushColor: { value: new THREE.Color() },
+      isClearOperation: { value: false },
+      isResetOperation: { value: false },
+      fogColor: { value: new THREE.Color(props.fogColor) },
+      opacity: { value: props.opacity }
     },
-    vertexShader: `
-          varying vec2 vUv;
-          void main() {
-              vUv = uv;
-              gl_Position = vec4(position, 1.0);
-          }
-      `,
-    fragmentShader: `
-          uniform sampler2D previousState;
-          uniform vec2 lineStart;
-          uniform vec2 lineEnd;
-          uniform float brushSize;
-          uniform vec2 textureSize;
-          uniform vec3 brushColor;
-          
-          varying vec2 vUv;
-          
-          float distanceToLine(vec2 p, vec2 a, vec2 b) {
-              vec2 pa = p - a;
-              vec2 ba = b - a;
-              float t = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-              return length(pa - ba * t);
-          }
-          
-          void main() {
-              vec2 pixelPos = vUv * textureSize;
-              vec4 prevColor = texture2D(previousState, vUv);
-              
-              float dist = distanceToLine(pixelPos, lineStart, lineEnd);
-              float brushMask = step(dist, brushSize);
-              
-              vec4 brushColorWithAlpha = vec4(brushColor, brushMask);
-              
-              // Alpha blending
-              float finalAlpha = brushColorWithAlpha.a + prevColor.a * (1.0 - brushColorWithAlpha.a);
-              vec3 finalColor = (brushColorWithAlpha.rgb * brushColorWithAlpha.a + 
-                               prevColor.rgb * prevColor.a * (1.0 - brushColorWithAlpha.a)) / 
-                               max(finalAlpha, 0.0001);
-              
-              gl_FragColor = vec4(finalColor, finalAlpha);
-          }
-      `,
+    vertexShader,
+    fragmentShader,
     transparent: true
   });
 
@@ -126,8 +45,20 @@
     opacity: props.opacity
   });
 
+  $effect(() => {
+    drawingShader.uniforms.opacity.value = props.opacity;
+    drawingShader.uniforms.fogColor.value = new THREE.Color(props.fogColor);
+    drawingShader.uniforms.textureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    drawingShader.uniforms.isClearOperation.value = false;
+    drawingShader.uniforms.isResetOperation.value = false;
+
+    console.log(props.opacity);
+
+    invalidate();
+  });
+
   // Setup scenes
-  const setupScenes = () => {
+  function setupScenes() {
     bufferManager = new BufferManager(mapSize.width, mapSize.height);
 
     // Setup drawing scene
@@ -136,9 +67,13 @@
     const drawingQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawingShader);
     drawingScene.add(drawingQuad);
 
+    // Fill twice, so both buffers are initialized
+    fill(false);
+    fill(false);
+
     // Update material with initial render target
     material.map = bufferManager.current.texture;
-  };
+  }
 
   // Initialize on mount
   $effect(() => {
@@ -155,15 +90,47 @@
     }
   });
 
+  // Simplified reset function
+  export function fill(clear: boolean = false) {
+    if (!bufferManager) return;
+
+    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+
+    if (clear) {
+      drawingShader.uniforms.isClearOperation.value = true;
+    } else {
+      drawingShader.uniforms.isResetOperation.value = true;
+    }
+
+    console.log(drawingShader.uniforms.isClearOperation.value, drawingShader.uniforms.isResetOperation.value);
+
+    // Render to both buffers
+    renderer.setRenderTarget(bufferManager.current);
+    renderer.render(drawingScene, drawingCamera);
+    renderer.setRenderTarget(null);
+
+    drawingShader.uniforms.isClearOperation.value = false;
+    drawingShader.uniforms.isResetOperation.value = false;
+
+    material.map = bufferManager.current.texture;
+    bufferManager.swap();
+  }
+
   // Drawing function
-  export function drawPath(tool: DrawingTool, start: THREE.Vector2, end: THREE.Vector2) {
+  export function drawPath(start: THREE.Vector2, end: THREE.Vector2, size: number, mode: DrawMode) {
     // Update shader uniforms
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
     drawingShader.uniforms.lineStart.value.copy(start);
     drawingShader.uniforms.lineEnd.value.copy(end);
-    drawingShader.uniforms.brushSize.value = tool.size! / 2;
+    drawingShader.uniforms.brushSize.value = size / 2;
     drawingShader.uniforms.textureSize.value.set(mapSize.width, mapSize.height);
-    drawingShader.uniforms.brushColor.value.set(props.fogColor || '#ffffff');
+
+    // Set color based on mode - transparent for erase, fog color for draw
+    if (mode === DrawMode.Erase) {
+      drawingShader.uniforms.brushColor.value.set('#000000');
+    } else {
+      drawingShader.uniforms.brushColor.value.set(props.fogColor || '#ffffff');
+    }
 
     // Render to current target
     renderer.setRenderTarget(bufferManager.current);

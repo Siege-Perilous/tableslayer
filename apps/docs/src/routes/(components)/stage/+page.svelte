@@ -39,8 +39,7 @@
   };
 
   const toolTypeOptions: ListOptions<number> = {
-    RoundBrush: ToolType.RoundBrush,
-    SquareBrush: ToolType.SquareBrush,
+    Brush: ToolType.Brush,
     Rectangle: ToolType.Rectangle,
     Ellipse: ToolType.Ellipse
   };
@@ -78,12 +77,12 @@
         case 'e':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          stageProps.fogOfWar.toolType = ToolType.Brush;
           break;
         case 'E':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          stageProps.fogOfWar.toolType = ToolType.Brush;
           break;
         case 'f':
           stage.fogOfWar.clear();
@@ -194,7 +193,7 @@
       <li>O - Draw Fog (Ellipse)</li>
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
-      <li>E - Reset Fog</li>
+      <li>F - Reset Fog</li>
       <li>p - Remove Ping</li>
       <li>P - Add Ping</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
@@ -225,8 +224,7 @@
       min={1}
       max={500}
       step={1}
-      disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
-        stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
     />
     <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
