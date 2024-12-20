@@ -276,6 +276,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock') }}
+          restore-keys: |
+            playwright-browsers-${{ runner.os }}-
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
         run: pnpx playwright install --with-deps
