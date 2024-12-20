@@ -18,7 +18,7 @@
 
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
 
-  let mesh: THREE.Mesh | undefined = $state();
+  let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
   let activeTool: DrawingTool;
@@ -84,7 +84,7 @@
           activeTool.origin = p;
         }
 
-        const coords = new THREE.Vector2(p.x - activeTool.size! / 2, mapSize.height - (p.y + activeTool.size! / 2));
+        const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
 
         if (!lastPos) {
           lastPos = coords;
@@ -100,7 +100,7 @@
   }
 
   function onWheel(e: WheelEvent) {
-    const newBrushSize = props.brushSize + e.deltaY;
+    const newBrushSize = Math.max(1, Math.min(props.brushSize + e.deltaY, 1000));
     onBrushSizeUpdated(newBrushSize);
   }
   /**

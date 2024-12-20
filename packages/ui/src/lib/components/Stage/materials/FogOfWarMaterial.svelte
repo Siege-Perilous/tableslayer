@@ -12,15 +12,11 @@
   const { props, mapSize }: Props = $props();
   const { renderer } = useThrelte();
 
-  let fogTexture: THREE.DataTexture;
   let material = new THREE.MeshBasicMaterial({
     transparent: true,
     color: props.fogColor,
     opacity: props.opacity
   });
-
-  const tempCanvas = new OffscreenCanvas(0, 0);
-  const context = tempCanvas.getContext('2d')!;
 
   const renderTarget = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, {
     format: THREE.RGBAFormat
@@ -29,8 +25,7 @@
   // Render the texture to the render target
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const quadMaterial = new THREE.MeshBasicMaterial();
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), quadMaterial);
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
   quadScene.add(quad);
 
   $effect(() => {
@@ -38,93 +33,75 @@
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
-        fogTexture = new THREE.DataTexture(
-          new Uint8Array(image.width * image.height * 4).fill(255),
-          image.width,
-          image.height,
-          THREE.RGBAFormat
-        );
-
-        fogTexture.needsUpdate = true;
-        material.map = fogTexture;
-        quadMaterial.map = fogTexture;
-
+        material.map = renderTarget.texture;
         renderTarget.width = image.width;
         renderTarget.height = image.height;
       };
     } else if (mapSize.width > 0 && mapSize.height > 0) {
-      fogTexture = new THREE.DataTexture(
-        new Uint8Array(mapSize.width * mapSize.height * 4).fill(255),
-        mapSize.width,
-        mapSize.height,
-        THREE.RGBAFormat
-      );
-
-      fogTexture.needsUpdate = true;
-      material.map = fogTexture;
-      quadMaterial.map = fogTexture;
-
+      material.map = renderTarget.texture;
       renderTarget.width = mapSize.width;
       renderTarget.height = mapSize.height;
     }
   });
 
   export function drawPath(tool: DrawingTool, start: THREE.Vector2, end: THREE.Vector2) {
-    // Determine brush size and radius
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(quadScene, quadCamera);
+    renderer.setRenderTarget(null);
+
     const brushRadius = tool.size! / 2;
 
-    // Calculate the dimensions of the intermediate texture, accounting for the brush size
-    const width = Math.abs(end.x - start.x) + 2 * brushRadius;
-    const height = Math.abs(end.y - start.y) + 2 * brushRadius;
+    // Define the target rectangle on the texture, accounting for the brush radius
+    const minX = Math.floor(Math.min(start.x, end.x) - 1.1 * brushRadius);
+    const minY = Math.floor(Math.min(start.y, end.y) - 1.1 * brushRadius);
+    const width = Math.ceil(Math.abs(end.x - start.x) + 2.2 * brushRadius);
+    const height = Math.ceil(Math.abs(end.y - start.y) + 2.2 * brushRadius);
 
-    // Create a canvas for intermediate drawing
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(width);
-    canvas.height = Math.ceil(height);
-    const context = canvas.getContext('2d')!;
+    // Create a temp canvas for the brush operations
+    const tempCanvas = new OffscreenCanvas(width, height);
+    const context = tempCanvas.getContext('2d')!;
+
+    // Read the current sub-rect into the texture
+    const sourceSubRect = new Uint8ClampedArray(width * height * 4);
+    renderer.readRenderTargetPixels(renderTarget, minX, minY, width, height, sourceSubRect);
+
+    const imageData = new ImageData(sourceSubRect, width, height);
+    context.putImageData(imageData, 0, 0);
 
     // Set the drawing style (brush, color, etc.)
-    context.strokeStyle = 'black'; // Example color; adjust as needed
+    context.globalCompositeOperation = 'source-over';
+    context.strokeStyle = 'white'; // Example color; adjust as needed
     context.lineCap = 'round';
-    context.lineWidth = tool.size!; // Brush size
+    context.lineWidth = tool.size!;
 
-    // Translate the context to center the line within the expanded texture
-    context.translate(brushRadius, brushRadius);
+    // Translate context so the brush center aligns with the texture region
+    context.translate(0, 0);
 
-    // Draw the path on the canvas
+    // Draw the stroke
     context.beginPath();
-    context.moveTo(0, 0); // Start point relative to the intermediate texture
-    context.lineTo(end.x - start.x, end.y - start.y); // End point relative to the intermediate texture
+    context.moveTo(start.x - minX, start.y - minY); // Start relative to the rect
+    context.lineTo(end.x - minX, end.y - minY); // End relative to the rect
     context.stroke();
 
     // Convert the canvas to a Three.js texture
-    const texture = new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(tempCanvas);
 
-    // Define the target rectangle on fogTexture for copy, accounting for brush
-    const coords = new THREE.Vector2(Math.min(start.x, end.x), Math.min(start.y, end.y));
+    // Copy the modified section back to the render target
+    renderer.copyTextureToTexture(
+      texture,
+      renderTarget.texture,
+      null,
+      new THREE.Vector2(Math.floor(minX), Math.floor(minY))
+    );
 
-    // Copy the intermediate texture to fogTexture
-    renderer.copyTextureToTexture(texture, fogTexture, null, coords);
-
-    // Clean up if necessary
+    // Clean up
     texture.dispose();
   }
 
   // Retrieve modified texture data from GPU
   export async function persistChanges() {
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(quadScene, quadCamera);
-    renderer.setRenderTarget(null);
-
-    // Read the render target data back into the texture
-    await renderer.readRenderTargetPixelsAsync(
-      renderTarget,
-      0,
-      0,
-      fogTexture.image.width,
-      fogTexture.image.height,
-      fogTexture.image.data
-    );
+    renderTarget.texture.needsUpdate = true;
+    console.log('persisted');
   }
 </script>
 
