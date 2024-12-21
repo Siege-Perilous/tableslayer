@@ -4,3 +4,4 @@ export * from './file';
 export * from './gameSession';
 export * from './party';
 export * from './user';
+export * from './ws';
