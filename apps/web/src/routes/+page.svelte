@@ -16,7 +16,6 @@
   });
 
   const { form: notifyForm, enhance: notifyEnhance, message: notifyMessage } = notifySuperForm;
-  $notifyForm.email = '';
 </script>
 
 <IllustrationOverlook />
