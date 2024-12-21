@@ -26,17 +26,17 @@
   <Text size="1.5rem">Tools to create animated battle maps<br /> for in person RPG games.</Text>
   <Spacer />
   <Hr />
-  <Spacer size={8} />
   {#if user}
     <div>
       <Button href="/profile" class="btn">Dashboard</Button>
     </div>
-  {:else if !dev}
+  {:else if dev}
     <div class="flex">
       <Button href="/login" class="btn">Log in</Button>
       <Button href="/signup" class="btn">Sign up</Button>
     </div>
   {:else if !$notifyMessage || ($notifyMessage && $notifyMessage.type !== 'success')}
+    <Spacer size={8} />
     <Text color="var(--fgMuted)">Interested in joining the beta? Sign up for updates.</Text>
     <Spacer size={4} />
     <form method="POST" action="?/notify" use:notifyEnhance>
