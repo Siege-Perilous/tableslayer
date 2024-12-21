@@ -8,4 +8,5 @@ export type TextProps = {
   weight?: number;
   color?: string;
   style?: string;
+  pretty?: boolean;
 } & HTMLAttributes<HTMLHeadingElement>;

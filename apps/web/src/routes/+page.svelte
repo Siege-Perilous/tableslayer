@@ -1,34 +1,65 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Title, Text, Spacer, Button, Panel } from '@tableslayer/ui';
+  import { Title, Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
   import { IllustrationOverlook } from '$lib/components';
+  import { notifySchema } from '$lib/schemas';
+  import { superForm } from 'sveltekit-superforms/client';
+  import { Field } from 'formsnap';
+  import { zodClient } from 'sveltekit-superforms/adapters';
+  import { MessageError, FieldErrors, Input, FSControl } from '@tableslayer/ui';
+
+  const notifySuperForm = superForm(data.notifyForm, {
+    validators: zodClient(notifySchema),
+    resetForm: true
+  });
+
+  const { form: notifyForm, enhance: notifyEnhance, message: notifyMessage } = notifySuperForm;
 </script>
 
 <IllustrationOverlook />
 
 <Panel class="panel--signup">
-  <Title size="xl" as="h1" class="heroTitle">Table Slayer</Title>
+  <Title as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="2rem">Create digital playmats<br />for in-person tabletop games.</Text>
-  <div class="flex">
-    {#if dev}
-      {#if user}
-        <Button href="/profile" class="btn">Dashboard</Button>
-      {:else}
-        <Button href="/login" class="btn">Log in</Button>
-        <Button href="/signup" class="btn">Sign up</Button>
-      {/if}
-    {:else}
-      <Text size="1.5rem">Coming soon...</Text>
-    {/if}
-  </div>
+  <Text size="1.5rem">Tools to create animated battle maps<br /> for your in person RPG games.</Text>
+  <Spacer />
+  <Hr />
+  <Spacer size={8} />
+  {#if user}
+    <Button href="/profile" class="btn">Dashboard</Button>
+  {:else if !dev}
+    <div class="flex">
+      <Button href="/login" class="btn">Log in</Button>
+      <Button href="/signup" class="btn">Sign up</Button>
+    </div>
+  {:else if !$notifyMessage || ($notifyMessage && $notifyMessage.type !== 'success')}
+    <Text color="var(--fgMuted)">Interested in joining the beta? Sign up for updates.</Text>
+    <Spacer size={4} />
+    <form method="POST" action="?/notify" use:notifyEnhance>
+      <Field form={notifySuperForm} name="email">
+        <FSControl label="Email">
+          {#snippet content({ props })}
+            <Input {...props} type="email" bind:value={$notifyForm.email} data-testid="email" />
+          {/snippet}
+        </FSControl>
+        <FieldErrors />
+      </Field>
+      <Spacer />
+      <Button data-testid="notifySubmit">Add me to the beta</Button>
+    </form>
+  {:else}
+    <Text size="1.5rem">Thanks. We'll contact you soon.</Text>
+  {/if}
+  {#if $notifyMessage}
+    <MessageError message={$notifyMessage} />
+  {/if}
 </Panel>
 
 <style>
   :global(.title.heroTitle) {
-    font-size: 5rem;
+    font-size: 4rem;
     line-height: 1;
     font-weight: 900;
     width: fit-content;
