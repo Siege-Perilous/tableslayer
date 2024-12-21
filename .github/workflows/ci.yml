@@ -179,8 +179,8 @@ jobs:
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Fly Preview Deployments - In Progress 🚀
 
-            - Docs preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring)
-            - Web preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring)
+            - Docs preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
+            - Web preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
           create-when-empty: true
       - name: Find Comment
         uses: peter-evans/find-comment@v3
@@ -245,8 +245,8 @@ jobs:
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Fly Preview Deployments - Completed ✅
 
-            - [Docs preview](https://pr-${{ github.event.pull_request.number }}-docs.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring)
-            - [Web preview](https://pr-${{ github.event.pull_request.number }}-web.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring)
+            - [Docs preview](https://pr-${{ github.event.pull_request.number }}-docs.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
+            - [Web preview](https://pr-${{ github.event.pull_request.number }}-web.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
       # Update PR Comment After Failure
       - name: Update PR Comment After Failure
         if: failure()
@@ -260,8 +260,8 @@ jobs:
             [x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ==
             ### Fly Preview Deployments - Failed ❌
 
-            - [Inspect docs preview](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-docs/monitoring).
-            - [Inspect web preview](https://fly.io/apps/pr-${{ github.event.pull_request_number }}-web/monitoring).
+            - [Inspect docs preview](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring).
+            - [Inspect web preview](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring).
 
   tests:
     if: github.event.pull_request.draft == false
