@@ -159,3 +159,10 @@ export const deleteSceneSchema = z.object({
 
 export type DeleteSceneSchema = typeof deleteSceneSchema;
 export type DeleteSceneFormType = z.infer<typeof deleteSceneSchema>;
+
+export const notifySchema = z.object({
+  email: z.string().email()
+});
+
+export type NotifySchema = typeof notifySchema;
+export type NotifyFormType = z.infer<typeof notifySchema>;
