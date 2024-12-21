@@ -15,7 +15,7 @@
 
 <svelte:head>
   <title>Table Slayer</title>
-  <meta name="description" content="Tools to create animated battle maps for your in person RPG games." />
+  <meta name="description" content="Tools to create animated battle maps for in person RPG games." />
 </svelte:head>
 
 <QueryClientProvider client={queryClient}>

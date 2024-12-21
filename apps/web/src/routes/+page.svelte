@@ -16,6 +16,7 @@
   });
 
   const { form: notifyForm, enhance: notifyEnhance, message: notifyMessage } = notifySuperForm;
+  $notifyForm.email = '';
 </script>
 
 <IllustrationOverlook />
@@ -23,12 +24,14 @@
 <Panel class="panel--signup">
   <Title as="h1" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="1.5rem">Tools to create animated battle maps<br /> for your in person RPG games.</Text>
+  <Text size="1.5rem">Tools to create animated battle maps<br /> for in person RPG games.</Text>
   <Spacer />
   <Hr />
   <Spacer size={8} />
   {#if user}
-    <Button href="/profile" class="btn">Dashboard</Button>
+    <div>
+      <Button href="/profile" class="btn">Dashboard</Button>
+    </div>
   {:else if !dev}
     <div class="flex">
       <Button href="/login" class="btn">Log in</Button>
