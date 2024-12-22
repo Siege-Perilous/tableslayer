@@ -21,11 +21,12 @@
 <IllustrationOverlook />
 
 <Panel class="panel--signup">
-  <Title as="h1" class="heroTitle">Table Slayer</Title>
+  <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
   <Spacer size={8} />
-  <Text size="1.5rem">Tools to create animated battle maps<br /> for in person RPG games.</Text>
+  <Text size="1.5rem">Tools to create animated battle maps for in person RPG games.</Text>
   <Spacer />
   <Hr />
+  <Spacer size={8} />
   {#if user}
     <div>
       <Button href="/profile" class="btn">Dashboard</Button>
@@ -36,7 +37,6 @@
       <Button href="/signup" class="btn">Sign up</Button>
     </div>
   {:else if !$notifyMessage || ($notifyMessage && $notifyMessage.type !== 'success')}
-    <Spacer size={8} />
     <Text color="var(--fgMuted)">Interested in joining the beta? Sign up for updates.</Text>
     <Spacer size={4} />
     <form method="POST" action="?/notify" use:notifyEnhance>
@@ -62,7 +62,7 @@
 <style>
   :global(.title.heroTitle) {
     font-size: 4rem;
-    line-height: 1;
+    line-height: 1.2;
     font-weight: 900;
     width: fit-content;
     /*  color: transparent;  */
@@ -76,6 +76,7 @@
     display: flex;
     flex-direction: column;
     width: fit-content;
+    max-width: 450px;
     padding: var(--size-12);
     margin: 20vh auto auto 10vh;
     position: relative;
@@ -84,7 +85,6 @@
   .flex {
     display: flex;
     gap: var(--size-4);
-    margin-top: var(--size-8);
   }
   :global(.heroTitle) {
     letter-spacing: 0.2rem;
@@ -92,7 +92,7 @@
 
   @media (max-width: 768px) {
     :global(.panel.panel--signup) {
-      margin: 20vh 3rem 0 3rem;
+      margin: 3rem 3rem auto 3rem;
     }
   }
 </style>
