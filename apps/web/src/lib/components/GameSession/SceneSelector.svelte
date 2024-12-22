@@ -1,16 +1,6 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import {
-    Button,
-    FSControl,
-    FileInput,
-    Icon,
-    Spacer,
-    MessageError,
-    ContextMenu,
-    addToast,
-    ToolTip
-  } from '@tableslayer/ui';
+  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
@@ -183,7 +173,6 @@
       <input type="hidden" name="dbName" bind:value={$setActiveSceneData.dbName} />
       <input type="hidden" name="sceneId" bind:value={$setActiveSceneData.sceneId} />
       {#if $setActiveSceneMessage}
-        <Spacer />
         <MessageError message={$setActiveSceneMessage} />
       {/if}
     </form>
@@ -205,7 +194,7 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Make active scene', onclick: () => setActiveScene(scene.id) }
+          { label: 'Set active scene', onclick: () => setActiveScene(scene.id) }
         ]}
       >
         {#snippet trigger()}
@@ -217,12 +206,8 @@
           >
             {#if activeScene && activeScene.id === scene.id}
               <div class="scene__projectedIcon">
-                <ToolTip positioning={{ placement: 'right' }}>
-                  {#snippet toolTipContent()}
-                    This scene is currently active to the players
-                  {/snippet}
-                  <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-                </ToolTip>
+                Active
+                <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
               </div>
             {/if}
             <div class="scene__text">{scene.order} - {scene.name}</div>
@@ -324,14 +309,15 @@
     background: var(--fgPrimary);
     padding: 0.25rem;
     height: 1.5rem;
-    width: 1.5rem;
     display: flex;
+    gap: 0.25rem;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-2);
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+    font-size: 0.85rem;
     z-index: 2;
   }
   .scene__input {

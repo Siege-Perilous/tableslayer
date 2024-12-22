@@ -63,7 +63,7 @@ export const actions: Actions = {
     try {
       const { dbName, sceneId } = setActiveSceneForm.data;
       await setActiveScene(dbName, sceneId);
-      return message(setActiveSceneForm, { type: 'success', text: 'Scene set as active' });
+      return message(setActiveSceneForm, { type: 'success', text: 'Active secene set' });
     } catch (error) {
       console.error('Error setting active scene', error);
       return message(setActiveSceneForm, { type: 'error', text: 'Error setting active scene' }, { status: 400 });

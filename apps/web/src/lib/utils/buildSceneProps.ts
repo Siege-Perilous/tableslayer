@@ -1,8 +1,9 @@
 import { type SelectScene } from '$lib/db/gs/schema';
+import type { Thumb } from '$lib/server';
 import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, ToolType } from '@tableslayer/ui';
 
 // Map activeScene properties to StageProps
-export const buildSceneProps = (activeScene: SelectScene): StageProps => {
+export const buildSceneProps = (activeScene: SelectScene & Thumb): StageProps => {
   return {
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
@@ -46,7 +47,7 @@ export const buildSceneProps = (activeScene: SelectScene): StageProps => {
         y: activeScene.mapOffsetY
       },
       zoom: activeScene.mapZoom,
-      url: activeScene.mapLocation || 'https://files.tableslayer.com/maps/01.jpeg'
+      url: activeScene.thumb.resizedUrl || 'https://files.tableslayer.com/maps/01.jpeg'
     },
     scene: {
       offset: {
