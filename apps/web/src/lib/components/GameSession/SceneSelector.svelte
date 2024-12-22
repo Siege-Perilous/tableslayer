@@ -1,6 +1,16 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast } from '@tableslayer/ui';
+  import {
+    Button,
+    FSControl,
+    FileInput,
+    Icon,
+    Spacer,
+    MessageError,
+    ContextMenu,
+    addToast,
+    ToolTip
+  } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
@@ -207,7 +217,12 @@
           >
             {#if activeScene && activeScene.id === scene.id}
               <div class="scene__projectedIcon">
-                <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+                <ToolTip positioning={{ placement: 'right' }}>
+                  {#snippet toolTipContent()}
+                    This scene is currently active to the players
+                  {/snippet}
+                  <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+                </ToolTip>
               </div>
             {/if}
             <div class="scene__text">{scene.order} - {scene.name}</div>
