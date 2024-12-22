@@ -167,3 +167,10 @@ export const SetActiveSceneSchema = z.object({
 
 export type SetActiveSceneSchema = typeof SetActiveSceneSchema;
 export type SetActiveSceneFormType = z.infer<typeof SetActiveSceneSchema>;
+
+export const notifySchema = z.object({
+  email: z.string().email()
+});
+
+export type NotifySchema = typeof notifySchema;
+export type NotifyFormType = z.infer<typeof notifySchema>;
