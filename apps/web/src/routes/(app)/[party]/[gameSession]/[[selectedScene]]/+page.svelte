@@ -17,9 +17,18 @@
   import { onMount } from 'svelte';
   import classNames from 'classnames';
 
-  let { scenes, gameSession, activeSceneNumber, activeScene, deleteSceneForm, party } = $derived(data);
+  let {
+    scenes,
+    gameSession,
+    selectedSceneNumber,
+    selectedScene,
+    deleteSceneForm,
+    party,
+    activeScene,
+    setActiveSceneForm
+  } = $derived(data);
 
-  let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
+  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
 
@@ -38,7 +47,7 @@
   const zoomSensitivity = 0.0005;
 
   $effect(() => {
-    stageProps = buildSceneProps(data.activeScene);
+    stageProps = buildSceneProps(data.selectedScene);
     stageIsLoading = true;
 
     const interval = setInterval(() => {
@@ -76,8 +85,8 @@
   };
 
   $effect(() => {
-    if (activeScene && hasThumb(activeScene) && activeScene.thumb) {
-      stageProps.map.url = `${activeScene.thumb.resizedUrl}?cors=1`;
+    if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
+      stageProps.map.url = `${selectedScene.thumb.resizedUrl}?cors=1`;
     } else {
       // You can clear or reset the map URL here when there's no thumb
       stageProps.map.url = StageDefaultProps.map.url;
@@ -295,10 +304,12 @@
     >
       <SceneSelector
         {deleteSceneForm}
-        {activeSceneNumber}
+        {selectedSceneNumber}
         {gameSession}
         {scenes}
         {party}
+        {activeScene}
+        {setActiveSceneForm}
         createSceneForm={data.createSceneForm}
       />
     </Pane>

@@ -159,3 +159,11 @@ export const deleteSceneSchema = z.object({
 
 export type DeleteSceneSchema = typeof deleteSceneSchema;
 export type DeleteSceneFormType = z.infer<typeof deleteSceneSchema>;
+
+export const SetActiveSceneSchema = z.object({
+  dbName: z.string(),
+  sceneId: z.string()
+});
+
+export type SetActiveSceneSchema = typeof SetActiveSceneSchema;
+export type SetActiveSceneFormType = z.infer<typeof SetActiveSceneSchema>;
