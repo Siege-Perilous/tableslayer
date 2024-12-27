@@ -27,7 +27,7 @@ void main() {
     vec4 prevColor = texture2D(previousState, vUv);
 
     float dist = distanceToLine(pixelPos, lineStart, lineEnd);
-    float brushMask = step(dist, brushSize);
+    float brushMask = smoothstep(brushSize + 2.0, brushSize, dist);
 
     gl_FragColor = mix(prevColor, brushColor, brushMask);
   }

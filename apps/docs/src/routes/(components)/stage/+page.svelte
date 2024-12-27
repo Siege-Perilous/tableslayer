@@ -76,13 +76,19 @@
       switch (event.key) {
         case 'e':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Brush;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Brush
+          };
           break;
         case 'E':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Brush;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Brush
+          };
           break;
         case 'f':
           stage.fogOfWar.clear();
@@ -92,13 +98,19 @@
           break;
         case 'o':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Ellipse
+          };
           break;
         case 'O':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Ellipse
+          };
           break;
         case 'p':
           stageProps.activeLayer = MapLayerType.Ping;
@@ -110,13 +122,18 @@
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
-          break;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Rectangle
+          };
         case 'R':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Rectangle
+          };
           break;
         case 'Escape':
           stageProps.activeLayer = MapLayerType.None;

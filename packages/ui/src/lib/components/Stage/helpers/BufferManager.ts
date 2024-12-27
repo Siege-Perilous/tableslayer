@@ -2,8 +2,10 @@ import * as THREE from 'three';
 
 // Create render targets for ping-pong buffer
 export class BufferManager {
+  private renderer: THREE.WebGLRenderer;
   private renderTargetA: THREE.WebGLRenderTarget;
   private renderTargetB: THREE.WebGLRenderTarget;
+  private onRender?: (current: THREE.WebGLRenderTarget) => void;
   current: THREE.WebGLRenderTarget;
   previous: THREE.WebGLRenderTarget;
 
@@ -12,7 +14,12 @@ export class BufferManager {
    * @param width - The width of the buffers
    * @param height - The height of the buffers
    */
-  constructor(width: number, height: number) {
+  constructor(
+    renderer: THREE.WebGLRenderer,
+    width: number,
+    height: number,
+    onRender?: (current: THREE.WebGLRenderTarget) => void
+  ) {
     const options = {
       format: THREE.RGBAFormat,
       type: THREE.UnsignedByteType,
@@ -24,41 +31,35 @@ export class BufferManager {
       alpha: true
     };
 
+    this.renderer = renderer;
     this.renderTargetA = new THREE.WebGLRenderTarget(width, height, options);
     this.renderTargetB = new THREE.WebGLRenderTarget(width, height, options);
     this.current = this.renderTargetA;
     this.previous = this.renderTargetB;
+    this.onRender = onRender;
   }
 
   /**
    * Swaps the current and previous buffers
    */
-  swap() {
+  persistChanges() {
     const temp = this.current;
     this.current = this.previous;
     this.previous = temp;
-    console.log('swap');
   }
 
   /**
    * Renders both buffers with the current state
-   * @param renderer - The renderer to use
    * @param scene - The scene to render
    * @param camera - The camera to render
    * @param persist - Whether to persist the changes to both buffers
    */
-  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, persist: boolean = false) {
+  render(scene: THREE.Scene, camera: THREE.Camera) {
     // First render to current buffer
-    renderer.setRenderTarget(this.current);
-    renderer.render(scene, camera);
-
-    // Optionally render to previous buffer to persist changes
-    if (persist) {
-      this.swap();
-    }
-
-    // Reset render target
-    renderer.setRenderTarget(null);
+    this.renderer.setRenderTarget(this.current);
+    this.renderer.render(scene, camera);
+    this.onRender?.(this.current);
+    this.renderer.setRenderTarget(null);
   }
 
   /**

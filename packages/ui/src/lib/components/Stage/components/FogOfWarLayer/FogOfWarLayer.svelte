@@ -27,52 +27,49 @@
   let lastPos: THREE.Vector2 | null = null;
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!p) return;
     drawing = true;
-    drawBrush(p);
+    draw(p);
   }
 
-  async function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): Promise<void> {
+  function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
     lastPos = null;
     drawing = false;
   }
 
   function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!material || !p) {
-      lastPos = null;
-      return;
-    }
-
-    // When using shapes, draw the shape outline while the mouse button is held down
-    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
-      // TODO
-    } else {
-      drawBrush(p);
-    }
-  }
-
-  function drawBrush(p: THREE.Vector2) {
-    if (!material) return;
-
-    // Flip the y-coordinate to match the canvas coordinate system
-    const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
-
-    // If this is the first time the mouse has moved, set the last position to the current position
-    if (!lastPos) {
-      lastPos = coords;
-    }
-
-    // Draw the path between the last position and the current position
-    material.drawPath(lastPos, coords, props.brushSize, props.drawMode, drawing);
-
-    // Update the last position to the current position
-    lastPos = coords;
+    draw(p);
   }
 
   function onWheel(e: WheelEvent) {
     const newBrushSize = Math.max(1, Math.min(props.brushSize + e.deltaY, 1000));
     onBrushSizeUpdated(newBrushSize);
   }
+
+  function draw(p: THREE.Vector2 | null) {
+    if (!p) {
+      lastPos = null;
+      material?.discardChanges();
+      return;
+    }
+
+    // Flip the y-coordinate to match the canvas coordinate system
+    const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
+
+    // If this is the first time the mouse has moved, set the last position to the current position
+    if (!lastPos) {
+      lastPos = coords.clone();
+    }
+
+    // When using shapes, draw the shape outline while the mouse button is held down
+    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
+      // TODO
+    } else {
+      material?.drawPath(coords, lastPos, drawing);
+    }
+
+    lastPos = coords.clone();
+  }
+
   /**
    * Clears all fog, revealing the entire map underneath
    */
