@@ -54,7 +54,7 @@ export interface StageExports {
   fogOfWar: {
     clear: () => void;
     reset: () => void;
-    toBase64: () => string;
+    toBase64: () => string | null;
   };
   map: {
     fit: () => void;

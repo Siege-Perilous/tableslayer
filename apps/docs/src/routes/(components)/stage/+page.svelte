@@ -14,9 +14,10 @@
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
 
-  const stageProps: StageProps = $state(StageDefaultProps);
+  let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
+  // svelte-ignore state_referenced_locally
   let mapUrl = $state(stageProps.map.url);
 
   const minZoom = 0.1;
@@ -127,6 +128,7 @@
             drawMode: DrawMode.Erase,
             toolType: ToolType.Rectangle
           };
+          break;
         case 'R':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar = {
@@ -245,9 +247,8 @@
     />
     <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog" />
-    <Button on:click={() => stage.fogOfWar.clear()} title="Reveal All" />
-    <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
+    <Button on:click={() => stage.fogOfWar.reset()} title="Reset" />
+    <Button on:click={() => stage.fogOfWar.clear()} title="Clear" />
   </Folder>
 
   <Folder title="Grid" expanded={false}>
@@ -299,6 +300,22 @@
     <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
     <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
   </Folder>
+
+  <Button
+    on:click={() => {
+      stageProps.fogOfWar.data = stage.fogOfWar.toBase64();
+      localStorage.setItem('stageProps', JSON.stringify(stageProps));
+      alert('Props saved');
+    }}
+    title="Save"
+  />
+  <Button
+    on:click={() => {
+      stageProps = JSON.parse(localStorage.getItem('stageProps') || '{}');
+      alert('Props loaded');
+    }}
+    title="Load"
+  />
 </Pane>
 
 <style>

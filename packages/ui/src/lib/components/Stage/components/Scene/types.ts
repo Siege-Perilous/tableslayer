@@ -17,7 +17,7 @@ export interface SceneExports {
   fogOfWar: {
     clear: () => void;
     reset: () => void;
-    toBase64: () => string;
+    toBase64: () => string | null;
   };
 
   map: {

@@ -44,5 +44,5 @@ export interface FogOfWarLayerProps {
 export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
-  toBase64: () => string;
+  toBase64: () => string | null;
 }

@@ -27,11 +27,22 @@
   let lastPos: THREE.Vector2 | null = null;
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
+    lastPos = flipY(p);
     drawing = true;
     draw(p);
   }
 
   function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
+    const coords = flipY(p);
+
+    // If using shapes, draw the shape outline when the mouse button is released
+    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
+      if (coords && drawing) {
+        material?.drawPath(coords, lastPos, true);
+      }
+    }
+
+    // Reset the drawing state
     lastPos = null;
     drawing = false;
   }
@@ -46,28 +57,38 @@
   }
 
   function draw(p: THREE.Vector2 | null) {
-    if (!p) {
-      lastPos = null;
-      material?.discardChanges();
-      return;
-    }
-
-    // Flip the y-coordinate to match the canvas coordinate system
-    const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
-
-    // If this is the first time the mouse has moved, set the last position to the current position
-    if (!lastPos) {
-      lastPos = coords.clone();
-    }
-
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
-      // TODO
-    } else {
-      material?.drawPath(coords, lastPos, drawing);
-    }
+      if (p && drawing) {
+        // Flip the y-coordinate to match the canvas coordinate system
+        const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
 
-    lastPos = coords.clone();
+        material?.drawPath(coords, lastPos);
+      }
+    } else {
+      if (!p) {
+        lastPos = null;
+        material?.discardChanges();
+        return;
+      }
+
+      // Flip the y-coordinate to match the canvas coordinate system
+      const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
+
+      // If this is the first time the mouse has moved, set the last position to the current position
+      if (!lastPos) {
+        lastPos = coords.clone();
+      }
+
+      material?.drawPath(coords, lastPos, drawing);
+
+      lastPos = coords.clone();
+    }
+  }
+
+  function flipY(p: THREE.Vector2 | null): THREE.Vector2 | null {
+    if (!p) return null;
+    return new THREE.Vector2(p.x, mapSize.height - p.y);
   }
 
   /**
@@ -90,9 +111,10 @@
    * Serializes the fog of war image data into a base-64 string
    * @return A base-64 string
    */
-  export function toBase64(): string {
-    // TODO
-    return '';
+  export function toBase64(): string | null {
+    const base64 = material?.toBase64() ?? '';
+    console.log(base64);
+    return base64;
   }
 </script>
 

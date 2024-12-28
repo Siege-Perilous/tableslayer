@@ -20,13 +20,14 @@
     uniforms: {
       previousState: { value: null },
       brushTexture: { value: null },
-      lineStart: { value: new THREE.Vector2() },
-      lineEnd: { value: new THREE.Vector2() },
+      start: { value: new THREE.Vector2() },
+      end: { value: new THREE.Vector2() },
       brushSize: { value: 1.0 },
       textureSize: { value: new THREE.Vector2() },
       brushColor: { value: new THREE.Vector4() },
       isClearOperation: { value: false },
-      isResetOperation: { value: false }
+      isResetOperation: { value: false },
+      shapeType: { value: 0 }
     },
     vertexShader,
     fragmentShader
@@ -52,10 +53,20 @@
   // Initialize on mount
   onMount(() => {
     if (props.data) {
+      console.log('loading image');
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
         bufferManager.resize(image.width, image.height);
+
+        console.log('setting texture');
+
+        const texture = new THREE.Texture(image);
+        drawingShader.uniforms.previousState.value = texture;
+        bufferManager.render(scene, quadCamera);
+        bufferManager.persistChanges();
+
+        material.map = texture;
       };
     }
   });
@@ -74,6 +85,8 @@
     material.color = new THREE.Color(props.fogColor);
     material.opacity = props.opacity;
     drawingShader.uniforms.brushSize.value = props.brushSize / 2;
+    drawingShader.uniforms.shapeType.value = props.toolType;
+
     if (props.drawMode === DrawMode.Erase) {
       drawingShader.uniforms.brushColor.value = new THREE.Vector4(0, 0, 0, 0);
     } else {
@@ -81,7 +94,6 @@
     }
 
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    bufferManager.render(scene, quadCamera);
   });
 
   export function discardChanges() {
@@ -125,14 +137,53 @@
     if (!bufferManager) return;
 
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    drawingShader.uniforms.lineStart.value.copy(start);
-    drawingShader.uniforms.lineEnd.value.copy(last ?? start);
+    drawingShader.uniforms.start.value.copy(start);
+    drawingShader.uniforms.end.value.copy(last ?? start);
 
     bufferManager.render(scene, quadCamera);
 
     if (persist) {
       bufferManager.persistChanges();
     }
+  }
+
+  /**
+   * Serializes the current fog of war state to a base64 string
+   * @returns A base64 string representation of the fog of war texture
+   */
+  export function toBase64(): string {
+    if (!bufferManager) return '';
+
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = bufferManager.current.width;
+    canvas.height = bufferManager.current.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    // Read pixels from WebGL render target
+    const pixels = new Uint8Array(4 * bufferManager.current.width * bufferManager.current.height);
+    bufferManager.render(scene, quadCamera);
+
+    renderer.readRenderTargetPixels(
+      bufferManager.previous,
+      0,
+      0,
+      bufferManager.current.width,
+      bufferManager.current.height,
+      pixels
+    );
+
+    // Create ImageData and put on canvas
+    const imageData = new ImageData(
+      new Uint8ClampedArray(pixels),
+      bufferManager.current.width,
+      bufferManager.current.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+
+    // Convert directly to base64
+    return canvas.toDataURL();
   }
 
   // Cleanup on destroy
