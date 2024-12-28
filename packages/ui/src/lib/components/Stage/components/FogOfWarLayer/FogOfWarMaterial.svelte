@@ -34,6 +34,8 @@
     fragmentShader
   });
 
+  const image = new Image();
+
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
   let quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -51,25 +53,6 @@
     material.map.needsUpdate = true;
   });
 
-  onMount(() => {
-    // Does image data already exist?
-    if (props.data) {
-      const image = new Image();
-      image.src = props.data;
-      image.onload = () => {
-        bufferManager.resize(image.width, image.height);
-
-        // TODO: This is currently broken
-        const texture = new THREE.Texture(image);
-        drawingShader.uniforms.previousState.value = texture;
-        bufferManager.render(scene, quadCamera);
-        bufferManager.persistChanges();
-
-        material.map = texture;
-      };
-    }
-  });
-
   // Whenever the map size changes, we need to re-initialize the buffers
   $effect(() => {
     bufferManager.resize(mapSize.width, mapSize.height);
@@ -77,10 +60,31 @@
     reset();
   });
 
+  $effect(() => {
+    // Does image data already exist? Only update if the data has changed
+    // and the map size has been initialized
+    if (props.data && image.src !== props.data && mapSize.width > 0 && mapSize.height > 0) {
+      image.src = props.data;
+      image.onload = () => {
+        bufferManager.resize(image.width, image.height);
+
+        const texture = new THREE.Texture(image);
+        texture.needsUpdate = true; // This is needed to trigger texture upload to GPU
+
+        drawingShader.uniforms.previousState.value = texture;
+        drawingShader.uniforms.isCopyOperation.value = true;
+        bufferManager.render(scene, quadCamera);
+        drawingShader.uniforms.isCopyOperation.value = false;
+
+        bufferManager.persistChanges();
+
+        bufferManager.render(scene, quadCamera);
+      };
+    }
+  });
+
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    console.log('props change detected, updating material');
-
     material.color = new THREE.Color(props.fogColor);
     material.opacity = props.opacity;
     drawingShader.uniforms.brushSize.value = props.brushSize / 2;
@@ -92,10 +96,7 @@
       drawingShader.uniforms.brushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    drawingShader.uniforms.isCopyOperation.value = true;
-    bufferManager.render(scene, quadCamera);
-    drawingShader.uniforms.isCopyOperation.value = false;
+    discardChanges();
   });
 
   export function discardChanges() {
