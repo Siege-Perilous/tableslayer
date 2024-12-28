@@ -26,10 +26,17 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
+  // Whenever the tool type changes, we need to reset the drawing state
+  $effect(() => {
+    const toolType = props.toolType;
+    lastPos = null;
+    drawing = false;
+  });
+
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     lastPos = flipY(p);
     drawing = true;
-    draw(p);
+    draw(e, p);
   }
 
   function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -47,16 +54,12 @@
     drawing = false;
   }
 
-  function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
-    draw(p);
-  }
-
   function onWheel(e: WheelEvent) {
     const newBrushSize = Math.max(1, Math.min(props.brushSize + e.deltaY, 1000));
     onBrushSizeUpdated(newBrushSize);
   }
 
-  function draw(p: THREE.Vector2 | null) {
+  function draw(e: MouseEvent, p: THREE.Vector2 | null) {
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
       if (p && drawing) {
@@ -118,7 +121,7 @@
   }
 </script>
 
-<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onWheel} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar">
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />

@@ -25,6 +25,7 @@
       brushSize: { value: 1.0 },
       textureSize: { value: new THREE.Vector2() },
       brushColor: { value: new THREE.Vector4() },
+      isCopyOperation: { value: false },
       isClearOperation: { value: false },
       isResetOperation: { value: false },
       shapeType: { value: 0 }
@@ -50,17 +51,15 @@
     material.map.needsUpdate = true;
   });
 
-  // Initialize on mount
   onMount(() => {
+    // Does image data already exist?
     if (props.data) {
-      console.log('loading image');
       const image = new Image();
       image.src = props.data;
       image.onload = () => {
         bufferManager.resize(image.width, image.height);
 
-        console.log('setting texture');
-
+        // TODO: This is currently broken
         const texture = new THREE.Texture(image);
         drawingShader.uniforms.previousState.value = texture;
         bufferManager.render(scene, quadCamera);
@@ -75,13 +74,13 @@
   $effect(() => {
     bufferManager.resize(mapSize.width, mapSize.height);
     drawingShader.uniforms.textureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
-
-    // Reset the fog of war to fill the entire layer
     reset();
   });
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
+    console.log('props change detected, updating material');
+
     material.color = new THREE.Color(props.fogColor);
     material.opacity = props.opacity;
     drawingShader.uniforms.brushSize.value = props.brushSize / 2;
@@ -94,6 +93,9 @@
     }
 
     drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    drawingShader.uniforms.isCopyOperation.value = true;
+    bufferManager.render(scene, quadCamera);
+    drawingShader.uniforms.isCopyOperation.value = false;
   });
 
   export function discardChanges() {

@@ -4,6 +4,7 @@ uniform vec2 end;
 uniform float brushSize;
 uniform vec2 textureSize;
 uniform vec4 brushColor;
+uniform bool isCopyOperation;
 uniform bool isClearOperation;
 uniform bool isResetOperation;
 uniform int shapeType;
@@ -39,8 +40,9 @@ float distanceToLine(vec2 p, vec2 a, vec2 b) {
 }
 
 void main() {
-  // If clearing, output transparent
-  if(isClearOperation) {
+  if(isCopyOperation) {
+    gl_FragColor = texture2D(previousState, vUv);
+  } else if(isClearOperation) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
   } else if(isResetOperation) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);

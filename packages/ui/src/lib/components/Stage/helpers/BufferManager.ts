@@ -1,6 +1,15 @@
 import * as THREE from 'three';
 
-// Create render targets for ping-pong buffer
+/**
+ * Manages a double-buffer system for real-time drawing operations.
+ * Uses ping-pong buffering to:
+ * 1. Show live previews without committing changes
+ * 2. Provide smooth transitions between states
+ * 3. Enable easy undo/redo capability
+ *
+ * The 'current' buffer shows the preview/in-progress state
+ * The 'previous' buffer holds the last committed state
+ */
 export class BufferManager {
   private renderer: THREE.WebGLRenderer;
   private renderTargetA: THREE.WebGLRenderTarget;
