@@ -22,6 +22,7 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
+        stage.scene.fit();
         clearInterval(interval);
       }
     }, 50);
@@ -88,10 +89,26 @@
   const randomColor = getRandomColor();
 
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
+
+  $effect(() => {
+    stageIsLoading = true;
+
+    const interval = setInterval(() => {
+      if (stage) {
+        stageIsLoading = false;
+        stage.scene.fit();
+        clearInterval(interval);
+      }
+    }, 50);
+  });
+
+  function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
+    stageProps.scene.zoom = zoom;
+  }
 </script>
 
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} />
+  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} />
 </div>
 {#each Object.values(cursors) as { user, position }}
   <div
@@ -117,6 +134,9 @@
     z-index: 2;
   }
   .stage {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
   }
