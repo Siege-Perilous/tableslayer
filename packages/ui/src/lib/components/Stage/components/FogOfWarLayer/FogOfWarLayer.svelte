@@ -60,6 +60,12 @@
   }
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
+    if (!p) {
+      lastPos = null;
+      material?.discardChanges();
+      return;
+    }
+
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
       if (p && drawing) {
@@ -69,12 +75,6 @@
         material?.drawPath(coords, lastPos);
       }
     } else {
-      if (!p) {
-        lastPos = null;
-        material?.discardChanges();
-        return;
-      }
-
       // Flip the y-coordinate to match the canvas coordinate system
       const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
 
