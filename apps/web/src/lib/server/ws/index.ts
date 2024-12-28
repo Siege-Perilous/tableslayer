@@ -8,7 +8,7 @@ export const initializeSocketIO = (server: any) => {
 
     // Listen for game session updates
     socket.on('updateSession', (data) => {
-      console.log(`Update received for ${socket.nsp.name}:`, data);
+      console.log(`Update received for ${socket.nsp.name}:`);
       socket.nsp.emit('sessionUpdated', data); // Broadcast to namespace
     });
 

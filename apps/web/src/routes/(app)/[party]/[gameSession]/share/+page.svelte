@@ -11,18 +11,10 @@
   const sanitizedId = slugify(data.gameSession.id, { lower: true, strict: true, replacement: '' });
   console.log('activeScene', activeScene);
 
-  $effect(() => {
-    if (activeScene) {
-      stageProps = buildSceneProps(activeScene);
-    }
-  });
-
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading = $state(true);
-
-  $inspect(stageProps);
 
   let cursors = $state({}); // Track cursor positions of all users
 
@@ -30,7 +22,6 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        stage.scene.fit();
         clearInterval(interval);
       }
     }, 50);
@@ -43,6 +34,22 @@
       const position = { x: event.clientX, y: event.clientY };
       socket.emit('cursorMove', { user, position });
     };
+
+    socket.on('sessionUpdated', (data) => {
+      if (data.sceneId === activeScene?.id) {
+        console.log('Updating stage props', data.stageProps);
+        // Update stage props while preserving local state
+
+        stageProps = {
+          ...stageProps,
+          fogOfWar: data.stageProps.fogOfWar,
+          grid: data.stageProps.grid,
+          map: data.stageProps.map,
+          display: data.stageProps.display,
+          ping: data.stageProps.ping
+        };
+      }
+    });
 
     // Listen for cursor updates from other users
     socket.on('cursorUpdate', (data) => {
@@ -80,38 +87,11 @@
   };
   const randomColor = getRandomColor();
 
-  const updateStage = (newProps: Partial<StageProps>) => {
-    Object.assign(stageProps, newProps);
-  };
-
-  function onBrushSizeUpdated(brushSize: number) {
-    stageProps.fogOfWar.brushSize = brushSize;
-  }
-
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
-  }
-
-  function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
-    stageProps.scene.offset.x = offset.x;
-    stageProps.scene.offset.y = offset.y;
-    stageProps.scene.zoom = zoom;
-  }
-
-  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
-    if (!stageProps) {
-      return;
-    }
-    stageProps.ping.locations = updatedLocations;
-  }
-
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 </script>
 
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} />
 </div>
 {#each Object.values(cursors) as { user, position }}
   <div
@@ -137,14 +117,8 @@
     z-index: 2;
   }
   .stage {
-    position: fixed;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    top: 0;
-    left: 0;
   }
   .stage--loading {
     visibility: hidden;

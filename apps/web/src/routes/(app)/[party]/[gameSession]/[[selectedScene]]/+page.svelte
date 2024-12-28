@@ -1,5 +1,7 @@
 <script lang="ts">
   let { data } = $props();
+  import slugify from 'slugify';
+  import { io, type Socket } from 'socket.io-client';
   import {
     Stage,
     type StageExports,
@@ -28,9 +30,47 @@
     setActiveSceneForm
   } = $derived(data);
 
+  let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
+
+  onMount(() => {
+    const sanitizedId = slugify(gameSession.id, { lower: true, strict: true, replacement: '' });
+    socket = io(`ws${location.origin.slice(4)}/gameSession/${sanitizedId}`, {
+      reconnectionDelayMax: 10000
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to game session socket');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from game session socket');
+    });
+
+    return () => {
+      socket?.disconnect();
+    };
+  });
+
+  const broadcastStageUpdate = () => {
+    if (!socket || !activeScene || activeScene.id !== selectedScene.id) return;
+
+    const updateData = {
+      sceneId: selectedScene?.id,
+      stageProps: {
+        fogOfWar: stageProps.fogOfWar,
+        grid: stageProps.grid,
+        map: stageProps.map,
+        scene: stageProps.scene,
+        display: stageProps.display,
+        ping: stageProps.ping
+      }
+    };
+
+    socket.emit('updateSession', updateData);
+  };
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -40,6 +80,7 @@
       activeControl = control;
       stageProps.activeLayer = MapLayerType.FogOfWar;
     }
+    broadcastStageUpdate();
   };
 
   const minZoom = 0.1;
@@ -91,30 +132,36 @@
       // You can clear or reset the map URL here when there's no thumb
       stageProps.map.url = StageDefaultProps.map.url;
     }
+    broadcastStageUpdate();
   });
 
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
+    broadcastStageUpdate();
   };
 
   function onBrushSizeUpdated(brushSize: number) {
     stageProps.fogOfWar.brushSize = brushSize;
+    broadcastStageUpdate();
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
     stageProps.map.zoom = zoom;
+    broadcastStageUpdate();
   }
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
+    broadcastStageUpdate();
   }
 
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
+    broadcastStageUpdate();
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -127,6 +174,7 @@
       stageProps.scene.offset.x += e.movementX;
       stageProps.scene.offset.y -= e.movementY;
     }
+    broadcastStageUpdate();
   }
 
   function onWheel(e: WheelEvent) {
@@ -143,6 +191,7 @@
       e.preventDefault();
       stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
     }
+    broadcastStageUpdate();
   }
 
   let stageIsLoading = $state(true);
@@ -288,6 +337,7 @@
       }
     });
   });
+
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 </script>
 
