@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { BufferManager } from '../../helpers/BufferManager';
   import vertexShader from '../../shaders/Drawing.vert?raw';
   import fragmentShader from '../../shaders/Drawing.frag?raw';

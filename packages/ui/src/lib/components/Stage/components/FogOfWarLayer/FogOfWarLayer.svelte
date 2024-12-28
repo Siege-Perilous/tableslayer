@@ -28,9 +28,10 @@
 
   // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    const toolType = props.toolType;
-    lastPos = null;
-    drawing = false;
+    if (props.toolType) {
+      lastPos = null;
+      drawing = false;
+    }
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
