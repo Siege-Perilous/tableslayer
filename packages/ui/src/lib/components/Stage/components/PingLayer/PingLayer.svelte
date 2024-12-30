@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
-  import PingMaterial from '../../materials/PingMaterial.svelte';
+  import PingMaterial from './PingMaterial.svelte';
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';

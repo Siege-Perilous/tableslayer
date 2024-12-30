@@ -12,7 +12,7 @@ export const StageDefaultProps: StageProps = {
     data: null,
     fogColor: '#303030',
     opacity: 0.8,
-    toolType: ToolType.RoundBrush,
+    toolType: ToolType.Brush,
     drawMode: DrawMode.Erase,
     brushSize: 200
   },

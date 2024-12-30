@@ -2,7 +2,7 @@
   import { T } from '@threlte/core';
   import { type GridLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
-  import GridMaterial from '../../materials/GridMaterial.svelte';
+  import GridMaterial from './GridMaterial.svelte';
 
   interface Props {
     grid: GridLayerProps;
