@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import fragmentShader from '../shaders/WeatherShader.frag?raw';
-  import vertexShader from '../shaders/default.vert?raw';
+  import fragmentShader from '../../shaders/WeatherShader.frag?raw';
+  import vertexShader from '../../shaders/default.vert?raw';
   import { T, useTask, useThrelte } from '@threlte/core';
-  import type { WeatherProps } from '../components/WeatherLayer/types';
+  import type { WeatherProps } from './types';
 
   interface Props {
     props: WeatherProps;

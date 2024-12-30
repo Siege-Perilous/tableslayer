@@ -1,7 +1,7 @@
 <script lang="ts">
   import { T } from '@threlte/core';
   import { type WeatherProps } from './types';
-  import WeatherMaterial from '../../materials/WeatherMaterial.svelte';
+  import WeatherMaterial from './WeatherMaterial.svelte';
 
   interface Props {
     props: WeatherProps;

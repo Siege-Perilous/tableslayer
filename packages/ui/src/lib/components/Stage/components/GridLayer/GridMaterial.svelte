@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import type { GridLayerProps } from '../components/GridLayer/types';
-  import type { DisplayProps } from '../components/Stage/types';
-  import fragmentShader from '../shaders/GridShader.frag?raw';
-  import vertexShader from '../shaders/default.vert?raw';
+  import type { GridLayerProps } from './types';
+  import type { DisplayProps } from '../Stage/types';
+  import fragmentShader from '../../shaders/GridShader.frag?raw';
+  import vertexShader from '../../shaders/default.vert?raw';
   import { T, useThrelte } from '@threlte/core';
 
   interface Props {

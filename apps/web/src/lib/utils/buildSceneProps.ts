@@ -24,7 +24,7 @@ export const buildSceneProps = (activeScene: SelectScene): StageProps => {
       data: activeScene.fogOfWarData,
       fogColor: activeScene.fogOfWarColor,
       opacity: activeScene.fogOfWarOpacity,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Erase,
       brushSize: 200
     },
