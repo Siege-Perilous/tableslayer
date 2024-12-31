@@ -11,7 +11,10 @@ uniform float uLacunarity;
 uniform float uAmplitude;
 uniform float uFrequency;
 uniform int uLevels;
+uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
+
 varying vec2 vUv;
+varying vec3 vWorldPosition;
 
 // Simplex noise functions from https://github.com/ashima/webgl-noise
 vec3 mod289(vec3 x) {
@@ -54,6 +57,17 @@ float snoise(vec2 v) {
 }
 
 void main() {
+
+  vec4 plane;
+
+	#pragma unroll_loop
+  for(int i = 0; i < NUM_CLIPPING_PLANES; i++) {
+    plane = uClippingPlanes[i];
+    if(dot(-vWorldPosition, plane.xyz) > plane.w) {
+      discard;
+    }
+  }
+
   // Fast blur
   float mask = texture2D(uMaskTexture, vUv).a;
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));

@@ -4,10 +4,10 @@
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy } from 'svelte';
   import { BufferManager } from './BufferManager';
-
+  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
-  import fogVertexShader from '../../shaders/default.vert?raw';
+  import fogVertexShader from '../../shaders/Fog.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
   interface Props {
@@ -57,7 +57,10 @@
       uFrequency: { value: 0.001 },
       uLevels: { value: 6 },
       uTime: { value: 0.0 },
-      uOpacity: { value: props.opacity }
+      uOpacity: { value: props.opacity },
+      uClippingPlanes: new THREE.Uniform(
+        clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
+      )
     },
     transparent: true,
     fragmentShader: fogFragmentShader,
@@ -106,6 +109,10 @@
   $effect(() => {
     material.uniforms.uFogColor.value = new THREE.Color(props.fogColor);
     material.uniforms.uOpacity.value = props.opacity;
+    material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
+      (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
+    );
+
     drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
     drawingShader.uniforms.uShapeType.value = props.toolType;
 
