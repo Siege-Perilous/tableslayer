@@ -1,11 +1,14 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useThrelte, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy } from 'svelte';
   import { BufferManager } from '../../helpers/BufferManager';
-  import vertexShader from '../../shaders/Drawing.vert?raw';
-  import fragmentShader from '../../shaders/Drawing.frag?raw';
+
+  import drawVertexShader from '../../shaders/Drawing.vert?raw';
+  import drawFragmentShader from '../../shaders/Drawing.frag?raw';
+  import fogVertexShader from '../../shaders/default.vert?raw';
+  import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -15,7 +18,7 @@
   const { props, mapSize }: Props = $props();
   const { renderer } = useThrelte();
 
-  // Create drawing shader
+  // This shader is used for drawing the fog of war on the GPU
   const drawingShader = new THREE.ShaderMaterial({
     uniforms: {
       previousState: { value: null },
@@ -30,8 +33,8 @@
       isResetOperation: { value: false },
       shapeType: { value: 0 }
     },
-    vertexShader,
-    fragmentShader
+    vertexShader: drawVertexShader,
+    fragmentShader: drawFragmentShader
   });
 
   const image = new Image();
@@ -42,15 +45,25 @@
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawingShader);
   scene.add(quad);
 
-  let material = new THREE.MeshBasicMaterial({
+  let material = new THREE.ShaderMaterial({
+    uniforms: {
+      uMaskTexture: { value: null },
+      uBlurRadius: { value: 100.0 },
+      uTime: { value: 0.0 },
+      uColor: { value: new THREE.Color(props.fogColor) },
+      uOpacity: { value: props.opacity }
+    },
     transparent: true,
-    color: props.fogColor,
-    opacity: props.opacity
+    fragmentShader: fogFragmentShader,
+    vertexShader: fogVertexShader
   });
 
   let bufferManager: BufferManager = new BufferManager(renderer, 0, 0, (current) => {
-    material.map = current.texture;
-    material.map.needsUpdate = true;
+    material.uniforms.uMaskTexture.value = bufferManager.previous.texture;
+  });
+
+  useTask((delta) => {
+    material.uniforms.uTime.value += delta;
   });
 
   // Whenever the map size changes, we need to re-initialize the buffers
@@ -85,8 +98,8 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    material.color = new THREE.Color(props.fogColor);
-    material.opacity = props.opacity;
+    material.uniforms.uColor.value = new THREE.Color(props.fogColor);
+    material.uniforms.uOpacity.value = props.opacity;
     drawingShader.uniforms.brushSize.value = props.brushSize / 2;
     drawingShader.uniforms.shapeType.value = props.toolType;
 
@@ -102,8 +115,7 @@
   export function discardChanges() {
     if (!bufferManager) return;
 
-    material.map = bufferManager.previous.texture;
-    material.map.needsUpdate = true;
+    material.uniforms.uMaskTexture.value = bufferManager.previous.texture;
   }
 
   /**
