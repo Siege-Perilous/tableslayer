@@ -21,17 +21,18 @@
   // This shader is used for drawing the fog of war on the GPU
   const drawingShader = new THREE.ShaderMaterial({
     uniforms: {
-      previousState: { value: null },
-      brushTexture: { value: null },
-      start: { value: new THREE.Vector2() },
-      end: { value: new THREE.Vector2() },
-      brushSize: { value: 1.0 },
-      textureSize: { value: new THREE.Vector2() },
-      brushColor: { value: new THREE.Vector4() },
-      isCopyOperation: { value: false },
-      isClearOperation: { value: false },
-      isResetOperation: { value: false },
-      shapeType: { value: 0 }
+      uPreviousState: { value: null },
+      uBrushTexture: { value: null },
+      uStart: { value: new THREE.Vector2() },
+      uEnd: { value: new THREE.Vector2() },
+      uBrushSize: { value: 1.0 },
+      uBrushFalloff: { value: 50.0 },
+      uTextureSize: { value: new THREE.Vector2() },
+      uBrushColor: { value: new THREE.Vector4() },
+      uIsCopyOperation: { value: false },
+      uIsClearOperation: { value: false },
+      uIsResetOperation: { value: false },
+      uShapeType: { value: 0 }
     },
     vertexShader: drawVertexShader,
     fragmentShader: drawFragmentShader
@@ -64,7 +65,7 @@
   });
 
   let bufferManager: BufferManager = new BufferManager(renderer, 0, 0, (current) => {
-    material.uniforms.uMaskTexture.value = bufferManager.previous.texture;
+    material.uniforms.uMaskTexture.value = bufferManager.current.texture;
   });
 
   useTask((delta) => {
@@ -74,7 +75,7 @@
   // Whenever the map size changes, we need to re-initialize the buffers
   $effect(() => {
     bufferManager.resize(mapSize.width, mapSize.height);
-    drawingShader.uniforms.textureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    drawingShader.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     reset();
   });
 
@@ -89,10 +90,10 @@
         const texture = new THREE.Texture(image);
         texture.needsUpdate = true; // This is needed to trigger texture upload to GPU
 
-        drawingShader.uniforms.previousState.value = texture;
-        drawingShader.uniforms.isCopyOperation.value = true;
+        drawingShader.uniforms.uPreviousState.value = texture;
+        drawingShader.uniforms.uIsCopyOperation.value = true;
         bufferManager.render(scene, quadCamera);
-        drawingShader.uniforms.isCopyOperation.value = false;
+        drawingShader.uniforms.uIsCopyOperation.value = false;
 
         bufferManager.persistChanges();
 
@@ -105,13 +106,13 @@
   $effect(() => {
     material.uniforms.uFogColor.value = new THREE.Color(props.fogColor);
     material.uniforms.uOpacity.value = props.opacity;
-    drawingShader.uniforms.brushSize.value = props.brushSize / 2;
-    drawingShader.uniforms.shapeType.value = props.toolType;
+    drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
+    drawingShader.uniforms.uShapeType.value = props.toolType;
 
     if (props.drawMode === DrawMode.Erase) {
-      drawingShader.uniforms.brushColor.value = new THREE.Vector4(0, 0, 0, 0);
+      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
     } else {
-      drawingShader.uniforms.brushColor.value = new THREE.Vector4(1, 1, 1, 1);
+      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
     discardChanges();
@@ -129,11 +130,11 @@
   export function reset() {
     if (!bufferManager) return;
 
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
 
-    drawingShader.uniforms.isResetOperation.value = true;
+    drawingShader.uniforms.uIsResetOperation.value = true;
     bufferManager.render(scene, quadCamera);
-    drawingShader.uniforms.isResetOperation.value = false;
+    drawingShader.uniforms.uIsResetOperation.value = false;
 
     bufferManager.persistChanges();
   }
@@ -144,11 +145,11 @@
   export function clear() {
     if (!bufferManager) return;
 
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
+    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
 
-    drawingShader.uniforms.isClearOperation.value = true;
+    drawingShader.uniforms.uIsClearOperation.value = true;
     bufferManager.render(scene, quadCamera);
-    drawingShader.uniforms.isClearOperation.value = false;
+    drawingShader.uniforms.uIsClearOperation.value = false;
 
     bufferManager.persistChanges();
   }
@@ -156,9 +157,9 @@
   export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
     if (!bufferManager) return;
 
-    drawingShader.uniforms.previousState.value = bufferManager.previous.texture;
-    drawingShader.uniforms.start.value.copy(start);
-    drawingShader.uniforms.end.value.copy(last ?? start);
+    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
+    drawingShader.uniforms.uStart.value.copy(start);
+    drawingShader.uniforms.uEnd.value.copy(last ?? start);
 
     bufferManager.render(scene, quadCamera);
 
