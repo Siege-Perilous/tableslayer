@@ -10,7 +10,7 @@ export const StageDefaultProps: StageProps = {
   },
   fogOfWar: {
     data: null,
-    fogColor: '#00ff00',
+    fogColor: '#ffffff',
     opacity: 0.8,
     toolType: ToolType.Brush,
     drawMode: DrawMode.Erase,

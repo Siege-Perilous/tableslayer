@@ -3,7 +3,7 @@
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy } from 'svelte';
-  import { BufferManager } from '../../helpers/BufferManager';
+  import { BufferManager } from './BufferManager';
 
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -48,9 +48,14 @@
   let material = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
-      uBlurRadius: { value: 100.0 },
+      uFogColor: { value: new THREE.Color(props.fogColor) },
+      uFogSpeed: { value: 0.05 },
+      uPersistence: { value: 0.7 },
+      uLacunarity: { value: 2.1 },
+      uAmplitude: { value: 1.0 },
+      uFrequency: { value: 0.001 },
+      uLevels: { value: 6 },
       uTime: { value: 0.0 },
-      uColor: { value: new THREE.Color(props.fogColor) },
       uOpacity: { value: props.opacity }
     },
     transparent: true,
@@ -98,7 +103,7 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    material.uniforms.uColor.value = new THREE.Color(props.fogColor);
+    material.uniforms.uFogColor.value = new THREE.Color(props.fogColor);
     material.uniforms.uOpacity.value = props.opacity;
     drawingShader.uniforms.brushSize.value = props.brushSize / 2;
     drawingShader.uniforms.shapeType.value = props.toolType;

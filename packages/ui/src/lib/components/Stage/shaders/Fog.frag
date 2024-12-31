@@ -1,11 +1,16 @@
 precision highp float;
 
 uniform sampler2D uMaskTexture;
-uniform float uBlurRadius;
+uniform vec3 uFogColor;
+uniform float uFogScale;
+uniform float uFogSpeed;
 uniform float uTime;
-uniform vec3 uColor;
 uniform float uOpacity;
-
+uniform float uPersistence;
+uniform float uLacunarity;
+uniform float uAmplitude;
+uniform float uFrequency;
+uniform int uLevels;
 varying vec2 vUv;
 
 // Simplex noise functions from https://github.com/ashima/webgl-noise
@@ -50,28 +55,33 @@ float snoise(vec2 v) {
 
 void main() {
   // Fast blur
-  vec4 sum = vec4(0.0);
-  vec2 texelSize = 1.0 / vec2(textureSize(uMaskTexture, 0));
+  float mask = texture2D(uMaskTexture, vUv).a;
+  vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 
-  // 9-tap gaussian blur
-  sum += texture2D(uMaskTexture, vUv + vec2(-uBlurRadius, -uBlurRadius) * texelSize) * 0.0625;
-  sum += texture2D(uMaskTexture, vUv + vec2(0.0, -uBlurRadius) * texelSize) * 0.125;
-  sum += texture2D(uMaskTexture, vUv + vec2(uBlurRadius, -uBlurRadius) * texelSize) * 0.0625;
-  sum += texture2D(uMaskTexture, vUv + vec2(-uBlurRadius, 0.0) * texelSize) * 0.125;
-  sum += texture2D(uMaskTexture, vUv) * 0.25;
-  sum += texture2D(uMaskTexture, vUv + vec2(uBlurRadius, 0.0) * texelSize) * 0.125;
-  sum += texture2D(uMaskTexture, vUv + vec2(-uBlurRadius, uBlurRadius) * texelSize) * 0.0625;
-  sum += texture2D(uMaskTexture, vUv + vec2(0.0, uBlurRadius) * texelSize) * 0.125;
-  sum += texture2D(uMaskTexture, vUv + vec2(uBlurRadius, uBlurRadius) * texelSize) * 0.0625;
+  // Add time-varying fog using octave-based simplex noise
+  vec4 finalColor = vec4(0.0);
+  float amplitude = uAmplitude;
+  float frequency = uFrequency;
+  float total = 0.0;
+  float brightness = 0.5;
 
-  // Add time-varying fog using simplex noise
-  float noise = snoise(vUv * 3.0 + uTime * 0.2);
-  noise = 0.5 + 0.5 * noise; // Remap to 0-1 range
+  // Layer multiple octaves of noise with varying brightness
+  for(int i = 0; i < uLevels; i++) {
+    float noise = amplitude * snoise(vUv * texSize * frequency + uTime * uFogSpeed);
+    noise = 1.0 + noise; // Remap to 0-1
 
-  // Mix the blurred texture with the noise using fog color and opacity uniforms
-  vec4 fogColor = vec4(uColor, 1.0);
-  vec4 noiseColor = mix(fogColor, vec4(noise), 0.5);
-  vec4 finalColor = mix(vec4(0.0), noiseColor, sum * uOpacity);
+    // Mix darker colors for low frequencies, brighter for high frequencies
+    vec3 layerColor = mix(vec3(0.0), uFogColor, brightness);
+    finalColor += vec4(layerColor, 1.0) * (noise * amplitude);
 
-  gl_FragColor = finalColor;
+    total += amplitude;
+    amplitude *= uPersistence;
+    frequency *= uLacunarity;
+    brightness *= 1.25; // Increase brightness for each octave
+  }
+
+  // Normalize the final color
+  finalColor.rgb = finalColor.rgb / total;
+
+  gl_FragColor = vec4(finalColor.rgb, mask * uOpacity);
 }

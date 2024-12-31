@@ -54,7 +54,7 @@ void main() {
 
     if(shapeType == 1) {
       float dist = distanceToLine(pixelPos, start, end);
-      brushMask = smoothstep(brushSize + 2.0, brushSize, dist);
+      brushMask = smoothstep(brushSize + 100.0, brushSize - 100.0, dist);
     } else if(shapeType == 2) {
       brushMask = isInsideRectangle(pixelPos, start, end) ? 1.0 : 0.0;
     } else if(shapeType == 3) {
