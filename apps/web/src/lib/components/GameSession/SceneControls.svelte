@@ -393,6 +393,7 @@
     border-radius: var(--radius-2);
     border: var(--sceneControlItemBorder);
     cursor: pointer;
+    white-space: nowrap;
   }
   .sceneControls__layer:hover:not(.sceneControls__layer--isActive) {
     cursor: pointer;

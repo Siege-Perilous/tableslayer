@@ -37,7 +37,7 @@
     };
 
     socket.on('sessionUpdated', (data) => {
-      if (data.sceneId === activeScene?.id) {
+      if (data.sceneId === data.activeSceneId) {
         console.log('Updating stage props', data.stageProps);
         // Update stage props while preserving local state
 

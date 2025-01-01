@@ -59,6 +59,7 @@
 
     const updateData = {
       sceneId: selectedScene?.id,
+      activeSceneId: activeScene.id || '',
       stageProps: {
         fogOfWar: stageProps.fogOfWar,
         grid: stageProps.grid,
@@ -102,22 +103,13 @@
   let stage: StageExports;
 
   let scenesPane: PaneAPI = $state(undefined)!;
-  let controlsPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
-  let isControlsCollapsed = $state(false);
 
   const handleToggleScenes = () => {
     if (isScenesCollapsed) {
       scenesPane.expand();
     } else {
       scenesPane.collapse();
-    }
-  };
-  const handleToggleControls = () => {
-    if (isControlsCollapsed) {
-      controlsPane.expand();
-    } else {
-      controlsPane.collapse();
     }
   };
 
@@ -347,7 +339,7 @@
       defaultSize={15}
       collapsible={true}
       collapsedSize={0}
-      minSize={15}
+      minSize={20}
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
@@ -385,22 +377,6 @@
         <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
       </div>
     </Pane>
-    <PaneResizer class="resizer">
-      <button
-        class="resizer__handle resizer__hander--right"
-        aria-label="Collapse controls column"
-        onclick={handleToggleControls}
-      ></button>
-    </PaneResizer>
-    <Pane
-      defaultSize={15}
-      class="controls"
-      collapsible={true}
-      collapsedSize={0}
-      bind:pane={controlsPane}
-      onCollapse={() => (isControlsCollapsed = true)}
-      onExpand={() => (isControlsCollapsed = false)}
-    ></Pane>
   </PaneGroup>
 </div>
 
