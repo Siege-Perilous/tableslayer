@@ -1,8 +1,7 @@
 export enum ToolType {
-  RoundBrush = 1,
-  SquareBrush = 2,
-  Rectangle = 3,
-  Ellipse = 4
+  Brush = 1,
+  Rectangle = 2,
+  Ellipse = 3
 }
 
 export enum DrawMode {
@@ -45,5 +44,5 @@ export interface FogOfWarLayerProps {
 export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
-  toBase64: () => string;
+  toBase64: () => string | null;
 }
