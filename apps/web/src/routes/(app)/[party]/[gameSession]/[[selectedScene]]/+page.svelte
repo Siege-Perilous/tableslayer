@@ -216,13 +216,13 @@
           if (
             activeLayer === MapLayerType.FogOfWar &&
             fogOfWar.drawMode === DrawMode.Erase &&
-            fogOfWar.toolType === ToolType.RoundBrush
+            fogOfWar.toolType === ToolType.Brush
           ) {
             stageProps.activeLayer = MapLayerType.None;
           } else {
             stageProps.activeLayer = MapLayerType.FogOfWar;
             fogOfWar.drawMode = DrawMode.Erase;
-            fogOfWar.toolType = ToolType.RoundBrush;
+            fogOfWar.toolType = ToolType.Brush;
             activeControl = 'erase';
           }
           break;
@@ -231,13 +231,13 @@
           if (
             activeLayer === MapLayerType.FogOfWar &&
             fogOfWar.drawMode === DrawMode.Draw &&
-            fogOfWar.toolType === ToolType.RoundBrush
+            fogOfWar.toolType === ToolType.Brush
           ) {
             stageProps.activeLayer = MapLayerType.None;
           } else {
             stageProps.activeLayer = MapLayerType.FogOfWar;
             fogOfWar.drawMode = DrawMode.Draw;
-            fogOfWar.toolType = ToolType.RoundBrush;
+            fogOfWar.toolType = ToolType.Brush;
           }
           break;
 

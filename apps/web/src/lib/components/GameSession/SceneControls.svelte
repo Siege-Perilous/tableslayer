@@ -167,14 +167,14 @@
       label: 'Freehand erase',
       value: 'eraseBrush',
       icon: IconPaint,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Erase
     },
     {
       label: 'Freehand add',
       value: 'addBrush',
       icon: IconPaintFilled,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Draw
     },
     {
