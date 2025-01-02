@@ -10,11 +10,21 @@ export const StageDefaultProps: StageProps = {
   },
   fogOfWar: {
     data: null,
-    fogColor: '#ffffff',
-    opacity: 0.8,
+    fogColor1: '#ffffff',
+    fogColor2: '#ffffff',
+    fogColor3: '#ffffff',
+    fogColor4: '#ffffff',
+    opacity: 1,
     toolType: ToolType.Brush,
     drawMode: DrawMode.Erase,
-    brushSize: 200
+    brushSize: 200,
+    fogSpeed: { x: 0.02, y: 0.02, z: 0.02, w: 0.02 },
+    frequency: { x: 0.001, y: 0.001, z: 0.001, w: 0.001 },
+    offset: { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+    amplitude: { x: 1.0, y: 0.0, z: 0.0, w: 0.0 },
+    persistence: { x: 0.4, y: 0.4, z: 0.4, w: 0.4 },
+    lacunarity: { x: 2.5, y: 2.5, z: 2.5, w: 2.5 },
+    levels: { x: 6, y: 6, z: 6, w: 6 }
   },
   grid: {
     gridType: GridType.Square,

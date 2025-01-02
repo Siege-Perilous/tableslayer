@@ -25,7 +25,7 @@
       uBrushTexture: { value: null },
       uStart: { value: new THREE.Vector2() },
       uEnd: { value: new THREE.Vector2() },
-      uBrushSize: { value: 1.0 },
+      uBrushSize: { value: props.brushSize },
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
       uBrushColor: { value: new THREE.Vector4() },
@@ -49,14 +49,18 @@
   let material = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
-      uFogColor: { value: new THREE.Color(props.fogColor) },
-      uFogSpeed: { value: 0.05 },
-      uPersistence: { value: 0.7 },
-      uLacunarity: { value: 2.1 },
-      uAmplitude: { value: 1.0 },
-      uFrequency: { value: 0.001 },
-      uLevels: { value: 6 },
       uTime: { value: 0.0 },
+      uFogColor1: { value: new THREE.Color(props.fogColor1) },
+      uFogColor2: { value: new THREE.Color(props.fogColor2) },
+      uFogColor3: { value: new THREE.Color(props.fogColor3) },
+      uFogColor4: { value: new THREE.Color(props.fogColor4) },
+      uFogSpeed: { value: props.fogSpeed },
+      uPersistence: { value: props.persistence },
+      uLacunarity: { value: props.lacunarity },
+      uFrequency: { value: props.frequency },
+      uOffset: { value: props.offset },
+      uAmplitude: { value: props.amplitude },
+      uLevels: { value: props.levels },
       uOpacity: { value: props.opacity },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
@@ -82,6 +86,7 @@
     reset();
   });
 
+  // Load the image data from the props
   $effect(() => {
     // Does image data already exist? Only update if the data has changed
     // and the map size has been initialized
@@ -107,7 +112,10 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    material.uniforms.uFogColor.value = new THREE.Color(props.fogColor);
+    material.uniforms.uFogColor1.value = new THREE.Color(props.fogColor1);
+    material.uniforms.uFogColor2.value = new THREE.Color(props.fogColor2);
+    material.uniforms.uFogColor3.value = new THREE.Color(props.fogColor3);
+    material.uniforms.uFogColor4.value = new THREE.Color(props.fogColor4);
     material.uniforms.uOpacity.value = props.opacity;
     material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
@@ -115,6 +123,13 @@
 
     drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
     drawingShader.uniforms.uShapeType.value = props.toolType;
+    material.uniforms.uFogSpeed.value = props.fogSpeed;
+    material.uniforms.uFrequency.value = props.frequency;
+    material.uniforms.uPersistence.value = props.persistence;
+    material.uniforms.uLacunarity.value = props.lacunarity;
+    material.uniforms.uLevels.value = props.levels;
+    material.uniforms.uOffset.value = props.offset;
+    material.uniforms.uAmplitude.value = props.amplitude;
 
     if (props.drawMode === DrawMode.Erase) {
       drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);

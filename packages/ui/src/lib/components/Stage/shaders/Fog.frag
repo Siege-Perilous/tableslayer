@@ -1,16 +1,21 @@
 precision highp float;
 
-uniform sampler2D uMaskTexture;
-uniform vec3 uFogColor;
-uniform float uFogScale;
-uniform float uFogSpeed;
 uniform float uTime;
+uniform vec3 uFogColor1;
+uniform vec3 uFogColor2;
+uniform vec3 uFogColor3;
+uniform vec3 uFogColor4;
 uniform float uOpacity;
-uniform float uPersistence;
-uniform float uLacunarity;
-uniform float uAmplitude;
-uniform float uFrequency;
-uniform int uLevels;
+
+uniform vec4 uFogSpeed;
+uniform vec4 uPersistence;
+uniform vec4 uLacunarity;
+uniform vec4 uFrequency;
+uniform vec4 uAmplitude;
+uniform vec4 uOffset;
+uniform ivec4 uLevels;
+
+uniform sampler2D uMaskTexture;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
 varying vec2 vUv;
@@ -53,7 +58,26 @@ float snoise(vec2 v) {
   vec3 g;
   g.x = a0.x * x0.x + h.x * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
+
+  float n = 130.0 * dot(m, g);
+  return n;
+}
+
+float fog(vec2 uv, vec2 size, float amplitude, float frequency, float persistence, float lacunarity, float offset, int levels, float speed) {
+  float sum = 0.0;
+
+  // Layer multiple octaves of noise with varying brightness
+  float a = 1.0;
+  for(int i = 0; i < levels; i++) {
+    sum += a * snoise(uv * size * frequency + uTime * speed);
+    a *= persistence;
+    frequency *= lacunarity;
+  }
+
+  sum /= float(levels);
+  sum = sum + 0.5 + offset;
+
+  return amplitude * clamp(sum, 0.0, 1.0);
 }
 
 void main() {
@@ -68,34 +92,15 @@ void main() {
     }
   }
 
-  // Fast blur
   float mask = texture2D(uMaskTexture, vUv).a;
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 
-  // Add time-varying fog using octave-based simplex noise
-  vec4 finalColor = vec4(0.0);
-  float amplitude = uAmplitude;
-  float frequency = uFrequency;
-  float total = 0.0;
-  float brightness = 0.5;
+  vec3 fog1 = uFogColor1 * fog(vUv, texSize, uAmplitude.x, uFrequency.x, uPersistence.x, uLacunarity.x, uOffset.x, uLevels.x, uFogSpeed.x);
+  vec3 fog2 = uFogColor2 * fog(vUv, texSize, uAmplitude.y, uFrequency.y, uPersistence.y, uLacunarity.y, uOffset.y, uLevels.y, uFogSpeed.y);
+  vec3 fog3 = uFogColor3 * fog(vUv, texSize, uAmplitude.z, uFrequency.z, uPersistence.z, uLacunarity.z, uOffset.z, uLevels.z, uFogSpeed.z);
+  vec3 fog4 = uFogColor4 * fog(vUv, texSize, uAmplitude.w, uFrequency.w, uPersistence.w, uLacunarity.w, uOffset.w, uLevels.w, uFogSpeed.w);
 
-  // Layer multiple octaves of noise with varying brightness
-  for(int i = 0; i < uLevels; i++) {
-    float noise = amplitude * snoise(vUv * texSize * frequency + uTime * uFogSpeed);
-    noise = 1.0 + noise; // Remap to 0-1
+  vec3 finalFog = fog1 + fog2 + fog3 + fog4;
 
-    // Mix darker colors for low frequencies, brighter for high frequencies
-    vec3 layerColor = mix(vec3(0.0), uFogColor, brightness);
-    finalColor += vec4(layerColor, 1.0) * (noise * amplitude);
-
-    total += amplitude;
-    amplitude *= uPersistence;
-    frequency *= uLacunarity;
-    brightness *= 1.25; // Increase brightness for each octave
-  }
-
-  // Normalize the final color
-  finalColor.rgb = finalColor.rgb / total;
-
-  gl_FragColor = vec4(finalColor.rgb, mask * uOpacity);
+  gl_FragColor = vec4(finalFog, mask * uOpacity);
 }
