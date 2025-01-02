@@ -2,30 +2,30 @@
   import { io } from 'socket.io-client';
   import slugify from 'slugify';
   import { onMount } from 'svelte';
-  import { buildSceneProps } from '$lib/utils/buildSceneProps.js';
+  import { buildSceneProps, initializeStage } from '$lib/utils';
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import classNames from 'classnames';
 
+  type CursorData = {
+    position: { x: number; y: number };
+    user: { id: string; email: string };
+  };
+
+  let cursors: Record<string, CursorData> = $state({});
+
   let { data } = $props();
-  const { user, activeScene } = $derived(data);
+  const { user } = $derived(data);
   const sanitizedId = slugify(data.gameSession.id, { lower: true, strict: true, replacement: '' });
-  console.log('activeScene', activeScene);
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading = $state(true);
 
-  let cursors = $state({}); // Track cursor positions of all users
-
   onMount(() => {
-    const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
-        stage.scene.fit();
-        clearInterval(interval);
-      }
-    }, 50);
+    initializeStage(stage, (isLoading) => {
+      stageIsLoading = isLoading;
+    });
     const socket = io(`ws${location.origin.slice(4)}/gameSession/${sanitizedId}`, {
       reconnectionDelayMax: 10000
     });
@@ -105,10 +105,22 @@
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.zoom = zoom;
   }
+
+  function onBrushSizeUpdated() {
+    return;
+  }
+
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    console.log('Updating map', offset, zoom);
+    return;
+  }
+  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
+    stageProps.ping.locations = updatedLocations;
+  }
 </script>
 
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} />
+  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
 </div>
 {#each Object.values(cursors) as { user, position }}
   <div

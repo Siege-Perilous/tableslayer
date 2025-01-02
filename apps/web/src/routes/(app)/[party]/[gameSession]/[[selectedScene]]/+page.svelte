@@ -1,21 +1,19 @@
 <script lang="ts">
   let { data } = $props();
-  import slugify from 'slugify';
-  import { io, type Socket } from 'socket.io-client';
-  import {
-    Stage,
-    type StageExports,
-    type StageProps,
-    DrawMode,
-    ToolType,
-    MapLayerType,
-    PingEditMode
-  } from '@tableslayer/ui';
+  import { type Socket } from 'socket.io-client';
+  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
-  import { StageDefaultProps, buildSceneProps } from '$lib/utils';
-  import type { SelectScene } from '$lib/db/gs/schema';
-  import type { Thumb } from '$lib/server';
+  import {
+    StageDefaultProps,
+    broadcastStageUpdate,
+    buildSceneProps,
+    handleKeyCommands,
+    setupGameSessionWebSocket,
+    handleStageZoom,
+    hasThumb,
+    initializeStage
+  } from '$lib/utils';
   import { onMount } from 'svelte';
   import classNames from 'classnames';
 
@@ -36,41 +34,19 @@
   let activeControl = $state('none');
 
   onMount(() => {
-    const sanitizedId = slugify(gameSession.id, { lower: true, strict: true, replacement: '' });
-    socket = io(`ws${location.origin.slice(4)}/gameSession/${sanitizedId}`, {
-      reconnectionDelayMax: 10000
-    });
-
-    socket.on('connect', () => {
-      console.log('Connected to game session socket');
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Disconnected from game session socket');
-    });
+    socket = setupGameSessionWebSocket(
+      gameSession.id,
+      () => console.log('Connected to game session socket'),
+      () => console.log('Disconnected from game session socket')
+    );
 
     return () => {
       socket?.disconnect();
     };
   });
 
-  const broadcastStageUpdate = () => {
-    if (!socket || !activeScene || activeScene.id !== selectedScene.id) return;
-
-    const updateData = {
-      sceneId: selectedScene?.id,
-      activeSceneId: activeScene.id || '',
-      stageProps: {
-        fogOfWar: stageProps.fogOfWar,
-        grid: stageProps.grid,
-        map: stageProps.map,
-        scene: stageProps.scene,
-        display: stageProps.display,
-        ping: stageProps.ping
-      }
-    };
-
-    socket.emit('updateSession', updateData);
+  const socketUpdate = () => {
+    broadcastStageUpdate(socket, activeScene ? activeScene.id : null, selectedScene.id, stageProps);
   };
 
   const handleSelectActiveControl = (control: string) => {
@@ -81,12 +57,8 @@
       activeControl = control;
       stageProps.activeLayer = MapLayerType.FogOfWar;
     }
-    broadcastStageUpdate();
+    socketUpdate();
   };
-
-  const minZoom = 0.1;
-  const maxZoom = 10;
-  const zoomSensitivity = 0.0005;
 
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene);
@@ -113,50 +85,45 @@
     }
   };
 
-  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
-    return 'thumb' in scene;
-  };
-
   $effect(() => {
     if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
       stageProps.map.url = `${selectedScene.thumb.resizedUrl}?cors=1`;
     } else {
-      // You can clear or reset the map URL here when there's no thumb
       stageProps.map.url = StageDefaultProps.map.url;
     }
-    broadcastStageUpdate();
+    socketUpdate();
   });
 
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
-    broadcastStageUpdate();
+    socketUpdate();
   };
 
-  function onBrushSizeUpdated(brushSize: number) {
+  const onBrushSizeUpdated = (brushSize: number) => {
     stageProps.fogOfWar.brushSize = brushSize;
-    broadcastStageUpdate();
-  }
+    socketUpdate();
+  };
 
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+  const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
     stageProps.map.zoom = zoom;
-    broadcastStageUpdate();
-  }
+    socketUpdate();
+  };
 
-  function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
+  const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
-    broadcastStageUpdate();
-  }
+    socketUpdate();
+  };
 
-  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
+  const onPingsUpdated = (updatedLocations: { x: number; y: number }[]) => {
     stageProps.ping.locations = updatedLocations;
-    broadcastStageUpdate();
-  }
+    socketUpdate();
+  };
 
-  function onMouseMove(e: MouseEvent) {
+  const onMouseMove = (e: MouseEvent) => {
     if (!(e.buttons === 1 || e.buttons === 2)) return;
 
     if (e.shiftKey) {
@@ -166,35 +133,19 @@
       stageProps.scene.offset.x += e.movementX;
       stageProps.scene.offset.y -= e.movementY;
     }
-    broadcastStageUpdate();
-  }
+    socketUpdate();
+  };
 
-  function onWheel(e: WheelEvent) {
-    let scrollDelta;
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-      scrollDelta = e.deltaX * zoomSensitivity;
-    } else {
-      scrollDelta = e.deltaY * zoomSensitivity;
-    }
-
-    if (e.shiftKey) {
-      stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
-    } else if (e.ctrlKey) {
-      e.preventDefault();
-      stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
-    }
-    broadcastStageUpdate();
-  }
+  const onWheel = (e: WheelEvent) => {
+    handleStageZoom(e, stageProps);
+    socketUpdate();
+  };
 
   let stageIsLoading = $state(true);
   onMount(() => {
-    const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
-        stage.scene.fit();
-        clearInterval(interval);
-      }
-    }, 50);
+    initializeStage(stage, (isLoading) => {
+      stageIsLoading = isLoading;
+    });
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -209,124 +160,7 @@
       );
     }
     document.addEventListener('keydown', (event) => {
-      const { activeLayer, fogOfWar, ping } = stageProps;
-
-      switch (event.key) {
-        case 'e':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Erase &&
-            fogOfWar.toolType === ToolType.Brush
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Erase;
-            fogOfWar.toolType = ToolType.Brush;
-            activeControl = 'erase';
-          }
-          break;
-
-        case 'E':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Draw &&
-            fogOfWar.toolType === ToolType.Brush
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Draw;
-            fogOfWar.toolType = ToolType.Brush;
-          }
-          break;
-
-        case 'f':
-          stage.fogOfWar.clear();
-          break;
-
-        case 'F':
-          stage.fogOfWar.reset();
-          break;
-
-        case 'o':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Erase &&
-            fogOfWar.toolType === ToolType.Ellipse
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Erase;
-            fogOfWar.toolType = ToolType.Ellipse;
-          }
-          break;
-
-        case 'O':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Draw &&
-            fogOfWar.toolType === ToolType.Ellipse
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Draw;
-            fogOfWar.toolType = ToolType.Ellipse;
-          }
-          break;
-
-        case 'p':
-          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Remove) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.Ping;
-            ping.editMode = PingEditMode.Remove;
-          }
-          break;
-
-        case 'P':
-          if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Add) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.Ping;
-            ping.editMode = PingEditMode.Add;
-          }
-          break;
-
-        case 'r':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Erase &&
-            fogOfWar.toolType === ToolType.Rectangle
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Erase;
-            fogOfWar.toolType = ToolType.Rectangle;
-          }
-          break;
-
-        case 'R':
-          if (
-            activeLayer === MapLayerType.FogOfWar &&
-            fogOfWar.drawMode === DrawMode.Draw &&
-            fogOfWar.toolType === ToolType.Rectangle
-          ) {
-            stageProps.activeLayer = MapLayerType.None;
-          } else {
-            stageProps.activeLayer = MapLayerType.FogOfWar;
-            fogOfWar.drawMode = DrawMode.Draw;
-            fogOfWar.toolType = ToolType.Rectangle;
-          }
-          break;
-
-        case 'Escape':
-          stageProps.activeLayer = MapLayerType.None;
-          break;
-      }
+      activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
     });
   });
 

@@ -4,6 +4,7 @@
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
+  import { hasThumb } from '$lib/utils';
   import {
     createSceneSchema,
     deleteSceneSchema,
@@ -98,10 +99,6 @@
   });
 
   let file = $state(fileProxy(createSceneData, 'file'));
-
-  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
-    return 'thumb' in scene;
-  };
 
   const onCreateScene = (order: number) => {
     $createSceneData.dbName = gameSession.dbName;
