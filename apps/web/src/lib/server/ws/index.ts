@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export const initializeSocketIO = (server: any) => {
   const wsServer = new Server(server);
 

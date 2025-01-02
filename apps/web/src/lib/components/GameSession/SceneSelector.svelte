@@ -79,8 +79,7 @@
     form: setActiveSceneData,
     enhance: setActiveSceneEnhance,
     message: setActiveSceneMessage,
-    formId: setActiveSceneFormId,
-    delayed: setActiveSceneDelayed
+    formId: setActiveSceneFormId
   } = setActiveSceneSuperForm;
 
   const {
