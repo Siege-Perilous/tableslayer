@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { io } from 'socket.io-client';
-  import slugify from 'slugify';
   import { onMount } from 'svelte';
-  import { buildSceneProps, initializeStage } from '$lib/utils';
+  import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
   import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import classNames from 'classnames';
 
@@ -15,22 +13,22 @@
 
   let { data } = $props();
   const { user } = $derived(data);
-  const sanitizedId = slugify(data.gameSession.id, { lower: true, strict: true, replacement: '' });
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
-  let stageIsLoading = $state(true);
+  let stageIsLoading: boolean = $state(true);
 
   onMount(() => {
     initializeStage(stage, (isLoading) => {
       stageIsLoading = isLoading;
     });
-    const socket = io(`ws${location.origin.slice(4)}/gameSession/${sanitizedId}`, {
-      reconnectionDelayMax: 10000
-    });
+    const socket = setupGameSessionWebSocket(
+      data.gameSession.id,
+      () => console.log('Connected to game session socket'),
+      () => console.log('Disconnected from game session socket')
+    );
 
-    // Emit cursor position on mouse movement
     const handleMouseMove = (event: MouseEvent) => {
       const position = { x: event.clientX, y: event.clientY };
       socket.emit('cursorMove', { user, position });
@@ -39,7 +37,6 @@
     socket.on('sessionUpdated', (data) => {
       if (data.sceneId === data.activeSceneId) {
         console.log('Updating stage props', data.stageProps);
-        // Update stage props while preserving local state
 
         stageProps = {
           ...stageProps,
@@ -62,15 +59,6 @@
       const updatedCursors = { ...cursors };
       delete updatedCursors[userId];
       cursors = updatedCursors;
-    });
-
-    socket.on('connect', () => {
-      console.log(`Connected to gameSession ${sanitizedId}`);
-    });
-
-    socket.on('disconnect', () => {
-      console.log(`Disconnected from gameSession ${sanitizedId}`);
-      cursors = {};
     });
 
     // Add mousemove event listener

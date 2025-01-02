@@ -124,6 +124,9 @@
   };
 
   const onMouseMove = (e: MouseEvent) => {
+    const position = { x: e.clientX, y: e.clientY };
+    socket.emit('cursorMove', { user: data.user, position });
+
     if (!(e.buttons === 1 || e.buttons === 2)) return;
 
     if (e.shiftKey) {
