@@ -40,8 +40,6 @@
 
     socket.on('sessionUpdated', (data) => {
       if (data.sceneId === data.activeSceneId) {
-        console.log('Updating stage props', data.stageProps);
-
         stageProps = {
           ...stageProps,
           fogOfWar: data.stageProps.fogOfWar,
@@ -81,8 +79,6 @@
 
       const absoluteXClient = horizontalMargin + adjustedX;
       const absoluteYClient = verticalMargin + adjustedY;
-
-      console.log('Client Adjusted Position:', { absoluteXClient, absoluteYClient });
 
       cursors = {
         ...cursors,
@@ -171,9 +167,9 @@
   {#each Object.values(cursors) as { user, position, fadedOut }}
     <div
       class="cursor"
-      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-1rem, -0.5rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
+      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-0.75rem, -0.25rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
     >
-      <Icon Icon={IconPointerFilled} size="2rem" stroke={1} />
+      <Icon Icon={IconPointerFilled} size="1.5rem" stroke={1} />
       <span class="cursor-label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
     </div>
   {/each}

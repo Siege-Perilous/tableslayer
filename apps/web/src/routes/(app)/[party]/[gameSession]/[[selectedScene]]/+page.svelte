@@ -174,9 +174,6 @@
       }
     }
 
-    console.log('Clamped Cursor Position:', { clampedX, clampedY });
-    console.log('Normalized Position:', { normalizedX, normalizedY });
-
     socket?.emit('cursorMove', {
       user: data.user,
       normalizedPosition: { x: normalizedX, y: normalizedY },
