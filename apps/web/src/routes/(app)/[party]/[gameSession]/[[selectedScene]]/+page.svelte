@@ -33,6 +33,12 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
 
+  // These are the values in stage props that exist
+  //  stageProps.display.resolution.x
+  //  stageProps.display.resolution.y
+  //  stageProps.scene.offset.x
+  //  stageProps.scene.offset.y
+
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
@@ -124,8 +130,16 @@
   };
 
   const onMouseMove = (e: MouseEvent) => {
+    // This position should be tied to the stage, not the window
+
+    // These are the values in stage props that exist
+    // stageProps.display.resolution.x
+    // stageProps.display.resolution.y
+    // stageProps.scene.offset.x
+    // stageProps.scene.offset.y
+
     const position = { x: e.clientX, y: e.clientY };
-    socket.emit('cursorMove', { user: data.user, position });
+    socket?.emit('cursorMove', { user: data.user, position });
 
     if (!(e.buttons === 1 || e.buttons === 2)) return;
 
