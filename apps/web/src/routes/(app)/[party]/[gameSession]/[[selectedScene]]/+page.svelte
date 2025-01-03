@@ -180,7 +180,8 @@
     socket?.emit('cursorMove', {
       user: data.user,
       normalizedPosition: { x: normalizedX, y: normalizedY },
-      zoom: stageProps.scene.zoom
+      zoom: stageProps.scene.zoom,
+      offset: stageProps.scene.offset
     });
   };
 

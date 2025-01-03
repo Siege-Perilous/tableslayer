@@ -1,12 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
-  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, Icon } from '@tableslayer/ui';
+  import { IconPointerFilled } from '@tabler/icons-svelte';
   import classNames from 'classnames';
 
   type CursorData = {
     position: { x: number; y: number };
     user: { id: string; email: string };
+    lastMoveTime: number;
+    fadedOut: boolean;
   };
 
   let cursors: Record<string, CursorData> = $state({});
@@ -18,6 +21,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading: boolean = $state(true);
+  const fadeOutDelay = 5000;
 
   onMount(() => {
     initializeStage(stage, (isLoading) => {
@@ -66,15 +70,12 @@
       const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
       const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
 
-      // Margins to center the client rectangle
       const horizontalMargin = (stageWidth - displayWidthClient) / 2;
       const verticalMargin = (stageHeight - displayHeightClient) / 2;
 
-      // Adjust the normalized position based on the editor's rectangle size
-      const rectX = normalizedPosition.x * displayWidthEditor; // Editor space position
-      const rectY = normalizedPosition.y * displayHeightEditor; // Editor space position
+      const rectX = normalizedPosition.x * displayWidthEditor;
+      const rectY = normalizedPosition.y * displayHeightEditor;
 
-      // Convert to the client rectangle, scaling by the ratio of editor-to-client rectangle size
       const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
       const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
 
@@ -85,7 +86,12 @@
 
       cursors = {
         ...cursors,
-        [user.id]: { user, position: { x: absoluteXClient, y: absoluteYClient } }
+        [user.id]: {
+          user,
+          position: { x: absoluteXClient, y: absoluteYClient },
+          lastMoveTime: Date.now(),
+          fadedOut: false
+        }
       };
     });
 
@@ -109,7 +115,7 @@
       .toString(16)
       .padStart(6, '0')}`;
   };
-  const randomColor = getRandomColor();
+  //  const randomColor = getRandomColor();
 
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 
@@ -140,35 +146,40 @@
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
+
+  $effect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      for (const [userId, cursor] of Object.entries(cursors)) {
+        if (!cursor.fadedOut && now - cursor.lastMoveTime > fadeOutDelay) {
+          // Mark the cursor as faded out after inactivity
+          cursors = {
+            ...cursors,
+            [userId]: { ...cursor, fadedOut: true }
+          };
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  });
 </script>
 
 <div class={stageClasses} bind:this={stageElement}>
   <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
 
-  {#each Object.values(cursors) as { user, position }}
+  {#each Object.values(cursors) as { user, position, fadedOut }}
     <div
       class="cursor"
-      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-50%, -50%); background-color: ${randomColor}`}
+      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-1rem, -0.5rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
     >
-      {user.email}
+      <Icon Icon={IconPointerFilled} size="2rem" stroke={1} />
+      <span class="cursor-label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
     </div>
   {/each}
 </div>
 
 <style>
-  .cursor {
-    position: fixed;
-    width: 100px;
-    height: 2rem;
-    line-height: 2rem;
-    pointer-events: none;
-    background: red;
-    color: black;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 12px;
-    z-index: 2;
-  }
   .stage {
     position: fixed;
     top: 0;
@@ -178,5 +189,32 @@
   }
   .stage--loading {
     visibility: hidden;
+  }
+  .cursor {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    font-size: 12px;
+  }
+
+  .cursor-pointer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cursor-icon {
+    stroke: black; /* Customize this color if needed */
+  }
+
+  .cursor-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: black;
+    display: none;
   }
 </style>
