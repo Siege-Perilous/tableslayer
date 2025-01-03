@@ -50,6 +50,7 @@
     uniforms: {
       uMaskTexture: { value: null },
       uTime: { value: 0.0 },
+      uBaseColor: { value: new THREE.Color(props.baseColor) },
       uFogColor1: { value: new THREE.Color(props.fogColor1) },
       uFogColor2: { value: new THREE.Color(props.fogColor2) },
       uFogColor3: { value: new THREE.Color(props.fogColor3) },
@@ -112,17 +113,19 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    material.uniforms.uFogColor1.value = new THREE.Color(props.fogColor1);
-    material.uniforms.uFogColor2.value = new THREE.Color(props.fogColor2);
-    material.uniforms.uFogColor3.value = new THREE.Color(props.fogColor3);
-    material.uniforms.uFogColor4.value = new THREE.Color(props.fogColor4);
+    drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
+    drawingShader.uniforms.uShapeType.value = props.toolType;
+
     material.uniforms.uOpacity.value = props.opacity;
     material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
 
-    drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
-    drawingShader.uniforms.uShapeType.value = props.toolType;
+    material.uniforms.uBaseColor.value = new THREE.Color(props.baseColor);
+    material.uniforms.uFogColor1.value = new THREE.Color(props.fogColor1);
+    material.uniforms.uFogColor2.value = new THREE.Color(props.fogColor2);
+    material.uniforms.uFogColor3.value = new THREE.Color(props.fogColor3);
+    material.uniforms.uFogColor4.value = new THREE.Color(props.fogColor4);
     material.uniforms.uFogSpeed.value = props.fogSpeed;
     material.uniforms.uFrequency.value = props.frequency;
     material.uniforms.uPersistence.value = props.persistence;

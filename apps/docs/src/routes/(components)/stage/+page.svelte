@@ -245,6 +245,7 @@
       step={1}
       disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
     />
+    <Color bind:value={stageProps.fogOfWar.baseColor} label="Base Color" />
     <Color bind:value={stageProps.fogOfWar.fogColor1} label="Color 1" />
     <Color bind:value={stageProps.fogOfWar.fogColor2} label="Color 2" />
     <Color bind:value={stageProps.fogOfWar.fogColor3} label="Color 3" />

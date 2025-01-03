@@ -70,13 +70,13 @@ void main() {
 
     if(uShapeType == 1) {
       float dist = distanceToLine(pixelPos, uStart, uEnd);
-      brushMask = smoothstep(uBrushSize + uBrushFalloff, uBrushSize - uBrushFalloff, dist);
+      brushMask = step(dist, uBrushSize);
     } else if(uShapeType == 2) {
       float dist = distanceToRectangle(pixelPos, uStart, uEnd);
-      brushMask = smoothstep(uBrushSize + uBrushFalloff, uBrushSize - uBrushFalloff, dist);
+      brushMask = dist < 1.0 ? 1.0 : 0.0;
     } else if(uShapeType == 3) {
       float dist = isInsideEllipse(pixelPos, uStart, uEnd);
-      brushMask = smoothstep(uBrushSize + uBrushFalloff, uBrushSize - uBrushFalloff, dist);
+      brushMask = dist < 1.0 ? 1.0 : 0.0;
     }
 
     gl_FragColor = mix(prevColor, uBrushColor, brushMask);

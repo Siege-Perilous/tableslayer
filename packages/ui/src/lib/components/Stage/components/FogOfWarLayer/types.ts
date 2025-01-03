@@ -31,6 +31,11 @@ export interface FogOfWarLayerProps {
   brushSize: number;
 
   /**
+   * The base color of the fog of war layer
+   */
+  baseColor: string;
+
+  /**
    * Color of the fog
    */
   fogColor1: string;

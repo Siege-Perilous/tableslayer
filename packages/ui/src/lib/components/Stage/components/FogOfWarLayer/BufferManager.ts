@@ -32,10 +32,9 @@ export class BufferManager {
     const options = {
       format: THREE.RGBAFormat,
       type: THREE.UnsignedByteType,
-      minFilter: THREE.LinearFilter,
+      minFilter: THREE.LinearMipMapLinearFilter,
       magFilter: THREE.LinearFilter,
-      wrapS: THREE.ClampToEdgeWrapping,
-      wrapT: THREE.ClampToEdgeWrapping,
+      generateMipmaps: true,
       depthBuffer: false,
       alpha: true
     };
@@ -67,6 +66,7 @@ export class BufferManager {
     // First render to current buffer
     this.renderer.setRenderTarget(this.current);
     this.renderer.render(scene, camera);
+
     this.onRender?.(this.current);
     this.renderer.setRenderTarget(null);
   }

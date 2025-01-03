@@ -1,6 +1,7 @@
 precision highp float;
 
 uniform float uTime;
+uniform vec3 uBaseColor;
 uniform vec3 uFogColor1;
 uniform vec3 uFogColor2;
 uniform vec3 uFogColor3;
@@ -80,6 +81,28 @@ float fog(vec2 uv, vec2 size, float amplitude, float frequency, float persistenc
   return amplitude * clamp(sum, 0.0, 1.0);
 }
 
+float mask(vec2 uv, vec2 size, float amplitude, float frequency, float speed) {
+    // Get base mask with mipmap blur
+  float baseMask = 0.0;
+
+  int count = 0;
+  for(int i = 4; i < 9; i++) {
+    baseMask += textureLod(uMaskTexture, uv, float(i)).a;
+    count++;
+  }
+  baseMask /= float(count);
+
+  // Add noise-based overhang
+  vec2 noiseUV = uv * size; // Scale UV for noise
+  float noise = amplitude * snoise(frequency * noiseUV + uTime * speed);
+  noise = noise * 0.5 + 0.5;
+
+  // Use thresholds to combine different layers of noise
+  float expandedMask = smoothstep(0.5, 1.0, baseMask + 0.4 * noise);
+
+  return expandedMask;
+}
+
 void main() {
 
   vec4 plane;
@@ -92,8 +115,13 @@ void main() {
     }
   }
 
-  float mask = texture2D(uMaskTexture, vUv).a;
+  // Sample at multiple levels of detail to get a nice feathered edge
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
+  float mask = mask(vUv, texSize, uAmplitude.x, uFrequency.x, uFogSpeed.x) +
+    mask(vUv, texSize, uAmplitude.y, uFrequency.y, uFogSpeed.y) +
+    mask(vUv, texSize, uAmplitude.z, uFrequency.z, uFogSpeed.z) +
+    mask(vUv, texSize, uAmplitude.w, uFrequency.w, uFogSpeed.w);
+  mask = mask * 0.25;
 
   vec3 fog1 = uFogColor1 * fog(vUv, texSize, uAmplitude.x, uFrequency.x, uPersistence.x, uLacunarity.x, uOffset.x, uLevels.x, uFogSpeed.x);
   vec3 fog2 = uFogColor2 * fog(vUv, texSize, uAmplitude.y, uFrequency.y, uPersistence.y, uLacunarity.y, uOffset.y, uLevels.y, uFogSpeed.y);
