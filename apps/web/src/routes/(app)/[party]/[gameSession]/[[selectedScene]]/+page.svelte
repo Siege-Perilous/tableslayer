@@ -34,10 +34,11 @@
   let activeControl = $state('none');
 
   // These are the values in stage props that exist
-  //  stageProps.display.resolution.x
-  //  stageProps.display.resolution.y
-  //  stageProps.scene.offset.x
-  //  stageProps.scene.offset.y
+  //  stageProps.display.resolution.x = 1920
+  //  stageProps.display.resolution.y = 1080
+  //  stageProps.scene.zoom = 0.5
+  //  stageProps.scene.offset.x = 0
+  //  stageProps.scene.offset.y = 0
 
   onMount(() => {
     socket = setupGameSessionWebSocket(
@@ -129,28 +130,58 @@
     socketUpdate();
   };
 
+  let isThrottled = false;
+
   const onMouseMove = (e: MouseEvent) => {
-    // This position should be tied to the stage, not the window
+    const canvasBounds = stageElement?.getBoundingClientRect(); // Full canvas bounds
+    if (!canvasBounds) return;
 
-    // These are the values in stage props that exist
-    // stageProps.display.resolution.x
-    // stageProps.display.resolution.y
-    // stageProps.scene.offset.x
-    // stageProps.scene.offset.y
+    const cursorX = e.clientX - canvasBounds.left; // Cursor relative to the canvas bounds
+    const cursorY = e.clientY - canvasBounds.top;
 
-    const position = { x: e.clientX, y: e.clientY };
-    socket?.emit('cursorMove', { user: data.user, position });
+    const displayWidth = stageProps.display.resolution.x * stageProps.scene.zoom; // Zoomed width of the rectangle
+    const displayHeight = stageProps.display.resolution.y * stageProps.scene.zoom; // Zoomed height of the rectangle
 
-    if (!(e.buttons === 1 || e.buttons === 2)) return;
+    const horizontalMargin = (canvasBounds.width - displayWidth) / 2;
+    const verticalMargin = (canvasBounds.height - displayHeight) / 2;
 
-    if (e.shiftKey) {
-      stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
-      stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
-    } else if (e.ctrlKey) {
-      stageProps.scene.offset.x += e.movementX;
-      stageProps.scene.offset.y -= e.movementY;
+    const relativeX = cursorX - horizontalMargin;
+    const relativeY = cursorY - verticalMargin;
+
+    const clampedX = Math.max(0, Math.min(relativeX, displayWidth));
+    const clampedY = Math.max(0, Math.min(relativeY, displayHeight));
+
+    const normalizedX = clampedX / displayWidth;
+    const normalizedY = clampedY / displayHeight;
+
+    // Handle panning
+    if (e.buttons === 1 || e.buttons === 2) {
+      if (e.shiftKey) {
+        stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
+        stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
+      } else if (e.ctrlKey) {
+        stageProps.scene.offset.x += e.movementX;
+        stageProps.scene.offset.y -= e.movementY;
+      }
+
+      // Avoid spamming WebSocket updates
+      if (!isThrottled) {
+        isThrottled = true;
+        requestAnimationFrame(() => {
+          socketUpdate(); // Send panning update
+          isThrottled = false;
+        });
+      }
     }
-    socketUpdate();
+
+    console.log('Clamped Cursor Position:', { clampedX, clampedY });
+    console.log('Normalized Position:', { normalizedX, normalizedY });
+
+    socket?.emit('cursorMove', {
+      user: data.user,
+      normalizedPosition: { x: normalizedX, y: normalizedY },
+      zoom: stageProps.scene.zoom
+    });
   };
 
   const onWheel = (e: WheelEvent) => {

@@ -49,9 +49,44 @@
       }
     });
 
-    // Listen for cursor updates from other users
     socket.on('cursorUpdate', (data) => {
-      cursors = { ...cursors, [data.user.id]: data };
+      const { normalizedPosition, user, zoom: editorZoom } = data;
+
+      const stageBounds = stageElement?.getBoundingClientRect();
+      if (!stageBounds) return;
+
+      const stageWidth = stageBounds.width;
+      const stageHeight = stageBounds.height;
+
+      const clientZoom = stageProps.scene.zoom;
+
+      const displayWidthClient = stageProps.display.resolution.x * clientZoom;
+      const displayHeightClient = stageProps.display.resolution.y * clientZoom;
+
+      const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
+      const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
+
+      // Margins to center the client rectangle
+      const horizontalMargin = (stageWidth - displayWidthClient) / 2;
+      const verticalMargin = (stageHeight - displayHeightClient) / 2;
+
+      // Adjust the normalized position based on the editor's rectangle size
+      const rectX = normalizedPosition.x * displayWidthEditor; // Editor space position
+      const rectY = normalizedPosition.y * displayHeightEditor; // Editor space position
+
+      // Convert to the client rectangle, scaling by the ratio of editor-to-client rectangle size
+      const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
+      const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
+
+      const absoluteXClient = horizontalMargin + adjustedX;
+      const absoluteYClient = verticalMargin + adjustedY;
+
+      console.log('Client Adjusted Position:', { absoluteXClient, absoluteYClient });
+
+      cursors = {
+        ...cursors,
+        [user.id]: { user, position: { x: absoluteXClient, y: absoluteYClient } }
+      };
     });
 
     // Remove the cursor when a user disconnects
@@ -109,15 +144,16 @@
 
 <div class={stageClasses} bind:this={stageElement}>
   <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
+
+  {#each Object.values(cursors) as { user, position }}
+    <div
+      class="cursor"
+      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-50%, -50%); background-color: ${randomColor}`}
+    >
+      {user.email}
+    </div>
+  {/each}
 </div>
-{#each Object.values(cursors) as { user, position }}
-  <div
-    class="cursor"
-    style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-50%, -50%); background-color: ${randomColor}`}
-  >
-    {user.email}
-  </div>
-{/each}
 
 <style>
   .cursor {
