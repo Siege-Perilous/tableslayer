@@ -244,6 +244,7 @@
     cursor: pointer;
     display: block;
     background-color: var(--contrastLow);
+    -webkit-touch-callout: none;
   }
   .scene:before {
     content: '';

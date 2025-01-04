@@ -35,6 +35,7 @@
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
+    e.preventDefault();
     lastPos = flipY(p);
     drawing = true;
     draw(e, p);
