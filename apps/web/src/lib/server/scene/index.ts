@@ -1,5 +1,5 @@
 import { gsChildDb } from '$lib/db/gs';
-import { sceneTable, type SelectScene } from '$lib/db/gs/schema';
+import { sceneTable, settingsTable, type SelectScene } from '$lib/db/gs/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
@@ -188,4 +188,39 @@ export const updateScene = async (
   if (Object.keys(updateData).length > 0) {
     await gsDb.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
   }
+};
+
+export const setActiveScene = async (dbName: string, sceneId: string) => {
+  const gsDb = gsChildDb(dbName);
+  // check to see if a settings row exists, create or update it
+  const settings = await gsDb.select().from(settingsTable).get();
+  if (settings) {
+    console.log('updating settings');
+    await gsDb.update(settingsTable).set({ activeSceneId: sceneId }).execute();
+  } else {
+    console.log('inserting settings');
+    await gsDb.insert(settingsTable).values({ activeSceneId: sceneId }).execute();
+  }
+};
+
+export const getActiveScene = async (dbName: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
+  const gsDb = gsChildDb(dbName);
+  const settings = await gsDb.select().from(settingsTable).get();
+
+  if (!settings || !settings.activeSceneId) {
+    return null;
+  }
+
+  const activeScene = await gsDb.select().from(sceneTable).where(eq(sceneTable.id, settings.activeSceneId)).get();
+
+  if (!activeScene) {
+    return null;
+  }
+
+  const thumb = activeScene.mapLocation
+    ? await transformImage(activeScene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    : null;
+  const activeSceneWithThumb = { ...activeScene, thumb };
+
+  return activeSceneWithThumb;
 };
