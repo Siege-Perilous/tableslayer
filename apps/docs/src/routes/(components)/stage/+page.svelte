@@ -14,9 +14,10 @@
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
 
-  const stageProps: StageProps = $state(StageDefaultProps);
+  let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
+  // svelte-ignore state_referenced_locally
   let mapUrl = $state(stageProps.map.url);
 
   const minZoom = 0.1;
@@ -39,8 +40,7 @@
   };
 
   const toolTypeOptions: ListOptions<number> = {
-    RoundBrush: ToolType.RoundBrush,
-    SquareBrush: ToolType.SquareBrush,
+    Brush: ToolType.Brush,
     Rectangle: ToolType.Rectangle,
     Ellipse: ToolType.Ellipse
   };
@@ -77,13 +77,19 @@
       switch (event.key) {
         case 'e':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Brush
+          };
           break;
         case 'E':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.RoundBrush;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Brush
+          };
           break;
         case 'f':
           stage.fogOfWar.clear();
@@ -93,13 +99,19 @@
           break;
         case 'o':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Ellipse
+          };
           break;
         case 'O':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Ellipse;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Ellipse
+          };
           break;
         case 'p':
           stageProps.activeLayer = MapLayerType.Ping;
@@ -111,13 +123,19 @@
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Erase;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Erase,
+            toolType: ToolType.Rectangle
+          };
           break;
         case 'R':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.drawMode = DrawMode.Draw;
-          stageProps.fogOfWar.toolType = ToolType.Rectangle;
+          stageProps.fogOfWar = {
+            ...stageProps.fogOfWar,
+            drawMode: DrawMode.Draw,
+            toolType: ToolType.Rectangle
+          };
           break;
         case 'Escape':
           stageProps.activeLayer = MapLayerType.None;
@@ -194,7 +212,7 @@
       <li>O - Draw Fog (Ellipse)</li>
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
-      <li>E - Reset Fog</li>
+      <li>F - Reset Fog</li>
       <li>p - Remove Ping</li>
       <li>P - Add Ping</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
@@ -225,14 +243,12 @@
       min={1}
       max={500}
       step={1}
-      disabled={stageProps.fogOfWar.toolType !== ToolType.RoundBrush &&
-        stageProps.fogOfWar.toolType !== ToolType.SquareBrush}
+      disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
     />
     <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog" />
-    <Button on:click={() => stage.fogOfWar.clear()} title="Reveal All" />
-    <Button on:click={() => console.log(stage.fogOfWar.toBase64())} title="Export" />
+    <Button on:click={() => stage.fogOfWar.reset()} title="Reset" />
+    <Button on:click={() => stage.fogOfWar.clear()} title="Clear" />
   </Folder>
 
   <Folder title="Grid" expanded={false}>
@@ -284,6 +300,22 @@
     <Binding bind:object={stageProps.weather} key={'scale'} label="Scale" />
     <Slider bind:value={stageProps.weather.speed} label="Speed" min={0} max={25} step={0.01} />
   </Folder>
+
+  <Button
+    on:click={() => {
+      stageProps.fogOfWar.data = stage.fogOfWar.toBase64();
+      localStorage.setItem('stageProps', JSON.stringify(stageProps));
+      alert('Props saved');
+    }}
+    title="Save"
+  />
+  <Button
+    on:click={() => {
+      stageProps = JSON.parse(localStorage.getItem('stageProps') || '{}');
+      alert('Props loaded');
+    }}
+    title="Load"
+  />
 </Pane>
 
 <style>

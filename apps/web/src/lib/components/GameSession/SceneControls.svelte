@@ -167,14 +167,14 @@
       label: 'Freehand erase',
       value: 'eraseBrush',
       icon: IconPaint,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Erase
     },
     {
       label: 'Freehand add',
       value: 'addBrush',
       icon: IconPaintFilled,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Draw
     },
     {
@@ -393,6 +393,7 @@
     border-radius: var(--radius-2);
     border: var(--sceneControlItemBorder);
     cursor: pointer;
+    white-space: nowrap;
   }
   .sceneControls__layer:hover:not(.sceneControls__layer--isActive) {
     cursor: pointer;

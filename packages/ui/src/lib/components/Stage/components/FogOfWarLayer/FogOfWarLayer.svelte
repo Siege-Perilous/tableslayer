@@ -1,12 +1,11 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
-  import { DrawMode, ToolType, type FogOfWarLayerProps } from './types';
-  import { getContext, onMount } from 'svelte';
-  import { Tool, type DrawingTool } from './tools/types';
-  import { textureToBase64 } from '../../helpers/utils';
+  import { ToolType, type FogOfWarLayerProps } from './types';
+  import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
+  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -18,215 +17,115 @@
 
   const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
 
-  let canvas: HTMLCanvasElement;
-  let context: CanvasRenderingContext2D;
-  let imageData: ImageData;
-
-  let mesh = $state(new THREE.Mesh());
-  let fogMaterial = $state(new THREE.MeshBasicMaterial());
-  let fogTexture: THREE.CanvasTexture;
-
-  let drawing: boolean = false;
-  let activeTool: DrawingTool;
+  let mesh: THREE.Mesh = $state(new THREE.Mesh());
+  let material: FogOfWarMaterial | undefined = $state();
+  let drawing = false;
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
   // to the new point
-  let resetPos = false;
+  let lastPos: THREE.Vector2 | null = null;
 
-  onMount(() => {
-    // Create a canvas element to draw on
-    canvas = document.createElement('canvas');
-    context = canvas.getContext('2d')!;
-  });
-
+  // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    if (!canvas) return;
-
-    // Dispose of the existing fog texture if there is one
-    fogTexture?.dispose();
-
-    if (props.data) {
-      const image = new Image();
-      image.src = props.data;
-      image.onload = () => {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        fogTexture = new THREE.CanvasTexture(canvas);
-        fogMaterial.map = fogTexture;
-
-        context.drawImage(image, 0, 0);
-        persistChanges();
-      };
-    } else if (mapSize.width > 0 && mapSize.height > 0) {
-      // Otherwise, start with a blank canvas
-      canvas.width = mapSize.width;
-      canvas.height = mapSize.height;
-      fogTexture = new THREE.CanvasTexture(canvas);
-      fogMaterial.map = fogTexture;
-
-      resetFog();
-    }
-  });
-
-  // Update the active tool when the tool type changes
-  $effect(() => {
-    switch (props.toolType) {
-      case ToolType.RoundBrush:
-        activeTool = new Tool.RoundBrush(props.brushSize, context);
-        break;
-      case ToolType.SquareBrush:
-        activeTool = new Tool.SquareBrush(props.brushSize, context);
-        break;
-      case ToolType.Rectangle:
-        activeTool = new Tool.Rectangle(context);
-        break;
-      case ToolType.Ellipse:
-        activeTool = new Tool.Ellipse(context);
-        break;
+    if (props.toolType) {
+      lastPos = null;
+      drawing = false;
     }
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!p) return;
+    e.preventDefault();
+    lastPos = flipY(p);
     drawing = true;
-    activeTool.origin = p;
+    draw(e, p);
   }
 
   function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (p) {
-      if (props.drawMode === DrawMode.Erase) {
-        configureClearMode();
-      } else if (props.drawMode === DrawMode.Draw) {
-        configureDrawMode();
+    const coords = flipY(p);
+
+    // If using shapes, draw the shape outline when the mouse button is released
+    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
+      if (coords && drawing) {
+        material?.drawPath(coords, lastPos, true);
       }
-      activeTool.draw(p);
     }
 
-    // Save off the image state
-    persistChanges();
-    fogTexture.needsUpdate = true;
+    // Reset the drawing state
+    lastPos = null;
     drawing = false;
   }
 
-  function onMouseMove(e: MouseEvent, p: THREE.Vector2 | null): void {
-    if (!activeTool) return;
+  function onWheel(e: WheelEvent) {
+    const newBrushSize = Math.max(1, Math.min(props.brushSize + e.deltaY, 1000));
+    onBrushSizeUpdated(newBrushSize);
+  }
 
+  function draw(e: MouseEvent, p: THREE.Vector2 | null) {
     if (!p) {
-      // Mouse is outside canvas, reset the start position
-      resetPos = true;
+      lastPos = null;
+      material?.discardChanges();
       return;
     }
 
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
-      if (drawing) {
-        // Restore the previous draw state, effectively clearing the outline from the previous frame
-        revertChanges();
-        configureOutlineMode();
-        activeTool.drawOutline(p);
+      if (p && drawing) {
+        // Flip the y-coordinate to match the canvas coordinate system
+        const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
+
+        material?.drawPath(coords, lastPos);
       }
     } else {
-      // Otherwise, we are using a brush. Paint with the brush when the mouse button is
-      // held down and show the outline when the mouse button is up
-      if (drawing) {
-        // If mouse left the canvas area, reset the line start position
-        if (resetPos) {
-          resetPos = false;
-          activeTool.origin = p;
-        }
+      // Flip the y-coordinate to match the canvas coordinate system
+      const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
 
-        if (props.drawMode === DrawMode.Erase) {
-          configureClearMode();
-        } else if (props.drawMode === DrawMode.Draw) {
-          configureDrawMode();
-        }
-
-        activeTool.draw(p);
-        persistChanges();
-      } else {
-        // Restore the previous draw state, effectively clearing the outline from the previous frame
-        revertChanges();
-        configureOutlineMode();
-        activeTool.drawOutline(p);
+      // If this is the first time the mouse has moved, set the last position to the current position
+      if (!lastPos) {
+        lastPos = coords.clone();
       }
+
+      material?.drawPath(coords, lastPos, drawing);
+
+      lastPos = coords.clone();
     }
   }
 
-  function onWheel(e: WheelEvent) {
-    const newBrushSize = props.brushSize + e.deltaY;
-    onBrushSizeUpdated(newBrushSize);
-  }
-
-  function configureDrawMode() {
-    context.globalAlpha = 1.0;
-    context.globalCompositeOperation = 'source-over';
-    context.fillStyle = 'white';
-    context.strokeStyle = 'white';
-  }
-
-  function configureClearMode() {
-    context.globalAlpha = 1.0;
-    context.globalCompositeOperation = 'destination-out';
-    context.fillStyle = 'black';
-    context.strokeStyle = 'black';
-  }
-
-  function configureOutlineMode() {
-    context.globalAlpha = 0.5;
-    if (props.drawMode === DrawMode.Draw) {
-      context.globalCompositeOperation = 'source-over';
-      context.fillStyle = 'white';
-      context.strokeStyle = 'white';
-    } else {
-      context.globalCompositeOperation = 'destination-out';
-      context.fillStyle = 'white';
-      context.strokeStyle = 'white';
-    }
-  }
-
-  function persistChanges() {
-    if (canvas && canvas.width > 0 && canvas.height > 0) {
-      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      fogTexture.needsUpdate = true;
-    }
-  }
-
-  function revertChanges() {
-    context.putImageData(imageData, 0, 0);
-    persistChanges();
+  function flipY(p: THREE.Vector2 | null): THREE.Vector2 | null {
+    if (!p) return null;
+    return new THREE.Vector2(p.x, mapSize.height - p.y);
   }
 
   /**
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
-    configureClearMode();
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    persistChanges();
+    if (!material) return;
+    material.clear();
   }
 
   /**
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    configureDrawMode();
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    persistChanges();
+    if (!material) return;
+    material.reset();
   }
 
   /**
    * Serializes the fog of war image data into a base-64 string
    * @return A base-64 string
    */
-  export function toBase64(): string {
-    return textureToBase64(fogTexture);
+  export function toBase64(): string | null {
+    const base64 = material?.toBase64() ?? '';
+    console.log(base64);
+    return base64;
   }
 </script>
 
-<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} {onMouseMove} {onMouseUp} {onWheel} />
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onWheel} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar">
-  <T.MeshBasicMaterial bind:ref={fogMaterial} color={props.fogColor} opacity={props.opacity} transparent={true} />
+  <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>
