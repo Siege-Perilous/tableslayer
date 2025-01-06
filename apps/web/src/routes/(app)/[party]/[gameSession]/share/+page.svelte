@@ -4,6 +4,7 @@
   import { Stage, type StageExports, type StageProps, Icon } from '@tableslayer/ui';
   import { IconPointerFilled } from '@tabler/icons-svelte';
   import classNames from 'classnames';
+  import type { BroadcastStageUpdate } from '$lib/utils';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -38,21 +39,19 @@
       socket.emit('cursorMove', { user, position });
     };
 
-    socket.on('sessionUpdated', (data) => {
-      if (data.sceneId === data.activeSceneId) {
-        stageProps = {
-          ...stageProps,
-          fogOfWar: data.stageProps.fogOfWar,
-          grid: data.stageProps.grid,
-          map: data.stageProps.map,
-          display: data.stageProps.display,
-          ping: data.stageProps.ping
-        };
-      }
+    socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
+      stageProps = {
+        ...stageProps,
+        fogOfWar: payload.stageProps.fogOfWar,
+        grid: payload.stageProps.grid,
+        map: payload.stageProps.map,
+        display: payload.stageProps.display,
+        ping: payload.stageProps.ping
+      };
     });
 
-    socket.on('cursorUpdate', (data) => {
-      const { normalizedPosition, user, zoom: editorZoom } = data;
+    socket.on('cursorUpdate', (payload) => {
+      const { normalizedPosition, user, zoom: editorZoom } = payload;
 
       const stageBounds = stageElement?.getBoundingClientRect();
       if (!stageBounds) return;
