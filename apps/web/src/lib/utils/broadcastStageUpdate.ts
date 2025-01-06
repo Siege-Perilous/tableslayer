@@ -1,17 +1,25 @@
+import type { SelectScene } from '$lib/db/gs/schema';
+import type { Thumb } from '$lib/server';
 import type { StageProps } from '@tableslayer/ui';
 import type { Socket } from 'socket.io-client';
 
+export type BroadcastStageUpdate = {
+  activeScene: SelectScene | (SelectScene & Thumb) | null;
+  selectedScene: SelectScene | (SelectScene & Thumb) | null;
+  stageProps: StageProps;
+};
+
 export const broadcastStageUpdate = (
   socket: Socket | null,
-  activeSceneId: string | null,
-  selectedSceneId: string | null,
-  stageProps: StageProps
+  activeScene: BroadcastStageUpdate['activeScene'],
+  selectedScene: BroadcastStageUpdate['selectedScene'],
+  stageProps: BroadcastStageUpdate['stageProps']
 ) => {
-  if (!socket || activeSceneId !== selectedSceneId) return;
+  if (!socket || !selectedScene || !activeScene || selectedScene.id !== activeScene.id) return;
 
   const updateData = {
-    sceneId: selectedSceneId,
-    activeSceneId: activeSceneId || '',
+    selectedScene: selectedScene,
+    activeScene: activeScene,
     stageProps: {
       fogOfWar: stageProps.fogOfWar,
       grid: stageProps.grid,

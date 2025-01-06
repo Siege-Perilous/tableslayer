@@ -53,7 +53,8 @@
   });
 
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene ? activeScene.id : null, selectedScene.id, stageProps);
+    console.log('socketUpdate');
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
 
   const handleSelectActiveControl = (control: string) => {
@@ -78,8 +79,6 @@
         clearInterval(interval);
       }
     }, 50);
-
-    socketUpdate();
   });
   let stage: StageExports;
 
@@ -100,7 +99,10 @@
     } else {
       stageProps.map.url = StageDefaultProps.map.url;
     }
-    socketUpdate();
+    if (activeScene) {
+      console.log('activeScene', activeScene);
+      socketUpdate();
+    }
   });
 
   const updateStage = (newProps: Partial<StageProps>) => {
@@ -176,12 +178,14 @@
       }
     }
 
-    socket?.emit('cursorMove', {
-      user: data.user,
-      normalizedPosition: { x: normalizedX, y: normalizedY },
-      zoom: stageProps.scene.zoom,
-      offset: stageProps.scene.offset
-    });
+    if (activeScene && activeScene.id === selectedScene.id) {
+      socket?.emit('cursorMove', {
+        user: data.user,
+        normalizedPosition: { x: normalizedX, y: normalizedY },
+        zoom: stageProps.scene.zoom,
+        offset: stageProps.scene.offset
+      });
+    }
   };
 
   const onWheel = (e: WheelEvent) => {
