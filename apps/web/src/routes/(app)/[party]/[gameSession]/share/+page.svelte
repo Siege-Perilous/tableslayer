@@ -40,24 +40,17 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
-      console.log('Session updated', payload);
-      if (!payload.activeScene || !payload.selectedScene) return;
-      if (payload.activeScene.id === payload.selectedScene.id) {
-        stageProps = {
-          ...stageProps,
-          fogOfWar: payload.stageProps.fogOfWar,
-          grid: payload.stageProps.grid,
-          map: payload.stageProps.map,
-          display: payload.stageProps.display,
-          ping: payload.stageProps.ping
-        };
-      } else {
-        stageProps = buildSceneProps(payload.activeScene);
-      }
+      stageProps = {
+        ...stageProps,
+        fogOfWar: payload.stageProps.fogOfWar,
+        grid: payload.stageProps.grid,
+        map: payload.stageProps.map,
+        display: payload.stageProps.display,
+        ping: payload.stageProps.ping
+      };
     });
 
     socket.on('cursorUpdate', (payload) => {
-      console.log('Cursor update', payload);
       const { normalizedPosition, user, zoom: editorZoom } = payload;
 
       const stageBounds = stageElement?.getBoundingClientRect();

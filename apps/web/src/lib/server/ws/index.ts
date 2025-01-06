@@ -16,8 +16,6 @@ export const initializeSocketIO = (server: any) => {
 
     // Listen for cursor movements
     socket.on('cursorMove', (data) => {
-      console.log(`Cursor move from user ${data.user.name}:`, data.position);
-
       // Broadcast cursor updates to other clients in the same namespace
       socket.broadcast.emit('cursorUpdate', data);
     });
