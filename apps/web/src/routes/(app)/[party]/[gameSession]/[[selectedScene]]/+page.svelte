@@ -78,6 +78,8 @@
         clearInterval(interval);
       }
     }, 50);
+
+    socketUpdate();
   });
   let stage: StageExports;
 

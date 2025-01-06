@@ -403,14 +403,6 @@
   .sceneControls__layer--isActive {
     background: var(--fgPrimary);
   }
-  .sceneControls__settings {
-    display: flex;
-    padding: 0 0.25rem 0 0.5rem;
-    align-items: center;
-    justify-content: center;
-    border-left: var(--borderThin);
-    height: 2rem;
-  }
   .sceneControls__trigger {
     display: flex;
     align-items: center;
