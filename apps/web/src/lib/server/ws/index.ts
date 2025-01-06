@@ -1,3 +1,4 @@
+import { type BroadcastStageUpdate } from '$lib/utils';
 import { Server } from 'socket.io';
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
@@ -8,15 +9,13 @@ export const initializeSocketIO = (server: any) => {
     console.log(`Client connected to namespace: ${socket.nsp.name}`);
 
     // Listen for game session updates
-    socket.on('updateSession', (data) => {
+    socket.on('updateSession', (data: BroadcastStageUpdate) => {
       console.log(`Update received for ${socket.nsp.name}:`);
       socket.nsp.emit('sessionUpdated', data); // Broadcast to namespace
     });
 
     // Listen for cursor movements
     socket.on('cursorMove', (data) => {
-      console.log(`Cursor move from user ${data.user.name}:`, data.position);
-
       // Broadcast cursor updates to other clients in the same namespace
       socket.broadcast.emit('cursorUpdate', data);
     });

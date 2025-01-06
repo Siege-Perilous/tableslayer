@@ -51,12 +51,12 @@
     "@types/chroma-js": "^2.4.5",
     "@types/marked": "^6.0.0",
     "@types/three": "0.171.0",
-    "marked": "^15.0.4",
-    "svelte": "5.16.0",
+    "marked": "^15.0.5",
+    "svelte": "5.16.2",
     "svelte-check": "^4.1.1",
     "typedoc": "^0.27.6",
     "typescript": "^5.7.2",
-    "vite": "^6.0.6"
+    "vite": "^6.0.7"
   },
   "dependencies": {
     "@tabler/icons-svelte": "^3.26.0",
@@ -66,9 +66,9 @@
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "formsnap": "^2.0.0",
-    "postprocessing": "6.36.5",
-    "shiki": "^1.24.4",
-    "three": "0.171.0"
+    "postprocessing": "6.36.6",
+    "shiki": "^1.26.1",
+    "three": "0.172.0"
   },
   "svelte": "./src/lib/index.ts",
   "types": "./src/lib/index.d.ts",
