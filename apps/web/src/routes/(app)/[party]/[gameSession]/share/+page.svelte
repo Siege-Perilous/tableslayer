@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
-  import { Stage, type StageExports, type StageProps, Icon } from '@tableslayer/ui';
-  import { IconPointerFilled } from '@tabler/icons-svelte';
+  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import classNames from 'classnames';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
@@ -168,8 +167,8 @@
       class="cursor"
       style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-0.75rem, -0.25rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
     >
-      <Icon Icon={IconPointerFilled} size="1.5rem" stroke={1} />
-      <span class="cursor-label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
+      <div class="cursor__pointer"></div>
+      <span class="cursor__label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
     </div>
   {/each}
 </div>
@@ -196,17 +195,15 @@
     font-size: 12px;
   }
 
-  .cursor-pointer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .cursor__pointer {
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: solid 0.25rem white;
+    background-color: black;
   }
 
-  .cursor-icon {
-    stroke: black; /* Customize this color if needed */
-  }
-
-  .cursor-label {
+  .cursor__label {
     font-size: 12px;
     font-weight: 600;
     color: black;
