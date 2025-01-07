@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
-  import { Stage, type StageExports, type StageProps, Icon } from '@tableslayer/ui';
-  import { IconCircleDotFilled } from '@tabler/icons-svelte';
+  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
   import classNames from 'classnames';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
