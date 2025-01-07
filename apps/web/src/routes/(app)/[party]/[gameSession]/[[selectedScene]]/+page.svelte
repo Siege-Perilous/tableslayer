@@ -1,9 +1,10 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
+  import { createUpdateSceneMutation } from '$lib/queries';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -57,6 +58,31 @@
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export function debounce<T extends (...args: any[]) => void>(callback: T, delay: number) {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    return (...args: Parameters<T>) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        callback(...args);
+        timer = null;
+      }, delay);
+    };
+  }
+
+  const updateSceneMutation = createUpdateSceneMutation();
+
+  const debouncedSave = debounce(() => {
+    $updateSceneMutation.mutate({
+      sceneId: selectedScene.id,
+      dbName: gameSession.dbName,
+      stageProps
+    });
+  }, 300);
+
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
       activeControl = 'none';
@@ -108,6 +134,7 @@
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
     socketUpdate();
+    debouncedSave();
   };
 
   const onBrushSizeUpdated = (brushSize: number) => {
@@ -217,6 +244,36 @@
   });
 
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
+
+  $effect(() => {
+    if ($updateSceneMutation.isPending) {
+      addToast({
+        data: {
+          title: 'Updating scene...',
+          type: 'loading'
+        }
+      });
+    }
+
+    if ($updateSceneMutation.isSuccess) {
+      addToast({
+        data: {
+          title: 'Scene updated successfully!',
+          type: 'success'
+        }
+      });
+    }
+
+    if ($updateSceneMutation.isError) {
+      console.error('error saving scene', $updateSceneMutation.error);
+      addToast({
+        data: {
+          title: 'Error updating scene',
+          type: 'danger'
+        }
+      });
+    }
+  });
 </script>
 
 <div class="container">

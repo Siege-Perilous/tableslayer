@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
   import { Stage, type StageExports, type StageProps, Icon } from '@tableslayer/ui';
-  import { IconPointerFilled } from '@tabler/icons-svelte';
+  import { IconCircleDotFilled } from '@tabler/icons-svelte';
   import classNames from 'classnames';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
@@ -168,7 +168,7 @@
       class="cursor"
       style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-0.75rem, -0.25rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
     >
-      <Icon Icon={IconPointerFilled} size="1.5rem" stroke={1} />
+      <Icon Icon={IconCircleDotFilled} size="1.5rem" stroke={1} />
       <span class="cursor-label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
     </div>
   {/each}
