@@ -1,9 +1,10 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector } from '$lib/components';
+  import { createUpdateSceneMutation } from '$lib/queries';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -32,6 +33,7 @@
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   // These are the values in stage props that exist
   //  stageProps.display.resolution.x = 1920
@@ -49,6 +51,7 @@
 
     return () => {
       socket?.disconnect();
+      if (saveTimer) clearTimeout(saveTimer);
     };
   });
 
@@ -56,6 +59,8 @@
     console.log('socketUpdate');
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
+
+  const updateSceneMutation = createUpdateSceneMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -217,6 +222,62 @@
   });
 
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
+
+  $effect(() => {
+    if ($updateSceneMutation.isPending) {
+      addToast({
+        data: {
+          title: 'Updating scene...',
+          type: 'loading'
+        }
+      });
+    }
+
+    if ($updateSceneMutation.isSuccess) {
+      addToast({
+        data: {
+          title: 'Scene updated successfully!',
+          type: 'success'
+        }
+      });
+    }
+
+    if ($updateSceneMutation.isError) {
+      console.error('error saving scene', $updateSceneMutation.error);
+      addToast({
+        data: {
+          title: 'Error updating scene',
+          type: 'danger'
+        }
+      });
+    }
+  });
+  const saveScene = () => {
+    console.log('Saving scene...');
+    $updateSceneMutation.mutate({
+      sceneId: selectedScene.id,
+      dbName: gameSession.dbName,
+      stageProps
+    });
+  };
+
+  // Save the scene every 3 seconds based on the stage props
+  $effect(() => {
+    // Snapshot is needed to track reactivity
+    $state.snapshot(stageProps);
+
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+
+    saveTimer = setTimeout(() => {
+      saveScene();
+    }, 3000);
+
+    return () => {
+      if (saveTimer) clearTimeout(saveTimer);
+    };
+  });
 </script>
 
 <div class="container">

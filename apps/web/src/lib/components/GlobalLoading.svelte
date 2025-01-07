@@ -1,33 +1,36 @@
 <script lang="ts">
   import { useIsFetching, useIsMutating } from '@tanstack/svelte-query';
-  import { isFetching } from '$lib/stores/loading';
+  import { writable } from 'svelte/store';
   import { onDestroy } from 'svelte';
 
-  const isFetchingCount = useIsFetching();
-  const isMutatingCount = useIsMutating();
+  // Global loader store
+  export const isFetching = writable(false);
 
-  const unsubscribeIsFetching = isFetchingCount.subscribe((value) => {
-    isFetching.set(value > 0);
+  const isFetchingCount = useIsFetching(); // Tracks queries
+  const isMutatingCount = useIsMutating(); // Tracks mutations
+
+  const unsubscribeIsFetching = isFetchingCount.subscribe((fetchCount) => {
+    checkLoader(fetchCount, $isMutatingCount);
   });
 
-  const unsubscribeIsMutating = isMutatingCount.subscribe((value) => {
-    isFetching.update((n) => n || value > 0);
+  const unsubscribeIsMutating = isMutatingCount.subscribe((mutateCount) => {
+    checkLoader($isFetchingCount, mutateCount);
   });
+
+  function checkLoader(fetchCount: number, mutateCount: number) {
+    // Only show the loader if there are active queries or mutations
+    isFetching.set(fetchCount > 0 || mutateCount > 0);
+  }
 
   onDestroy(() => {
     unsubscribeIsFetching();
     unsubscribeIsMutating();
   });
-
-  let showLoader = false;
-
-  isFetching.subscribe((value) => {
-    showLoader = value;
-  });
 </script>
 
-{#if showLoader}
-  <div class="global-loader">global loading</div>
+<!-- Global loader display -->
+{#if $isFetching}
+  <div class="global-loader">Global Loading</div>
 {/if}
 
 <style>
@@ -37,5 +40,10 @@
     right: 0;
     height: 1rem;
     background: red;
+    padding: 0.5rem;
+    color: white;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    z-index: 9999;
   }
 </style>

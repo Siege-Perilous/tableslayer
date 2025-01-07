@@ -274,8 +274,13 @@
   </Control>
   <Spacer />
 {/snippet}
+
 {#snippet fogControls()}
   <ColorPicker bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
+{/snippet}
+
+{#snippet mapControls()}
+  Hello
 {/snippet}
 
 <ColorMode mode="dark">
@@ -319,6 +324,8 @@
               {@render gridControls()}
             {:else if scene.id === 'fog'}
               {@render fogControls()}
+            {:else if scene.id === 'map'}
+              {@render mapControls()}
             {/if}
           {/snippet}
         </Popover>
