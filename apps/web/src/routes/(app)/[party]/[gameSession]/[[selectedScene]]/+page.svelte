@@ -33,6 +33,7 @@
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   // These are the values in stage props that exist
   //  stageProps.display.resolution.x = 1920
@@ -50,6 +51,7 @@
 
     return () => {
       socket?.disconnect();
+      if (saveTimer) clearTimeout(saveTimer);
     };
   });
 
@@ -58,30 +60,7 @@
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export function debounce<T extends (...args: any[]) => void>(callback: T, delay: number) {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    return (...args: Parameters<T>) => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(() => {
-        callback(...args);
-        timer = null;
-      }, delay);
-    };
-  }
-
   const updateSceneMutation = createUpdateSceneMutation();
-
-  const debouncedSave = debounce(() => {
-    $updateSceneMutation.mutate({
-      sceneId: selectedScene.id,
-      dbName: gameSession.dbName,
-      stageProps
-    });
-  }, 300);
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -134,7 +113,6 @@
   const updateStage = (newProps: Partial<StageProps>) => {
     Object.assign(stageProps, newProps);
     socketUpdate();
-    debouncedSave();
   };
 
   const onBrushSizeUpdated = (brushSize: number) => {
@@ -273,6 +251,32 @@
         }
       });
     }
+  });
+  const saveScene = () => {
+    console.log('Saving scene...');
+    $updateSceneMutation.mutate({
+      sceneId: selectedScene.id,
+      dbName: gameSession.dbName,
+      stageProps
+    });
+  };
+
+  // Save the scene every 3 seconds based on the stage props
+  $effect(() => {
+    // Snapshot is needed to track reactivity
+    $state.snapshot(stageProps);
+
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+
+    saveTimer = setTimeout(() => {
+      saveScene();
+    }, 3000);
+
+    return () => {
+      if (saveTimer) clearTimeout(saveTimer);
+    };
   });
 </script>
 
