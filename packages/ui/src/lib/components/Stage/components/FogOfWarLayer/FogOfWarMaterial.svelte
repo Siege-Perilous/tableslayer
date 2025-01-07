@@ -114,9 +114,13 @@
     }
   });
 
+  $effect(() => {
+    drawingShader.uniforms.uBrushSize.value = props.brushSize;
+    bufferManager.render(scene, quadCamera);
+  });
+
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    drawingShader.uniforms.uBrushSize.value = props.brushSize / 2;
     drawingShader.uniforms.uShapeType.value = props.toolType;
 
     material.uniforms.uOpacity.value = props.opacity;

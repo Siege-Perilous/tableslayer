@@ -21,7 +21,7 @@ export const StageDefaultProps: StageProps = {
     brushSize: 200,
     edgeFrequency: 0.002,
     edgeAmplitude: 0.1,
-    edgeOffset: 0.55,
+    edgeOffset: 0.65,
     fogSpeed: { x: -0.015, y: 0.01, z: -0.05, w: 0.1 },
     frequency: { x: 0.0008, y: 0.002, z: 0.001, w: 0.001 },
     offset: { x: -0.4, y: -0.2, z: -0.3, w: -0.25 },

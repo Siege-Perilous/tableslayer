@@ -135,7 +135,7 @@ void main() {
   vec3 fog3 = uFogColor3 * fog(vUv, texSize, uAmplitude.z, uFrequency.z, uPersistence.z, uLacunarity.z, uOffset.z, uLevels.z, uFogSpeed.z);
   vec3 fog4 = uFogColor4 * fog(vUv, texSize, uAmplitude.w, uFrequency.w, uPersistence.w, uLacunarity.w, uOffset.w, uLevels.w, uFogSpeed.w);
 
-  vec3 finalFog = fog1 + fog2 + fog3 + fog4;
+  vec3 finalFog = uBaseColor + fog1 + fog2 + fog3 + fog4;
 
   gl_FragColor = vec4(finalFog, mask * uOpacity);
 }

@@ -15,8 +15,6 @@
 
   const { props, isActive, mapSize }: Props = $props();
 
-  const onBrushSizeUpdated = getContext<Callbacks>('callbacks').onBrushSizeUpdated;
-
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
@@ -53,11 +51,6 @@
     // Reset the drawing state
     lastPos = null;
     drawing = false;
-  }
-
-  function onWheel(e: WheelEvent) {
-    const newBrushSize = Math.max(1, Math.min(props.brushSize + e.deltaY, 1000));
-    onBrushSizeUpdated(newBrushSize);
   }
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
@@ -122,7 +115,7 @@
   }
 </script>
 
-<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onWheel} />
+<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} />
 
 <T.Mesh bind:ref={mesh} name="FogOfWar">
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />

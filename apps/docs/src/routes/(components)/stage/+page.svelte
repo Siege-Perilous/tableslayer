@@ -151,10 +151,6 @@
     stageProps.ping.locations = [];
   }
 
-  function onBrushSizeUpdated(brushSize: number) {
-    stageProps.fogOfWar.brushSize = brushSize;
-  }
-
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
@@ -196,12 +192,14 @@
     } else if (e.ctrlKey) {
       e.preventDefault();
       stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
+      stageProps.fogOfWar.brushSize = Math.max(10, Math.min(stageProps.fogOfWar.brushSize + 500.0 * scrollDelta, 1000));
     }
   }
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
   <div>
     <h1>Keybindings</h1>
     <ul>
