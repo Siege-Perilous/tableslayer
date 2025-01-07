@@ -16,6 +16,9 @@ uniform vec4 uAmplitude;
 uniform vec4 uOffset;
 uniform ivec4 uLevels;
 
+uniform float uEdgeFrequency;
+uniform float uEdgeAmplitude;
+uniform float uEdgeOffset;
 uniform sampler2D uMaskTexture;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
@@ -85,20 +88,24 @@ float mask(vec2 uv, vec2 size, float amplitude, float frequency, float speed) {
     // Get base mask with mipmap blur
   float baseMask = 0.0;
 
+  // Sample the mask at multiple mipmap levels to get a more feathered edge
+  // The lower layers contain more detail while higher layers are more blurred
+  float layerWeights[10] = float[](0.1, 0.0, 0.0, 0.0, 0.3, 0.4, 0.8, 0.7, 0.4, 0.3);
   int count = 0;
-  for(int i = 4; i < 9; i++) {
-    baseMask += textureLod(uMaskTexture, uv, float(i)).a;
-    count++;
+  float totalWeight = 0.0;
+  for(int i = 0; i < layerWeights.length(); i++) {
+    float weight = layerWeights[i];
+    baseMask += textureLod(uMaskTexture, uv, float(i)).a * weight;
+    totalWeight += weight;
   }
-  baseMask /= float(count);
+  baseMask /= totalWeight;
 
-  // Add noise-based overhang
+  // Add noise to the mask edge to create a more natural effect. The noise
+  // is purely additive, 
   vec2 noiseUV = uv * size; // Scale UV for noise
-  float noise = amplitude * snoise(frequency * noiseUV + uTime * speed);
+  float noise = uEdgeAmplitude * snoise(uEdgeFrequency * noiseUV + uTime * speed);
   noise = noise * 0.5 + 0.5;
-
-  // Use thresholds to combine different layers of noise
-  float expandedMask = smoothstep(0.5, 1.0, baseMask + 0.4 * noise);
+  float expandedMask = smoothstep(uEdgeOffset, 1.0, baseMask + noise);
 
   return expandedMask;
 }

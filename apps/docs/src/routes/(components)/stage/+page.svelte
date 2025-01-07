@@ -251,6 +251,15 @@
     <Color bind:value={stageProps.fogOfWar.fogColor3} label="Color 3" />
     <Color bind:value={stageProps.fogOfWar.fogColor4} label="Color 4" />
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider
+      bind:value={stageProps.fogOfWar.edgeFrequency}
+      label="Edge Frequency"
+      min={0.001}
+      max={0.025}
+      step={0.001}
+    />
+    <Slider bind:value={stageProps.fogOfWar.edgeAmplitude} label="Edge Amplitude" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fogOfWar.edgeOffset} label="Edge Offset" min={0} max={1} step={0.01} />
     <Binding bind:object={stageProps.fogOfWar} key={'fogSpeed'} label="Fog Speed" />
     <Binding bind:object={stageProps.fogOfWar} key={'frequency'} label="Frequency" />
     <Binding bind:object={stageProps.fogOfWar} key={'offset'} label="Offset" />

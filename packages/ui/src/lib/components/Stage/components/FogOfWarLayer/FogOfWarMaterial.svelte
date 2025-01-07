@@ -56,6 +56,9 @@
       uFogColor3: { value: new THREE.Color(props.fogColor3) },
       uFogColor4: { value: new THREE.Color(props.fogColor4) },
       uFogSpeed: { value: props.fogSpeed },
+      uEdgeFrequency: { value: props.edgeFrequency },
+      uEdgeAmplitude: { value: props.edgeAmplitude },
+      uEdgeOffset: { value: props.edgeOffset },
       uPersistence: { value: props.persistence },
       uLacunarity: { value: props.lacunarity },
       uFrequency: { value: props.frequency },
@@ -127,6 +130,9 @@
     material.uniforms.uFogColor3.value = new THREE.Color(props.fogColor3);
     material.uniforms.uFogColor4.value = new THREE.Color(props.fogColor4);
     material.uniforms.uFogSpeed.value = props.fogSpeed;
+    material.uniforms.uEdgeFrequency.value = props.edgeFrequency;
+    material.uniforms.uEdgeAmplitude.value = props.edgeAmplitude;
+    material.uniforms.uEdgeOffset.value = props.edgeOffset;
     material.uniforms.uFrequency.value = props.frequency;
     material.uniforms.uPersistence.value = props.persistence;
     material.uniforms.uLacunarity.value = props.lacunarity;

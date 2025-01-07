@@ -31,6 +31,21 @@ export interface FogOfWarLayerProps {
   brushSize: number;
 
   /**
+   * The frequency of the noise added to the mask edge
+   */
+  edgeFrequency: number;
+
+  /**
+   * The amplitude of the noise added to the mask edge
+   */
+  edgeAmplitude: number;
+
+  /**
+   * The offset of the noise added to the mask edge
+   */
+  edgeOffset: number;
+
+  /**
    * The base color of the fog of war layer
    */
   baseColor: string;
