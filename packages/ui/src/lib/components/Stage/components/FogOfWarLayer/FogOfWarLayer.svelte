@@ -24,14 +24,6 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
-  // Whenever the tool type changes, we need to reset the drawing state
-  $effect(() => {
-    if (props.tool.type) {
-      lastPos = null;
-      drawing = false;
-    }
-  });
-
   // Add outline material
   const outlineMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -50,6 +42,14 @@
     depthTest: false
   });
 
+  // Whenever the tool type changes, we need to reset the drawing state
+  $effect(() => {
+    if (props.tool.type) {
+      lastPos = null;
+      drawing = false;
+    }
+  });
+
   // Update outline material uniforms
   $effect(() => {
     outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
@@ -63,6 +63,11 @@
     if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {
       outlineMaterial.visible = false;
     }
+  });
+
+  // Show/hide the outline material when the layer is active
+  $effect(() => {
+    outlineMaterial.visible = isActive;
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -85,6 +90,13 @@
     // Reset the drawing state
     lastPos = null;
     drawing = false;
+  }
+
+  function onMouseLeave(e: MouseEvent, p: THREE.Vector2 | null) {
+    lastPos = null;
+    drawing = false;
+    outlineMaterial.visible = false;
+    material?.render('copy', false);
   }
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
@@ -144,7 +156,15 @@
   }
 </script>
 
-<InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} />
+<InputManager
+  {isActive}
+  layerSize={mapSize}
+  target={mesh}
+  {onMouseDown}
+  onMouseMove={draw}
+  {onMouseUp}
+  {onMouseLeave}
+/>
 
 <!-- 
 Invisible mesh used for input detection.

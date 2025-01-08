@@ -138,6 +138,8 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
+    drawMaterial.uniforms.uEnd.value.copy(drawMaterial.uniforms.uStart.value);
+
     // Update brush properties
     drawMaterial.uniforms.uShapeType.value = props.tool.type;
     drawMaterial.uniforms.uBrushSize.value = props.tool.size;
