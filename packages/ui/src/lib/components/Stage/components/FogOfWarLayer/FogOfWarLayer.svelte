@@ -90,16 +90,14 @@
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
-    if (!material) return;
-    material.clear();
+    material?.render('clear', true);
   }
 
   /**
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    if (!material) return;
-    material.reset();
+    material?.render('reset', true);
   }
 
   /**
