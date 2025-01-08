@@ -92,7 +92,7 @@
     drawing = false;
   }
 
-  function onMouseLeave(e: MouseEvent, p: THREE.Vector2 | null) {
+  function onMouseLeave() {
     lastPos = null;
     drawing = false;
     outlineMaterial.visible = false;
