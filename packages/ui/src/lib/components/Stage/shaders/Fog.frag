@@ -16,9 +16,13 @@ uniform vec4 uAmplitude;
 uniform vec4 uOffset;
 uniform ivec4 uLevels;
 
-uniform float uEdgeFrequency;
-uniform float uEdgeAmplitude;
+uniform int uEdgeMinMipMapLevel;
+uniform int uEdgeMaxMipMapLevel;
+uniform vec4 uEdgeFrequency;
+uniform vec4 uEdgeAmplitude;
 uniform float uEdgeOffset;
+uniform float uEdgeSpeed;
+
 uniform sampler2D uMaskTexture;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
@@ -84,30 +88,29 @@ float fog(vec2 uv, vec2 size, float amplitude, float frequency, float persistenc
   return amplitude * clamp(sum, 0.0, 1.0);
 }
 
-float mask(vec2 uv, vec2 size, float amplitude, float frequency, float speed) {
-    // Get base mask with mipmap blur
-  float baseMask = 0.0;
-
-  // Sample the mask at multiple mipmap levels to get a more feathered edge
-  // The lower layers contain more detail while higher layers are more blurred
-  float layerWeights[8] = float[](0.1, 0.0, 0.0, 0.0, 0.3, 0.4, 0.8, 0.7);
-  int count = 0;
+float mask(vec2 uv, vec2 size, float amplitude, float frequency) {
+  // Sample the mask at multiple mipmap levels to get a feathered edge
+  float featheredMask = 0.0;
   float totalWeight = 0.0;
-  for(int i = 0; i < layerWeights.length(); i++) {
-    float weight = layerWeights[i];
-    baseMask += textureLod(uMaskTexture, uv, float(i)).a * weight;
-    totalWeight += weight;
+  for(int i = uEdgeMinMipMapLevel; i <= uEdgeMaxMipMapLevel; i++) {
+    featheredMask += textureLod(uMaskTexture, uv, float(i)).a;
   }
-  baseMask /= totalWeight;
+  featheredMask /= float(uEdgeMaxMipMapLevel - uEdgeMinMipMapLevel + 1);
+  featheredMask = clamp(featheredMask, 0.0, 1.0);
 
-  // Add noise to the mask edge to create a more natural effect. The noise
-  // is purely additive, 
-  vec2 noiseUV = uv * size; // Scale UV for noise
-  float noise = uEdgeAmplitude * snoise(uEdgeFrequency * noiseUV + uTime * speed);
-  noise = noise * 0.5 + 0.5;
-  float expandedMask = smoothstep(uEdgeOffset, 1.0, baseMask + noise);
+  // Add noise to the edge of the mask
+  vec2 noiseUV = uv * size;
+  float edgeNoise = snoise(frequency * noiseUV + uTime * uEdgeSpeed) + uEdgeOffset;
 
-  return expandedMask;
+  // Create an edge mask that's only non-zero near the transition
+  float edgeWidth = 0.2;
+  float edgeMask = smoothstep(0.0, edgeWidth, featheredMask) * (1.0 - smoothstep(1.0 - edgeWidth, 1.0, featheredMask));
+
+  // Blend the noise only at the edges
+  float finalMask = featheredMask + edgeNoise * amplitude * edgeMask;
+
+  float baseMask = texture2D(uMaskTexture, vUv).a;
+  return amplitude * finalMask + (1.0 - amplitude) * baseMask;
 }
 
 void main() {
@@ -124,18 +127,21 @@ void main() {
 
   // Sample at multiple levels of detail to get a nice feathered edge
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
-  float mask = mask(vUv, texSize, uAmplitude.x, uFrequency.x, uFogSpeed.x) +
-    mask(vUv, texSize, uAmplitude.y, uFrequency.y, uFogSpeed.y) +
-    mask(vUv, texSize, uAmplitude.z, uFrequency.z, uFogSpeed.z) +
-    mask(vUv, texSize, uAmplitude.w, uFrequency.w, uFogSpeed.w);
-  mask = mask * 0.25;
+
+  float mask1 = mask(vUv, texSize, uEdgeAmplitude.x, uEdgeFrequency.x);
+  float mask2 = mask(vUv, texSize, uEdgeAmplitude.y, uEdgeFrequency.y);
+  float mask3 = mask(vUv, texSize, uEdgeAmplitude.z, uEdgeFrequency.z);
+  float mask4 = mask(vUv, texSize, uEdgeAmplitude.w, uEdgeFrequency.w);
 
   vec3 fog1 = uFogColor1 * fog(vUv, texSize, uAmplitude.x, uFrequency.x, uPersistence.x, uLacunarity.x, uOffset.x, uLevels.x, uFogSpeed.x);
   vec3 fog2 = uFogColor2 * fog(vUv, texSize, uAmplitude.y, uFrequency.y, uPersistence.y, uLacunarity.y, uOffset.y, uLevels.y, uFogSpeed.y);
   vec3 fog3 = uFogColor3 * fog(vUv, texSize, uAmplitude.z, uFrequency.z, uPersistence.z, uLacunarity.z, uOffset.z, uLevels.z, uFogSpeed.z);
   vec3 fog4 = uFogColor4 * fog(vUv, texSize, uAmplitude.w, uFrequency.w, uPersistence.w, uLacunarity.w, uOffset.w, uLevels.w, uFogSpeed.w);
 
-  vec3 finalFog = uBaseColor + fog1 + fog2 + fog3 + fog4;
+  vec4 finalFog = vec4(fog1, mask1) +
+    vec4(fog2, mask2) +
+    vec4(fog3, mask3) +
+    vec4(fog4, mask4);
 
-  gl_FragColor = vec4(finalFog, mask * uOpacity);
+  gl_FragColor = vec4(uBaseColor + finalFog.rgb, finalFog.a * uOpacity);
 }

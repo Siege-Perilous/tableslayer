@@ -26,7 +26,7 @@
 
   // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    if (props.toolType) {
+    if (props.tool.type) {
       lastPos = null;
       drawing = false;
     }
@@ -35,18 +35,34 @@
   // Add outline material
   const outlineMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      uStart: { value: new THREE.Vector2() },
-      uEnd: { value: new THREE.Vector2() },
-      uBrushSize: { value: props.brushSize },
+      uStart: { value: new THREE.Vector2(Infinity, Infinity) },
+      uEnd: { value: new THREE.Vector2(Infinity, Infinity) },
+      uBrushSize: { value: props.tool.size },
       uTextureSize: { value: new THREE.Vector2(mapSize.width, mapSize.height) },
-      uShapeType: { value: props.toolType },
-      uOutlineColor: { value: new THREE.Vector3(0, 0, 0) },
-      uOutlineThickness: { value: 10.0 }
+      uShapeType: { value: props.tool.type },
+      uOutlineColor: { value: new THREE.Color(props.outline.color) },
+      uOutlineOpacity: { value: props.outline.opacity },
+      uOutlineThickness: { value: props.outline.thickness }
     },
     vertexShader: toolOutlineVertexShader,
     fragmentShader: toolOutlineFragmentShader,
     transparent: true,
     depthTest: false
+  });
+
+  // Update outline material uniforms
+  $effect(() => {
+    outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
+    outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
+    outlineMaterial.uniforms.uOutlineOpacity.value = props.outline.opacity;
+    outlineMaterial.uniforms.uShapeType.value = props.tool.type;
+    outlineMaterial.uniforms.uBrushSize.value = props.tool.size;
+
+    // When changing to a rectangle or ellipse, initially hide the outline
+    if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {
+      outlineMaterial.visible = false;
+    }
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
@@ -59,12 +75,10 @@
     const coords = flipY(p);
 
     // If using shapes, draw the shape outline when the mouse button is released
-    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
+    if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
       if (coords && drawing) {
         material?.drawPath(coords, lastPos, true);
-        // Hide the outline by setting start and end to zero
-        outlineMaterial.uniforms.uStart.value.set(-1, -1);
-        outlineMaterial.uniforms.uEnd.value.set(-1, -1);
+        outlineMaterial.visible = false;
       }
     }
 
@@ -74,37 +88,28 @@
   }
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
-    if (!p) {
-      return;
-    }
-
+    // Flip the y-coordinate to match the canvas coordinate system
     const coords = flipY(p);
 
-    // Update outline position
+    // If the mouse is not within the drawing area, do nothing
+    if (!coords) return;
+
     outlineMaterial.uniforms.uStart.value.copy(coords);
     outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? coords);
-    outlineMaterial.uniforms.uShapeType.value = props.toolType;
-    outlineMaterial.uniforms.uBrushSize.value = props.brushSize;
 
-    // When using shapes, draw the shape outline while the mouse button is held down
-    if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
-      if (p && drawing) {
-        // Flip the y-coordinate to match the canvas coordinate system
-        const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
-
+    if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
+      // When using shapes, draw the shape outline while the mouse button is held down
+      if (drawing) {
+        outlineMaterial.visible = true;
         material?.drawPath(coords, lastPos);
       }
     } else {
-      // Flip the y-coordinate to match the canvas coordinate system
-      const coords = new THREE.Vector2(p.x, mapSize.height - p.y);
-
       // If this is the first time the mouse has moved, set the last position to the current position
       if (!lastPos) {
         lastPos = coords.clone();
       }
-
+      outlineMaterial.visible = true;
       material?.drawPath(coords, lastPos, drawing);
-
       lastPos = coords.clone();
     }
   }
@@ -151,7 +156,7 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[mapSize.width * 10, mapSize.height * 10]} />
 </T.Mesh>
 
-<T.Mesh name="FogOfWarToolOutline" renderOrder={1}>
+<T.Mesh name="FogOfWarToolOutline" position.z={-10} renderOrder={1}>
   <T is={outlineMaterial} />
   <T.PlaneGeometry />
 </T.Mesh>

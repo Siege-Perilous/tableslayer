@@ -1,3 +1,5 @@
+precision highp float;
+
 uniform vec2 uStart;
 uniform vec2 uEnd;
 uniform float uBrushSize;
@@ -5,6 +7,7 @@ uniform vec2 uTextureSize;
 uniform int uShapeType;
 uniform vec3 uOutlineColor;
 uniform float uOutlineThickness;
+uniform float uOutlineOpacity;
 
 varying vec2 vUv;
 
@@ -43,14 +46,14 @@ void main() {
     float inner = smoothstep(uBrushSize - outlineWidth, uBrushSize, dist);
     float outer = smoothstep(uBrushSize, uBrushSize + outlineWidth, dist);
     float outline = inner - outer;
-    gl_FragColor = vec4(uOutlineColor, outline);
+    gl_FragColor = vec4(uOutlineColor, outline * uOutlineOpacity);
   } else if(uShapeType == 2) { // Rectangle
     dist = distanceToRectangle(pixelPos, uStart, uEnd);
     float outline = smoothstep(0.0, outlineWidth, dist) - smoothstep(outlineWidth, outlineWidth * 2.0, dist);
-    gl_FragColor = vec4(uOutlineColor, outline);
+    gl_FragColor = vec4(uOutlineColor, outline * uOutlineOpacity);
   } else if(uShapeType == 3) { // Ellipse
     dist = isInsideEllipse(pixelPos, uStart, uEnd);
     float outline = smoothstep(0.0, outlineWidth, dist) - smoothstep(outlineWidth, outlineWidth * 2.0, dist);
-    gl_FragColor = vec4(uOutlineColor, outline);
+    gl_FragColor = vec4(uOutlineColor, outline * uOutlineOpacity);
   }
 }

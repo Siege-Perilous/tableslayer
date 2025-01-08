@@ -16,87 +16,133 @@ export interface FogOfWarLayerProps {
   data: string | null;
 
   /**
-   * The type of drawing tool currently selected
-   */
-  toolType: ToolType;
-
-  /**
-   * The current drawing mode (`DrawMode.Erase` or `DrawMode.Draw`)
-   */
-  drawMode: DrawMode;
-
-  /**
-   * When `toolType = ToolType.Brush`, setting this controls the brush size
-   */
-  brushSize: number;
-
-  /**
-   * The frequency of the noise added to the mask edge
-   */
-  edgeFrequency: number;
-
-  /**
-   * The amplitude of the noise added to the mask edge
-   */
-  edgeAmplitude: number;
-
-  /**
-   * The offset of the noise added to the mask edge
-   */
-  edgeOffset: number;
-
-  /**
-   * The base color of the fog of war layer
-   */
-  baseColor: string;
-
-  /**
-   * Color of the fog
-   */
-  fogColor1: string;
-  fogColor2: string;
-  fogColor3: string;
-  fogColor4: string;
-
-  /**
    * Controls the opacity of the entire fog of war layer
    */
   opacity: number;
 
   /**
-   * Controls the speed of the fog
+   * The outline settings
    */
-  fogSpeed: { x: number; y: number; z: number; w: number };
+  outline: {
+    /**
+     * The color of the outline
+     */
+    color: string;
+
+    /**
+     * The opacity of the outline
+     */
+    opacity: number;
+
+    /**
+     * The thickness of the outline
+     */
+    thickness: number;
+  };
 
   /**
-   * Controls the frequency of the fog
+   * The tool settings
    */
-  frequency: { x: number; y: number; z: number; w: number };
+  tool: {
+    /**
+     * The current drawing mode (`DrawMode.Erase` or `DrawMode.Draw`)
+     */
+    mode: DrawMode;
+
+    /**
+     * When `toolType = ToolType.Brush`, setting this controls the brush size
+     */
+    size: number;
+
+    /**
+     * The type of drawing tool currently selected
+     */
+    type: ToolType;
+  };
 
   /**
-   * Controls the persistence of the fog
+   * The edge settings
    */
-  persistence: { x: number; y: number; z: number; w: number };
+  edge: {
+    /**
+     * The minimum mip map level to use for the edge mask
+     */
+    minMipMapLevel: number;
+
+    /**
+     * The maximum mip map level to use for the edge mask
+     */
+    maxMipMapLevel: number;
+
+    /**
+     * The frequency of the noise added to the mask edge
+     */
+    frequency: { x: number; y: number; z: number; w: number };
+
+    /**
+     * The amplitude of the noise added to the mask edge
+     */
+    amplitude: { x: number; y: number; z: number; w: number };
+
+    /**
+     * The offset of the noise added to the mask edge
+     */
+    offset: number;
+
+    /**
+     * The speed of the noise added to the mask edge
+     */
+    speed: number;
+  };
 
   /**
-   * Controls the lacunarity of the fog
+   * The noise settings
    */
-  lacunarity: { x: number; y: number; z: number; w: number };
+  noise: {
+    /**
+     * Color of the fog
+     */
+    baseColor: string;
+    fogColor1: string;
+    fogColor2: string;
+    fogColor3: string;
+    fogColor4: string;
 
-  /**
-   * Controls the levels of the fog
-   */
-  levels: { x: number; y: number; z: number; w: number };
+    /**
+     * Controls the speed of the fog
+     */
+    speed: { x: number; y: number; z: number; w: number };
 
-  /**
-   * Controls the offset of the fog
-   */
-  offset: { x: number; y: number; z: number; w: number };
+    /**
+     * Controls the frequency of the fog
+     */
+    frequency: { x: number; y: number; z: number; w: number };
 
-  /**
-   * Controls the amplitude of the fog
-   */
-  amplitude: { x: number; y: number; z: number; w: number };
+    /**
+     * Controls the persistence of the fog
+     */
+    persistence: { x: number; y: number; z: number; w: number };
+
+    /**
+     * Controls the lacunarity of the fog
+     */
+    lacunarity: { x: number; y: number; z: number; w: number };
+
+    /**
+     * Controls the levels of the fog
+     */
+    levels: { x: number; y: number; z: number; w: number };
+
+    /**
+     * Controls the offset of the fog
+     */
+    offset: { x: number; y: number; z: number; w: number };
+
+    /**
+     * Controls the amplitude of the fog
+     */
+    amplitude: { x: number; y: number; z: number; w: number };
+  };
 }
 
 export interface FogOfWarExports {

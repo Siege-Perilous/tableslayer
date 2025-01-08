@@ -18,13 +18,13 @@
   const { renderer } = useThrelte();
 
   // This shader is used for drawing the fog of war on the GPU
-  const drawingShader = new THREE.ShaderMaterial({
+  const drawMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uPreviousState: { value: null },
       uBrushTexture: { value: null },
       uStart: { value: new THREE.Vector2() },
       uEnd: { value: new THREE.Vector2() },
-      uBrushSize: { value: props.brushSize },
+      uBrushSize: { value: props.tool.size },
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
       uBrushColor: { value: new THREE.Vector4() },
@@ -35,6 +35,39 @@
     },
     vertexShader: drawVertexShader,
     fragmentShader: drawFragmentShader
+  });
+
+  // Material used for rendering the fog of war
+  let fogMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uMaskTexture: { value: null },
+      uTime: { value: 0.0 },
+      uBaseColor: { value: new THREE.Color(props.noise.baseColor) },
+      uFogColor1: { value: new THREE.Color(props.noise.fogColor1) },
+      uFogColor2: { value: new THREE.Color(props.noise.fogColor2) },
+      uFogColor3: { value: new THREE.Color(props.noise.fogColor3) },
+      uFogColor4: { value: new THREE.Color(props.noise.fogColor4) },
+      uFogSpeed: { value: props.noise.speed },
+      uEdgeMinMipMapLevel: { value: props.edge.minMipMapLevel },
+      uEdgeMaxMipMapLevel: { value: props.edge.maxMipMapLevel },
+      uEdgeFrequency: { value: props.edge.frequency },
+      uEdgeAmplitude: { value: props.edge.amplitude },
+      uEdgeOffset: { value: props.edge.offset },
+      uEdgeSpeed: { value: props.edge.speed },
+      uPersistence: { value: props.noise.persistence },
+      uLacunarity: { value: props.noise.lacunarity },
+      uFrequency: { value: props.noise.frequency },
+      uOffset: { value: props.noise.offset },
+      uAmplitude: { value: props.noise.amplitude },
+      uLevels: { value: props.noise.levels },
+      uOpacity: { value: props.opacity },
+      uClippingPlanes: new THREE.Uniform(
+        clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
+      )
+    },
+    transparent: true,
+    fragmentShader: fogFragmentShader,
+    vertexShader: fogVertexShader
   });
 
   const image = new Image();
@@ -62,38 +95,8 @@
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
   let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawingShader);
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawMaterial);
   scene.add(quad);
-
-  // Material used for rendering the fog of war
-  let fogMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      uMaskTexture: { value: null },
-      uTime: { value: 0.0 },
-      uBaseColor: { value: new THREE.Color(props.baseColor) },
-      uFogColor1: { value: new THREE.Color(props.fogColor1) },
-      uFogColor2: { value: new THREE.Color(props.fogColor2) },
-      uFogColor3: { value: new THREE.Color(props.fogColor3) },
-      uFogColor4: { value: new THREE.Color(props.fogColor4) },
-      uFogSpeed: { value: props.fogSpeed },
-      uEdgeFrequency: { value: props.edgeFrequency },
-      uEdgeAmplitude: { value: props.edgeAmplitude },
-      uEdgeOffset: { value: props.edgeOffset },
-      uPersistence: { value: props.persistence },
-      uLacunarity: { value: props.lacunarity },
-      uFrequency: { value: props.frequency },
-      uOffset: { value: props.offset },
-      uAmplitude: { value: props.amplitude },
-      uLevels: { value: props.levels },
-      uOpacity: { value: props.opacity },
-      uClippingPlanes: new THREE.Uniform(
-        clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
-      )
-    },
-    transparent: true,
-    fragmentShader: fogFragmentShader,
-    vertexShader: fogVertexShader
-  });
 
   onDestroy(() => {
     targetA.dispose();
@@ -108,7 +111,7 @@
   $effect(() => {
     targetA.setSize(mapSize.width, mapSize.height);
     targetB.setSize(mapSize.width, mapSize.height);
-    drawingShader.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     render('reset', true);
   });
 
@@ -136,32 +139,38 @@
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
     // Update brush properties
-    drawingShader.uniforms.uShapeType.value = props.toolType;
-    drawingShader.uniforms.uBrushSize.value = props.brushSize;
+    drawMaterial.uniforms.uShapeType.value = props.tool.type;
+    drawMaterial.uniforms.uBrushSize.value = props.tool.size;
 
-    if (props.drawMode === DrawMode.Erase) {
-      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
+    if (props.tool.mode === DrawMode.Erase) {
+      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
     } else {
-      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
+      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
     // Update fog properties
-    fogMaterial.uniforms.uBaseColor.value = new THREE.Color(props.baseColor);
-    fogMaterial.uniforms.uFogColor1.value = new THREE.Color(props.fogColor1);
-    fogMaterial.uniforms.uFogColor2.value = new THREE.Color(props.fogColor2);
-    fogMaterial.uniforms.uFogColor3.value = new THREE.Color(props.fogColor3);
-    fogMaterial.uniforms.uFogColor4.value = new THREE.Color(props.fogColor4);
-    fogMaterial.uniforms.uFogSpeed.value = props.fogSpeed;
-    fogMaterial.uniforms.uEdgeFrequency.value = props.edgeFrequency;
-    fogMaterial.uniforms.uEdgeAmplitude.value = props.edgeAmplitude;
-    fogMaterial.uniforms.uEdgeOffset.value = props.edgeOffset;
-    fogMaterial.uniforms.uFrequency.value = props.frequency;
-    fogMaterial.uniforms.uPersistence.value = props.persistence;
-    fogMaterial.uniforms.uLacunarity.value = props.lacunarity;
-    fogMaterial.uniforms.uLevels.value = props.levels;
-    fogMaterial.uniforms.uOffset.value = props.offset;
-    fogMaterial.uniforms.uAmplitude.value = props.amplitude;
     fogMaterial.uniforms.uOpacity.value = props.opacity;
+
+    fogMaterial.uniforms.uBaseColor.value = new THREE.Color(props.noise.baseColor);
+    fogMaterial.uniforms.uFogColor1.value = new THREE.Color(props.noise.fogColor1);
+    fogMaterial.uniforms.uFogColor2.value = new THREE.Color(props.noise.fogColor2);
+    fogMaterial.uniforms.uFogColor3.value = new THREE.Color(props.noise.fogColor3);
+    fogMaterial.uniforms.uFogColor4.value = new THREE.Color(props.noise.fogColor4);
+
+    fogMaterial.uniforms.uEdgeMinMipMapLevel.value = props.edge.minMipMapLevel;
+    fogMaterial.uniforms.uEdgeMaxMipMapLevel.value = props.edge.maxMipMapLevel;
+    fogMaterial.uniforms.uEdgeFrequency.value = props.edge.frequency;
+    fogMaterial.uniforms.uEdgeAmplitude.value = props.edge.amplitude;
+    fogMaterial.uniforms.uEdgeOffset.value = props.edge.offset;
+    fogMaterial.uniforms.uEdgeSpeed.value = props.edge.speed;
+    fogMaterial.uniforms.uFogSpeed.value = props.noise.speed;
+    fogMaterial.uniforms.uFrequency.value = props.noise.frequency;
+    fogMaterial.uniforms.uPersistence.value = props.noise.persistence;
+    fogMaterial.uniforms.uLacunarity.value = props.noise.lacunarity;
+    fogMaterial.uniforms.uLevels.value = props.noise.levels;
+    fogMaterial.uniforms.uOffset.value = props.noise.offset;
+    fogMaterial.uniforms.uAmplitude.value = props.noise.amplitude;
+
     fogMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
@@ -189,21 +198,19 @@
     persist: boolean = false,
     lastTexture: THREE.Texture | null = null
   ) {
-    console.log('render', operation, lastTexture);
-
     // If no previous state is provided, use the last target
-    drawingShader.uniforms.uPreviousState.value = lastTexture ?? lastTarget.texture;
+    drawMaterial.uniforms.uPreviousState.value = lastTexture ?? lastTarget.texture;
 
-    drawingShader.uniforms.uIsCopyOperation.value = operation === 'copy';
-    drawingShader.uniforms.uIsResetOperation.value = operation === 'reset';
-    drawingShader.uniforms.uIsClearOperation.value = operation === 'clear';
+    drawMaterial.uniforms.uIsCopyOperation.value = operation === 'copy';
+    drawMaterial.uniforms.uIsResetOperation.value = operation === 'reset';
+    drawMaterial.uniforms.uIsClearOperation.value = operation === 'clear';
 
     renderer.setRenderTarget(currentTarget);
     renderer.render(scene, camera);
 
-    drawingShader.uniforms.uIsCopyOperation.value = false;
-    drawingShader.uniforms.uIsResetOperation.value = false;
-    drawingShader.uniforms.uIsClearOperation.value = false;
+    drawMaterial.uniforms.uIsCopyOperation.value = false;
+    drawMaterial.uniforms.uIsResetOperation.value = false;
+    drawMaterial.uniforms.uIsClearOperation.value = false;
 
     fogMaterial.uniforms.uMaskTexture.value = currentTarget.texture;
     fogMaterial.uniformsNeedUpdate = true;
@@ -216,8 +223,8 @@
   }
 
   export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
-    drawingShader.uniforms.uStart.value.copy(start);
-    drawingShader.uniforms.uEnd.value.copy(last ?? start);
+    drawMaterial.uniforms.uStart.value.copy(start);
+    drawMaterial.uniforms.uEnd.value.copy(last ?? start);
     render('draw', persist);
   }
 
@@ -232,21 +239,6 @@
 
     // Create blob from pixel data
     return new Blob([pixels.buffer], { type: 'application/octet-stream' });
-  }
-
-  /**
-   * Deserializes a binary buffer into the fog of war texture
-   * @param blob The binary buffer containing the fog of war data
-   * @returns Promise that resolves when the data has been loaded
-   */
-  async function deserialize(blob: Blob): Promise<void> {
-    // Convert blob to ArrayBuffer
-    const arrayBuffer = await blob.arrayBuffer();
-    const pixels = new Uint8Array(arrayBuffer);
-
-    // Create temporary texture to hold the data
-    const texture = new THREE.DataTexture(pixels, currentTarget.width, currentTarget.height, THREE.RGBAFormat);
-    texture.needsUpdate = true;
   }
 </script>
 
