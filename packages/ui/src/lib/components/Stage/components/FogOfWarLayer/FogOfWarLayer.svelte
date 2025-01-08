@@ -4,6 +4,8 @@
   import { ToolType, type FogOfWarLayerProps } from './types';
   import InputManager from '../InputManager/InputManager.svelte';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
+  import toolOutlineVertexShader from '../../shaders/default.vert?raw';
+  import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
 
   interface Props {
     props: FogOfWarLayerProps;
@@ -30,6 +32,23 @@
     }
   });
 
+  // Add outline material
+  const outlineMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uStart: { value: new THREE.Vector2() },
+      uEnd: { value: new THREE.Vector2() },
+      uBrushSize: { value: props.brushSize },
+      uTextureSize: { value: new THREE.Vector2(mapSize.width, mapSize.height) },
+      uShapeType: { value: props.toolType },
+      uOutlineColor: { value: new THREE.Vector3(0, 0, 0) },
+      uOutlineThickness: { value: 10.0 }
+    },
+    vertexShader: toolOutlineVertexShader,
+    fragmentShader: toolOutlineFragmentShader,
+    transparent: true,
+    depthTest: false
+  });
+
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
     lastPos = flipY(p);
     drawing = true;
@@ -43,6 +62,9 @@
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
       if (coords && drawing) {
         material?.drawPath(coords, lastPos, true);
+        // Hide the outline by setting start and end to zero
+        outlineMaterial.uniforms.uStart.value.set(-1, -1);
+        outlineMaterial.uniforms.uEnd.value.set(-1, -1);
       }
     }
 
@@ -55,6 +77,14 @@
     if (!p) {
       return;
     }
+
+    const coords = flipY(p);
+
+    // Update outline position
+    outlineMaterial.uniforms.uStart.value.copy(coords);
+    outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? coords);
+    outlineMaterial.uniforms.uShapeType.value = props.toolType;
+    outlineMaterial.uniforms.uBrushSize.value = props.brushSize;
 
     // When using shapes, draw the shape outline while the mouse button is held down
     if (props.toolType === ToolType.Ellipse || props.toolType === ToolType.Rectangle) {
@@ -119,6 +149,11 @@ events to be detected outside of the fog of war layer.
 <T.Mesh bind:ref={mesh} name="FogOfWar">
   <T.MeshBasicMaterial transparent={true} opacity={0} />
   <T.PlaneGeometry args={[mapSize.width * 10, mapSize.height * 10]} />
+</T.Mesh>
+
+<T.Mesh name="FogOfWarToolOutline" renderOrder={1}>
+  <T is={outlineMaterial} />
+  <T.PlaneGeometry />
 </T.Mesh>
 
 <T.Mesh name="FogOfWar">
