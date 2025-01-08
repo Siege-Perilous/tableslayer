@@ -55,8 +55,6 @@
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
     if (!p) {
-      lastPos = null;
-      material?.discardChanges();
       return;
     }
 
@@ -117,7 +115,17 @@
 
 <InputManager {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} />
 
+<!-- 
+Invisible mesh used for input detection.
+The plane geometry is larger than the map size to allow cursor 
+events to be detected outside of the fog of war layer.
+-->
 <T.Mesh bind:ref={mesh} name="FogOfWar">
+  <T.MeshBasicMaterial transparent={true} opacity={0} />
+  <T.PlaneGeometry args={[mapSize.width * 10, mapSize.height * 10]} />
+</T.Mesh>
+
+<T.Mesh name="FogOfWar">
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

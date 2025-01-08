@@ -90,7 +90,7 @@ float mask(vec2 uv, vec2 size, float amplitude, float frequency, float speed) {
 
   // Sample the mask at multiple mipmap levels to get a more feathered edge
   // The lower layers contain more detail while higher layers are more blurred
-  float layerWeights[10] = float[](0.1, 0.0, 0.0, 0.0, 0.3, 0.4, 0.8, 0.7, 0.4, 0.3);
+  float layerWeights[8] = float[](0.1, 0.0, 0.0, 0.0, 0.3, 0.4, 0.8, 0.7);
   int count = 0;
   float totalWeight = 0.0;
   for(int i = 0; i < layerWeights.length(); i++) {

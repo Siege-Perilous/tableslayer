@@ -3,7 +3,6 @@
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy } from 'svelte';
-  import { BufferManager } from './BufferManager';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -40,9 +39,24 @@
 
   const image = new Image();
 
+  const options = {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    minFilter: THREE.LinearMipMapLinearFilter,
+    magFilter: THREE.LinearFilter,
+    generateMipmaps: true,
+    depthBuffer: false,
+    alpha: true
+  };
+
+  let renderTargetA = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
+  let renderTargetB = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
+  let current = renderTargetA;
+  let previous = renderTargetB;
+
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
-  let quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawingShader);
   scene.add(quad);
 
@@ -75,8 +89,9 @@
     vertexShader: fogVertexShader
   });
 
-  let bufferManager: BufferManager = new BufferManager(renderer, 0, 0, (current) => {
-    material.uniforms.uMaskTexture.value = bufferManager.current.texture;
+  onDestroy(() => {
+    renderTargetA.dispose();
+    renderTargetB.dispose();
   });
 
   useTask((delta) => {
@@ -85,7 +100,8 @@
 
   // Whenever the map size changes, we need to re-initialize the buffers
   $effect(() => {
-    bufferManager.resize(mapSize.width, mapSize.height);
+    renderTargetA.setSize(mapSize.width, mapSize.height);
+    renderTargetB.setSize(mapSize.width, mapSize.height);
     drawingShader.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     reset();
   });
@@ -97,32 +113,37 @@
     if (props.data && image.src !== props.data && mapSize.width > 0 && mapSize.height > 0) {
       image.src = props.data;
       image.onload = () => {
-        bufferManager.resize(image.width, image.height);
+        renderTargetA.setSize(mapSize.width, mapSize.height);
+        renderTargetB.setSize(mapSize.width, mapSize.height);
 
         const texture = new THREE.Texture(image);
-        texture.needsUpdate = true; // This is needed to trigger texture upload to GPU
+        // This is needed to trigger texture upload to GPU
+        texture.needsUpdate = true;
 
-        drawingShader.uniforms.uPreviousState.value = texture;
-        drawingShader.uniforms.uIsCopyOperation.value = true;
-        bufferManager.render(scene, quadCamera);
-        drawingShader.uniforms.uIsCopyOperation.value = false;
-
-        bufferManager.persistChanges();
-
-        bufferManager.render(scene, quadCamera);
+        // Render twice so buffers are in sync
+        render(texture, 'copy');
+        swapBuffers();
+        render(previous.texture, 'copy');
       };
     }
   });
 
+  // Update brush size in separate effect to avoid flickering when discarding changes
   $effect(() => {
+    drawingShader.uniforms.uShapeType.value = props.toolType;
     drawingShader.uniforms.uBrushSize.value = props.brushSize;
-    bufferManager.render(scene, quadCamera);
+
+    if (props.drawMode === DrawMode.Erase) {
+      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
+    } else {
+      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
+    }
+
+    render(previous.texture, 'draw');
   });
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    drawingShader.uniforms.uShapeType.value = props.toolType;
-
     material.uniforms.uOpacity.value = props.opacity;
     material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
@@ -144,62 +165,69 @@
     material.uniforms.uOffset.value = props.offset;
     material.uniforms.uAmplitude.value = props.amplitude;
 
-    if (props.drawMode === DrawMode.Erase) {
-      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
-    } else {
-      drawingShader.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
-    }
-
     discardChanges();
   });
 
-  export function discardChanges() {
-    if (!bufferManager) return;
+  /**
+   * Swaps the current and previous buffers
+   */
+  function swapBuffers() {
+    const temp = current;
+    current = previous;
+    previous = temp;
+  }
 
-    material.uniforms.uMaskTexture.value = bufferManager.previous.texture;
+  /**
+   * Renders the to the current buffer
+   */
+  function render(lastTexture: THREE.Texture, operation: 'reset' | 'copy' | 'clear' | 'draw') {
+    drawingShader.uniforms.uPreviousState.value = lastTexture;
+
+    drawingShader.uniforms.uIsCopyOperation.value = operation === 'copy';
+    drawingShader.uniforms.uIsResetOperation.value = operation === 'reset';
+    drawingShader.uniforms.uIsClearOperation.value = operation === 'clear';
+
+    renderer.setRenderTarget(current);
+    renderer.render(scene, camera);
+
+    drawingShader.uniforms.uIsCopyOperation.value = false;
+    drawingShader.uniforms.uIsResetOperation.value = false;
+    drawingShader.uniforms.uIsClearOperation.value = false;
+
+    material.uniforms.uMaskTexture.value = current.texture;
+    material.uniformsNeedUpdate = true;
+
+    renderer.setRenderTarget(null);
+  }
+
+  export function discardChanges() {
+    render(previous.texture, 'copy');
   }
 
   /**
    * Resets the fog of war to fill the entire layer
    */
   export function reset() {
-    if (!bufferManager) return;
-
-    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
-
-    drawingShader.uniforms.uIsResetOperation.value = true;
-    bufferManager.render(scene, quadCamera);
-    drawingShader.uniforms.uIsResetOperation.value = false;
-
-    bufferManager.persistChanges();
+    render(previous.texture, 'reset');
+    swapBuffers();
   }
 
   /**
    * Clears the fog of war to reveal the entire map underneath
    */
   export function clear() {
-    if (!bufferManager) return;
-
-    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
-
-    drawingShader.uniforms.uIsClearOperation.value = true;
-    bufferManager.render(scene, quadCamera);
-    drawingShader.uniforms.uIsClearOperation.value = false;
-
-    bufferManager.persistChanges();
+    render(previous.texture, 'clear');
+    swapBuffers();
   }
 
   export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
-    if (!bufferManager) return;
-
-    drawingShader.uniforms.uPreviousState.value = bufferManager.previous.texture;
     drawingShader.uniforms.uStart.value.copy(start);
     drawingShader.uniforms.uEnd.value.copy(last ?? start);
 
-    bufferManager.render(scene, quadCamera);
+    render(previous.texture, 'draw');
 
     if (persist) {
-      bufferManager.persistChanges();
+      swapBuffers();
     }
   }
 
@@ -208,44 +236,24 @@
    * @returns A base64 string representation of the fog of war texture
    */
   export function toBase64(): string {
-    if (!bufferManager) return '';
-
     // Create canvas
     const canvas = document.createElement('canvas');
-    canvas.width = bufferManager.current.width;
-    canvas.height = bufferManager.current.height;
+    canvas.width = current.width;
+    canvas.height = current.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
     // Read pixels from WebGL render target
-    const pixels = new Uint8Array(4 * bufferManager.current.width * bufferManager.current.height);
-    bufferManager.render(scene, quadCamera);
-
-    renderer.readRenderTargetPixels(
-      bufferManager.previous,
-      0,
-      0,
-      bufferManager.current.width,
-      bufferManager.current.height,
-      pixels
-    );
+    const pixels = new Uint8Array(4 * current.width * current.height);
+    renderer.readRenderTargetPixels(current, 0, 0, current.width, current.height, pixels);
 
     // Create ImageData and put on canvas
-    const imageData = new ImageData(
-      new Uint8ClampedArray(pixels),
-      bufferManager.current.width,
-      bufferManager.current.height
-    );
+    const imageData = new ImageData(new Uint8ClampedArray(pixels), current.width, current.height);
     ctx.putImageData(imageData, 0, 0);
 
     // Convert directly to base64
     return canvas.toDataURL();
   }
-
-  // Cleanup on destroy
-  onDestroy(() => {
-    bufferManager?.dispose();
-  });
 </script>
 
 {#snippet attachMaterial()}
