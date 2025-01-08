@@ -321,7 +321,7 @@
 
   <Button
     on:click={() => {
-      stageProps.fogOfWar.data = stage.fogOfWar.toBase64();
+      stageProps.fogOfWar.data = null;
       localStorage.setItem('stageProps', JSON.stringify(stageProps));
       alert('Props saved');
     }}

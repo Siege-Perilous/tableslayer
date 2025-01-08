@@ -53,7 +53,7 @@ export interface StageExports {
   fogOfWar: {
     clear: () => void;
     reset: () => void;
-    toBase64: () => string | null;
+    serialize: () => Blob | null;
   };
   map: {
     fit: () => void;

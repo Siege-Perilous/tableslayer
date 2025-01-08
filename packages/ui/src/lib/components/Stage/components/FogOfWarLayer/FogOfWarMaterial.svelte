@@ -222,27 +222,31 @@
   }
 
   /**
-   * Serializes the current fog of war state to a base64 string
-   * @returns A base64 string representation of the fog of war texture
+   * Serializes the current fog of war state to a binary buffer
+   * @returns A binary buffer representation of the fog of war texture
    */
-  export function toBase64(): string {
-    // Create canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = currentTarget.width;
-    canvas.height = currentTarget.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '';
-
+  export function serialize(): Blob {
     // Read pixels from WebGL render target
     const pixels = new Uint8Array(4 * currentTarget.width * currentTarget.height);
     renderer.readRenderTargetPixels(currentTarget, 0, 0, currentTarget.width, currentTarget.height, pixels);
 
-    // Create ImageData and put on canvas
-    const imageData = new ImageData(new Uint8ClampedArray(pixels), currentTarget.width, currentTarget.height);
-    ctx.putImageData(imageData, 0, 0);
+    // Create blob from pixel data
+    return new Blob([pixels.buffer], { type: 'application/octet-stream' });
+  }
 
-    // Convert directly to base64
-    return canvas.toDataURL();
+  /**
+   * Deserializes a binary buffer into the fog of war texture
+   * @param blob The binary buffer containing the fog of war data
+   * @returns Promise that resolves when the data has been loaded
+   */
+  async function deserialize(blob: Blob): Promise<void> {
+    // Convert blob to ArrayBuffer
+    const arrayBuffer = await blob.arrayBuffer();
+    const pixels = new Uint8Array(arrayBuffer);
+
+    // Create temporary texture to hold the data
+    const texture = new THREE.DataTexture(pixels, currentTarget.width, currentTarget.height, THREE.RGBAFormat);
+    texture.needsUpdate = true;
   }
 </script>
 

@@ -102,5 +102,5 @@ export interface FogOfWarLayerProps {
 export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
-  toBase64: () => string | null;
+  serialize: () => Blob | null;
 }

@@ -2,9 +2,7 @@
   import * as THREE from 'three';
   import { T, type Size } from '@threlte/core';
   import { ToolType, type FogOfWarLayerProps } from './types';
-  import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
-  import type { Callbacks } from '../Stage/types';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
 
   interface Props {
@@ -101,13 +99,13 @@
   }
 
   /**
-   * Serializes the fog of war image data into a base-64 string
-   * @return A base-64 string
+   * Serializes the fog of war image data into a binary buffer
+   * @return A binary buffer
    */
-  export function toBase64(): string | null {
-    const base64 = material?.toBase64() ?? '';
-    console.log(base64);
-    return base64;
+  export function serialize(): Blob | null {
+    const blob = material?.serialize() ?? null;
+    console.log(blob);
+    return blob;
   }
 </script>
 

@@ -2,7 +2,6 @@ uniform sampler2D uPreviousState;
 uniform vec2 uStart;
 uniform vec2 uEnd;
 uniform float uBrushSize;
-uniform float uBrushFalloff;
 uniform vec2 uTextureSize;
 uniform vec4 uBrushColor;
 uniform bool uIsCopyOperation;
