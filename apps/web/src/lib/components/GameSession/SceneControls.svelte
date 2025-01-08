@@ -167,14 +167,14 @@
       label: 'Freehand erase',
       value: 'eraseBrush',
       icon: IconPaint,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Erase
     },
     {
       label: 'Freehand add',
       value: 'addBrush',
       icon: IconPaintFilled,
-      toolType: ToolType.RoundBrush,
+      toolType: ToolType.Brush,
       drawMode: DrawMode.Draw
     },
     {
@@ -274,8 +274,13 @@
   </Control>
   <Spacer />
 {/snippet}
+
 {#snippet fogControls()}
   <ColorPicker bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
+{/snippet}
+
+{#snippet mapControls()}
+  Hello
 {/snippet}
 
 <ColorMode mode="dark">
@@ -319,6 +324,8 @@
               {@render gridControls()}
             {:else if scene.id === 'fog'}
               {@render fogControls()}
+            {:else if scene.id === 'map'}
+              {@render mapControls()}
             {/if}
           {/snippet}
         </Popover>
@@ -393,6 +400,7 @@
     border-radius: var(--radius-2);
     border: var(--sceneControlItemBorder);
     cursor: pointer;
+    white-space: nowrap;
   }
   .sceneControls__layer:hover:not(.sceneControls__layer--isActive) {
     cursor: pointer;
@@ -401,14 +409,6 @@
   }
   .sceneControls__layer--isActive {
     background: var(--fgPrimary);
-  }
-  .sceneControls__settings {
-    display: flex;
-    padding: 0 0.25rem 0 0.5rem;
-    align-items: center;
-    justify-content: center;
-    border-left: var(--borderThin);
-    height: 2rem;
   }
   .sceneControls__trigger {
     display: flex;

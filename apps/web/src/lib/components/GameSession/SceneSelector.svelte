@@ -1,14 +1,16 @@
 <script lang="ts">
   import SuperDebug, { fileProxy } from 'sveltekit-superforms';
   import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast } from '@tableslayer/ui';
-  import { IconPlus } from '@tabler/icons-svelte';
+  import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
+  import { hasThumb } from '$lib/utils';
   import {
     createSceneSchema,
     deleteSceneSchema,
     type CreateSceneFormType,
-    type DeleteSceneFormType
+    type DeleteSceneFormType,
+    type SetActiveSceneFormType
   } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
   import { superForm } from 'sveltekit-superforms';
@@ -22,16 +24,20 @@
     scenes,
     createSceneForm,
     gameSession,
-    activeSceneNumber,
+    selectedSceneNumber,
     deleteSceneForm,
+    setActiveSceneForm,
+    activeScene,
     party
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     createSceneForm: SuperValidated<CreateSceneFormType>;
     deleteSceneForm: SuperValidated<DeleteSceneFormType>;
+    setActiveSceneForm: SuperValidated<SetActiveSceneFormType>;
     gameSession: SelectGameSession;
-    activeSceneNumber: number;
+    selectedSceneNumber: number;
     party: SelectParty & Thumb;
+    activeScene: SelectScene | (SelectScene & Thumb) | null;
   } = $props();
 
   const createSceneSuperForm = superForm(createSceneForm, {
@@ -54,6 +60,13 @@
     delayMs: 500
   });
 
+  const setActiveSceneSuperForm = superForm(setActiveSceneForm, {
+    resetForm: true,
+    validators: zodClient(deleteSceneSchema),
+    invalidateAll: 'force',
+    delayMs: 500
+  });
+
   const {
     form: createSceneData,
     enhance: createSceneEnhance,
@@ -62,6 +75,14 @@
     reset: createSceneReset,
     delayed: createSceneDelayed
   } = createSceneSuperForm;
+
+  const {
+    form: setActiveSceneData,
+    enhance: setActiveSceneEnhance,
+    message: setActiveSceneMessage,
+    formId: setActiveSceneFormId
+  } = setActiveSceneSuperForm;
+
   const {
     form: deleteSceneData,
     enhance: deleteSceneEnhance,
@@ -79,16 +100,20 @@
 
   let file = $state(fileProxy(createSceneData, 'file'));
 
-  const hasThumb = (scene: SelectScene | (SelectScene & Thumb)) => {
-    return 'thumb' in scene;
-  };
-
   const onCreateScene = (order: number) => {
     $createSceneData.dbName = gameSession.dbName;
     $createSceneData.name = 'test';
     $createSceneFormId = `createScene-${order}`;
     $createSceneData.order = order;
     setTimeout(() => createSceneSuperForm.submit(), 50);
+  };
+
+  const setActiveScene = (sceneId: string) => {
+    console.log('setActiveScene', sceneId);
+    $setActiveSceneFormId = sceneId;
+    $setActiveSceneData.sceneId = sceneId;
+    $setActiveSceneData.dbName = gameSession.dbName;
+    setTimeout(() => setActiveSceneSuperForm.submit(), 50);
   };
 
   const onDeleteScene = (sceneId: string) => {
@@ -129,7 +154,6 @@
       </div>
       {#if $createSceneMessage}
         <Spacer />
-        {$createSceneMessage.text}
         <MessageError message={$createSceneMessage} />
       {/if}
       <Spacer />
@@ -141,12 +165,19 @@
       </Button>
     </form>
     <SuperDebug data={$createSceneData} display={false} />
+    <form method="post" action="?/setActiveScene" use:setActiveSceneEnhance>
+      <input type="hidden" name="dbName" bind:value={$setActiveSceneData.dbName} />
+      <input type="hidden" name="sceneId" bind:value={$setActiveSceneData.sceneId} />
+      {#if $setActiveSceneMessage}
+        <MessageError message={$setActiveSceneMessage} />
+      {/if}
+    </form>
   </div>
   <div class="scene__list">
     {#each scenes as scene}
       {@const sceneSelectorClasses = classNames(
         'scene',
-        scene.order === activeSceneNumber && 'scene--isActive',
+        scene.order === selectedSceneNumber && 'scene--isSelected',
         $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
       )}
       <ContextMenu
@@ -159,7 +190,7 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Make active scene', onclick: () => console.log('active') }
+          { label: 'Set active scene', onclick: () => setActiveScene(scene.id) }
         ]}
       >
         {#snippet trigger()}
@@ -169,11 +200,12 @@
             class={sceneSelectorClasses}
             style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
           >
-            <!--
-          <div class="scene__projectedIcon">
-            <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-          </div>
-          -->
+            {#if activeScene && activeScene.id === scene.id}
+              <div class="scene__projectedIcon">
+                Active
+                <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+              </div>
+            {/if}
             <div class="scene__text">{scene.order} - {scene.name}</div>
           </a>
         {/snippet}
@@ -212,6 +244,7 @@
     cursor: pointer;
     display: block;
     background-color: var(--contrastLow);
+    -webkit-touch-callout: none;
   }
   .scene:before {
     content: '';
@@ -224,10 +257,10 @@
     border-radius: var(--radius-2);
     border: solid var(--bg) 0.25rem;
   }
-  .scene:hover:not(.scene--isActive) {
+  .scene:hover:not(.scene--isSelected) {
     border-color: var(--primary-800);
   }
-  .scene--isActive {
+  .scene--isSelected {
     border-width: 2px;
     border-color: var(--fgPrimary);
   }
@@ -273,14 +306,15 @@
     background: var(--fgPrimary);
     padding: 0.25rem;
     height: 1.5rem;
-    width: 1.5rem;
     display: flex;
+    gap: 0.25rem;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-2);
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+    font-size: 0.85rem;
     z-index: 2;
   }
   .scene__input {

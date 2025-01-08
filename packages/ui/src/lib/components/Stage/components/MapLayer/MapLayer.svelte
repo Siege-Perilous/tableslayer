@@ -40,7 +40,6 @@
           width: image?.source.data.width ?? 0,
           height: image?.source.data.height ?? 0
         };
-        fit();
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));
