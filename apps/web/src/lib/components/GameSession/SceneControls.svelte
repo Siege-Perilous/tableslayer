@@ -13,7 +13,8 @@
     ToolType,
     type StageProps,
     MapLayerType,
-    Input
+    Input,
+    Button
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -244,6 +245,15 @@
     });
     return selectedOption.value;
   };
+
+  const handleMapRotation = () => {
+    onUpdateStage({
+      map: {
+        ...stageProps.map,
+        rotation: stageProps.map.rotation + 90
+      }
+    });
+  };
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -273,6 +283,9 @@
     <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
   </Control>
   <Spacer />
+  <Control label="Grid thickness">
+    <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+  </Control>
 {/snippet}
 
 {#snippet fogControls()}
@@ -280,7 +293,8 @@
 {/snippet}
 
 {#snippet mapControls()}
-  Hello
+  <Button>Fit map</Button>
+  <Button onclick={handleMapRotation}>Rotate map</Button>
 {/snippet}
 
 <ColorMode mode="dark">

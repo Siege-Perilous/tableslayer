@@ -32,7 +32,6 @@ export const broadcastStageUpdate = (
       }
     };
 
-    console.log('Broadcasting update, active is selected:', updateData);
     socket.emit('updateSession', updateData);
   } else if (activeScene) {
     const newStageProps = buildSceneProps(activeScene);
@@ -50,7 +49,6 @@ export const broadcastStageUpdate = (
       }
     };
 
-    console.log('Broadcasting update, active is not selected:', updateData);
     socket.emit('updateSession', updateData);
   }
 };

@@ -56,7 +56,6 @@
   });
 
   const socketUpdate = () => {
-    console.log('socketUpdate');
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
 
