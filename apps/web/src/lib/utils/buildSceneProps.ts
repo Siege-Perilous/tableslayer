@@ -1,10 +1,12 @@
 import { type SelectScene } from '$lib/db/gs/schema';
 import type { Thumb } from '$lib/server';
+import { generateGradientColors } from '$lib/utils';
 import { hasThumb } from '$lib/utils/hasThumb';
 import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, ToolType } from '@tableslayer/ui';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)): StageProps => {
+  const fogColors = generateGradientColors(activeScene.fogOfWarColor);
   const thumbUrl = hasThumb(activeScene) ? activeScene.thumb.resizedUrl : 'https://files.tableslayer.com/maps/01.jpeg';
   return {
     activeLayer: MapLayerType.None,
@@ -27,13 +29,13 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
       data: activeScene.fogOfWarData,
       opacity: activeScene.fogOfWarOpacity,
       outline: {
-        color: '#000000',
+        color: '#FFFFFF',
         opacity: 1,
-        thickness: 10
+        thickness: 2
       },
       tool: {
         type: ToolType.Brush,
-        size: 200,
+        size: 75,
         mode: DrawMode.Erase
       },
       edge: {
@@ -45,11 +47,11 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
         speed: 0.2
       },
       noise: {
-        baseColor: activeScene.fogOfWarColor,
-        fogColor1: '#888888',
-        fogColor2: '#aaaaaa',
-        fogColor3: '#cccccc',
-        fogColor4: '#eeeeee',
+        baseColor: fogColors[0],
+        fogColor1: fogColors[1],
+        fogColor2: fogColors[2],
+        fogColor3: fogColors[3],
+        fogColor4: fogColors[4],
         speed: { x: -0.015, y: 0.01, z: -0.05, w: 0.1 },
         frequency: { x: 0.0008, y: 0.002, z: 0.001, w: 0.001 },
         offset: { x: -0.4, y: -0.2, z: -0.3, w: -0.25 },
@@ -66,7 +68,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
       lineColor: activeScene.gridLineColor,
       lineThickness: activeScene.gridLineThickness,
       shadowColor: activeScene.gridShadowColor,
-      shadowOpacity: activeScene.gridShadowOpacity,
+      shadowOpacity: 0,
       shadowBlur: activeScene.gridShadowBlur,
       shadowSpread: activeScene.gridShadowSpread
     },
@@ -100,7 +102,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
     weather: {
       color: '#AD0000',
       angle: 20,
-      opacity: 0.9,
+      opacity: 0,
       intensity: 0.5,
       speed: 10.0,
       scale: {

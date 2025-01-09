@@ -1,5 +1,6 @@
 export * from './broadcastStageUpdate';
 export * from './buildSceneProps';
+export * from './colors';
 export * from './createRandomNames';
 export * from './defaultMapState';
 export * from './generateSlug';

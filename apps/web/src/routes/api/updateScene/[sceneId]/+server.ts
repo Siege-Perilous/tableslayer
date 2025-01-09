@@ -23,9 +23,18 @@ function setNestedIfExists(
   map: Record<string, string>
 ) {
   if (!source[parentKey]) return;
+
   for (const [sourceKey, targetKey] of Object.entries(map)) {
-    if (source[parentKey][sourceKey] !== undefined) {
-      target[targetKey] = source[parentKey][sourceKey];
+    // Handle nested keys by splitting on "."
+    const keys = sourceKey.split('.');
+    let value = source[parentKey];
+    for (const key of keys) {
+      if (value == null) break; // Stop if any part of the path is missing
+      value = value[key];
+    }
+
+    if (value !== undefined) {
+      target[targetKey] = value;
     }
   }
 }
@@ -33,8 +42,8 @@ function setNestedIfExists(
 // Converts partial `StageProps` to `sceneTable` fields
 const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Record<string, unknown>> => {
   const details: Partial<Record<string, unknown>> = {};
-
   // Direct mapping
+  console.log('stageProps.fogOfWar.noise.baseColor', stageProps?.fogOfWar?.noise.baseColor);
   setIfExists(stageProps, details, {
     backgroundColor: 'backgroundColor'
   });
@@ -51,7 +60,7 @@ const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Re
 
   setNestedIfExists(stageProps, details, 'fogOfWar', {
     data: 'fogOfWarData',
-    fogColor: 'fogOfWarColor',
+    'noise.baseColor': 'fogOfWarColor',
     opacity: 'fogOfWarOpacity'
   });
 
@@ -103,6 +112,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 
     const userId = locals.user.id as string;
     const sceneDetails = convertPropsToSceneDetails(stageProps);
+    console.log('sceneDetails:', sceneDetails);
 
     await updateScene(dbName, userId, sceneId, sceneDetails);
 
