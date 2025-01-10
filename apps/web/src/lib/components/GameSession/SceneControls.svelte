@@ -30,6 +30,7 @@
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
+  import { generateGradientColors } from '$lib/utils';
 
   let {
     onUpdateStage,
@@ -44,7 +45,7 @@
   } = $props();
 
   let gridHex = $state(stageProps.grid.lineColor);
-  let fogHex = $state(stageProps.fogOfWar.fogColor);
+  let fogHex = $state(stageProps.fogOfWar.noise.baseColor);
   let tvDiagnalSize = $state(40);
 
   type SceneControl = {
@@ -85,11 +86,19 @@
   // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
     const fogColor = chroma(cd.hex).hex('rgb');
+    const fogColors = generateGradientColors(fogColor);
     onUpdateStage({
       fogOfWar: {
         ...stageProps.fogOfWar,
-        fogColor: fogColor,
-        opacity: cd.rgba.a
+        opacity: cd.rgba.a,
+        noise: {
+          ...stageProps.fogOfWar.noise,
+          baseColor: fogColors[0],
+          fogColor1: fogColors[1],
+          fogColor2: fogColors[2],
+          fogColor3: fogColors[3],
+          fogColor4: fogColors[4]
+        }
       }
     });
   };
@@ -210,7 +219,7 @@
   // Set initial state based on current stageProps matching the toolType and drawMode
   let selectedFogTool = $state(
     eraseOptions.find(
-      (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+      (option) => option.toolType === stageProps.fogOfWar.tool.type && option.drawMode === stageProps.fogOfWar.tool.mode
     ) || eraseOptions[0]
   );
 
@@ -219,7 +228,8 @@
   $effect(() => {
     selectedFogTool =
       eraseOptions.find(
-        (option) => option.toolType === stageProps.fogOfWar.toolType && option.drawMode === stageProps.fogOfWar.drawMode
+        (option) =>
+          option.toolType === stageProps.fogOfWar.tool.type && option.drawMode === stageProps.fogOfWar.tool.mode
       ) || eraseOptions[0];
   });
 
@@ -238,8 +248,11 @@
       },
       fogOfWar: {
         ...stageProps.fogOfWar,
-        toolType: selectedOption.toolType,
-        drawMode: selectedOption.drawMode
+        tool: {
+          ...stageProps.fogOfWar.tool,
+          type: selectedOption.toolType,
+          mode: selectedOption.drawMode
+        }
       }
     });
     return selectedOption.value;

@@ -115,11 +115,6 @@
     socketUpdate();
   };
 
-  const onBrushSizeUpdated = (brushSize: number) => {
-    stageProps.fogOfWar.brushSize = brushSize;
-    socketUpdate();
-  };
-
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
@@ -312,14 +307,7 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper">
         <div class={stageClasses} bind:this={stageElement}>
-          <Stage
-            bind:this={stage}
-            props={stageProps}
-            {onBrushSizeUpdated}
-            {onMapUpdate}
-            {onSceneUpdate}
-            {onPingsUpdated}
-          />
+          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
       </div>

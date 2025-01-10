@@ -7,17 +7,16 @@
 
   interface Props {
     props: StageProps;
-    onBrushSizeUpdated: (brushSize: number) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
 
-  setContext('callbacks', { onBrushSizeUpdated, onMapUpdate, onSceneUpdate, onPingsUpdated });
+  setContext('callbacks', { onMapUpdate, onSceneUpdate, onPingsUpdated });
 
   export const map = {
     fill: () => sceneRef.map.fill(),
@@ -27,7 +26,7 @@
   export const fogOfWar = {
     clear: () => sceneRef?.fogOfWar.clear(),
     reset: () => sceneRef?.fogOfWar.reset(),
-    toBase64: () => sceneRef.fogOfWar.toBase64()
+    serialize: () => sceneRef?.fogOfWar.serialize()
   };
 
   export const scene = {
