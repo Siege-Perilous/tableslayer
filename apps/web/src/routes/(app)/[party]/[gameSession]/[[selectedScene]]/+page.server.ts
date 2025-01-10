@@ -12,7 +12,13 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     selectedSceneNumber = 1;
   }
 
-  const scenes = await getScenes(gameSession.dbName);
+  let scenes = await getScenes(gameSession.dbName);
+
+  if (scenes.length === 0) {
+    await createScene(gameSession.dbName, '1', 'Scene 1', 1);
+    scenes = await getScenes(gameSession.dbName);
+  }
+
   const createSceneForm = await superValidate(zod(createSceneSchema));
   const deleteSceneForm = await superValidate(zod(deleteSceneSchema));
   const setActiveSceneForm = await superValidate(zod(SetActiveSceneSchema));
