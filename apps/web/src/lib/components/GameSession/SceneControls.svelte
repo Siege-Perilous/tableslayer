@@ -31,7 +31,7 @@
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
-  import { generateGradientColors } from '$lib/utils';
+  import { generateGradientColors, to8CharHex } from '$lib/utils';
 
   let {
     onUpdateStage,
@@ -45,8 +45,8 @@
     stageProps: StageProps;
   } = $props();
 
-  let gridHex = $state(stageProps.grid.lineColor);
-  let fogHex = $state(stageProps.fogOfWar.noise.baseColor);
+  let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
+  let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
   let tvDiagnalSize = $state(40);
 
   type SceneControl = {

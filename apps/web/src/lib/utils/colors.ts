@@ -6,10 +6,15 @@ import chroma from 'chroma-js';
  * @param {string} [colorEnd] - The ending color in hex format. If not provided, generates lighter shades.
  * @returns {string[]} Array of 5 colors as hex strings.
  */
-export function generateGradientColors(colorStart: string, colorEnd?: string): string[] {
+export const generateGradientColors = (colorStart: string, colorEnd?: string): string[] => {
   if (!colorEnd) {
     return chroma.scale([colorStart, chroma(colorStart).brighten(3).hex()]).colors(5);
   }
 
   return chroma.scale([colorStart, colorEnd]).colors(5);
-}
+};
+
+export const to8CharHex = (hex: string, opacity: number) => {
+  const rgba = chroma(hex).alpha(opacity).rgba();
+  return chroma(rgba).hex('rgba');
+};
