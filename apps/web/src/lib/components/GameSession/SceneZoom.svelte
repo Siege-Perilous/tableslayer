@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
-  import { IconSelector, IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
+  import { IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
     onUpdateStage,
