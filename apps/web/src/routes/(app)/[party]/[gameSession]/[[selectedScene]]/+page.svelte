@@ -3,7 +3,7 @@
   import { type Socket } from 'socket.io-client';
   import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, SceneSelector } from '$lib/components';
+  import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { createUpdateSceneMutation } from '$lib/queries';
   import {
     StageDefaultProps,
@@ -309,6 +309,7 @@
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
+        <SceneZoom onUpdateStage={updateStage} {stageProps} />
       </div>
     </Pane>
   </PaneGroup>
