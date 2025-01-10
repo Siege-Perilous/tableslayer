@@ -77,19 +77,13 @@
       switch (event.key) {
         case 'e':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Erase,
-            toolType: ToolType.Brush
-          };
+          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
+          stageProps.fogOfWar.tool.type = ToolType.Brush;
           break;
         case 'E':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Draw,
-            toolType: ToolType.Brush
-          };
+          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
+          stageProps.fogOfWar.tool.type = ToolType.Brush;
           break;
         case 'f':
           stage.fogOfWar.clear();
@@ -99,19 +93,13 @@
           break;
         case 'o':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Erase,
-            toolType: ToolType.Ellipse
-          };
+          stageProps.fogOfWar.tool.type = ToolType.Ellipse;
+          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
           break;
         case 'O':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Draw,
-            toolType: ToolType.Ellipse
-          };
+          stageProps.fogOfWar.tool.type = ToolType.Ellipse;
+          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
         case 'p':
           stageProps.activeLayer = MapLayerType.Ping;
@@ -123,19 +111,13 @@
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Erase,
-            toolType: ToolType.Rectangle
-          };
+          stageProps.fogOfWar.tool.type = ToolType.Rectangle;
+          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
           break;
         case 'R':
           stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar = {
-            ...stageProps.fogOfWar,
-            drawMode: DrawMode.Draw,
-            toolType: ToolType.Rectangle
-          };
+          stageProps.fogOfWar.tool.type = ToolType.Rectangle;
+          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
         case 'Escape':
           stageProps.activeLayer = MapLayerType.None;
@@ -149,10 +131,6 @@
     // Reset fog of war data and ping locations
     stageProps.fogOfWar.data = null;
     stageProps.ping.locations = [];
-  }
-
-  function onBrushSizeUpdated(brushSize: number) {
-    stageProps.fogOfWar.brushSize = brushSize;
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
@@ -196,12 +174,14 @@
     } else if (e.ctrlKey) {
       e.preventDefault();
       stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
+      stageProps.fogOfWar.tool.size = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
     }
   }
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onBrushSizeUpdated} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
   <div>
     <h1>Keybindings</h1>
     <ul>
@@ -235,18 +215,60 @@
   </Folder>
 
   <Folder title="Fog of War" expanded={false}>
-    <List bind:value={stageProps.fogOfWar.toolType} label="Tool" options={toolTypeOptions} />
-    <List bind:value={stageProps.fogOfWar.drawMode} label="Draw Mode" options={drawModeOptions} />
+    <List bind:value={stageProps.fogOfWar.tool.type} label="Tool" options={toolTypeOptions} />
+    <List bind:value={stageProps.fogOfWar.tool.mode} label="Draw Mode" options={drawModeOptions} />
     <Slider
-      bind:value={stageProps.fogOfWar.brushSize}
+      bind:value={stageProps.fogOfWar.tool.size}
       label="Brush Size"
       min={1}
       max={500}
       step={1}
-      disabled={stageProps.fogOfWar.toolType !== ToolType.Brush}
+      disabled={stageProps.fogOfWar.tool.type !== ToolType.Brush}
     />
-    <Color bind:value={stageProps.fogOfWar.fogColor} label="Color" />
+
     <Slider bind:value={stageProps.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+
+    <Folder title="Outline" expanded={false}>
+      <Color bind:value={stageProps.fogOfWar.outline.color} label="Color" />
+      <Slider bind:value={stageProps.fogOfWar.outline.thickness} label="Thickness" min={0} max={100} step={1} />
+      <Slider bind:value={stageProps.fogOfWar.outline.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    </Folder>
+
+    <Folder title="Edge" expanded={false}>
+      <Slider
+        bind:value={stageProps.fogOfWar.edge.minMipMapLevel}
+        label="Min Mip Map Level"
+        min={0}
+        max={10}
+        step={1}
+      />
+      <Slider
+        bind:value={stageProps.fogOfWar.edge.maxMipMapLevel}
+        label="Max Mip Map Level"
+        min={0}
+        max={10}
+        step={1}
+      />
+      <Binding bind:object={stageProps.fogOfWar.edge} key={'frequency'} label="Frequency" />
+      <Binding bind:object={stageProps.fogOfWar.edge} key={'amplitude'} label="Amplitude" />
+      <Slider bind:value={stageProps.fogOfWar.edge.offset} label="Offset" min={0} max={2} step={0.01} />
+      <Slider bind:value={stageProps.fogOfWar.edge.speed} label="Speed" min={0} max={1} step={0.01} />
+    </Folder>
+
+    <Folder title="Noise" expanded={false}>
+      <Color bind:value={stageProps.fogOfWar.noise.baseColor} label="Base Color" />
+      <Color bind:value={stageProps.fogOfWar.noise.fogColor1} label="Color 1" />
+      <Color bind:value={stageProps.fogOfWar.noise.fogColor2} label="Color 2" />
+      <Color bind:value={stageProps.fogOfWar.noise.fogColor3} label="Color 3" />
+      <Color bind:value={stageProps.fogOfWar.noise.fogColor4} label="Color 4" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'speed'} label="Fog Speed" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'frequency'} label="Frequency" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'offset'} label="Offset" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'amplitude'} label="Amplitude" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'persistence'} label="Persistence" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'lacunarity'} label="Lacunarity" />
+      <Binding bind:object={stageProps.fogOfWar.noise} key={'levels'} label="Levels" />
+    </Folder>
     <Button on:click={() => stage.fogOfWar.reset()} title="Reset" />
     <Button on:click={() => stage.fogOfWar.clear()} title="Clear" />
   </Folder>
@@ -303,7 +325,7 @@
 
   <Button
     on:click={() => {
-      stageProps.fogOfWar.data = stage.fogOfWar.toBase64();
+      stageProps.fogOfWar.data = null;
       localStorage.setItem('stageProps', JSON.stringify(stageProps));
       alert('Props saved');
     }}

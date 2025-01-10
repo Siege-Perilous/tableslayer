@@ -129,10 +129,6 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onBrushSizeUpdated() {
-    return;
-  }
-
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     console.log('Updating map', offset, zoom);
     return;
@@ -160,7 +156,7 @@
 </script>
 
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onBrushSizeUpdated} {onMapUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
     <div

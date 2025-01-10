@@ -10,10 +10,11 @@
     onMouseDown?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onMouseUp?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onMouseMove?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
+    onMouseLeave?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onWheel?: (e: WheelEvent) => void;
   }
 
-  let { layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onWheel }: Props = $props();
+  let { layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onMouseLeave, onWheel }: Props = $props();
 
   const { camera, renderer, size } = useThrelte();
 
@@ -24,6 +25,7 @@
     if (onMouseDown) renderer.domElement.addEventListener('mousedown', handleMouseDown);
     if (onMouseUp) renderer.domElement.addEventListener('mousemove', handleMouseMove);
     if (onMouseMove) renderer.domElement.addEventListener('mouseup', handleMouseUp);
+    if (onMouseLeave) renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
   });
 
@@ -32,6 +34,7 @@
     if (onMouseDown) renderer.domElement.removeEventListener('mousedown', handleMouseDown);
     if (onMouseUp) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
     if (onMouseMove) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
+    if (onMouseLeave) renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
   });
 
@@ -57,6 +60,12 @@
   function handleWheel(event: WheelEvent) {
     if (onWheel && isActive) {
       onWheel(event);
+    }
+  }
+
+  function handleMouseLeave(event: MouseEvent) {
+    if (onMouseLeave && isActive) {
+      onMouseLeave(event, null);
     }
   }
 
