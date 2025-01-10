@@ -13,14 +13,14 @@ export function handleKeyCommands(
     case 'e':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Erase &&
-        fogOfWar.toolType === ToolType.Brush
+        fogOfWar.tool.mode === DrawMode.Erase &&
+        fogOfWar.tool.type === ToolType.Brush
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Erase;
-        fogOfWar.toolType = ToolType.Brush;
+        fogOfWar.tool.mode = DrawMode.Erase;
+        fogOfWar.tool.type = ToolType.Brush;
         return 'erase';
       }
       break;
@@ -28,14 +28,14 @@ export function handleKeyCommands(
     case 'E':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Draw &&
-        fogOfWar.toolType === ToolType.Brush
+        fogOfWar.tool.mode === DrawMode.Draw &&
+        fogOfWar.tool.type === ToolType.Brush
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Draw;
-        fogOfWar.toolType = ToolType.Brush;
+        fogOfWar.tool.mode = DrawMode.Draw;
+        fogOfWar.tool.type = ToolType.Brush;
         return 'draw';
       }
       break;
@@ -51,28 +51,28 @@ export function handleKeyCommands(
     case 'o':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Erase &&
-        fogOfWar.toolType === ToolType.Ellipse
+        fogOfWar.tool.mode === DrawMode.Erase &&
+        fogOfWar.tool.type === ToolType.Ellipse
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Erase;
-        fogOfWar.toolType = ToolType.Ellipse;
+        fogOfWar.tool.mode = DrawMode.Erase;
+        fogOfWar.tool.type = ToolType.Ellipse;
       }
       break;
 
     case 'O':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Draw &&
-        fogOfWar.toolType === ToolType.Ellipse
+        fogOfWar.tool.mode === DrawMode.Draw &&
+        fogOfWar.tool.type === ToolType.Ellipse
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Draw;
-        fogOfWar.toolType = ToolType.Ellipse;
+        fogOfWar.tool.mode = DrawMode.Draw;
+        fogOfWar.tool.type = ToolType.Ellipse;
       }
       break;
 
@@ -97,28 +97,28 @@ export function handleKeyCommands(
     case 'r':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Erase &&
-        fogOfWar.toolType === ToolType.Rectangle
+        fogOfWar.tool.mode === DrawMode.Erase &&
+        fogOfWar.tool.type === ToolType.Rectangle
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Erase;
-        fogOfWar.toolType = ToolType.Rectangle;
+        fogOfWar.tool.mode = DrawMode.Erase;
+        fogOfWar.tool.type = ToolType.Rectangle;
       }
       break;
 
     case 'R':
       if (
         activeLayer === MapLayerType.FogOfWar &&
-        fogOfWar.drawMode === DrawMode.Draw &&
-        fogOfWar.toolType === ToolType.Rectangle
+        fogOfWar.tool.mode === DrawMode.Draw &&
+        fogOfWar.tool.type === ToolType.Rectangle
       ) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
         stageProps.activeLayer = MapLayerType.FogOfWar;
-        fogOfWar.drawMode = DrawMode.Draw;
-        fogOfWar.toolType = ToolType.Rectangle;
+        fogOfWar.tool.mode = DrawMode.Draw;
+        fogOfWar.tool.type = ToolType.Rectangle;
       }
       break;
 
