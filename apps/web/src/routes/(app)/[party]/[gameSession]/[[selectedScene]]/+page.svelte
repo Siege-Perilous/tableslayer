@@ -357,6 +357,7 @@
   }
   .container {
     height: calc(100vh - 49px);
+    user-select: none;
   }
   .stage {
     width: 100%;

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { StageProps } from '@tableslayer/ui';
+  import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
+  import { IconSelector, IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
     onUpdateStage,
@@ -29,38 +30,74 @@
   const toggleZoomType = () => {
     zoomType = zoomType === 'map' ? 'scene' : 'map';
   };
+
+  const handleMapRotate = () => {
+    onUpdateStage({
+      map: {
+        ...stageProps.map,
+        rotation: stageProps.map.rotation + 90
+      }
+    });
+  };
 </script>
 
-<div class="zoomControls">
-  <button onclick={toggleZoomType}>
-    {zoomType === 'map' ? 'Map' : 'Scene'}
-  </button>
-  <button
+<div class="sceneZoom">
+  <Button onclick={toggleZoomType} variant="ghost">
+    <span class={zoomType === 'map' ? 'sceneZoom__mutedText' : ''}> Scene </span>
+    <span class="sceneZoom__mutedText"> | </span>
+    <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}> Map </span>
+  </Button>
+  <IconButton
+    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
     class="zoomControls__button"
     aria-label="Zoom in"
+    variant="ghost"
     onclick={() => {
       handleZoom(100, zoomType);
     }}
   >
-    +
-  </button>
-  <button
+    <Icon Icon={IconPlus} stroke={3} />
+  </IconButton>
+  <IconButton
+    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
     class="zoomControls__button"
     aria-label="Zoom out"
+    variant="ghost"
     onclick={() => {
       handleZoom(-100, zoomType);
     }}
   >
-    -
-  </button>
+    <Icon Icon={IconMinus} stroke={3} />
+  </IconButton>
+  {#if zoomType === 'map'}
+    <IconButton
+      title="Rotate map"
+      class="zoomControls__button"
+      aria-label="Rotate map"
+      variant="ghost"
+      onclick={() => {
+        handleMapRotate();
+      }}
+    >
+      <Icon Icon={IconRotateClockwise2} stroke={3} />
+    </IconButton>
+  {/if}
 </div>
 
 <style>
-  .zoomControls {
+  :global {
+    .sceneZoomButton {
+      padding: 0.25rem;
+    }
+  }
+  .sceneZoom {
     position: absolute;
     bottom: 1rem;
     left: 1rem;
     display: flex;
-    gap: 0.5rem;
+    z-index: 1;
+  }
+  .sceneZoom__mutedText {
+    color: var(--fgMuted);
   }
 </style>
