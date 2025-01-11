@@ -14,9 +14,11 @@
     type StageProps,
     MapLayerType,
     Input,
-    Button
+    Button,
+    IconButton
   } from '@tableslayer/ui';
   import {
+    IconHexagons,
     IconGrid4x4,
     IconPaint,
     IconPaintFilled,
@@ -27,6 +29,7 @@
     IconCircle,
     IconCircleFilled,
     IconSquare,
+    IconLayoutGrid,
     IconSquareFilled
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
@@ -267,6 +270,16 @@
       }
     });
   };
+
+  const handleGridTypeChange = (gridType: number) => {
+    console.log('grid type change', gridType);
+    onUpdateStage({
+      grid: {
+        ...stageProps.grid,
+        gridType
+      }
+    });
+  };
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -292,13 +305,24 @@
     </Control>
   </div>
   <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Grid type">
+      <IconButton variant="ghost" onclick={() => handleGridTypeChange(0)}>
+        <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+      </IconButton>
+      <IconButton variant="ghost" onclick={() => handleGridTypeChange(1)}>
+        <Icon Icon={IconHexagons} size="20px" stroke={2} />
+      </IconButton>
+    </Control>
+    <Control label="Grid thickness">
+      <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+    </Control>
+  </div>
+  <Spacer />
   <Control label="Grid Color">
     <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
   </Control>
   <Spacer />
-  <Control label="Grid thickness">
-    <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
-  </Control>
 {/snippet}
 
 {#snippet fogControls()}
