@@ -79,7 +79,7 @@
   export const fogOfWar = {
     clear: () => fogOfWarLayer.clearFog(),
     reset: () => fogOfWarLayer.resetFog(),
-    serialize: () => fogOfWarLayer.serialize()
+    toJpeg: () => fogOfWarLayer.toJpeg()
   };
 </script>
 

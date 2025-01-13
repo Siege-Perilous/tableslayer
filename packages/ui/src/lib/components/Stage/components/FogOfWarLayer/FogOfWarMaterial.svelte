@@ -234,13 +234,30 @@
    * Serializes the current fog of war state to a binary buffer
    * @returns A binary buffer representation of the fog of war texture
    */
-  export function serialize(): Blob {
+  export async function toJpeg(): Promise<Blob> {
+    // Create a temporary canvas to draw the texture
+    const canvas = document.createElement('canvas');
+    canvas.width = currentTarget.width;
+    canvas.height = currentTarget.height;
+    const ctx = canvas.getContext('2d')!;
+
     // Read pixels from WebGL render target
     const pixels = new Uint8Array(4 * currentTarget.width * currentTarget.height);
     renderer.readRenderTargetPixels(currentTarget, 0, 0, currentTarget.width, currentTarget.height, pixels);
 
-    // Create blob from pixel data
-    return new Blob([pixels.buffer], { type: 'application/octet-stream' });
+    // Draw pixels to canvas
+    const imageData = ctx.createImageData(currentTarget.width, currentTarget.height);
+    imageData.data.set(pixels);
+    ctx.putImageData(imageData, 0, 0);
+
+    // Convert to blob with lossless JPEG compression
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => resolve(blob!),
+        'image/jpeg',
+        1.0 // Maximum quality for lossless compression
+      );
+    });
   }
 </script>
 

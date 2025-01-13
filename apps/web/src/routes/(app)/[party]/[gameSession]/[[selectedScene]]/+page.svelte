@@ -245,7 +245,7 @@
   const saveScene = async () => {
     console.log('Saving scene...');
     // This doesnn't work yet.
-    //  const fogBlob = stage.fogOfWar.serialize();
+    //  const fogBlob = stage.fogOfWar.toJpeg();
 
     //  const fogLocation = await $createFogMutation.mutateAsync({
     //  blob: fogBlob,

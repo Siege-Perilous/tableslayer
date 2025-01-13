@@ -148,5 +148,5 @@ export interface FogOfWarLayerProps {
 export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
-  serialize: () => Blob | null;
+  toJpeg: () => Promise<Blob>;
 }

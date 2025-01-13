@@ -269,8 +269,20 @@
       <Binding bind:object={stageProps.fogOfWar.noise} key={'lacunarity'} label="Lacunarity" />
       <Binding bind:object={stageProps.fogOfWar.noise} key={'levels'} label="Levels" />
     </Folder>
-    <Button on:click={() => stage.fogOfWar.reset()} title="Reset" />
-    <Button on:click={() => stage.fogOfWar.clear()} title="Clear" />
+    <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog Of War" />
+    <Button on:click={() => stage.fogOfWar.clear()} title="Clear Fog Of War" />
+    <Button
+      on:click={async () => {
+        const blob = await stage.fogOfWar.toJpeg();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fog-of-war.jpg';
+        a.click();
+        URL.revokeObjectURL(url);
+      }}
+      title="Export JPEG"
+    />
   </Folder>
 
   <Folder title="Grid" expanded={false}>
@@ -327,16 +339,16 @@
     on:click={() => {
       stageProps.fogOfWar.data = null;
       localStorage.setItem('stageProps', JSON.stringify(stageProps));
-      alert('Props saved');
+      alert('Props saved to local storage');
     }}
-    title="Save"
+    title="Save Props"
   />
   <Button
     on:click={() => {
       stageProps = JSON.parse(localStorage.getItem('stageProps') || '{}');
-      alert('Props loaded');
+      alert('Props loaded from local storage');
     }}
-    title="Load"
+    title="Load Props"
   />
 </Pane>
 

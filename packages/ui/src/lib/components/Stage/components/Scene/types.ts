@@ -17,7 +17,7 @@ export interface SceneExports {
   fogOfWar: {
     clear: () => void;
     reset: () => void;
-    serialize: () => Blob | null;
+    toJpeg: () => Promise<Blob>;
   };
 
   map: {

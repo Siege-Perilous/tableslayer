@@ -38,6 +38,6 @@ export interface MapLayerExports {
   fogOfWar: {
     clear: () => void;
     reset: () => void;
-    serialize: () => Blob | null;
+    toJpeg: () => Promise<Blob>;
   };
 }
