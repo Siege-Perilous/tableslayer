@@ -3,11 +3,11 @@
   import { IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
-    onUpdateStage,
-    stageProps
+    stageProps,
+    socketUpdate
   }: {
-    onUpdateStage: (newProps: Partial<StageProps>) => void;
     stageProps: StageProps;
+    socketUpdate: () => void;
   } = $props();
 
   let zoomType = $state<'map' | 'scene'>('scene');
@@ -19,12 +19,8 @@
   const handleZoom = (deltaY: number, zoomType: 'map' | 'scene') => {
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
-    onUpdateStage({
-      [zoomType]: {
-        ...stageProps[zoomType],
-        zoom: newZoom
-      }
-    });
+    stageProps[zoomType].zoom = newZoom;
+    socketUpdate();
   };
 
   const toggleZoomType = () => {
@@ -32,12 +28,8 @@
   };
 
   const handleMapRotate = () => {
-    onUpdateStage({
-      map: {
-        ...stageProps.map,
-        rotation: stageProps.map.rotation + 90
-      }
-    });
+    stageProps.map.rotation += 90;
+    socketUpdate();
   };
 </script>
 

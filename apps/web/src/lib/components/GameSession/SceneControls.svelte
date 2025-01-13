@@ -37,12 +37,12 @@
   import { generateGradientColors, to8CharHex } from '$lib/utils';
 
   let {
-    onUpdateStage,
+    socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
     stageProps
   }: {
-    onUpdateStage: (newProps: Partial<StageProps>) => void;
+    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;
@@ -91,32 +91,30 @@
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
     const fogColor = chroma(cd.hex).hex('rgb');
     const fogColors = generateGradientColors(fogColor);
-    onUpdateStage({
-      fogOfWar: {
-        ...stageProps.fogOfWar,
-        opacity: cd.rgba.a,
-        noise: {
-          ...stageProps.fogOfWar.noise,
-          baseColor: fogColors[0],
-          fogColor1: fogColors[1],
-          fogColor2: fogColors[2],
-          fogColor3: fogColors[3],
-          fogColor4: fogColors[4]
-        }
+    stageProps.fogOfWar = {
+      ...stageProps.fogOfWar,
+      opacity: cd.rgba.a,
+      noise: {
+        ...stageProps.fogOfWar.noise,
+        baseColor: fogColors[0],
+        fogColor1: fogColors[1],
+        fogColor2: fogColors[2],
+        fogColor3: fogColors[3],
+        fogColor4: fogColors[4]
       }
-    });
+    };
+    socketUpdate();
   };
 
   // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
   const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
     const gridColor = chroma(cd.hex).hex('rgb');
-    onUpdateStage({
-      grid: {
-        ...stageProps.grid,
-        lineColor: gridColor,
-        opacity: cd.rgba.a
-      }
-    });
+    stageProps.grid = {
+      ...stageProps.grid,
+      lineColor: gridColor,
+      opacity: cd.rgba.a
+    };
+    socketUpdate();
   };
 
   type TvResolution = {
@@ -149,30 +147,22 @@
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
-    onUpdateStage({
-      display: {
-        ...stageProps.display,
-        resolution: {
-          x: selectedResolution.width,
-          y: selectedResolution.height
-        }
-      }
-    });
+    stageProps.display.resolution = {
+      x: selectedResolution.width,
+      y: selectedResolution.height
+    };
+    socketUpdate();
     return selectedResolution;
   };
 
   const handleTvSizeChange = (diagonalSize: number) => {
     console.log('update tv size');
     const { width, height } = getTvDimensions(diagonalSize);
-    onUpdateStage({
-      display: {
-        ...stageProps.display,
-        size: {
-          x: width,
-          y: height
-        }
-      }
-    });
+    stageProps.display.size = {
+      x: width,
+      y: height
+    };
+    socketUpdate();
   };
 
   const eraseOptions = [
@@ -245,40 +235,22 @@
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
     selectedFogTool = selectedOption!;
     activeControl = 'erase';
-    onUpdateStage({
-      activeLayer: MapLayerType.FogOfWar,
-      scene: {
-        ...stageProps.scene
-      },
-      fogOfWar: {
-        ...stageProps.fogOfWar,
-        tool: {
-          ...stageProps.fogOfWar.tool,
-          type: selectedOption.toolType,
-          mode: selectedOption.drawMode
-        }
-      }
-    });
+    stageProps.activeLayer = MapLayerType.FogOfWar;
+    stageProps.fogOfWar.tool.type = selectedOption.toolType;
+    stageProps.fogOfWar.tool.mode = selectedOption.drawMode;
+    socketUpdate();
     return selectedOption.value;
   };
 
   const handleMapRotation = () => {
-    onUpdateStage({
-      map: {
-        ...stageProps.map,
-        rotation: stageProps.map.rotation + 90
-      }
-    });
+    stageProps.map.rotation += 90;
+    socketUpdate();
   };
 
   const handleGridTypeChange = (gridType: number) => {
     console.log('grid type change', gridType);
-    onUpdateStage({
-      grid: {
-        ...stageProps.grid,
-        gridType
-      }
-    });
+    stageProps.grid.gridType = gridType;
+    socketUpdate();
   };
 </script>
 

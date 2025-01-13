@@ -109,11 +109,6 @@
     }
   });
 
-  const updateStage = (newProps: Partial<StageProps>) => {
-    Object.assign(stageProps, newProps);
-    socketUpdate();
-  };
-
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
@@ -308,8 +303,8 @@
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
-        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
-        <SceneZoom onUpdateStage={updateStage} {stageProps} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
+        <SceneZoom {socketUpdate} {stageProps} />
       </div>
     </Pane>
   </PaneGroup>
