@@ -60,6 +60,7 @@
   };
 
   const updateSceneMutation = createUpdateSceneMutation();
+  //  const createFogMutation = createUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -241,8 +242,20 @@
       });
     }
   });
-  const saveScene = () => {
+  const saveScene = async () => {
     console.log('Saving scene...');
+    // This doesnn't work yet.
+    //  const fogBlob = stage.fogOfWar.serialize();
+
+    //  const fogLocation = await $createFogMutation.mutateAsync({
+    //  blob: fogBlob,
+    //  sceneId: selectedScene.id
+    //  });
+
+    //  if (fogLocation) {
+    //  console.log('Fog uploaded successfully', fogLocation);
+    //  }
+
     $updateSceneMutation.mutate({
       sceneId: selectedScene.id,
       dbName: gameSession.dbName,
