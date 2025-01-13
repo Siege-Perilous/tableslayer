@@ -128,20 +128,6 @@ export const uploadFileFromBlob = async (blob: Blob, userId: string, destination
 // We don't bother storing any user db records for the fog of war files
 export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
   try {
-    console.log('Blob type:', blob.type); // Logs the MIME type
-    console.log('Blob size:', blob.size); // Logs the file size
-
-    // Read the first few bytes to check for the PNG signature
-    const buffer = await blob.slice(0, 8).arrayBuffer();
-    const uint8Array = new Uint8Array(buffer);
-    console.log('First 8 bytes:', Array.from(uint8Array)); // Should log [137, 80, 78, 71, 13, 10, 26, 10] for PNG
-
-    const isPng = uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && uint8Array[2] === 0x4e && uint8Array[3] === 0x47;
-    if (!isPng) {
-      throw new Error('The uploaded blob is not a PNG image');
-    }
-
-    // Proceed with the upload if it's valid
     const file = new File([blob], 'fog', { type: blob.type });
     const fileType = 'image/png';
     const fileName = sceneId + '.png';
