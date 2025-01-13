@@ -23,6 +23,12 @@
   let stageIsLoading: boolean = $state(true);
   const fadeOutDelay = 5000;
 
+  const handleResize = () => {
+    if (stage) {
+      stage.scene.fit();
+    }
+  };
+
   onMount(() => {
     initializeStage(stage, (isLoading) => {
       stageIsLoading = isLoading;
@@ -119,7 +125,7 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        stage.scene.fit();
+        handleResize();
         clearInterval(interval);
       }
     }, 50);
@@ -154,6 +160,8 @@
     return () => clearInterval(interval);
   });
 </script>
+
+<svelte:window onresize={handleResize} />
 
 <div class={stageClasses} bind:this={stageElement}>
   <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
