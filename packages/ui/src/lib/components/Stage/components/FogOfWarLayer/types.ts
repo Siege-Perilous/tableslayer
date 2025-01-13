@@ -13,7 +13,7 @@ export interface FogOfWarLayerProps {
   /**
    * Initial texture data used to populate the fog of war layer
    */
-  data: string | null;
+  url: string | null;
 
   /**
    * Controls the opacity of the entire fog of war layer
@@ -148,5 +148,5 @@ export interface FogOfWarLayerProps {
 export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
-  toJpeg: () => Promise<Blob>;
+  toPng: () => Promise<Blob>;
 }

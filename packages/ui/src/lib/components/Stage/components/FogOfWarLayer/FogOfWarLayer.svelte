@@ -150,8 +150,8 @@
    * Serializes the fog of war image data into a binary buffer
    * @return A binary buffer
    */
-  export async function toJpeg(): Promise<Blob> {
-    return (await material?.toJpeg()) ?? new Blob();
+  export async function toPng(): Promise<Blob> {
+    return (await material?.toPng()) ?? new Blob();
   }
 </script>
 

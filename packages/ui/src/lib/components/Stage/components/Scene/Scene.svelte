@@ -93,7 +93,7 @@
   export const fogOfWar = {
     clear: () => mapLayer.fogOfWar.clear(),
     reset: () => mapLayer.fogOfWar.reset(),
-    toJpeg: () => mapLayer.fogOfWar.toJpeg()
+    toPng: () => mapLayer.fogOfWar.toPng()
   };
 </script>
 

@@ -70,7 +70,7 @@
     vertexShader: fogVertexShader
   });
 
-  const image = new Image();
+  const textureLoader = new THREE.TextureLoader();
 
   // Options for the render targets
   const options = {
@@ -117,22 +117,11 @@
 
   // Load the image data from the props
   $effect(() => {
-    // Does image data already exist? Only update if the data has changed
-    // and the map size has been initialized
-    if (props.data && image.src !== props.data && mapSize.width > 0 && mapSize.height > 0) {
-      image.src = props.data;
-      image.onload = () => {
-        targetA.setSize(mapSize.width, mapSize.height);
-        targetB.setSize(mapSize.width, mapSize.height);
-
-        const texture = new THREE.Texture(image);
-        // This is needed to trigger texture upload to GPU
-        texture.needsUpdate = true;
-
-        // Render twice so buffers are in sync
-        render('copy', true, texture);
-        render('copy');
-      };
+    // Only update if the data has changed and map size is initialized
+    if (props.url && mapSize.width > 0 && mapSize.height > 0) {
+      targetA.setSize(mapSize.width, mapSize.height);
+      targetB.setSize(mapSize.width, mapSize.height);
+      textureLoader.load(props.url, (texture) => render('copy', true, texture));
     }
   });
 
@@ -234,7 +223,7 @@
    * Serializes the current fog of war state to a binary buffer
    * @returns A binary buffer representation of the fog of war texture
    */
-  export async function toJpeg(): Promise<Blob> {
+  export async function toPng(): Promise<Blob> {
     // Create a temporary canvas to draw the texture
     const canvas = document.createElement('canvas');
     canvas.width = currentTarget.width;
@@ -250,13 +239,9 @@
     imageData.data.set(pixels);
     ctx.putImageData(imageData, 0, 0);
 
-    // Convert to blob with lossless JPEG compression
+    // Convert to blob with lossless PNG compression
     return new Promise((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob!),
-        'image/jpeg',
-        1.0 // Maximum quality for lossless compression
-      );
+      canvas.toBlob((blob) => resolve(blob!), 'image/png');
     });
   }
 </script>

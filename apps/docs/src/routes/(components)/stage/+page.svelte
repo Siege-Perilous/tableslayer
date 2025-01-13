@@ -15,7 +15,7 @@
   import { onMount } from 'svelte';
 
   let stageProps: StageProps = $state(StageDefaultProps);
-  let stage: StageExports;
+  let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   // svelte-ignore state_referenced_locally
   let mapUrl = $state(stageProps.map.url);
@@ -86,10 +86,10 @@
           stageProps.fogOfWar.tool.type = ToolType.Brush;
           break;
         case 'f':
-          stage.fogOfWar.clear();
+          stage?.fogOfWar.clear();
           break;
         case 'F':
-          stage.fogOfWar.reset();
+          stage?.fogOfWar.reset();
           break;
         case 'o':
           stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -129,7 +129,7 @@
   function updateMapUrl() {
     stageProps.map.url = mapUrl;
     // Reset fog of war data and ping locations
-    stageProps.fogOfWar.data = null;
+    stageProps.fogOfWar.url = null;
     stageProps.ping.locations = [];
   }
 
@@ -269,19 +269,21 @@
       <Binding bind:object={stageProps.fogOfWar.noise} key={'lacunarity'} label="Lacunarity" />
       <Binding bind:object={stageProps.fogOfWar.noise} key={'levels'} label="Levels" />
     </Folder>
-    <Button on:click={() => stage.fogOfWar.reset()} title="Reset Fog Of War" />
-    <Button on:click={() => stage.fogOfWar.clear()} title="Clear Fog Of War" />
+    <Button on:click={() => stage?.fogOfWar.reset()} title="Reset Fog Of War" />
+    <Button on:click={() => stage?.fogOfWar.clear()} title="Clear Fog Of War" />
     <Button
       on:click={async () => {
-        const blob = await stage.fogOfWar.toJpeg();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fog-of-war.jpg';
-        a.click();
-        URL.revokeObjectURL(url);
+        const blob = await stage?.fogOfWar.toPng();
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'fog-of-war.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
       }}
-      title="Export JPEG"
+      title="Export PNG"
     />
   </Folder>
 
@@ -305,8 +307,8 @@
     <Separator />
     <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
     <Button on:click={() => (stageProps.map.offset = { x: 0, y: 0 })} title="Center" />
-    <Button on:click={() => stage.map.fill()} title="Fill" />
-    <Button on:click={() => stage.map.fit()} title="Fit" />
+    <Button on:click={() => stage?.map.fill()} title="Fill" />
+    <Button on:click={() => stage?.map.fit()} title="Fit" />
   </Folder>
 
   <Folder title="Ping" expanded={false}>
@@ -321,8 +323,8 @@
   <Folder title="Scene" expanded={false}>
     <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <Button on:click={() => (stageProps.scene.offset = { x: 0, y: 0 })} title="Center" />
-    <Button on:click={() => stage.scene.fill()} title="Fill" />
-    <Button on:click={() => stage.scene.fit()} title="Fit" />
+    <Button on:click={() => stage?.scene.fill()} title="Fill" />
+    <Button on:click={() => stage?.scene.fit()} title="Fit" />
   </Folder>
 
   <Folder title="Weather" expanded={false}>
@@ -337,7 +339,6 @@
 
   <Button
     on:click={() => {
-      stageProps.fogOfWar.data = null;
       localStorage.setItem('stageProps', JSON.stringify(stageProps));
       alert('Props saved to local storage');
     }}

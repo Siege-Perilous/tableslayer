@@ -26,7 +26,7 @@
   export const fogOfWar = {
     clear: () => sceneRef?.fogOfWar.clear(),
     reset: () => sceneRef?.fogOfWar.reset(),
-    toJpeg: () => sceneRef?.fogOfWar.toJpeg()
+    toPng: () => sceneRef?.fogOfWar.toPng()
   };
 
   export const scene = {
