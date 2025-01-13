@@ -120,6 +120,28 @@ export const uploadFileFromInput = async (file: File, userId: string, destinatio
   }
 };
 
+export const uploadFileFromBlob = async (blob: Blob, userId: string, destinationFolder?: string) => {
+  const file = new File([blob], 'fog', { type: blob.type });
+  return await uploadFileFromInput(file, userId, destinationFolder);
+};
+
+// We don't bother storing any user db records for the fog of war files
+export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
+  try {
+    const file = new File([blob], 'fog', { type: blob.type });
+    const fileType = 'image/png';
+    const fileName = sceneId + '.png';
+    const fileBuffer = await file.arrayBuffer();
+    const contentLength = fileBuffer.byteLength;
+
+    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, fileType, 'fog', contentLength);
+    return fullPath;
+  } catch (error) {
+    console.error('Error uploading fog from blob:', error);
+    throw error;
+  }
+};
+
 export const getFile = async (fileId: number) => {
   try {
     const fileRow = await db.select().from(filesTable).where(eq(filesTable.id, fileId)).get();

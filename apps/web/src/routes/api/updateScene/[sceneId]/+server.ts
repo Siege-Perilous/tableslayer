@@ -112,7 +112,6 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 
     const userId = locals.user.id as string;
     const sceneDetails = convertPropsToSceneDetails(stageProps);
-    console.log('sceneDetails:', sceneDetails);
 
     await updateScene(dbName, userId, sceneId, sceneDetails);
 

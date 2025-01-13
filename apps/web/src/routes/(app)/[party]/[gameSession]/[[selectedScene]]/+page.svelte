@@ -3,7 +3,7 @@
   import { type Socket } from 'socket.io-client';
   import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, SceneSelector } from '$lib/components';
+  import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { createUpdateSceneMutation } from '$lib/queries';
   import {
     StageDefaultProps,
@@ -56,11 +56,11 @@
   });
 
   const socketUpdate = () => {
-    console.log('socketUpdate');
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
   };
 
   const updateSceneMutation = createUpdateSceneMutation();
+  //  const createFogMutation = createUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -109,11 +109,6 @@
       socketUpdate();
     }
   });
-
-  const updateStage = (newProps: Partial<StageProps>) => {
-    Object.assign(stageProps, newProps);
-    socketUpdate();
-  };
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
     stageProps.map.offset.x = offset.x;
@@ -247,8 +242,20 @@
       });
     }
   });
-  const saveScene = () => {
+  const saveScene = async () => {
     console.log('Saving scene...');
+    // This doesnn't work yet.
+    //  const fogBlob = stage.fogOfWar.serialize();
+
+    //  const fogLocation = await $createFogMutation.mutateAsync({
+    //  blob: fogBlob,
+    //  sceneId: selectedScene.id
+    //  });
+
+    //  if (fogLocation) {
+    //  console.log('Fog uploaded successfully', fogLocation);
+    //  }
+
     $updateSceneMutation.mutate({
       sceneId: selectedScene.id,
       dbName: gameSession.dbName,
@@ -309,7 +316,8 @@
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
-        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} onUpdateStage={updateStage} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
+        <SceneZoom {socketUpdate} {stageProps} />
       </div>
     </Pane>
   </PaneGroup>
@@ -357,6 +365,7 @@
   }
   .container {
     height: calc(100vh - 49px);
+    user-select: none;
   }
   .stage {
     width: 100%;

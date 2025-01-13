@@ -13,9 +13,12 @@
     ToolType,
     type StageProps,
     MapLayerType,
-    Input
+    Input,
+    Button,
+    IconButton
   } from '@tableslayer/ui';
   import {
+    IconHexagons,
     IconGrid4x4,
     IconPaint,
     IconPaintFilled,
@@ -26,26 +29,27 @@
     IconCircle,
     IconCircleFilled,
     IconSquare,
+    IconLayoutGrid,
     IconSquareFilled
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
-  import { generateGradientColors } from '$lib/utils';
+  import { generateGradientColors, to8CharHex } from '$lib/utils';
 
   let {
-    onUpdateStage,
+    socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
     stageProps
   }: {
-    onUpdateStage: (newProps: Partial<StageProps>) => void;
+    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;
   } = $props();
 
-  let gridHex = $state(stageProps.grid.lineColor);
-  let fogHex = $state(stageProps.fogOfWar.noise.baseColor);
+  let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
+  let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
   let tvDiagnalSize = $state(40);
 
   type SceneControl = {
@@ -87,32 +91,30 @@
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
     const fogColor = chroma(cd.hex).hex('rgb');
     const fogColors = generateGradientColors(fogColor);
-    onUpdateStage({
-      fogOfWar: {
-        ...stageProps.fogOfWar,
-        opacity: cd.rgba.a,
-        noise: {
-          ...stageProps.fogOfWar.noise,
-          baseColor: fogColors[0],
-          fogColor1: fogColors[1],
-          fogColor2: fogColors[2],
-          fogColor3: fogColors[3],
-          fogColor4: fogColors[4]
-        }
+    stageProps.fogOfWar = {
+      ...stageProps.fogOfWar,
+      opacity: cd.rgba.a,
+      noise: {
+        ...stageProps.fogOfWar.noise,
+        baseColor: fogColors[0],
+        fogColor1: fogColors[1],
+        fogColor2: fogColors[2],
+        fogColor3: fogColors[3],
+        fogColor4: fogColors[4]
       }
-    });
+    };
+    socketUpdate();
   };
 
   // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
   const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
     const gridColor = chroma(cd.hex).hex('rgb');
-    onUpdateStage({
-      grid: {
-        ...stageProps.grid,
-        lineColor: gridColor,
-        opacity: cd.rgba.a
-      }
-    });
+    stageProps.grid = {
+      ...stageProps.grid,
+      lineColor: gridColor,
+      opacity: cd.rgba.a
+    };
+    socketUpdate();
   };
 
   type TvResolution = {
@@ -145,30 +147,22 @@
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
-    onUpdateStage({
-      display: {
-        ...stageProps.display,
-        resolution: {
-          x: selectedResolution.width,
-          y: selectedResolution.height
-        }
-      }
-    });
+    stageProps.display.resolution = {
+      x: selectedResolution.width,
+      y: selectedResolution.height
+    };
+    socketUpdate();
     return selectedResolution;
   };
 
   const handleTvSizeChange = (diagonalSize: number) => {
     console.log('update tv size');
     const { width, height } = getTvDimensions(diagonalSize);
-    onUpdateStage({
-      display: {
-        ...stageProps.display,
-        size: {
-          x: width,
-          y: height
-        }
-      }
-    });
+    stageProps.display.size = {
+      x: width,
+      y: height
+    };
+    socketUpdate();
   };
 
   const eraseOptions = [
@@ -241,21 +235,22 @@
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
     selectedFogTool = selectedOption!;
     activeControl = 'erase';
-    onUpdateStage({
-      activeLayer: MapLayerType.FogOfWar,
-      scene: {
-        ...stageProps.scene
-      },
-      fogOfWar: {
-        ...stageProps.fogOfWar,
-        tool: {
-          ...stageProps.fogOfWar.tool,
-          type: selectedOption.toolType,
-          mode: selectedOption.drawMode
-        }
-      }
-    });
+    stageProps.activeLayer = MapLayerType.FogOfWar;
+    stageProps.fogOfWar.tool.type = selectedOption.toolType;
+    stageProps.fogOfWar.tool.mode = selectedOption.drawMode;
+    socketUpdate();
     return selectedOption.value;
+  };
+
+  const handleMapRotation = () => {
+    stageProps.map.rotation += 90;
+    socketUpdate();
+  };
+
+  const handleGridTypeChange = (gridType: number) => {
+    console.log('grid type change', gridType);
+    stageProps.grid.gridType = gridType;
+    socketUpdate();
   };
 </script>
 
@@ -282,6 +277,20 @@
     </Control>
   </div>
   <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Grid type">
+      <IconButton variant="ghost" onclick={() => handleGridTypeChange(0)}>
+        <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+      </IconButton>
+      <IconButton variant="ghost" onclick={() => handleGridTypeChange(1)}>
+        <Icon Icon={IconHexagons} size="20px" stroke={2} />
+      </IconButton>
+    </Control>
+    <Control label="Grid thickness">
+      <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+    </Control>
+  </div>
+  <Spacer />
   <Control label="Grid Color">
     <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
   </Control>
@@ -293,7 +302,8 @@
 {/snippet}
 
 {#snippet mapControls()}
-  Hello
+  <Button>Fit map</Button>
+  <Button onclick={handleMapRotation}>Rotate map</Button>
 {/snippet}
 
 <ColorMode mode="dark">
