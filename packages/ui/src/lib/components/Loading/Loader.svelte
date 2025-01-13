@@ -1,4 +1,11 @@
-<div class="loader">
+<script lang="ts">
+  let { ...restProps } = $props();
+  import classNames from 'classnames';
+
+  const loaderClasses = classNames('loader', restProps.class ?? '');
+</script>
+
+<div class={loaderClasses}>
   <div class="loader__anim"></div>
 </div>
 

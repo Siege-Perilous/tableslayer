@@ -7,7 +7,8 @@ import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, T
 // Map activeScene properties to StageProps
 export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
-  const thumbUrl = hasThumb(activeScene) ? activeScene.thumb.resizedUrl : 'https://files.tableslayer.com/maps/01.jpeg';
+  const thumbUrl = hasThumb(activeScene) && activeScene.thumb !== null ? activeScene.thumb.resizedUrl : '';
+  console.log('thumb', thumbUrl);
   return {
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
@@ -52,10 +53,10 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
         fogColor2: fogColors[2],
         fogColor3: fogColors[3],
         fogColor4: fogColors[4],
-        speed: { x: -0.015, y: 0.01, z: -0.05, w: 0.1 },
+        speed: { x: -0.015, y: 0.03, z: -0.05, w: 0.1 },
         frequency: { x: 0.0008, y: 0.002, z: 0.001, w: 0.001 },
         offset: { x: -0.4, y: -0.2, z: -0.3, w: -0.25 },
-        amplitude: { x: 0.6, y: 0.5, z: 0.5, w: 1 },
+        amplitude: { x: -2.0, y: 0.5, z: 0.5, w: 1 },
         persistence: { x: 0.4, y: 0.4, z: 0.3, w: 0.48 },
         lacunarity: { x: 2.5, y: 2.5, z: 2.5, w: 2 },
         levels: { x: 6, y: 4, z: 3, w: 6 }

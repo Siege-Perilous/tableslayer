@@ -2,6 +2,7 @@
   import { useIsFetching, useIsMutating } from '@tanstack/svelte-query';
   import { writable } from 'svelte/store';
   import { onDestroy } from 'svelte';
+  import { Loader } from '@tableslayer/ui';
 
   // Global loader store
   export const isFetching = writable(false);
@@ -30,20 +31,14 @@
 
 <!-- Global loader display -->
 {#if $isFetching}
-  <div class="global-loader">Global Loading</div>
+  <Loader class="globalLoader" />
 {/if}
 
 <style>
-  .global-loader {
+  :global(.globalLoader) {
     position: fixed;
-    bottom: 0;
-    right: 0;
-    height: 1rem;
-    background: red;
-    padding: 0.5rem;
-    color: white;
-    font-size: 0.9rem;
-    border-radius: 4px;
+    bottom: 1rem;
+    right: 1rem;
     z-index: 9999;
   }
 </style>
