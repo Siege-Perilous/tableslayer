@@ -2,7 +2,7 @@ import { createMutation } from '@tanstack/svelte-query';
 
 export const createUploadFogFromBlobMutation = () => {
   return createMutation<{ location: string }, Error, { sceneId: string; blob: Blob }>({
-    mutationKey: ['uploadFile'],
+    mutationKey: ['uploadFog'],
     mutationFn: async ({ sceneId, blob }) => {
       const response = await fetch(`/api/file/uploadFogFromBlob/${sceneId}`, {
         method: 'POST',
