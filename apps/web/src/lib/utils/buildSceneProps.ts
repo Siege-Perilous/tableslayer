@@ -27,7 +27,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
       }
     },
     fogOfWar: {
-      data: activeScene.fogOfWarData,
+      url: activeScene.fogOfWarUrl,
       opacity: activeScene.fogOfWarOpacity,
       outline: {
         color: '#FFFFFF',

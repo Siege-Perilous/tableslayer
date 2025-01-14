@@ -4,7 +4,7 @@
   import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
-  import { createUpdateSceneMutation } from '$lib/queries';
+  import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -60,7 +60,7 @@
   };
 
   const updateSceneMutation = createUpdateSceneMutation();
-  //  const createFogMutation = createUploadFogFromBlobMutation();
+  const createFogMutation = createUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -244,17 +244,17 @@
   });
   const saveScene = async () => {
     console.log('Saving scene...');
-    // This doesnn't work yet.
-    //  const fogBlob = stage.fogOfWar.serialize();
 
-    //  const fogLocation = await $createFogMutation.mutateAsync({
-    //  blob: fogBlob,
-    //  sceneId: selectedScene.id
-    //  });
+    const fogBlob = await stage.fogOfWar.toPng();
 
-    //  if (fogLocation) {
-    //  console.log('Fog uploaded successfully', fogLocation);
-    //  }
+    const fogLocation = await $createFogMutation.mutateAsync({
+      blob: fogBlob,
+      sceneId: selectedScene.id
+    });
+
+    if (fogLocation) {
+      console.log('Fog uploaded successfully', fogLocation);
+    }
 
     $updateSceneMutation.mutate({
       sceneId: selectedScene.id,

@@ -9,7 +9,7 @@ export const StageDefaultProps: StageProps = {
     resolution: { x: 1920, y: 1080 }
   },
   fogOfWar: {
-    data: null,
+    url: null,
     opacity: 1,
     outline: {
       color: '#000000',
