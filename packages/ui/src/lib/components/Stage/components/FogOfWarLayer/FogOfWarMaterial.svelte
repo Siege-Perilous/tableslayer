@@ -116,12 +116,14 @@
   });
 
   // Load the image data from the props
+  let previousUrl: string | null = null;
   $effect(() => {
     // Only update if the data has changed and map size is initialized
-    if (props.url && mapSize.width > 0 && mapSize.height > 0) {
+    if (props.url && props.url !== previousUrl && mapSize.width > 0 && mapSize.height > 0) {
       targetA.setSize(mapSize.width, mapSize.height);
       targetB.setSize(mapSize.width, mapSize.height);
       textureLoader.load(props.url, (texture) => render('copy', true, texture));
+      previousUrl = props.url;
     }
   });
 
