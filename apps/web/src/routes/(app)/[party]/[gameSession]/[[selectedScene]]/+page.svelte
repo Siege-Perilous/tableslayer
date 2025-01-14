@@ -1,7 +1,7 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, addToast, Button } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
@@ -242,20 +242,23 @@
       });
     }
   });
-  const saveScene = async () => {
-    console.log('Saving scene...');
 
+  const uploadFog = async () => {
     const fogBlob = await stage.fogOfWar.toPng();
-
-    const fogLocation = await $createFogMutation.mutateAsync({
+    const fog = await $createFogMutation.mutateAsync({
       blob: fogBlob,
       sceneId: selectedScene.id
     });
 
-    if (fogLocation) {
-      console.log('Fog uploaded successfully', fogLocation);
+    if (fog) {
+      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?t=${Date.now()}`;
+      socketUpdate();
+      console.log('Fog uploaded successfully');
     }
+  };
 
+  const saveScene = async () => {
+    console.log('Saving scene...');
     $updateSceneMutation.mutate({
       sceneId: selectedScene.id,
       dbName: gameSession.dbName,
@@ -318,6 +321,7 @@
         </div>
         <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
         <SceneZoom {socketUpdate} {stageProps} />
+        <Button class="uploadFog" onclick={uploadFog} variant="ghost">Upload Fog</Button>
       </div>
     </Pane>
   </PaneGroup>
@@ -325,6 +329,11 @@
 
 <style>
   :global {
+    .uploadFog {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+    }
     .panel.scene {
       aspect-ratio: 16 / 9;
     }

@@ -8,7 +8,6 @@ import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, T
 export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
   const thumbUrl = hasThumb(activeScene) && activeScene.thumb !== null ? activeScene.thumb.resizedUrl : '';
-  console.log('thumb', thumbUrl);
   return {
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
