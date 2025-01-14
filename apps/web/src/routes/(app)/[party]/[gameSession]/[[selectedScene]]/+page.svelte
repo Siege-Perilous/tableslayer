@@ -129,6 +129,13 @@
     socketUpdate();
   };
 
+  const onMouseUp = async () => {
+    if (stageProps.activeLayer === MapLayerType.FogOfWar) {
+      await uploadFog();
+      socketUpdate();
+    }
+  };
+
   let isThrottled = false;
 
   const onMouseMove = (e: MouseEvent) => {
@@ -315,13 +322,12 @@
       ></button>
     </PaneResizer>
     <Pane defaultSize={70}>
-      <div class="stageWrapper">
+      <div class="stageWrapper" onmouseup={onMouseUp} role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
         <SceneZoom {socketUpdate} {stageProps} />
-        <Button class="uploadFog" onclick={uploadFog} variant="ghost">Upload Fog</Button>
       </div>
     </Pane>
   </PaneGroup>
@@ -329,11 +335,6 @@
 
 <style>
   :global {
-    .uploadFog {
-      position: absolute;
-      bottom: 1rem;
-      right: 1rem;
-    }
     .panel.scene {
       aspect-ratio: 16 / 9;
     }
