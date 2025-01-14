@@ -225,9 +225,7 @@
    */
   export async function toPng(): Promise<Blob> {
     // Create a temporary canvas to draw the texture
-    const canvas = document.createElement('canvas');
-    canvas.width = currentTarget.width;
-    canvas.height = currentTarget.height;
+    const canvas = new OffscreenCanvas(currentTarget.width, currentTarget.height);
     const ctx = canvas.getContext('2d')!;
 
     // Read pixels from WebGL render target
@@ -239,9 +237,19 @@
     imageData.data.set(pixels);
     ctx.putImageData(imageData, 0, 0);
 
+    // The pixel data is flipped vertically when read from the WebGL render target, so we need to flip it back
+    const flippedCanvas = document.createElement('canvas');
+    flippedCanvas.width = canvas.width;
+    flippedCanvas.height = canvas.height;
+    const flippedCtx = flippedCanvas.getContext('2d')!;
+
+    flippedCtx.scale(1, -1);
+    flippedCtx.translate(0, -canvas.height);
+    flippedCtx.drawImage(canvas, 0, 0);
+
     // Convert to blob with lossless PNG compression
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), 'image/png');
+      flippedCanvas.toBlob((blob) => resolve(blob!), 'image/png');
     });
   }
 </script>
