@@ -150,10 +150,8 @@
    * Serializes the fog of war image data into a binary buffer
    * @return A binary buffer
    */
-  export function serialize(): Blob | null {
-    const blob = material?.serialize() ?? null;
-    console.log(blob);
-    return blob;
+  export async function toPng(): Promise<Blob> {
+    return (await material?.toPng()) ?? new Blob();
   }
 </script>
 

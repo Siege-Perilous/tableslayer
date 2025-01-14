@@ -18,7 +18,7 @@ export const sceneTable = sqliteTable(
     displaySizeY: integer('displaySizeY').notNull().default(10.0),
     displayResolutionX: integer('displayResolutionX').notNull().default(1920),
     displayResolutionY: integer('displayResolutionY').notNull().default(1080),
-    fogOfWarData: text('fogOfWarData'),
+    fogOfWarUrl: text('fogOfWarUrl'),
     fogOfWarColor: text('fogOfWarColor').notNull().default('#000'),
     fogOfWarOpacity: real('fogOfWarOpacity').notNull().default(0.9),
     mapLocation: text('mapLocation'),
