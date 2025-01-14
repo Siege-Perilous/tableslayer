@@ -253,7 +253,7 @@
     if (fog) {
       stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?t=${Date.now()}`;
       socketUpdate();
-      console.log('Fog uploaded successfully');
+      console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
     }
   };
 
