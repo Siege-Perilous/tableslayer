@@ -49,6 +49,7 @@
       () => console.log('Disconnected from game session socket')
     );
 
+    socketUpdate();
     return () => {
       socket?.disconnect();
       if (saveTimer) clearTimeout(saveTimer);
