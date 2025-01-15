@@ -159,6 +159,11 @@
 
     return () => clearInterval(interval);
   });
+
+  $effect(() => {
+    $state.snapshot(stageProps);
+    handleResize();
+  });
 </script>
 
 <svelte:window onresize={handleResize} />

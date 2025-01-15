@@ -59,7 +59,7 @@ const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Re
   });
 
   setNestedIfExists(stageProps, details, 'fogOfWar', {
-    data: 'fogOfWarData',
+    url: 'fogOfWarUrl',
     'noise.baseColor': 'fogOfWarColor',
     opacity: 'fogOfWarOpacity'
   });

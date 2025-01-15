@@ -30,7 +30,8 @@ const uploadToR2 = async (
   fileName: string,
   contentType: string,
   destinationFolder?: string,
-  contentLength?: number
+  contentLength?: number,
+  caching: boolean = true // Default to true
 ) => {
   // Normalize the destination folder
   const normalizedFolder = destinationFolder?.replace(/^\/+|\/+$/g, '') || '';
@@ -46,7 +47,8 @@ const uploadToR2 = async (
     Key: key,
     Body: fileStream,
     ContentType: contentType,
-    ...(contentLength && { ContentLength: contentLength }) // Set ContentLength if available
+    ...(contentLength && { ContentLength: contentLength }),
+    ...(caching === false && { CacheControl: 'no-cache, no-store, must-revalidate' }) // Apply no-cache headers if caching is false
   };
 
   try {
@@ -134,8 +136,8 @@ export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
     const fileBuffer = await file.arrayBuffer();
     const contentLength = fileBuffer.byteLength;
 
-    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, fileType, 'fog', contentLength);
-    return fullPath;
+    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, fileType, 'fog', contentLength, false);
+    return fullPath + `?t=${Date.now()}`;
   } catch (error) {
     console.error('Error uploading fog from blob:', error);
     throw error;
