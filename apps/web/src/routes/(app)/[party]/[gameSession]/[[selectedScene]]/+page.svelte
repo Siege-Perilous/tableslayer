@@ -35,13 +35,6 @@
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // These are the values in stage props that exist
-  //  stageProps.display.resolution.x = 1920
-  //  stageProps.display.resolution.y = 1080
-  //  stageProps.scene.zoom = 0.5
-  //  stageProps.scene.offset.x = 0
-  //  stageProps.scene.offset.y = 0
-
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
@@ -259,7 +252,7 @@
     });
 
     if (fog) {
-      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?t=${Date.now()}`;
+      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
       socketUpdate();
       console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
     }

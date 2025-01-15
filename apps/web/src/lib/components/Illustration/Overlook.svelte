@@ -1,76 +1,64 @@
 <script lang="ts">
   let m = $state({ x: 0, y: 0 });
+  import { fade } from 'svelte/transition';
 
   const handleMousemove = (event: MouseEvent) => {
     m.x = event.clientX;
     m.y = event.clientY;
   };
   const parallaxFactor = 0.01; // Adjust for a subtle effect
-  let fg: HTMLDivElement;
-  let bg: HTMLDivElement;
-  let cloud1: HTMLDivElement;
-  let cloud2: HTMLDivElement;
-  let cloud3: HTMLDivElement;
-  let cloud4: HTMLDivElement;
-  let cloud5: HTMLDivElement;
-  let cloud6: HTMLDivElement;
-  let cloud7: HTMLDivElement;
+  let fg = $state<HTMLDivElement | null>(null);
+  let bg = $state<HTMLDivElement | null>(null);
+  let cloudElements = $state<(HTMLDivElement | null)[]>(Array(7).fill(null));
+
+  let showBg = $state(false);
+  let showFg = $state(false);
+  let showClouds = $state(Array(7).fill(false));
 
   $effect(() => {
-    const applyParallax = (element: HTMLDivElement, parallaxFactor: number) => {
-      element.style.marginTop = `${m.y * parallaxFactor}px`;
+    const applyParallax = (element: HTMLDivElement, factor: number) => {
+      element.style.marginTop = `${m.y * factor}px`;
     };
-    bg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
-    fg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
-    applyParallax(cloud1, parallaxFactor * 1);
-    applyParallax(cloud2, parallaxFactor * 0.9);
-    applyParallax(cloud3, parallaxFactor * 0.8);
-    applyParallax(cloud4, parallaxFactor * 0.6);
-    applyParallax(cloud5, parallaxFactor * 0.7);
-    applyParallax(cloud6, parallaxFactor * 0.6);
-    applyParallax(cloud7, parallaxFactor * 0.5);
+
+    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
+    if (fg) fg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
+
+    cloudElements.forEach((cloud, i) => {
+      if (cloud) {
+        applyParallax(cloud, parallaxFactor * (1 - i * Math.random() * 0.1));
+      }
+    });
+  });
+
+  $effect(() => {
+    console.log('Cloud element bindings: ', cloudElements);
+    setTimeout(() => (showBg = true), 100); // Background
+    setTimeout(() => (showFg = true), 400); // Foreground
+    showClouds.forEach((_, i) => {
+      setTimeout(() => (showClouds[i] = true), 700 + i * 200); // Cloud sequence
+    });
   });
 </script>
 
 <svelte:window onmousemove={handleMousemove} />
 
-<div
-  bind:this={cloud1}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c1.png')"
-  class="cloud cloud1"
-></div>
-<div
-  bind:this={cloud2}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c2.png')"
-  class="cloud cloud2"
-></div>
-<div
-  bind:this={cloud3}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c3.png')"
-  class="cloud cloud3"
-></div>
-<div
-  bind:this={cloud4}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c4.png')"
-  class="cloud cloud4"
-></div>
-<div
-  bind:this={cloud5}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c5.png')"
-  class="cloud cloud5"
-></div>
-<div
-  bind:this={cloud6}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c6.png')"
-  class="cloud cloud6"
-></div>
-<div
-  bind:this={cloud7}
-  style="background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c7.png')"
-  class="cloud cloud7"
-></div>
-<div class="signup__fg" bind:this={fg}></div>
-<div class="signup__bg" bind:this={bg}></div>
+{#if showBg}
+  <div class="signup__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
+{/if}
+
+{#if showFg}
+  <div class="signup__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
+{/if}
+{#each showClouds as show, i}
+  {#if show}
+    <div
+      class={`cloud cloud${i + 1}`}
+      bind:this={cloudElements[i]}
+      style={`background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c${i + 1}.png')`}
+      transition:fade={{ duration: 800 }}
+    ></div>
+  {/if}
+{/each}
 
 <style>
   :global(.light .cloud) {
@@ -172,6 +160,27 @@
     }
     100% {
       transform: translateX(100%);
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .signup__fg {
+      background-size: 65%;
+    }
+    .signup__bg {
+      background-size: 90%;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .signup__fg {
+      background-size: 85%;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .signup__fg {
+      background-size: 100%;
     }
   }
 

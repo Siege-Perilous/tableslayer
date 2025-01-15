@@ -218,7 +218,7 @@ export const getActiveScene = async (dbName: string): Promise<SelectScene | ((Se
   }
 
   const thumb = activeScene.mapLocation
-    ? await transformImage(activeScene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    ? await transformImage(activeScene.mapLocation, 'w=5000,h=5000,fit=scale-down,gravity=center')
     : null;
   const activeSceneWithThumb = { ...activeScene, thumb };
 

@@ -45,6 +45,7 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
+      console.log('Received stage update', payload);
       stageProps = {
         ...stageProps,
         fogOfWar: payload.stageProps.fogOfWar,
@@ -53,6 +54,8 @@
         display: payload.stageProps.display,
         ping: payload.stageProps.ping
       };
+
+      handleResize();
     });
 
     socket.on('cursorUpdate', (payload) => {
@@ -158,11 +161,6 @@
     }, 1000);
 
     return () => clearInterval(interval);
-  });
-
-  $effect(() => {
-    $state.snapshot(stageProps);
-    handleResize();
   });
 </script>
 
