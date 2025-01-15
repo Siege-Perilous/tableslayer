@@ -49,6 +49,7 @@
       () => console.log('Disconnected from game session socket')
     );
 
+    socketUpdate();
     return () => {
       socket?.disconnect();
       if (saveTimer) clearTimeout(saveTimer);
@@ -127,6 +128,13 @@
   const onPingsUpdated = (updatedLocations: { x: number; y: number }[]) => {
     stageProps.ping.locations = updatedLocations;
     socketUpdate();
+  };
+
+  const onMouseUp = async () => {
+    if (stageProps.activeLayer === MapLayerType.FogOfWar) {
+      await uploadFog();
+      socketUpdate();
+    }
   };
 
   let isThrottled = false;
@@ -242,20 +250,23 @@
       });
     }
   });
-  const saveScene = async () => {
-    console.log('Saving scene...');
 
+  const uploadFog = async () => {
     const fogBlob = await stage.fogOfWar.toPng();
-
-    const fogLocation = await $createFogMutation.mutateAsync({
+    const fog = await $createFogMutation.mutateAsync({
       blob: fogBlob,
       sceneId: selectedScene.id
     });
 
-    if (fogLocation) {
-      console.log('Fog uploaded successfully', fogLocation);
+    if (fog) {
+      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?t=${Date.now()}`;
+      socketUpdate();
+      console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
     }
+  };
 
+  const saveScene = async () => {
+    console.log('Saving scene...');
     $updateSceneMutation.mutate({
       sceneId: selectedScene.id,
       dbName: gameSession.dbName,
@@ -312,7 +323,7 @@
       ></button>
     </PaneResizer>
     <Pane defaultSize={70}>
-      <div class="stageWrapper">
+      <div class="stageWrapper" onmouseup={onMouseUp} role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>

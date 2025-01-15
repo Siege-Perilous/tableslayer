@@ -41,7 +41,7 @@
   <div
     use:melt={$contentAction}
     transition:fade={{ duration: 100 }}
-    class={classNames('popContent', ...(restProps.class ?? ''))}
+    class={classNames('popContent', restProps.class ?? '')}
   >
     {@render content()}
     <button class="popClose" use:melt={$close}> close </button>
