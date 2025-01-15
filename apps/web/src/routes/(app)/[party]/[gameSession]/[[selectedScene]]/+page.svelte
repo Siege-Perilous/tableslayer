@@ -1,7 +1,7 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { Stage, type StageExports, type StageProps, MapLayerType, addToast, Button } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
