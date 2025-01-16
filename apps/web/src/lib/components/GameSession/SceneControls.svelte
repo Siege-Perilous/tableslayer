@@ -15,7 +15,9 @@
     MapLayerType,
     Input,
     Button,
-    IconButton
+    IconButton,
+    Text,
+    Hr
   } from '@tableslayer/ui';
   import {
     IconHexagons,
@@ -30,22 +32,29 @@
     IconCircleFilled,
     IconSquare,
     IconLayoutGrid,
-    IconSquareFilled
+    IconSquareFilled,
+    IconScreenShare
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
   import { generateGradientColors, to8CharHex } from '$lib/utils';
+  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import type { Thumb } from '$lib/server';
 
   let {
     socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
-    stageProps
+    stageProps,
+    party,
+    gameSession
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;
+    party: SelectParty & Thumb;
+    gameSession: SelectGameSession;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -83,6 +92,12 @@
       id: 'grid',
       icon: IconGrid4x4,
       text: 'Grid',
+      mapLayer: MapLayerType.None
+    },
+    {
+      id: 'play',
+      icon: IconScreenShare,
+      text: 'Play',
       mapLayer: MapLayerType.None
     }
   ];
@@ -305,6 +320,27 @@
   <Button>Fit map</Button>
   <Button onclick={handleMapRotation}>Rotate map</Button>
 {/snippet}
+{#snippet playControls()}
+  <div class="sceneControls__playPopover">
+    <Button href={`/${party.slug}/${gameSession.slug}/share`} target="_blank">Open playfield</Button>
+    <Spacer size={2} />
+    <Text size="0.85rem" color="var(--fgMuted)"
+      >This will open a new tab with the playfield. Fullscreen it on your display.</Text
+    >
+    <Spacer />
+    <Hr />
+    <Spacer />
+    <Button href="">Set active scene</Button>
+    <Spacer size={2} />
+    <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
+    <Spacer />
+    <Hr />
+    <Spacer />
+    <Button href="">Pause playfield</Button>
+    <Spacer size={2} />
+    <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>
+  </div>
+{/snippet}
 
 <ColorMode mode="dark">
   <div class="sceneControls">
@@ -349,6 +385,8 @@
               {@render fogControls()}
             {:else if scene.id === 'map'}
               {@render mapControls()}
+            {:else if scene.id === 'play'}
+              {@render playControls()}
             {/if}
           {/snippet}
         </Popover>
@@ -442,5 +480,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+  .sceneControls__playPopover {
+    width: 16rem;
   }
 </style>

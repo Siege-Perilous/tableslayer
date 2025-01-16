@@ -37,8 +37,8 @@
 <style>
   :global(.globalLoader) {
     position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
+    bottom: 2.5rem;
+    right: 2.5rem;
+    z-index: 2;
   }
 </style>

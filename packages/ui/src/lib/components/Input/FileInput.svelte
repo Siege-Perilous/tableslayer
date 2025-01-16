@@ -23,7 +23,10 @@
     if (files.length > 0) {
       const urls = [];
       for (const file of files) {
-        if (file && (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg'))) {
+        if (
+          (file && (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg'))) ||
+          file.type.startsWith('image/webp')
+        ) {
           const objectUrl = URL.createObjectURL(file);
           urls.push(objectUrl);
           generatedUrls.push(objectUrl); // Keep track of generated URLs for cleanup
@@ -45,7 +48,7 @@
     <label class="fileInput__dropZoneLabel" for={restProps.id}><div>Select an image</div></label>
   {/if}
   <!-- File input for selecting images -->
-  <input bind:files {...restProps} type="file" class="fileInput__input" accept="image/png, image/jpeg" />
+  <input bind:files {...restProps} type="file" class="fileInput__input" accept="image/png, image/jpeg, image/webp" />
 
   <!-- Display previews for all selected files -->
   {#each previewUrls as previewUrl}
