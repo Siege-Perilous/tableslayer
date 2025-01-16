@@ -99,7 +99,7 @@
       stageProps.map.url = StageDefaultProps.map.url;
     }
     if (activeScene) {
-      console.log('activeScene', activeScene);
+      console.log('activeScene', activeScene, 'stageProps', $state.snapshot(stageProps));
       socketUpdate();
     }
   });
@@ -215,19 +215,10 @@
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 
   $effect(() => {
-    if ($updateSceneMutation.isPending) {
-      addToast({
-        data: {
-          title: 'Updating scene...',
-          type: 'loading'
-        }
-      });
-    }
-
     if ($updateSceneMutation.isSuccess) {
       addToast({
         data: {
-          title: 'Scene updated successfully!',
+          title: 'Scene saved!',
           type: 'success'
         }
       });

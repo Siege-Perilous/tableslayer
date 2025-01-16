@@ -95,7 +95,7 @@ export const getSceneFromOrder = async (
   }
 
   const thumb = scene.mapLocation
-    ? await transformImage(scene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    ? await transformImage(scene.mapLocation, 'w=5000,h=5000,fit=scale-down,gravity=center')
     : null;
   const sceneWithThumb = { ...scene, thumb };
 

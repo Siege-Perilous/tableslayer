@@ -148,7 +148,7 @@
     content: '';
     background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/fg-solid.png');
     background-position: bottom 0px right -100px;
-    background-size: 90%;
+    background-size: 85%;
     background-repeat: no-repeat;
     width: 100%;
     height: 100%;
