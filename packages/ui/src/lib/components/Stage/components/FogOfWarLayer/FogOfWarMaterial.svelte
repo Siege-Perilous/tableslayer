@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -70,8 +70,6 @@
     vertexShader: fogVertexShader
   });
 
-  const textureLoader = new THREE.TextureLoader();
-
   // Options for the render targets
   const options = {
     format: THREE.RGBAFormat,
@@ -82,6 +80,9 @@
     depthBuffer: false,
     alpha: true
   };
+
+  let imageUrl: string | null = $state(null);
+  const textureLoader = new THREE.TextureLoader();
 
   // Use two render targets to store the previous and current state of the fog of war
   let targetA = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
@@ -109,6 +110,7 @@
 
   // Whenever the map size changes, we need to re-initialize the buffers
   $effect(() => {
+    console.log('mapSize', mapSize);
     targetA.setSize(mapSize.width, mapSize.height);
     targetB.setSize(mapSize.width, mapSize.height);
     drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
@@ -117,6 +119,13 @@
 
   // Load the image data from the props
   $effect(() => {
+    // Do not update if the image url has not changed
+    if (imageUrl === props.url) {
+      return;
+    } else {
+      imageUrl = props.url;
+    }
+
     // Only update if the data has changed and map size is initialized
     if (props.url && mapSize.width > 0 && mapSize.height > 0) {
       targetA.setSize(mapSize.width, mapSize.height);

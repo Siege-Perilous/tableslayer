@@ -1,7 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
+  import { getContext } from 'svelte';
   import { T, type Size } from '@threlte/core';
   import { ToolType, type FogOfWarLayerProps } from './types';
+  import type { Callbacks } from '../Stage/types';
   import InputManager from '../InputManager/InputManager.svelte';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
@@ -14,6 +16,8 @@
   }
 
   const { props, isActive, mapSize }: Props = $props();
+
+  const onFogUpdate = getContext<Callbacks>('callbacks').onFogUpdate;
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
@@ -87,6 +91,8 @@
         outlineMaterial.visible = false;
       }
     }
+
+    onFogUpdate(toPng());
 
     // Reset the drawing state
     lastPos = null;

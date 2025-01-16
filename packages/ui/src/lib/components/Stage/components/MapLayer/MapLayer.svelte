@@ -7,7 +7,7 @@
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
-  import { getContext } from 'svelte';
+  import { getContext, untrack } from 'svelte';
 
   interface Props {
     props: StageProps;
@@ -18,6 +18,7 @@
 
   const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
 
+  let imageUrl: string | null = $state(null);
   let image: THREE.Texture | undefined = $state();
   const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
@@ -26,6 +27,13 @@
   let mapSize: Size = $state({ width: 0, height: 0 });
 
   $effect(() => {
+    // Do not update if the image url has not changed
+    if (imageUrl === props.map.url) {
+      return;
+    } else {
+      imageUrl = props.map.url;
+    }
+
     // Update the image whenever the URL is changed
     loader
       .load(props.map.url, {
