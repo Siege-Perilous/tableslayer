@@ -16,18 +16,18 @@
   let showClouds = $state(Array(7).fill(false));
 
   $effect(() => {
-    const applyParallax = (element: HTMLDivElement, factor: number) => {
-      element.style.marginTop = `${m.y * factor}px`;
-    };
+    //  const applyParallax = (element: HTMLDivElement, factor: number) => {
+    //  element.style.marginTop = `${m.y * factor}px`;
+    //  };
 
-    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
-    if (fg) fg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
+    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
+    if (fg) fg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
 
-    cloudElements.forEach((cloud, i) => {
-      if (cloud) {
-        applyParallax(cloud, parallaxFactor * (1 - i * Math.random() * 0.1));
-      }
-    });
+    //  cloudElements.forEach((cloud, i) => {
+    //  if (cloud) {
+    //  applyParallax(cloud, parallaxFactor * (1 - i * Math.random() * 0.1));
+    //  }
+    //  });
   });
 
   $effect(() => {
@@ -128,6 +128,7 @@
     width: 100%;
     height: 100%;
     z-index: 0;
+    margin-left: -50px;
     content: '';
     background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/signup/bg-trans.png');
     background-position: bottom -200px left -200px;

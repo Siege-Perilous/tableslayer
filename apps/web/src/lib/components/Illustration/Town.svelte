@@ -16,18 +16,8 @@
   let showClouds = $state(Array(7).fill(false));
 
   $effect(() => {
-    const applyParallax = (element: HTMLDivElement, factor: number) => {
-      element.style.marginTop = `${m.y * factor}px`;
-    };
-
-    if (bg) bg.style.transform = `translate(${m.x * -parallaxFactor}px, ${m.y * parallaxFactor}px)`;
+    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
     if (fg) fg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
-
-    cloudElements.forEach((cloud, i) => {
-      if (cloud) {
-        applyParallax(cloud, parallaxFactor * (1 - i * Math.random() * 0.1));
-      }
-    });
   });
 
   $effect(() => {
@@ -42,13 +32,6 @@
 
 <svelte:window onmousemove={handleMousemove} />
 
-{#if showBg}
-  <div class="login__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
-{/if}
-
-{#if showFg}
-  <div class="login__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
-{/if}
 {#each showClouds as show, i}
   {#if show}
     <div
@@ -59,13 +42,22 @@
     ></div>
   {/if}
 {/each}
+{#if showBg}
+  <div class="login__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
+{/if}
+
+{#if showFg}
+  <div class="login__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
+{/if}
 
 <style>
   :global(.light .cloud) {
     filter: contrast(0.7) !important;
   }
   :global(.light .login__bg) {
-    opacity: 0.1 !important;
+    filter: none !important;
+    background-blend-mode: normal !important;
+    opacity: 0.2 !important;
   }
   .cloud {
     position: fixed;
@@ -122,11 +114,12 @@
   }
   .login__bg {
     top: 0;
-    left: -50px;
+    left: 0;
     position: fixed;
     width: 100%;
     height: 100%;
     z-index: 0;
+    margin-left: -50px;
     content: '';
     background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/bg-solid.png');
     background-position: bottom -50px left 0px;
