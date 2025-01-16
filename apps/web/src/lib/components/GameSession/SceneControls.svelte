@@ -40,6 +40,8 @@
   import { generateGradientColors, to8CharHex } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
+  import { createSetActiveSceneMutation } from '$lib/queries';
+  import type { SelectScene } from '$lib/db/gs/schema';
 
   let {
     socketUpdate,
@@ -47,7 +49,9 @@
     activeControl = 'none',
     stageProps,
     party,
-    gameSession
+    gameSession,
+    selectedScene,
+    activeScene
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -55,6 +59,8 @@
     stageProps: StageProps;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
+    selectedScene: SelectScene & Thumb;
+    activeScene: SelectScene & Thumb;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -267,6 +273,13 @@
     stageProps.grid.gridType = gridType;
     socketUpdate();
   };
+
+  const setActiveScene = createSetActiveSceneMutation();
+  const handleSetActiveScene = async () => {
+    if (!selectedScene || selectedScene.id === activeScene.id) return;
+
+    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: selectedScene.id, partyId: party.id });
+  };
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -330,12 +343,14 @@
     <Spacer />
     <Hr />
     <Spacer />
-    <Button href="">Set active scene</Button>
-    <Spacer size={2} />
-    <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
-    <Spacer />
-    <Hr />
-    <Spacer />
+    {#if selectedScene.id !== activeScene.id}
+      <Button onclick={handleSetActiveScene}>Set active scene</Button>
+      <Spacer size={2} />
+      <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
+      <Spacer />
+      <Hr />
+      <Spacer />
+    {/if}
     <Button href="">Pause playfield</Button>
     <Spacer size={2} />
     <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>

@@ -149,7 +149,7 @@
                   <Spacer />
                   <MessageError message={$deleteGameSessionMessage} />
                 {/if}
-                <Button type="submit" variant="danger">Delete party</Button>
+                <Button type="submit" variant="danger">Delete session</Button>
               </form>
             </div>
           {/snippet}

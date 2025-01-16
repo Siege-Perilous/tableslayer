@@ -9,8 +9,7 @@
     createSceneSchema,
     deleteSceneSchema,
     type CreateSceneFormType,
-    type DeleteSceneFormType,
-    type SetActiveSceneFormType
+    type DeleteSceneFormType
   } from '$lib/schemas';
   import type { SuperValidated } from 'sveltekit-superforms';
   import { superForm } from 'sveltekit-superforms';
@@ -19,6 +18,7 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
+  import { createSetActiveSceneMutation } from '$lib/queries';
 
   let {
     scenes,
@@ -26,14 +26,12 @@
     gameSession,
     selectedSceneNumber,
     deleteSceneForm,
-    setActiveSceneForm,
     activeScene,
     party
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     createSceneForm: SuperValidated<CreateSceneFormType>;
     deleteSceneForm: SuperValidated<DeleteSceneFormType>;
-    setActiveSceneForm: SuperValidated<SetActiveSceneFormType>;
     gameSession: SelectGameSession;
     selectedSceneNumber: number;
     party: SelectParty & Thumb;
@@ -60,13 +58,6 @@
     delayMs: 500
   });
 
-  const setActiveSceneSuperForm = superForm(setActiveSceneForm, {
-    resetForm: true,
-    validators: zodClient(deleteSceneSchema),
-    invalidateAll: 'force',
-    delayMs: 500
-  });
-
   const {
     form: createSceneData,
     enhance: createSceneEnhance,
@@ -75,13 +66,6 @@
     reset: createSceneReset,
     delayed: createSceneDelayed
   } = createSceneSuperForm;
-
-  const {
-    form: setActiveSceneData,
-    enhance: setActiveSceneEnhance,
-    message: setActiveSceneMessage,
-    formId: setActiveSceneFormId
-  } = setActiveSceneSuperForm;
 
   const {
     form: deleteSceneData,
@@ -108,14 +92,10 @@
     setTimeout(() => createSceneSuperForm.submit(), 50);
   };
 
-  const setActiveScene = (sceneId: string) => {
-    console.log('setActiveScene', sceneId);
-    $setActiveSceneFormId = sceneId;
-    $setActiveSceneData.sceneId = sceneId;
-    $setActiveSceneData.dbName = gameSession.dbName;
-    setTimeout(() => setActiveSceneSuperForm.submit(), 50);
+  const setActiveScene = createSetActiveSceneMutation();
+  const handleSetActiveScene = async (sceneId: string) => {
+    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: sceneId, partyId: party.id });
   };
-
   const onDeleteScene = (sceneId: string) => {
     $deleteSceneFormId = sceneId;
     $deleteSceneData.sceneId = sceneId;
@@ -165,13 +145,6 @@
       </Button>
     </form>
     <SuperDebug data={$createSceneData} display={false} />
-    <form method="post" action="?/setActiveScene" use:setActiveSceneEnhance>
-      <input type="hidden" name="dbName" bind:value={$setActiveSceneData.dbName} />
-      <input type="hidden" name="sceneId" bind:value={$setActiveSceneData.sceneId} />
-      {#if $setActiveSceneMessage}
-        <MessageError message={$setActiveSceneMessage} />
-      {/if}
-    </form>
   </div>
   <div class="scene__list">
     {#each scenes as scene}
@@ -190,7 +163,7 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Set active scene', onclick: () => setActiveScene(scene.id) }
+          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) }
         ]}
       >
         {#snippet trigger()}
