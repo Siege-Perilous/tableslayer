@@ -16,18 +16,8 @@
   let showClouds = $state(Array(7).fill(false));
 
   $effect(() => {
-    //  const applyParallax = (element: HTMLDivElement, factor: number) => {
-    //  element.style.marginTop = `${m.y * factor}px`;
-    //  };
-
-    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
-    if (fg) fg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
-
-    //  cloudElements.forEach((cloud, i) => {
-    //  if (cloud) {
-    //  applyParallax(cloud, parallaxFactor * (1 - i * Math.random() * 0.1));
-    //  }
-    //  });
+    if (bg) bg.style.transform = `translate(${m.x * parallaxFactor}px, ${m.y * parallaxFactor}px)`;
+    if (fg) fg.style.transform = `translate(${m.x * parallaxFactor * 0.5}px, ${m.y * parallaxFactor * 0.5}px)`;
   });
 
   $effect(() => {
@@ -42,13 +32,6 @@
 
 <svelte:window onmousemove={handleMousemove} />
 
-{#if showBg}
-  <div class="signup__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
-{/if}
-
-{#if showFg}
-  <div class="signup__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
-{/if}
 {#each showClouds as show, i}
   {#if show}
     <div
@@ -59,13 +42,22 @@
     ></div>
   {/if}
 {/each}
+{#if showBg}
+  <div class="login__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
+{/if}
+
+{#if showFg}
+  <div class="login__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
+{/if}
 
 <style>
   :global(.light .cloud) {
     filter: contrast(0.7) !important;
   }
-  :global(.light .signup__bg) {
-    opacity: 0.1 !important;
+  :global(.light .login__bg) {
+    filter: none !important;
+    background-blend-mode: normal !important;
+    opacity: 0.2 !important;
   }
   .cloud {
     position: fixed;
@@ -120,25 +112,25 @@
     animation-duration: 75s;
     animation-delay: -10s;
   }
-  .signup__bg {
+  .login__bg {
     top: 0;
     left: 0;
-    right: 0;
     position: fixed;
     width: 100%;
     height: 100%;
     z-index: 0;
     margin-left: -50px;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/signup/bg-trans.png');
-    background-position: bottom -200px left -200px;
-    background-size: 100%;
+    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/bg-solid.png');
+    background-position: bottom -50px left 0px;
+    background-size: 85%;
     background-repeat: no-repeat;
     background-blend-mode: multiply;
     inset: 0;
     opacity: 1;
+    filter: brightness(0.25);
   }
-  .signup__fg {
+  .login__fg {
     top: 0;
     left: 0;
     right: 0;
@@ -147,9 +139,9 @@
     height: 100%;
     z-index: 3;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/signup/fg-solid.png');
-    background-position: bottom -100px right -100px;
-    background-size: 75%;
+    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/fg-solid.png');
+    background-position: bottom 0px right -100px;
+    background-size: 85%;
     background-repeat: no-repeat;
     width: 100%;
     height: 100%;
@@ -165,28 +157,28 @@
   }
 
   @media (min-width: 1920px) {
-    .signup__fg {
+    .login__fg {
       background-size: 65%;
     }
-    .signup__bg {
+    .login__bg {
       background-size: 90%;
     }
   }
 
   @media (max-width: 1200px) {
-    .signup__fg {
+    .login__fg {
       background-size: 85%;
     }
   }
 
   @media (max-width: 1000px) {
-    .signup__fg {
+    .login__fg {
       background-size: 100%;
     }
   }
 
   @media (max-width: 768px) {
-    .signup__fg {
+    .login__fg {
       display: none;
     }
   }

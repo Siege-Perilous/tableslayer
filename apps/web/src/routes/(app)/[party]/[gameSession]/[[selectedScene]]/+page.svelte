@@ -35,13 +35,6 @@
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // These are the values in stage props that exist
-  //  stageProps.display.resolution.x = 1920
-  //  stageProps.display.resolution.y = 1080
-  //  stageProps.scene.zoom = 0.5
-  //  stageProps.scene.offset.x = 0
-  //  stageProps.scene.offset.y = 0
-
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
@@ -106,7 +99,7 @@
       stageProps.map.url = StageDefaultProps.map.url;
     }
     if (activeScene) {
-      console.log('activeScene', activeScene);
+      console.log('activeScene', activeScene, 'stageProps', $state.snapshot(stageProps));
       socketUpdate();
     }
   });
@@ -222,19 +215,10 @@
   let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
 
   $effect(() => {
-    if ($updateSceneMutation.isPending) {
-      addToast({
-        data: {
-          title: 'Updating scene...',
-          type: 'loading'
-        }
-      });
-    }
-
     if ($updateSceneMutation.isSuccess) {
       addToast({
         data: {
-          title: 'Scene updated successfully!',
+          title: 'Scene saved!',
           type: 'success'
         }
       });
@@ -259,7 +243,7 @@
     });
 
     if (fog) {
-      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?t=${Date.now()}`;
+      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
       socketUpdate();
       console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
     }
@@ -327,7 +311,7 @@
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
-        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} {party} {gameSession} />
         <SceneZoom {socketUpdate} {stageProps} />
       </div>
     </Pane>

@@ -16,6 +16,7 @@
     Spacer,
     Panel
   } from '@tableslayer/ui';
+  import { IllustrationTown } from '$lib/components';
 
   let { data } = $props();
   const form = superForm(data.loginForm, {
@@ -24,6 +25,8 @@
   });
   const { form: formData, enhance, message } = form;
 </script>
+
+<IllustrationTown />
 
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>
@@ -66,6 +69,8 @@
     flex-direction: column;
     max-width: var(--contain-smallForm);
     padding: var(--size-8);
-    margin: 20vh auto auto auto;
+    margin: 20vh auto auto 10vh;
+    position: relative;
+    z-index: 5;
   }
 </style>
