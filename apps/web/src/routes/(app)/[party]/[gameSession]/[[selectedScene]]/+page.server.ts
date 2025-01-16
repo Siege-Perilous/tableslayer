@@ -1,5 +1,5 @@
-import { createSceneSchema, deleteSceneSchema, SetActiveSceneSchema } from '$lib/schemas';
-import { createScene, deleteScene, getSceneFromOrder, getScenes, setActiveScene } from '$lib/server/scene';
+import { createSceneSchema, deleteSceneSchema } from '$lib/schemas';
+import { createScene, deleteScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
 import { setToastCookie } from '@tableslayer/ui';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -21,7 +21,6 @@ export const load: PageServerLoad = async ({ parent, params }) => {
 
   const createSceneForm = await superValidate(zod(createSceneSchema));
   const deleteSceneForm = await superValidate(zod(deleteSceneSchema));
-  const setActiveSceneForm = await superValidate(zod(SetActiveSceneSchema));
 
   // check if activeSceneNumber is valid
   if (selectedSceneNumber < 1 || selectedSceneNumber > scenes.length) {
@@ -35,8 +34,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     selectedSceneNumber,
     selectedScene,
     deleteSceneForm,
-    activeScene,
-    setActiveSceneForm
+    activeScene
   };
 };
 
@@ -59,20 +57,6 @@ export const actions: Actions = {
     } catch (error) {
       console.error('Error creating scene', error);
       return message(createSceneForm, { type: 'error', text: 'Error creating scene' }, { status: 500 });
-    }
-  },
-  setActiveScene: async (event) => {
-    const setActiveSceneForm = await superValidate(event.request, zod(SetActiveSceneSchema));
-    if (!setActiveSceneForm.valid) {
-      return message(setActiveSceneForm, { type: 'error', text: 'Invalid scene data' }, { status: 400 });
-    }
-    try {
-      const { dbName, sceneId } = setActiveSceneForm.data;
-      await setActiveScene(dbName, sceneId);
-      return message(setActiveSceneForm, { type: 'success', text: 'Active secene set' });
-    } catch (error) {
-      console.error('Error setting active scene', error);
-      return message(setActiveSceneForm, { type: 'error', text: 'Error setting active scene' }, { status: 400 });
     }
   },
   deleteScene: async (event) => {

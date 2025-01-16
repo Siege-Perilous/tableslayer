@@ -88,7 +88,11 @@ export const createScene = async (dbName: string, userId: string, name?: string,
     })
     .execute();
 
-  await setActiveScene(dbName, sceneId);
+  const scenes = await gsDb.select().from(sceneTable).all();
+
+  if (scenes.length === 1) {
+    await setActiveScene(dbName, sceneId);
+  }
 };
 
 export const getSceneFromOrder = async (

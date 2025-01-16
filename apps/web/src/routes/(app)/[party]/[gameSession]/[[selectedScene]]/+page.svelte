@@ -18,16 +18,7 @@
   import { onMount } from 'svelte';
   import classNames from 'classnames';
 
-  let {
-    scenes,
-    gameSession,
-    selectedSceneNumber,
-    selectedScene,
-    deleteSceneForm,
-    party,
-    activeScene,
-    setActiveSceneForm
-  } = $derived(data);
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } = $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
@@ -295,7 +286,6 @@
         {scenes}
         {party}
         {activeScene}
-        {setActiveSceneForm}
         createSceneForm={data.createSceneForm}
       />
     </Pane>
@@ -311,7 +301,16 @@
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
-        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} {party} {gameSession} />
+        <SceneControls
+          {stageProps}
+          {selectedScene}
+          {activeScene}
+          {handleSelectActiveControl}
+          {activeControl}
+          {socketUpdate}
+          {party}
+          {gameSession}
+        />
         <SceneZoom {socketUpdate} {stageProps} />
       </div>
     </Pane>
