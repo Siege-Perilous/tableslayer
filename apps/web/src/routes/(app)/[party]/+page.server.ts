@@ -333,7 +333,7 @@ export const actions: Actions = {
     const { partyId, name } = createGameSessionForm.data;
 
     try {
-      await createGameSessionDb(partyId, name);
+      await createGameSessionDb(partyId, event.locals.user.id, name);
       return message(createGameSessionForm, { type: 'success', text: 'Game session created' });
     } catch (error) {
       if (error instanceof Error) {
