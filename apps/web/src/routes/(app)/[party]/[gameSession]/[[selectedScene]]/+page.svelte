@@ -311,7 +311,7 @@
         <div class={stageClasses} bind:this={stageElement}>
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
-        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} />
+        <SceneControls {stageProps} {handleSelectActiveControl} {activeControl} {socketUpdate} {party} {gameSession} />
         <SceneZoom {socketUpdate} {stageProps} />
       </div>
     </Pane>
