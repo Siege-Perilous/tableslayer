@@ -58,6 +58,10 @@
     socketUpdate();
   };
 
+  const handleResize = () => {
+    stage.scene.fit();
+  };
+
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene);
     stageIsLoading = true;
@@ -65,7 +69,7 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        stage.scene.fit();
+        handleResize();
         clearInterval(interval);
       }
     }, 50);
@@ -302,7 +306,8 @@
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls
-          {stageProps}
+          bind:stageProps
+          {handleResize}
           {selectedScene}
           {activeScene}
           {handleSelectActiveControl}
@@ -311,7 +316,7 @@
           {party}
           {gameSession}
         />
-        <SceneZoom {socketUpdate} {stageProps} />
+        <SceneZoom {socketUpdate} bind:stageProps />
       </div>
     </Pane>
   </PaneGroup>

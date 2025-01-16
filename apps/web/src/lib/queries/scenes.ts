@@ -1,5 +1,4 @@
 import { invalidateAll } from '$app/navigation';
-import type { StageProps } from '@tableslayer/ui';
 import { createMutation } from '@tanstack/svelte-query';
 
 export const createUpdateSceneMutation = () => {

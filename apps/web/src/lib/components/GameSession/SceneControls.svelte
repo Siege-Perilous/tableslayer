@@ -17,7 +17,8 @@
     Button,
     IconButton,
     Text,
-    Hr
+    Hr,
+    addToast
   } from '@tableslayer/ui';
   import {
     IconHexagons,
@@ -47,11 +48,12 @@
     socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
-    stageProps,
+    stageProps = $bindable(),
     party,
     gameSession,
     selectedScene,
-    activeScene
+    activeScene,
+    handleResize
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -59,8 +61,9 @@
     stageProps: StageProps;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
-    selectedScene: SelectScene & Thumb;
-    activeScene: SelectScene & Thumb;
+    selectedScene: SelectScene | (SelectScene & Thumb);
+    activeScene: SelectScene | (SelectScene & Thumb);
+    handleResize: () => void;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -172,6 +175,7 @@
       x: selectedResolution.width,
       y: selectedResolution.height
     };
+    handleResize();
     socketUpdate();
     return selectedResolution;
   };
@@ -278,8 +282,36 @@
   const handleSetActiveScene = async () => {
     if (!selectedScene || selectedScene.id === activeScene.id) return;
 
-    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: selectedScene.id, partyId: party.id });
+    const response = await $setActiveScene.mutateAsync({
+      dbName: gameSession.dbName,
+      sceneId: selectedScene.id,
+      partyId: party.id
+    });
+    if (response.success == true) {
+      addToast({
+        data: {
+          title: 'Active scene set',
+          type: 'success'
+        }
+      });
+    }
   };
+
+  let localPadding = $state(stageProps.display.padding.x);
+
+  $effect(() => {
+    if (stageProps.display.padding.x !== localPadding) {
+      localPadding = stageProps.display.padding.x;
+    }
+  });
+
+  const handlePaddingChange = () => {
+    stageProps.display.padding.x = localPadding;
+    stageProps.display.padding.y = localPadding;
+    socketUpdate();
+  };
+
+  let gridTypeLabel = $derived(stageProps.grid.gridType === 0 ? 'Square size' : 'Hex size');
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -314,8 +346,26 @@
         <Icon Icon={IconHexagons} size="20px" stroke={2} />
       </IconButton>
     </Control>
-    <Control label="Grid thickness">
+    <Control label={gridTypeLabel}>
+      <Input type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {#snippet end()}
+        in.
+      {/snippet}
+    </Control>
+  </div>
+  <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Line thickness">
+      {#snippet end()}
+        px
+      {/snippet}
       <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+    </Control>
+    <Control label="Table padding">
+      <Input type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {#snippet end()}
+        px
+      {/snippet}
     </Control>
   </div>
   <Spacer />

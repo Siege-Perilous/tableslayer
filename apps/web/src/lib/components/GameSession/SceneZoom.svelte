@@ -3,7 +3,7 @@
   import { IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
-    stageProps,
+    stageProps = $bindable(),
     socketUpdate
   }: {
     stageProps: StageProps;
