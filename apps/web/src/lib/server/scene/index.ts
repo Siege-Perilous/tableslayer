@@ -95,7 +95,7 @@ export const getSceneFromOrder = async (
   }
 
   const thumb = scene.mapLocation
-    ? await transformImage(scene.mapLocation, 'w=5000,h=5000,fit=scale-down,gravity=center')
+    ? await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
     : null;
   const sceneWithThumb = { ...scene, thumb };
 
@@ -218,7 +218,7 @@ export const getActiveScene = async (dbName: string): Promise<SelectScene | ((Se
   }
 
   const thumb = activeScene.mapLocation
-    ? await transformImage(activeScene.mapLocation, 'w=5000,h=5000,fit=scale-down,gravity=center')
+    ? await transformImage(activeScene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
     : null;
   const activeSceneWithThumb = { ...activeScene, thumb };
 
