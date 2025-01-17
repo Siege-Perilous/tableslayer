@@ -44,6 +44,7 @@
   import { createSetActiveSceneMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
+  import { UpdateMapImage, openFileDialog } from './';
 
   let {
     socketUpdate,
@@ -317,6 +318,12 @@
   };
 
   let gridTypeLabel = $derived(stageProps.grid.gridType === 0 ? 'Square size' : 'Hex size');
+
+  let contextSceneId = $state('');
+  const handleMapImageChange = (sceneId: string) => {
+    contextSceneId = sceneId;
+    openFileDialog();
+  };
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -385,6 +392,12 @@
 {/snippet}
 
 {#snippet mapControls()}
+  <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 5MB in size.</Text>
+  <Spacer size={2} />
+  <Button onclick={() => handleMapImageChange(selectedScene.id)}>Replace image</Button>
+  <Spacer />
+  <Hr />
+  <Spacer />
   <div class="sceneControls__settingsPopover">
     <Control label="Scale">
       <Input type="number" bind:value={stageProps.map.zoom} />
@@ -418,6 +431,7 @@
     <Button onclick={handleMapFill}>Fill in scene</Button>
     <Button onclick={handleMapFit}>Fit in scene</Button>
   </div>
+  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
 {/snippet}
 {#snippet playControls()}
   <div class="sceneControls__playPopover">
