@@ -118,6 +118,6 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
     return json({ success: true });
   } catch (err) {
     console.error(err);
-    return error(500, 'Internal server error');
+    return error(500, 'Could not update scene');
   }
 };

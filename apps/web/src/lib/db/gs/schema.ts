@@ -25,7 +25,7 @@ export const sceneTable = sqliteTable(
     mapRotation: integer('mapRotation').notNull().default(0),
     mapOffsetX: integer('mapOffsetX').notNull().default(0),
     mapOffsetY: integer('mapOffsetY').notNull().default(0),
-    mapZoom: integer('mapZoom').notNull().default(1),
+    mapZoom: real('mapZoom').notNull().default(1.0),
     gridType: integer('gridType').notNull().default(0),
     gridSpacing: integer('gridSpacing').notNull().default(1),
     gridOpacity: real('gridOpacity').notNull().default(0.8),
@@ -49,7 +49,8 @@ export const sceneTable = sqliteTable(
 
 export const settingsTable = sqliteTable('settings', {
   id: text('id').primaryKey().notNull().default('settings'),
-  activeSceneId: text('activeSceneId').references(() => sceneTable.id, { onDelete: 'set null' })
+  activeSceneId: text('activeSceneId').references(() => sceneTable.id, { onDelete: 'set null' }),
+  isPaused: integer('isPaused').notNull().default(0)
 });
 
 export type SelectScene = typeof sceneTable.$inferSelect;

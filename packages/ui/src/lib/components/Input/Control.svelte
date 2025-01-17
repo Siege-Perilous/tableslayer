@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import { Label, FSLabel } from './';
   import classNames from 'classnames';
+  import type { HTMLBaseAttributes } from 'svelte/elements';
 
   type Props = {
     children: Snippet<[{ props?: Record<string, unknown> }]>;
@@ -9,17 +10,18 @@
     start?: Snippet;
     end?: Snippet;
     props?: Record<string, unknown>;
-  };
+  } & HTMLBaseAttributes;
 
-  let { children, label, start, end, props }: Props = $props();
+  let { children, label, start, end, props, ...restProps }: Props = $props();
 
   const inputWrapperClasses = classNames('control__inputWrapper', {
     'control__inputWrapper--start': start,
     'control__inputWrapper--end': end
   });
+  const controlClasses = classNames('control', restProps.class ?? '');
 </script>
 
-<div class="control">
+<div class={controlClasses}>
   {#if label && props}
     <FSLabel class="control__label">{label}</FSLabel>
   {:else if label}
