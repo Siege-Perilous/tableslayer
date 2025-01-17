@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -11,7 +11,7 @@
 
   interface Props {
     props: FogOfWarLayerProps;
-    mapSize: Size;
+    mapSize: Size | null;
   }
 
   const { props, mapSize }: Props = $props();
@@ -84,14 +84,9 @@
   let imageUrl: string | null = $state(null);
   const textureLoader = new THREE.TextureLoader();
 
-  // Use two render targets to store the previous and current state of the fog of war
-  let targetA = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
-  let targetB = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
-
-  // Current target is the one that is being drawn on
-  let tempTarget = targetA;
-  // Last target is the one that is being used for the previous state
-  let persistedTarget = targetB;
+  // Double-buffered render targets
+  let tempTarget = new THREE.WebGLRenderTarget(1, 1, options);
+  let persistedTarget = new THREE.WebGLRenderTarget(1, 1, options);
 
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
@@ -100,36 +95,32 @@
   scene.add(quad);
 
   onDestroy(() => {
-    targetA.dispose();
-    targetB.dispose();
+    tempTarget?.dispose();
+    persistedTarget?.dispose();
   });
 
   useTask((delta) => {
     fogMaterial.uniforms.uTime.value += delta;
   });
 
-  // Whenever the map size changes, we need to re-initialize the buffers
+  // Map size changed
   $effect(() => {
-    targetA.setSize(mapSize.width, mapSize.height);
-    targetB.setSize(mapSize.width, mapSize.height);
-    drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
-    render('fill', true);
-  });
+    if (!mapSize) return;
 
-  // Load the image data from the props
-  $effect(() => {
-    // Do not update if the image url has not changed
-    if (imageUrl === props.url) {
-      return;
-    } else {
-      imageUrl = props.url;
+    // If map size changed, update the render target sizes
+    if (mapSize.width !== tempTarget.width || mapSize.height !== tempTarget.height) {
+      tempTarget.setSize(mapSize.width, mapSize.height);
+      persistedTarget.setSize(mapSize.width, mapSize.height);
+      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+      render('fill', true);
     }
 
-    // Only update if the data has changed and map size is initialized
-    if (props.url && mapSize.width > 0 && mapSize.height > 0) {
-      targetA.setSize(mapSize.width, mapSize.height);
-      targetB.setSize(mapSize.width, mapSize.height);
+    // Only reload the image if the url has changed and the map size is initialized
+    if (props.url && props.url !== imageUrl) {
       textureLoader.load(props.url, (texture) => render('revert', true, texture));
+      untrack(() => {
+        imageUrl = props.url;
+      });
     }
   });
 

@@ -12,7 +12,7 @@
   interface Props {
     props: FogOfWarLayerProps;
     isActive: boolean;
-    mapSize: Size;
+    mapSize: Size | null;
   }
 
   const { props, isActive, mapSize }: Props = $props();
@@ -34,7 +34,7 @@
       uStart: { value: new THREE.Vector2(Infinity, Infinity) },
       uEnd: { value: new THREE.Vector2(Infinity, Infinity) },
       uBrushSize: { value: props.tool.size },
-      uTextureSize: { value: new THREE.Vector2(mapSize.width, mapSize.height) },
+      uTextureSize: { value: new THREE.Vector2(0, 0) },
       uShapeType: { value: props.tool.type },
       uOutlineColor: { value: new THREE.Color(props.outline.color) },
       uOutlineOpacity: { value: props.outline.opacity },
@@ -57,6 +57,8 @@
 
   // Update outline material uniforms
   $effect(() => {
+    if (!mapSize) return;
+
     outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
     outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
@@ -135,7 +137,7 @@
   }
 
   function flipY(p: THREE.Vector2 | null): THREE.Vector2 | null {
-    if (!p) return null;
+    if (!p || !mapSize) return null;
     return new THREE.Vector2(p.x, mapSize.height - p.y);
   }
 
@@ -181,7 +183,7 @@ events to be detected outside of the fog of war layer.
 -->
 <T.Mesh bind:ref={mesh} name="FogOfWar">
   <T.MeshBasicMaterial transparent={true} opacity={0} />
-  <T.PlaneGeometry args={[mapSize.width * 10, mapSize.height * 10]} />
+  <T.PlaneGeometry args={[(mapSize?.width ?? 0) * 10, (mapSize?.height ?? 0) * 10]} />
 </T.Mesh>
 
 <T.Mesh name="FogOfWarToolOutline" position.z={-10} renderOrder={1}>

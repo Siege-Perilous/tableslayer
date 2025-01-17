@@ -10,7 +10,7 @@
   interface Props {
     props: PingLayerProps;
     isActive: boolean;
-    mapSize: Size;
+    mapSize: Size | null;
   }
 
   const { props, isActive, mapSize }: Props = $props();
@@ -23,7 +23,7 @@
 
   // Regenerate buffer geometry each time ping array is updated
   $effect(() => {
-    if (!mapSize || mapSize.width === 0 || mapSize.height === 0) return;
+    if (!mapSize) return;
 
     const vertices: number[] = [];
     const centers: number[] = [];
@@ -74,7 +74,7 @@
   });
 
   function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
-    if (!coords) return;
+    if (!coords || !mapSize) return;
 
     if (props.editMode === PingEditMode.Add) {
       const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };

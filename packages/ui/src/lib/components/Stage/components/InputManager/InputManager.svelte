@@ -6,7 +6,7 @@
   interface Props {
     isActive: boolean;
     target?: THREE.Mesh;
-    layerSize?: Size;
+    layerSize?: Size | null;
     onMouseDown?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onMouseUp?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onMouseMove?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
