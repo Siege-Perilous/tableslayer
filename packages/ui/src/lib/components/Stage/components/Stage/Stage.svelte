@@ -7,16 +7,17 @@
 
   interface Props {
     props: StageProps;
+    onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props, onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
 
-  setContext('callbacks', { onMapUpdate, onSceneUpdate, onPingsUpdated });
+  setContext('callbacks', { onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated });
 
   export const map = {
     fill: () => sceneRef.map.fill(),
