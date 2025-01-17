@@ -36,6 +36,8 @@ export const broadcastStageUpdate = (
   } else if (activeScene) {
     const newStageProps = buildSceneProps(activeScene);
 
+    console.log('Broadcasting stage update', newStageProps);
+
     const updateData = {
       selectedScene: selectedScene,
       activeScene: activeScene,

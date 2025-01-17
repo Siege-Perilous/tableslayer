@@ -1,6 +1,7 @@
 import { gsChildDb } from '$lib/db/gs';
 import { sceneTable, settingsTable, type SelectScene } from '$lib/db/gs/schema';
 import { eq, sql } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 
 const reorderScenes = async (dbName: string) => {
@@ -42,8 +43,9 @@ export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectS
 export const createScene = async (dbName: string, userId: string, name?: string, order?: number, file?: File) => {
   const gsDb = gsChildDb(dbName);
 
+  // Default to a placeholder map
+  let fileLocation = 'maps/01.jpeg';
   // Handle file upload
-  let fileLocation = null;
   if (file) {
     const fileRow = await uploadFileFromInput(file, userId, 'map');
     const fileContent = await getFile(fileRow.fileId);
@@ -74,14 +76,23 @@ export const createScene = async (dbName: string, userId: string, name?: string,
       .execute();
   }
 
+  const sceneId = uuidv4();
+
   await gsDb
     .insert(sceneTable)
     .values({
+      id: sceneId,
       name,
       order,
       mapLocation: fileLocation
     })
     .execute();
+
+  const scenes = await gsDb.select().from(sceneTable).all();
+
+  if (scenes.length === 1) {
+    await setActiveScene(dbName, sceneId);
+  }
 };
 
 export const getSceneFromOrder = async (
@@ -95,7 +106,7 @@ export const getSceneFromOrder = async (
   }
 
   const thumb = scene.mapLocation
-    ? await transformImage(scene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    ? await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
     : null;
   const sceneWithThumb = { ...scene, thumb };
 
@@ -218,7 +229,7 @@ export const getActiveScene = async (dbName: string): Promise<SelectScene | ((Se
   }
 
   const thumb = activeScene.mapLocation
-    ? await transformImage(activeScene.mapLocation, 'w=2000,h=2000,fit=scale-down,gravity=center')
+    ? await transformImage(activeScene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
     : null;
   const activeSceneWithThumb = { ...activeScene, thumb };
 

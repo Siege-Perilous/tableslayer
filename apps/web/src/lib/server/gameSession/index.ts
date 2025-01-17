@@ -5,6 +5,7 @@ import { createClient } from '@tursodatabase/api';
 import { eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
+import { createScene } from '../scene';
 
 const turso = createClient({
   org: 'snide',
@@ -38,7 +39,7 @@ export const deletePartyGameSession = async (id: string) => {
 };
 
 // Function to create a new project database
-export const createGameSessionDb = async (partyId: string, gsName?: string) => {
+export const createGameSessionDb = async (partyId: string, userId: string, gsName?: string) => {
   try {
     const gameSessionId = uuidv4();
     const name = gsName || createRandomGameSessionName();
@@ -68,6 +69,9 @@ export const createGameSessionDb = async (partyId: string, gsName?: string) => {
         dbName: database.name
       })
       .execute();
+
+    await createScene(database.name, userId, 'First scene');
+
     return database;
   } catch (error) {
     console.error(error);
