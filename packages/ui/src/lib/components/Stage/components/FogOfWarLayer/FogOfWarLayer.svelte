@@ -48,9 +48,10 @@
 
   // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    if (props.tool.type) {
+    if (!isActive) {
       lastPos = null;
       drawing = false;
+      material?.render('revert', false);
     }
   });
 
@@ -103,7 +104,7 @@
     lastPos = null;
     drawing = false;
     outlineMaterial.visible = false;
-    material?.render('copy', false);
+    material?.render('revert', false);
   }
 
   function draw(e: MouseEvent, p: THREE.Vector2 | null) {
@@ -143,13 +144,15 @@
    */
   export function clearFog() {
     material?.render('clear', true);
+    onFogUpdate(toPng());
   }
 
   /**
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    material?.render('reset', true);
+    material?.render('fill', true);
+    onFogUpdate(toPng());
   }
 
   /**

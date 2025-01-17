@@ -28,9 +28,9 @@
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
       uBrushColor: { value: new THREE.Vector4() },
-      uIsCopyOperation: { value: false },
+      uIsRevertOperation: { value: false },
       uIsClearOperation: { value: false },
-      uIsResetOperation: { value: false },
+      uIsFillOperation: { value: false },
       uShapeType: { value: 0 }
     },
     vertexShader: drawVertexShader,
@@ -89,9 +89,9 @@
   let targetB = new THREE.WebGLRenderTarget(mapSize.width, mapSize.height, options);
 
   // Current target is the one that is being drawn on
-  let currentTarget = targetA;
+  let tempTarget = targetA;
   // Last target is the one that is being used for the previous state
-  let lastTarget = targetB;
+  let persistedTarget = targetB;
 
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
@@ -110,11 +110,10 @@
 
   // Whenever the map size changes, we need to re-initialize the buffers
   $effect(() => {
-    console.log('mapSize', mapSize);
     targetA.setSize(mapSize.width, mapSize.height);
     targetB.setSize(mapSize.width, mapSize.height);
     drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
-    render('reset', true);
+    render('fill', true);
   });
 
   // Load the image data from the props
@@ -130,7 +129,7 @@
     if (props.url && mapSize.width > 0 && mapSize.height > 0) {
       targetA.setSize(mapSize.width, mapSize.height);
       targetB.setSize(mapSize.width, mapSize.height);
-      textureLoader.load(props.url, (texture) => render('copy', true, texture));
+      textureLoader.load(props.url, (texture) => render('revert', true, texture));
     }
   });
 
@@ -176,7 +175,7 @@
     );
 
     // Discard the current buffer by copying the previous buffer to the current buffer
-    render('copy', true);
+    render('revert', true);
     // Re-draw the scene to show the updated tool overlay
     render('draw');
   });
@@ -185,34 +184,37 @@
    * Swaps the current and previous buffers to persist the current state
    */
   function swapBuffers() {
-    const temp = currentTarget;
-    currentTarget = lastTarget;
-    lastTarget = temp;
+    const temp = tempTarget;
+    tempTarget = persistedTarget;
+    persistedTarget = temp;
   }
 
   /**
    * Renders the to the current buffer
+   * @param operation The operation to perform. 'fill' will reset the fog of war to the initial state, 'revert' will copy the current state to the previous state, 'clear' will clear the current state, and 'draw' will draw the current state
+   * @param persist Whether to persist the current state
+   * @param lastTexture The texture to use for the previous state
    */
   export function render(
-    operation: 'reset' | 'copy' | 'clear' | 'draw',
+    operation: 'fill' | 'revert' | 'clear' | 'draw',
     persist: boolean = false,
     lastTexture: THREE.Texture | null = null
   ) {
     // If no previous state is provided, use the last target
-    drawMaterial.uniforms.uPreviousState.value = lastTexture ?? lastTarget.texture;
+    drawMaterial.uniforms.uPreviousState.value = lastTexture ?? persistedTarget.texture;
 
-    drawMaterial.uniforms.uIsCopyOperation.value = operation === 'copy';
-    drawMaterial.uniforms.uIsResetOperation.value = operation === 'reset';
+    drawMaterial.uniforms.uIsRevertOperation.value = operation === 'revert';
+    drawMaterial.uniforms.uIsFillOperation.value = operation === 'fill';
     drawMaterial.uniforms.uIsClearOperation.value = operation === 'clear';
 
-    renderer.setRenderTarget(currentTarget);
+    renderer.setRenderTarget(tempTarget);
     renderer.render(scene, camera);
 
-    drawMaterial.uniforms.uIsCopyOperation.value = false;
-    drawMaterial.uniforms.uIsResetOperation.value = false;
+    drawMaterial.uniforms.uIsRevertOperation.value = false;
+    drawMaterial.uniforms.uIsFillOperation.value = false;
     drawMaterial.uniforms.uIsClearOperation.value = false;
 
-    fogMaterial.uniforms.uMaskTexture.value = currentTarget.texture;
+    fogMaterial.uniforms.uMaskTexture.value = tempTarget.texture;
     fogMaterial.uniformsNeedUpdate = true;
 
     renderer.setRenderTarget(null);
@@ -234,15 +236,15 @@
    */
   export async function toPng(): Promise<Blob> {
     // Create a temporary canvas to draw the texture
-    const canvas = new OffscreenCanvas(currentTarget.width, currentTarget.height);
+    const canvas = new OffscreenCanvas(persistedTarget.width, persistedTarget.height);
     const ctx = canvas.getContext('2d')!;
 
     // Read pixels from WebGL render target
-    const pixels = new Uint8Array(4 * currentTarget.width * currentTarget.height);
-    renderer.readRenderTargetPixels(currentTarget, 0, 0, currentTarget.width, currentTarget.height, pixels);
+    const pixels = new Uint8Array(4 * persistedTarget.width * persistedTarget.height);
+    renderer.readRenderTargetPixels(persistedTarget, 0, 0, persistedTarget.width, persistedTarget.height, pixels);
 
     // Draw pixels to canvas
-    const imageData = ctx.createImageData(currentTarget.width, currentTarget.height);
+    const imageData = ctx.createImageData(persistedTarget.width, persistedTarget.height);
     imageData.data.set(pixels);
     ctx.putImageData(imageData, 0, 0);
 

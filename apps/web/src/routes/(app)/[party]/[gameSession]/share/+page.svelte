@@ -45,10 +45,11 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
-      console.log('Received stage update', payload);
       stageProps = {
         ...stageProps,
-        fogOfWar: payload.stageProps.fogOfWar,
+        fogOfWar: {
+          ...payload.stageProps.fogOfWar
+        },
         grid: payload.stageProps.grid,
         map: payload.stageProps.map,
         display: payload.stageProps.display,
@@ -138,10 +139,16 @@
     stageProps.scene.zoom = zoom;
   }
 
+  function onFogUpdate(blob: Promise<Blob>) {
+    console.log('Updating fog', blob);
+    return;
+  }
+
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     console.log('Updating map', offset, zoom);
     return;
   }
+
   function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
     stageProps.ping.locations = updatedLocations;
   }
@@ -167,7 +174,7 @@
 <svelte:window onresize={handleResize} />
 
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
     <div

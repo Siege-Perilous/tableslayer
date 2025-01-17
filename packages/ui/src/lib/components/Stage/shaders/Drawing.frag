@@ -4,9 +4,9 @@ uniform vec2 uEnd;
 uniform float uBrushSize;
 uniform vec2 uTextureSize;
 uniform vec4 uBrushColor;
-uniform bool uIsCopyOperation;
+uniform bool uIsRevertOperation;
 uniform bool uIsClearOperation;
-uniform bool uIsResetOperation;
+uniform bool uIsFillOperation;
 uniform int uShapeType;
 
 varying vec2 vUv;
@@ -55,11 +55,11 @@ float distanceToLine(vec2 p, vec2 a, vec2 b) {
 }
 
 void main() {
-  if(uIsCopyOperation) {
+  if(uIsRevertOperation) {
     gl_FragColor = texture2D(uPreviousState, vUv);
   } else if(uIsClearOperation) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-  } else if(uIsResetOperation) {
+  } else if(uIsFillOperation) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
     vec2 pixelPos = vUv * uTextureSize;
