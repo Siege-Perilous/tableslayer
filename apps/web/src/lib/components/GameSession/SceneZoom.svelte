@@ -1,13 +1,17 @@
 <script lang="ts">
   import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
-  import { IconPlus, IconMinus, IconRotateClockwise2 } from '@tabler/icons-svelte';
+  import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
 
   let {
-    stageProps,
-    socketUpdate
+    stageProps = $bindable(),
+    socketUpdate,
+    handleSceneFit,
+    handleMapFill
   }: {
     stageProps: StageProps;
     socketUpdate: () => void;
+    handleSceneFit: () => void;
+    handleMapFill: () => void;
   } = $props();
 
   let zoomType = $state<'map' | 'scene'>('scene');
@@ -63,6 +67,15 @@
   </IconButton>
   {#if zoomType === 'map'}
     <IconButton
+      title="Fill map within scene"
+      class="zoomControls__button"
+      aria-label="Fit scene"
+      variant="ghost"
+      onclick={handleMapFill}
+    >
+      <Icon Icon={IconArrowsMaximize} stroke={3} />
+    </IconButton>
+    <IconButton
       title="Rotate map"
       class="zoomControls__button"
       aria-label="Rotate map"
@@ -72,6 +85,16 @@
       }}
     >
       <Icon Icon={IconRotateClockwise2} stroke={3} />
+    </IconButton>
+  {:else}
+    <IconButton
+      title="Fit scene in view"
+      class="zoomControls__button"
+      aria-label="Fit scene"
+      variant="ghost"
+      onclick={handleSceneFit}
+    >
+      <Icon Icon={IconArrowsMaximize} stroke={3} />
     </IconButton>
   {/if}
 </div>

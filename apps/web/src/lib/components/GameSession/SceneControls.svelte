@@ -17,7 +17,8 @@
     Button,
     IconButton,
     Text,
-    Hr
+    Hr,
+    addToast
   } from '@tableslayer/ui';
   import {
     IconHexagons,
@@ -42,16 +43,20 @@
   import type { Thumb } from '$lib/server';
   import { createSetActiveSceneMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
+  import { IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
     socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
-    stageProps,
+    stageProps = $bindable(),
     party,
     gameSession,
     selectedScene,
-    activeScene
+    activeScene,
+    handleSceneFit,
+    handleMapFill,
+    handleMapFit
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -59,8 +64,11 @@
     stageProps: StageProps;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
-    selectedScene: SelectScene & Thumb;
-    activeScene: SelectScene & Thumb;
+    selectedScene: SelectScene | (SelectScene & Thumb);
+    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    handleSceneFit: () => void;
+    handleMapFill: () => void;
+    handleMapFit: () => void;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -172,6 +180,7 @@
       x: selectedResolution.width,
       y: selectedResolution.height
     };
+    handleSceneFit();
     socketUpdate();
     return selectedResolution;
   };
@@ -264,7 +273,7 @@
   };
 
   const handleMapRotation = () => {
-    stageProps.map.rotation += 90;
+    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
     socketUpdate();
   };
 
@@ -276,10 +285,38 @@
 
   const setActiveScene = createSetActiveSceneMutation();
   const handleSetActiveScene = async () => {
-    if (!selectedScene || selectedScene.id === activeScene.id) return;
+    if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
-    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: selectedScene.id, partyId: party.id });
+    const response = await $setActiveScene.mutateAsync({
+      dbName: gameSession.dbName,
+      sceneId: selectedScene.id,
+      partyId: party.id
+    });
+    if (response.success == true) {
+      addToast({
+        data: {
+          title: 'Active scene set',
+          type: 'success'
+        }
+      });
+    }
   };
+
+  let localPadding = $state(stageProps.display.padding.x);
+
+  $effect(() => {
+    if (stageProps.display.padding.x !== localPadding) {
+      localPadding = stageProps.display.padding.x;
+    }
+  });
+
+  const handlePaddingChange = () => {
+    stageProps.display.padding.x = localPadding;
+    stageProps.display.padding.y = localPadding;
+    socketUpdate();
+  };
+
+  let gridTypeLabel = $derived(stageProps.grid.gridType === 0 ? 'Square size' : 'Hex size');
 </script>
 
 <!-- Usage of ColorPicker -->
@@ -314,8 +351,26 @@
         <Icon Icon={IconHexagons} size="20px" stroke={2} />
       </IconButton>
     </Control>
-    <Control label="Grid thickness">
+    <Control label={gridTypeLabel}>
+      <Input type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {#snippet end()}
+        in.
+      {/snippet}
+    </Control>
+  </div>
+  <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Line thickness">
+      {#snippet end()}
+        px
+      {/snippet}
       <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+    </Control>
+    <Control label="Table padding">
+      <Input type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {#snippet end()}
+        px
+      {/snippet}
     </Control>
   </div>
   <Spacer />
@@ -330,8 +385,39 @@
 {/snippet}
 
 {#snippet mapControls()}
-  <Button>Fit map</Button>
-  <Button onclick={handleMapRotation}>Rotate map</Button>
+  <div class="sceneControls__settingsPopover">
+    <Control label="Scale">
+      <Input type="number" bind:value={stageProps.map.zoom} />
+      {#snippet start()}
+        x
+      {/snippet}
+    </Control>
+    <Control label="Rotate" class="sceneControls__rotate">
+      <Input type="number" bind:value={stageProps.map.rotation} />
+      {#snippet end()}
+        <IconButton variant="ghost" onclick={handleMapRotation}>
+          <Icon Icon={IconRotateClockwise2} />
+        </IconButton>
+      {/snippet}
+    </Control>
+  </div>
+  <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Offset X">
+      <Input type="number" bind:value={stageProps.map.offset.x} />
+      {#snippet end()}
+        px
+      {/snippet}
+    </Control>
+    <Control label="Offset Y">
+      <Input type="number" bind:value={stageProps.map.offset.y} />
+      {#snippet end()}
+        px
+      {/snippet}
+    </Control>
+    <Button onclick={handleMapFill}>Fill in scene</Button>
+    <Button onclick={handleMapFit}>Fit in scene</Button>
+  </div>
 {/snippet}
 {#snippet playControls()}
   <div class="sceneControls__playPopover">
@@ -343,7 +429,7 @@
     <Spacer />
     <Hr />
     <Spacer />
-    {#if selectedScene.id !== activeScene.id}
+    {#if !activeScene || selectedScene.id !== activeScene.id}
       <Button onclick={handleSetActiveScene}>Set active scene</Button>
       <Spacer size={2} />
       <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
@@ -439,6 +525,9 @@
     }
     .sceneControls__selectorIcon {
       color: var(--contrastHigh);
+    }
+    .sceneControls__rotate .control__end {
+      padding: 0;
     }
   }
   .sceneControls {
