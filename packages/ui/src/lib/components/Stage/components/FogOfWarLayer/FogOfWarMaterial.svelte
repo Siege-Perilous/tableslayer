@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Size } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
-  import { onDestroy, onMount, untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
