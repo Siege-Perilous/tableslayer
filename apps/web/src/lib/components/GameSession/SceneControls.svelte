@@ -392,46 +392,48 @@
 {/snippet}
 
 {#snippet mapControls()}
-  <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 5MB in size.</Text>
-  <Spacer size={2} />
-  <Button onclick={() => handleMapImageChange(selectedScene.id)}>Replace image</Button>
-  <Spacer />
-  <Hr />
-  <Spacer />
-  <div class="sceneControls__settingsPopover">
-    <Control label="Scale">
-      <Input type="number" bind:value={stageProps.map.zoom} />
-      {#snippet start()}
-        x
-      {/snippet}
-    </Control>
-    <Control label="Rotate" class="sceneControls__rotate">
-      <Input type="number" bind:value={stageProps.map.rotation} />
-      {#snippet end()}
-        <IconButton variant="ghost" onclick={handleMapRotation}>
-          <Icon Icon={IconRotateClockwise2} />
-        </IconButton>
-      {/snippet}
-    </Control>
+  <div class="sceneControls__mapPopover">
+    <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 5MB in size.</Text>
+    <Spacer size={2} />
+    <Button onclick={() => handleMapImageChange(selectedScene.id)}>Replace map</Button>
+    <Spacer />
+    <Hr />
+    <Spacer />
+    <div class="sceneControls__settingsPopover">
+      <Control label="Scale">
+        <Input type="number" bind:value={stageProps.map.zoom} />
+        {#snippet start()}
+          x
+        {/snippet}
+      </Control>
+      <Control label="Rotate" class="sceneControls__rotate">
+        <Input type="number" bind:value={stageProps.map.rotation} />
+        {#snippet end()}
+          <IconButton variant="ghost" onclick={handleMapRotation}>
+            <Icon Icon={IconRotateClockwise2} />
+          </IconButton>
+        {/snippet}
+      </Control>
+    </div>
+    <Spacer />
+    <div class="sceneControls__settingsPopover">
+      <Control label="Offset X">
+        <Input type="number" bind:value={stageProps.map.offset.x} />
+        {#snippet end()}
+          px
+        {/snippet}
+      </Control>
+      <Control label="Offset Y">
+        <Input type="number" bind:value={stageProps.map.offset.y} />
+        {#snippet end()}
+          px
+        {/snippet}
+      </Control>
+      <Button onclick={handleMapFill}>Fill in scene</Button>
+      <Button onclick={handleMapFit}>Fit in scene</Button>
+    </div>
+    <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
   </div>
-  <Spacer />
-  <div class="sceneControls__settingsPopover">
-    <Control label="Offset X">
-      <Input type="number" bind:value={stageProps.map.offset.x} />
-      {#snippet end()}
-        px
-      {/snippet}
-    </Control>
-    <Control label="Offset Y">
-      <Input type="number" bind:value={stageProps.map.offset.y} />
-      {#snippet end()}
-        px
-      {/snippet}
-    </Control>
-    <Button onclick={handleMapFill}>Fill in scene</Button>
-    <Button onclick={handleMapFit}>Fit in scene</Button>
-  </div>
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
 {/snippet}
 {#snippet playControls()}
   <div class="sceneControls__playPopover">
@@ -601,5 +603,8 @@
   }
   .sceneControls__playPopover {
     width: 16rem;
+  }
+  .sceneControls__mapPopover {
+    max-width: 16rem;
   }
 </style>
