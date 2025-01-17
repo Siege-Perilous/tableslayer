@@ -18,7 +18,8 @@
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
   import classNames from 'classnames';
-  import { createSetActiveSceneMutation } from '$lib/queries';
+  import { createSetActiveSceneMutation, createUpdateSceneMapImageMutation } from '$lib/queries';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     scenes,
@@ -104,6 +105,51 @@
   };
 
   const sceneInputClasses = classNames('scene', $createSceneDelayed && 'scene--isLoading');
+  const updateSceneMapImage = createUpdateSceneMapImageMutation();
+
+  let sceneToUpdate: SelectScene | null = null;
+  let hiddenFileInput: HTMLInputElement | null = null;
+
+  const onUpdateMapImage = (scene: SelectScene) => {
+    sceneToUpdate = scene;
+    hiddenFileInput?.click(); // Programmatically click the hidden file input
+  };
+
+  const handleFileChange = async (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const pickedFile = input.files[0];
+    input.value = '';
+
+    if (!sceneToUpdate || !pickedFile) {
+      return;
+    }
+
+    try {
+      await $updateSceneMapImage.mutateAsync({
+        sceneId: sceneToUpdate.id,
+        dbName: gameSession.dbName,
+        file: pickedFile
+      });
+      await invalidateAll();
+      addToast({
+        data: {
+          title: 'Map updated',
+          type: 'success'
+        }
+      });
+    } catch (err: unknown) {
+      console.error('Update map image failed:', err);
+      addToast({
+        data: {
+          title: 'Error updating map',
+          body: err instanceof Error ? err.message : 'Unknown error',
+          type: 'danger'
+        }
+      });
+    }
+  };
 
   $effect(() => {
     if ($createSceneDelayed) {
@@ -163,7 +209,11 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) }
+          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) },
+          {
+            label: 'Update map image',
+            onclick: () => onUpdateMapImage(scene)
+          }
         ]}
       >
         {#snippet trigger()}
@@ -185,6 +235,9 @@
       </ContextMenu>
     {/each}
   </div>
+
+  <input type="file" accept="image/*" bind:this={hiddenFileInput} onchange={handleFileChange} style="display:none" />
+
   <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
     <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
     <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
