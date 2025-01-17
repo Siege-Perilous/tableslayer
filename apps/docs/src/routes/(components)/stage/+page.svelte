@@ -133,6 +133,11 @@
     stageProps.ping.locations = [];
   }
 
+  async function onFogUpdate(blob: Promise<Blob>) {
+    const result = await blob;
+    console.log(result);
+  }
+
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
@@ -181,7 +186,7 @@
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
   <div>
     <h1>Keybindings</h1>
     <ul>

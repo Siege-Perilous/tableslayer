@@ -126,13 +126,6 @@
     socketUpdate();
   };
 
-  const onMouseUp = async () => {
-    if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-      await uploadFog();
-      socketUpdate();
-    }
-  };
-
   let isThrottled = false;
 
   const onMouseMove = (e: MouseEvent) => {
@@ -239,8 +232,8 @@
     }
   });
 
-  const uploadFog = async () => {
-    const fogBlob = await stage.fogOfWar.toPng();
+  const onFogUpdate = async (blob: Promise<Blob>) => {
+    const fogBlob = await blob;
     const fog = await $createFogMutation.mutateAsync({
       blob: fogBlob,
       sceneId: selectedScene.id
@@ -310,9 +303,9 @@
       ></button>
     </PaneResizer>
     <Pane defaultSize={70}>
-      <div class="stageWrapper" onmouseup={onMouseUp} role="presentation">
+      <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
-          <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+          <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls
           bind:stageProps

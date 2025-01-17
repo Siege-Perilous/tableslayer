@@ -18,14 +18,22 @@
 
   const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
 
+  let imageUrl: string | null = $state(null);
   let image: THREE.Texture | undefined = $state();
   const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
 
   // The size of the map image
-  let mapSize: Size = $state({ width: 0, height: 0 });
+  let mapSize: Size | null = $state(null);
 
   $effect(() => {
+    // Do not update if the image url has not changed
+    if (imageUrl === props.map.url) {
+      return;
+    } else {
+      imageUrl = props.map.url;
+    }
+
     // Update the image whenever the URL is changed
     loader
       .load(props.map.url, {
@@ -47,6 +55,8 @@
   });
 
   export function fill() {
+    if (!mapSize) return;
+
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -61,6 +71,7 @@
   }
 
   export function fit() {
+    if (!mapSize) return;
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 
@@ -87,7 +98,7 @@
 <T.Object3D
   position={[props.map.offset.x, props.map.offset.y, 0]}
   rotation.z={(props.map.rotation / 180.0) * Math.PI}
-  scale={[mapSize.width * props.map.zoom, mapSize.height * props.map.zoom, 1]}
+  scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
   <T.Mesh>
