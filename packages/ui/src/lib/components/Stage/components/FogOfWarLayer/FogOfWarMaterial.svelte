@@ -112,11 +112,14 @@
       tempTarget.setSize(mapSize.width, mapSize.height);
       persistedTarget.setSize(mapSize.width, mapSize.height);
       drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+
+      // Since the target size changed, the data is invalidated and we need to reset the fog
       render('fill', true);
     }
 
     // Only reload the image if the url has changed and the map size is initialized
     if (props.url && props.url !== imageUrl) {
+      // Load the new image
       textureLoader.load(props.url, (texture) => render('revert', true, texture));
       untrack(() => {
         imageUrl = props.url;
