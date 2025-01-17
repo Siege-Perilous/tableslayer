@@ -66,6 +66,10 @@
     stage.map.fill();
   };
 
+  const handleMapFit = () => {
+    stage.map.fit();
+  };
+
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene);
     stageIsLoading = true;
@@ -228,6 +232,7 @@
       addToast({
         data: {
           title: 'Error updating scene',
+          body: $updateSceneMutation.error.message,
           type: 'danger'
         }
       });
@@ -312,6 +317,7 @@
         <SceneControls
           bind:stageProps
           {handleMapFill}
+          {handleMapFit}
           {handleSceneFit}
           {selectedScene}
           {activeScene}

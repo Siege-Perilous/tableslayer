@@ -55,7 +55,8 @@
     selectedScene,
     activeScene,
     handleSceneFit,
-    handleMapFill
+    handleMapFill,
+    handleMapFit
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -64,9 +65,10 @@
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb);
+    activeScene: SelectScene | (SelectScene & Thumb) | null;
     handleSceneFit: () => void;
     handleMapFill: () => void;
+    handleMapFit: () => void;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -283,7 +285,7 @@
 
   const setActiveScene = createSetActiveSceneMutation();
   const handleSetActiveScene = async () => {
-    if (!selectedScene || selectedScene.id === activeScene.id) return;
+    if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
     const response = await $setActiveScene.mutateAsync({
       dbName: gameSession.dbName,
@@ -413,7 +415,8 @@
         px
       {/snippet}
     </Control>
-    <Button variant="ghost" onclick={handleMapFill}>Fill map</Button>
+    <Button onclick={handleMapFill}>Fill in scene</Button>
+    <Button onclick={handleMapFit}>Fit in scene</Button>
   </div>
 {/snippet}
 {#snippet playControls()}
@@ -426,7 +429,7 @@
     <Spacer />
     <Hr />
     <Spacer />
-    {#if selectedScene.id !== activeScene.id}
+    {#if !activeScene || selectedScene.id !== activeScene.id}
       <Button onclick={handleSetActiveScene}>Set active scene</Button>
       <Spacer size={2} />
       <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
