@@ -43,6 +43,7 @@
   import type { Thumb } from '$lib/server';
   import { createSetActiveSceneMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
+  import { IconRotateClockwise2 } from '@tabler/icons-svelte';
 
   let {
     socketUpdate,
@@ -53,7 +54,8 @@
     gameSession,
     selectedScene,
     activeScene,
-    handleResize
+    handleSceneFit,
+    handleMapFill
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -63,7 +65,8 @@
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb);
-    handleResize: () => void;
+    handleSceneFit: () => void;
+    handleMapFill: () => void;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -175,7 +178,7 @@
       x: selectedResolution.width,
       y: selectedResolution.height
     };
-    handleResize();
+    handleSceneFit();
     socketUpdate();
     return selectedResolution;
   };
@@ -268,7 +271,7 @@
   };
 
   const handleMapRotation = () => {
-    stageProps.map.rotation += 90;
+    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
     socketUpdate();
   };
 
@@ -380,8 +383,38 @@
 {/snippet}
 
 {#snippet mapControls()}
-  <Button>Fit map</Button>
-  <Button onclick={handleMapRotation}>Rotate map</Button>
+  <div class="sceneControls__settingsPopover">
+    <Control label="Scale">
+      <Input type="number" bind:value={stageProps.map.zoom} />
+      {#snippet start()}
+        x
+      {/snippet}
+    </Control>
+    <Control label="Rotate" class="sceneControls__rotate">
+      <Input type="number" bind:value={stageProps.map.rotation} />
+      {#snippet end()}
+        <IconButton variant="ghost" onclick={handleMapRotation}>
+          <Icon Icon={IconRotateClockwise2} />
+        </IconButton>
+      {/snippet}
+    </Control>
+  </div>
+  <Spacer />
+  <div class="sceneControls__settingsPopover">
+    <Control label="Offset X">
+      <Input type="number" bind:value={stageProps.map.offset.x} />
+      {#snippet end()}
+        px
+      {/snippet}
+    </Control>
+    <Control label="Offset Y">
+      <Input type="number" bind:value={stageProps.map.offset.y} />
+      {#snippet end()}
+        px
+      {/snippet}
+    </Control>
+    <Button variant="ghost" onclick={handleMapFill}>Fill map</Button>
+  </div>
 {/snippet}
 {#snippet playControls()}
   <div class="sceneControls__playPopover">
@@ -489,6 +522,9 @@
     }
     .sceneControls__selectorIcon {
       color: var(--contrastHigh);
+    }
+    .sceneControls__rotate .control__end {
+      padding: 0;
     }
   }
   .sceneControls {
