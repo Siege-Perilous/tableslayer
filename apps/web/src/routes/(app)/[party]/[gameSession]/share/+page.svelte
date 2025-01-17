@@ -47,9 +47,7 @@
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       stageProps = {
         ...stageProps,
-        fogOfWar: {
-          ...payload.stageProps.fogOfWar
-        },
+        fogOfWar: payload.stageProps.fogOfWar,
         grid: payload.stageProps.grid,
         map: payload.stageProps.map,
         display: payload.stageProps.display,
