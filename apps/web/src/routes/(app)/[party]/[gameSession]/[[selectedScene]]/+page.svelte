@@ -58,6 +58,18 @@
     socketUpdate();
   };
 
+  const handleSceneFit = () => {
+    stage.scene.fit();
+  };
+
+  const handleMapFill = () => {
+    stage.map.fill();
+  };
+
+  const handleMapFit = () => {
+    stage.map.fit();
+  };
+
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene);
     stageIsLoading = true;
@@ -65,7 +77,7 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        stage.scene.fit();
+        handleSceneFit();
         clearInterval(interval);
       }
     }, 50);
@@ -220,6 +232,7 @@
       addToast({
         data: {
           title: 'Error updating scene',
+          body: $updateSceneMutation.error.message,
           type: 'danger'
         }
       });
@@ -302,7 +315,10 @@
           <Stage bind:this={stage} props={stageProps} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
         </div>
         <SceneControls
-          {stageProps}
+          bind:stageProps
+          {handleMapFill}
+          {handleMapFit}
+          {handleSceneFit}
           {selectedScene}
           {activeScene}
           {handleSelectActiveControl}
@@ -311,7 +327,7 @@
           {party}
           {gameSession}
         />
-        <SceneZoom {socketUpdate} {stageProps} />
+        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
       </div>
     </Pane>
   </PaneGroup>

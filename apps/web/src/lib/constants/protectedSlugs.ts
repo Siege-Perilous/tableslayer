@@ -10,5 +10,6 @@ export const protectedSlugs = [
   'logout',
   'create-party',
   'profile',
-  'test'
+  'test',
+  'api'
 ];

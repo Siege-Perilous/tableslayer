@@ -93,7 +93,18 @@ export const partyTable = sqliteTable(
     avatarFileId: integer('avatar_file_id')
       .references(() => filesTable.id, { onDelete: 'cascade' })
       .notNull()
-      .default(1)
+      .default(1),
+    pauseScreenFileId: integer('pause_screen_file_id')
+      .references(() => filesTable.id, { onDelete: 'cascade' })
+      .notNull()
+      .default(1),
+    defaultTvSize: integer('tv_size').notNull().default(40),
+    defaultDisplayResolutionX: integer('default_resolution_x').notNull().default(1920),
+    defaultDisplayResolutionY: integer('default_resolution_y').notNull().default(1080),
+    defaultDisplayPaddingX: integer('default_display_padding_x').notNull().default(16),
+    defaultDisplayPaddingY: integer('default_display_padding_y').notNull().default(16),
+    defaultGridSpacing: integer('default_grid_spacing').notNull().default(1),
+    defaultLineThickness: integer('default_line_thickness').notNull().default(1)
   },
   (table) => ({
     protectedSlugCheck: check(
