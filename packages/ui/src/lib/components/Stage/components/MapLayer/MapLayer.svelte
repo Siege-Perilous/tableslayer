@@ -7,7 +7,7 @@
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
-  import { getContext, untrack } from 'svelte';
+  import { getContext } from 'svelte';
 
   interface Props {
     props: StageProps;
