@@ -1,7 +1,7 @@
 import type { Snippet } from 'svelte';
 import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
-export type ButtonProps = {
+export type _ButtonProps = {
   children: Snippet;
   /**
    * Renders inside of a flex before the children.
@@ -20,8 +20,9 @@ export type ButtonProps = {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'ghost' | 'danger' | 'link';
   href?: string;
-} & HTMLButtonAttributes &
-  HTMLAnchorAttributes;
+};
+
+export type ButtonProps = (_ButtonProps & HTMLButtonAttributes) | (_ButtonProps & HTMLAnchorAttributes);
 
 export type IconButtonProps = {
   children: Snippet;
