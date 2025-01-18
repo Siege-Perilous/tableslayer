@@ -109,9 +109,57 @@
     material?.render('revert', false);
   }
 
-  function draw(e: MouseEvent, p: THREE.Vector2 | null) {
-    // Flip the y-coordinate to match the canvas coordinate system
-    const coords = flipY(p);
+  function onTouchStart(e: TouchEvent): void {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const coords = mapTouchToVector2(touch);
+    lastPos = flipY(coords);
+    drawing = true;
+    draw(e, coords);
+  }
+
+  function onTouchMove(e: TouchEvent): void {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const coords = mapTouchToVector2(touch);
+    draw(e, coords);
+  }
+
+  function onTouchEnd(e: TouchEvent): void {
+    const touch = e.changedTouches[0];
+    const coords = mapTouchToVector2(touch);
+
+    // If using shapes, finalize the shape on touch end
+    if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
+      if (coords && drawing) {
+        material?.drawPath(coords, lastPos, true);
+        outlineMaterial.visible = false;
+      }
+    }
+
+    onFogUpdate(toPng());
+    lastPos = null;
+    drawing = false;
+  }
+
+  // Helper to map touch points to THREE.Vector2
+  function mapTouchToVector2(touch: Touch): THREE.Vector2 | null {
+    const rect = (touch.target as Element).getBoundingClientRect();
+    return new THREE.Vector2(touch.clientX - rect.left, touch.clientY - rect.top);
+  }
+
+  function draw(e: MouseEvent | TouchEvent, p: THREE.Vector2 | null) {
+    // Determine the event type and extract coordinates
+    let coords: THREE.Vector2 | null;
+    if (e instanceof MouseEvent) {
+      // Flip the y-coordinate to match the canvas coordinate system
+      coords = flipY(p);
+    } else if (e instanceof TouchEvent) {
+      const touch = e.touches[0];
+      coords = flipY(mapTouchToVector2(touch));
+    } else {
+      return; // Exit if the event type is unsupported
+    }
 
     // If the mouse is not within the drawing area, do nothing
     if (!coords) return;
@@ -174,11 +222,14 @@
   onMouseMove={draw}
   {onMouseUp}
   {onMouseLeave}
+  {onTouchStart}
+  {onTouchMove}
+  {onTouchEnd}
 />
 
-<!-- 
+<!--
 Invisible mesh used for input detection.
-The plane geometry is larger than the map size to allow cursor 
+The plane geometry is larger than the map size to allow cursor
 events to be detected outside of the fog of war layer.
 -->
 <T.Mesh bind:ref={mesh} name="FogOfWar">

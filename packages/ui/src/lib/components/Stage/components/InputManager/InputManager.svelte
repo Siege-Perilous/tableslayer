@@ -12,9 +12,24 @@
     onMouseMove?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onMouseLeave?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
     onWheel?: (e: WheelEvent) => void;
+    onTouchStart?: (e: TouchEvent, coords: THREE.Vector2 | null) => void;
+    onTouchMove?: (e: TouchEvent, coords: THREE.Vector2 | null) => void;
+    onTouchEnd?: (e: TouchEvent, coords: THREE.Vector2 | null) => void;
   }
 
-  let { layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onMouseLeave, onWheel }: Props = $props();
+  let {
+    layerSize,
+    isActive,
+    target,
+    onMouseDown,
+    onMouseUp,
+    onMouseMove,
+    onMouseLeave,
+    onWheel,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd
+  }: Props = $props();
 
   const { camera, renderer, size } = useThrelte();
 
@@ -27,6 +42,9 @@
     if (onMouseMove) renderer.domElement.addEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
+    if (onTouchStart) renderer.domElement.addEventListener('touchstart', handleTouchStart);
+    if (onTouchMove) renderer.domElement.addEventListener('touchmove', handleTouchMove);
+    if (onTouchEnd) renderer.domElement.addEventListener('touchend', handleTouchEnd);
   });
 
   // Cleanup method to remove event listeners
@@ -36,6 +54,9 @@
     if (onMouseMove) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
+    if (onTouchStart) renderer.domElement.removeEventListener('touchstart', handleTouchStart);
+    if (onTouchMove) renderer.domElement.removeEventListener('touchmove', handleTouchMove);
+    if (onTouchEnd) renderer.domElement.removeEventListener('touchend', handleTouchEnd);
   });
 
   // Internal event handler methods
@@ -68,6 +89,26 @@
       onMouseLeave(event, null);
     }
   }
+  function handleTouchStart(event: TouchEvent) {
+    if (onTouchStart && isActive) {
+      const coords = touchToCanvasCoords(event.touches[0]);
+      onTouchStart(event, coords);
+    }
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    if (onTouchMove && isActive) {
+      const coords = touchToCanvasCoords(event.touches[0]);
+      onTouchMove(event, coords);
+    }
+  }
+
+  function handleTouchEnd(event: TouchEvent) {
+    if (onTouchEnd && isActive) {
+      const coords = touchToCanvasCoords(event.changedTouches[0]);
+      onTouchEnd(event, coords);
+    }
+  }
 
   function mouseToCanvasCoords(e: MouseEvent): THREE.Vector2 | null {
     if (!target || !layerSize) return null;
@@ -75,6 +116,31 @@
     const mouse = new THREE.Vector2((e.offsetX / $size.width) * 2 - 1, -(e.offsetY / $size.height) * 2 + 1);
 
     raycaster.setFromCamera(mouse, $camera);
+    const intersects = raycaster.intersectObject(target);
+
+    if (intersects.length > 0) {
+      const { point } = intersects[0];
+      const localPoint = target.worldToLocal(point);
+      const canvasPoint = new THREE.Vector2(
+        layerSize.width * (localPoint.x + 0.5),
+        layerSize.height * (-localPoint.y + 0.5)
+      );
+      return canvasPoint;
+    } else {
+      return null;
+    }
+  }
+
+  function touchToCanvasCoords(touch: Touch): THREE.Vector2 | null {
+    if (!target || !layerSize) return null;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    const touchPoint = new THREE.Vector2(
+      ((touch.clientX - rect.left) / rect.width) * 2 - 1,
+      -((touch.clientY - rect.top) / rect.height) * 2 + 1
+    );
+
+    raycaster.setFromCamera(touchPoint, $camera);
     const intersects = raycaster.intersectObject(target);
 
     if (intersects.length > 0) {
