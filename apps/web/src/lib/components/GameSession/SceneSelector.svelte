@@ -4,6 +4,7 @@
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
+  import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
   import {
     createSceneSchema,
@@ -115,6 +116,13 @@
       });
     }
   });
+
+  let contextSceneId = $state('');
+  const handleMapImageChange = (sceneId: string) => {
+    console.log('changing map image', sceneId);
+    contextSceneId = sceneId;
+    openFileDialog();
+  };
 </script>
 
 <div class="scenes">
@@ -163,7 +171,11 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) }
+          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) },
+          {
+            label: 'Update map image',
+            onclick: () => handleMapImageChange(scene.id)
+          }
         ]}
       >
         {#snippet trigger()}
@@ -185,6 +197,7 @@
       </ContextMenu>
     {/each}
   </div>
+
   <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
     <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
     <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
@@ -193,6 +206,7 @@
     <Spacer />
     <MessageError message={$deleteSceneMessage} />
   {/if}
+  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
 </div>
 
 <style>

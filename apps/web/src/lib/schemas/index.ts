@@ -164,5 +164,16 @@ export const notifySchema = z.object({
   email: z.string().email()
 });
 
+export const updateSceneMapImageSchema = z.object({
+  sceneId: z.string(),
+  dbName: z.string(),
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
+    message: 'File size must be less than 5MB'
+  })
+});
+
+export type UpdateSceneMapImageSchema = typeof updateSceneMapImageSchema;
+export type UpdateSceneMapImageFormType = z.infer<typeof updateSceneMapImageSchema>;
+
 export type NotifySchema = typeof notifySchema;
 export type NotifyFormType = z.infer<typeof notifySchema>;

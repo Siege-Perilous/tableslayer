@@ -201,6 +201,15 @@ export const updateScene = async (
   }
 };
 
+export const updateSceneMap = async (dbName: string, sceneId: string, userId: string, file: File) => {
+  const gsDb = gsChildDb(dbName);
+  const fileRow = await uploadFileFromInput(file, userId, 'map');
+  const fileContent = await getFile(fileRow.fileId);
+  const fileLocation = fileContent.location;
+
+  await gsDb.update(sceneTable).set({ mapLocation: fileLocation }).where(eq(sceneTable.id, sceneId)).execute();
+};
+
 export const setActiveScene = async (dbName: string, sceneId: string) => {
   const gsDb = gsChildDb(dbName);
   // check to see if a settings row exists, create or update it
