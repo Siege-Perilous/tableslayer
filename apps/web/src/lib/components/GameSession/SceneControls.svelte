@@ -324,6 +324,10 @@
     contextSceneId = sceneId;
     openFileDialog();
   };
+  $effect(() => {
+    gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
+    fogHex = to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity);
+  });
 </script>
 
 <!-- Usage of ColorPicker -->
