@@ -34,7 +34,8 @@
     IconSquare,
     IconLayoutGrid,
     IconSquareFilled,
-    IconScreenShare
+    IconScreenShare,
+    IconScreenShareOff
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
@@ -87,7 +88,7 @@
     mapLayer: number;
   };
 
-  const sceneControlArray: SceneControl[] = [
+  const sceneControlArray: SceneControl[] = $derived([
     {
       id: 'map',
       icon: IconMap,
@@ -114,11 +115,11 @@
     },
     {
       id: 'play',
-      icon: IconScreenShare,
+      icon: gameSettings.isPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
       mapLayer: MapLayerType.None
     }
-  ];
+  ]);
 
   // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
@@ -476,7 +477,7 @@
       <Hr />
       <Spacer />
     {/if}
-    <Button onclick={handleToggleGamePause}>
+    <Button variant="danger" onclick={handleToggleGamePause}>
       {#if gameSettings.isPaused}Unpause playfield{:else}Pause playfield{/if}
     </Button>
     <Spacer size={2} />

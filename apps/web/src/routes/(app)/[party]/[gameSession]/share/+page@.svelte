@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { buildSceneProps, initializeStage, setupGameSessionWebSocket } from '$lib/utils';
-  import { Stage, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
+  import { Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
   import classNames from 'classnames';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
@@ -21,7 +21,8 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading: boolean = $state(true);
-  let gameIsPaused: boolean = $state(data.gameSettings.isPaused);
+  let gameIsPaused: boolean = $state(data.gameSettings.isPaused === 0 ? false : true);
+  let randomFantasyQuote = $state(getRandomFantasyQuote());
   const fadeOutDelay = 5000;
 
   const handleResize = () => {
@@ -57,6 +58,12 @@
       };
 
       handleResize();
+    });
+
+    $effect(() => {
+      if (gameIsPaused) {
+        randomFantasyQuote = getRandomFantasyQuote();
+      }
     });
 
     socket.on('cursorUpdate', (payload) => {
@@ -174,7 +181,16 @@
 <svelte:window onresize={handleResize} />
 
 {#if gameIsPaused}
-  Game is paused
+  <div class="paused">
+    <div>
+      <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
+      <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
+    </div>
+    <div class="quote">
+      <Text size="1.5rem">{randomFantasyQuote.quote}</Text>
+      <Text color="var(--fgMuted)">— {randomFantasyQuote.author}, <span>{randomFantasyQuote.source}</span></Text>
+    </div>
+  </div>
 {/if}
 <div class={stageClasses} bind:this={stageElement}>
   <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
@@ -191,6 +207,26 @@
 </div>
 
 <style>
+  .paused {
+    display: flex;
+    gap: 4rem;
+    width: 100vw;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+  }
+  .quote {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: var(--contain-mobile);
+    font-family: var(--font-mono);
+    border-left: var(--borderThin);
+    padding-left: 4rem;
+  }
+  .quote span {
+    font-style: italic;
+  }
   .stage {
     position: fixed;
     top: 0;
