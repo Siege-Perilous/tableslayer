@@ -54,3 +54,4 @@ export const settingsTable = sqliteTable('settings', {
 });
 
 export type SelectScene = typeof sceneTable.$inferSelect;
+export type SelectGameSettings = typeof settingsTable.$inferSelect;

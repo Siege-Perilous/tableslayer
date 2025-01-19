@@ -10,4 +10,5 @@ export * from './hasThumb';
 export * from './initializeStage';
 export * from './isValidEmail';
 export * from './isWithinExpirationDate';
+export * from './randomQuotes';
 export * from './stageKeyCommands';
