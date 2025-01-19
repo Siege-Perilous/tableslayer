@@ -40,8 +40,9 @@
   import { writable } from 'svelte/store';
   import { generateGradientColors, to8CharHex } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
-  import { createSetActiveSceneMutation } from '$lib/queries';
+  import { createSetActiveSceneMutation, createToggleGamePauseMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
@@ -57,7 +58,8 @@
     activeScene,
     handleSceneFit,
     handleMapFill,
-    handleMapFit
+    handleMapFit,
+    gameSettings
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -70,6 +72,7 @@
     handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
+    gameSettings: SelectGameSettings;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -303,6 +306,22 @@
     }
   };
 
+  const toggleGamePause = createToggleGamePauseMutation();
+  const handleToggleGamePause = async () => {
+    const response = await $toggleGamePause.mutateAsync({
+      dbName: gameSession.dbName,
+      partyId: party.id
+    });
+    if (response.success == true) {
+      addToast({
+        data: {
+          title: 'Game paused',
+          type: 'success'
+        }
+      });
+    }
+  };
+
   let localPadding = $state(stageProps.display.padding.x);
 
   $effect(() => {
@@ -457,7 +476,9 @@
       <Hr />
       <Spacer />
     {/if}
-    <Button href="">Pause playfield</Button>
+    <Button onclick={handleToggleGamePause}>
+      {#if gameSettings.isPaused}Unpause playfield{:else}Pause playfield{/if}
+    </Button>
     <Spacer size={2} />
     <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>
   </div>

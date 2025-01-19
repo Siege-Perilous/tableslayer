@@ -18,7 +18,8 @@
   import { onMount } from 'svelte';
   import classNames from 'classnames';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } = $derived(data);
+  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } =
+    $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
@@ -319,6 +320,7 @@
           {socketUpdate}
           {party}
           {gameSession}
+          {gameSettings}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
       </div>

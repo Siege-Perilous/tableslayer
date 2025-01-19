@@ -1,5 +1,5 @@
 import { gsChildDb } from '$lib/db/gs';
-import { sceneTable, settingsTable, type SelectScene } from '$lib/db/gs/schema';
+import { sceneTable, settingsTable, type SelectScene, type SelectSettings } from '$lib/db/gs/schema';
 import { eq, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
@@ -243,4 +243,24 @@ export const getActiveScene = async (dbName: string): Promise<SelectScene | ((Se
   const activeSceneWithThumb = { ...activeScene, thumb };
 
   return activeSceneWithThumb;
+};
+
+export const getGameSettings = async (dbName: string): Promise<SelectSettings> => {
+  const gsDb = gsChildDb(dbName);
+  const settings = await gsDb.select().from(settingsTable).get();
+  if (!settings) {
+    throw new Error('Settings not found');
+  }
+  return settings;
+};
+
+export const toggleGamePause = async (dbName: string) => {
+  const gsDb = gsChildDb(dbName);
+  const settings = await gsDb.select().from(settingsTable).get();
+  if (settings) {
+    await gsDb
+      .update(settingsTable)
+      .set({ isPaused: settings.isPaused ? 0 : 1 })
+      .execute();
+  }
 };
