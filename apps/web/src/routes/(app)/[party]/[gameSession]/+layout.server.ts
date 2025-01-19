@@ -10,7 +10,7 @@ export const load = (async ({ params, parent }) => {
   }
 
   const gameSettings = await getGameSettings(gameSession.dbName);
-  const activeScene = getActiveScene(gameSession.dbName);
+  const activeScene = await getActiveScene(gameSession.dbName);
 
   return {
     gameSettings,
