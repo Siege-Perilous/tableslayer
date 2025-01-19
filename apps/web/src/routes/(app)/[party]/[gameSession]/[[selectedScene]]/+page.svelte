@@ -42,7 +42,7 @@
   });
 
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps);
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSettings.isPaused);
   };
 
   const updateSceneMutation = createUpdateSceneMutation();

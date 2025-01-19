@@ -21,6 +21,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading: boolean = $state(true);
+  let gameIsPaused: boolean = $state(data.gameSettings.isPaused);
   const fadeOutDelay = 5000;
 
   const handleResize = () => {
@@ -30,7 +31,7 @@
   };
 
   onMount(() => {
-    initializeStage(stage, (isLoading) => {
+    initializeStage(stage, (isLoading: boolean) => {
       stageIsLoading = isLoading;
     });
     const socket = setupGameSessionWebSocket(
@@ -45,6 +46,7 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
+      gameIsPaused = payload.gameIsPaused;
       stageProps = {
         ...stageProps,
         fogOfWar: payload.stageProps.fogOfWar,
@@ -119,7 +121,7 @@
   };
   //  const randomColor = getRandomColor();
 
-  let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
+  let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading, 'stage--hidden': gameIsPaused }));
 
   $effect(() => {
     stageIsLoading = true;
@@ -171,6 +173,9 @@
 
 <svelte:window onresize={handleResize} />
 
+{#if gameIsPaused}
+  Game is paused
+{/if}
 <div class={stageClasses} bind:this={stageElement}>
   <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
 
@@ -192,8 +197,14 @@
     left: 0;
     width: 100%;
     height: 100%;
+    background: red;
+    z-index: 1;
   }
   .stage--loading {
+    visibility: hidden;
+  }
+  .stage--hidden {
+    display: none;
     visibility: hidden;
   }
   .cursor {

@@ -8,13 +8,15 @@ export type BroadcastStageUpdate = {
   activeScene: SelectScene | (SelectScene & Thumb) | null;
   selectedScene: SelectScene | (SelectScene & Thumb) | null;
   stageProps: StageProps;
+  gameIsPaused: boolean;
 };
 
 export const broadcastStageUpdate = (
   socket: Socket | null,
   activeScene: BroadcastStageUpdate['activeScene'],
   selectedScene: BroadcastStageUpdate['selectedScene'],
-  stageProps: BroadcastStageUpdate['stageProps']
+  stageProps: BroadcastStageUpdate['stageProps'],
+  gameIsPaused: boolean
 ) => {
   if (!socket || !selectedScene) return;
 
@@ -22,6 +24,7 @@ export const broadcastStageUpdate = (
     const updateData = {
       selectedScene: selectedScene,
       activeScene: activeScene,
+      gameIsPaused,
       stageProps: {
         fogOfWar: stageProps.fogOfWar,
         grid: stageProps.grid,
@@ -39,8 +42,9 @@ export const broadcastStageUpdate = (
     console.log('Broadcasting stage update', newStageProps);
 
     const updateData = {
-      selectedScene: selectedScene,
-      activeScene: activeScene,
+      selectedScene,
+      activeScene,
+      gameIsPaused,
       stageProps: {
         fogOfWar: newStageProps.fogOfWar,
         grid: newStageProps.grid,
