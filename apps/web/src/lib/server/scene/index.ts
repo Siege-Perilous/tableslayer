@@ -258,9 +258,6 @@ export const toggleGamePause = async (dbName: string) => {
   const gsDb = gsChildDb(dbName);
   const settings = await gsDb.select().from(settingsTable).get();
   if (settings) {
-    await gsDb
-      .update(settingsTable)
-      .set({ isPaused: settings.isPaused ? 0 : 1 })
-      .execute();
+    await gsDb.update(settingsTable).set({ isPaused: !settings.isPaused }).execute();
   }
 };
