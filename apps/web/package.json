@@ -37,6 +37,7 @@
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
+    "@sentry/sveltekit": "^8",
     "@tabler/icons-svelte": "^3.28.1",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.64.2",
