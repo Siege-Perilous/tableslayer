@@ -87,6 +87,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY
       },
+      rotation: 0,
       zoom: 1
     },
     ping: {

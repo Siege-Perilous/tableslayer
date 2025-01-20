@@ -310,7 +310,7 @@
     <List bind:value={mapUrl} label="Map" options={mapOptions} />
     <Button on:click={() => updateMapUrl()} title="Load" />
     <Separator />
-    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} />
+    <Slider bind:value={stageProps.map.rotation} label="Rotation" min={0} max={360} step={1} />
     <Button on:click={() => (stageProps.map.offset = { x: 0, y: 0 })} title="Center" />
     <Button on:click={() => stage?.map.fill()} title="Fill" />
     <Button on:click={() => stage?.map.fit()} title="Fit" />
@@ -328,6 +328,7 @@
   <Folder title="Scene" expanded={false}>
     <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <Button on:click={() => (stageProps.scene.offset = { x: 0, y: 0 })} title="Center" />
+    <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} step={1} />
     <Button on:click={() => stage?.scene.fill()} title="Fill" />
     <Button on:click={() => stage?.scene.fit()} title="Fit" />
   </Folder>

@@ -80,6 +80,7 @@ export const StageDefaultProps: StageProps = {
       x: 0,
       y: 0
     },
+    rotation: 0,
     zoom: 1.0
   },
   weather: {

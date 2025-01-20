@@ -97,7 +97,13 @@
   };
 </script>
 
-<T.OrthographicCamera makeDefault near={0.1} far={1000} position={[0, 0, 100]}></T.OrthographicCamera>
+<T.OrthographicCamera
+  makeDefault
+  near={0.1}
+  far={1000}
+  rotation={[0, 0, (props.scene.rotation * Math.PI) / 180]}
+  position={[0, 0, 100]}
+></T.OrthographicCamera>
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>

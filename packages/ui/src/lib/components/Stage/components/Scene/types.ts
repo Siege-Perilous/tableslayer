@@ -5,6 +5,11 @@ export interface SceneLayerProps {
   offset: { x: number; y: number };
 
   /**
+   * The rotation of the scene layer in degrees
+   */
+  rotation: number;
+
+  /**
    * The scale of the scene layer
    */
   zoom: number;
