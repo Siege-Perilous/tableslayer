@@ -35,8 +35,8 @@
   ],
   "peerDependencies": {
     "@melt-ui/svelte": "^0.86.2",
-    "@sveltejs/kit": "^2.11.1",
-    "svelte": "^5.14.0"
+    "@sveltejs/kit": "^2.16.0",
+    "svelte": "^5.19.0"
   },
   "devDependencies": {
     "@magidoc/plugin-svelte-marked": "^6.2.0",
