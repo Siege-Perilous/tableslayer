@@ -17,6 +17,16 @@ export const r2 = new S3Client({
   forcePathStyle: true
 });
 
+// Needed to delete the checksum header to avoid issues with R2
+r2.middlewareStack.add(
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  (next) => async (args: any) => {
+    delete args.request.headers['x-amz-checksum-crc32'];
+    return next(args);
+  },
+  { step: 'build' }
+);
+
 const CLOUDFLARE_BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
 
 const generateRandomFileName = (originalName: string) => {
