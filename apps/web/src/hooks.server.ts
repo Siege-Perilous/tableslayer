@@ -5,10 +5,12 @@ import { sequence } from '@sveltejs/kit/hooks';
 
 import { useServer } from 'vite-sveltekit-node-ws';
 
-Sentry.init({
-  dsn: 'https://f027207d962eb65a32305ca8824d26f1@o4508673215430656.ingest.us.sentry.io/4508673215758336',
-  tracesSampleRate: 1
-});
+if (process.env.ENV_NAME === 'production') {
+  Sentry.init({
+    dsn: 'https://f027207d962eb65a32305ca8824d26f1@o4508673215430656.ingest.us.sentry.io/4508673215758336',
+    tracesSampleRate: 1
+  });
+}
 
 useServer(
   (server) => {
