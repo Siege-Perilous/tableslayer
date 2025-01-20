@@ -8,11 +8,15 @@ export const createToggleGamePauseMutation = () => {
   return createMutation<ToggleGamePauseResponse, Error, { dbName: string; partyId: string }>({
     mutationKey: ['toggleGamePause'],
     mutationFn: async ({ dbName, partyId }) => {
+      if (!dbName || !partyId) {
+        throw new Error('dbName and partyId are required');
+      }
       const response = await fetch('/api/gameSessions/togglePause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dbName, partyId })
       });
+      console.log('Server response:', response);
 
       if (!response.ok) {
         throw new Error(`Failed to toggle game pause: ${response.statusText}`);

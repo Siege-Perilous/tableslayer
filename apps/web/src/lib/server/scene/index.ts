@@ -249,7 +249,7 @@ export const getGameSettings = async (dbName: string): Promise<SelectGameSetting
   const gsDb = gsChildDb(dbName);
   const settings = await gsDb.select().from(settingsTable).get();
   if (!settings) {
-    throw new Error('Settings not found');
+    throw new Error(`Settings not found for ${dbName}`);
   }
   return settings;
 };
