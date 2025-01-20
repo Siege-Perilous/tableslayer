@@ -73,4 +73,9 @@
     position: relative;
     z-index: 5;
   }
+  @media (max-width: 768px) {
+    :global(.panel.panel--login) {
+      margin: 3rem 3rem auto 3rem;
+    }
+  }
 </style>
