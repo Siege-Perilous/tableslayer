@@ -21,7 +21,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
   let stageIsLoading: boolean = $state(true);
-  let gameIsPaused: boolean = $state(data.gameSettings.isPaused === 0 ? false : true);
+  let gameIsPaused = $state(data.gameSettings.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   const fadeOutDelay = 5000;
 
