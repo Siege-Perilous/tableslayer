@@ -56,5 +56,6 @@ export const generateGradientColors = (colorStart: string, colorEnd?: string): s
  */
 export const to8CharHex = (hex: string, opacity: number) => {
   const rgba = chroma(hex).alpha(opacity).rgba();
-  return chroma(rgba).hex('rgba');
+  const [r, g, b, a] = rgba;
+  return chroma(r, g, b, a).hex('rgba');
 };

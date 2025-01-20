@@ -4,7 +4,6 @@ import ws from 'vite-sveltekit-node-ws';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // @ts-expect-error https://github.com/sveltejs/cli/issues/341
   plugins: [
     sentrySvelteKit({
       sourceMapsUploadOptions: {
