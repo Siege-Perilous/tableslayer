@@ -30,7 +30,7 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.731.1",
+    "@aws-sdk/client-s3": "=3.712.0",
     "@libsql/client": "^0.14.0",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@melt-ui/pp": "^0.3.2",
