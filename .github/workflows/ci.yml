@@ -207,6 +207,9 @@ jobs:
           CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
           ENV_NAME=preview
           GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
+          BODY_SIZE_LIMIT=${{ secrets.BODY_SIZE_LIMIT }}
+          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           EOF
       - name: Deploy docs
         id: deploydocs
