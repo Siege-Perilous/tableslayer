@@ -1,4 +1,12 @@
-import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StageProps } from '@tableslayer/ui';
+import {
+  DrawMode,
+  GridType,
+  MapLayerType,
+  PingEditMode,
+  SceneRotation,
+  ToolType,
+  type StageProps
+} from '@tableslayer/ui';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
@@ -80,7 +88,7 @@ export const StageDefaultProps: StageProps = {
       x: 0,
       y: 0
     },
-    rotation: 0,
+    rotation: SceneRotation.Deg0,
     zoom: 1.0
   },
   weather: {

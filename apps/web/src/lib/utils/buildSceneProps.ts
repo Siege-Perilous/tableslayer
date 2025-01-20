@@ -2,7 +2,15 @@ import { type SelectScene } from '$lib/db/gs/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { hasThumb } from '$lib/utils/hasThumb';
-import { DrawMode, type GridType, MapLayerType, PingEditMode, type StageProps, ToolType } from '@tableslayer/ui';
+import {
+  DrawMode,
+  type GridType,
+  MapLayerType,
+  PingEditMode,
+  SceneRotation,
+  type StageProps,
+  ToolType
+} from '@tableslayer/ui';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)): StageProps => {
@@ -87,7 +95,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY
       },
-      rotation: 0,
+      rotation: SceneRotation.Deg0,
       zoom: 1
     },
     ping: {

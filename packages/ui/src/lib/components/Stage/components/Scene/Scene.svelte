@@ -38,13 +38,22 @@
 
   export function fill() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
-    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
+    let sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
+    let sceneWidth = props.display.resolution.x;
+    let sceneHeight = props.display.resolution.y;
+
+    // Swap dimensions if rotated 90 or 270 degrees
+    if (props.scene.rotation === 90 || props.scene.rotation === 270) {
+      sceneAspectRatio = props.display.resolution.y / props.display.resolution.x;
+      sceneWidth = props.display.resolution.y;
+      sceneHeight = props.display.resolution.x;
+    }
 
     let newZoom: number;
     if (sceneAspectRatio > canvasAspectRatio) {
-      newZoom = renderer.domElement.clientHeight / props.display.resolution.y;
+      newZoom = renderer.domElement.clientHeight / sceneHeight;
     } else {
-      newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
+      newZoom = renderer.domElement.clientWidth / sceneWidth;
     }
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
@@ -52,13 +61,22 @@
 
   export function fit() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
-    const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
+    let sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
+    let sceneWidth = props.display.resolution.x;
+    let sceneHeight = props.display.resolution.y;
+
+    // Swap dimensions if rotated 90 or 270 degrees
+    if (props.scene.rotation === 90 || props.scene.rotation === 270) {
+      sceneAspectRatio = props.display.resolution.y / props.display.resolution.x;
+      sceneWidth = props.display.resolution.y;
+      sceneHeight = props.display.resolution.x;
+    }
 
     let newZoom: number;
     if (sceneAspectRatio < canvasAspectRatio) {
-      newZoom = renderer.domElement.clientHeight / props.display.resolution.y;
+      newZoom = renderer.domElement.clientHeight / sceneHeight;
     } else {
-      newZoom = renderer.domElement.clientWidth / props.display.resolution.x;
+      newZoom = renderer.domElement.clientWidth / sceneWidth;
     }
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);

@@ -9,7 +9,8 @@
     ToolType,
     WeatherType,
     MapLayerType,
-    PingEditMode
+    PingEditMode,
+    SceneRotation
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
@@ -57,6 +58,13 @@
 
   const weatherTypeOptions: ListOptions<number> = {
     Rain: WeatherType.Rain
+  };
+
+  const sceneRotationOptions: ListOptions<number> = {
+    Deg0: SceneRotation.Deg0,
+    Deg90: SceneRotation.Deg90,
+    Deg180: SceneRotation.Deg180,
+    Deg270: SceneRotation.Deg270
   };
 
   onMount(() => {
@@ -328,7 +336,7 @@
   <Folder title="Scene" expanded={false}>
     <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <Button on:click={() => (stageProps.scene.offset = { x: 0, y: 0 })} title="Center" />
-    <Slider bind:value={stageProps.scene.rotation} label="Rotation" min={0} max={360} step={1} />
+    <List bind:value={stageProps.scene.rotation} label="Rotation" options={sceneRotationOptions} />
     <Button on:click={() => stage?.scene.fill()} title="Fill" />
     <Button on:click={() => stage?.scene.fit()} title="Fit" />
   </Folder>

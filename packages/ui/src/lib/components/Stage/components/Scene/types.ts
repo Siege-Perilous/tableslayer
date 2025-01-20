@@ -1,3 +1,10 @@
+export enum SceneRotation {
+  Deg0 = 0,
+  Deg90 = 90,
+  Deg180 = 180,
+  Deg270 = 270
+}
+
 export interface SceneLayerProps {
   /**
    * The position of the scene layer within the canvas
@@ -7,7 +14,7 @@ export interface SceneLayerProps {
   /**
    * The rotation of the scene layer in degrees
    */
-  rotation: number;
+  rotation: SceneRotation;
 
   /**
    * The scale of the scene layer
