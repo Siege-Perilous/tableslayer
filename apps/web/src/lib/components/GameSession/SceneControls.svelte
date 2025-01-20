@@ -321,6 +321,7 @@
         }
       });
     }
+    socketUpdate();
   };
 
   let localPadding = $state(stageProps.display.padding.x);
