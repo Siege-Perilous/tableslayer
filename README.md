@@ -28,13 +28,13 @@ General CI operations look like this:
 - Lint
 - TSC
 - Create Turso DB prefixed with the PR number
-- Deploy Vercel previews (setting env vars to the Turso DB and PR number)
+- Deploy Fly previews (setting env vars to the Turso DB and PR number)
   - Any child DBs made in the preview (like game sessions) will also get prefixed names
 - On PR merge, clean up the DBs (with the prefix) made for / during the preview website
 
 ## Tests
 
-Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any of the app-folders and they will be run against the vercel preview URLs that are generated with your PR.
+Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any of the app-folders and they will be run against the Fly preview URLs that are generated with your PR.
 
 ## Styling
 
@@ -45,6 +45,7 @@ Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any
 
 This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://vitejs.dev/).
 
+- [Fly](https://fly.io) provides hosting
 - [Turbo](https://turbo.build) provides the monorepo build / packaging.
 - [Svelte](https://svelte.dev/) provides the frontend framework. This repo uses Svelte 5. [This article](https://sveltekit.io/blog/svelte-5) provides a summary of the changes.
   - [Superforms](https://superforms.rocks/) + [Form Snap](https://formsnap.dev/) power the forms.
