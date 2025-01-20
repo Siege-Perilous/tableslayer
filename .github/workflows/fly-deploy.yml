@@ -29,6 +29,8 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
           CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
           CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+          BODY_SIZE_LIMIT=${{ secrets.BODY_SIZE_LIMIT }}
           ENV_NAME=production
           GITHUB_PR_NUMBER=0
           EOF
