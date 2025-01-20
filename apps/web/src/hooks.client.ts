@@ -1,7 +1,8 @@
+import { dev } from '$app/environment';
 import * as Sentry from '@sentry/sveltekit';
 import { handleErrorWithSentry } from '@sentry/sveltekit';
 
-if (process.env.ENV_NAME === 'production') {
+if (!dev) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     tracesSampleRate: 1.0
