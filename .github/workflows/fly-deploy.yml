@@ -32,6 +32,8 @@ jobs:
           SENTRY_DSN=${{ secrets.SENTRY_DSN }}
           BODY_SIZE_LIMIT=${{ secrets.BODY_SIZE_LIMIT }}
           ENV_NAME=production
+          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           GITHUB_PR_NUMBER=0
           EOF
       - name: Deploy fly productions

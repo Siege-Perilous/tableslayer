@@ -22,7 +22,9 @@
         "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_R2_ACCESS_KEY",
         "CLOUDFLARE_R2_SECRET_KEY",
-        "CLOUDFLARE_R2_BUCKET_NAME"
+        "CLOUDFLARE_R2_BUCKET_NAME",
+        "SENTRY_DSN",
+        "SENTRY_AUTH_TOKEN"
       ],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
@@ -42,7 +44,9 @@
         "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_R2_ACCESS_KEY",
         "CLOUDFLARE_R2_SECRET_KEY",
-        "CLOUDFLARE_R2_BUCKET_NAME"
+        "CLOUDFLARE_R2_BUCKET_NAME",
+        "SENTRY_DSN",
+        "SENTRY_AUTH_TOKEN"
       ],
       "persistent": true,
       "cache": false

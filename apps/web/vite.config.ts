@@ -1,10 +1,20 @@
+import { sentrySvelteKit } from '@sentry/sveltekit';
 import { sveltekit } from '@sveltejs/kit/vite';
 import ws from 'vite-sveltekit-node-ws';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   // @ts-expect-error https://github.com/sveltejs/cli/issues/341
-  plugins: [sveltekit(), ws()],
+  plugins: [
+    sentrySvelteKit({
+      sourceMapsUploadOptions: {
+        org: 'siege-perilous',
+        project: 'tableslayer'
+      }
+    }),
+    sveltekit(),
+    ws()
+  ],
   server: {
     port: 5174,
     strictPort: false
