@@ -18,7 +18,7 @@ export const StageDefaultProps: StageProps = {
     },
     tool: {
       type: ToolType.Brush,
-      size: 200,
+      size: 50,
       mode: DrawMode.Erase
     },
     edge: {
@@ -47,8 +47,8 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     spacing: 1,
-    opacity: 0.05,
-    lineColor: '#E6E6E6',
+    opacity: 0.25,
+    lineColor: '#000000',
     lineThickness: 1.0,
     shadowOpacity: 0.4,
     shadowBlur: 0.5,
@@ -80,6 +80,7 @@ export const StageDefaultProps: StageProps = {
       x: 0,
       y: 0
     },
+    rotation: 0,
     zoom: 1.0
   },
   weather: {
