@@ -24,7 +24,8 @@
         "CLOUDFLARE_R2_SECRET_KEY",
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
-        "SENTRY_AUTH_TOKEN"
+        "SENTRY_AUTH_TOKEN",
+        "BODY_SIZE_LIMIT"
       ],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
@@ -46,7 +47,8 @@
         "CLOUDFLARE_R2_SECRET_KEY",
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
-        "SENTRY_AUTH_TOKEN"
+        "SENTRY_AUTH_TOKEN",
+        "BODY_SIZE_LIMIT"
       ],
       "persistent": true,
       "cache": false
