@@ -8,6 +8,7 @@ export const createToggleGamePauseMutation = () => {
   return createMutation<ToggleGamePauseResponse, Error, { dbName: string; partyId: string }>({
     mutationKey: ['toggleGamePause'],
     mutationFn: async ({ dbName, partyId }) => {
+      console.log('toggleGamePause mutation started');
       if (!dbName || !partyId) {
         throw new Error('dbName and partyId are required');
       }
@@ -26,6 +27,9 @@ export const createToggleGamePauseMutation = () => {
     },
     onSuccess: async () => {
       await invalidateAll();
+    },
+    onError: (error) => {
+      console.error('Error toggling game pause:', error);
     }
   });
 };
