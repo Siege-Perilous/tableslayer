@@ -309,6 +309,8 @@
 
   const toggleGamePause = createToggleGamePauseMutation();
   const handleToggleGamePause = async () => {
+    console.log(`toggle game pause for ${gameSession.dbName}`);
+    if (!selectedScene) return;
     const response = await $toggleGamePause.mutateAsync({
       dbName: gameSession.dbName,
       partyId: party.id
