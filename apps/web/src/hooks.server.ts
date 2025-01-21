@@ -16,7 +16,7 @@ useServer(
   (server) => {
     initializeSocketIO(server);
   },
-  (path) => /socket\.io|gameSession/.test(path)
+  (path) => /^\/(socket\.io|gameSession\/socket)/.test(path)
 );
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
