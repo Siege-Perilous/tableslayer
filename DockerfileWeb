@@ -28,6 +28,7 @@ RUN pnpm turbo run web#build
 FROM base
 
 ENV NODE_ENV=production
+ENV BODY_SIZE_LIMIT=20M
 
 WORKDIR /app/apps/web
 CMD ["node", "build"]
