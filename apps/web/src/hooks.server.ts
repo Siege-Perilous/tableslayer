@@ -20,7 +20,16 @@ useServer(
 );
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
-  console.log('BODY_SIZE_LIMIT:', process.env.BODY_SIZE_LIMIT);
+  const contentLength = event.request.headers.get('content-length');
+
+  if (contentLength) {
+    const sizeInBytes = parseInt(contentLength, 10);
+    const maxSizeInBytes = 20 * 1024 * 1024; // 20 MB
+
+    if (sizeInBytes > maxSizeInBytes) {
+      return new Response('Payload Too Large', { status: 413 });
+    }
+  }
   const token = event.cookies.get('session') ?? null;
   if (token === null) {
     event.locals.user = null;
