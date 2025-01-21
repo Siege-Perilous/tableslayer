@@ -258,10 +258,9 @@ export const toggleGamePause = async (dbName: string) => {
   console.log(`toggling game pause for ${dbName}`);
   const gsDb = gsChildDb(dbName);
   const settings = await gsDb.select().from(settingsTable).get();
-  if (!settings) {
-    throw new Error(`Settings not found for ${dbName}`);
-  }
   if (settings) {
     await gsDb.update(settingsTable).set({ isPaused: !settings.isPaused }).execute();
+  } else {
+    await gsDb.insert(settingsTable).values({ isPaused: true }).execute();
   }
 };

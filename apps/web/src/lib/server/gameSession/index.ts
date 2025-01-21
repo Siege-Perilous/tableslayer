@@ -70,6 +70,7 @@ export const createGameSessionDb = async (partyId: string, userId: string, gsNam
       })
       .execute();
 
+    // Create the initial scene, and set it as active within settings
     await createScene(database.name, userId, 'First scene');
 
     return database;
