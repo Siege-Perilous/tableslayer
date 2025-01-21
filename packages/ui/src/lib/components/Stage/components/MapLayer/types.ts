@@ -17,7 +17,7 @@ export interface MapLayerProps {
   };
 
   /**
-   * Rotation of the map relative to the scene
+   * Rotation of the map relative to the scene in degrees
    */
   rotation: number;
 
