@@ -11,6 +11,7 @@ primary_region = 'ewr'
 
 [env]
   PORT = '8080'
+  BODY_SIZE_LIMIT = "20M"
 
 [http_service]
   internal_port = 8080
