@@ -93,7 +93,8 @@ const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Re
 
   setNestedIfExists(stageProps, details, 'scene', {
     'offset.x': 'sceneOffsetX',
-    'offset.y': 'sceneOffsetY'
+    'offset.y': 'sceneOffsetY',
+    rotation: 'sceneRotation'
   });
 
   return details;

@@ -37,7 +37,7 @@ export const broadcastStageUpdate = (
 
     socket.emit('updateSession', updateData);
   } else if (activeScene) {
-    const newStageProps = buildSceneProps(activeScene);
+    const newStageProps = buildSceneProps(activeScene, 'editor');
 
     console.log('Broadcasting stage update', newStageProps);
 

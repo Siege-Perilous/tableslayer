@@ -32,7 +32,11 @@
   };
 
   const handleMapRotate = () => {
-    stageProps.map.rotation += 90;
+    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
+    socketUpdate();
+  };
+  const handleSceneRotate = () => {
+    stageProps.scene.rotation = (stageProps.scene.rotation + 90) % 360;
     socketUpdate();
   };
 </script>
@@ -95,6 +99,17 @@
       onclick={handleSceneFit}
     >
       <Icon Icon={IconArrowsMaximize} stroke={3} />
+    </IconButton>
+    <IconButton
+      title="Rotate scene"
+      class="zoomControls__button"
+      aria-label="Rotate scene"
+      variant="ghost"
+      onclick={() => {
+        handleSceneRotate();
+      }}
+    >
+      <Icon Icon={IconRotateClockwise2} stroke={3} />
     </IconButton>
   {/if}
 </div>
