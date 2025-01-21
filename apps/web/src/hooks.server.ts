@@ -20,7 +20,6 @@ useServer(
 );
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
-  console.log('BODY_SIZE_LIMIT:', process.env.BODY_SIZE_LIMIT);
   const token = event.cookies.get('session') ?? null;
   if (token === null) {
     event.locals.user = null;
