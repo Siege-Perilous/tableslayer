@@ -13,7 +13,10 @@ import {
 } from '@tableslayer/ui';
 
 // Map activeScene properties to StageProps
-export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)): StageProps => {
+export const buildSceneProps = (
+  activeScene: SelectScene | (SelectScene & Thumb),
+  mode: 'client' | 'editor'
+): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
   const thumbUrl =
     hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
@@ -95,7 +98,7 @@ export const buildSceneProps = (activeScene: SelectScene | (SelectScene & Thumb)
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY
       },
-      rotation: SceneRotation.Deg0,
+      rotation: mode === 'editor' ? activeScene.sceneRotation : SceneRotation.Deg0,
       zoom: 1
     },
     ping: {

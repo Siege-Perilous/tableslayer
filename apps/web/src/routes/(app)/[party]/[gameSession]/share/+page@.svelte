@@ -19,7 +19,8 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let stageProps: StageProps = $state(buildSceneProps(data.activeScene));
+  let editorSceneRotation = $state(data.activeScene.sceneRotation);
+  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSettings.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
@@ -48,6 +49,7 @@
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
+      editorSceneRotation = payload.stageProps.scene.rotation;
       stageProps = {
         ...stageProps,
         fogOfWar: payload.stageProps.fogOfWar,
@@ -65,6 +67,9 @@
         randomFantasyQuote = getRandomFantasyQuote();
       }
     });
+
+    $inspect(editorSceneRotation);
+    $inspect(stageProps);
 
     socket.on('cursorUpdate', (payload) => {
       const { normalizedPosition, user, zoom: editorZoom } = payload;

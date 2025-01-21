@@ -22,7 +22,7 @@
     $derived(data);
 
   let socket: Socket | null = $state(null);
-  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene));
+  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -72,7 +72,7 @@
   };
 
   $effect(() => {
-    stageProps = buildSceneProps(data.selectedScene);
+    stageProps = buildSceneProps(data.selectedScene, 'editor');
     stageIsLoading = true;
 
     const interval = setInterval(() => {
