@@ -125,7 +125,7 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} z={0} />
+  <MapLayer bind:this={mapLayer} {props} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />

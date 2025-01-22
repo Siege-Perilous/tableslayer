@@ -2,7 +2,7 @@ import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StagePro
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
-  backgroundColor: '#0b0b0c',
+  backgroundColor: '#808080',
   display: {
     padding: { x: 16, y: 16 },
     size: { x: 17.77, y: 10.0 },
@@ -48,7 +48,7 @@ export const StageDefaultProps: StageProps = {
     gridType: GridType.Square,
     spacing: 1,
     opacity: 0.25,
-    lineColor: '#000000',
+    lineColor: '#ffffff',
     lineThickness: 1.0,
     shadowOpacity: 0.4,
     shadowBlur: 0.5,

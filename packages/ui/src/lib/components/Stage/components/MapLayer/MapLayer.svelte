@@ -11,7 +11,6 @@
 
   interface Props {
     props: StageProps;
-    z: number;
   }
 
   const { props }: Props = $props();
