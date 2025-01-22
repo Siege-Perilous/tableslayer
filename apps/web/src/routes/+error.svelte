@@ -1,20 +1,20 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Panel, Title, Text } from '@tableslayer/ui';
+  import { Title, Text } from '@tableslayer/ui';
   console.log(page);
 </script>
 
-<Panel class="error">
+<div class="error">
   <Title as="h1" size="xl">
     {page.status}
   </Title>
-  <Text>
+  <Text color="var(--fgMuted)" size="2rem">
     {page.error.message}
   </Text>
-</Panel>
+</div>
 
 <style>
-  :global(.panel.error) {
+  .error {
     display: flex;
     flex-direction: column;
     align-items: center;
