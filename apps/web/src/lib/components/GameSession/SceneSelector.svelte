@@ -218,6 +218,7 @@
     width: 100%;
     background: var(--bg);
     overflow-y: auto;
+    transition: border-color 0.2s;
   }
   .scene {
     position: relative;
