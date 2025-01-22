@@ -130,6 +130,7 @@
   let isThrottled = false;
 
   const onMouseMove = (e: MouseEvent) => {
+    const rotation = stageProps.scene.rotation; // Rotation in degrees
     const canvasBounds = stageElement?.getBoundingClientRect(); // Full canvas bounds
     if (!canvasBounds) return;
 
@@ -139,19 +140,40 @@
     const displayWidth = stageProps.display.resolution.x * stageProps.scene.zoom; // Zoomed width of the rectangle
     const displayHeight = stageProps.display.resolution.y * stageProps.scene.zoom; // Zoomed height of the rectangle
 
-    const horizontalMargin = (canvasBounds.width - displayWidth) / 2;
-    const verticalMargin = (canvasBounds.height - displayHeight) / 2;
+    const rotatedWidth = rotation % 180 === 0 ? displayWidth : displayHeight;
+    const rotatedHeight = rotation % 180 === 0 ? displayHeight : displayWidth;
+
+    const horizontalMargin = (canvasBounds.width - rotatedWidth) / 2;
+    const verticalMargin = (canvasBounds.height - rotatedHeight) / 2;
 
     const relativeX = cursorX - horizontalMargin;
     const relativeY = cursorY - verticalMargin;
 
-    const clampedX = Math.max(0, Math.min(relativeX, displayWidth));
-    const clampedY = Math.max(0, Math.min(relativeY, displayHeight));
+    // Clamp to ensure cursor stays within visible bounds after rotation
+    const clampedX = Math.max(0, Math.min(relativeX, rotatedWidth));
+    const clampedY = Math.max(0, Math.min(relativeY, rotatedHeight));
 
-    const normalizedX = clampedX / displayWidth;
-    const normalizedY = clampedY / displayHeight;
+    // Normalize clamped coordinates to range [0, 1]
+    const normalizedX = clampedX / rotatedWidth;
+    const normalizedY = clampedY / rotatedHeight;
 
-    // Handle panning
+    // Rotate the normalized coordinates to account for the scene's rotation
+    const rotatePoint = (x: number, y: number, angle: number): { x: number; y: number } => {
+      const radians = (Math.PI / 180) * angle;
+      return {
+        x: x * Math.cos(radians) - y * Math.sin(radians),
+        y: x * Math.sin(radians) + y * Math.cos(radians)
+      };
+    };
+
+    // Rotate around the center (0.5, 0.5) of the normalized coordinate space
+    const rotated = rotatePoint(normalizedX - 0.5, normalizedY - 0.5, -rotation);
+
+    // Adjust back to [0, 1] normalized space
+    const finalNormalizedX = rotated.x + 0.5;
+    const finalNormalizedY = rotated.y + 0.5;
+
+    // Handle panning (existing logic)
     if (e.buttons === 1 || e.buttons === 2) {
       if (e.shiftKey) {
         stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
@@ -171,10 +193,11 @@
       }
     }
 
+    // Emit the normalized and rotated position over the WebSocket
     if (activeScene && activeScene.id === selectedScene.id) {
       socket?.emit('cursorMove', {
         user: data.user,
-        normalizedPosition: { x: normalizedX, y: normalizedY },
+        normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
         zoom: stageProps.scene.zoom,
         offset: stageProps.scene.offset
       });
@@ -281,7 +304,8 @@
       defaultSize={15}
       collapsible={true}
       collapsedSize={0}
-      minSize={20}
+      minSize={10}
+      maxSize={30}
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
@@ -300,6 +324,7 @@
       <button
         class="resizer__handle resizer__hander--left"
         aria-label="Collapse scenes column"
+        title={isScenesCollapsed ? 'Expand scenes column' : 'Collapse scenes column'}
         onclick={handleToggleScenes}
       ></button>
     </PaneResizer>
@@ -354,6 +379,10 @@
       background: var(--contrastMedium);
       margin-top: 1rem;
       cursor: pointer;
+      transition: background 0.2s;
+    }
+    .resizer:hover .resizer__handle {
+      background: var(--fg);
     }
     .resizer__handle--left {
       position: relative;
