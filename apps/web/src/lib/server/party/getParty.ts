@@ -9,6 +9,7 @@ import {
   type SelectUser
 } from '$lib/db/app/schema';
 import { getFile, transformImage, type Thumb } from '$lib/server';
+import { error } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const getParty = async (partyId: string): Promise<SelectParty & Thumb> => {
@@ -45,7 +46,7 @@ export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty &
   const party = await db.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
 
   if (!party) {
-    throw new Error('Party not found');
+    error(404, 'Party not found');
   }
 
   const file = await getFile(party.avatarFileId);
