@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
 import { createRandomGameSessionName } from '$lib/utils';
+import { error } from '@sveltejs/kit';
 import { createClient } from '@tursodatabase/api';
 import { eq } from 'drizzle-orm';
 import slugify from 'slugify';
@@ -19,6 +20,9 @@ export const getPartyGameSessions = async (partyId: string): Promise<SelectGameS
 
 export const getPartyGameSessionFromSlug = async (slug: string) => {
   const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.slug, slug)).get();
+  if (!gameSession) {
+    error(404, 'Game session not found');
+  }
   return gameSession;
 };
 
