@@ -1,14 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { IllustrationOverlook } from '$lib/components';
   import { Panel, Title, Text } from '@tableslayer/ui';
   console.log(page);
 </script>
 
-<IllustrationOverlook />
-
 <Panel class="error">
-  <Title as="h1" size="md" data-testid="signInHeading">
+  <Title as="h1" size="xl">
     {page.status}
   </Title>
   <Text>
@@ -20,9 +17,10 @@
   :global(.panel.error) {
     display: flex;
     flex-direction: column;
+    align-items: center;
     max-width: var(--contain-smallForm);
     padding: var(--size-8);
-    margin: 20vh auto auto 10vh;
+    margin: 20vh auto auto auto;
     position: relative;
     z-index: 5;
   }
