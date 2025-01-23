@@ -3,6 +3,7 @@ import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
   createGameSessionSchema,
+  defaultSceneSettingsSchema,
   deleteGameSessionSchema,
   deleteInviteSchema,
   deletePartySchema,
@@ -18,6 +19,7 @@ import {
   deletePartyGameSession,
   getEmailsInvitedToParty,
   getParty,
+  getPartyFromSlug,
   getPartyMembers,
   getUser,
   isEmailAlreadyInvitedToParty,
@@ -25,7 +27,8 @@ import {
   isUserByEmailInPartyAlready,
   isUserOnlyAdminInParty,
   renameGameSession,
-  sendPartyInviteEmail
+  sendPartyInviteEmail,
+  updateParty
 } from '$lib/server';
 import { deleteParty, renameParty } from '$lib/server/party/createParty';
 import { createSha256Hash } from '$lib/utils/hash';
@@ -74,6 +77,20 @@ export const load: PageServerLoad = async ({ parent }) => {
   const deleteGameSessionForm = await superValidate(zod(deleteGameSessionSchema));
   const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
+  const defaultSceneSettingsData = {
+    defaultTvSize: party.defaultTvSize,
+    defaultGridSpacing: party.defaultGridSpacing,
+    defaultLineThickness: party.defaultLineThickness,
+    defaultDisplayResolutionX: party.defaultDisplayResolutionX,
+    defaultDisplayResolutionY: party.defaultDisplayResolutionY,
+    defaultDisplayPaddingX: party.defaultDisplayPaddingX,
+    defaultDisplayPaddingY: party.defaultDisplayPaddingY,
+    defaultGridType: party.defaultGridType,
+    defaultDisplaySizeX: party.defaultDisplaySizeX,
+    defaultDisplaySizeY: party.defaultDisplaySizeY
+  };
+  const defaultSceneSettingsForm = await superValidate(defaultSceneSettingsData, zod(defaultSceneSettingsSchema));
+
   return {
     members,
     invitedEmails,
@@ -84,7 +101,8 @@ export const load: PageServerLoad = async ({ parent }) => {
     removePartyMemberForm,
     creatGameSessionForm,
     deleteGameSessionForm,
-    renameGameSessionForm
+    renameGameSessionForm,
+    defaultSceneSettingsForm
   };
 };
 
@@ -386,6 +404,29 @@ export const actions: Actions = {
       } else {
         console.log('Error renaming game session', error);
         return message(renameGameSessionForm, { type: 'error', text: 'Error renaming game session' });
+      }
+    }
+  },
+  updateDefaultSceneSettings: async (event) => {
+    const party = await getPartyFromSlug(event.params.party);
+    const partyId = party.id;
+    const defaultSceneSettingsForm = await superValidate(event.request, zod(defaultSceneSettingsSchema));
+    if (!defaultSceneSettingsForm.valid) {
+      console.error('Validation errors:', defaultSceneSettingsForm.errors);
+      return message(defaultSceneSettingsForm, { type: 'error', text: 'Invalid default scene settings' });
+    }
+
+    const { ...settings } = defaultSceneSettingsForm.data;
+
+    try {
+      await updateParty(partyId, settings);
+      return message(defaultSceneSettingsForm, { type: 'success', text: 'Default scene settings updated' });
+    } catch (error) {
+      if (error instanceof Error) {
+        return message(defaultSceneSettingsForm, { type: 'error', text: error.message });
+      } else {
+        console.log('Error updating default scene settings', error);
+        return message(defaultSceneSettingsForm, { type: 'error', text: 'Error updating default scene settings' });
       }
     }
   }

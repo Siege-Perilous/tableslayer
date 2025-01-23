@@ -4,6 +4,7 @@
 
   let { children, size = 'md', variant = 'primary', ...restProps }: IconButtonProps = $props();
 
+  console.log('variant from inside the button', variant);
   const iconBtnClasses = classNames('iconBtn', `iconBtn--${size}`, `iconBtn--${variant}`, restProps.class ?? '');
 </script>
 

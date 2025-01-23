@@ -12,7 +12,14 @@
     Spacer,
     Hr
   } from '@tableslayer/ui';
-  import { PartyMember, ResendInvite, PartyTitle, CreateGameSession, GameSessionCard } from '$lib/components';
+  import {
+    PartyMember,
+    ResendInvite,
+    PartyTitle,
+    CreateGameSession,
+    GameSessionCard,
+    DefaultPartySettings
+  } from '$lib/components';
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
   import { inviteMemberSchema } from '$lib/schemas';
@@ -120,6 +127,7 @@
           </div>
         {/if}
       </Panel>
+      <DefaultPartySettings {party} defaultSceneSettingsForm={data.defaultSceneSettingsForm} />
     </aside>
   </div>
 </div>

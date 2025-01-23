@@ -177,3 +177,19 @@ export type UpdateSceneMapImageFormType = z.infer<typeof updateSceneMapImageSche
 
 export type NotifySchema = typeof notifySchema;
 export type NotifyFormType = z.infer<typeof notifySchema>;
+
+export const defaultSceneSettingsSchema = z.object({
+  defaultTvSize: z.number().min(1).max(120),
+  defaultDisplayResolutionX: z.number().min(1).max(10000),
+  defaultDisplayResolutionY: z.number().min(1).max(10000),
+  defaultDisplayPaddingX: z.number().min(0).max(500),
+  defaultDisplayPaddingY: z.number().min(0).max(500),
+  defaultDisplaySizeX: z.number().min(0).max(1000),
+  defaultDisplaySizeY: z.number().min(0).max(1000),
+  defaultGridSpacing: z.number().min(0).max(100),
+  defaultLineThickness: z.number().min(0).max(100),
+  defaultGridType: z.number().min(0).max(1)
+});
+
+export type DefaultSceneSettings = typeof defaultSceneSettingsSchema;
+export type DefaultSceneSettingsFormType = z.infer<typeof defaultSceneSettingsSchema>;

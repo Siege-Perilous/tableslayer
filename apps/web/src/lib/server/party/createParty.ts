@@ -1,5 +1,5 @@
 import { db } from '$lib/db/app';
-import { partyMemberTable, partyTable, type SelectParty } from '$lib/db/app/schema';
+import { partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -111,5 +111,22 @@ export const renameParty = async (partyId: string, name: string): Promise<Select
   } catch (error) {
     console.error('Error renaming party', error);
     throw error;
+  }
+};
+
+type PartialInsertParty = Partial<InsertParty>;
+
+export const updateParty = async (partyId: string, updates: PartialInsertParty): Promise<void> => {
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No updates provided.');
+  }
+
+  try {
+    await db.update(partyTable).set(updates).where(eq(partyTable.id, partyId)).run();
+
+    console.log(`Party ${partyId} updated successfully.`);
+  } catch (error) {
+    console.error(`Error updating party ${partyId}`, error);
+    throw new Error('Failed to update party.');
   }
 };

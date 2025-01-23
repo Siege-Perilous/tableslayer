@@ -11,4 +11,5 @@ export * from './initializeStage';
 export * from './isValidEmail';
 export * from './isWithinExpirationDate';
 export * from './randomQuotes';
+export * from './sceneSettings';
 export * from './stageKeyCommands';

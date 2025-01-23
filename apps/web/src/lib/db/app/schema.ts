@@ -99,6 +99,9 @@ export const partyTable = sqliteTable(
       .notNull()
       .default(1),
     defaultTvSize: integer('tv_size').notNull().default(40),
+    defaultGridType: integer('default_grid_type').notNull().default(0),
+    defaultDisplaySizeX: integer('default_display_size_x').notNull().default(17.77),
+    defaultDisplaySizeY: integer('default_display_size_y').notNull().default(10.0),
     defaultDisplayResolutionX: integer('default_resolution_x').notNull().default(1920),
     defaultDisplayResolutionY: integer('default_resolution_y').notNull().default(1080),
     defaultDisplayPaddingX: integer('default_display_padding_x').notNull().default(16),
