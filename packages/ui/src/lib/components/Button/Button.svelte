@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { ButtonProps } from './types';
   import { Loader } from '../Loading';
-  import classNames from 'classnames';
   /* @type {ButtonProps} */
   let {
     children,
@@ -15,16 +14,21 @@
     ...restProps
   }: ButtonProps = $props();
 
-  const btnClasses = classNames(
+  let btnClasses = $derived([
     'btn',
     `btn--${size}`,
     isLoading && 'btn-isLoading',
     isDisabled && 'btn--isDisabled',
     `btn--${variant}`,
     restProps.class ?? ''
-  );
+  ]);
 
   const component = href !== undefined ? 'a' : 'button';
+
+  let buttonProps = $state({});
+  if (component === 'button') {
+    buttonProps = { disabled: isDisabled };
+  }
 </script>
 
 <!--
@@ -51,7 +55,7 @@
   - `end` - The end snippet of the button.
 -->
 
-<svelte:element this={component} {href} disabled={isDisabled} {...restProps} class={btnClasses}>
+<svelte:element this={component} {href} {...buttonProps} {...restProps} class={btnClasses}>
   {#if isLoading}
     <Loader />
   {/if}

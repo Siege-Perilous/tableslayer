@@ -18,7 +18,6 @@
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
-  import classNames from 'classnames';
   import { createSetActiveSceneMutation } from '$lib/queries';
 
   let {
@@ -104,7 +103,7 @@
     setTimeout(() => deleteSceneSuperForm.submit(), 50);
   };
 
-  const sceneInputClasses = classNames('scene', $createSceneDelayed && 'scene--isLoading');
+  let sceneInputClasses = $derived(['scene', $createSceneDelayed && 'scene--isLoading']);
 
   $effect(() => {
     if ($createSceneDelayed) {

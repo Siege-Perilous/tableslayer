@@ -2,10 +2,9 @@
   import type { ToastDataProps } from './types';
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
-  import classNames from 'classnames';
   import { IconX } from '@tabler/icons-svelte';
   import { Icon, Loader } from '../';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   const {
     elements: { content, title, description, close },
     helpers,
@@ -35,7 +34,7 @@
 <script lang="ts">
   import { checkToastCookie } from './toastCookie';
   $effect(() => {
-    if ($page.url) {
+    if (page.url) {
       checkToastCookie();
     }
   });
@@ -45,7 +44,7 @@
 <div
   use:portal
   role="alert"
-  class={classNames('toasts', isHovered && 'toasts--isHovered')}
+  class={['toasts', isHovered && 'toasts--isHovered']}
   onmouseenter={handleMouseEnter}
   onmouseleave={handleMouseLeave}
 >
@@ -71,7 +70,7 @@
           {#if data.type === 'loading'}
             <Loader />
           {:else}
-            <div class={classNames('toast__titleDot', `toast__titleDot--${data.type}`)}></div>
+            <div class={['toast__titleDot', `toast__titleDot--${data.type}`]}></div>
           {/if}
         </div>
         {#if data.body}

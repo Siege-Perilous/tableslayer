@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { TdProps } from './types';
-  import classNames from 'classnames';
   let { children, ...restProps }: TdProps = $props();
-  const tdClasses = classNames('td', restProps.class ?? '');
+  let tdClasses = $derived(['td', restProps.class ?? '']);
 </script>
 
 <td {...restProps} class={tdClasses}>

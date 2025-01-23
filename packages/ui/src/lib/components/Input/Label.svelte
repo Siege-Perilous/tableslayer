@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { LabelProps } from './types';
-  import classNames from 'classnames';
   let { children, props, ...restProps }: LabelProps = $props();
 
-  const labelClasses = classNames('label', restProps.class ?? '');
+  let labelClasses = $derived(['label', restProps.class ?? '']);
 </script>
 
 <label {...props} {...restProps} class={labelClasses}>

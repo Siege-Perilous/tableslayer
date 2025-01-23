@@ -1,8 +1,7 @@
 <script lang="ts">
-  import classNames from 'classnames';
   let { ...restProps } = $props();
 
-  const hrClasses = classNames('hr', restProps.class ?? '');
+  let hrClasses = $derived(['hr', restProps.class ?? '']);
 </script>
 
 <hr class={hrClasses} {...restProps} />

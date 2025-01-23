@@ -77,21 +77,7 @@ export const load: PageServerLoad = async ({ parent }) => {
   const deleteGameSessionForm = await superValidate(zod(deleteGameSessionSchema));
   const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
-  const defaultSceneSettingsData = {
-    defaultTvSize: party.defaultTvSize,
-    defaultGridSpacing: party.defaultGridSpacing,
-    defaultLineThickness: party.defaultLineThickness,
-    defaultDisplayResolutionX: party.defaultDisplayResolutionX,
-    defaultDisplayResolutionY: party.defaultDisplayResolutionY,
-    defaultDisplayPaddingX: party.defaultDisplayPaddingX,
-    defaultDisplayPaddingY: party.defaultDisplayPaddingY,
-    defaultGridType: party.defaultGridType,
-    defaultDisplaySizeX: party.defaultDisplaySizeX,
-    defaultDisplaySizeY: party.defaultDisplaySizeY
-  };
-  const defaultSceneSettingsForm = await superValidate(defaultSceneSettingsData, zod(defaultSceneSettingsSchema), {
-    strict: true
-  });
+  const defaultSceneSettingsForm = await superValidate(zod(defaultSceneSettingsSchema));
 
   return {
     members,

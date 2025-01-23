@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { ThProps } from './types';
-  import classNames from 'classnames';
   let { children, ...restProps }: ThProps = $props();
-  const thClasses = classNames('th', restProps.class ?? '');
+  let thClasses = $derived(['th', restProps.class ?? '']);
 </script>
 
 <th {...restProps} class={thClasses}>

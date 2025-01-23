@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { Label, FSLabel } from './';
-  import classNames from 'classnames';
   import type { HTMLBaseAttributes } from 'svelte/elements';
 
   type Props = {
@@ -14,11 +13,12 @@
 
   let { children, label, start, end, props, ...restProps }: Props = $props();
 
-  const inputWrapperClasses = classNames('control__inputWrapper', {
-    'control__inputWrapper--start': start,
-    'control__inputWrapper--end': end
-  });
-  const controlClasses = classNames('control', restProps.class ?? '');
+  const inputWrapperClasses = $derived([
+    'control__inputWrapper',
+    start && 'control__inputWrapper--start',
+    end && 'control__inputWrapper--end'
+  ]);
+  const controlClasses = $derived(['control', restProps.class ?? '']);
 </script>
 
 <div class={controlClasses}>

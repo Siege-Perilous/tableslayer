@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { check, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
 import { protectedSlugs } from '../../constants';
@@ -100,8 +100,8 @@ export const partyTable = sqliteTable(
       .default(1),
     defaultTvSize: integer('tv_size').notNull().default(40),
     defaultGridType: integer('default_grid_type').notNull().default(0),
-    defaultDisplaySizeX: integer('default_display_size_x').notNull().default(17.77),
-    defaultDisplaySizeY: integer('default_display_size_y').notNull().default(10.0),
+    defaultDisplaySizeX: real('default_display_size_x').notNull().default(17.77),
+    defaultDisplaySizeY: real('default_display_size_y').notNull().default(10.0),
     defaultDisplayResolutionX: integer('default_resolution_x').notNull().default(1920),
     defaultDisplayResolutionY: integer('default_resolution_y').notNull().default(1080),
     defaultDisplayPaddingX: integer('default_display_padding_x').notNull().default(16),
@@ -178,6 +178,8 @@ export const insertUserSchema = createInsertSchema(usersTable);
 export const selectUserSchema = createSelectSchema(usersTable);
 export const insertPartyMember = createInsertSchema(partyMemberTable);
 export const gameSessionSchema = createInsertSchema(gameSessionTable);
+export const insertPartySchema = createInsertSchema(partyTable);
+export const updatePartySchema = insertPartySchema.partial();
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;

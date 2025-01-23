@@ -1,11 +1,9 @@
 <script lang="ts">
   import type { IconButtonProps } from './types';
-  import classNames from 'classnames';
 
   let { children, size = 'md', variant = 'primary', ...restProps }: IconButtonProps = $props();
 
-  console.log('variant from inside the button', variant);
-  const iconBtnClasses = classNames('iconBtn', `iconBtn--${size}`, `iconBtn--${variant}`, restProps.class ?? '');
+  const iconBtnClasses = $derived(['iconBtn', `iconBtn--${size}`, `iconBtn--${variant}`, restProps.class ?? '']);
 </script>
 
 <button {...restProps} class={iconBtnClasses}>

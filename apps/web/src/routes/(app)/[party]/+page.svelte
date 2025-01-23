@@ -127,7 +127,7 @@
           </div>
         {/if}
       </Panel>
-      <DefaultPartySettings {party} defaultSceneSettingsForm={data.defaultSceneSettingsForm} />
+      <DefaultPartySettings {party} />
     </aside>
   </div>
 </div>
