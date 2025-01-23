@@ -4,14 +4,14 @@
   import { PartyInviteResponse } from '$lib/components';
   import { Avatar, Button, Panel, Spacer, Title } from '@tableslayer/ui';
   console.log('invite in client', invite);
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 </script>
 
 <Panel class="panelInvite">
   {#if !invite}
     <Title as="h1" size="lg">Invalid invite code</Title>
     <Spacer size={4} />
-    <p>The code {$page.params.code} does not exist or has already been accepted.</p>
+    <p>The code {page.params.code} does not exist or has already been accepted.</p>
   {:else if user && invite}
     <Title as="h1" size="md">Hero, aceept the call!</Title>
     <Spacer size={4} />
@@ -37,7 +37,7 @@
   {:else}
     <Title as="h1" size="lg">You aren't logged in</Title>
     <Spacer size={4} />
-    <p>You need an account for {invite.email} to accept this invite</p>
+    <p>You need an account for {invite.invite.email} to accept this invite</p>
     <Spacer size={4} />
     <div class="invitedBy">
       <Button href="/signup">Sign up</Button>
