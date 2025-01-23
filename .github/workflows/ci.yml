@@ -282,7 +282,7 @@ jobs:
       - uses: ./.github/shared
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
-        run: pnpm exec playwright install --with-deps
+        run: pnpx playwright install --with-deps
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
