@@ -27,7 +27,7 @@
     });
   });
 
-  const codeBlockClasses = $derived(['codeBlock', `codeBlock--${variant}`]);
+  let codeBlockClasses = $derived(['codeBlock', `codeBlock--${variant}`]);
 </script>
 
 <span class={codeBlockClasses}>

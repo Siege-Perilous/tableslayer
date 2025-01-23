@@ -4,7 +4,7 @@
 
   let { value = $bindable(), files = $bindable(), variant = 'default', ...restProps }: FileInputProps = $props();
 
-  const inputClasses = $derived(['fileInput', variant && `fileInput--${variant}`, restProps.class ?? '']);
+  let inputClasses = $derived(['fileInput', variant && `fileInput--${variant}`, restProps.class ?? '']);
 
   // Array to keep track of generated object URLs for cleanup
   let generatedUrls: string[] = [];

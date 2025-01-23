@@ -13,7 +13,7 @@
 
   let { children, label, start, end, props, ...restProps }: Props = $props();
 
-  const inputWrapperClasses = $derived([
+  let inputWrapperClasses = $derived([
     'control__inputWrapper',
     start && 'control__inputWrapper--start',
     end && 'control__inputWrapper--end'
