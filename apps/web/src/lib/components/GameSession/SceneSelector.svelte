@@ -155,11 +155,11 @@
   </div>
   <div class="scene__list">
     {#each scenes as scene}
-      {@const sceneSelectorClasses = classNames(
+      {@const sceneSelectorClasses = [
         'scene',
         scene.order === selectedSceneNumber && 'scene--isSelected',
         $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
-      )}
+      ]}
       <ContextMenu
         items={[
           { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
