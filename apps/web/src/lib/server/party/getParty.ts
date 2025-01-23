@@ -1,5 +1,6 @@
 import { db } from '$lib/db/app';
 import {
+  gameSessionTable,
   partyInviteTable,
   partyMemberTable,
   partyTable,
@@ -166,4 +167,20 @@ export const isUserInParty = async (userId: string, partyId: string) => {
     console.error('Error checking if user is in party', error);
     return false;
   }
+};
+
+export const getPartyFromGameSessionDbName = async (dbName: string) => {
+  const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.dbName, dbName)).get();
+
+  if (!gameSession) {
+    throw new Error('Game session not found');
+  }
+
+  const party = await db.select().from(partyTable).where(eq(partyTable.id, gameSession.partyId)).get();
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  return party;
 };

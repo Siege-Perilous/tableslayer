@@ -41,16 +41,22 @@
 
   const defaultSceneSettingsSuperForm = superForm(defaultSceneSettingsForm, {
     id: `settings-${party.slug}`,
+    delayMs: 100,
+    timeoutMs: 2000,
     validators: zodClient(defaultSceneSettingsSchema),
-    resetForm: true,
+    resetForm: false,
     invalidateAll: true
   });
 
   let padding = $state(party.defaultDisplayPaddingX);
   let defaultSelected = $derived(getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY));
-  let selectedGridType = $state(party.defaultGridType);
 
-  const { form: settingsForm, enhance: settingsEnhance, message: settingsMessage } = defaultSceneSettingsSuperForm;
+  const {
+    form: settingsForm,
+    enhance: settingsEnhance,
+    message: settingsMessage,
+    delayed: settingsDelayed
+  } = defaultSceneSettingsSuperForm;
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
@@ -66,14 +72,12 @@
   };
 
   const handleGridTypeChange = (gridType: number) => {
-    selectedGridType = gridType;
     $settingsForm.defaultGridType = gridType;
-    console.log($settingsForm);
-    console.log($settingsForm.defaultGridType);
   };
 
   $effect(() => {
-    console.log('Settings form updated:', $settingsForm);
+    $settingsForm.defaultDisplayPaddingX = padding;
+    $settingsForm.defaultDisplayPaddingY = padding;
   });
 </script>
 
@@ -92,7 +96,6 @@
               {...props}
               type="number"
               name="defaultTvSize"
-              placeholder="TV size"
               bind:value={$settingsForm.defaultTvSize}
               oninput={() => handleTvSizeChange($settingsForm.defaultTvSize)}
             />
@@ -109,33 +112,31 @@
           options={selectTvResolutionOptions}
         />
       </Control>
-      <Control label="Grid type">
-        <IconButton
-          type="button"
-          variant={$settingsForm.defaultGridType === 0 ? 'primary' : 'ghost'}
-          onclick={() => handleGridTypeChange(0)}
-        >
-          <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
-        </IconButton>
-        &nbsp;
-        <IconButton
-          type="button"
-          variant={$settingsForm.defaultGridType === 1 ? 'primary' : 'ghost'}
-          onclick={() => handleGridTypeChange(1)}
-        >
-          <Icon Icon={IconHexagons} size="20px" stroke={2} />
-        </IconButton>
-      </Control>
+      {#if $settingsForm.defaultGridType === 0}
+        <Control label="Grid type">
+          <IconButton type="button" variant="primary" onclick={() => handleGridTypeChange(0)}>
+            <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+          </IconButton>
+          &nbsp;
+          <IconButton type="button" variant="ghost" onclick={() => handleGridTypeChange(1)}>
+            <Icon Icon={IconHexagons} size="20px" stroke={2} />
+          </IconButton>
+        </Control>
+      {:else}
+        <Control label="Grid type">
+          <IconButton type="button" variant="ghost" onclick={() => handleGridTypeChange(0)}>
+            <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+          </IconButton>
+          &nbsp;
+          <IconButton type="button" variant="primary" onclick={() => handleGridTypeChange(1)}>
+            <Icon Icon={IconHexagons} size="20px" stroke={2} />
+          </IconButton>
+        </Control>
+      {/if}
       <Field form={defaultSceneSettingsSuperForm} name="gridSize">
         <FSControl label="Grid size">
           {#snippet content({ props })}
-            <Input
-              {...props}
-              type="number"
-              name="defaultGridSpacing"
-              placeholder="Grid size"
-              bind:value={$settingsForm.defaultGridSpacing}
-            />
+            <Input {...props} type="number" name="defaultGridSpacing" bind:value={$settingsForm.defaultGridSpacing} />
           {/snippet}
           {#snippet end()}
             in.
@@ -149,7 +150,6 @@
               {...props}
               type="number"
               name="defaultLineThickness"
-              placeholder="Line thickness"
               bind:value={$settingsForm.defaultLineThickness}
             />
           {/snippet}
@@ -159,7 +159,7 @@
         </FSControl>
       </Field>
       <Control label="Padding">
-        <Input type="number" name="padding" placeholder="Width" bind:value={padding} />
+        <Input type="number" name="padding" bind:value={padding} />
         {#snippet end()}
           px
         {/snippet}
@@ -173,15 +173,15 @@
     <input type="hidden" name="defaultDisplaySizeY" bind:value={$settingsForm.defaultDisplaySizeY} />
     <input type="hidden" name="defaultGridType" bind:value={$settingsForm.defaultGridType} />
     <Spacer />
-    <Button type="submit">Save</Button>
+    <Button type="submit" isLoading={$settingsDelayed}>Save</Button>
     {#if $settingsMessage}
       <MessageError message={$settingsMessage} />
     {/if}
   </form>
-
-  {$settingsForm.defaultGridType}
-  {selectedGridType}
-  <SuperDebug data={$settingsForm} display={true} />
+  <div class="superFormHack">
+    {party.defaultTvSize}
+  </div>
+  <SuperDebug data={$settingsForm} display={false} />
 </Panel>
 
 <style>
@@ -194,5 +194,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+  .superFormHack {
+    display: none;
   }
 </style>

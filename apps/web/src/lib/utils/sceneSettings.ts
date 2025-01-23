@@ -30,3 +30,10 @@ export const selectTvResolutionOptions = tvResolutionOptions.map(({ label, value
 export const getResolutionOption = (width: number, height: number) => {
   return tvResolutionOptions.find((option) => option.width === width && option.height === height);
 };
+
+export const getTvSizeFromPhysicalDimensions = (width: number, height: number): number => {
+  // Calculate the diagonal using the Pythagorean theorem
+  const diagonal = Math.sqrt(width ** 2 + height ** 2);
+
+  return Math.round(diagonal);
+};

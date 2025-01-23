@@ -89,7 +89,9 @@ export const load: PageServerLoad = async ({ parent }) => {
     defaultDisplaySizeX: party.defaultDisplaySizeX,
     defaultDisplaySizeY: party.defaultDisplaySizeY
   };
-  const defaultSceneSettingsForm = await superValidate(defaultSceneSettingsData, zod(defaultSceneSettingsSchema));
+  const defaultSceneSettingsForm = await superValidate(defaultSceneSettingsData, zod(defaultSceneSettingsSchema), {
+    strict: true
+  });
 
   return {
     members,

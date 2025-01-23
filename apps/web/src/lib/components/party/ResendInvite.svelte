@@ -21,12 +21,18 @@
     removeInviteForm: SuperValidated<DeleteInviteFormType>;
     isPartyAdmin: boolean;
   } = $props();
-  const resendSuperForm = superForm(resendInviteForm, { id: email, validators: zodClient(resendInviteSchema) });
+  const resendSuperForm = superForm(resendInviteForm, {
+    id: `resend-${email}`,
+    validators: zodClient(resendInviteSchema)
+  });
   const { form: resendForm, enhance: resendEnhance, message: resendMessage } = resendSuperForm;
   $resendForm.email = email;
   $resendForm.partyId = partyId;
 
-  const removeSuperForm = superForm(removeInviteForm, { id: email, validators: zodClient(resendInviteSchema) });
+  const removeSuperForm = superForm(removeInviteForm, {
+    id: `remove-${email}`,
+    validators: zodClient(resendInviteSchema)
+  });
   const { form: removeForm, enhance: removeEnhance, message: removeMessage } = removeSuperForm;
   $removeForm.email = email;
   $removeForm.partyId = partyId;

@@ -45,7 +45,9 @@
     type TvResolution,
     tvResolutionOptions,
     getTvDimensions,
-    selectTvResolutionOptions
+    selectTvResolutionOptions,
+    getResolutionOption,
+    getTvSizeFromPhysicalDimensions
   } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
@@ -85,7 +87,10 @@
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
   let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
-  let tvDiagnalSize = $state(40);
+  let tvDiagnalSize = $state(getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y));
+  let defaultSelectedResoltion = $derived(
+    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)
+  );
 
   type SceneControl = {
     id: string;
@@ -329,6 +334,7 @@
   $effect(() => {
     gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
     fogHex = to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity);
+    tvDiagnalSize = getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y);
   });
 </script>
 
@@ -349,6 +355,7 @@
     </Control>
     <Control label="Resolution">
       <Select
+        defaultSelected={defaultSelectedResoltion}
         onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
         options={selectTvResolutionOptions}
       />
