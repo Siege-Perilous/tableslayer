@@ -280,17 +280,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
+      - name: Check Playwright Browser Installation
+        id: check-browsers
+        run: |
+          if [ -d "/home/runner/.cache/ms-playwright" ] && [ -d "/home/runner/.cache/ms-playwright/chromium-1155" ]; then
+            echo "browsers_installed=true" >> $GITHUB_ENV
+          else
+            echo "browsers_installed=false" >> $GITHUB_ENV
+          fi
       - name: Install Playwright Browsers
-        if: ${{ github.ref != 'refs/heads/main' }}
+        if: ${{ github.ref != 'refs/heads/main' }} && env.browsers_installed == 'false'
         run: pnpx playwright install --with-deps
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: https://pr-${{ github.event.pull_request.number }}-${{ matrix.app }}.fly.dev
-          PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
           pnpm run test
