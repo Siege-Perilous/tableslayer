@@ -59,6 +59,8 @@
   .fileInput {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   .fileInput__input::file-selector-button {
     background: var(--inputBg);

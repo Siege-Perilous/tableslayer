@@ -89,8 +89,8 @@ export type RemovePartyMemberFormType = z.infer<typeof removePartyMemberSchema>;
 
 export const createPartySchema = z.object({
   name: z.string().min(3),
-  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
-    message: 'File size must be less than 5MB'
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 25000000, {
+    message: 'File size must be less than 25MB'
   })
 });
 
@@ -143,8 +143,8 @@ export const createSceneSchema = z.object({
   order: z.number().int().positive(),
   file: z
     .instanceof(File, { message: 'Please upload an image' })
-    .refine((file) => file.size < 5000000, {
-      message: 'File size must be less than 5MB'
+    .refine((file) => file.size < 25000000, {
+      message: 'File size must be less than 25MB'
     })
     .optional()
 });
@@ -167,8 +167,8 @@ export const notifySchema = z.object({
 export const updateSceneMapImageSchema = z.object({
   sceneId: z.string(),
   dbName: z.string(),
-  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
-    message: 'File size must be less than 5MB'
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 25000000, {
+    message: 'File size must be less than 25MB'
   })
 });
 
