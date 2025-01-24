@@ -1,8 +1,7 @@
 <script lang="ts">
-  import classNames from 'classnames';
   import type { TitleProps } from './types';
   let { children, as = 'p', size, style, ...restProps }: TitleProps = $props();
-  const titleClasses = classNames('title', `title-${size}`, restProps.class ?? '');
+  let titleClasses = $derived(['title', `title-${size}`, restProps.class ?? '']);
 </script>
 
 <svelte:element this={as} {...restProps} class={titleClasses} {style}>

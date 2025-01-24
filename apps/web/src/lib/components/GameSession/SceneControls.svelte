@@ -39,7 +39,16 @@
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
-  import { generateGradientColors, to8CharHex } from '$lib/utils';
+  import {
+    generateGradientColors,
+    to8CharHex,
+    type TvResolution,
+    tvResolutionOptions,
+    getTvDimensions,
+    selectTvResolutionOptions,
+    getResolutionOption,
+    getTvSizeFromPhysicalDimensions
+  } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
@@ -78,7 +87,10 @@
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
   let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
-  let tvDiagnalSize = $state(40);
+  let tvDiagnalSize = $state(getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y));
+  let defaultSelectedResoltion = $derived(
+    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)
+  );
 
   type SceneControl = {
     id: string;
@@ -149,34 +161,6 @@
       opacity: cd.rgba.a
     };
     socketUpdate();
-  };
-
-  type TvResolution = {
-    label: string;
-    value: string;
-    width: number;
-    height: number;
-  };
-
-  const tvResolutionOptions = [
-    { label: '720p', value: '720p', width: 1280, height: 720 },
-    { label: '1080p', value: '1080p', width: 1920, height: 1080 },
-    { label: '1440p', value: '1440p', width: 2560, height: 1440 },
-    { label: '4K', value: '4K', width: 3840, height: 2160 }
-  ];
-  const selectTvResolutionOptions = tvResolutionOptions.map(({ label, value }) => ({ label, value }));
-
-  const getTvDimensions = (
-    diagonalInches: number,
-    aspectRatio: { width: number; height: number } = { width: 16, height: 9 }
-  ): { width: number; height: number } => {
-    const { width: aspectRatioWidth, height: aspectRatioHeight } = aspectRatio;
-    // Calculate the diagonal factor using the Pythagorean theorem
-    const diagonalFactor = Math.sqrt(aspectRatioWidth ** 2 + aspectRatioHeight ** 2);
-    // Calculate height and width
-    const height = (diagonalInches * aspectRatioHeight) / diagonalFactor;
-    const width = (diagonalInches * aspectRatioWidth) / diagonalFactor;
-    return { width, height };
   };
 
   const handleSelectedResolution = (selected: TvResolution) => {
@@ -350,6 +334,7 @@
   $effect(() => {
     gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
     fogHex = to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity);
+    tvDiagnalSize = getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y);
   });
 </script>
 
@@ -357,22 +342,29 @@
 {#snippet gridControls()}
   <div class="sceneControls__settingsPopover">
     <Control label="TV size">
-      <Input
-        type="number"
-        min={10}
-        step={1}
-        bind:value={tvDiagnalSize}
-        oninput={() => handleTvSizeChange(tvDiagnalSize)}
-      />
+      {#snippet content({ id })}
+        <Input
+          {id}
+          type="number"
+          min={10}
+          step={1}
+          bind:value={tvDiagnalSize}
+          oninput={() => handleTvSizeChange(tvDiagnalSize)}
+        />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
     </Control>
     <Control label="Resolution">
-      <Select
-        onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-        options={selectTvResolutionOptions}
-      />
+      {#snippet content({ id })}
+        <Select
+          ids={{ trigger: id }}
+          defaultSelected={defaultSelectedResoltion}
+          onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+          options={selectTvResolutionOptions}
+        />
+      {/snippet}
     </Control>
   </div>
   <Spacer />
@@ -386,7 +378,9 @@
       </IconButton>
     </Control>
     <Control label={gridTypeLabel}>
-      <Input type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {#snippet content({ id })}
+        <Input {id} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
@@ -398,10 +392,15 @@
       {#snippet end()}
         px
       {/snippet}
-      <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+
+      {#snippet content({ id })}
+        <Input {id} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+      {/snippet}
     </Control>
     <Control label="Table padding">
-      <Input type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {#snippet content({ id })}
+        <Input {id} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {/snippet}
       {#snippet end()}
         px
       {/snippet}
@@ -409,7 +408,9 @@
   </div>
   <Spacer />
   <Control label="Grid Color">
-    <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+    {#snippet content({ id })}
+      <ColorPicker {id} bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+    {/snippet}
   </Control>
   <Spacer />
 {/snippet}
@@ -428,13 +429,17 @@
     <Spacer />
     <div class="sceneControls__settingsPopover">
       <Control label="Scale">
-        <Input type="number" bind:value={stageProps.map.zoom} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.zoom} />
+        {/snippet}
         {#snippet start()}
           x
         {/snippet}
       </Control>
       <Control label="Rotate" class="sceneControls__rotate">
-        <Input type="number" bind:value={stageProps.map.rotation} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.rotation} />
+        {/snippet}
         {#snippet end()}
           <IconButton variant="ghost" onclick={handleMapRotation}>
             <Icon Icon={IconRotateClockwise2} />
@@ -445,13 +450,17 @@
     <Spacer />
     <div class="sceneControls__settingsPopover">
       <Control label="Offset X">
-        <Input type="number" bind:value={stageProps.map.offset.x} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.offset.x} />
+        {/snippet}
         {#snippet end()}
           px
         {/snippet}
       </Control>
       <Control label="Offset Y">
-        <Input type="number" bind:value={stageProps.map.offset.y} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.offset.y} />
+        {/snippet}
         {#snippet end()}
           px
         {/snippet}

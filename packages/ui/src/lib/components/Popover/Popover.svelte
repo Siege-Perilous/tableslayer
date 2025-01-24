@@ -2,7 +2,6 @@
   import { createPopover, createSync, melt } from '@melt-ui/svelte';
   import { fade } from 'svelte/transition';
   import type { PopoverProps } from './types';
-  import classNames from 'classnames';
   import type { HTMLBaseAttributes } from 'svelte/elements';
 
   let {
@@ -38,11 +37,7 @@
 </button>
 
 {#if isOpen}
-  <div
-    use:melt={$contentAction}
-    transition:fade={{ duration: 100 }}
-    class={classNames('popContent', restProps.class ?? '')}
-  >
+  <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class={['popContent', restProps.class ?? '']}>
     {@render content()}
     <button class="popClose" use:melt={$close}> close </button>
   </div>
