@@ -2,16 +2,19 @@
   import type { Snippet } from 'svelte';
   import { Label, FSLabel } from './';
   import type { HTMLBaseAttributes } from 'svelte/elements';
-
   type Props = {
-    children: Snippet<[{ props?: Record<string, unknown> }]>;
+    children?: Snippet<[Record<string, unknown>]>;
+    content?: Snippet<[{ id: string }]>;
     label?: string;
     start?: Snippet;
     end?: Snippet;
     props?: Record<string, unknown>;
+    id?: string;
   } & HTMLBaseAttributes;
 
-  let { children, label, start, end, props, ...restProps }: Props = $props();
+  let { children, content, label, start, end, id, props, ...restProps }: Props = $props();
+
+  let inputId = id || `control-${crypto.randomUUID()}`;
 
   let inputWrapperClasses = $derived([
     'control__inputWrapper',
@@ -25,16 +28,18 @@
   {#if label && props}
     <FSLabel class="control__label">{label}</FSLabel>
   {:else if label}
-    <Label class="control__label">{label}</Label>
+    <Label class="control__label" for={inputId}>{label}</Label>
   {/if}
   <div class={inputWrapperClasses}>
     {#if start}
       <div class="control__start">{@render start()}</div>
     {/if}
-    {#if props}
+    {#if props && children}
       {@render children({ ...props })}
+    {:else if content}
+      {@render content({ id: inputId })}
     {:else}
-      {@render children({})}
+      {@render children()}
     {/if}
     {#if end}
       <div class="control__end">{@render end()}</div>

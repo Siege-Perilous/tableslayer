@@ -342,23 +342,29 @@
 {#snippet gridControls()}
   <div class="sceneControls__settingsPopover">
     <Control label="TV size">
-      <Input
-        type="number"
-        min={10}
-        step={1}
-        bind:value={tvDiagnalSize}
-        oninput={() => handleTvSizeChange(tvDiagnalSize)}
-      />
+      {#snippet content({ id })}
+        <Input
+          {id}
+          type="number"
+          min={10}
+          step={1}
+          bind:value={tvDiagnalSize}
+          oninput={() => handleTvSizeChange(tvDiagnalSize)}
+        />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
     </Control>
     <Control label="Resolution">
-      <Select
-        defaultSelected={defaultSelectedResoltion}
-        onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-        options={selectTvResolutionOptions}
-      />
+      {#snippet content({ id })}
+        <Select
+          ids={{ trigger: id }}
+          defaultSelected={defaultSelectedResoltion}
+          onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+          options={selectTvResolutionOptions}
+        />
+      {/snippet}
     </Control>
   </div>
   <Spacer />
@@ -372,7 +378,9 @@
       </IconButton>
     </Control>
     <Control label={gridTypeLabel}>
-      <Input type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {#snippet content({ id })}
+        <Input {id} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
@@ -384,10 +392,15 @@
       {#snippet end()}
         px
       {/snippet}
-      <Input type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+
+      {#snippet content({ id })}
+        <Input {id} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+      {/snippet}
     </Control>
     <Control label="Table padding">
-      <Input type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {#snippet content({ id })}
+        <Input {id} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      {/snippet}
       {#snippet end()}
         px
       {/snippet}
@@ -395,7 +408,9 @@
   </div>
   <Spacer />
   <Control label="Grid Color">
-    <ColorPicker bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+    {#snippet content({ id })}
+      <ColorPicker {id} bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+    {/snippet}
   </Control>
   <Spacer />
 {/snippet}
@@ -414,13 +429,17 @@
     <Spacer />
     <div class="sceneControls__settingsPopover">
       <Control label="Scale">
-        <Input type="number" bind:value={stageProps.map.zoom} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.zoom} />
+        {/snippet}
         {#snippet start()}
           x
         {/snippet}
       </Control>
       <Control label="Rotate" class="sceneControls__rotate">
-        <Input type="number" bind:value={stageProps.map.rotation} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.rotation} />
+        {/snippet}
         {#snippet end()}
           <IconButton variant="ghost" onclick={handleMapRotation}>
             <Icon Icon={IconRotateClockwise2} />
@@ -431,13 +450,17 @@
     <Spacer />
     <div class="sceneControls__settingsPopover">
       <Control label="Offset X">
-        <Input type="number" bind:value={stageProps.map.offset.x} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.offset.x} />
+        {/snippet}
         {#snippet end()}
           px
         {/snippet}
       </Control>
       <Control label="Offset Y">
-        <Input type="number" bind:value={stageProps.map.offset.y} />
+        {#snippet content({ id })}
+          <Input {id} type="number" bind:value={stageProps.map.offset.y} />
+        {/snippet}
         {#snippet end()}
           px
         {/snippet}

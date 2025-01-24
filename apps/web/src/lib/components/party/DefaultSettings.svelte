@@ -107,54 +107,69 @@
   <Spacer />
   <div class="defaultSettings__grid">
     <Control label="TV size">
-      <Input
-        type="number"
-        name="defaultTvSize"
-        bind:value={partyData.defaultTvSize}
-        oninput={() => handleTvSizeChange(partyData.defaultTvSize)}
-      />
+      {#snippet content({ id })}
+        <Input
+          {id}
+          type="number"
+          name="defaultTvSize"
+          bind:value={partyData.defaultTvSize}
+          oninput={() => handleTvSizeChange(partyData.defaultTvSize)}
+        />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
     </Control>
     <Control label="Resolution">
-      <Select
-        onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-        {defaultSelected}
-        options={selectTvResolutionOptions}
-      />
+      {#snippet content({ id })}
+        <Select
+          ids={{ trigger: id }}
+          onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+          {defaultSelected}
+          options={selectTvResolutionOptions}
+        />
+      {/snippet}
     </Control>
     <Control label="Grid type">
-      <IconButton
-        type="button"
-        variant={partyData.defaultGridType === 0 ? 'primary' : 'ghost'}
-        onclick={() => handleGridTypeChange(0)}
-      >
-        <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
-      </IconButton>
-      &nbsp;
-      <IconButton
-        type="button"
-        variant={partyData.defaultGridType === 1 ? 'primary' : 'ghost'}
-        onclick={() => handleGridTypeChange(1)}
-      >
-        <Icon Icon={IconHexagons} size="20px" stroke={2} />
-      </IconButton>
+      {#snippet content({ id })}
+        <IconButton
+          type="button"
+          variant={partyData.defaultGridType === 0 ? 'primary' : 'ghost'}
+          onclick={() => handleGridTypeChange(0)}
+          {id}
+        >
+          <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+        </IconButton>
+        &nbsp;
+        <IconButton
+          type="button"
+          variant={partyData.defaultGridType === 1 ? 'primary' : 'ghost'}
+          onclick={() => handleGridTypeChange(1)}
+        >
+          <Icon Icon={IconHexagons} size="20px" stroke={2} />
+        </IconButton>
+      {/snippet}
     </Control>
     <Control label="Grid size">
-      <Input type="number" name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
+      {#snippet content({ id })}
+        <Input type="number" {id} name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
+      {/snippet}
       {#snippet end()}
         in.
       {/snippet}
     </Control>
     <Control label="Line thickness">
-      <Input type="number" name="defaultLineThickness" bind:value={partyData.defaultLineThickness} />
+      {#snippet content({ id })}
+        <Input type="number" {id} name="defaultLineThickness" bind:value={partyData.defaultLineThickness} />
+      {/snippet}
       {#snippet end()}
         px
       {/snippet}
     </Control>
     <Control label="Padding">
-      <Input type="number" name="padding" bind:value={padding} />
+      {#snippet content({ id })}
+        <Input type="number" {id} name="padding" bind:value={padding} />
+      {/snippet}
       {#snippet end()}
         px
       {/snippet}
