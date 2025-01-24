@@ -88,11 +88,10 @@
     }
 
     if ($updateParty.isError) {
-      console.error('error saving scene', $updateParty.error);
+      console.log('zod', JSON.parse($updateParty.error.message));
       addToast({
         data: {
           title: 'Error updating default settings',
-          body: $updateParty.error.message,
           type: 'danger'
         }
       });
