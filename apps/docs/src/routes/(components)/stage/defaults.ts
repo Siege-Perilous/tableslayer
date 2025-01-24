@@ -100,20 +100,16 @@ export const StageDefaultProps: StageProps = {
     },
     particles: {
       count: 1000,
-      type: ParticleType.Circle,
+      type: ParticleType.Rain,
       lifetime: 5,
       spawnArea: { width: 1920, height: 1080 },
       initialVelocity: { x: 0, y: 0, z: 0 },
       force: {
-        amplitude: {
-          linear: { x: 0, y: 0, z: 100.0 },
-          exponential: { x: 0, y: 0, z: 0 },
-          sinusoidal: { x: 0, y: 0, z: 0 },
-          noise: { x: 0, y: 0, z: 0 }
-        },
-        frequency: {
-          sinusoidal: { x: 0, y: 0, z: 0 },
-          noise: { x: 0, y: 0, z: 0 }
+        linear: { x: 0, y: 0, z: 100.0 },
+        exponential: { x: 0, y: 0, z: 0 },
+        sinusoidal: {
+          amplitude: { x: 0, y: 0, z: 0 },
+          frequency: { x: 5, y: 5, z: 5 }
         }
       },
       size: { min: 1, max: 10 },

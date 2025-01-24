@@ -1,12 +1,17 @@
-import circle from './particles/images/circle_05.png';
+import snow from './particles/images/circle_05.png';
+import rain from './particles/images/trace_01.png';
 
 export enum ParticleType {
-  Circle = 1
+  Snow = 1,
+  Rain = 2
 }
 
 export const ParticleImageURLs = {
-  [ParticleType.Circle]: {
-    url: circle
+  [ParticleType.Snow]: {
+    url: snow
+  },
+  [ParticleType.Rain]: {
+    url: rain
   }
 } as const;
 
@@ -24,35 +29,23 @@ export interface ParticleSystemProps {
     z: number;
   };
   force: {
-    amplitude: {
-      linear: {
-        x: number;
-        y: number;
-        z: number;
-      };
-      exponential: {
-        x: number;
-        y: number;
-        z: number;
-      };
-      sinusoidal: {
-        x: number;
-        y: number;
-        z: number;
-      };
-      noise: {
-        x: number;
-        y: number;
-        z: number;
-      };
+    linear: {
+      x: number;
+      y: number;
+      z: number;
     };
-    frequency: {
-      sinusoidal: {
+    exponential: {
+      x: number;
+      y: number;
+      z: number;
+    };
+    sinusoidal: {
+      amplitude: {
         x: number;
         y: number;
         z: number;
       };
-      noise: {
+      frequency: {
         x: number;
         y: number;
         z: number;

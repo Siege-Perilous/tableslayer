@@ -14,7 +14,6 @@
   const { props }: Props = $props();
 
   const geometry = $derived.by(() => {
-    console.log('updating geometry');
     const geometry = new THREE.BufferGeometry();
 
     // Initialize particle attributes
@@ -65,12 +64,10 @@
 
     uLifetime: { value: props.lifetime },
     uInitialVelocity: { value: props.initialVelocity },
-    uLinearForceAmplitude: { value: props.force.amplitude.linear },
-    uExponentialForceAmplitude: { value: props.force.amplitude.exponential },
-    uSinusoidalForceAmplitude: { value: props.force.amplitude.sinusoidal },
-    uSinusoidalForceFrequency: { value: props.force.frequency.sinusoidal },
-    uNoiseForceAmplitude: { value: props.force.amplitude.noise },
-    uNoiseForceFrequency: { value: props.force.frequency.noise },
+    uLinearForceAmplitude: { value: props.force.linear },
+    uExponentialForceAmplitude: { value: props.force.exponential },
+    uSinusoidalForceAmplitude: { value: props.force.sinusoidal.amplitude },
+    uSinusoidalForceFrequency: { value: props.force.sinusoidal.frequency },
     uFadeInTime: { value: props.fadeInTime },
     uFadeOutTime: { value: props.fadeOutTime }
   });

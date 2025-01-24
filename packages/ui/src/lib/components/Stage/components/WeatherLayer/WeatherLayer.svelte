@@ -24,9 +24,6 @@
     })
   );
 
-  $inspect(renderTarget);
-  $inspect(scene);
-
   // Create camera for render target
   const rtCamera = $derived(
     new THREE.PerspectiveCamera(props.camera.fov, resolution.x / resolution.y, props.camera.near, props.camera.far)
