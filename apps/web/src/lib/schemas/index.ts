@@ -89,8 +89,8 @@ export type RemovePartyMemberFormType = z.infer<typeof removePartyMemberSchema>;
 
 export const createPartySchema = z.object({
   name: z.string().min(3),
-  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
-    message: 'File size must be less than 5MB'
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 25000000, {
+    message: 'File size must be less than 25MB'
   })
 });
 
@@ -143,8 +143,8 @@ export const createSceneSchema = z.object({
   order: z.number().int().positive(),
   file: z
     .instanceof(File, { message: 'Please upload an image' })
-    .refine((file) => file.size < 5000000, {
-      message: 'File size must be less than 5MB'
+    .refine((file) => file.size < 25000000, {
+      message: 'File size must be less than 25MB'
     })
     .optional()
 });
@@ -167,8 +167,8 @@ export const notifySchema = z.object({
 export const updateSceneMapImageSchema = z.object({
   sceneId: z.string(),
   dbName: z.string(),
-  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 5000000, {
-    message: 'File size must be less than 5MB'
+  file: z.instanceof(File, { message: 'Please upload an image' }).refine((file) => file.size < 25000000, {
+    message: 'File size must be less than 25MB'
   })
 });
 
@@ -177,3 +177,19 @@ export type UpdateSceneMapImageFormType = z.infer<typeof updateSceneMapImageSche
 
 export type NotifySchema = typeof notifySchema;
 export type NotifyFormType = z.infer<typeof notifySchema>;
+
+export const defaultSceneSettingsSchema = z.object({
+  defaultTvSize: z.number().min(1).max(120),
+  defaultDisplayResolutionX: z.number().min(1).max(10000),
+  defaultDisplayResolutionY: z.number().min(1).max(10000),
+  defaultDisplayPaddingX: z.number().min(0).max(500),
+  defaultDisplayPaddingY: z.number().min(0).max(500),
+  defaultDisplaySizeX: z.number().min(0).max(1000),
+  defaultDisplaySizeY: z.number().min(0).max(1000),
+  defaultGridSpacing: z.number().min(0).max(100),
+  defaultLineThickness: z.number().min(0).max(100),
+  defaultGridType: z.number().min(0).max(1)
+});
+
+export type DefaultSceneSettings = typeof defaultSceneSettingsSchema;
+export type DefaultSceneSettingsFormType = z.infer<typeof defaultSceneSettingsSchema>;

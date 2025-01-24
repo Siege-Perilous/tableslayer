@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { TableProps } from './types';
-  import classNames from 'classnames';
-  const tableClasses = classNames('table');
   let { children, ...restProps }: TableProps = $props();
+  let tableClasses = $derived(['table', restProps.class ?? '']);
 </script>
 
 <table {...restProps} class={tableClasses}>

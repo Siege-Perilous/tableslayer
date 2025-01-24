@@ -3,7 +3,6 @@
   import { onMount } from 'svelte';
   import { createHighlighter } from 'shiki';
   import { createCssVariablesTheme } from 'shiki/theme-css-variables';
-  import classNames from 'classnames';
 
   let { code, lang = 'svelte', variant = 'default' }: CodeBlockProps = $props();
 
@@ -28,7 +27,7 @@
     });
   });
 
-  const codeBlockClasses = classNames('codeBlock', `codeBlock--${variant}`);
+  let codeBlockClasses = $derived(['codeBlock', `codeBlock--${variant}`]);
 </script>
 
 <span class={codeBlockClasses}>

@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { LinkProps } from './types';
-  import classNames from 'classnames';
   let { children, as = 'a', color = 'primary', ...restProps }: LinkProps = $props();
 
-  const linkClasses = classNames('link', `link--${color}`, restProps.class ?? '');
+  let linkClasses = $derived(['link', `link--${color}`, restProps.class ?? '']);
 </script>
 
 <svelte:element this={as} {...restProps} class={linkClasses}>

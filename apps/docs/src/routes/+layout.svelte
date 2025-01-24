@@ -4,7 +4,7 @@
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
   import { Icon, IconButton, Toast, Title } from '@tableslayer/ui';
   import { IconMoon, IconSun, IconMenu2 } from '@tabler/icons-svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   let isMenuOpen = $state(true);
 
@@ -61,7 +61,7 @@
     <nav>
       <ul>
         {#each routes as route}
-          <li class:isActive={route.path === $page.url.pathname}>
+          <li class:isActive={route.path === page.url.pathname}>
             <a href={route.path}>{route.name}</a>
           </li>
         {/each}

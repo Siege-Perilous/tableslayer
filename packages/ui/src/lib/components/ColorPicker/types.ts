@@ -20,6 +20,7 @@ export type HSLA = {
 };
 
 export type ColorPickerProps = {
+  id?: string;
   hex?: string;
   rgba?: RGBA;
   hsva?: HSVA;

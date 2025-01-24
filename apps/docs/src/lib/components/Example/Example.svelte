@@ -2,9 +2,8 @@
   import { ColorMode, PropsTable, Title, Spacer } from '@tableslayer/ui';
   import type { ExampleProps } from './types';
   let { children, codeBlock, propsName, title, layout, ...restProps }: ExampleProps = $props();
-  import classNames from 'classnames';
 
-  const contentClasses = classNames('ex__content', layout && `ex__content--${layout}`);
+  let contentClasses = $derived(['ex__content', layout && `ex__content--${layout}`]);
 </script>
 
 <Title as="h2" size="md">{title}</Title>

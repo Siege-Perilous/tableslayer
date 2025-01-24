@@ -3,6 +3,7 @@ import { sceneTable, settingsTable, type SelectGameSettings, type SelectScene } 
 import { eq, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
+import { getPartyFromGameSessionDbName } from '../party';
 
 const reorderScenes = async (dbName: string) => {
   const gsDb = gsChildDb(dbName);
@@ -76,6 +77,9 @@ export const createScene = async (dbName: string, userId: string, name?: string,
       .execute();
   }
 
+  // Get the party's default settings
+  const party = await getPartyFromGameSessionDbName(dbName);
+
   const sceneId = uuidv4();
 
   await gsDb
@@ -84,7 +88,16 @@ export const createScene = async (dbName: string, userId: string, name?: string,
       id: sceneId,
       name,
       order,
-      mapLocation: fileLocation
+      mapLocation: fileLocation,
+      gridType: party.defaultGridType,
+      displaySizeX: party.defaultDisplaySizeX,
+      displaySizeY: party.defaultDisplaySizeY,
+      displayResolutionX: party.defaultDisplayResolutionX,
+      displayResolutionY: party.defaultDisplayResolutionY,
+      displayPaddingX: party.defaultDisplayPaddingX,
+      displayPaddingY: party.defaultDisplayPaddingY,
+      gridSpacing: party.defaultGridSpacing,
+      gridLineThickness: party.defaultLineThickness
     })
     .execute();
 

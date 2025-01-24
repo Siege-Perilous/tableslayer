@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
-  import classNames from 'classnames';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
   type CursorData = {
@@ -133,7 +132,7 @@
   };
   //  const randomColor = getRandomColor();
 
-  let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading, 'stage--hidden': gameIsPaused }));
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
 
   $effect(() => {
     stageIsLoading = true;

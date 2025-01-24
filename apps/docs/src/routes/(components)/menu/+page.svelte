@@ -2,7 +2,7 @@
   import { DropdownRadioMenu, Link, CodeBlock, Icon, Spacer } from '@tableslayer/ui';
   import { IconChevronDown } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   const example = `
 const menuItems = [
   {
@@ -59,9 +59,9 @@ $effect(() => {
     }
   ];
 
-  let selectedParty = $state(menuItems.find((party) => party.href === $page.url.hash) || menuItems[0]);
+  let selectedParty = $state(menuItems.find((party) => party.href === page.url.hash) || menuItems[0]);
   $effect(() => {
-    selectedParty = menuItems.find((party) => party.href === $page.url.hash) || menuItems[0];
+    selectedParty = menuItems.find((party) => party.href === page.url.hash) || menuItems[0];
   });
 </script>
 
