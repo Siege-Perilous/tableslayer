@@ -1,8 +1,16 @@
-import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StageProps } from '@tableslayer/ui';
+import {
+  DrawMode,
+  GridType,
+  MapLayerType,
+  ParticleType,
+  PingEditMode,
+  ToolType,
+  type StageProps
+} from '@tableslayer/ui';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
-  backgroundColor: '#808080',
+  backgroundColor: '#404040',
   display: {
     padding: { x: 16, y: 16 },
     size: { x: 17.77, y: 10.0 },
@@ -30,15 +38,15 @@ export const StageDefaultProps: StageProps = {
       speed: 0.2
     },
     noise: {
-      baseColor: '#666666',
+      baseColor: '#000000',
       fogColor1: '#888888',
       fogColor2: '#aaaaaa',
       fogColor3: '#cccccc',
-      fogColor4: '#eeeeee',
+      fogColor4: '#808080',
       speed: { x: -0.015, y: 0.01, z: -0.05, w: 0.1 },
       frequency: { x: 0.0008, y: 0.002, z: 0.001, w: 0.001 },
       offset: { x: -0.4, y: -0.2, z: -0.3, w: -0.25 },
-      amplitude: { x: 0.6, y: 0.5, z: 0.5, w: 1 },
+      amplitude: { x: 0.0, y: 0.0, z: 0.0, w: 0.8 },
       persistence: { x: 0.4, y: 0.4, z: 0.3, w: 0.48 },
       lacunarity: { x: 2.5, y: 2.5, z: 2.5, w: 2 },
       levels: { x: 6, y: 4, z: 3, w: 6 }
@@ -84,15 +92,35 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#a0a0f0',
-    angle: 20,
-    opacity: 0.7,
-    intensity: 0.3,
-    speed: 10.0,
-    scale: {
-      x: 5.0,
-      y: 100.0
+    camera: {
+      position: { x: 0, y: 0, z: -500 },
+      fov: 45,
+      near: 1,
+      far: 10000
     },
-    weatherType: 0
+    particles: {
+      count: 1000,
+      type: ParticleType.Circle,
+      lifetime: 5,
+      spawnArea: { width: 1920, height: 1080 },
+      initialVelocity: { x: 0, y: 0, z: 0 },
+      force: {
+        amplitude: {
+          linear: { x: 0, y: 0, z: 100.0 },
+          exponential: { x: 0, y: 0, z: 0 },
+          sinusoidal: { x: 0, y: 0, z: 0 },
+          noise: { x: 0, y: 0, z: 0 }
+        },
+        frequency: {
+          sinusoidal: { x: 0, y: 0, z: 0 },
+          noise: { x: 0, y: 0, z: 0 }
+        }
+      },
+      size: { min: 1, max: 10 },
+      color: '#ffffff',
+      opacity: 1,
+      fadeInTime: 3.0,
+      fadeOutTime: 1.0
+    }
   }
 };

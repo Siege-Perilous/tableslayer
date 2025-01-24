@@ -1,85 +1,100 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte } from '@threlte/core';
+  import { T, useTask } from '@threlte/core';
   import { ParticleImageURLs } from './types';
-  import type { ParticleProps } from './types';
-  import { onMount } from 'svelte';
+  import type { ParticleSystemProps } from './types';
+
+  import fragmentShader from '../../shaders/Particles.frag?raw';
+  import vertexShader from '../../shaders/Particles.vert?raw';
 
   interface Props {
-    props: ParticleProps;
+    props: ParticleSystemProps;
   }
 
   const { props }: Props = $props();
-  const { invalidate } = useThrelte();
 
-  // Create geometry with custom attributes
-  const geometry = new THREE.BufferGeometry();
+  const geometry = $derived.by(() => {
+    console.log('updating geometry');
+    const geometry = new THREE.BufferGeometry();
 
-  // Initialize particle attributes
-  const positions = new Float32Array(props.count * 3);
-  const velocities = new Float32Array(props.count * 3);
-  const ages = new Float32Array(props.count);
-  const seeds = new Float32Array(props.count);
+    // Initialize particle attributes
+    const positions = new Float32Array(props.count * 3);
+    const velocities = new Float32Array(props.count * 3);
+    const sizes = new Float32Array(props.count);
+    const seeds = new Float32Array(props.count);
+    const ageOffsets = new Float32Array(props.count);
 
-  // Initialize particles
-  for (let i = 0; i < props.count; i++) {
-    // Random position within spawn area
-    positions[i * 3] = (Math.random() - 0.5) * props.spawnArea.width;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * props.spawnArea.height;
-    positions[i * 3 + 2] = 0;
-
-    // Initial velocity
-    velocities[i * 3] = props.velocity.x;
-    velocities[i * 3 + 1] = props.velocity.y;
-    velocities[i * 3 + 2] = props.velocity.z;
-
-    // Random age and seed
-    ages[i] = Math.random() * props.lifetime;
-    seeds[i] = Math.random();
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
-  geometry.setAttribute('age', new THREE.BufferAttribute(ages, 1));
-  geometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
-
-  // Create particle material
-  const texture = new THREE.TextureLoader().load(ParticleImageURLs[props.type].url);
-  const material = new THREE.PointsMaterial({
-    size: 100,
-    map: texture,
-    transparent: true,
-    opacity: 0.5,
-    blending: THREE.AdditiveBlending,
-    vertexColors: true
-  });
-
-  // Update particle system
-  onMount(() => {
-    const positions = geometry.attributes.position.array;
-    const velocities = geometry.attributes.velocity.array;
-    const ages = geometry.attributes.age.array;
-
+    // Initialize particles
     for (let i = 0; i < props.count; i++) {
-      // Reset particle if lifetime exceeded
-      if (ages[i] > props.lifetime) {
-        positions[i * 3] = (Math.random() - 0.5) * props.spawnArea.width;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * props.spawnArea.height;
-        positions[i * 3 + 2] = -100;
-        ages[i] = 0;
-      }
+      // Random position within spawn area
+      positions[i * 3] = (Math.random() - 0.5) * props.spawnArea.width;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * props.spawnArea.height;
+      positions[i * 3 + 2] = -500;
+
+      // Initial velocity
+      velocities[i * 3] = props.initialVelocity.x;
+      velocities[i * 3 + 1] = props.initialVelocity.y;
+      velocities[i * 3 + 2] = props.initialVelocity.z;
+
+      // Random age and seed
+      ageOffsets[i] = Math.random() * props.lifetime;
+      seeds[i] = Math.random();
+      sizes[i] = Math.random() * (props.size.max - props.size.min) + props.size.min;
     }
 
-    geometry.attributes.position.needsUpdate = true;
-    geometry.attributes.velocity.needsUpdate = true;
-    geometry.attributes.age.needsUpdate = true;
-
-    invalidate();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+    geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
+    geometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    return geometry;
   });
 
+  const material = new THREE.ShaderMaterial();
+  const loader = new THREE.TextureLoader();
+
+  // Particle texture
+  const texture = $derived(loader.load(ParticleImageURLs[props.type].url));
+
+  // Create a derived value for uniforms that updates when props change
+  const uniforms = $derived({
+    uTime: { value: 0 },
+    uTexture: { value: texture },
+    uOpacity: { value: props.opacity },
+    uColor: { value: new THREE.Color(props.color) },
+
+    uLifetime: { value: props.lifetime },
+    uInitialVelocity: { value: props.initialVelocity },
+    uLinearForceAmplitude: { value: props.force.amplitude.linear },
+    uExponentialForceAmplitude: { value: props.force.amplitude.exponential },
+    uSinusoidalForceAmplitude: { value: props.force.amplitude.sinusoidal },
+    uSinusoidalForceFrequency: { value: props.force.frequency.sinusoidal },
+    uNoiseForceAmplitude: { value: props.force.amplitude.noise },
+    uNoiseForceFrequency: { value: props.force.frequency.noise },
+    uFadeInTime: { value: props.fadeInTime },
+    uFadeOutTime: { value: props.fadeOutTime }
+  });
+
+  // Update material uniforms whenever they change
   $effect(() => {
-    material.color = new THREE.Color(props.color);
+    console.log('updating particle uniforms');
+    Object.assign(material.uniforms, uniforms);
+  });
+
+  useTask((dt) => {
+    material.uniforms.uTime.value += dt;
   });
 </script>
 
-<T.Points {geometry} {material} />
+<T.Points {geometry}>
+  <T.ShaderMaterial
+    is={material}
+    {vertexShader}
+    {fragmentShader}
+    transparent={true}
+    depthWrite={false}
+    depthTest={false}
+    blending={THREE.AdditiveBlending}
+    renderOrder={1}
+  />
+</T.Points>

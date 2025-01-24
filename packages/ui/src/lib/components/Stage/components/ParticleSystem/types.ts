@@ -1,7 +1,7 @@
 import circle from './particles/images/circle_05.png';
 
 export enum ParticleType {
-  Circle = 'circle'
+  Circle = 1
 }
 
 export const ParticleImageURLs = {
@@ -10,23 +10,61 @@ export const ParticleImageURLs = {
   }
 } as const;
 
-export interface ParticleProps {
+export interface ParticleSystemProps {
   count: number;
   type: ParticleType;
   lifetime: number;
-  spawnArea: {
-    width: number;
-    height: number;
-  };
-  velocity: {
+  color: string;
+  opacity: number;
+  fadeInTime: number;
+  fadeOutTime: number;
+  initialVelocity: {
     x: number;
     y: number;
     z: number;
   };
-  forces: {
-    x: (t: number) => number;
-    y: (t: number) => number;
-    z: (t: number) => number;
+  force: {
+    amplitude: {
+      linear: {
+        x: number;
+        y: number;
+        z: number;
+      };
+      exponential: {
+        x: number;
+        y: number;
+        z: number;
+      };
+      sinusoidal: {
+        x: number;
+        y: number;
+        z: number;
+      };
+      noise: {
+        x: number;
+        y: number;
+        z: number;
+      };
+    };
+    frequency: {
+      sinusoidal: {
+        x: number;
+        y: number;
+        z: number;
+      };
+      noise: {
+        x: number;
+        y: number;
+        z: number;
+      };
+    };
   };
-  color: string;
+  size: {
+    min: number;
+    max: number;
+  };
+  spawnArea: {
+    width: number;
+    height: number;
+  };
 }
