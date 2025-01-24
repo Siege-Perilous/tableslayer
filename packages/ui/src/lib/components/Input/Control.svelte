@@ -38,7 +38,7 @@
       {@render children({ ...props })}
     {:else if content}
       {@render content({ id: inputId })}
-    {:else}
+    {:else if children}
       {@render children()}
     {/if}
     {#if end}
