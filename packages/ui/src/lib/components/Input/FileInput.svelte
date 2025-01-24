@@ -1,11 +1,10 @@
 <script lang="ts">
   import type { FileInputProps } from './types';
   import { onDestroy } from 'svelte';
-  import classNames from 'classnames';
 
   let { value = $bindable(), files = $bindable(), variant = 'default', ...restProps }: FileInputProps = $props();
 
-  const inputClasses = classNames('fileInput', variant && `fileInput--${variant}`, restProps.class ?? '');
+  let inputClasses = $derived(['fileInput', variant && `fileInput--${variant}`, restProps.class ?? '']);
 
   // Array to keep track of generated object URLs for cleanup
   let generatedUrls: string[] = [];
@@ -60,6 +59,8 @@
   .fileInput {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   .fileInput__input::file-selector-button {
     background: var(--inputBg);

@@ -5,8 +5,7 @@
   let { data, children } = $props();
   const { user } = data;
   import { IconSelector } from '@tabler/icons-svelte';
-  import { page } from '$app/stores';
-  import classNames from 'classnames';
+  import { page } from '$app/state';
 
   let parties = $derived(data.parties);
 
@@ -17,9 +16,9 @@
       href: `/${party.slug}`
     })) || []
   );
-  let selectedParty = $derived(parties && parties.find((party) => party.slug === $page.params.party));
-  const gameSession = $derived($page.data.gameSession);
-  let headerContainerClasses = $derived(classNames('header_container', gameSession && 'header_container--isSession'));
+  let selectedParty = $derived(parties && parties.find((party) => party.slug === page.params.party));
+  const gameSession = $derived(page.data.gameSession);
+  let headerContainerClasses = $derived(['header_container', gameSession && 'header_container--isSession']);
 </script>
 
 <header>

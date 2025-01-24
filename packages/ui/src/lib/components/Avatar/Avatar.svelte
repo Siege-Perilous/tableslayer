@@ -1,10 +1,9 @@
 <script lang="ts">
-  import classNames from 'classnames';
   import type { AvatarProps } from './types';
   let { src, alt, initials, size = 'sm', isLoading }: AvatarProps = $props();
   import { createAvatar, melt } from '@melt-ui/svelte';
 
-  const avatarClasses = classNames('avatar', `avatar--${size}`, isLoading && 'isLoading');
+  let avatarClasses = $derived(['avatar', `avatar--${size}`, isLoading && 'isLoading']);
 
   const {
     elements: { fallback }

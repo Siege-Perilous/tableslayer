@@ -1,8 +1,6 @@
 <script lang="ts">
   let { ...restProps } = $props();
-  import classNames from 'classnames';
-
-  const loaderClasses = classNames('loader', restProps.class ?? '');
+  let loaderClasses = $derived(['loader', restProps.class ?? '']);
 </script>
 
 <div class={loaderClasses}>

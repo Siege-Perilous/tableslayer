@@ -11,7 +11,9 @@
     hsva = $bindable(),
     hsla = $bindable(),
     showInputs = false,
-    onUpdate = () => {}
+    onUpdate = () => {},
+    id,
+    ...restProps
   }: ColorPickerProps = $props();
 
   const color = $state<ColorState>({
@@ -436,7 +438,6 @@
 
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
-  // @ts-expect-error Can't figure out how to type this to FormatOption
   const handleFormatChange = ({ next }) => {
     selectedFormat = next.value;
     updateColorInputs();
@@ -455,7 +456,7 @@
 
 <svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
 
-<div class="colorPicker">
+<div class="colorPicker" {...restProps}>
   <!-- Saturation/Value Selector -->
   <div class="colorPicker__box">
     <canvas
@@ -468,6 +469,7 @@
       onfocus={startSaturationAdjustment}
       onblur={endSaturationAdjustment}
       onkeydown={handleKeyDown}
+      {id}
     ></canvas>
     <!-- Selection Indicator -->
     <div

@@ -1,8 +1,7 @@
 <script lang="ts">
-  import classNames from 'classnames';
   import type { CardFanProps } from './types';
   let { images, height = '120px', ...restProps }: CardFanProps = $props();
-  const cardFanClasses = classNames('cardFan', `cardFan--count-${images.length}`, restProps.class ?? '');
+  const cardFanClasses = $derived(['cardFan', `cardFan--count-${images.length}`, restProps.class ?? '']);
 </script>
 
 <div {...restProps} class={cardFanClasses} style="--cardFanHeight: {height}">

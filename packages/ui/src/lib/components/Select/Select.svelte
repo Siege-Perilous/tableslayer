@@ -3,7 +3,6 @@
   import { IconChevronDown } from '@tabler/icons-svelte';
   import type { SelectProps } from '../';
   import { Icon } from '../';
-  import classNames from 'classnames';
 
   let {
     options,
@@ -40,7 +39,7 @@
     onSelectedChange
   });
 
-  const selectClasses = classNames('select', variant && `select--${variant}`);
+  let selectClasses = $derived(['select', variant && `select--${variant}`]);
 </script>
 
 <div {...restProps} class={selectClasses}>

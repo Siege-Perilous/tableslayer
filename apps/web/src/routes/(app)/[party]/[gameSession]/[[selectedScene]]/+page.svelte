@@ -16,7 +16,6 @@
     initializeStage
   } from '$lib/utils';
   import { onMount } from 'svelte';
-  import classNames from 'classnames';
 
   let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } =
     $derived(data);
@@ -232,7 +231,7 @@
     });
   });
 
-  let stageClasses = $derived(classNames('stage', { 'stage--loading': stageIsLoading }));
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
 
   $effect(() => {
     if ($updateSceneMutation.isSuccess) {
