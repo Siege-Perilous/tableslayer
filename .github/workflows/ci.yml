@@ -282,12 +282,15 @@ jobs:
       - uses: ./.github/shared
       - name: Install Playwright Browsers
         if: ${{ github.ref != 'refs/heads/main' }}
-        run: pnpx playwright install --with-deps --no-shell
+        run: pnpx playwright install --with-deps
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: https://pr-${{ github.event.pull_request.number }}-${{ matrix.app }}.fly.dev
+          PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
           pnpm run test
