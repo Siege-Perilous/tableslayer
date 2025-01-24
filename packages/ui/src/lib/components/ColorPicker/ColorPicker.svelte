@@ -438,6 +438,7 @@
 
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
+  // @ts-expect-error Can't figure out how to type this to FormatOption
   const handleFormatChange = ({ next }) => {
     selectedFormat = next.value;
     updateColorInputs();
