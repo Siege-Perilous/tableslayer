@@ -1,9 +1,9 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Title, Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
+  import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
-  import { IllustrationOverlook } from '$lib/components';
+  import { IllustrationOverlook, Logo } from '$lib/components';
   import { notifySchema } from '$lib/schemas';
   import { superForm } from 'sveltekit-superforms/client';
   import { Field } from 'formsnap';
@@ -21,7 +21,7 @@
 <IllustrationOverlook />
 
 <Panel class="panel--signup">
-  <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
+  <Logo class="logo" />
   <Spacer size={8} />
   <Text size="1.5rem">Tools to create animated battle maps for in person RPG games.</Text>
   <Spacer />
@@ -72,15 +72,22 @@
     /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
     /*  -1px 0 0 rgba(255, 255, 255, 1);  */
   }
-  :global(.panel.panel--signup) {
-    display: flex;
-    flex-direction: column;
-    width: fit-content;
-    max-width: 450px;
-    padding: var(--size-12);
-    margin: 20vh auto auto 10vh;
-    position: relative;
-    z-index: 5;
+  :global {
+    .panel.panel--signup {
+      display: flex;
+      flex-direction: column;
+      width: fit-content;
+      max-width: 480px;
+      padding: 3rem;
+      margin: 20vh auto auto 10vh;
+      position: relative;
+      z-index: 5;
+    }
+    .logo {
+      width: 392px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
   }
   .flex {
     display: flex;
