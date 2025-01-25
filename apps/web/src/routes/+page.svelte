@@ -20,7 +20,7 @@
 
 <IllustrationOverlook />
 
-<Panel class="panel--signup">
+<Panel class="panel--home">
   <Logo class="logo" />
   <Spacer size={8} />
   <Text size="1.5rem">Tools to create animated battle maps for in person RPG games.</Text>
@@ -73,7 +73,7 @@
     /*  -1px 0 0 rgba(255, 255, 255, 1);  */
   }
   :global {
-    .panel.panel--signup {
+    .panel.panel--home {
       display: flex;
       flex-direction: column;
       width: fit-content;
@@ -87,6 +87,7 @@
       width: 392px;
       max-width: 100%;
       margin: 0 auto;
+      color: var(--fg);
     }
   }
   .flex {
@@ -98,7 +99,7 @@
   }
 
   @media (max-width: 768px) {
-    :global(.panel.panel--signup) {
+    :global(.panel.panel--home) {
       margin: 3rem 3rem auto 3rem;
     }
   }
