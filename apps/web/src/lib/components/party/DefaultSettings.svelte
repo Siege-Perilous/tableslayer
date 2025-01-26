@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createUpdatePartyMutation } from '$lib/queries';
+  import { createUpdatePartyMutation, type FormMutationError } from '$lib/queries';
   import {
     Button,
     IconButton,
@@ -71,32 +71,25 @@
   const updateParty = createUpdatePartyMutation();
 
   const save = async () => {
-    $updateParty.mutateAsync({
-      partyId: party.id,
-      partyData: partyData
-    });
-  };
-
-  $effect(() => {
-    if ($updateParty.isSuccess) {
+    try {
+      await $updateParty.mutateAsync({ partyId: party.id, partyData });
       addToast({
         data: {
           title: 'Default settings updated',
           type: 'success'
         }
       });
-    }
-
-    if ($updateParty.isError) {
-      console.log('zod', JSON.parse($updateParty.error.message));
+    } catch (e) {
+      const error = e as FormMutationError;
+      console.error('Error updating party:', error);
       addToast({
         data: {
-          title: 'Error updating default settings',
+          title: error.message || 'Error updating party',
           type: 'danger'
         }
       });
     }
-  });
+  };
 </script>
 
 <Spacer size={8} />

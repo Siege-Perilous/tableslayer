@@ -22,9 +22,24 @@ export const POST: RequestHandler = async (event) => {
     return json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      console.error('Failed to update party:', err);
-      return json({ success: false, errors: err.errors }, { status: 400 });
+      return json(
+        {
+          success: false,
+          status: 400,
+          message: 'Validation errors occurred while updating the party.',
+          errors: err.errors
+        },
+        { status: 400 }
+      );
     }
-    throw error(500, 'Failed to update party');
+
+    return json(
+      {
+        success: false,
+        status: 500,
+        message: 'An unexpected error occurred while updating the party.'
+      },
+      { status: 500 }
+    );
   }
 };
