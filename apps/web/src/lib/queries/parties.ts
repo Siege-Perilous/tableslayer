@@ -1,8 +1,8 @@
 import type { InsertParty } from '$lib/db/app/schema';
-import { createBaseMutation } from './baseMutation';
+import { mutationFactory } from '$lib/factories';
 
 export const createUpdatePartyMutation = () => {
-  return createBaseMutation<{ partyId: string; partyData: Partial<InsertParty> }>({
+  return mutationFactory<{ partyId: string; partyData: Partial<InsertParty> }>({
     mutationKey: ['updateParty'],
     endpoint: '/api/party/updateParty',
     method: 'POST'

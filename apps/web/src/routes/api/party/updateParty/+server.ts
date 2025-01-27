@@ -1,45 +1,29 @@
-import { type InsertParty, updatePartySchema } from '$lib/db/app/schema';
+import { updatePartySchema } from '$lib/db/app/schema';
+import { apiFactory } from '$lib/factories';
 import { isUserInParty, updateParty } from '$lib/server';
-import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
 
-export const POST: RequestHandler = async (event) => {
-  const { request, locals } = event;
-  const { partyId, partyData } = (await request.json()) as {
-    partyId: string;
-    partyData: Partial<InsertParty>;
-  };
+const updatePartyDetails = z.object({
+  partyId: z.string(),
+  partyData: updatePartySchema
+});
 
-  try {
-    const parsedPartyData = updatePartySchema.parse(partyData);
+export const POST = apiFactory(
+  async ({ body, locals }) => {
+    const { partyId, partyData } = body;
 
-    if (!locals.user.id || !isUserInParty(locals.user.id, partyId)) {
-      throw error(401, 'Unauthorized request - not a member of this party.');
+    if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
+      throw new Error('Unauthorized');
     }
 
-    await updateParty(partyId, parsedPartyData);
+    await updateParty(partyId, partyData);
 
-    return json({ success: true });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return json(
-        {
-          success: false,
-          status: 400,
-          message: 'Validation errors occurred while updating the party.',
-          errors: err.errors
-        },
-        { status: 400 }
-      );
-    }
-
-    return json(
-      {
-        success: false,
-        status: 500,
-        message: 'An unexpected error occurred while updating the party.'
-      },
-      { status: 500 }
-    );
+    return { success: true };
+  },
+  {
+    validationSchema: updatePartyDetails,
+    validationErrorMessage: 'Check your form for errors',
+    unauthorizedMessage: 'You are not authorized to update this party.',
+    unexpectedErrorMessage: 'An unexpected error occurred while updating the party.'
   }
-};
+);

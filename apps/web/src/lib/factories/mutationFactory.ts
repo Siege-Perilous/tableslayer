@@ -24,7 +24,7 @@ type MutationFactoryConfig = {
   onSuccess?: () => void;
 };
 
-export function createBaseMutation<
+export function mutationFactory<
   SuccessType = FormMutationSuccess,
   FailureType = FormMutationError,
   VariablesType = MutationVariables
