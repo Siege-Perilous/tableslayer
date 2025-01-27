@@ -6,15 +6,33 @@
   import { Icon } from '../';
 
   type Props = {
-    children: Snippet<[Record<string, unknown>]>;
+    /**
+     * The input component that will be rendered
+     */
+    input: Snippet<[{ inputProps: Record<string, unknown> }]>;
+    /**
+     * The label for the input
+     */
     label?: string;
+    /**
+     * A snippet that will be rendered at the start of the input
+     */
     start?: Snippet;
+    /**
+     * A snippet that will be rendered at the end of the input
+     */
     end?: Snippet;
+    /**
+     * The name needs to match a "path" in our zod schema
+     */
     name: string;
+    /**
+     * This shape matches what returns from zod / mutation factories
+     */
     errors?: { code: string; expected: string; received: string; path: string[]; message?: string }[];
   } & HTMLBaseAttributes;
 
-  let { children, label, start, name, errors, end, ...restProps }: Props = $props();
+  let { input, label, start, name, errors, end, ...restProps }: Props = $props();
   let error = $derived(errors?.find((error) => error.path.includes(name)));
 
   const id = `control-${crypto.randomUUID()}`;
@@ -42,7 +60,7 @@
     {#if start}
       <div class="control__start">{@render start()}</div>
     {/if}
-    {@render children({ inputProps })}
+    {@render input({ inputProps })}
     {#if end}
       <div class="control__end">{@render end()}</div>
     {/if}

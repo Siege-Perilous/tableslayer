@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { createUpdatePartyMutation, type FormMutationError } from '$lib/queries';
+  import { createUpdatePartyMutation } from '$lib/queries';
+  import { type FormMutationError } from '$lib/factories';
   import {
     Button,
     IconButton,
     Icon,
-    Control,
     FormControl,
     Input,
     Panel,
@@ -14,7 +14,7 @@
     Title,
     addToast
   } from '@tableslayer/ui';
-  import type { SelectParty } from '$lib/db/app/schema';
+  import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
@@ -46,7 +46,7 @@
     defaultDisplayPaddingX: party.defaultDisplayPaddingX,
     defaultDisplayPaddingY: party.defaultDisplayPaddingY
   });
-  let errors = $state<FormMutationError[]>([]);
+  let errors = $state<FormMutationError['errors']>([]);
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
@@ -102,10 +102,10 @@
 <Panel class="defaultSettings">
   <Spacer />
   <div class="defaultSettings__grid">
-    <Control label="TV size">
-      {#snippet content({ id })}
+    <FormControl label="TV size" name="defaultTvSize" {errors}>
+      {#snippet input({ inputProps })}
         <Input
-          {id}
+          {...inputProps}
           type="number"
           name="defaultTvSize"
           bind:value={partyData.defaultTvSize}
@@ -115,24 +115,25 @@
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
-    <Control label="Resolution">
-      {#snippet content({ id })}
+    </FormControl>
+    <FormControl label="Resolution" name="defaultDisplayResolutionX" {errors}>
+      {#snippet input({ inputProps })}
         <Select
-          ids={{ trigger: id }}
+          ids={{ trigger: inputProps.id as string }}
           onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+          {...inputProps}
           {defaultSelected}
           options={selectTvResolutionOptions}
         />
       {/snippet}
-    </Control>
-    <Control label="Grid type">
-      {#snippet content({ id })}
+    </FormControl>
+    <FormControl label="Grid type" name="defaultGridType" {errors}>
+      {#snippet input({ inputProps })}
         <IconButton
           type="button"
           variant={partyData.defaultGridType === 0 ? 'primary' : 'ghost'}
           onclick={() => handleGridTypeChange(0)}
-          {id}
+          {...inputProps}
         >
           <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
         </IconButton>
@@ -141,35 +142,36 @@
           type="button"
           variant={partyData.defaultGridType === 1 ? 'primary' : 'ghost'}
           onclick={() => handleGridTypeChange(1)}
+          {...inputProps}
         >
           <Icon Icon={IconHexagons} size="20px" stroke={2} />
         </IconButton>
       {/snippet}
-    </Control>
-    <Control label="Grid size">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
+    </FormControl>
+    <FormControl label="Grid size" name="defaultGridSpacing" {errors}>
+      {#snippet input({ inputProps })}
+        <Input type="number" {...inputProps} name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
       {/snippet}
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
+    </FormControl>
     <FormControl label="Line thickness" name="defaultLineThickness" {errors}>
-      {#snippet children({ inputProps })}
+      {#snippet input({ inputProps })}
         <Input type="number" {...inputProps} bind:value={partyData.defaultLineThickness} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
     </FormControl>
-    <Control label="Padding">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="padding" bind:value={padding} />
+    <FormControl label="Padding" name="defaultDisplayPaddingX" {errors}>
+      {#snippet input({ inputProps })}
+        <Input type="number" {...inputProps} name="padding" bind:value={padding} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
-    </Control>
+    </FormControl>
   </div>
   <Spacer />
   <Button onclick={() => save()}>Save</Button>

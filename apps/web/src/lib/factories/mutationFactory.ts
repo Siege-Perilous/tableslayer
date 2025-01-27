@@ -5,7 +5,7 @@ export type FormMutationError = {
   success: boolean;
   status: number;
   message: string;
-  errors?: { code: string; expected: string; received: string; path: string[] }[];
+  errors?: { code: string; expected: string; received: string; path: string[]; message?: string }[];
 };
 
 export type FormMutationSuccess = {
