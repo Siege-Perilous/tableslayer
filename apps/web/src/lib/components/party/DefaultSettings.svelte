@@ -33,6 +33,8 @@
     party: SelectParty & Thumb;
   } = $props();
 
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let isPartyDataChanged = false;
   let defaultSelected = $derived(getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY));
   let padding = $state(party.defaultDisplayPaddingX);
   let partyData = $state({
@@ -85,7 +87,7 @@
       });
     } catch (e) {
       const error = e as FormMutationError;
-      errors = error.errors as ZodIssue[];
+      errors = error.errors;
       addToast({
         data: {
           title: error.message || 'Error updating party',
@@ -98,6 +100,28 @@
   const handleValidation = () => {
     errors = updatePartySchema.safeParse(partyData).error?.errors;
   };
+
+  $effect(() => {
+    $state.snapshot(partyData);
+
+    if (!isPartyDataChanged) {
+      isPartyDataChanged = true;
+      return;
+    }
+
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+
+    saveTimer = setTimeout(() => {
+      save();
+    }, 3000);
+    return () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+    };
+  });
 </script>
 
 <Spacer size={8} />
@@ -186,7 +210,6 @@
     </FormControl>
   </div>
   <Spacer />
-  <Button onclick={() => save()}>Save</Button>
   <div class="superFormHack">
     {party.defaultTvSize}
   </div>
