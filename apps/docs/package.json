@@ -18,27 +18,27 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
-    "@tabler/icons-svelte": "^3.28.1",
+    "@tabler/icons-svelte": "^3.29.0",
     "@tableslayer/ui": "workspace:*",
-    "mode-watcher": "^0.5.0",
-    "svelte-tweakpane-ui": "^1.5.1"
+    "mode-watcher": "^0.5.1",
+    "svelte-tweakpane-ui": "^1.5.2"
   },
   "devDependencies": {
     "@melt-ui/pp": "^0.3.2",
     "@playwright/test": "^1.50.0",
     "@sveltejs/adapter-auto": "^4.0.0",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.16.0",
+    "@sveltejs/kit": "^2.16.1",
     "@sveltejs/vite-plugin-svelte": "5.0.3",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
-    "@threlte/core": "8.0.0-next.15",
+    "@threlte/core": "8.0.1",
     "dotenv": "^16.4.7",
-    "svelte": "5.19.0",
+    "svelte": "5.19.3",
     "svelte-check": "^4.1.4",
     "tslib": "^2.8.1",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7",
-    "vitest": "^3.0.2"
+    "vite": "^6.0.11",
+    "vitest": "^3.0.4"
   }
 }
