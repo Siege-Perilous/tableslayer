@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
 import { protectedSlugs } from '../../constants';
 
@@ -117,6 +117,11 @@ export const partyTable = sqliteTable(
   })
 );
 
+export type SelectParty = typeof partyTable.$inferSelect;
+export const selectPartySchema = createSelectSchema(partyTable);
+export const insertPartySchema = createInsertSchema(partyTable);
+export const updatePartySchema = createUpdateSchema(partyTable);
+
 export const partyMemberTable = sqliteTable(
   'party_member',
   {
@@ -178,8 +183,6 @@ export const insertUserSchema = createInsertSchema(usersTable);
 export const selectUserSchema = createSelectSchema(usersTable);
 export const insertPartyMember = createInsertSchema(partyMemberTable);
 export const gameSessionSchema = createInsertSchema(gameSessionTable);
-export const insertPartySchema = createInsertSchema(partyTable);
-export const updatePartySchema = insertPartySchema.partial();
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
@@ -188,5 +191,4 @@ export type SelectGameSession = typeof gameSessionTable.$inferSelect;
 export type SelectSession = typeof sessionTable.$inferSelect;
 
 export type InsertParty = typeof partyTable.$inferInsert;
-export type SelectParty = typeof partyTable.$inferSelect;
 export type SelectPartyInvite = typeof partyInviteTable.$inferSelect;

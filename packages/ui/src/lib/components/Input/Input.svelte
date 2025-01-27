@@ -37,7 +37,8 @@
       border-color: var(--inputBorderColor);
     }
   }
-  [data-fs-error] {
+  [data-fs-error],
+  [aria-invalid='true'] {
     border-color: var(--fgDanger);
   }
 </style>

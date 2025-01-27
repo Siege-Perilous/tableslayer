@@ -5,6 +5,7 @@
     IconButton,
     Icon,
     Control,
+    FormControl,
     Input,
     Panel,
     Select,
@@ -45,6 +46,7 @@
     defaultDisplayPaddingX: party.defaultDisplayPaddingX,
     defaultDisplayPaddingY: party.defaultDisplayPaddingY
   });
+  let errors = $state<FormMutationError[]>([]);
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
@@ -73,6 +75,7 @@
   const save = async () => {
     try {
       await $updateParty.mutateAsync({ partyId: party.id, partyData });
+      errors = [];
       addToast({
         data: {
           title: 'Default settings updated',
@@ -81,7 +84,7 @@
       });
     } catch (e) {
       const error = e as FormMutationError;
-      console.error('Error updating party:', error);
+      errors = error.errors;
       addToast({
         data: {
           title: error.message || 'Error updating party',
@@ -151,14 +154,14 @@
         in.
       {/snippet}
     </Control>
-    <Control label="Line thickness">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="defaultLineThickness" bind:value={partyData.defaultLineThickness} />
+    <FormControl label="Line thickness" name="defaultLineThickness" {errors}>
+      {#snippet children({ inputProps })}
+        <Input type="number" {...inputProps} bind:value={partyData.defaultLineThickness} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
-    </Control>
+    </FormControl>
     <Control label="Padding">
       {#snippet content({ id })}
         <Input type="number" {id} name="padding" bind:value={padding} />
