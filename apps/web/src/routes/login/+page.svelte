@@ -67,7 +67,7 @@
   :global(.panel.login) {
     display: flex;
     flex-direction: column;
-    max-width: var(--contain-smallForm);
+    max-width: 480px;
     padding: var(--size-8);
     margin: 20vh auto auto 10vh;
     position: relative;
