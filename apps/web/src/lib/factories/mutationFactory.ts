@@ -1,11 +1,12 @@
 import { invalidateAll } from '$app/navigation';
 import { createMutation } from '@tanstack/svelte-query';
+import { type ZodIssue } from 'zod';
 
 export type FormMutationError = {
   success: boolean;
   status: number;
   message: string;
-  errors?: { code: string; expected: string; received: string; path: string[]; message?: string }[];
+  errors?: ZodIssue[];
 };
 
 export type FormMutationSuccess = {

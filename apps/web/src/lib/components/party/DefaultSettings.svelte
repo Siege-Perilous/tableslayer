@@ -16,6 +16,7 @@
   } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
+  import { type ZodIssue } from 'zod';
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 
@@ -46,7 +47,7 @@
     defaultDisplayPaddingX: party.defaultDisplayPaddingX,
     defaultDisplayPaddingY: party.defaultDisplayPaddingY
   });
-  let errors = $state<FormMutationError['errors']>([]);
+  let errors = $state<ZodIssue[] | undefined>(undefined);
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
@@ -75,7 +76,7 @@
   const save = async () => {
     try {
       await $updateParty.mutateAsync({ partyId: party.id, partyData });
-      errors = [];
+      errors = undefined;
       addToast({
         data: {
           title: 'Default settings updated',
@@ -84,7 +85,7 @@
       });
     } catch (e) {
       const error = e as FormMutationError;
-      errors = error.errors;
+      errors = error.errors as ZodIssue[];
       addToast({
         data: {
           title: error.message || 'Error updating party',
@@ -92,6 +93,10 @@
         }
       });
     }
+  };
+
+  const handleValidation = () => {
+    errors = updatePartySchema.safeParse(partyData).error?.errors;
   };
 </script>
 
@@ -110,6 +115,7 @@
           name="defaultTvSize"
           bind:value={partyData.defaultTvSize}
           oninput={() => handleTvSizeChange(partyData.defaultTvSize)}
+          onblur={handleValidation}
         />
       {/snippet}
       {#snippet end()}
@@ -150,7 +156,13 @@
     </FormControl>
     <FormControl label="Grid size" name="defaultGridSpacing" {errors}>
       {#snippet input({ inputProps })}
-        <Input type="number" {...inputProps} name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
+        <Input
+          type="number"
+          {...inputProps}
+          name="defaultGridSpacing"
+          onblur={handleValidation}
+          bind:value={partyData.defaultGridSpacing}
+        />
       {/snippet}
       {#snippet end()}
         in.
@@ -158,7 +170,7 @@
     </FormControl>
     <FormControl label="Line thickness" name="defaultLineThickness" {errors}>
       {#snippet input({ inputProps })}
-        <Input type="number" {...inputProps} bind:value={partyData.defaultLineThickness} />
+        <Input type="number" {...inputProps} onblur={handleValidation} bind:value={partyData.defaultLineThickness} />
       {/snippet}
       {#snippet end()}
         px
@@ -166,7 +178,7 @@
     </FormControl>
     <FormControl label="Padding" name="defaultDisplayPaddingX" {errors}>
       {#snippet input({ inputProps })}
-        <Input type="number" {...inputProps} name="padding" bind:value={padding} />
+        <Input type="number" {...inputProps} onblur={handleValidation} bind:value={padding} />
       {/snippet}
       {#snippet end()}
         px
