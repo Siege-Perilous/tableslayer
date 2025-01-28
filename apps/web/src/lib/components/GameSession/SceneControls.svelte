@@ -3,16 +3,11 @@
     ColorMode,
     Icon,
     Popover,
-    Spacer,
     DropdownRadioMenu,
     DrawMode,
     ToolType,
     type StageProps,
-    MapLayerType,
-    Button,
-    Text,
-    Hr,
-    addToast
+    MapLayerType
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -33,10 +28,9 @@
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
-  import { createSetActiveSceneMutation, createToggleGamePauseMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
   import { type ZodIssue } from 'zod';
-  import { GridControls, MapControls, FogControls } from './';
+  import { GridControls, MapControls, FogControls, PlayControls } from './';
 
   let {
     socketUpdate,
@@ -185,110 +179,7 @@
     socketUpdate();
     return selectedOption.value;
   };
-
-  const setActiveScene = createSetActiveSceneMutation();
-  const handleSetActiveScene = async () => {
-    if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
-
-    const response = await $setActiveScene.mutateAsync({
-      dbName: gameSession.dbName,
-      sceneId: selectedScene.id,
-      partyId: party.id
-    });
-    if (response.success == true) {
-      addToast({
-        data: {
-          title: 'Active scene set',
-          type: 'success'
-        }
-      });
-    }
-  };
-
-  const toggleGamePause = createToggleGamePauseMutation();
-  const handleToggleGamePause = async () => {
-    console.log(`toggle game pause for ${gameSession.dbName}`);
-    if (!selectedScene) return;
-    const response = await $toggleGamePause.mutateAsync({
-      dbName: gameSession.dbName,
-      partyId: party.id
-    });
-    if (response.success == true) {
-      addToast({
-        data: {
-          title: 'Game paused',
-          type: 'success'
-        }
-      });
-    }
-    socketUpdate();
-  };
 </script>
-
-{#snippet gridControls()}
-  <GridControls
-    {stageProps}
-    {socketUpdate}
-    {handleSelectActiveControl}
-    {activeControl}
-    {party}
-    {gameSession}
-    {selectedScene}
-    {activeScene}
-    {handleSceneFit}
-    {handleMapFill}
-    {handleMapFit}
-    {gameSettings}
-    {errors}
-  />
-{/snippet}
-
-{#snippet fogControls()}
-  <FogControls {stageProps} {socketUpdate} />
-{/snippet}
-
-{#snippet mapControls()}
-  <MapControls
-    {stageProps}
-    {socketUpdate}
-    {handleSelectActiveControl}
-    {activeControl}
-    {party}
-    {gameSession}
-    {selectedScene}
-    {activeScene}
-    {handleSceneFit}
-    {handleMapFill}
-    {handleMapFit}
-    {gameSettings}
-    {errors}
-  />
-{/snippet}
-{#snippet playControls()}
-  <div class="sceneControls__playPopover">
-    <Button href={`/${party.slug}/${gameSession.slug}/share`} target="_blank">Open playfield</Button>
-    <Spacer size={2} />
-    <Text size="0.85rem" color="var(--fgMuted)"
-      >This will open a new tab with the playfield. Fullscreen it on your display.</Text
-    >
-    <Spacer />
-    <Hr />
-    <Spacer />
-    {#if !activeScene || selectedScene.id !== activeScene.id}
-      <Button onclick={handleSetActiveScene}>Set active scene</Button>
-      <Spacer size={2} />
-      <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
-      <Spacer />
-      <Hr />
-      <Spacer />
-    {/if}
-    <Button variant="danger" onclick={handleToggleGamePause}>
-      {#if gameSettings.isPaused}Unpause playfield{:else}Pause playfield{/if}
-    </Button>
-    <Spacer size={2} />
-    <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>
-  </div>
-{/snippet}
 
 <ColorMode mode="dark">
   <div class="sceneControls">
@@ -328,13 +219,41 @@
           {/snippet}
           {#snippet content()}
             {#if scene.id === 'grid'}
-              {@render gridControls()}
+              <GridControls
+                {stageProps}
+                {socketUpdate}
+                {handleSelectActiveControl}
+                {activeControl}
+                {party}
+                {gameSession}
+                {selectedScene}
+                {activeScene}
+                {handleSceneFit}
+                {handleMapFill}
+                {handleMapFit}
+                {gameSettings}
+                {errors}
+              />
             {:else if scene.id === 'fog'}
-              {@render fogControls()}
+              <FogControls {stageProps} {socketUpdate} />
             {:else if scene.id === 'map'}
-              {@render mapControls()}
+              <MapControls
+                {stageProps}
+                {socketUpdate}
+                {handleSelectActiveControl}
+                {activeControl}
+                {party}
+                {gameSession}
+                {selectedScene}
+                {activeScene}
+                {handleSceneFit}
+                {handleMapFill}
+                {handleMapFit}
+                {gameSettings}
+                {errors}
+              />
             {:else if scene.id === 'play'}
-              {@render playControls()}
+              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {gameSettings} />
             {/if}
           {/snippet}
         </Popover>
@@ -425,8 +344,5 @@
   .sceneControls__trigger {
     display: flex;
     align-items: center;
-  }
-  .sceneControls__playPopover {
-    width: 16rem;
   }
 </style>
