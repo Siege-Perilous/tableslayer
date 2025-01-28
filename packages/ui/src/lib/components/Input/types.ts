@@ -9,7 +9,7 @@ export type InputProps = {
 } & HTMLInputAttributes;
 
 export type FileInputProps = {
-  files: FileList;
+  files: FileList | null;
 } & InputProps;
 
 export type LabelProps = {

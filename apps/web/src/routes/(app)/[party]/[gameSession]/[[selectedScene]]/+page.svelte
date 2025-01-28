@@ -321,15 +321,7 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector
-        {deleteSceneForm}
-        {selectedSceneNumber}
-        {gameSession}
-        {scenes}
-        {party}
-        {activeScene}
-        createSceneForm={data.createSceneForm}
-      />
+      <SceneSelector {deleteSceneForm} {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
     <PaneResizer class="resizer">
       <button

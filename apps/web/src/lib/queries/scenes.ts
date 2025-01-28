@@ -14,6 +14,14 @@ export const createUpdateSceneMutation = () => {
   });
 };
 
+export const createNewSceneMutation = () => {
+  return mutationFactory<{ dbName: string; partyId: string; sceneData: Partial<SelectScene>; file?: File }>({
+    mutationKey: ['insertScene'],
+    endpoint: '/api/scenes/createScene',
+    method: 'POST'
+  });
+};
+
 type UpdateSceneMapImageVariables = {
   sceneId: string;
   dbName: string;
