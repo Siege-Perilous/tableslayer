@@ -1,19 +1,7 @@
 <script lang="ts">
   import { createUpdatePartyMutation } from '$lib/queries';
   import { type FormMutationError } from '$lib/factories';
-  import {
-    Button,
-    IconButton,
-    Icon,
-    FormControl,
-    Input,
-    Panel,
-    Select,
-    Spacer,
-    Text,
-    Title,
-    addToast
-  } from '@tableslayer/ui';
+  import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title, addToast } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { type ZodIssue } from 'zod';
