@@ -56,7 +56,11 @@ export const settingsTable = sqliteTable('settings', {
 });
 
 export type SelectScene = typeof sceneTable.$inferSelect;
-export type SelectGameSettings = typeof settingsTable.$inferSelect;
 export const selectSceneSchema = createSelectSchema(sceneTable);
 export const insertSceneSchema = createInsertSchema(sceneTable);
 export const updateSceneSchema = createUpdateSchema(sceneTable);
+
+export type SelectGameSettings = typeof settingsTable.$inferSelect;
+export const selectGameSessionSettingsSchema = createSelectSchema(settingsTable);
+export const insertGameSessionSettingsSchema = createInsertSchema(settingsTable);
+export const updateGameSessionSettingsSchema = createUpdateSchema(settingsTable);

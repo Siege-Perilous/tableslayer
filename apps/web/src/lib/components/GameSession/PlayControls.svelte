@@ -4,7 +4,8 @@
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
-  import { createSetActiveSceneMutation, createToggleGamePauseMutation } from '$lib/queries';
+  import { createUpdateGameSessionSettingsMutation } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
 
   let {
     socketUpdate,
@@ -22,42 +23,60 @@
     gameSettings: SelectGameSettings;
   } = $props();
 
-  const setActiveScene = createSetActiveSceneMutation();
+  const updateSettings = createUpdateGameSessionSettingsMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
-    const response = await $setActiveScene.mutateAsync({
-      dbName: gameSession.dbName,
-      sceneId: selectedScene.id,
-      partyId: party.id
-    });
-    if (response.success == true) {
+    try {
+      await $updateSettings.mutateAsync({
+        dbName: gameSession.dbName,
+        settings: { activeSceneId: selectedScene.id },
+        partyId: party.id
+      });
+
       addToast({
         data: {
           title: 'Active scene set',
           type: 'success'
         }
       });
-    }
-  };
-
-  const toggleGamePause = createToggleGamePauseMutation();
-  const handleToggleGamePause = async () => {
-    console.log(`toggle game pause for ${gameSession.dbName}`);
-    if (!selectedScene) return;
-    const response = await $toggleGamePause.mutateAsync({
-      dbName: gameSession.dbName,
-      partyId: party.id
-    });
-    if (response.success == true) {
+    } catch (e) {
+      const error = e as FormMutationError;
       addToast({
         data: {
-          title: 'Game paused',
-          type: 'success'
+          title: error.message || 'Error saving scene',
+          type: 'danger'
         }
       });
     }
-    socketUpdate();
+  };
+
+  const handleToggleGamePause = async () => {
+    if (!selectedScene) return;
+
+    try {
+      await $updateSettings.mutateAsync({
+        dbName: gameSession.dbName,
+        settings: { isPaused: !gameSettings.isPaused },
+        partyId: party.id
+      });
+      socketUpdate();
+
+      addToast({
+        data: {
+          title: 'Playfield paused',
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      const error = e as FormMutationError;
+      addToast({
+        data: {
+          title: error.message || 'Error pausing playfield',
+          type: 'danger'
+        }
+      });
+    }
   };
 </script>
 

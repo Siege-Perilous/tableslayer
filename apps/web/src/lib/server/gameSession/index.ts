@@ -1,5 +1,7 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
+import { gsChildDb } from '$lib/db/gs';
+import { settingsTable, type SelectGameSettings } from '$lib/db/gs/schema';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { createClient } from '@tursodatabase/api';
@@ -110,5 +112,21 @@ export const renameGameSession = async (partyId: string, gameSessionId: string, 
   } catch (error) {
     console.error(error);
     throw error;
+  }
+};
+
+export const updateGameSessionSettings = async (dbName: string, settings: Partial<SelectGameSettings>) => {
+  const gsDb = gsChildDb(dbName);
+
+  // Construct update object dynamically
+  const updateData: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(settings)) {
+    if (value !== undefined) {
+      updateData[key] = value;
+    }
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await gsDb.update(settingsTable).set(updateData).where(eq(settingsTable.id, settingsTable)).execute();
   }
 };
