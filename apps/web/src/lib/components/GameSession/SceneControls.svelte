@@ -5,7 +5,6 @@
     Popover,
     ColorPicker,
     type ColorUpdatePayload,
-    Select,
     FormControl,
     Spacer,
     DropdownRadioMenu,
@@ -21,7 +20,6 @@
     addToast
   } from '@tableslayer/ui';
   import {
-    IconHexagons,
     IconGrid4x4,
     IconPaint,
     IconPaintFilled,
@@ -32,23 +30,13 @@
     IconCircle,
     IconCircleFilled,
     IconSquare,
-    IconLayoutGrid,
     IconSquareFilled,
     IconScreenShare,
     IconScreenShareOff
   } from '@tabler/icons-svelte';
   import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
-  import {
-    generateGradientColors,
-    to8CharHex,
-    type TvResolution,
-    tvResolutionOptions,
-    getTvDimensions,
-    selectTvResolutionOptions,
-    getResolutionOption,
-    getTvSizeFromPhysicalDimensions
-  } from '$lib/utils';
+  import { generateGradientColors, to8CharHex } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
@@ -57,6 +45,7 @@
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
   import { type ZodIssue } from 'zod';
+  import { GridControls } from './';
 
   let {
     socketUpdate,
@@ -88,12 +77,7 @@
     errors: ZodIssue[] | undefined;
   } = $props();
 
-  let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
   let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
-  let tvDiagnalSize = $state(getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y));
-  let defaultSelectedResoltion = $derived(
-    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)
-  );
 
   type SceneControl = {
     id: string;
@@ -151,38 +135,6 @@
         fogColor3: fogColors[3],
         fogColor4: fogColors[4]
       }
-    };
-    socketUpdate();
-  };
-
-  // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
-  const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
-    const gridColor = chroma(cd.hex).hex('rgb');
-    stageProps.grid = {
-      ...stageProps.grid,
-      lineColor: gridColor,
-      opacity: cd.rgba.a
-    };
-    socketUpdate();
-  };
-
-  const handleSelectedResolution = (selected: TvResolution) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
-    stageProps.display.resolution = {
-      x: selectedResolution.width,
-      y: selectedResolution.height
-    };
-    handleSceneFit();
-    socketUpdate();
-    return selectedResolution;
-  };
-
-  const handleTvSizeChange = (diagonalSize: number) => {
-    console.log('update tv size');
-    const { width, height } = getTvDimensions(diagonalSize);
-    stageProps.display.size = {
-      x: width,
-      y: height
     };
     socketUpdate();
   };
@@ -269,12 +221,6 @@
     socketUpdate();
   };
 
-  const handleGridTypeChange = (gridType: number) => {
-    console.log('grid type change', gridType);
-    stageProps.grid.gridType = gridType;
-    socketUpdate();
-  };
-
   const setActiveScene = createSetActiveSceneMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
@@ -321,103 +267,32 @@
     }
   });
 
-  const handlePaddingChange = () => {
-    stageProps.display.padding.x = localPadding;
-    stageProps.display.padding.y = localPadding;
-    socketUpdate();
-  };
-
-  let gridTypeLabel = $derived(stageProps.grid.gridType === 0 ? 'Square size' : 'Hex size');
-
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
     openFileDialog();
   };
   $effect(() => {
-    gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
     fogHex = to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity);
-    tvDiagnalSize = getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y);
   });
 </script>
 
-<!-- Usage of ColorPicker -->
 {#snippet gridControls()}
-  <div class="sceneControls__settingsPopover">
-    <FormControl label="TV size" name="tvDiagnalSize" {errors}>
-      {#snippet input({ inputProps })}
-        <Input
-          {...inputProps}
-          type="number"
-          min={10}
-          step={1}
-          bind:value={tvDiagnalSize}
-          oninput={() => handleTvSizeChange(tvDiagnalSize)}
-        />
-      {/snippet}
-      {#snippet end()}
-        in.
-      {/snippet}
-    </FormControl>
-    <FormControl label="Resolution" name="displayResolutionX" {errors}>
-      {#snippet input({ inputProps })}
-        <Select
-          ids={{ trigger: inputProps.id as string }}
-          defaultSelected={defaultSelectedResoltion}
-          onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-          options={selectTvResolutionOptions}
-        />
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <div class="sceneControls__settingsPopover">
-    <FormControl label="Grid type" name="gridType" {errors}>
-      {#snippet input({ inputProps })}
-        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(0)}>
-          <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
-        </IconButton>
-        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(1)}>
-          <Icon Icon={IconHexagons} size="20px" stroke={2} />
-        </IconButton>
-      {/snippet}
-    </FormControl>
-    <FormControl label={gridTypeLabel} name="gridSpacing" {errors}>
-      {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
-      {/snippet}
-      {#snippet end()}
-        in.
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <div class="sceneControls__settingsPopover">
-    <FormControl label="Line thickness" name="gridLineThickness" {errors}>
-      {#snippet end()}
-        px
-      {/snippet}
-
-      {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
-      {/snippet}
-    </FormControl>
-    <FormControl label="Table padding" name="displayPaddingX" {errors}>
-      {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
-      {/snippet}
-      {#snippet end()}
-        px
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <FormControl label="Grid Color" name="gridLineColor" {errors}>
-    {#snippet input({ inputProps })}
-      <ColorPicker {...inputProps} bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
-    {/snippet}
-  </FormControl>
-  <Spacer />
+  <GridControls
+    {stageProps}
+    {socketUpdate}
+    {handleSelectActiveControl}
+    {activeControl}
+    {party}
+    {gameSession}
+    {selectedScene}
+    {activeScene}
+    {handleSceneFit}
+    {handleMapFill}
+    {handleMapFit}
+    {gameSettings}
+    {errors}
+  />
 {/snippet}
 
 {#snippet fogControls()}
