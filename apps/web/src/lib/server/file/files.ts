@@ -115,7 +115,11 @@ export const uploadFileFromInput = async (file: File, userId: string, destinatio
     const fileRow = await db.insert(filesTable).values({ location: fullPath }).returning().get();
     const fileToUserRow = await db.insert(userFilesTable).values({ userId, fileId: fileRow.id }).returning().get();
 
-    return fileToUserRow;
+    return {
+      userId: fileToUserRow.userId,
+      fileId: fileToUserRow.fileId,
+      location: fileRow.location
+    };
   } catch (error) {
     console.error('Error uploading from file input:', error);
     throw error;

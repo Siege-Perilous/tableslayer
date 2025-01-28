@@ -1,5 +1,11 @@
 import { gsChildDb } from '$lib/db/gs';
-import { sceneTable, settingsTable, type SelectGameSettings, type SelectScene } from '$lib/db/gs/schema';
+import {
+  sceneTable,
+  settingsTable,
+  type InsertScene,
+  type SelectGameSettings,
+  type SelectScene
+} from '$lib/db/gs/schema';
 import { eq, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
@@ -41,8 +47,15 @@ export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectS
   return scenesWithThumbs;
 };
 
-export const createScene = async (dbName: string, userId: string, name?: string, order?: number, file?: File) => {
+export const createScene = async (
+  dbName: string,
+  userId: string,
+  data: Omit<InsertScene, 'order'> & { order?: number },
+  file?: File
+) => {
   const gsDb = gsChildDb(dbName);
+  let order = data.order;
+  const name = data.name;
 
   // Default to a placeholder map
   let fileLocation = 'maps/01.jpeg';

@@ -5,8 +5,9 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ parent, params }) => {
+export const load: PageServerLoad = async ({ parent, params, locals }) => {
   const { gameSession, activeScene } = await parent();
+  const userId = locals.user.id;
   let selectedSceneNumber = Number(params.selectedScene);
   if (isNaN(selectedSceneNumber)) {
     selectedSceneNumber = 1;
@@ -15,7 +16,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
   let scenes = await getScenes(gameSession.dbName);
 
   if (scenes.length === 0) {
-    await createScene(gameSession.dbName, '1', 'Scene 1', 1);
+    await createScene(gameSession.dbName, userId, { name: 'Scene 1' });
     scenes = await getScenes(gameSession.dbName);
   }
 
@@ -48,7 +49,7 @@ export const actions: Actions = {
 
     try {
       const { name, file, order, dbName } = createSceneForm.data;
-      await createScene(dbName, userId, name, order, file);
+      await createScene(dbName, userId, { name, order }, file);
       // Use cookie version because form resets
       setToastCookie(event, {
         title: 'Scene created',

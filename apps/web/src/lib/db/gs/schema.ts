@@ -55,6 +55,7 @@ export const settingsTable = sqliteTable('settings', {
   isPaused: integer('isPaused', { mode: 'boolean' }).notNull().default(false)
 });
 
+export type InsertScene = typeof sceneTable.$inferInsert;
 export type SelectScene = typeof sceneTable.$inferSelect;
 export const selectSceneSchema = createSelectSchema(sceneTable);
 export const insertSceneSchema = createInsertSchema(sceneTable);
