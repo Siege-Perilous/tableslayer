@@ -44,7 +44,7 @@
       const error = e as FormMutationError;
       addToast({
         data: {
-          title: error.message || 'Error saving scene',
+          title: error.message || 'Error setting active scene',
           type: 'danger'
         }
       });

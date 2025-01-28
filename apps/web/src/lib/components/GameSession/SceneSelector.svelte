@@ -18,7 +18,8 @@
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
-  import { createSetActiveSceneMutation } from '$lib/queries';
+  import { createUpdateGameSessionSettingsMutation } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
 
   let {
     scenes,
@@ -92,10 +93,32 @@
     setTimeout(() => createSceneSuperForm.submit(), 50);
   };
 
-  const setActiveScene = createSetActiveSceneMutation();
+  const updateSettings = createUpdateGameSessionSettingsMutation();
   const handleSetActiveScene = async (sceneId: string) => {
-    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: sceneId, partyId: party.id });
+    try {
+      await $updateSettings.mutateAsync({
+        dbName: gameSession.dbName,
+        settings: { activeSceneId: sceneId },
+        partyId: party.id
+      });
+
+      addToast({
+        data: {
+          title: 'Active scene set',
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      const error = e as FormMutationError;
+      addToast({
+        data: {
+          title: error.message || 'Error setting active scene',
+          type: 'danger'
+        }
+      });
+    }
   };
+
   const onDeleteScene = (sceneId: string) => {
     $deleteSceneFormId = sceneId;
     $deleteSceneData.sceneId = sceneId;

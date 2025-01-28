@@ -1,4 +1,3 @@
-import { invalidateAll } from '$app/navigation';
 import { createMutation } from '@tanstack/svelte-query';
 
 import type { SelectScene } from '$lib/db/gs/schema';
@@ -11,41 +10,6 @@ export const createUpdateSceneMutation = () => {
     method: 'POST',
     onSuccess: async () => {
       return;
-    }
-  });
-};
-
-type SetActiveSceneResponse = {
-  success: boolean;
-};
-
-type SetActiveSceneVariables = {
-  sceneId: string;
-  partyId: string;
-  dbName: string;
-};
-
-export const createSetActiveSceneMutation = () => {
-  return createMutation<SetActiveSceneResponse, Error, SetActiveSceneVariables>({
-    mutationKey: ['setActiveScene'],
-    mutationFn: async ({ sceneId, partyId, dbName }) => {
-      const response = await fetch('/api/scenes/setActiveScene', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ sceneId, partyId, dbName })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to set active scene: ${response.statusText}`);
-      }
-
-      const data = (await response.json()) as SetActiveSceneResponse;
-      return data;
-    },
-    onSuccess: async () => {
-      await invalidateAll();
     }
   });
 };
