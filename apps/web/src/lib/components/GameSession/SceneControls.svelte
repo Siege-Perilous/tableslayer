@@ -3,18 +3,13 @@
     ColorMode,
     Icon,
     Popover,
-    ColorPicker,
-    type ColorUpdatePayload,
-    FormControl,
     Spacer,
     DropdownRadioMenu,
     DrawMode,
     ToolType,
     type StageProps,
     MapLayerType,
-    Input,
     Button,
-    IconButton,
     Text,
     Hr,
     addToast
@@ -34,18 +29,14 @@
     IconScreenShare,
     IconScreenShareOff
   } from '@tabler/icons-svelte';
-  import chroma from 'chroma-js';
   import { writable } from 'svelte/store';
-  import { generateGradientColors, to8CharHex } from '$lib/utils';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
   import { createSetActiveSceneMutation, createToggleGamePauseMutation } from '$lib/queries';
   import type { SelectScene } from '$lib/db/gs/schema';
-  import { IconRotateClockwise2 } from '@tabler/icons-svelte';
-  import { UpdateMapImage, openFileDialog } from './';
   import { type ZodIssue } from 'zod';
-  import { GridControls } from './';
+  import { GridControls, MapControls, FogControls } from './';
 
   let {
     socketUpdate,
@@ -76,8 +67,6 @@
     gameSettings: SelectGameSettings;
     errors: ZodIssue[] | undefined;
   } = $props();
-
-  let fogHex = $state(to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity));
 
   type SceneControl = {
     id: string;
@@ -119,25 +108,6 @@
       mapLayer: MapLayerType.None
     }
   ]);
-
-  // Ensure the handleFogColorUpdate function is typed with ColorUpdatePayload
-  const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
-    const fogColor = chroma(cd.hex).hex('rgb');
-    const fogColors = generateGradientColors(fogColor);
-    stageProps.fogOfWar = {
-      ...stageProps.fogOfWar,
-      opacity: cd.rgba.a,
-      noise: {
-        ...stageProps.fogOfWar.noise,
-        baseColor: fogColors[0],
-        fogColor1: fogColors[1],
-        fogColor2: fogColors[2],
-        fogColor3: fogColors[3],
-        fogColor4: fogColors[4]
-      }
-    };
-    socketUpdate();
-  };
 
   const eraseOptions = [
     {
@@ -216,11 +186,6 @@
     return selectedOption.value;
   };
 
-  const handleMapRotation = () => {
-    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
-    socketUpdate();
-  };
-
   const setActiveScene = createSetActiveSceneMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
@@ -258,23 +223,6 @@
     }
     socketUpdate();
   };
-
-  let localPadding = $state(stageProps.display.padding.x);
-
-  $effect(() => {
-    if (stageProps.display.padding.x !== localPadding) {
-      localPadding = stageProps.display.padding.x;
-    }
-  });
-
-  let contextSceneId = $state('');
-  const handleMapImageChange = (sceneId: string) => {
-    contextSceneId = sceneId;
-    openFileDialog();
-  };
-  $effect(() => {
-    fogHex = to8CharHex(stageProps.fogOfWar.noise.baseColor, stageProps.fogOfWar.opacity);
-  });
 </script>
 
 {#snippet gridControls()}
@@ -296,60 +244,25 @@
 {/snippet}
 
 {#snippet fogControls()}
-  <ColorPicker bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
+  <FogControls {stageProps} {socketUpdate} />
 {/snippet}
 
 {#snippet mapControls()}
-  <div class="sceneControls__mapPopover">
-    <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 5MB in size.</Text>
-    <Spacer size={2} />
-    <Button onclick={() => handleMapImageChange(selectedScene.id)}>Replace map</Button>
-    <Spacer />
-    <Hr />
-    <Spacer />
-    <div class="sceneControls__settingsPopover">
-      <FormControl label="Scale" name="mapZoom" {errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="number" bind:value={stageProps.map.zoom} />
-        {/snippet}
-        {#snippet start()}
-          x
-        {/snippet}
-      </FormControl>
-      <FormControl label="Rotate" class="sceneControls__rotate" name="mapRotation" {errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="number" bind:value={stageProps.map.rotation} />
-        {/snippet}
-        {#snippet end()}
-          <IconButton variant="ghost" onclick={handleMapRotation}>
-            <Icon Icon={IconRotateClockwise2} />
-          </IconButton>
-        {/snippet}
-      </FormControl>
-    </div>
-    <Spacer />
-    <div class="sceneControls__settingsPopover">
-      <FormControl label="Offset X" name="mapOffsetX" {errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="number" bind:value={stageProps.map.offset.x} />
-        {/snippet}
-        {#snippet end()}
-          px
-        {/snippet}
-      </FormControl>
-      <FormControl label="Offset Y" name="mapOffsetY" {errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="number" bind:value={stageProps.map.offset.y} />
-        {/snippet}
-        {#snippet end()}
-          px
-        {/snippet}
-      </FormControl>
-      <Button onclick={handleMapFill}>Fill in scene</Button>
-      <Button onclick={handleMapFit}>Fit in scene</Button>
-    </div>
-    <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
-  </div>
+  <MapControls
+    {stageProps}
+    {socketUpdate}
+    {handleSelectActiveControl}
+    {activeControl}
+    {party}
+    {gameSession}
+    {selectedScene}
+    {activeScene}
+    {handleSceneFit}
+    {handleMapFill}
+    {handleMapFit}
+    {gameSettings}
+    {errors}
+  />
 {/snippet}
 {#snippet playControls()}
   <div class="sceneControls__playPopover">
@@ -513,16 +426,7 @@
     display: flex;
     align-items: center;
   }
-  .sceneControls__settingsPopover {
-    width: 16rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
   .sceneControls__playPopover {
     width: 16rem;
-  }
-  .sceneControls__mapPopover {
-    max-width: 16rem;
   }
 </style>
