@@ -1,20 +1,16 @@
 import { invalidateAll } from '$app/navigation';
-import type { StageProps } from '@tableslayer/ui';
 import { createMutation } from '@tanstack/svelte-query';
 
-export const createUpdateSceneMutation = () => {
-  return createMutation<void, Error, { sceneId: string; dbName: string; stageProps: Partial<StageProps> }>({
-    mutationKey: ['updateScene'],
-    mutationFn: async ({ sceneId, dbName, stageProps }) => {
-      const response = await fetch(`/api/scenes/updateScene/${sceneId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dbName, stageProps })
-      });
+import type { SelectScene } from '$lib/db/gs/schema';
+import { mutationFactory } from '$lib/factories';
 
-      if (!response.ok) {
-        throw new Error(`Failed to update scene: ${response.statusText}`);
-      }
+export const createUpdateSceneMutation = () => {
+  return mutationFactory<{ dbName: string; partyId: string; sceneId: string; sceneData: Partial<SelectScene> }>({
+    mutationKey: ['updateScene'],
+    endpoint: '/api/scenes/updateScene',
+    method: 'POST',
+    onSuccess: async () => {
+      return;
     }
   });
 };

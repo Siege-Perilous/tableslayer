@@ -1,10 +1,13 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
+  import { type FormMutationError } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
+  import { type ZodIssue } from 'zod';
+  import { convertPropsToSceneDetails } from '$lib/utils';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -25,6 +28,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let errors = $state<ZodIssue[] | undefined>(undefined);
 
   onMount(() => {
     socket = setupGameSessionWebSocket(
@@ -233,28 +237,6 @@
 
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
 
-  $effect(() => {
-    if ($updateSceneMutation.isSuccess) {
-      addToast({
-        data: {
-          title: 'Scene saved!',
-          type: 'success'
-        }
-      });
-    }
-
-    if ($updateSceneMutation.isError) {
-      console.error('error saving scene', $updateSceneMutation.error);
-      addToast({
-        data: {
-          title: 'Error updating scene',
-          body: $updateSceneMutation.error.message,
-          type: 'danger'
-        }
-      });
-    }
-  });
-
   const onFogUpdate = async (blob: Promise<Blob>) => {
     const fogBlob = await blob;
     const fog = await $createFogMutation.mutateAsync({
@@ -268,31 +250,61 @@
       console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
     }
   };
-
-  const saveScene = async () => {
-    console.log('Saving scene...');
-    $updateSceneMutation.mutate({
-      sceneId: selectedScene.id,
-      dbName: gameSession.dbName,
-      stageProps
-    });
+  let lastSavedData = '';
+  let dirtyData = '';
+  const updateDirtyData = () => {
+    dirtyData = JSON.stringify(convertPropsToSceneDetails(stageProps));
   };
 
-  // Save the scene every 3 seconds based on the stage props
-  $effect(() => {
-    // Snapshot is needed to track reactivity
-    $state.snapshot(stageProps);
+  const saveScene = async () => {
+    if (dirtyData === lastSavedData) return;
 
-    if (saveTimer) {
-      clearTimeout(saveTimer);
+    try {
+      await $updateSceneMutation.mutateAsync({
+        sceneId: selectedScene.id,
+        dbName: gameSession.dbName,
+        partyId: party.id,
+        sceneData: JSON.parse(dirtyData)
+      });
+      errors = undefined;
+      addToast({
+        data: {
+          title: 'Scene saved!',
+          type: 'success'
+        }
+      });
+
+      // Now that we've successfully saved, the lastSavedData is the dirtyData
+      lastSavedData = dirtyData;
+    } catch (e) {
+      const error = e as FormMutationError;
+      errors = error.errors;
+      addToast({
+        data: {
+          title: error.message || 'Error saving scene',
+          type: 'danger'
+        }
+      });
+    }
+  };
+
+  // This effect will run whenever `stageProps` changes.
+  $effect(() => {
+    // Recompute the “dirty” data from stageProps
+    updateDirtyData();
+
+    if (dirtyData !== lastSavedData) {
+      if (saveTimer) clearTimeout(saveTimer);
+
+      saveTimer = setTimeout(() => {
+        saveScene();
+      }, 3000);
     }
 
-    saveTimer = setTimeout(() => {
-      saveScene();
-    }, 3000);
-
     return () => {
-      if (saveTimer) clearTimeout(saveTimer);
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
     };
   });
 </script>
@@ -345,6 +357,7 @@
           {party}
           {gameSession}
           {gameSettings}
+          {errors}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
       </div>

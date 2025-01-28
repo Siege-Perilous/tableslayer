@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
 
 export const sceneTable = sqliteTable(
@@ -14,8 +15,8 @@ export const sceneTable = sqliteTable(
     backgroundColor: text('backgroundColor').notNull().default('#0b0b0c'),
     displayPaddingX: integer('displayPaddingX').notNull().default(16),
     displayPaddingY: integer('displayPaddingY').notNull().default(16),
-    displaySizeX: integer('displaySizeX').notNull().default(17.77),
-    displaySizeY: integer('displaySizeY').notNull().default(10.0),
+    displaySizeX: real('displaySizeX').notNull().default(17.77),
+    displaySizeY: real('displaySizeY').notNull().default(10.0),
     displayResolutionX: integer('displayResolutionX').notNull().default(1920),
     displayResolutionY: integer('displayResolutionY').notNull().default(1080),
     fogOfWarUrl: text('fogOfWarUrl'),
@@ -56,3 +57,6 @@ export const settingsTable = sqliteTable('settings', {
 
 export type SelectScene = typeof sceneTable.$inferSelect;
 export type SelectGameSettings = typeof settingsTable.$inferSelect;
+export const selectSceneSchema = createSelectSchema(sceneTable);
+export const insertSceneSchema = createInsertSchema(sceneTable);
+export const updateSceneSchema = createUpdateSchema(sceneTable);

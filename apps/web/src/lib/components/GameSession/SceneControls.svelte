@@ -6,7 +6,7 @@
     ColorPicker,
     type ColorUpdatePayload,
     Select,
-    Control,
+    FormControl,
     Spacer,
     DropdownRadioMenu,
     DrawMode,
@@ -56,6 +56,7 @@
   import type { SelectScene } from '$lib/db/gs/schema';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
+  import { type ZodIssue } from 'zod';
 
   let {
     socketUpdate,
@@ -69,7 +70,8 @@
     handleSceneFit,
     handleMapFill,
     handleMapFit,
-    gameSettings
+    gameSettings,
+    errors
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -83,6 +85,7 @@
     handleMapFill: () => void;
     handleMapFit: () => void;
     gameSettings: SelectGameSettings;
+    errors: ZodIssue[] | undefined;
   } = $props();
 
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
@@ -341,10 +344,10 @@
 <!-- Usage of ColorPicker -->
 {#snippet gridControls()}
   <div class="sceneControls__settingsPopover">
-    <Control label="TV size">
-      {#snippet content({ id })}
+    <FormControl label="TV size" name="tvDiagnalSize" {errors}>
+      {#snippet input({ inputProps })}
         <Input
-          {id}
+          {...inputProps}
           type="number"
           min={10}
           step={1}
@@ -355,63 +358,65 @@
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
-    <Control label="Resolution">
-      {#snippet content({ id })}
+    </FormControl>
+    <FormControl label="Resolution" name="displayResolutionX" {errors}>
+      {#snippet input({ inputProps })}
         <Select
-          ids={{ trigger: id }}
+          ids={{ trigger: inputProps.id as string }}
           defaultSelected={defaultSelectedResoltion}
           onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
           options={selectTvResolutionOptions}
         />
       {/snippet}
-    </Control>
+    </FormControl>
   </div>
   <Spacer />
   <div class="sceneControls__settingsPopover">
-    <Control label="Grid type">
-      <IconButton variant="ghost" onclick={() => handleGridTypeChange(0)}>
-        <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
-      </IconButton>
-      <IconButton variant="ghost" onclick={() => handleGridTypeChange(1)}>
-        <Icon Icon={IconHexagons} size="20px" stroke={2} />
-      </IconButton>
-    </Control>
-    <Control label={gridTypeLabel}>
-      {#snippet content({ id })}
-        <Input {id} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+    <FormControl label="Grid type" name="gridType" {errors}>
+      {#snippet input({ inputProps })}
+        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(0)}>
+          <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+        </IconButton>
+        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(1)}>
+          <Icon Icon={IconHexagons} size="20px" stroke={2} />
+        </IconButton>
+      {/snippet}
+    </FormControl>
+    <FormControl label={gridTypeLabel} name="gridSpacing" {errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
       {/snippet}
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
+    </FormControl>
   </div>
   <Spacer />
   <div class="sceneControls__settingsPopover">
-    <Control label="Line thickness">
+    <FormControl label="Line thickness" name="gridLineThickness" {errors}>
       {#snippet end()}
         px
       {/snippet}
 
-      {#snippet content({ id })}
-        <Input {id} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
       {/snippet}
-    </Control>
-    <Control label="Table padding">
-      {#snippet content({ id })}
-        <Input {id} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+    </FormControl>
+    <FormControl label="Table padding" name="displayPaddingX" {errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
-    </Control>
+    </FormControl>
   </div>
   <Spacer />
-  <Control label="Grid Color">
-    {#snippet content({ id })}
-      <ColorPicker {id} bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
+  <FormControl label="Grid Color" name="gridLineColor" {errors}>
+    {#snippet input({ inputProps })}
+      <ColorPicker {...inputProps} bind:hex={gridHex} onUpdate={handleGridColorUpdate} />
     {/snippet}
-  </Control>
+  </FormControl>
   <Spacer />
 {/snippet}
 
@@ -428,43 +433,43 @@
     <Hr />
     <Spacer />
     <div class="sceneControls__settingsPopover">
-      <Control label="Scale">
-        {#snippet content({ id })}
-          <Input {id} type="number" bind:value={stageProps.map.zoom} />
+      <FormControl label="Scale" name="mapZoom" {errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="number" bind:value={stageProps.map.zoom} />
         {/snippet}
         {#snippet start()}
           x
         {/snippet}
-      </Control>
-      <Control label="Rotate" class="sceneControls__rotate">
-        {#snippet content({ id })}
-          <Input {id} type="number" bind:value={stageProps.map.rotation} />
+      </FormControl>
+      <FormControl label="Rotate" class="sceneControls__rotate" name="mapRotation" {errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="number" bind:value={stageProps.map.rotation} />
         {/snippet}
         {#snippet end()}
           <IconButton variant="ghost" onclick={handleMapRotation}>
             <Icon Icon={IconRotateClockwise2} />
           </IconButton>
         {/snippet}
-      </Control>
+      </FormControl>
     </div>
     <Spacer />
     <div class="sceneControls__settingsPopover">
-      <Control label="Offset X">
-        {#snippet content({ id })}
-          <Input {id} type="number" bind:value={stageProps.map.offset.x} />
+      <FormControl label="Offset X" name="mapOffsetX" {errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="number" bind:value={stageProps.map.offset.x} />
         {/snippet}
         {#snippet end()}
           px
         {/snippet}
-      </Control>
-      <Control label="Offset Y">
-        {#snippet content({ id })}
-          <Input {id} type="number" bind:value={stageProps.map.offset.y} />
+      </FormControl>
+      <FormControl label="Offset Y" name="mapOffsetY" {errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="number" bind:value={stageProps.map.offset.y} />
         {/snippet}
         {#snippet end()}
           px
         {/snippet}
-      </Control>
+      </FormControl>
       <Button onclick={handleMapFill}>Fill in scene</Button>
       <Button onclick={handleMapFit}>Fit in scene</Button>
     </div>
