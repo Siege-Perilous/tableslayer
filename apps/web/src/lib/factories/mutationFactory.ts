@@ -18,21 +18,34 @@ export type FormMutationSuccess = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MutationVariables = Record<string, any>;
 
-type MutationFactoryConfig = {
-  mutationKey: string[];
-  endpoint: string;
-  method: 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  onSuccess?: () => void;
-};
+// Simple version replaces mutationFn with a simple endpoint call.
+type MutationFactoryConfig<VariablesType, SuccessType> =
+  | {
+      mutationKey: string[];
+      mutationFn: (variables: VariablesType) => Promise<SuccessType>;
+      onSuccess?: () => void;
+      onError?: (error: unknown) => void;
+    }
+  | {
+      mutationKey: string[];
+      endpoint: string;
+      method: 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+      onSuccess?: () => void;
+      onError?: (error: unknown) => void;
+    };
 
 export function mutationFactory<
   VariablesType = MutationVariables,
   SuccessType = FormMutationSuccess,
   FailureType = FormMutationError
->(config: MutationFactoryConfig) {
+>(config: MutationFactoryConfig<VariablesType, SuccessType>) {
   return createMutation<SuccessType, FailureType, VariablesType>({
     mutationKey: config.mutationKey,
     mutationFn: async (variables: VariablesType) => {
+      if ('mutationFn' in config) {
+        return config.mutationFn(variables);
+      }
+
       const response = await fetch(config.endpoint, {
         method: config.method,
         headers: { 'Content-Type': 'application/json' },
@@ -42,14 +55,13 @@ export function mutationFactory<
       const data = await response.json();
 
       if (!response.ok) {
-        throw data; // Throw the response with errors
+        throw data;
       }
 
-      return data; // Return success response
+      return data;
     },
-    onError: (error) => {
-      console.error('Error in mutation:', error); // Log or handle the error
-    },
+    onError: config.onError ?? ((error) => console.error('Error in mutation:', error)),
+    // By default, onSuccess will invalidate all queries to refresh data.
     onSuccess: async () => {
       if (config.onSuccess) {
         config.onSuccess();
