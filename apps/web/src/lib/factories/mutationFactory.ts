@@ -26,9 +26,9 @@ type MutationFactoryConfig = {
 };
 
 export function mutationFactory<
+  VariablesType = MutationVariables,
   SuccessType = FormMutationSuccess,
-  FailureType = FormMutationError,
-  VariablesType = MutationVariables
+  FailureType = FormMutationError
 >(config: MutationFactoryConfig) {
   return createMutation<SuccessType, FailureType, VariablesType>({
     mutationKey: config.mutationKey,

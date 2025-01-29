@@ -1,5 +1,3 @@
-import { createMutation } from '@tanstack/svelte-query';
-
 import type { SelectScene } from '$lib/db/gs/schema';
 import { mutationFactory } from '$lib/factories';
 
@@ -19,32 +17,5 @@ export const createNewSceneMutation = () => {
     mutationKey: ['insertScene'],
     endpoint: '/api/scenes/createScene',
     method: 'POST'
-  });
-};
-
-type UpdateSceneMapImageVariables = {
-  sceneId: string;
-  dbName: string;
-  file: File;
-};
-
-export const createUpdateSceneMapImageMutation = () => {
-  return createMutation<void, Error, UpdateSceneMapImageVariables>({
-    mutationKey: ['updateSceneMapImage'],
-    mutationFn: async ({ sceneId, dbName, file }) => {
-      const formData = new FormData();
-      formData.append('sceneId', sceneId);
-      formData.append('dbName', dbName);
-      formData.append('file', file, file.name);
-
-      const response = await fetch('/api/scenes/updateSceneMapImage', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update scene map image: ${response.statusText}`);
-      }
-    }
   });
 };

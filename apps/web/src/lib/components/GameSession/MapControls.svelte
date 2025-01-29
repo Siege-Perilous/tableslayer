@@ -15,7 +15,8 @@
     selectedScene,
     handleMapFill,
     handleMapFit,
-    errors
+    errors,
+    party
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -92,7 +93,7 @@
     <Button onclick={handleMapFill}>Fill in scene</Button>
     <Button onclick={handleMapFit}>Fit in scene</Button>
   </div>
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
+  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
 </div>
 
 <style>

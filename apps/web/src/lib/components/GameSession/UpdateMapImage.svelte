@@ -6,12 +6,14 @@
 </script>
 
 <script lang="ts">
-  import { createUpdateSceneMapImageMutation } from '$lib/queries';
-  import { addToast } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
-  let { sceneId, dbName }: { sceneId: string; dbName: string } = $props();
 
-  const updateSceneMapImage = createUpdateSceneMapImageMutation();
+  import { createUploadFileMutation, createUpdateSceneMutation } from '$lib/queries';
+  import { addToast } from '@tableslayer/ui';
+  let { sceneId, dbName, partyId }: { sceneId: string; dbName: string; partyId: string } = $props();
+
+  const uploadFile = createUploadFileMutation();
+  const updateScene = createUpdateSceneMutation();
 
   async function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -20,14 +22,22 @@
     input.value = '';
 
     try {
-      await $updateSceneMapImage.mutateAsync({
-        sceneId,
-        dbName,
-        file: pickedFile
+      const uploadedFile = await $uploadFile.mutateAsync({
+        file: pickedFile,
+        folder: 'map'
       });
 
-      await invalidateAll();
+      await $updateScene.mutateAsync({
+        dbName,
+        sceneId,
+        partyId,
+        sceneData: {
+          mapLocation: uploadedFile.location
+        }
+      });
 
+      input.value = '';
+      invalidateAll();
       addToast({
         data: {
           title: 'Map updated',
