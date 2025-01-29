@@ -2,7 +2,7 @@ import { mutationFactory } from '$lib/factories';
 import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 
-// Uploads fog to R2, does not create a user file entry
+// Uploads fog to R2, does not create a user file entry because they are throwaway
 export const createUploadFogFromBlobMutation = () => {
   return mutationFactory<{ blob: Blob }, { location: string }, Error>({
     mutationKey: ['uploadFog'],
