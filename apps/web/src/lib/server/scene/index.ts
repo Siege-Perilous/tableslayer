@@ -47,12 +47,7 @@ export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectS
   return scenesWithThumbs;
 };
 
-export const createScene = async (
-  dbName: string,
-  userId: string,
-  data: Omit<InsertScene, 'order'> & { order?: number },
-  file?: File
-) => {
+export const createScene = async (dbName: string, data: Omit<InsertScene, 'order'> & { order?: number }) => {
   const gsDb = gsChildDb(dbName);
   let order = data.order;
   const name = data.name;
@@ -60,10 +55,9 @@ export const createScene = async (
   // Default to a placeholder map
   let fileLocation = 'maps/01.jpeg';
   // Handle file upload
-  if (file) {
-    const fileRow = await uploadFileFromInput(file, userId, 'map');
-    const fileContent = await getFile(fileRow.fileId);
-    fileLocation = fileContent.location;
+
+  if (data.mapLocation) {
+    fileLocation = data.mapLocation;
   }
 
   if (order === undefined) {

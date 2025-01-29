@@ -15,7 +15,7 @@ export const createUpdateSceneMutation = () => {
 };
 
 export const createNewSceneMutation = () => {
-  return mutationFactory<{ dbName: string; partyId: string; sceneData: Partial<SelectScene>; file?: File }>({
+  return mutationFactory<{ dbName: string; partyId: string; sceneData: Partial<SelectScene> }>({
     mutationKey: ['insertScene'],
     endpoint: '/api/scenes/createScene',
     method: 'POST'

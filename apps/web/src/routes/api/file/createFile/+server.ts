@@ -1,25 +1,24 @@
-import { insertSceneSchema } from '$lib/db/gs/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
-import { createScene, isUserInParty } from '$lib/server';
+import { createUserFileFromLocation } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
-  dbName: z.string(),
-  partyId: z.string(),
-  sceneData: insertSceneSchema
+  location: z.string().min(1, 'File location cannot be empty')
 });
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { dbName, partyId, sceneData } = body;
+    const { location } = body;
+    console.log('body', body);
 
-    if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
+    if (!locals.user?.id) {
       throw new Error('Unauthorized');
     }
 
-    await createScene(dbName, sceneData);
+    const userId = locals.user.id;
+    const fileDetails = await createUserFileFromLocation(location, userId);
 
-    return { success: true };
+    return fileDetails;
   },
   {
     validationSchema,

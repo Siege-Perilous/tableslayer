@@ -11,7 +11,11 @@
   import { zodClient } from 'sveltekit-superforms/adapters';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
-  import { createUpdateGameSessionSettingsMutation, createNewSceneMutation } from '$lib/queries';
+  import {
+    createUpdateGameSessionSettingsMutation,
+    createUploadFileMutation,
+    createNewSceneMutation
+  } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
 
   let {
@@ -48,32 +52,45 @@
   let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
 
+  console.log(gameSession.dbName);
+  const uploadFile = createUploadFileMutation();
   const createNewScene = createNewSceneMutation();
+
   const handleCreateScene = async (order: number) => {
     try {
-      console.log('creating new scene', order, file);
+      let mapLocation: string | undefined = undefined;
+
+      if (file && file.length) {
+        const uploadedFile = await $uploadFile.mutateAsync({
+          file: file[0],
+          folder: 'map'
+        });
+        mapLocation = uploadedFile.location;
+      }
+
+      console.log(mapLocation);
+
       await $createNewScene.mutateAsync({
         dbName: gameSession.dbName,
         partyId: party.id,
         sceneData: {
           name: 'New Scene',
-          order
-        },
-        file: file ? file[0] : undefined
+          order,
+          mapLocation
+        }
       });
 
       addToast({
         data: {
-          title: 'Scene created',
+          title: 'Scene created successfully',
           type: 'success'
         }
       });
-    } catch (e) {
-      const error = e as FormMutationError;
-
+    } catch (error) {
+      console.log('Error creating scene:', error);
       addToast({
         data: {
-          title: error.message || 'Error creating scene',
+          title: 'Error creating scene',
           type: 'danger'
         }
       });

@@ -4,9 +4,8 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ parent, params, locals }) => {
+export const load: PageServerLoad = async ({ parent, params }) => {
   const { gameSession, activeScene } = await parent();
-  const userId = locals.user.id;
   let selectedSceneNumber = Number(params.selectedScene);
   if (isNaN(selectedSceneNumber)) {
     selectedSceneNumber = 1;
@@ -15,7 +14,7 @@ export const load: PageServerLoad = async ({ parent, params, locals }) => {
   let scenes = await getScenes(gameSession.dbName);
 
   if (scenes.length === 0) {
-    await createScene(gameSession.dbName, userId, { name: 'Scene 1' });
+    await createScene(gameSession.dbName, { name: 'Scene 1' });
     scenes = await getScenes(gameSession.dbName);
   }
 
