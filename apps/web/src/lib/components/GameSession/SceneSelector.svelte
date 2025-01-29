@@ -210,7 +210,7 @@
     <Spacer />
     <MessageError message={$deleteSceneMessage} />
   {/if}
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
+  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
 </div>
 
 <style>

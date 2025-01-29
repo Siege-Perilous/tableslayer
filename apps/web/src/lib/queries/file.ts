@@ -25,11 +25,7 @@ export const createUploadFogFromBlobMutation = () => {
 };
 
 export const createUploadFileMutation = () => {
-  return createMutation<
-    { userId: string; fileId: string; location: string }, // Success Type
-    Error, // Error Type
-    { file: File; folder: string } // Variables Type
-  >({
+  return createMutation<{ userId: string; fileId: string; location: string }, Error, { file: File; folder: string }>({
     mutationKey: ['uploadFile'],
     mutationFn: async ({ file, folder }) => {
       try {
@@ -40,7 +36,6 @@ export const createUploadFileMutation = () => {
         const contentType = file.type;
 
         // Step 2: Fetch Presigned URL
-
         const presignedUrlResponse = await fetch('/api/file/generatePresignedWriteUrl', {
           method: 'POST',
           body: JSON.stringify({ fileName, contentType }),
