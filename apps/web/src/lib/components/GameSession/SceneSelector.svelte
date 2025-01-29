@@ -52,11 +52,11 @@
   let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
 
-  console.log(gameSession.dbName);
   const uploadFile = createUploadFileMutation();
   const createNewScene = createNewSceneMutation();
 
   const handleCreateScene = async (order: number) => {
+    formIsLoading = true;
     try {
       let mapLocation: string | undefined = undefined;
 
@@ -67,8 +67,6 @@
         });
         mapLocation = uploadedFile.location;
       }
-
-      console.log(mapLocation);
 
       await $createNewScene.mutateAsync({
         dbName: gameSession.dbName,
@@ -86,8 +84,11 @@
           type: 'success'
         }
       });
+      formIsLoading = false;
+      file = null;
     } catch (error) {
       console.log('Error creating scene:', error);
+      formIsLoading = false;
       addToast({
         data: {
           title: 'Error creating scene',
