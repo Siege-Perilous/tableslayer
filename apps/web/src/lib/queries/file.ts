@@ -1,30 +1,49 @@
 import { mutationFactory } from '$lib/factories';
-import { createMutation } from '@tanstack/svelte-query';
 import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 
+// Uploads fog to R2, does not create a user file entry
 export const createUploadFogFromBlobMutation = () => {
-  return createMutation<{ location: string }, Error, { sceneId: string; blob: Blob }>({
+  return mutationFactory<{ blob: Blob }, { location: string }, Error>({
     mutationKey: ['uploadFog'],
-    mutationFn: async ({ sceneId, blob }) => {
-      const response = await fetch(`/api/file/uploadFogFromBlob/${sceneId}`, {
+    mutationFn: async ({ blob }) => {
+      const fileName = `fog/${uuidv4()}.png`;
+      const contentType = 'image/png';
+      const file = new File([blob], fileName, { type: contentType });
+      // Step 1: Fetch Presigned URL
+      const presignedUrlResponse = await fetch('/api/file/generatePresignedWriteUrl', {
         method: 'POST',
-        headers: {
-          'Content-Type': blob.type
-        },
-        body: blob
+        body: JSON.stringify({ fileName, contentType }),
+        headers: { 'Content-Type': 'application/json' }
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to upload fog of war: ${response.statusText}`);
+      if (!presignedUrlResponse.ok) {
+        throw new Error('Failed to generate presigned URL');
       }
 
-      const file = await response.json();
-      return file;
+      const { signedUrl } = await presignedUrlResponse.json();
+
+      // Step 2: Upload to Cloudflare R2
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType },
+        body: file
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('File upload to Cloudflare R2 failed');
+      }
+
+      return { location: fileName };
+    },
+    // Don't invalidate.
+    onSuccess: () => {
+      return;
     }
   });
 };
 
+// Uploads a file to R2 and creates a user file entry
 export const createUploadFileMutation = () => {
   return mutationFactory<{ file: File; folder: string }, { userId: string; fileId: string; location: string }, Error>({
     mutationKey: ['uploadFile'],

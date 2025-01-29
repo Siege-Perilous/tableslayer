@@ -14,6 +14,7 @@
     createDeleteSceneMutation
   } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
+  import type { ZodIssue } from 'zod';
 
   let {
     scenes,
@@ -32,6 +33,7 @@
   let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
   let sceneBeingDeleted = $state('');
+  let createSceneErrors = $state<ZodIssue[] | undefined>(undefined);
 
   const uploadFile = createUploadFileMutation();
   const createNewScene = createNewSceneMutation();
@@ -69,7 +71,9 @@
       });
       formIsLoading = false;
       file = null;
-    } catch (error) {
+    } catch (e) {
+      const error = e as FormMutationError;
+      createSceneErrors = error.errors;
       console.log('Error creating scene:', error);
       formIsLoading = false;
       addToast({
@@ -99,7 +103,7 @@
       const error = e as FormMutationError;
       addToast({
         data: {
-          title: error.message || 'Error setting active scene',
+          title: error.message,
           type: 'danger'
         }
       });
@@ -146,7 +150,7 @@
 <div class="scenes">
   <div class="scene__input">
     <div class={sceneInputClasses}>
-      <FormControl name="file">
+      <FormControl name="file" errors={createSceneErrors}>
         {#snippet input({ inputProps })}
           <FileInput variant="dropzone" {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
         {/snippet}

@@ -20,8 +20,7 @@
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } =
-    $derived(data);
+  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
@@ -321,7 +320,7 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector {deleteSceneForm} {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
+      <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
     <PaneResizer class="resizer">
       <button
