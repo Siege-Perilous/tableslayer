@@ -1,8 +1,5 @@
-import { deleteSceneSchema } from '$lib/schemas';
-import { createScene, deleteScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
-import { message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
-import type { Actions, PageServerLoad } from './$types';
+import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, params }) => {
   const { gameSession, activeScene } = await parent();
@@ -18,8 +15,6 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     scenes = await getScenes(gameSession.dbName);
   }
 
-  const deleteSceneForm = await superValidate(zod(deleteSceneSchema));
-
   // check if activeSceneNumber is valid
   if (selectedSceneNumber < 1 || selectedSceneNumber > scenes.length) {
     selectedSceneNumber = 1;
@@ -30,25 +25,6 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     scenes,
     selectedSceneNumber,
     selectedScene,
-    deleteSceneForm,
     activeScene
   };
-};
-
-export const actions: Actions = {
-  deleteScene: async (event) => {
-    //  const userId = event.locals.user.id;
-    const deleteSceneForm = await superValidate(event.request, zod(deleteSceneSchema));
-    if (!deleteSceneForm.valid) {
-      return message(deleteSceneForm, { type: 'error', text: 'Invalid scene data' }, { status: 400 });
-    }
-    try {
-      const { dbName, sceneId } = deleteSceneForm.data;
-      await deleteScene(dbName, sceneId);
-      return message(deleteSceneForm, { type: 'success', text: 'Scene deleted' });
-    } catch (error) {
-      console.error('Error deleting scene', error);
-      return message(deleteSceneForm, { type: 'error', text: 'Error deleting scene' }, { status: 500 });
-    }
-  }
 };

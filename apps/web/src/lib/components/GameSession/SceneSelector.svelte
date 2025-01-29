@@ -1,20 +1,17 @@
 <script lang="ts">
-  import { Button, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast, FormControl } from '@tableslayer/ui';
+  import { Button, FileInput, Icon, Spacer, ContextMenu, addToast, FormControl } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
-  import { deleteSceneSchema, type DeleteSceneFormType } from '$lib/schemas';
-  import type { SuperValidated } from 'sveltekit-superforms';
-  import { superForm } from 'sveltekit-superforms';
-  import { zodClient } from 'sveltekit-superforms/adapters';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
     createUpdateGameSessionSettingsMutation,
     createUploadFileMutation,
-    createNewSceneMutation
+    createNewSceneMutation,
+    createDeleteSceneMutation
   } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
 
@@ -22,38 +19,24 @@
     scenes,
     gameSession,
     selectedSceneNumber,
-    deleteSceneForm,
     activeScene,
     party
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
-    deleteSceneForm: SuperValidated<DeleteSceneFormType>;
     gameSession: SelectGameSession;
     selectedSceneNumber: number;
     party: SelectParty & Thumb;
     activeScene: SelectScene | (SelectScene & Thumb) | null;
   } = $props();
 
-  const deleteSceneSuperForm = superForm(deleteSceneForm, {
-    resetForm: true,
-    validators: zodClient(deleteSceneSchema),
-    invalidateAll: 'force',
-    delayMs: 500
-  });
-
-  const {
-    form: deleteSceneData,
-    enhance: deleteSceneEnhance,
-    message: deleteSceneMessage,
-    formId: deleteSceneFormId,
-    delayed: deleteSceneDelayed
-  } = deleteSceneSuperForm;
-
   let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
+  let sceneBeingDeleted = $state('');
 
   const uploadFile = createUploadFileMutation();
   const createNewScene = createNewSceneMutation();
+  const updateSettings = createUpdateGameSessionSettingsMutation();
+  const deleteScene = createDeleteSceneMutation();
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -98,7 +81,6 @@
     }
   };
 
-  const updateSettings = createUpdateGameSessionSettingsMutation();
   const handleSetActiveScene = async (sceneId: string) => {
     try {
       await $updateSettings.mutateAsync({
@@ -124,11 +106,31 @@
     }
   };
 
-  const onDeleteScene = (sceneId: string) => {
-    $deleteSceneFormId = sceneId;
-    $deleteSceneData.sceneId = sceneId;
-    $deleteSceneData.dbName = gameSession.dbName;
-    setTimeout(() => deleteSceneSuperForm.submit(), 50);
+  const handleDeleteScene = (sceneId: string) => {
+    sceneBeingDeleted = sceneId;
+    try {
+      $deleteScene.mutateAsync({
+        dbName: gameSession.dbName,
+        partyId: party.id,
+        sceneId
+      });
+      addToast({
+        data: {
+          title: 'Scene deleted',
+          type: 'success'
+        }
+      });
+      sceneBeingDeleted = '';
+    } catch (e) {
+      sceneBeingDeleted = '';
+      const error = e as FormMutationError;
+      addToast({
+        data: {
+          title: error.message || 'Error deleting scene',
+          type: 'danger'
+        }
+      });
+    }
   };
 
   let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
@@ -160,18 +162,13 @@
   </div>
   <div class="scene__list">
     {#each scenes as scene}
-      {@const sceneSelectorClasses = [
-        'scene',
-        scene.order === selectedSceneNumber && 'scene--isSelected',
-        $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
-      ]}
       <ContextMenu
         items={[
           { label: 'New scene', onclick: () => handleCreateScene(scene.order + 1) },
           {
             label: 'Delete',
             onclick: () => {
-              onDeleteScene(scene.id);
+              handleDeleteScene(scene.id);
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
@@ -186,7 +183,11 @@
           <a
             href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
             id={`scene-${scene.order}`}
-            class={sceneSelectorClasses}
+            class={[
+              'scene',
+              scene.order === selectedSceneNumber && 'scene--isSelected',
+              sceneBeingDeleted === scene.id && 'scene--isLoading'
+            ]}
             style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
           >
             {#if activeScene && activeScene.id === scene.id}
@@ -202,14 +203,6 @@
     {/each}
   </div>
 
-  <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
-    <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
-    <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
-  </form>
-  {#if $deleteSceneMessage}
-    <Spacer />
-    <MessageError message={$deleteSceneMessage} />
-  {/if}
   <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
 </div>
 

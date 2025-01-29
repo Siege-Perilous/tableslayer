@@ -19,3 +19,11 @@ export const createNewSceneMutation = () => {
     method: 'POST'
   });
 };
+
+export const createDeleteSceneMutation = () => {
+  return mutationFactory<{ dbName: string; partyId: string; sceneId: string }>({
+    mutationKey: ['deleteScene'],
+    endpoint: '/api/scenes/deleteScene',
+    method: 'POST'
+  });
+};
