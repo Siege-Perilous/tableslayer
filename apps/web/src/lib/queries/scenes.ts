@@ -1,7 +1,7 @@
 import type { SelectScene } from '$lib/db/gs/schema';
 import { mutationFactory } from '$lib/factories';
 
-export const createUpdateSceneMutation = () => {
+export const useUpdateSceneMutation = () => {
   return mutationFactory<{ dbName: string; partyId: string; sceneId: string; sceneData: Partial<SelectScene> }>({
     mutationKey: ['updateScene'],
     endpoint: '/api/scenes/updateScene',
@@ -12,7 +12,7 @@ export const createUpdateSceneMutation = () => {
   });
 };
 
-export const createNewSceneMutation = () => {
+export const useCreateSceneMutation = () => {
   return mutationFactory<{ dbName: string; partyId: string; sceneData: Partial<SelectScene> }>({
     mutationKey: ['insertScene'],
     endpoint: '/api/scenes/createScene',
@@ -20,7 +20,7 @@ export const createNewSceneMutation = () => {
   });
 };
 
-export const createDeleteSceneMutation = () => {
+export const useDeleteSceneMutation = () => {
   return mutationFactory<{ dbName: string; partyId: string; sceneId: string }>({
     mutationKey: ['deleteScene'],
     endpoint: '/api/scenes/deleteScene',

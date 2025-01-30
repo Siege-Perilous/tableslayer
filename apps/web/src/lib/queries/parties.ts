@@ -1,10 +1,29 @@
-import type { InsertParty } from '$lib/db/app/schema';
+import type { InsertParty, SelectParty } from '$lib/db/app/schema';
 import { mutationFactory } from '$lib/factories';
 
-export const createUpdatePartyMutation = () => {
-  return mutationFactory<{ partyId: string; partyData: Partial<InsertParty> }>({
+export const useUpdatePartyMutation = () => {
+  return mutationFactory<
+    { partyId: string; partyData: Partial<InsertParty> },
+    { success: boolean; party: SelectParty }
+  >({
     mutationKey: ['updateParty'],
     endpoint: '/api/party/updateParty',
+    method: 'POST'
+  });
+};
+
+export const useNewPartyMutation = () => {
+  return mutationFactory<{ partyData?: Partial<InsertParty> }, { success: boolean; party: SelectParty }>({
+    mutationKey: ['updateParty'],
+    endpoint: '/api/party/createParty',
+    method: 'POST'
+  });
+};
+
+export const useDeletePartyMutation = () => {
+  return mutationFactory<{ partyId: string }>({
+    mutationKey: ['deleteParty'],
+    endpoint: '/api/party/deleteParty',
     method: 'POST'
   });
 };

@@ -3,7 +3,7 @@ import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 
 // Uploads fog to R2, does not create a user file entry because they are throwaway
-export const createUploadFogFromBlobMutation = () => {
+export const useUploadFogFromBlobMutation = () => {
   return mutationFactory<{ blob: Blob }, { location: string }, Error>({
     mutationKey: ['uploadFog'],
     mutationFn: async ({ blob }) => {
@@ -44,7 +44,7 @@ export const createUploadFogFromBlobMutation = () => {
 };
 
 // Uploads a file to R2 and creates a user file entry
-export const createUploadFileMutation = () => {
+export const useUploadFileMutation = () => {
   return mutationFactory<{ file: File; folder: string }, { userId: string; fileId: string; location: string }, Error>({
     mutationKey: ['uploadFile'],
     mutationFn: async ({ file, folder }) => {

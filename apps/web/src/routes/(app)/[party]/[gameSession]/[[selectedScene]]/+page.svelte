@@ -5,7 +5,7 @@
   import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
-  import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
+  import { useUpdateSceneMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { convertPropsToSceneDetails } from '$lib/utils';
   import {
@@ -47,8 +47,8 @@
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSettings.isPaused);
   };
 
-  const updateSceneMutation = createUpdateSceneMutation();
-  const createFogMutation = createUploadFogFromBlobMutation();
+  const updateSceneMutation = useUpdateSceneMutation();
+  const createFogMutation = useUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {

@@ -8,12 +8,12 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
 
-  import { createUploadFileMutation, createUpdateSceneMutation } from '$lib/queries';
+  import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
   import { addToast } from '@tableslayer/ui';
   let { sceneId, dbName, partyId }: { sceneId: string; dbName: string; partyId: string } = $props();
 
-  const uploadFile = createUploadFileMutation();
-  const updateScene = createUpdateSceneMutation();
+  const uploadFile = useUploadFileMutation();
+  const updateScene = useUpdateSceneMutation();
 
   async function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;

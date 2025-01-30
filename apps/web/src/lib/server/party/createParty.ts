@@ -1,5 +1,6 @@
 import { db } from '$lib/db/app';
 import { partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
+import { SlugConflictError } from '$lib/server';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,6 +8,60 @@ import { v4 as uuidv4 } from 'uuid';
 interface CustomError extends Error {
   code?: string;
 }
+
+export const createParty = async (userId: string, partyData?: Partial<InsertParty>): Promise<SelectParty> => {
+  let isPartyNameUnique = false;
+  let partyName = partyData?.name || createRandomName();
+
+  while (!isPartyNameUnique) {
+    try {
+      const slug = generateSlug(partyName);
+      const id = uuidv4();
+
+      // Attempt to create the party
+      const party = await db
+        .insert(partyTable)
+        .values({
+          ...partyData,
+          id,
+          name: partyName,
+          slug
+        })
+        .returning()
+        .get();
+
+      // Add the user as the admin
+      await db
+        .insert(partyMemberTable)
+        .values({
+          partyId: id,
+          userId,
+          role: 'admin'
+        })
+        .execute();
+
+      isPartyNameUnique = true;
+      return party;
+    } catch (error) {
+      const customError = error as CustomError;
+
+      if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
+        // If the error is due to a unique constraint violation
+        if (partyData?.name) {
+          // If the user provided the name, throw an error
+          throw new Error('Party name is not unique');
+        } else {
+          // If the name was generated, try again with a new random name
+          partyName = createRandomName();
+        }
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error('Unexpected error: Unable to create party'); // Fallback error (should never reach here)
+};
 
 export const createRandomNamedParty = async (): Promise<SelectParty> => {
   let partyName = createRandomName();
@@ -116,17 +171,27 @@ export const renameParty = async (partyId: string, name: string): Promise<Select
 
 type PartialInsertParty = Partial<InsertParty>;
 
-export const updateParty = async (partyId: string, updates: PartialInsertParty): Promise<void> => {
+export const updateParty = async (partyId: string, updates: PartialInsertParty): Promise<SelectParty> => {
   if (Object.keys(updates).length === 0) {
     throw new Error('No updates provided.');
   }
 
+  // Ensure slug is updated if name is changed
+  if (updates.name && !updates.slug) {
+    updates.slug = generateSlug(updates.name);
+  }
+
   try {
-    await db.update(partyTable).set(updates).where(eq(partyTable.id, partyId)).run();
+    const party = await db.update(partyTable).set(updates).where(eq(partyTable.id, partyId)).returning().get();
 
     console.log(`Party ${partyId} updated successfully.`);
-  } catch (error) {
-    console.error(`Error updating party ${partyId}`, error);
+    return party;
+  } catch (error: unknown) {
+    // Check if Drizzle/SQLite complained about a unique constraint
+    if (error instanceof Error && error.message.includes('UNIQUE constraint failed: party.slug')) {
+      // Construct a new ZodError that points to "slug" as the invalid field
+      throw new SlugConflictError('Name is already taken.');
+    }
     throw new Error('Failed to update party.');
   }
 };

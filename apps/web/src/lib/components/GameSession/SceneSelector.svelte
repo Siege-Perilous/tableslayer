@@ -8,10 +8,10 @@
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
-    createUpdateGameSessionSettingsMutation,
-    createUploadFileMutation,
-    createNewSceneMutation,
-    createDeleteSceneMutation
+    useUpdateGameSessionSettingsMutation,
+    useUploadFileMutation,
+    useCreateSceneMutation,
+    useDeleteSceneMutation
   } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import type { ZodIssue } from 'zod';
@@ -35,10 +35,10 @@
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<ZodIssue[] | undefined>(undefined);
 
-  const uploadFile = createUploadFileMutation();
-  const createNewScene = createNewSceneMutation();
-  const updateSettings = createUpdateGameSessionSettingsMutation();
-  const deleteScene = createDeleteSceneMutation();
+  const uploadFile = useUploadFileMutation();
+  const createNewScene = useCreateSceneMutation();
+  const updateSettings = useUpdateGameSessionSettingsMutation();
+  const deleteScene = useDeleteSceneMutation();
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;

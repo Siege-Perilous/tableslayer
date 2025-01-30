@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './email';
+export * from './errors';
 export * from './file';
 export * from './gameSession';
 export * from './party';

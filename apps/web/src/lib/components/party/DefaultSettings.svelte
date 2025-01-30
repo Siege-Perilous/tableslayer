@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createUpdatePartyMutation } from '$lib/queries';
+  import { useUpdatePartyMutation } from '$lib/queries';
   import { type FormMutationError } from '$lib/factories';
   import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title, addToast } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
@@ -61,7 +61,7 @@
     partyData.defaultDisplayPaddingY = padding;
   });
 
-  const updateParty = createUpdatePartyMutation();
+  const updateParty = useUpdatePartyMutation();
 
   const save = async () => {
     try {

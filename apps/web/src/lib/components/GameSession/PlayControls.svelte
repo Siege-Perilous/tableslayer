@@ -4,7 +4,7 @@
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
-  import { createUpdateGameSessionSettingsMutation } from '$lib/queries';
+  import { useUpdateGameSessionSettingsMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
 
   let {
@@ -23,7 +23,7 @@
     gameSettings: SelectGameSettings;
   } = $props();
 
-  const updateSettings = createUpdateGameSessionSettingsMutation();
+  const updateSettings = useUpdateGameSessionSettingsMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
