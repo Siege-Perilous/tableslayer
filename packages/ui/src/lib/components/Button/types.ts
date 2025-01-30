@@ -34,6 +34,6 @@ export type IconButtonProps = {
 export type ConfirmActionButtonProps = {
   trigger: Snippet<[{ triggerProps: { onclick: (e: Event) => void } }]>;
   actionMessage: Snippet;
-  action: () => void;
+  action: (e: Event) => void;
   actionButtonText?: string;
 };

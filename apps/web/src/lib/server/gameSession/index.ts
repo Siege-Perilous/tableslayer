@@ -29,7 +29,7 @@ export const getPartyGameSessionFromSlug = async (slug: string) => {
   return gameSession;
 };
 
-export const deletePartyGameSession = async (id: string) => {
+export const deleteGameSession = async (id: string) => {
   try {
     const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.id, id)).get();
     if (!gameSession) {

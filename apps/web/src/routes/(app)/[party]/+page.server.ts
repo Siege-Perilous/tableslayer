@@ -2,7 +2,6 @@ import { db } from '$lib/db/app';
 import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
-  deleteGameSessionSchema,
   deleteInviteSchema,
   inviteMemberSchema,
   removePartyMemberSchema,
@@ -11,7 +10,6 @@ import {
 } from '$lib/schemas';
 import {
   changePartyRole,
-  deletePartyGameSession,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
@@ -64,7 +62,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
   const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
   const removePartyMemberForm = await superValidate(zod(removeMemberSchemaWithPartyId));
-  const deleteGameSessionForm = await superValidate(zod(deleteGameSessionSchema));
   const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
   return {
@@ -75,7 +72,6 @@ export const load: PageServerLoad = async ({ parent }) => {
     resendInviteForm,
     removeInviteForm,
     removePartyMemberForm,
-    deleteGameSessionForm,
     renameGameSessionForm
   };
 };
@@ -251,31 +247,6 @@ export const actions: Actions = {
           { type: 'error', text: 'Unable to remove party member' },
           { status: 500 }
         );
-      }
-    }
-  },
-  deleteGameSession: async (event) => {
-    const deleteGameSessionForm = await superValidate(event.request, zod(deleteGameSessionSchema));
-    if (!deleteGameSessionForm.valid) {
-      return message(deleteGameSessionForm, { type: 'error', text: 'Invalid game session' });
-    }
-
-    const { sessionId } = deleteGameSessionForm.data;
-
-    try {
-      await deletePartyGameSession(sessionId);
-
-      setToastCookie(event, {
-        title: 'Game session deleted',
-        type: 'success'
-      });
-      return message(deleteGameSessionForm, { type: 'success', text: 'Game session deleted' });
-    } catch (error) {
-      if (error instanceof Error) {
-        return message(deleteGameSessionForm, { type: 'error', text: error.message });
-      } else {
-        console.log('Error deleting game session', error);
-        return message(deleteGameSessionForm, { type: 'error', text: 'Error deleting game session' });
       }
     }
   },
