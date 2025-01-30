@@ -45,7 +45,7 @@
       <Spacer />
       <div class="sessionList">
         {#if isPartyAdmin}
-          <CreateGameSession {partyId} createGameSessionForm={data.creatGameSessionForm} />
+          <CreateGameSession {partyId} />
         {/if}
         {#each gameSessions as session}
           <GameSessionCard

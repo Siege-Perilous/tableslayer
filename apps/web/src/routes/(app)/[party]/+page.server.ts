@@ -2,10 +2,8 @@ import { db } from '$lib/db/app';
 import { partyInviteTable, partyMemberTable } from '$lib/db/app/schema';
 import {
   changeRoleSchema,
-  createGameSessionSchema,
   deleteGameSessionSchema,
   deleteInviteSchema,
-  deletePartySchema,
   inviteMemberSchema,
   removePartyMemberSchema,
   renameGameSessionSchema,
@@ -13,20 +11,17 @@ import {
 } from '$lib/schemas';
 import {
   changePartyRole,
-  createGameSessionDb,
   deletePartyGameSession,
   getEmailsInvitedToParty,
   getParty,
   getPartyMembers,
   getUser,
   isEmailAlreadyInvitedToParty,
-  isUserAdminInParty,
   isUserByEmailInPartyAlready,
   isUserOnlyAdminInParty,
   renameGameSession,
   sendPartyInviteEmail
 } from '$lib/server';
-import { deleteParty } from '$lib/server/party/createParty';
 import { createSha256Hash } from '$lib/utils/hash';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
@@ -69,7 +64,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
   const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
   const removePartyMemberForm = await superValidate(zod(removeMemberSchemaWithPartyId));
-  const creatGameSessionForm = await superValidate(zod(createGameSessionSchema));
   const deleteGameSessionForm = await superValidate(zod(deleteGameSessionSchema));
   const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
@@ -81,7 +75,6 @@ export const load: PageServerLoad = async ({ parent }) => {
     resendInviteForm,
     removeInviteForm,
     removePartyMemberForm,
-    creatGameSessionForm,
     deleteGameSessionForm,
     renameGameSessionForm
   };
@@ -258,53 +251,6 @@ export const actions: Actions = {
           { type: 'error', text: 'Unable to remove party member' },
           { status: 500 }
         );
-      }
-    }
-  },
-  deleteParty: async (event) => {
-    const deletePartyForm = await superValidate(event.request, zod(deletePartySchema));
-    if (!deletePartyForm.valid) {
-      return message(deletePartyForm, { type: 'error', text: 'Invalid delete operation' });
-    }
-    const { partyId } = deletePartyForm.data;
-    const userId = event.locals.user.id;
-    const isUserAdminInPartyResult = await isUserAdminInParty(userId, partyId);
-    console.log('isUserAdminInPartyResult', isUserAdminInPartyResult);
-
-    if (!isUserAdminInPartyResult) {
-      return message(deletePartyForm, { type: 'error', text: 'User is not admin in party' });
-    }
-
-    const isPartyDeleted = await deleteParty(partyId);
-
-    if (!isPartyDeleted) {
-      return message(deletePartyForm, { type: 'error', text: 'Error deleting party' });
-    }
-
-    setToastCookie(event, {
-      title: 'Party deleted',
-      type: 'success'
-    });
-
-    return redirect(302, '/profile');
-  },
-  createGameSession: async (event) => {
-    const createGameSessionForm = await superValidate(event.request, zod(createGameSessionSchema));
-    if (!createGameSessionForm.valid) {
-      return message(createGameSessionForm, { type: 'error', text: 'Invalid game session name' });
-    }
-
-    const { partyId, name } = createGameSessionForm.data;
-
-    try {
-      await createGameSessionDb(partyId, event.locals.user.id, name);
-      return message(createGameSessionForm, { type: 'success', text: 'Game session created' });
-    } catch (error) {
-      if (error instanceof Error) {
-        return message(createGameSessionForm, { type: 'error', text: error.message });
-      } else {
-        console.log('Error creating game session', error);
-        return message(createGameSessionForm, { type: 'error', text: 'Error creating game session' });
       }
     }
   },

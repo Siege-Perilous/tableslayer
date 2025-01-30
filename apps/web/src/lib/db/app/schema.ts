@@ -4,6 +4,10 @@ import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'driz
 import { v4 as uuidv4 } from 'uuid';
 import { protectedSlugs } from '../../constants';
 
+// USERS
+// USERS
+// USERS
+
 export const usersTable = sqliteTable('users', {
   id: text('id')
     .primaryKey()
@@ -19,10 +23,20 @@ export const usersTable = sqliteTable('users', {
     .default(1)
 });
 
+export type InsertUser = typeof usersTable.$inferInsert;
+export type SelectUser = typeof usersTable.$inferSelect;
+export const insertUserSchema = createInsertSchema(usersTable);
+export const selectUserSchema = createSelectSchema(usersTable);
+export const updateUserSchema = createUpdateSchema(usersTable);
+
 export const filesTable = sqliteTable('files', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   location: text('location').unique().notNull()
 });
+
+// USER FILES
+// USER FILES
+// USER FILES
 
 export const userFilesTable = sqliteTable(
   'user_files',
@@ -39,6 +53,16 @@ export const userFilesTable = sqliteTable(
   })
 );
 
+export type InsertUserFile = typeof userFilesTable.$inferInsert;
+export type SelectUserFile = typeof userFilesTable.$inferSelect;
+export const insertUserFileSchema = createInsertSchema(userFilesTable);
+export const selectUserFileSchema = createSelectSchema(userFilesTable);
+export const updateUserFileSchema = createUpdateSchema(userFilesTable);
+
+// SESSIONS
+// SESSIONS
+// SESSIONS
+
 export const sessionTable = sqliteTable('session', {
   id: text('id')
     .primaryKey()
@@ -49,6 +73,16 @@ export const sessionTable = sqliteTable('session', {
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
 });
+
+export type InsertSession = typeof sessionTable.$inferInsert;
+export type SelectSession = typeof sessionTable.$inferSelect;
+export const insertSessionSchema = createInsertSchema(sessionTable);
+export const selectSessionSchema = createSelectSchema(sessionTable);
+export const updateSessionSchema = createUpdateSchema(sessionTable);
+
+// EMAIL VERIFICATION CODES
+// EMAIL VERIFICATION CODES
+// EMAIL VERIFICATION CODES
 
 export const emailVerificationCodesTable = sqliteTable('email_verification_codes', {
   id: text('id')
@@ -65,6 +99,16 @@ export const emailVerificationCodesTable = sqliteTable('email_verification_codes
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
 });
 
+export type InsertEmailVerificationCode = typeof emailVerificationCodesTable.$inferInsert;
+export type SelectEmailVerificationCode = typeof emailVerificationCodesTable.$inferSelect;
+export const insertEmailVerificationCodeSchema = createInsertSchema(emailVerificationCodesTable);
+export const selectEmailVerificationCodeSchema = createSelectSchema(emailVerificationCodesTable);
+export const updateEmailVerificationCodeSchema = createUpdateSchema(emailVerificationCodesTable);
+
+// RESET PASSWORD CODES
+// RESET PASSWORD CODES
+// RESET PASSWORD CODES
+
 export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
   id: text('id')
     .primaryKey()
@@ -80,6 +124,16 @@ export const resetPasswordCodesTable = sqliteTable('reset_password_codes', {
     .notNull()
     .default(sql`(strftime('%s', 'now') + 60 * 15)`)
 });
+
+export type InsertResetPasswordCode = typeof resetPasswordCodesTable.$inferInsert;
+export type SelectResetPasswordCode = typeof resetPasswordCodesTable.$inferSelect;
+export const insertResetPasswordCodeSchema = createInsertSchema(resetPasswordCodesTable);
+export const selectResetPasswordCodeSchema = createSelectSchema(resetPasswordCodesTable);
+export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCodesTable);
+
+// PARTY
+// PARTY
+// PARTY
 
 export const partyTable = sqliteTable(
   'party',
@@ -117,10 +171,15 @@ export const partyTable = sqliteTable(
   })
 );
 
+export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;
 export const selectPartySchema = createSelectSchema(partyTable);
 export const insertPartySchema = createInsertSchema(partyTable);
 export const updatePartySchema = createUpdateSchema(partyTable);
+
+// PARTY MEMBERS
+// PARTY MEMBERS
+// PARTY MEMBERS
 
 export const partyMemberTable = sqliteTable(
   'party_member',
@@ -143,6 +202,16 @@ export const partyMemberTable = sqliteTable(
 export const VALID_PARTY_ROLES = ['admin', 'editor', 'viewer'] as const;
 export type PartyRole = (typeof VALID_PARTY_ROLES)[number];
 
+export type InsertPartyMember = typeof partyMemberTable.$inferInsert;
+export type SelectPartyMember = typeof partyMemberTable.$inferSelect;
+export const insertPartyMemberSchema = createInsertSchema(partyMemberTable);
+export const selectPartyMemberSchema = createSelectSchema(partyMemberTable);
+export const updatePartyMemberSchema = createUpdateSchema(partyMemberTable);
+
+// PARTY INVITES
+// PARTY INVITES
+// PARTY INVITES
+
 export const partyInviteTable = sqliteTable('party_invite', {
   id: text('id')
     .primaryKey()
@@ -158,6 +227,16 @@ export const partyInviteTable = sqliteTable('party_invite', {
   email: text('email').notNull(),
   role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
 });
+
+export type InsertPartyInvite = typeof partyInviteTable.$inferInsert;
+export type SelectPartyInvite = typeof partyInviteTable.$inferSelect;
+export const insertPartyInviteSchema = createInsertSchema(partyInviteTable);
+export const selectPartyInviteSchema = createSelectSchema(partyInviteTable);
+export const updatePartyInviteSchema = createUpdateSchema(partyInviteTable);
+
+// GAME SESSION
+// GAME SESSION
+// GAME SESSION
 
 export const gameSessionTable = sqliteTable(
   'game_session',
@@ -178,17 +257,8 @@ export const gameSessionTable = sqliteTable(
   })
 );
 
-// Generate Zod schemas
-export const insertUserSchema = createInsertSchema(usersTable);
-export const selectUserSchema = createSelectSchema(usersTable);
-export const insertPartyMember = createInsertSchema(partyMemberTable);
-export const gameSessionSchema = createInsertSchema(gameSessionTable);
-
-export type InsertUser = typeof usersTable.$inferInsert;
-export type SelectUser = typeof usersTable.$inferSelect;
-export type InsertPartyMember = typeof partyMemberTable.$inferInsert;
 export type SelectGameSession = typeof gameSessionTable.$inferSelect;
-export type SelectSession = typeof sessionTable.$inferSelect;
-
-export type InsertParty = typeof partyTable.$inferInsert;
-export type SelectPartyInvite = typeof partyInviteTable.$inferSelect;
+export type InsertGameSession = typeof gameSessionTable.$inferInsert;
+export const insertGameSessionSchema = createInsertSchema(gameSessionTable);
+export const selectGameSessionSchema = createSelectSchema(gameSessionTable);
+export const updateGameSessionSchema = createUpdateSchema(gameSessionTable);

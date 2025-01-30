@@ -1,6 +1,6 @@
 import { insertPartySchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
-import { createParty } from '$lib/server';
+import { createParty, SlugConflictError } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -9,16 +9,29 @@ const validationSchema = z.object({
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const partyData = body.partyData;
+    try {
+      const partyData = body.partyData;
 
-    if (!locals.user?.id) {
-      throw new Error('Unauthorized');
+      if (!locals.user?.id) {
+        throw new Error('Unauthorized');
+      }
+      const userId = locals.user.id;
+
+      const party = await createParty(userId, partyData);
+
+      return { success: true, party };
+    } catch (error) {
+      if (error instanceof SlugConflictError) {
+        throw new z.ZodError([
+          {
+            path: ['partyData', 'name'],
+            message: error.message,
+            code: 'custom'
+          }
+        ]);
+      }
+      throw error;
     }
-    const userId = locals.user.id;
-
-    const party = await createParty(userId, partyData);
-
-    return { success: true, party };
   },
   {
     validationSchema,

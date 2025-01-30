@@ -88,7 +88,7 @@ export const actions: Actions = {
       });
 
       // Create a game session database
-      await createGameSessionDb(party.id, userId);
+      await createGameSessionDb(party.id);
 
       // Create an email verification code
       await db

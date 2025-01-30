@@ -1,7 +1,8 @@
 import { db } from '$lib/db/app';
-import { gameSessionTable, type SelectGameSession } from '$lib/db/app/schema';
+import { gameSessionTable, type InsertGameSession, type SelectGameSession } from '$lib/db/app/schema';
 import { gsChildDb } from '$lib/db/gs';
 import { settingsTable, type SelectGameSettings } from '$lib/db/gs/schema';
+import { SlugConflictError } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { createClient } from '@tursodatabase/api';
@@ -44,20 +45,25 @@ export const deletePartyGameSession = async (id: string) => {
   }
 };
 
+// Don't allow sessions within the same party to have the same slug
+// This is so we have very nice URLs like /party-name/game-session-name
+export const checkForGameSessionSlugConflict = async (partyId: string, slug: string) => {
+  const existingGameSessions = await getPartyGameSessions(partyId);
+  if (existingGameSessions.some((gs) => gs.slug === slug)) {
+    throw new SlugConflictError('Game session with that name already exists');
+  }
+};
+
 // Function to create a new project database
-export const createGameSessionDb = async (partyId: string, userId: string, gsName?: string) => {
+export const createGameSessionDb = async (partyId: string, gameSessionData?: Partial<InsertGameSession>) => {
   try {
     const gameSessionId = uuidv4();
-    const name = gsName || createRandomGameSessionName();
+    const name = (gameSessionData && gameSessionData.name) || createRandomGameSessionName();
     const slug = slugify(name, { lower: true });
     const prBranch = process.env.GITHUB_PR_NUMBER!;
     const prefix = process.env.ENV_NAME! === 'preview' ? `pr-${prBranch}-gs-child` : 'gs-child';
 
-    const existingGameSessions = await getPartyGameSessions(partyId);
-
-    if (existingGameSessions.some((gs) => gs.slug === slug)) {
-      throw new Error('Game session with that name already exists');
-    }
+    await checkForGameSessionSlugConflict(partyId, slug);
 
     const database = await turso.databases.create(`${prefix}-${gameSessionId}`, {
       group: 'default',
@@ -68,6 +74,7 @@ export const createGameSessionDb = async (partyId: string, userId: string, gsNam
     await db
       .insert(gameSessionTable)
       .values({
+        ...gameSessionData,
         id: gameSessionId,
         name,
         partyId,
@@ -81,7 +88,7 @@ export const createGameSessionDb = async (partyId: string, userId: string, gsNam
 
     return database;
   } catch (error) {
-    console.error(error);
+    console.error('Error creating game session', error);
     throw error;
   }
 };
@@ -94,11 +101,7 @@ export const renameGameSession = async (partyId: string, gameSessionId: string, 
       throw new Error('Game session not found');
     }
 
-    const existingGameSessions = await getPartyGameSessions(partyId);
-
-    if (existingGameSessions.some((gs) => gs.slug === slug)) {
-      throw new Error('Game session with that name already exists');
-    }
+    await checkForGameSessionSlugConflict(partyId, slug);
 
     const renamedGameSession = await db
       .update(gameSessionTable)
@@ -110,7 +113,7 @@ export const renameGameSession = async (partyId: string, gameSessionId: string, 
       .run();
     return renamedGameSession;
   } catch (error) {
-    console.error(error);
+    console.error('Error creating game session', error);
     throw error;
   }
 };
