@@ -30,3 +30,10 @@ export type IconButtonProps = {
   variant?: 'primary' | 'ghost' | 'danger' | 'link';
   href?: string;
 } & HTMLButtonAttributes;
+
+export type ConfirmActionButtonProps = {
+  trigger: Snippet<[{ triggerProps: { onclick: (e: Event) => void } }]>;
+  actionMessage: Snippet;
+  action: () => void;
+  actionButtonText?: string;
+};

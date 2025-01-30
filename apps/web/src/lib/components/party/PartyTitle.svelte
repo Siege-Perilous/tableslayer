@@ -10,6 +10,7 @@
   import {
     Avatar,
     Button,
+    ConfirmActionButton,
     Spacer,
     addToast,
     Hr,
@@ -128,7 +129,16 @@
         <Spacer />
         <Hr />
         <Spacer />
-        <Button type="submit" variant="danger" onclick={handleDeleteParty}>Delete party</Button>
+        <ConfirmActionButton actionButtonText="Confirm delete" action={handleDeleteParty}>
+          {#snippet trigger({ triggerProps })}
+            <Button type="submit" variant="danger" {...triggerProps}>Delete party</Button>
+          {/snippet}
+          {#snippet actionMessage()}
+            <Text size="0.875rem" color="var(--fgDanger)"
+              >This will permenantly delete the party along with all related sessions.</Text
+            >
+          {/snippet}
+        </ConfirmActionButton>
         <Spacer size={2} />
         <Text size="0.875rem" color="var(--fgMuted)"
           >Deleting a party is permanent and you will lose any sessions and encounters created. This can not be undone.</Text
