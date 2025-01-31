@@ -5,7 +5,6 @@ import {
   deleteInviteSchema,
   inviteMemberSchema,
   removePartyMemberSchema,
-  renameGameSessionSchema,
   resendInviteSchema
 } from '$lib/schemas';
 import {
@@ -17,7 +16,6 @@ import {
   isEmailAlreadyInvitedToParty,
   isUserByEmailInPartyAlready,
   isUserOnlyAdminInParty,
-  renameGameSession,
   sendPartyInviteEmail
 } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
@@ -62,7 +60,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const changeMemberRoleForm = await superValidate(zod(changeRoleSchemeWithPartyId));
   const removeInviteForm = await superValidate(zod(removeInviteSchemaWithPartyId));
   const removePartyMemberForm = await superValidate(zod(removeMemberSchemaWithPartyId));
-  const renameGameSessionForm = await superValidate(zod(renameGameSessionSchema));
 
   return {
     members,
@@ -71,8 +68,7 @@ export const load: PageServerLoad = async ({ parent }) => {
     inviteMemberForm,
     resendInviteForm,
     removeInviteForm,
-    removePartyMemberForm,
-    renameGameSessionForm
+    removePartyMemberForm
   };
 };
 
@@ -247,26 +243,6 @@ export const actions: Actions = {
           { type: 'error', text: 'Unable to remove party member' },
           { status: 500 }
         );
-      }
-    }
-  },
-  renameGameSession: async (event) => {
-    const renameGameSessionForm = await superValidate(event.request, zod(renameGameSessionSchema));
-    if (!renameGameSessionForm.valid) {
-      return message(renameGameSessionForm, { type: 'error', text: 'Invalid game session name' });
-    }
-
-    const { sessionId, name, partyId } = renameGameSessionForm.data;
-
-    try {
-      await renameGameSession(partyId, sessionId, name);
-      return message(renameGameSessionForm, { type: 'success', text: 'Game session renamed' });
-    } catch (error) {
-      if (error instanceof Error) {
-        return message(renameGameSessionForm, { type: 'error', text: error.message });
-      } else {
-        console.log('Error renaming game session', error);
-        return message(renameGameSessionForm, { type: 'error', text: 'Error renaming game session' });
       }
     }
   }

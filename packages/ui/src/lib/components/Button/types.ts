@@ -1,5 +1,5 @@
 import type { Snippet } from 'svelte';
-import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
+import type { HTMLAnchorAttributes, HTMLButtonAttributes, SvelteHTMLElements } from 'svelte/elements';
 
 export type _ButtonProps = {
   children: Snippet;
@@ -13,6 +13,7 @@ export type _ButtonProps = {
   end?: Snippet;
   isLoading?: boolean;
   isDisabled?: boolean;
+  as?: keyof SvelteHTMLElements;
   /**
    * Size of the button.
    * @default md
@@ -24,12 +25,15 @@ export type _ButtonProps = {
 
 export type ButtonProps = (_ButtonProps & HTMLButtonAttributes) | (_ButtonProps & HTMLAnchorAttributes);
 
-export type IconButtonProps = {
+export type _IconButtonProps = {
   children: Snippet;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'ghost' | 'danger' | 'link';
   href?: string;
-} & HTMLButtonAttributes;
+  as?: keyof SvelteHTMLElements;
+};
+
+export type IconButtonProps = (_IconButtonProps & HTMLButtonAttributes) | (_IconButtonProps & HTMLAnchorAttributes);
 
 export type ConfirmActionButtonProps = {
   trigger: Snippet<[{ triggerProps: { onclick: (e: Event) => void } }]>;

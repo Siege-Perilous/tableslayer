@@ -48,13 +48,7 @@
           <CreateGameSession {partyId} />
         {/if}
         {#each gameSessions as session}
-          <GameSessionCard
-            {isPartyAdmin}
-            {party}
-            {session}
-            deleteGameSessionForm={data.deleteGameSessionForm}
-            renameGameSessionForm={data.renameGameSessionForm}
-          />
+          <GameSessionCard {isPartyAdmin} {party} {session} />
         {/each}
       </div>
     </main>

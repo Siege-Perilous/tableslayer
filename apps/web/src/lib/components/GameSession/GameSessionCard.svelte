@@ -1,10 +1,8 @@
 <script lang="ts">
   import {
-    FSControl,
     Spacer,
     Button,
     Hr,
-    MessageError,
     Input,
     LinkBox,
     Panel,
@@ -17,46 +15,27 @@
     IconButton,
     Icon,
     addToast,
+    FormControl,
     ConfirmActionButton
   } from '@tableslayer/ui';
-  import { superForm, type SuperValidated } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { useDeleteGameSessionMutation } from '$lib/queries';
+  import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
-  import { renameGameSessionSchema, type RenameGameSessionFormType } from '$lib/schemas';
   import type { SelectGameSession, SelectParty } from '$lib/db';
   import type { Thumb } from '$lib/server';
-  import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
-  import SuperDebug from 'sveltekit-superforms';
 
   let {
     party,
     session,
-    renameGameSessionForm,
     isPartyAdmin
   }: {
     party: SelectParty & Thumb;
     session: SelectGameSession;
-    renameGameSessionForm: SuperValidated<RenameGameSessionFormType>;
     isPartyAdmin: boolean;
   } = $props();
 
-  const renameGameSessionSuperForm = superForm(renameGameSessionForm, {
-    id: `renameGameSession-${session.id}`,
-    validators: zodClient(renameGameSessionSchema),
-    invalidateAll: 'force'
-  });
-
-  const {
-    form: renameGameSessionFormData,
-    enhance: renameGameSessionEnhance,
-    message: renameGameSessionMessage
-  } = renameGameSessionSuperForm;
-
-  $renameGameSessionFormData.sessionId = session.id;
-  $renameGameSessionFormData.partyId = party.id;
-  $renameGameSessionFormData.name = session.name;
+  let gameSessionName = $state(session.name);
+  let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
 
   const images = [
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/01.jpeg',
@@ -65,6 +44,35 @@
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/04.jpeg',
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/12.jpeg'
   ];
+
+  const renameGameSession = useUpdateGameSessionMutation();
+
+  const handleRenameGameSession = async (e: Event) => {
+    e.preventDefault();
+    try {
+      await $renameGameSession.mutateAsync({
+        partyId: party.id,
+        gameSessionId: session.id,
+        gameSessionData: { name: gameSessionName }
+      });
+      addToast({
+        data: {
+          title: `Game session renamed to ${gameSessionName}`,
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      const error = e as FormMutationError;
+      renameGameSessionErrors = error;
+      addToast({
+        data: {
+          title: 'Error renaming game session',
+          body: error.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
 
   const deleteGameSession = useDeleteGameSessionMutation();
 
@@ -103,39 +111,36 @@
     ></div>
     {#if isPartyAdmin}
       <div class="gameSessionCard__popover">
-        <Popover positioning={{ placement: 'bottom-end' }}>
+        <Popover>
           {#snippet trigger()}
-            <Icon Icon={IconChevronDown} />
+            <IconButton as="div" variant="ghost">
+              <Icon Icon={IconChevronDown} />
+            </IconButton>
           {/snippet}
           {#snippet content()}
             <div class="gameSessionCard__popoverContent">
-              <form method="post" action="?/renameGameSession" use:renameGameSessionEnhance>
+              <form onsubmit={handleRenameGameSession}>
                 <div class="gameSessionCard__renameField">
                   <div>
-                    <Field form={renameGameSessionSuperForm} name="name">
-                      <FSControl label="Rename session">
-                        {#snippet content({ props })}
-                          <Input {...props} bind:value={$renameGameSessionFormData.name} hideAutocomplete />
-                        {/snippet}
-                      </FSControl>
-                    </Field>
-                    <input type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
-                    <input type="hidden" name="partyId" value={$renameGameSessionFormData.sessionId} />
+                    <FormControl
+                      label="Rename session"
+                      name="name"
+                      errors={renameGameSessionErrors && renameGameSessionErrors.errors}
+                    >
+                      {#snippet input({ inputProps })}
+                        <Input {...inputProps} bind:value={gameSessionName} hideAutocomplete />
+                      {/snippet}
+                    </FormControl>
                   </div>
-                  <IconButton type="submit" class="gameSessionCard__renameFieldBtn">
+                  <IconButton class="gameSessionCard__renameFieldBtn">
                     <Icon Icon={IconCheck} />
                   </IconButton>
                 </div>
                 <Spacer size={2} />
-                <Text size="0.875rem" color="var(--fgMuted)"
-                  >Renaming your game session will change the URL and break all links.</Text
-                >
+                <Text size="0.875rem" color="var(--fgMuted)">
+                  Renaming your game session will change the URL and break all links.
+                </Text>
               </form>
-              {#if $renameGameSessionMessage}
-                <Spacer />
-                <MessageError message={$renameGameSessionMessage} />
-              {/if}
-              <SuperDebug data={$renameGameSessionFormData} display={false} />
               <Spacer />
               <Hr />
               <Spacer />

@@ -28,3 +28,14 @@ export const useDeleteGameSessionMutation = () => {
     method: 'POST'
   });
 };
+
+export const useUpdateGameSessionMutation = () => {
+  return mutationFactory<
+    { partyId: string; gameSessionId: string; gameSessionData: Partial<InsertGameSession> },
+    { success: boolean; gameSession: SelectGameSession }
+  >({
+    mutationKey: ['createGameSession'],
+    endpoint: '/api/gameSessions/updateGameSession',
+    method: 'POST'
+  });
+};

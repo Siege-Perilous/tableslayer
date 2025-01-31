@@ -47,9 +47,10 @@ export const deleteGameSession = async (id: string) => {
 
 // Don't allow sessions within the same party to have the same slug
 // This is so we have very nice URLs like /party-name/game-session-name
-export const checkForGameSessionSlugConflict = async (partyId: string, slug: string) => {
+export const checkForGameSessionSlugConflict = async (partyId: string, slug: string, gameSessionId?: string) => {
   const existingGameSessions = await getPartyGameSessions(partyId);
-  if (existingGameSessions.some((gs) => gs.slug === slug)) {
+
+  if (existingGameSessions.some((gs) => gs.slug === slug && gs.id !== gameSessionId)) {
     throw new SlugConflictError('Game session with that name already exists');
   }
 };
@@ -89,6 +90,33 @@ export const createGameSessionDb = async (partyId: string, gameSessionData?: Par
     return database;
   } catch (error) {
     console.error('Error creating game session', error);
+    throw error;
+  }
+};
+
+export const updateGameSession = async (gameSessionId: string, gameSessionData: Partial<InsertGameSession>) => {
+  try {
+    const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.id, gameSessionId)).get();
+    if (!gameSession) {
+      throw new Error('Game session not found');
+    }
+
+    // We don't want to allow renaming the database
+    if (gameSessionData.dbName) {
+      throw new Error('Cannot update game session db name');
+    }
+
+    if (gameSessionData.name) {
+      const newSlug = slugify(gameSessionData.name, { lower: true });
+      await checkForGameSessionSlugConflict(gameSession.partyId, newSlug, gameSessionId);
+      gameSessionData.slug = newSlug;
+    }
+
+    await db.update(gameSessionTable).set(gameSessionData).where(eq(gameSessionTable.id, gameSessionId)).execute();
+
+    return true;
+  } catch (error) {
+    console.error('Error updating game session', error);
     throw error;
   }
 };
