@@ -40,6 +40,7 @@
         }
       });
       formIsLoading = false;
+      createPartyError = undefined;
       goto(`/${response.party.slug}`);
     } catch (e) {
       createPartyError = e as FormMutationError;

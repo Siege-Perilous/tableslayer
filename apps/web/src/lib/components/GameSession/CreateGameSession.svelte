@@ -74,6 +74,7 @@
       width: 100%;
       gap: 2rem;
       height: 100%;
+      min-height: 270px;
       transition: border-color 0.2s var(--ease-in-2);
       align-items: center;
       justify-content: center;

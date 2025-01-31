@@ -44,12 +44,16 @@ export const createParty = async (userId: string, partyData?: Partial<InsertPart
       return party;
     } catch (error) {
       const customError = error as CustomError;
+      if (error instanceof Error && error.message.includes('UNIQUE')) {
+        // Construct a new ZodError that points to "slug" as the invalid field
+        throw new SlugConflictError('Name is already taken.');
+      }
 
       if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
         // If the error is due to a unique constraint violation
         if (partyData?.name) {
           // If the user provided the name, throw an error
-          throw new Error('Party name is not unique');
+          throw new SlugConflictError('Name is already in use.');
         } else {
           // If the name was generated, try again with a new random name
           partyName = createRandomName();
