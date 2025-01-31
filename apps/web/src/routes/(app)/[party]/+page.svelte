@@ -38,7 +38,7 @@
 </script>
 
 <div class="container">
-  <PartyTitle {isPartyAdmin} deletePartyForm={data.deletePartyForm} renamePartyForm={data.renamePartyForm} {party} />
+  <PartyTitle {isPartyAdmin} {party} />
   <div class="containerLayout">
     <main>
       <Title as="h2" size="sm">Sessions</Title>
