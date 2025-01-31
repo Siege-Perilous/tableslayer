@@ -45,7 +45,7 @@ export const useUploadFogFromBlobMutation = () => {
 
 // Uploads a file to R2 and creates a user file entry
 export const useUploadFileMutation = () => {
-  return mutationFactory<{ file: File; folder: string }, { userId: string; fileId: string; location: string }, Error>({
+  return mutationFactory<{ file: File; folder: string }, { userId: string; fileId: number; location: string }, Error>({
     mutationKey: ['uploadFile'],
     mutationFn: async ({ file, folder }) => {
       const fileId = uuidv4();

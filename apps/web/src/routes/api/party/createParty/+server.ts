@@ -4,7 +4,8 @@ import { createParty, SlugConflictError } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
-  partyData: insertPartySchema.optional()
+  // Allow slug to be optional, since it's generated on the server
+  partyData: insertPartySchema.omit({ slug: true }).optional()
 });
 
 export const POST = apiFactory(

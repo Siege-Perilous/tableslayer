@@ -12,7 +12,7 @@ export const useUpdatePartyMutation = () => {
   });
 };
 
-export const useNewPartyMutation = () => {
+export const useCreatePartyMutation = () => {
   return mutationFactory<{ partyData?: Partial<InsertParty> }, { success: boolean; party: SelectParty }>({
     mutationKey: ['updateParty'],
     endpoint: '/api/party/createParty',
