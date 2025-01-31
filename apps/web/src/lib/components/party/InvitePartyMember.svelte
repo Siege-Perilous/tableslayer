@@ -27,6 +27,7 @@
           type: 'success'
         }
       });
+      email = '';
       formIsLoading = false;
       error = undefined;
     } catch (e) {
@@ -52,7 +53,7 @@
       <div>
         <FormControl label="Invite new member" name="email" errors={error && error.errors}>
           {#snippet input({ inputProps })}
-            <Input {...inputProps} type="email" bind:value={email} />
+            <Input {...inputProps} type="email" placeholder="email address" bind:value={email} />
           {/snippet}
         </FormControl>
       </div>
