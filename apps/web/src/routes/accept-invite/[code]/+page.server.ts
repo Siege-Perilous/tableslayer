@@ -1,13 +1,13 @@
 import { inviteResponseSchema } from '$lib/schemas';
 import {
   acceptPartyInvite,
-  checkIfEmailInUserTable,
   createSession,
   declinePartyInvite,
   generateSessionToken,
   getParty,
   getPartyInvitesForCode,
   getUserByEmail,
+  isEmailInUserTable,
   setSessionTokenCookie
 } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
@@ -38,7 +38,7 @@ export const load: PageServerLoad = async (event) => {
     // User is not logged in
     if (!user) {
       console.log('User not logged in');
-      const userExistsAlready = await checkIfEmailInUserTable(invite.invite.email);
+      const userExistsAlready = await isEmailInUserTable(invite.invite.email);
 
       if (userExistsAlready) {
         // Since code comes by email, we can just log them in

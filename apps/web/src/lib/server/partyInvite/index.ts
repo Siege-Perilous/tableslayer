@@ -1,7 +1,58 @@
 import { db } from '$lib/db/app';
-import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES } from '$lib/db/app/schema';
+import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES, type PartyRole } from '$lib/db/app/schema';
+import { createSha256Hash } from '$lib/utils/hash';
 import { and, eq } from 'drizzle-orm';
-import { getUser } from '../user';
+import { UserAlreadyInPartyError, UserAlreadyInvitedError } from '../errors';
+import { isUserInParty } from '../party/getParty';
+import { getUser, getUserByEmail, isEmailInUserTable } from '../user';
+
+export const createPartyInvite = async (email: string, partyId: string, invitedBy: string, role: PartyRole) => {
+  try {
+    // Check if an invite already exists for the email and party
+    const existingInvite = await db
+      .select()
+      .from(partyInviteTable)
+      .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+      .get();
+
+    if (existingInvite) {
+      throw new UserAlreadyInvitedError('User already invited');
+    }
+
+    const isExistingUser = await isEmailInUserTable(email);
+
+    if (isExistingUser) {
+      const invitedUser = await getUserByEmail(email);
+      if (!invitedUser) {
+        throw new Error('Unexpected: User exists in table but could not be fetched');
+      }
+
+      const isInvitedUserInParty = await isUserInParty(invitedUser.id, partyId);
+      if (isInvitedUserInParty) {
+        throw new UserAlreadyInPartyError('User already in party');
+      }
+    }
+
+    // Generate the invite code and create the invite
+    const inviteCode = await createSha256Hash(`${email}${partyId}${Date.now()}`);
+    const newInvite = await db
+      .insert(partyInviteTable)
+      .values({
+        partyId,
+        invitedBy,
+        code: inviteCode,
+        email,
+        role
+      })
+      .returning()
+      .get();
+
+    return newInvite;
+  } catch (error) {
+    console.error('Error creating party invite:', error);
+    throw error;
+  }
+};
 
 export const getPartyInvitesForEmail = async (email: string) => {
   try {

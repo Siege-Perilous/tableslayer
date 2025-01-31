@@ -1,38 +1,17 @@
 <script lang="ts">
-  import {
-    Icon,
-    IconButton,
-    FSControl,
-    Input,
-    FieldErrors,
-    Panel,
-    Title,
-    Text,
-    MessageError,
-    Spacer,
-    Hr
-  } from '@tableslayer/ui';
+  import { Panel, Title, Text, Spacer } from '@tableslayer/ui';
   import {
     PartyMember,
     ResendInvite,
     PartyTitle,
     CreateGameSession,
     GameSessionCard,
-    DefaultPartySettings
+    DefaultPartySettings,
+    InvitePartyMember
   } from '$lib/components';
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { inviteMemberSchema } from '$lib/schemas';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { IconMail } from '@tabler/icons-svelte';
 
   let { data } = $props();
   const { party, gameSessions, members, isPartyAdmin, invitedEmails, user } = $derived(data);
-  const inviteMemberForm = superForm(data.inviteMemberForm, {
-    validators: zodClient(inviteMemberSchema)
-  });
-
-  const { form: inviteMemberData, enhance: enhanceInviteMember, message: inviteMemberMessage } = inviteMemberForm;
 
   const partyId = data.party.id as string;
 </script>
@@ -69,39 +48,7 @@
             <p>No members found.</p>
           {/each}
         </div>
-        {#if isPartyAdmin}
-          <Spacer size={4} />
-          <Hr />
-          <Spacer size={4} />
-          <form method="post" action="?/inviteMember" use:enhanceInviteMember>
-            <div class="partyMember__inviteForm">
-              <div>
-                <Field form={inviteMemberForm} name="email">
-                  <FSControl label="Invite new member">
-                    {#snippet content({ props })}
-                      <Input {...props} type="email" placeholder="email address" bind:value={$inviteMemberData.email} />
-                    {/snippet}
-                  </FSControl>
-                  <FieldErrors />
-                </Field>
-              </div>
-
-              <IconButton type="submit" class="partyMember__inviteFormBtn">
-                <Icon Icon={IconMail} />
-              </IconButton>
-            </div>
-            {#if $inviteMemberMessage}
-              <MessageError message={$inviteMemberMessage} />
-            {/if}
-            <Field form={inviteMemberForm} name="email">
-              <FSControl>
-                {#snippet content({ props })}
-                  <Input {...props} type="hidden" name="partyId" bind:value={$inviteMemberData.partyId} />
-                {/snippet}
-              </FSControl>
-            </Field>
-          </form>
-        {/if}
+        <InvitePartyMember {isPartyAdmin} {party} />
         {#if invitedEmails.length > 0}
           <Spacer size={4} />
           <Text weight={600}>Pending invites</Text>
@@ -128,9 +75,6 @@
 
 <style>
   :global {
-    .partyMember__inviteFormBtn {
-      margin-top: 1.5rem;
-    }
     .partyMembers__aside {
       padding: 1rem;
     }
@@ -154,9 +98,5 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
-  .partyMember__inviteForm {
-    display: flex;
-    gap: 0.5rem;
   }
 </style>

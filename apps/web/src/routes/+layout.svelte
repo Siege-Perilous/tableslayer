@@ -38,7 +38,7 @@
     position: fixed;
     bottom: 2.5rem;
     right: 2.5rem;
-    z-index: 2;
+    z-index: 1;
   }
   /*  .grid {  */
   /*  pointer-events: none;  */

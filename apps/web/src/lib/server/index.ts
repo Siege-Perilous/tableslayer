@@ -4,6 +4,7 @@ export * from './errors';
 export * from './file';
 export * from './gameSession';
 export * from './party';
+export * from './partyInvite';
 export * from './scene';
 export * from './user';
 export * from './ws';
