@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
-import { partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
-import { SlugConflictError } from '$lib/server';
+import { gameSessionTable, partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
+import { SlugConflictError, deleteGameSession } from '$lib/server';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -154,6 +154,15 @@ export const updatePartyAvatar = async (partyId: string, avatarFileId: number): 
 
 export const deleteParty = async (partyId: string): Promise<boolean> => {
   try {
+    // get game session database namee in the party
+    const gameSessions = await db.select().from(gameSessionTable).where(eq(gameSessionTable.partyId, partyId));
+    const gameSessionIds = gameSessions.map((session) => session.id);
+
+    // delete the game session rows and turso databases
+    for (const gameSessionId of gameSessionIds) {
+      await deleteGameSession(gameSessionId);
+    }
+
     await db.delete(partyTable).where(eq(partyTable.id, partyId)).execute();
     return true;
   } catch (error) {

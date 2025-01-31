@@ -250,6 +250,8 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
+    // The name of the database in Turso
+    // Delete a gameSession with deleteGameSession() to delete the database as well
     dbName: text('db_name').unique().notNull()
   },
   (table) => ({
