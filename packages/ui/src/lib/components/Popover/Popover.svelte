@@ -49,7 +49,7 @@
   }
   .popContent {
     padding: var(--size-2);
-    background: var(--bg);
+    background: var(--popoverBg);
     color: var(--fg);
     border: var(--borderThin);
     border-radius: var(--radius-1);

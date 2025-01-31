@@ -61,6 +61,7 @@
           type: 'success'
         }
       });
+      renameGameSessionErrors = undefined;
     } catch (e) {
       const error = e as FormMutationError;
       renameGameSessionErrors = error;
