@@ -44,6 +44,9 @@ export const load: PageServerLoad = async (event) => {
         // Since code comes by email, we can just log them in
         const token = generateSessionToken();
         const invitedUser = await getUserByEmail(invite.invite.email);
+        if (!invitedUser) {
+          throw new Error('Invited user of that email does not exist');
+        }
         await createSession(token, invitedUser.id);
         setSessionTokenCookie(event, token);
 
