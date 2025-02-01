@@ -9,20 +9,15 @@ const validationSchema = z.object({
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    try {
-      const { userId, partyId } = body;
+    const { userId, partyId } = body;
 
-      if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
-        throw new Error('Unauthorized');
-      }
-
-      await deletePartyMember(userId, partyId);
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting party member', error);
-      throw error;
+    if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
+      throw new Error('Unauthorized');
     }
+
+    await deletePartyMember(userId, partyId);
+
+    return { success: true };
   },
   {
     validationSchema,

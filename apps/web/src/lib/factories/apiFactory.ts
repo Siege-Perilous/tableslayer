@@ -56,6 +56,17 @@ export function apiFactory<BodyType>(
         );
       }
 
+      if (err instanceof Error) {
+        return json(
+          {
+            success: false,
+            status: 400,
+            message: err.message
+          },
+          { status: 400 }
+        );
+      }
+
       // Handle unexpected errors
       return json(
         {

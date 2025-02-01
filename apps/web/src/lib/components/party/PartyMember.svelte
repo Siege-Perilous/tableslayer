@@ -85,7 +85,14 @@
     } catch (e) {
       const error = e as FormMutationError;
       formIsLoading = false;
-      addToast({ data: { title: 'Error removing member', body: error.message, type: 'danger' } });
+      console.log('member removed error', error);
+      addToast({
+        data: {
+          title: 'Error removing member',
+          body: error.message,
+          type: 'danger'
+        }
+      });
     }
   };
 </script>

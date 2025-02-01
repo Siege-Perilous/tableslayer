@@ -24,3 +24,12 @@ export class UserAlreadyInPartyError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
+
+export class UserIsLastAdminInParty extends Error {
+  name = 'UserIsLastAdminInParty';
+
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}

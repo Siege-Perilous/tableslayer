@@ -9,7 +9,7 @@ import {
   type SelectParty,
   type SelectUser
 } from '$lib/db/app/schema';
-import { getFile, transformImage, type Thumb } from '$lib/server';
+import { getFile, isUserOnlyAdminInParty, transformImage, UserIsLastAdminInParty, type Thumb } from '$lib/server';
 import { error } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 
@@ -187,6 +187,10 @@ export const getPartyFromGameSessionDbName = async (dbName: string) => {
 
 export const deletePartyMember = async (userId: string, partyId: string) => {
   try {
+    const isOnlyAdmin = await isUserOnlyAdminInParty(userId, partyId);
+    if (isOnlyAdmin) {
+      throw new UserIsLastAdminInParty('Cannot remove the last admin');
+    }
     await db
       .delete(partyMemberTable)
       .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
