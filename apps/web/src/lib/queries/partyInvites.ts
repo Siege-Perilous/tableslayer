@@ -24,3 +24,11 @@ export const useDeletePartyInviteMutation = () => {
     method: 'POST'
   });
 };
+
+export const useRespondToPartyInviteMutation = () => {
+  return mutationFactory<{ code: string; accepted: boolean }>({
+    mutationKey: ['respondToPartyInvite'],
+    endpoint: '/api/partyInvite/respondToPartyInvite',
+    method: 'POST'
+  });
+};

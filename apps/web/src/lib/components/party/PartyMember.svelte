@@ -16,6 +16,7 @@
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
   import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
   type PartyMember = SelectUser & {
     role: PartyRole;
@@ -47,6 +48,9 @@
     formIsLoading = true;
     try {
       await $deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id });
+      if (member.id === user.id) {
+        goto('/profile');
+      }
       formIsLoading = false;
       addToast({
         data: {
