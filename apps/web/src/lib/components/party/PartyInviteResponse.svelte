@@ -11,7 +11,7 @@
     invite: {
       invite: SelectPartyInvite;
       party: SelectParty;
-      invitedByUser: SeletUser;
+      invitedByUser: SeletUser | undefined;
     };
   } = $props();
   let formIsLoading = $state(false);

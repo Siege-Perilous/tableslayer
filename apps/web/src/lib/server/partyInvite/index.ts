@@ -83,11 +83,23 @@ export const getPartyInvitesForEmail = async (email: string) => {
       .where(eq(partyInviteTable.email, email))
       .all();
 
-    if (!invitesWithPartyInfo) {
-      throw new Error('No party invites found for email');
+    if (!invitesWithPartyInfo || invitesWithPartyInfo.length === 0) {
+      return [];
     }
 
-    return invitesWithPartyInfo;
+    const invitesWithDetails = await Promise.all(
+      invitesWithPartyInfo.map(async (inviteWithParty) => {
+        const invitedById = inviteWithParty.invite.invitedBy;
+        const invitedByUser = await getUser(invitedById);
+
+        return {
+          ...inviteWithParty,
+          invitedByUser
+        };
+      })
+    );
+
+    return invitesWithDetails;
   } catch (error) {
     console.error('Error fetching party invites for email', error);
     throw error;
