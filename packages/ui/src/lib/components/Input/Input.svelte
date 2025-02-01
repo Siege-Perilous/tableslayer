@@ -30,7 +30,7 @@
       background: var(--inputFocusBg);
     }
   }
-  .input[placeholder] {
+  .input::placeholder {
     color: var(--fgMuted);
   }
   .input--transparent {

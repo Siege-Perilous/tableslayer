@@ -1,12 +1,27 @@
 <script lang="ts">
   import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
-  import { FSControl, Hr, Text, Avatar, Select, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
+  import {
+    FSControl,
+    addToast,
+    Hr,
+    Text,
+    Avatar,
+    Select,
+    MessageError,
+    Icon,
+    Popover,
+    Spacer,
+    Button,
+    ConfirmActionButton
+  } from '@tableslayer/ui';
   import { Field } from 'formsnap';
   import { type SuperValidated } from 'sveltekit-superforms/client';
   import { type ChangeRoleFormType, type RemovePartyMemberFormType, changeRoleSchema } from '$lib/schemas';
   import { superForm } from 'sveltekit-superforms/client';
   import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
+  import { useDeletePartyMemberMutation } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
 
   type PartyMember = SelectUser & {
     role: PartyRole;
@@ -22,7 +37,7 @@
     user: SelectUser;
   };
 
-  let { member, user, changeMemberRoleForm, removePartyMemberForm, isPartyAdmin }: PartyMemberProps = $props();
+  let { member, user, changeMemberRoleForm, isPartyAdmin }: PartyMemberProps = $props();
 
   const changeMemberRoleSuperForm = superForm(changeMemberRoleForm, {
     id: `changeRole-${member.id}`,
@@ -35,16 +50,6 @@
   $memberForm.userId = member.id;
   $memberForm.role = member.role;
   $memberForm.partyId = member.partyId;
-
-  const removeMemberSuperForm = superForm(removePartyMemberForm, {
-    id: `removeMember-${member.id}`,
-    resetForm: true
-  });
-
-  const { form: removeMemberForm, enhance: removeMemberEnhance, message: removeMemberMessage } = removeMemberSuperForm;
-
-  $removeMemberForm.userId = member.id;
-  $removeMemberForm.partyId = member.partyId;
 
   type RoleOption = { value: PartyRole; label: string };
 
@@ -60,6 +65,29 @@
   };
 
   const isSelf = member.id === user.id;
+
+  let formIsLoading = $state(false);
+  const deletePartyMember = useDeletePartyMemberMutation();
+
+  const handleDeletePartyMember = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Member removed',
+          body: `${member.name || member.email} has been removed from the party`,
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      const error = e as FormMutationError;
+      formIsLoading = false;
+      addToast({ data: { title: 'Error removing member', body: error.message, type: 'danger' } });
+    }
+  };
 </script>
 
 {#snippet partyMember()}
@@ -117,29 +145,28 @@
           <Hr />
           <Spacer size={4} />
         {/if}
-        <form method="POST" action="?/removePartyMember" use:removeMemberEnhance>
-          <Field form={removeMemberSuperForm} name="userId">
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="userId" value={$removeMemberForm.userId} />
-              {/snippet}
-            </FSControl>
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="partyId" value={$removeMemberForm.partyId} />
-              {/snippet}
-            </FSControl>
-          </Field>
-          <Button variant="danger" type="submit">{isSelf ? 'Leave party' : 'Remove party member'}</Button>
-          <Spacer size={2} />
-          <Text size="0.875rem" color="var(--fgMuted)"
-            >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
-          >
-          {#if $removeMemberMessage}
-            <Spacer size={2} />
-            <MessageError message={$removeMemberMessage} />
-          {/if}
-        </form>
+        <ConfirmActionButton
+          isLoading={formIsLoading}
+          actionButtonText="Confirm delete"
+          action={handleDeletePartyMember}
+        >
+          {#snippet trigger({ triggerProps })}
+            <Button variant="danger" {...triggerProps}>
+              {isSelf ? 'Leave party' : 'Remove party member'}
+            </Button>
+          {/snippet}
+          {#snippet actionMessage()}
+            <Text size="0.875rem" color="var(--fgDanger)">
+              {isSelf
+                ? 'This will remove you from the party and all related sessions.'
+                : 'This will permanently remove this member from the party. They can be invited back later.'}
+            </Text>
+          {/snippet}
+        </ConfirmActionButton>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)"
+          >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
+        >
       </div>
     {/snippet}
   </Popover>

@@ -184,3 +184,15 @@ export const getPartyFromGameSessionDbName = async (dbName: string) => {
 
   return party;
 };
+
+export const deletePartyMember = async (userId: string, partyId: string) => {
+  try {
+    await db
+      .delete(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .execute();
+  } catch (error) {
+    console.error('Error deleting party member', error);
+    throw error;
+  }
+};

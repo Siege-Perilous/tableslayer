@@ -40,4 +40,5 @@ export type ConfirmActionButtonProps = {
   actionMessage: Snippet;
   action: (e: Event) => void;
   actionButtonText?: string;
+  isLoading?: boolean;
 };
