@@ -40,6 +40,7 @@
   });
 
   let selectClasses = $derived(['select', variant && `select--${variant}`]);
+  console.log($selectedLabel);
 </script>
 
 <div {...restProps} class={selectClasses}>

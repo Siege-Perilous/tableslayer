@@ -41,15 +41,16 @@ export const createPartyInvite = async (email: string, partyId: string, invitedB
         throw new UserAlreadyInPartyError('User already in party');
       }
     }
+    const inviteCode = uuidv4();
+    const hashedInviteCode = await createSha256Hash(inviteCode);
 
     // Generate the invite code and create the invite
-    const inviteCode = await createSha256Hash(`${email}${partyId}${Date.now()}`);
     const newInvite = await db
       .insert(partyInviteTable)
       .values({
         partyId,
         invitedBy,
-        code: inviteCode,
+        code: hashedInviteCode,
         email,
         role
       })
