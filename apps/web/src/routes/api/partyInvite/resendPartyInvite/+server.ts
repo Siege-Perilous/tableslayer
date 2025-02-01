@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const validationSchema = z.object({
   partyId: z.string(),
-  email: z.string()
+  email: z.string().email()
 });
 
 export const POST = apiFactory(

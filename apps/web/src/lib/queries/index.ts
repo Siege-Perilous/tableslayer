@@ -1,3 +1,4 @@
+export * from './auth';
 export * from './file';
 export * from './gameSessions';
 export * from './parties';
