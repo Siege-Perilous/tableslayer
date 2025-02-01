@@ -7,6 +7,7 @@ import {
   usersTable,
   type PartyRole,
   type SelectParty,
+  type SelectPartyMember,
   type SelectUser
 } from '$lib/db/app/schema';
 import { getFile, isUserOnlyAdminInParty, transformImage, UserIsLastAdminInParty, type Thumb } from '$lib/server';
@@ -197,6 +198,36 @@ export const deletePartyMember = async (userId: string, partyId: string) => {
       .execute();
   } catch (error) {
     console.error('Error deleting party member', error);
+    throw error;
+  }
+};
+
+export const updatePartyMember = async (partyMemberData: Partial<SelectPartyMember>) => {
+  if (!partyMemberData.userId || !partyMemberData.partyId) {
+    throw new Error('userId and partyId are required');
+  }
+  const isOnlyAdmin = await isUserOnlyAdminInParty(partyMemberData.userId, partyMemberData.partyId);
+
+  if (isOnlyAdmin && partyMemberData.role !== 'admin') {
+    throw new UserIsLastAdminInParty('Cannot remove the last admin');
+  }
+
+  try {
+    const partyMember = await db
+      .update(partyMemberTable)
+      .set(partyMemberData)
+      .where(
+        and(eq(partyMemberTable.partyId, partyMemberData.partyId), eq(partyMemberTable.userId, partyMemberData.userId))
+      )
+      .returning()
+      .get();
+
+    if (!partyMember) {
+      throw new Error('Party member not found');
+    }
+    return partyMember;
+  } catch (error) {
+    console.error('Error updating party member', error);
     throw error;
   }
 };

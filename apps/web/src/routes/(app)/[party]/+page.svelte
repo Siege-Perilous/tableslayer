@@ -37,13 +37,7 @@
       <Panel class="partyMembers__aside">
         <div class="partyMembers">
           {#each members as member}
-            <PartyMember
-              {user}
-              {member}
-              {isPartyAdmin}
-              removePartyMemberForm={data.removePartyMemberForm}
-              changeMemberRoleForm={data.changeMemberRoleForm}
-            />
+            <PartyMember {user} {member} {isPartyAdmin} />
           {:else}
             <p>No members found.</p>
           {/each}
@@ -55,7 +49,7 @@
           <Spacer size={2} />
           <div class="partyMembers">
             {#each invitedEmails as email (email)}
-              <ResendInvite resendInviteForm={data.resendInviteForm} {email} {partyId} {isPartyAdmin} />
+              <ResendInvite {email} {partyId} {isPartyAdmin} />
             {:else}
               <Text>No pending invites</Text>
             {/each}

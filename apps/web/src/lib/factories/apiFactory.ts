@@ -56,6 +56,7 @@ export function apiFactory<BodyType>(
         );
       }
 
+      // This covers custom errors set in $lib/server/errors
       if (err instanceof Error) {
         return json(
           {

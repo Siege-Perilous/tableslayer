@@ -1,26 +1,20 @@
 <script lang="ts">
   import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
   import {
-    FSControl,
     addToast,
     Hr,
     Text,
     Avatar,
     Select,
-    MessageError,
     Icon,
     Popover,
     Spacer,
     Button,
-    ConfirmActionButton
+    ConfirmActionButton,
+    FormControl
   } from '@tableslayer/ui';
-  import { Field } from 'formsnap';
-  import { type SuperValidated } from 'sveltekit-superforms/client';
-  import { type ChangeRoleFormType, type RemovePartyMemberFormType, changeRoleSchema } from '$lib/schemas';
-  import { superForm } from 'sveltekit-superforms/client';
-  import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
-  import { useDeletePartyMemberMutation } from '$lib/queries';
+  import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
 
   type PartyMember = SelectUser & {
@@ -31,43 +25,22 @@
 
   type PartyMemberProps = {
     member: PartyMember;
-    changeMemberRoleForm: SuperValidated<ChangeRoleFormType>;
-    removePartyMemberForm: SuperValidated<RemovePartyMemberFormType>;
     isPartyAdmin: boolean;
     user: SelectUser;
   };
-
-  let { member, user, changeMemberRoleForm, isPartyAdmin }: PartyMemberProps = $props();
-
-  const changeMemberRoleSuperForm = superForm(changeMemberRoleForm, {
-    id: `changeRole-${member.id}`,
-    validators: zodClient(changeRoleSchema),
-    resetForm: true
-  });
-
-  const { form: memberForm, enhance: memberEnhance, message: memberMessage } = changeMemberRoleSuperForm;
-
-  $memberForm.userId = member.id;
-  $memberForm.role = member.role;
-  $memberForm.partyId = member.partyId;
-
   type RoleOption = { value: PartyRole; label: string };
 
-  const roleOptions: RoleOption[] = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
-  let defaultRole = $state(roleOptions.find((role) => role.value === $memberForm.role));
+  let { member, user, isPartyAdmin }: PartyMemberProps = $props();
 
-  const handleSelectedRole = (selected: RoleOption) => {
-    $memberForm.role = selected.value;
-    defaultRole = selected;
-    // delay for the form to update
-    setTimeout(() => changeMemberRoleSuperForm.submit(), 200);
-    return selected;
-  };
+  let role = $state<PartyRole>(member.role);
+  const roleOptions: RoleOption[] = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
+  let defaultRole = $derived(roleOptions.find((option) => option.value === role));
 
   const isSelf = member.id === user.id;
 
   let formIsLoading = $state(false);
   const deletePartyMember = useDeletePartyMemberMutation();
+  const updatePartyMember = useUpdatePartyMemberMutation();
 
   const handleDeletePartyMember = async (e: Event) => {
     e.preventDefault();
@@ -95,6 +68,34 @@
       });
     }
   };
+  const handleSelectedRole = async (selected: RoleOption) => {
+    role = selected.value;
+    formIsLoading = true;
+    console.log('selected', selected);
+    try {
+      await $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Member role updated',
+          body: `${member.name || member.email}'s role has been updated to ${role}`,
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      const error = e as FormMutationError;
+      addToast({
+        data: {
+          title: 'Error updating member role',
+          body: error.message,
+          type: 'danger'
+        }
+      });
+      formIsLoading = false;
+    }
+    console.log('selected', selected);
+    return selected;
+  };
 </script>
 
 {#snippet partyMember()}
@@ -120,34 +121,23 @@
     {#snippet content()}
       <div class="partyMember__popover">
         {#if isPartyAdmin}
-          <form method="POST" action="?/changeRole" use:memberEnhance>
-            <!-- Bind directly to the form field -->
-            <Field form={changeMemberRoleSuperForm} name="role">
-              <FSControl>
-                {#snippet content({ props })}
-                  <Select
-                    {...props}
-                    options={roleOptions}
-                    name="role"
-                    defaultSelected={defaultRole}
-                    selectedPrefix="Role: "
-                    onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
-                  />
-                {/snippet}
-              </FSControl>
-              <input type="hidden" name="role" value={$memberForm.role} />
-              <input type="hidden" name="userId" value={$memberForm.userId} />
-              <input type="hidden" name="partyId" value={$memberForm.partyId} />
-            </Field>
-            <Spacer size={2} />
-            <Text size="0.875rem" color="var(--fgMuted)"
-              >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
-            >
-            <Spacer size={2} />
-            {#if $memberMessage}
-              <MessageError message={$memberMessage} />
-            {/if}
-          </form>
+          <!-- Bind directly to the form field -->
+          <FormControl name="role">
+            {#snippet input({ inputProps })}
+              <Select
+                {...inputProps}
+                options={roleOptions}
+                name="role"
+                defaultSelected={defaultRole}
+                selectedPrefix="Role: "
+                onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
+              />
+            {/snippet}
+          </FormControl>
+          <Spacer size={2} />
+          <Text size="0.875rem" color="var(--fgMuted)"
+            >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
+          >
           <Spacer size={4} />
           <Hr />
           <Spacer size={4} />
