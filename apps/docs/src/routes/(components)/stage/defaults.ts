@@ -101,6 +101,10 @@ export const StageDefaultProps: StageProps = {
     particles: {
       count: 1000,
       type: ParticleType.Rain,
+      color: '#ffffff',
+      opacity: 1,
+      fadeInTime: 1.0,
+      fadeOutTime: 1.0,
       lifetime: 5,
       spawnArea: { width: 1920, height: 1080 },
       initialVelocity: { x: 0, y: 0, z: 0 },
@@ -112,11 +116,9 @@ export const StageDefaultProps: StageProps = {
           frequency: { x: 5, y: 5, z: 5 }
         }
       },
-      size: { min: 100, max: 100 },
-      color: '#ffffff',
-      opacity: 1,
-      fadeInTime: 1.0,
-      fadeOutTime: 1.0
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1 },
+      size: { min: 0.01, max: 0.01 }
     }
   }
 };

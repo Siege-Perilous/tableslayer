@@ -51,8 +51,6 @@
     rtCamera.position.z = -1 / 2 / Math.tan((DEG2RAD * props.camera.fov) / 2);
     rtCamera.far = -rtCamera.position.z;
     rtCamera.lookAt(0, 0, 0);
-
-    console.log(rtCamera.position.z);
   });
 
   // Custom render task

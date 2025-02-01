@@ -143,8 +143,7 @@
   }
 
   async function onFogUpdate(blob: Promise<Blob>) {
-    const result = await blob;
-    console.log(result);
+    // No-op
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
@@ -362,47 +361,29 @@
             bind:value={stageProps.weather.particles.force.linear.x}
             label="Amplitude X"
             min={0}
-            max={100}
+            max={1000}
             step={1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.linear.y}
             label="Amplitude Y"
             min={0}
-            max={100}
+            max={1000}
             step={1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.linear.z}
             label="Amplitude Z"
             min={0}
-            max={100}
+            max={1000}
             step={1}
           />
         </Folder>
 
         <Folder title="Exponential" expanded={false}>
-          <Slider
-            bind:value={stageProps.weather.particles.force.exponential.x}
-            label="Amplitude X"
-            min={0}
-            max={100}
-            step={1}
-          />
-          <Slider
-            bind:value={stageProps.weather.particles.force.exponential.y}
-            label="Amplitude Y"
-            min={0}
-            max={100}
-            step={1}
-          />
-          <Slider
-            bind:value={stageProps.weather.particles.force.exponential.z}
-            label="Amplitude Z"
-            min={0}
-            max={100}
-            step={1}
-          />
+          <Slider bind:value={stageProps.weather.particles.force.exponential.x} label="Amplitude X" min={0} max={10} />
+          <Slider bind:value={stageProps.weather.particles.force.exponential.y} label="Amplitude Y" min={0} max={10} />
+          <Slider bind:value={stageProps.weather.particles.force.exponential.z} label="Amplitude Z" min={0} max={10} />
         </Folder>
 
         <Folder title="Sinusoidal" expanded={false}>
@@ -410,22 +391,13 @@
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.x}
             label="Amplitude X"
             min={0}
-            max={100}
-            step={1}
+            max={1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.y}
             label="Amplitude Y"
             min={0}
-            max={100}
-            step={1}
-          />
-          <Slider
-            bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.z}
-            label="Amplitude Z"
-            min={0}
-            max={100}
-            step={1}
+            max={1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.frequency.x}
@@ -439,23 +411,29 @@
             min={0}
             max={10}
           />
-          <Slider
-            bind:value={stageProps.weather.particles.force.sinusoidal.frequency.z}
-            label="Frequency Z"
-            min={0}
-            max={10}
-          />
         </Folder>
       </Folder>
+
       <Folder title="Initial Velocity" expanded={false}>
         <Slider bind:value={stageProps.weather.particles.initialVelocity.x} label="X" min={-1000} max={1000} step={1} />
         <Slider bind:value={stageProps.weather.particles.initialVelocity.y} label="Y" min={-1000} max={1000} step={1} />
         <Slider bind:value={stageProps.weather.particles.initialVelocity.z} label="Z" min={-1000} max={1000} step={1} />
       </Folder>
 
+      <Folder title="Rotation" expanded={false}>
+        <Slider bind:value={stageProps.weather.particles.rotation.x} label="X" min={0} max={360} step={1} />
+        <Slider bind:value={stageProps.weather.particles.rotation.y} label="Y" min={0} max={360} step={1} />
+        <Slider bind:value={stageProps.weather.particles.rotation.z} label="Z" min={0} max={360} step={1} />
+      </Folder>
+
+      <Folder title="Scale" expanded={false}>
+        <Slider bind:value={stageProps.weather.particles.scale.x} label="X" min={0} max={10} />
+        <Slider bind:value={stageProps.weather.particles.scale.y} label="Y" min={0} max={10} />
+      </Folder>
+
       <Folder title="Size" expanded={false}>
-        <Slider bind:value={stageProps.weather.particles.size.min} label="Min Size" min={1} max={100} step={1} />
-        <Slider bind:value={stageProps.weather.particles.size.max} label="Max Size" min={1} max={100} step={1} />
+        <Slider bind:value={stageProps.weather.particles.size.min} label="Min Size" min={0.001} max={0.1} />
+        <Slider bind:value={stageProps.weather.particles.size.max} label="Max Size" min={0.001} max={0.1} />
       </Folder>
 
       <Folder title="Spawn Area" expanded={false}>
@@ -468,6 +446,7 @@
   <Button
     on:click={() => {
       localStorage.setItem('stageProps', JSON.stringify(stageProps));
+      console.log(stageProps);
       alert('Props saved to local storage');
     }}
     title="Save Props"
@@ -475,6 +454,7 @@
   <Button
     on:click={() => {
       stageProps = JSON.parse(localStorage.getItem('stageProps') || '{}');
+      console.log(stageProps);
       alert('Props loaded from local storage');
     }}
     title="Load Props"

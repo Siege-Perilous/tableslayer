@@ -52,6 +52,15 @@ export interface ParticleSystemProps {
       };
     };
   };
+  rotation: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  scale: {
+    x: number;
+    y: number;
+  };
   size: {
     min: number;
     max: number;

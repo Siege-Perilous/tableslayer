@@ -13,21 +13,12 @@ uniform float uLifetime;
 uniform float uFadeInTime;
 uniform float uFadeOutTime;
 
+varying vec2 vUv;
 varying vec3 vPos;
 varying float vAge;
 
 void main() {
-  // Calculate angle from position to origin in XY plane
-  float angle = atan(vPos.y, vPos.x) - (3.1415926535897932384626433832795 / 2.0);
-
-  // Rotate texture coordinates around center point
-  vec2 centeredCoord = gl_PointCoord - 0.5;
-  float s = sin(angle);
-  float c = cos(angle);
-  vec2 rotatedCoord = vec2(centeredCoord.x * c - centeredCoord.y * s, centeredCoord.x * s + centeredCoord.y * c);
-  vec2 finalCoord = rotatedCoord + 0.5;
-
-  vec4 textureColor = texture2D(uTexture, finalCoord);
+  vec4 textureColor = texture2D(uTexture, vUv);
 
   float opacity = uOpacity * textureColor.a;
 
