@@ -55,13 +55,7 @@
           <Spacer size={2} />
           <div class="partyMembers">
             {#each invitedEmails as email (email)}
-              <ResendInvite
-                removeInviteForm={data.removeInviteForm}
-                resendInviteForm={data.resendInviteForm}
-                {email}
-                {partyId}
-                {isPartyAdmin}
-              />
+              <ResendInvite resendInviteForm={data.resendInviteForm} {email} {partyId} {isPartyAdmin} />
             {:else}
               <Text>No pending invites</Text>
             {/each}

@@ -1,7 +1,16 @@
 import { db } from '$lib/db/app';
-import { partyInviteTable, partyMemberTable, partyTable, VALID_PARTY_ROLES, type PartyRole } from '$lib/db/app/schema';
+import {
+  partyInviteTable,
+  partyMemberTable,
+  partyTable,
+  VALID_PARTY_ROLES,
+  type PartyRole,
+  type SelectPartyInvite
+} from '$lib/db/app/schema';
 import { createSha256Hash } from '$lib/utils/hash';
 import { and, eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+import { sendPartyInviteEmail } from '../email';
 import { UserAlreadyInPartyError, UserAlreadyInvitedError } from '../errors';
 import { isUserInParty } from '../party/getParty';
 import { getUser, getUserByEmail, isEmailInUserTable } from '../user';
@@ -46,6 +55,8 @@ export const createPartyInvite = async (email: string, partyId: string, invitedB
       })
       .returning()
       .get();
+
+    await sendPartyInviteEmail(partyId, email, inviteCode);
 
     return newInvite;
   } catch (error) {
@@ -155,6 +166,52 @@ export const getPartyInvite = async (partyId: string, email: string) => {
     return invite;
   } catch (error) {
     console.error('Error fetching party invite', error);
+    throw error;
+  }
+};
+
+export const deletePartyInvite = async (partyInviteId: string) => {
+  try {
+    await db.delete(partyInviteTable).where(eq(partyInviteTable.id, partyInviteId)).run();
+  } catch (error) {
+    console.error('Error deleting party invite', error);
+    throw error;
+  }
+};
+
+export const deletePartyInviteByEmail = async (partyId: string, email: string) => {
+  try {
+    await db
+      .delete(partyInviteTable)
+      .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+      .execute();
+  } catch (error) {
+    console.error('Error deleting party invite', error);
+    throw error;
+  }
+};
+
+export const resendPartyInvite = async (partyId: string, email: string): Promise<SelectPartyInvite> => {
+  try {
+    const inviteCode = uuidv4();
+    const hashedInviteCode = await createSha256Hash(inviteCode);
+
+    const invite = await db
+      .update(partyInviteTable)
+      .set({ code: hashedInviteCode })
+      .where(eq(partyInviteTable.email, email))
+      .returning()
+      .get();
+
+    if (!invite) {
+      throw new Error('No party invite found');
+    }
+
+    await sendPartyInviteEmail(partyId, email, inviteCode);
+
+    return invite;
+  } catch (error) {
+    console.error('Error resending party invite', error);
     throw error;
   }
 };

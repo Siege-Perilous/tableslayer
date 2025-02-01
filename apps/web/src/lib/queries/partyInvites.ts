@@ -9,16 +9,16 @@ export const useCreatePartyInviteMutation = () => {
   });
 };
 
-export const useUpdatePartyInviteMutation = () => {
-  return mutationFactory<Partial<InsertPartyInvite>, { success: boolean; partyInvite: SelectPartyInvite }>({
-    mutationKey: ['updatePartyInvite'],
-    endpoint: '/api/partyInvite/updatePartyInvite',
+export const useResendPartyInviteMutation = () => {
+  return mutationFactory<{ partyId: string; email: string }, { success: boolean; partyInvite: SelectPartyInvite }>({
+    mutationKey: ['resendPartyInvite'],
+    endpoint: '/api/partyInvite/resendPartyInvite',
     method: 'POST'
   });
 };
 
 export const useDeletePartyInviteMutation = () => {
-  return mutationFactory<{ partyInviteId: string }>({
+  return mutationFactory<{ partyId: string; email: string }>({
     mutationKey: ['deletePartyInvite'],
     endpoint: '/api/partyInvite/deletePartyInvite',
     method: 'POST'
