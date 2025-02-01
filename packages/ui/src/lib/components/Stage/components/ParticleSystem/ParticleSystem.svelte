@@ -34,7 +34,9 @@
       // Quad vertex positions (same for all 4 corners initially)
       const baseIdx = i * 12;
       // Generate random size for this particle
-      const size = Math.random() * (props.size.max - props.size.min) + props.size.min;
+      let size = Math.random() * (props.size.max - props.size.min) + props.size.min;
+      let width = size * props.scale.x;
+      let height = size * props.scale.y;
 
       const rotation = new THREE.Euler(
         (Math.PI / 180) * props.rotation.x,
@@ -42,10 +44,10 @@
         (Math.PI / 180) * props.rotation.z + angle
       );
 
-      const v1 = new THREE.Vector3(-size / 2, -size / 2, 0);
-      const v2 = new THREE.Vector3(size / 2, -size / 2, 0);
-      const v3 = new THREE.Vector3(-size / 2, size / 2, 0);
-      const v4 = new THREE.Vector3(size / 2, size / 2, 0);
+      const v1 = new THREE.Vector3(-width / 2, -height / 2, 0);
+      const v2 = new THREE.Vector3(width / 2, -height / 2, 0);
+      const v3 = new THREE.Vector3(-width / 2, height / 2, 0);
+      const v4 = new THREE.Vector3(width / 2, height / 2, 0);
 
       v1.applyEuler(rotation);
       v2.applyEuler(rotation);

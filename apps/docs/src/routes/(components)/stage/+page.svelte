@@ -391,13 +391,13 @@
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.x}
             label="Amplitude X"
             min={0}
-            max={1}
+            max={0.1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.y}
             label="Amplitude Y"
             min={0}
-            max={1}
+            max={0.1}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.frequency.x}

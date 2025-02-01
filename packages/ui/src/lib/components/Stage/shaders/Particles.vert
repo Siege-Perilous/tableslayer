@@ -9,7 +9,6 @@ uniform float uTime;
 uniform float uLifetime;
 
 uniform vec3 uColor;
-uniform vec2 uScale;
 
 uniform vec3 uInitialVelocity;
 uniform vec3 uLinearForceAmplitude;
@@ -28,9 +27,7 @@ void main() {
   velocity += uExponentialForceAmplitude * exp(vAge);
   velocity += uSinusoidalForceAmplitude * sin(vAge * uSinusoidalForceFrequency);
 
-  vec3 pos = position;
-  pos.xy *= uScale;
-  pos += vAge * velocity;
+  vec3 pos = position + vAge * velocity;
 
     // Scale point size based on distance from camera
   float distanceToCamera = length(modelViewMatrix * vec4(pos, 1.0));

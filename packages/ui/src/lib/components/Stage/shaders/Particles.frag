@@ -7,8 +7,6 @@ uniform float uTime;
 uniform float uOpacity;
 uniform vec3 uColor;
 
-uniform float uSize;
-
 uniform float uLifetime;
 uniform float uFadeInTime;
 uniform float uFadeOutTime;
