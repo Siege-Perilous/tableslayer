@@ -181,17 +181,16 @@ Invisible mesh used for input detection.
 The plane geometry is larger than the map size to allow cursor 
 events to be detected outside of the fog of war layer.
 -->
-<T.Mesh bind:ref={mesh} name="FogOfWar">
-  <T.MeshBasicMaterial transparent={true} opacity={0} />
-  <T.PlaneGeometry args={[(mapSize?.width ?? 0) * 10, (mapSize?.height ?? 0) * 10]} />
+<T.Mesh bind:ref={mesh} name="FogOfWar" visible={false}>
+  <T.PlaneGeometry args={[10, 10]} />
 </T.Mesh>
 
-<T.Mesh name="FogOfWarToolOutline" position.z={-10} renderOrder={1}>
+<T.Mesh name="FogOfWarToolOutline" position.z={-10} renderOrder={300}>
   <T is={outlineMaterial} />
   <T.PlaneGeometry />
 </T.Mesh>
 
-<T.Mesh name="FogOfWar">
+<T.Mesh name="FogOfWar" renderOrder={200}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

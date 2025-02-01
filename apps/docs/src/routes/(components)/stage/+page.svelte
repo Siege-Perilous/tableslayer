@@ -344,22 +344,17 @@
 
   <Folder title="Weather" expanded={true}>
     <Folder title="Camera" expanded={true}>
-      <Slider bind:value={stageProps.weather.camera.position.x} label="X" min={-1000} max={1000} />
-      <Slider bind:value={stageProps.weather.camera.position.y} label="Y" min={-1000} max={1000} />
-      <Slider bind:value={stageProps.weather.camera.position.z} label="Z" min={-1000} max={1000} />
       <Slider bind:value={stageProps.weather.camera.fov} label="FOV" min={1} max={180} step={1} />
-      <Slider bind:value={stageProps.weather.camera.near} label="Near" min={1} max={1000} />
-      <Slider bind:value={stageProps.weather.camera.far} label="Far" min={0} max={1000} />
     </Folder>
     <Folder title="Particles" expanded={true}>
       <List bind:value={stageProps.weather.particles.type} label="Type" options={particleTypeOptions} />
       <Slider bind:value={stageProps.weather.particles.count} label="Count" min={1} max={10000} step={1} />
       <Color bind:value={stageProps.weather.particles.color} label="Color" />
       <Slider bind:value={stageProps.weather.particles.opacity} label="Opacity" min={0} max={1} step={0.01} />
-      <Slider bind:value={stageProps.weather.particles.lifetime} label="Lifetime" min={1} max={100} step={1} />
+      <Slider bind:value={stageProps.weather.particles.lifetime} label="Lifetime" min={1} max={10} />
 
-      <Slider bind:value={stageProps.weather.particles.fadeInTime} label="Fade In Time" min={0} max={10} step={0.1} />
-      <Slider bind:value={stageProps.weather.particles.fadeOutTime} label="Fade Out Time" min={0} max={10} step={0.1} />
+      <Slider bind:value={stageProps.weather.particles.fadeInTime} label="Fade In (s)" min={0} max={10} step={0.01} />
+      <Slider bind:value={stageProps.weather.particles.fadeOutTime} label="Fade Out (s)" min={0} max={10} step={0.01} />
 
       <Folder title="Force" expanded={false}>
         <Folder title="Linear" expanded={false}>

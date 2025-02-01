@@ -8,6 +8,7 @@
   import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
+  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
 
   interface Props {
     props: StageProps;
@@ -104,6 +105,8 @@
     <T.MeshBasicMaterial map={image} transparent={true} />
     <T.PlaneGeometry />
   </T.Mesh>
+
+  <WeatherLayer props={props.weather} {mapSize} />
 
   <FogOfWarLayer
     bind:this={fogOfWarLayer}

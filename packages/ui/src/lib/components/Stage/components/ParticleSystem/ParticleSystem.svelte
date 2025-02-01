@@ -25,10 +25,16 @@
 
     // Initialize particles
     for (let i = 0; i < props.count; i++) {
+      // Generate within a disk
+      const radius = 0.2 + Math.random();
+      const angle = Math.random() * 2 * Math.PI;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+
       // Random position within spawn area
-      positions[i * 3] = (Math.random() - 0.5) * props.spawnArea.width;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * props.spawnArea.height;
-      positions[i * 3 + 2] = -500;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = -1;
 
       // Initial velocity
       velocities[i * 3] = props.initialVelocity.x;
@@ -74,7 +80,6 @@
 
   // Update material uniforms whenever they change
   $effect(() => {
-    console.log('updating particle uniforms');
     Object.assign(material.uniforms, uniforms);
   });
 
@@ -92,6 +97,5 @@
     depthWrite={false}
     depthTest={false}
     blending={THREE.AdditiveBlending}
-    renderOrder={1}
   />
 </T.Points>

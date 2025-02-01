@@ -129,5 +129,4 @@
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
-  <WeatherLayer props={props.weather} resolution={props.display.resolution} />
 </T.Object3D>

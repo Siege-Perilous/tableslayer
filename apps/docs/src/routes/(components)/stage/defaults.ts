@@ -94,7 +94,7 @@ export const StageDefaultProps: StageProps = {
   weather: {
     camera: {
       position: { x: 0, y: 0, z: -500 },
-      fov: 45,
+      fov: 100,
       near: 1,
       far: 10000
     },
@@ -105,17 +105,17 @@ export const StageDefaultProps: StageProps = {
       spawnArea: { width: 1920, height: 1080 },
       initialVelocity: { x: 0, y: 0, z: 0 },
       force: {
-        linear: { x: 0, y: 0, z: 100.0 },
-        exponential: { x: 0, y: 0, z: 0 },
+        linear: { x: 0, y: 0, z: 0 },
+        exponential: { x: 0, y: 0, z: 100 },
         sinusoidal: {
           amplitude: { x: 0, y: 0, z: 0 },
           frequency: { x: 5, y: 5, z: 5 }
         }
       },
-      size: { min: 1, max: 10 },
+      size: { min: 100, max: 100 },
       color: '#ffffff',
       opacity: 1,
-      fadeInTime: 3.0,
+      fadeInTime: 1.0,
       fadeOutTime: 1.0
     }
   }
