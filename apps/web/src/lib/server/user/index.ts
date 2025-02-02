@@ -16,6 +16,7 @@ import {
   transformImage,
   uploadFileFromUrl
 } from '$lib/server';
+import { isWithinExpirationDate } from '$lib/utils';
 import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -183,5 +184,46 @@ export const initiateResetPassword = async (email: string) => {
     });
   } catch (error) {
     console.error(error);
+  }
+};
+
+export const resetPassword = async (code: string, password: string, loggedInUserId?: string) => {
+  try {
+    const hashedResetCode = await createSha256Hash(code);
+    const resetPasswordCodeRow = await db
+      .select()
+      .from(resetPasswordCodesTable)
+      .where(eq(resetPasswordCodesTable.code, hashedResetCode))
+      .get();
+
+    const isWithinExpiration =
+      resetPasswordCodeRow !== undefined && isWithinExpirationDate(resetPasswordCodeRow.expiresAt);
+
+    if (!isWithinExpiration) {
+      throw new Error('Reset code expired');
+    }
+
+    const userDesiringReset = await getUserByResetPasswordCode(hashedResetCode);
+
+    if (!userDesiringReset) {
+      throw new Error('Reset code not found');
+    }
+
+    if (loggedInUserId && loggedInUserId !== userDesiringReset.id) {
+      throw new Error('Reset code does not match user');
+    }
+
+    const passwordHash = await createArgonHash(password);
+    await db.delete(resetPasswordCodesTable).where(eq(resetPasswordCodesTable.userId, userDesiringReset.id)).execute();
+    const user = await db
+      .update(usersTable)
+      .set({ passwordHash })
+      .where(eq(usersTable.id, userDesiringReset.id))
+      .returning()
+      .get();
+    return user;
+  } catch (error) {
+    console.error('Error resetting password', error);
+    throw error;
   }
 };

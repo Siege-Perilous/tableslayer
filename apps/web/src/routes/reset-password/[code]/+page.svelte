@@ -1,18 +1,48 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import SuperDebug from 'sveltekit-superforms';
-  import { resetPasswordSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { addToast, Input, FormControl, Button, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { useAuthResetPasswordMutation } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
   let { data } = $props();
-  const { userDesiringReset } = data;
-  const form = superForm(data.resetPasswordForm, {
-    validators: zodClient(resetPasswordSchema)
-  });
+  const { userDesiringReset, resetCode } = data;
+  let password = $state('');
+  let confirmPassword = $state('');
+  let formIsLoading = $state(false);
+  let resetPasswordError = $state<FormMutationError | undefined>(undefined);
 
-  const { form: formData, enhance, message } = form;
+  const resetPassword = useAuthResetPasswordMutation();
+
+  const handleResetPassword = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $resetPassword.mutateAsync({
+        email: userDesiringReset.email,
+        password,
+        confirmPassword,
+        code: resetCode
+      });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Password reset',
+          type: 'success'
+        }
+      });
+      goto('/profile');
+    } catch (e) {
+      resetPasswordError = e as FormMutationError;
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Error resetting password',
+          body: resetPasswordError.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
 </script>
 
 <Panel class="panel--signup">
@@ -20,41 +50,26 @@
   <Spacer size={2} />
   <p>You will be logged in after successfully resetting your password</p>
   <Spacer size={8} />
-  <form method="post" use:enhance>
-    <Field {form} name="password">
-      <FSControl label="Password">
-        {#snippet content({ props })}
-          <Input {...props} type="password" bind:value={$formData.password} />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+  <form onsubmit={handleResetPassword}>
+    <FormControl label="Password" name="password" errors={resetPasswordError && resetPasswordError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="password" bind:value={password} />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="confirmPassword">
-      <FSControl label="Confirm password">
-        {#snippet content({ props })}
-          <Input {...props} type="password" bind:value={$formData.confirmPassword} />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
-    {#if $message}
-      <Spacer />
-      <MessageError message={$message} />
-    {/if}
+    <FormControl
+      label="Confirm password"
+      name="confirmPassword"
+      errors={resetPasswordError && resetPasswordError.errors}
+    >
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="password" bind:value={confirmPassword} />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="userId">
-      <FSControl>
-        {#snippet content({ props })}
-          <Input {...props} type="hidden" name="userId" value={userDesiringReset.id} />
-        {/snippet}
-      </FSControl>
-    </Field>
-    <Button type="submit">Submit</Button>
-    <Spacer />
+    <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
   </form>
 </Panel>
-<SuperDebug data={$formData} display={false} />
 
 <style>
   :global(.panel.panel--signup) {

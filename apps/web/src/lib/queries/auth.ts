@@ -23,3 +23,11 @@ export const useAuthForgotPasswordMutation = () => {
     method: 'POST'
   });
 };
+
+export const useAuthResetPasswordMutation = () => {
+  return mutationFactory<{ email: string; password: string; confirmPassword: string; code: string }>({
+    mutationKey: ['authResetPassword'],
+    endpoint: '/api/auth/resetPassword',
+    method: 'POST'
+  });
+};
