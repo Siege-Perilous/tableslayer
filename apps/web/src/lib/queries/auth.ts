@@ -7,3 +7,11 @@ export const useAuthLogin = () => {
     method: 'POST'
   });
 };
+
+export const useAuthSignup = () => {
+  return mutationFactory<{ email: string; password: string; confirmPassword: string }>({
+    mutationKey: ['authSignup'],
+    endpoint: '/api/auth/signup',
+    method: 'POST'
+  });
+};

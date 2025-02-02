@@ -1,18 +1,42 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import SuperDebug from 'sveltekit-superforms';
-  import { signupSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Link, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, addToast, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { IllustrationOverlook } from '$lib/components';
+  import { useAuthSignup } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
-  let { data } = $props();
-  const form = superForm(data.signupForm, {
-    validators: zodClient(signupSchema)
-  });
+  let email = $state('');
+  let password = $state('');
+  let confirmPassword = $state('');
+  let signupError = $state<FormMutationError | undefined>(undefined);
+  let formIsLoading = $state(false);
+  const signup = useAuthSignup();
 
-  const { form: formData, enhance, message } = form;
+  const handleSignup = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $signup.mutateAsync({ email, password, confirmPassword });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Welcome to Table Slayer!',
+          type: 'success'
+        }
+      });
+      goto('/verify-email');
+    } catch (e) {
+      signupError = e as FormMutationError;
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Error signing up',
+          body: signupError.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
 </script>
 
 <IllustrationOverlook />
@@ -22,42 +46,28 @@
   <Spacer size={2} />
   <p>Already have an account? <Link href="/login">Sign in</Link>.</p>
   <Spacer size={8} />
-  <form method="post" use:enhance>
-    <Field {form} name="email">
-      <FSControl label="Email">
-        {#snippet content({ props })}
-          <Input {...props} type="text" bind:value={$formData.email} data-testid="email" />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+  <form onsubmit={handleSignup}>
+    <FormControl label="Email" name="email" errors={signupError && signupError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="text" bind:value={email} data-testid="email" />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="password">
-      <FSControl label="Password">
-        {#snippet content({ props })}
-          <Input {...props} type="password" bind:value={$formData.password} data-testid="password" />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+    <FormControl label="Password" name="password" errors={signupError && signupError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="password" bind:value={password} data-testid="password" />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="confirmPassword">
-      <FSControl label="Confirm Password">
-        {#snippet content({ props })}
-          <Input {...props} type="password" bind:value={$formData.confirmPassword} data-testid="confirmPassword" />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
-    {#if $message}
-      <Spacer />
-      <MessageError message={$message} />
-    {/if}
+    <FormControl label="Confirm Password" name="confirmPassword" errors={signupError && signupError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="password" bind:value={confirmPassword} data-testid="confirmPassword" />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Button type="submit" data-testid="signupSubmit">Submit</Button>
+    <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
   </form>
 </Panel>
-<SuperDebug data={$formData} display={false} />
 
 <style>
   :global(.panel.panel--signup) {

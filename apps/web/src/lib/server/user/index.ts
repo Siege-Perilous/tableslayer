@@ -1,6 +1,22 @@
 import { db } from '$lib/db/app';
-import { resetPasswordCodesTable, usersTable, type SelectUser } from '$lib/db/app/schema';
-import { getFile, transformImage } from '$lib/server';
+import {
+  emailVerificationCodesTable,
+  partyMemberTable,
+  resetPasswordCodesTable,
+  usersTable,
+  type SelectUser
+} from '$lib/db/app/schema';
+import {
+  createGameSessionDb,
+  createRandomNamedParty,
+  getFile,
+  getGravatarDisplayName,
+  getGravatarUrl,
+  sendSingleEmail,
+  transformImage,
+  uploadFileFromUrl
+} from '$lib/server';
+import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { eq } from 'drizzle-orm';
 
 export const getUser = async (userId: string) => {
@@ -70,5 +86,66 @@ export const getUserByResetPasswordCode = async (code: string) => {
   } catch (error) {
     console.error('Error getting user by reset password code', error);
     throw error;
+  }
+};
+
+export const createUserByEmailAndPassword = async (email: string, password: string, userId: string) => {
+  const passwordHash = await createArgonHash(password);
+  const randomShortCode = createShortCode();
+  const emailVerificationHash = await createSha256Hash(randomShortCode);
+
+  try {
+    if (await isEmailInUserTable(email)) {
+      throw new Error('Email already in use');
+    }
+    const name = await getGravatarDisplayName(email);
+    await db.insert(usersTable).values({
+      id: userId,
+      name,
+      email: email,
+      passwordHash: passwordHash
+    });
+    try {
+      const gravatar = getGravatarUrl(email);
+      const fileToUserRow = await uploadFileFromUrl(gravatar, userId, 'avatar');
+      if (fileToUserRow) {
+        await db.update(usersTable).set({ avatarFileId: fileToUserRow.fileId }).where(eq(usersTable.id, userId));
+      }
+    } catch (avatarError) {
+      console.error('Error uploading avatar', avatarError);
+      throw avatarError;
+    }
+
+    // Create a personal party for the user
+    const party = await createRandomNamedParty();
+
+    await db.insert(partyMemberTable).values({
+      partyId: party.id,
+      userId: userId,
+      role: 'admin'
+    });
+
+    // Create a game session database
+    await createGameSessionDb(party.id);
+
+    // Create an email verification code
+    await db
+      .insert(emailVerificationCodesTable)
+      .values({
+        userId,
+        code: emailVerificationHash
+      })
+      .returning()
+      .get();
+
+    // Send email
+    await sendSingleEmail({
+      to: email,
+      subject: 'Verify your email',
+      html: `Your verification code is: ${randomShortCode}`
+    });
+  } catch (e) {
+    console.error('Error creating user', e);
+    throw e;
   }
 };
