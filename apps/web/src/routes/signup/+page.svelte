@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Input, addToast, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { IllustrationOverlook } from '$lib/components';
-  import { useAuthSignup } from '$lib/queries';
+  import { useAuthSignupMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { goto } from '$app/navigation';
 
@@ -10,7 +10,7 @@
   let confirmPassword = $state('');
   let signupError = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
-  const signup = useAuthSignup();
+  const signup = useAuthSignupMutation();
 
   const handleSignup = async (e: Event) => {
     e.preventDefault();

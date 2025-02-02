@@ -1,6 +1,6 @@
 import { mutationFactory } from '$lib/factories';
 
-export const useAuthLogin = () => {
+export const useAuthLoginMutation = () => {
   return mutationFactory<{ email: string; password: string }>({
     mutationKey: ['authLogin'],
     endpoint: '/api/auth/login',
@@ -8,10 +8,18 @@ export const useAuthLogin = () => {
   });
 };
 
-export const useAuthSignup = () => {
+export const useAuthSignupMutation = () => {
   return mutationFactory<{ email: string; password: string; confirmPassword: string }>({
     mutationKey: ['authSignup'],
     endpoint: '/api/auth/signup',
+    method: 'POST'
+  });
+};
+
+export const useAuthForgotPasswordMutation = () => {
+  return mutationFactory<{ email: string }>({
+    mutationKey: ['authForgotPassword'],
+    endpoint: '/api/auth/forgotPassword',
     method: 'POST'
   });
 };

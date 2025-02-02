@@ -31,8 +31,8 @@ export const POST = apiFactory(
 
       return { success: true };
     } catch (e) {
-      console.error('Login error:', e);
-      throw new Error('Incorrect email or password');
+      const error = e as Error;
+      throw new Error(error.message);
     }
   },
   {

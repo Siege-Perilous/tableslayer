@@ -18,6 +18,8 @@ import {
 } from '$lib/server';
 import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 
 export const getUser = async (userId: string) => {
   try {
@@ -147,5 +149,39 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
   } catch (e) {
     console.error('Error creating user', e);
     throw e;
+  }
+};
+
+export const initiateResetPassword = async (email: string) => {
+  const randomString = uuidv4();
+  const resetPasswordHash = await createSha256Hash(randomString);
+  try {
+    const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+    const existingResetCode = await db
+      .select()
+      .from(resetPasswordCodesTable)
+      .where(eq(resetPasswordCodesTable.email, email))
+      .get();
+
+    if (existingResetCode) {
+      await db.delete(resetPasswordCodesTable).where(eq(resetPasswordCodesTable.email, email)).run();
+    }
+    if (!existingUser) {
+      throw new Error('Check your email for a password reset link');
+    }
+
+    await db.insert(resetPasswordCodesTable).values({
+      email,
+      code: resetPasswordHash,
+      userId: existingUser.id
+    });
+
+    await sendSingleEmail({
+      to: email,
+      subject: 'Reset your password',
+      html: `Visit ${baseURL}/reset-password/${randomString} to reset your password. If you did not make this request, ignore this email. No futher steps are required.`
+    });
+  } catch (error) {
+    console.error(error);
   }
 };

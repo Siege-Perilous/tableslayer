@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { useAuthLogin } from '$lib/queries';
+  import { useAuthLoginMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { goto } from '$app/navigation';
   import { addToast, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
@@ -9,7 +9,7 @@
   let formIsLoading = $state(false);
   let loginErrors = $state<FormMutationError | undefined>(undefined);
 
-  const login = useAuthLogin();
+  const login = useAuthLoginMutation();
 
   const handleLogin = async (e: Event) => {
     e.preventDefault();
