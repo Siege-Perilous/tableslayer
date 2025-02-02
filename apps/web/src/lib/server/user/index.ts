@@ -13,6 +13,7 @@ import {
   getGravatarDisplayName,
   getGravatarUrl,
   sendSingleEmail,
+  sendVerificationEmail,
   transformImage,
   uploadFileFromUrl
 } from '$lib/server';
@@ -224,6 +225,58 @@ export const resetPassword = async (code: string, password: string, loggedInUser
     return user;
   } catch (error) {
     console.error('Error resetting password', error);
+    throw error;
+  }
+};
+
+export const changeUserEmail = async (userId: string, newEmail: string) => {
+  try {
+    const existingUser = await getUserByEmail(newEmail);
+    if (existingUser) {
+      throw new Error('Email already in use');
+    }
+    await db.update(usersTable).set({ email: newEmail }).where(eq(usersTable.id, userId)).execute();
+    await sendVerificationEmail(userId, newEmail);
+  } catch (error) {
+    console.error('Error changing user email', error);
+    throw error;
+  }
+};
+
+export const resendVerifyEmail = async (userId: string) => {
+  try {
+    const user = await getUser(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    await sendVerificationEmail(userId, user.email);
+  } catch (error) {
+    console.error('Error resending verification email', error);
+    throw error;
+  }
+};
+
+export const verifyEmail = async (userId: string, code: string) => {
+  try {
+    const hashedCode = await createSha256Hash(code);
+
+    const verificationCode = await db
+      .select()
+      .from(emailVerificationCodesTable)
+      .where(eq(emailVerificationCodesTable.userId, userId))
+      .get();
+    if (
+      !verificationCode ||
+      !isWithinExpirationDate(verificationCode.expiresAt) ||
+      verificationCode.code !== hashedCode
+    ) {
+      throw new Error('Invalid verification code');
+    }
+
+    await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, userId)).execute();
+    await db.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
+  } catch (error) {
+    console.error('Error verifying email', error);
     throw error;
   }
 };

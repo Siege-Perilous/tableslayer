@@ -55,7 +55,7 @@
     <div>
       <Button href="/profile" class="btn">Dashboard</Button>
     </div>
-  {:else if !dev}
+  {:else if dev}
     <div class="flex">
       <Button href="/login" class="btn">Log in</Button>
       <Button href="/signup" class="btn">Sign up</Button>

@@ -31,3 +31,27 @@ export const useAuthResetPasswordMutation = () => {
     method: 'POST'
   });
 };
+
+export const useAuthVerifyEmailMutation = () => {
+  return mutationFactory<{ code: string }>({
+    mutationKey: ['authVerifyEmail'],
+    endpoint: '/api/auth/verifyEmail',
+    method: 'POST'
+  });
+};
+
+export const useAuthResendVerificationEmailMutation = () => {
+  return mutationFactory<{ userId: string }>({
+    mutationKey: ['authResendVerificationEmail'],
+    endpoint: '/api/auth/resendVerificationEmail',
+    method: 'POST'
+  });
+};
+
+export const useAuthChangeEmailMutation = () => {
+  return mutationFactory<{ newEmail: string }>({
+    mutationKey: ['authChangeEmail'],
+    endpoint: '/api/auth/changeEmail',
+    method: 'POST'
+  });
+};

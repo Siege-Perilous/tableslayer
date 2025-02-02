@@ -1,28 +1,104 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { Button, FSControl, FieldErrors, Input } from '@tableslayer/ui';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { changeUserEmailSchema, resendVerificationCodeSchema, verificationCodeSchema } from '$lib/schemas';
-  import SuperDebug from 'sveltekit-superforms';
+  import { addToast, Button, FormControl, Input } from '@tableslayer/ui';
+  import {
+    useAuthVerifyEmailMutation,
+    useAuthResendVerificationEmailMutation,
+    useAuthChangeEmailMutation
+  } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
   let { data } = $props();
-
-  const changeEmailForm = superForm(data.changeEmailForm, {
-    validators: zodClient(changeUserEmailSchema)
-  });
-  const resendForm = superForm(data.resendForm, {
-    validators: zodClient(resendVerificationCodeSchema)
-  });
-  const verifyCodeForm = superForm(data.verifyForm, {
-    validators: zodClient(verificationCodeSchema)
-  });
-
-  const { form: changeEmailData, enhance: enhanceChangeEmail, message: changeEmailMessage } = changeEmailForm;
-  const { form: resendData, enhance: enhanceResend, message: resendMessage } = resendForm;
-  const { form: verifyData, enhance: enhanceVerify, message: verifyMessage } = verifyCodeForm;
+  const { user } = data;
 
   let isChangingEmail = $state(false);
+  let formIsLoading = $state(false);
+  let newEmail = $state('');
+  let verifyCode = $state('');
+  let verifyEmailError = $state<FormMutationError | undefined>(undefined);
+  let resendEmailError = $state<FormMutationError | undefined>(undefined);
+  let changeEmailError = $state<FormMutationError | undefined>(undefined);
+
+  const verifyEmail = useAuthVerifyEmailMutation();
+  const resendEmail = useAuthResendVerificationEmailMutation();
+  const changeEmail = useAuthChangeEmailMutation();
+
+  const handleVerifyEmail = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $verifyEmail.mutateAsync({ code: verifyCode });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Email verified',
+          type: 'success'
+        }
+      });
+      goto('/profile');
+    } catch (e) {
+      verifyEmailError = e as FormMutationError;
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Error verifying email',
+          body: verifyEmailError.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
+
+  const handleResendEmail = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $resendEmail.mutateAsync({ userId: user.id });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Verification email resent',
+          type: 'success'
+        }
+      });
+    } catch (e) {
+      resendEmailError = e as FormMutationError;
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Error resending verification email',
+          body: resendEmailError.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
+
+  const handleChangeEmail = async (e: Event) => {
+    e.preventDefault();
+    formIsLoading = true;
+    try {
+      await $changeEmail.mutateAsync({ newEmail });
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Email changed',
+          type: 'success'
+        }
+      });
+      isChangingEmail = false;
+    } catch (e) {
+      changeEmailError = e as FormMutationError;
+      formIsLoading = false;
+      addToast({
+        data: {
+          title: 'Error changing email',
+          body: changeEmailError.message,
+          type: 'danger'
+        }
+      });
+    }
+  };
 </script>
 
 <h1>Verify email</h1>
@@ -33,47 +109,30 @@
   {#if data.isVerified}
     <p>Email is already verified</p>
   {:else if data.isWithinExpiration}
-    <form method="post" action="?/verify" use:enhanceVerify>
-      <Field form={verifyCodeForm} name="code">
-        <FSControl label="Verify code">
-          {#snippet content({ props })}
-            <Input {...props} type="text" bind:value={$verifyData.code} />
-          {/snippet}
-        </FSControl>
-        <FieldErrors />
-      </Field>
-      <Button type="submit">Verify</Button>
-      {#if $verifyMessage}
-        <p>{$verifyMessage.text}</p>
-      {/if}
+    <form onsubmit={handleVerifyEmail}>
+      <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="text" bind:value={verifyCode} />
+        {/snippet}
+      </FormControl>
+      <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
     </form>
   {:else}
     <p>Your previous verification code expired. Please request a new one.</p>
-    <form method="post" action="?/resend" use:enhanceResend>
-      <button>Resend</button>
-      {#if $resendMessage}
-        <p>{$resendMessage.text}</p>
-      {/if}
-    </form>
+    <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
+      >Resend verification email</Button
+    >
   {/if}
 {:else}
-  <form method="post" action="?/changeEmail" use:enhanceChangeEmail>
-    <Field form={changeEmailForm} name="email">
-      <FSControl label="New email">
-        {#snippet content({ props })}
-          <Input {...props} type="email" bind:value={$changeEmailData.email} />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+  <form onsubmit={handleChangeEmail}>
+    <FormControl label="New email" name="newEmail" errors={changeEmailError && changeEmailError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="email" bind:value={newEmail} />
+      {/snippet}
+    </FormControl>
     <button>Change email</button>
-    <button type="button" onclick={() => (isChangingEmail = false)}>Cancel</button>
-    {#if $changeEmailMessage}
-      <p>{$changeEmailMessage.text}</p>
-    {/if}
+    <Button type="button" isLoading={formIsLoading} disabled={formIsLoading} onclick={() => (isChangingEmail = false)}
+      >Cancel</Button
+    >
   </form>
 {/if}
-
-<SuperDebug data={$changeEmailData} label="Change email" />
-<SuperDebug data={$resendData} label="Resend email" />
-<SuperDebug data={$verifyData} label="Verify code" />
