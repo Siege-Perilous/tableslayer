@@ -27,7 +27,7 @@ jobs:
       - uses: ./.github/shared
       - run: pnpm lint -- --quiet
 
-  tsc:
+  TypeScript:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
