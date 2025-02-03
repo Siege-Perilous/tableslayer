@@ -4,6 +4,7 @@
   import Scene from '../Scene/Scene.svelte';
   import type { SceneExports } from '../Scene/types';
   import { setContext } from 'svelte';
+  import { PerfMonitor } from '@threlte/extras';
 
   interface Props {
     props: StageProps;
@@ -39,5 +40,6 @@
 <div style="background-color: {props.backgroundColor}; height: 100%; width: 100%;">
   <Canvas>
     <Scene bind:this={sceneRef} {props} />
+    <PerfMonitor logsPerSecond={30} anchorX={'right'} anchorY={'bottom'} />
   </Canvas>
 </div>

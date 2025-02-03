@@ -5,7 +5,6 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
-  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
 
