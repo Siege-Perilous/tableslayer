@@ -20,6 +20,6 @@
 </script>
 
 <Example title="Avatar" propsName="Avatar">
-  <Select {options} />
-  <Select options={optionsWithGroups} />
+  <Select {options} value="option3" />
+  <Select options={optionsWithGroups} value="option3" />
 </Example>
