@@ -3,7 +3,7 @@ import type { Snippet } from 'svelte';
 
 export type ContextMenuItem = ContextMenuItemProps & {
   type?: 'divider';
-  label: string;
+  label?: string;
   href?: string;
   onclick?: () => void;
   end?: Snippet;

@@ -6,7 +6,7 @@
 <Example title="LinkOverlay" propsName="LinkOverlay">
   <LinkBox as="div">
     <Panel class="panelLinkExample">
-      <Title size="xs">
+      <Title size="xs" as="h2">
         <LinkOverlay href="https://google.com">Overlay link for card</LinkOverlay>
       </Title>
       <Spacer size={2} />

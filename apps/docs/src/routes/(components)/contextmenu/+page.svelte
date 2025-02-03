@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { ContextMenu, Icon } from '@tableslayer/ui';
+  import { ContextMenu, Icon, type ContextMenuItem } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import { IconBell } from '@tabler/icons-svelte';
 
-  const items = [
+  const items: ContextMenuItem[] = [
     { label: 'Link', href: '/link' },
     { type: 'divider' },
     { label: 'Alert', onclick: () => alert('Alert'), end: alertEnd },
