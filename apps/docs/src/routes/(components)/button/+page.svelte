@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, CodeBlock, Icon, Spacer } from '@tableslayer/ui';
+  import { Button, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
   import { IconCheck, IconX, IconGhost3 } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
   const example = `import { Button, Icon } from '@tableslayer/ui';
@@ -11,6 +11,16 @@ import { IconCheck } from '@tabler/icons-svelte';
   {/snippet}
   Primary
 </Button>
+`;
+  const confirmActionExample = `import { Button, ConfirmActionButton, Text } from '@tableslayer/ui';
+<ConfirmActionButton actionButtonText="Double sure?" action={() => alert('hello')}>
+  {#snippet trigger({ triggerProps })}
+    <Button variant="danger" {...triggerProps}>Delete this thing?</Button>
+  {/snippet}
+  {#snippet actionMessage()}
+    <Text>Are you sure you want to delete this thing?</Text>
+  {/snippet}
+</ConfirmActionButton>
 `;
 </script>
 
@@ -40,3 +50,18 @@ import { IconCheck } from '@tabler/icons-svelte';
 </Example>
 
 <Spacer size={8} />
+
+<Example title="ConfirmActionButton" propsName="ConfirmActionButton" layout="column">
+  {#snippet codeBlock()}
+    <CodeBlock code={confirmActionExample} lang="svelte" />
+  {/snippet}
+
+  <ConfirmActionButton actionButtonText="Double sure?" action={() => alert('hello')}>
+    {#snippet trigger({ triggerProps })}
+      <Button variant="danger" {...triggerProps}>Delete this thing?</Button>
+    {/snippet}
+    {#snippet actionMessage()}
+      <Text>Are you sure you want to delete this thing?</Text>
+    {/snippet}
+  </ConfirmActionButton>
+</Example>

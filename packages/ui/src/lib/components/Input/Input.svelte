@@ -30,6 +30,9 @@
       background: var(--inputFocusBg);
     }
   }
+  .input::placeholder {
+    color: var(--fgMuted);
+  }
   .input--transparent {
     border-color: transparent;
     background: transparent;
@@ -37,7 +40,8 @@
       border-color: var(--inputBorderColor);
     }
   }
-  [data-fs-error] {
+  [data-fs-error],
+  [aria-invalid='true'] {
     border-color: var(--fgDanger);
   }
 </style>

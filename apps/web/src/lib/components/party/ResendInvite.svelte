@@ -1,41 +1,50 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms';
-  import { Field } from 'formsnap';
-  import { FSControl, Hr, Text, Avatar, MessageError, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
-  import { resendInviteSchema, type DeleteInviteFormType } from '$lib/schemas';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { type SuperValidated } from 'sveltekit-superforms/client';
-  import { type ResendInviteFormType } from '$lib/schemas';
+  import { Hr, Text, Avatar, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { IconChevronDown } from '@tabler/icons-svelte';
+  import { useDeletePartyInviteMutation, useResendPartyInviteMutation } from '$lib/queries';
+  import { handleMutation } from '$lib/factories';
 
   let {
     email,
     partyId,
-    resendInviteForm,
-    removeInviteForm,
     isPartyAdmin
   }: {
     email: string;
     partyId: string;
-    resendInviteForm: SuperValidated<ResendInviteFormType>;
-    removeInviteForm: SuperValidated<DeleteInviteFormType>;
     isPartyAdmin: boolean;
   } = $props();
-  const resendSuperForm = superForm(resendInviteForm, {
-    id: `resend-${email}`,
-    validators: zodClient(resendInviteSchema)
-  });
-  const { form: resendForm, enhance: resendEnhance, message: resendMessage } = resendSuperForm;
-  $resendForm.email = email;
-  $resendForm.partyId = partyId;
 
-  const removeSuperForm = superForm(removeInviteForm, {
-    id: `remove-${email}`,
-    validators: zodClient(resendInviteSchema)
-  });
-  const { form: removeForm, enhance: removeEnhance, message: removeMessage } = removeSuperForm;
-  $removeForm.email = email;
-  $removeForm.partyId = partyId;
+  let formIsLoading = $state(false);
+
+  const deletePartyInvite = useDeletePartyInviteMutation();
+  const handleDeletePartyInvite = async (e: Event) => {
+    console.log('delete');
+    e.preventDefault();
+
+    await handleMutation({
+      mutation: () => $deletePartyInvite.mutateAsync({ partyId, email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Invite cancelled', body: `Invite for ${email} has been cancelled` },
+        error: { title: 'Error cancelling invite', body: (err) => err.message }
+      }
+    });
+  };
+
+  const resendPartyInvite = useResendPartyInviteMutation();
+
+  const handleResendPartyInvite = async (e: Event) => {
+    e.preventDefault();
+
+    await handleMutation({
+      mutation: () => $resendPartyInvite.mutateAsync({ partyId, email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Invite resent', body: `Invite for ${email} has been resent` },
+        error: { title: 'Error resending invite', body: (err) => err.message }
+      }
+    });
+  };
 </script>
 
 {#snippet resendInvite()}
@@ -57,55 +66,13 @@
     {/snippet}
     {#snippet content()}
       <div class="resendInvite__popover">
-        <form method="post" action="?/resendInvite" use:resendEnhance>
-          <Button type="submit">Resend invite</Button>
-          <Spacer size={2} />
-          <Field form={resendSuperForm} name="email">
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="email" bind:value={$resendForm.email} />
-              {/snippet}
-            </FSControl>
-          </Field>
-          <Field form={resendSuperForm} name="partyId">
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="partyId" bind:value={$resendForm.partyId} />
-              {/snippet}
-            </FSControl>
-          </Field>
-          <Text size="0.875rem" color="var(--fgMuted)"
-            >The previous email will be invalidated and a new one will be sent.</Text
-          >
-          {#if $resendMessage}
-            <MessageError message={$resendMessage} />
-          {/if}
-        </form>
+        <Button onclick={handleResendPartyInvite} disabled={formIsLoading}>Resend invite</Button>
         <Spacer size={4} />
         <Hr />
         <Spacer size={4} />
-        <form method="post" action="?/removeInvite" use:removeEnhance>
-          <Button type="submit" variant="danger">Cancel invite</Button>
-          <Spacer size={2} />
-          <Field form={removeSuperForm} name="email">
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="email" bind:value={$removeForm.email} />
-              {/snippet}
-            </FSControl>
-          </Field>
-          <Field form={removeSuperForm} name="partyId">
-            <FSControl>
-              {#snippet content({ props })}
-                <input {...props} type="hidden" name="partyId" bind:value={$removeForm.partyId} />
-              {/snippet}
-            </FSControl>
-          </Field>
-          <Text size="0.875rem" color="var(--fgMuted)">Any previous email invites sent will no longer work</Text>
-          {#if $removeMessage}
-            <MessageError message={$removeMessage} />
-          {/if}
-        </form>
+        <Button onclick={handleDeletePartyInvite} variant="danger" disabled={formIsLoading}>Cancel invite</Button>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)">Any previous email invites sent will no longer work</Text>
       </div>
     {/snippet}
   </Popover>

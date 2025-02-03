@@ -6,11 +6,8 @@
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher } from 'mode-watcher';
   import { GlobalLoading } from '$lib/components';
-  import { Toast } from '@tableslayer/ui';
+  import { Loader, Toast } from '@tableslayer/ui';
   import { navigating } from '$app/state';
-  if (navigating) {
-    console.log('navigating');
-  }
 </script>
 
 <svelte:head>
@@ -27,11 +24,21 @@
   <!--  <div class="grid"></div>  -->
 </QueryClientProvider>
 
+{#if navigating.to}
+  <Loader class="globalLoader" />
+{/if}
+
 <Toast />
 
 <style>
   :global(body) {
     background: var(--bg);
+  }
+  :global(.globalLoader) {
+    position: fixed;
+    bottom: 2.5rem;
+    right: 2.5rem;
+    z-index: 1;
   }
   /*  .grid {  */
   /*  pointer-events: none;  */

@@ -1,69 +1,54 @@
 <script lang="ts">
-  import SuperDebug, { superForm } from 'sveltekit-superforms';
-  import { inviteResponseSchema } from '$lib/schemas';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { Button, Icon, MessageError, addToast } from '@tableslayer/ui';
+  import { Button, Icon } from '@tableslayer/ui';
   import { IconX, IconCheck } from '@tabler/icons-svelte';
   import type { SelectParty, SelectPartyInvite, SeletUser } from '$lib/db/schema';
+  import { useRespondToPartyInviteMutation } from '$lib/queries';
+  import { handleMutation } from '$lib/factories';
+  import { goto } from '$app/navigation';
   let {
     invite
   }: {
     invite: {
       invite: SelectPartyInvite;
       party: SelectParty;
-      invitedByUser: SeletUser;
-    } | null;
-    willRedirectToParty?: boolean;
+      invitedByUser: SeletUser | undefined;
+    };
   } = $props();
+  let formIsLoading = $state(false);
   const { code } = invite.invite;
-  const inviteResponseForm = superForm(
-    { code },
-    {
-      validators: zodClient(inviteResponseSchema),
-      delayMs: 300
-    }
-  );
-  const { form, enhance, message, formId, delayed } = inviteResponseForm;
 
-  if ($message) {
-    console.log($message);
-    addToast({
-      data: {
-        title: $message.text
+  const respondToPartyInvite = useRespondToPartyInviteMutation();
+
+  const handleRespondToInvite = (accepted: boolean) => async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () => $respondToPartyInvite.mutateAsync({ code, accepted }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        goto(accepted ? `/${invite.party.slug}` : '/profile');
+      },
+      toastMessages: {
+        success: { title: 'Success', body: `You have ${accepted ? 'accepted' : 'declined'} the invite` },
+        error: { title: 'Error', body: (err) => err.message }
       }
     });
-  }
+  };
 </script>
 
-<form method="POST" use:enhance>
-  <div class="inviteResponse">
-    <Button formaction="?/acceptInvite" name="code" onclick={() => ($formId = code)} value={code}>
-      {#snippet start()}
-        <Icon Icon={IconCheck} />
-      {/snippet}
-      {#if $delayed && $formId === code}
-        Loading...
-      {:else}
-        Accept
-      {/if}
-    </Button>
-    <Button variant="danger" formaction="?/declineInvite" name="code" onclick={() => ($formId = code)} value={code}>
-      {#snippet start()}
-        <Icon Icon={IconX} />
-      {/snippet}
-      {#if $delayed && $formId === code}
-        Loading...
-      {:else}
-        Deny
-      {/if}
-    </Button>
-  </div>
-</form>
-
-{#if $message}
-  <MessageError message={$message} />
-{/if}
-<SuperDebug data={form} display={false} />
+<div class="inviteResponse">
+  <Button name="code" onclick={handleRespondToInvite(true)} isLoading={formIsLoading}>
+    {#snippet start()}
+      <Icon Icon={IconCheck} />
+    {/snippet}
+    Accept
+  </Button>
+  <Button variant="danger" onclick={handleRespondToInvite(false)}>
+    {#snippet start()}
+      <Icon Icon={IconX} />
+    {/snippet}
+    Decline
+  </Button>
+</div>
 
 <style>
   .inviteResponse {

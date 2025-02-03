@@ -9,12 +9,6 @@ declare global {
       user: User | null;
       session: Session | null;
     }
-    namespace Superforms {
-      type Message = {
-        type: 'error' | 'success';
-        text: string;
-      };
-    }
   }
 }
 
