@@ -1,7 +1,27 @@
 import { db } from '$lib/db/app';
-import { resetPasswordCodesTable, usersTable, type SelectUser } from '$lib/db/app/schema';
-import { getFile, transformImage } from '$lib/server';
+import {
+  emailVerificationCodesTable,
+  partyMemberTable,
+  resetPasswordCodesTable,
+  usersTable,
+  type SelectUser
+} from '$lib/db/app/schema';
+import {
+  createGameSessionDb,
+  createRandomNamedParty,
+  getFile,
+  getGravatarDisplayName,
+  getGravatarUrl,
+  sendSingleEmail,
+  sendVerificationEmail,
+  transformImage,
+  uploadFileFromUrl
+} from '$lib/server';
+import { isWithinExpirationDate } from '$lib/utils';
+import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 
 export const getUser = async (userId: string) => {
   try {
@@ -18,21 +38,33 @@ export const getUser = async (userId: string) => {
 
 export const getUserByEmail = async (email: string) => {
   try {
-    const user = (await db.select().from(usersTable).where(eq(usersTable.email, email)).get()) as SelectUser;
-    const file = await getFile(user.avatarFileId);
-    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-    const userWithThumb = { ...user, thumb: thumb };
-    if (!userWithThumb) {
-      throw new Error('User not found');
+    console.log('Getting user by email:', email);
+    const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+
+    if (!user) {
+      console.warn('No user found for email:', email);
+      return null; // Return null instead of throwing
     }
-    return userWithThumb;
+
+    console.log('User found:', user);
+
+    // Fetch avatar file and thumbnail if the user exists
+    let thumb = null;
+    try {
+      const file = await getFile(user.avatarFileId);
+      thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    } catch (fileError) {
+      console.warn('Error fetching or transforming avatar for user:', email, fileError);
+    }
+
+    return { ...user, thumb }; // Return user with thumb (or null thumb if failed)
   } catch (error) {
-    console.error('Error getting user from table', error);
-    throw error;
+    console.error('Error getting user by email:', error);
+    throw error; // Allow unexpected errors to propagate
   }
 };
 
-export const checkIfEmailInUserTable = async (email: string) => {
+export const isEmailInUserTable = async (email: string) => {
   try {
     const isExistingUser = (await db.select().from(usersTable).where(eq(usersTable.email, email)).get()) !== undefined;
     return isExistingUser;
@@ -57,6 +89,194 @@ export const getUserByResetPasswordCode = async (code: string) => {
     return user;
   } catch (error) {
     console.error('Error getting user by reset password code', error);
+    throw error;
+  }
+};
+
+export const createUserByEmailAndPassword = async (email: string, password: string, userId: string) => {
+  const passwordHash = await createArgonHash(password);
+  const randomShortCode = createShortCode();
+  const emailVerificationHash = await createSha256Hash(randomShortCode);
+
+  try {
+    if (await isEmailInUserTable(email)) {
+      throw new Error('Email already in use');
+    }
+    const name = await getGravatarDisplayName(email);
+    await db.insert(usersTable).values({
+      id: userId,
+      name,
+      email: email,
+      passwordHash: passwordHash
+    });
+    try {
+      const gravatar = getGravatarUrl(email);
+      const fileToUserRow = await uploadFileFromUrl(gravatar, userId, 'avatar');
+      if (fileToUserRow) {
+        await db.update(usersTable).set({ avatarFileId: fileToUserRow.fileId }).where(eq(usersTable.id, userId));
+      }
+    } catch (avatarError) {
+      console.error('Error uploading avatar', avatarError);
+      throw avatarError;
+    }
+
+    // Create a personal party for the user
+    const party = await createRandomNamedParty();
+
+    await db.insert(partyMemberTable).values({
+      partyId: party.id,
+      userId: userId,
+      role: 'admin'
+    });
+
+    // Create a game session database
+    await createGameSessionDb(party.id);
+
+    // Create an email verification code
+    await db
+      .insert(emailVerificationCodesTable)
+      .values({
+        userId,
+        code: emailVerificationHash
+      })
+      .returning()
+      .get();
+
+    // Send email
+    await sendSingleEmail({
+      to: email,
+      subject: 'Verify your email',
+      html: `Your verification code is: ${randomShortCode}`
+    });
+  } catch (e) {
+    console.error('Error creating user', e);
+    throw e;
+  }
+};
+
+export const initiateResetPassword = async (email: string) => {
+  const randomString = uuidv4();
+  const resetPasswordHash = await createSha256Hash(randomString);
+  try {
+    const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
+    const existingResetCode = await db
+      .select()
+      .from(resetPasswordCodesTable)
+      .where(eq(resetPasswordCodesTable.email, email))
+      .get();
+
+    if (existingResetCode) {
+      await db.delete(resetPasswordCodesTable).where(eq(resetPasswordCodesTable.email, email)).run();
+    }
+    if (!existingUser) {
+      throw new Error('Check your email for a password reset link');
+    }
+
+    await db.insert(resetPasswordCodesTable).values({
+      email,
+      code: resetPasswordHash,
+      userId: existingUser.id
+    });
+
+    await sendSingleEmail({
+      to: email,
+      subject: 'Reset your password',
+      html: `Visit ${baseURL}/reset-password/${randomString} to reset your password. If you did not make this request, ignore this email. No futher steps are required.`
+    });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const resetPassword = async (code: string, password: string, loggedInUserId?: string) => {
+  try {
+    const hashedResetCode = await createSha256Hash(code);
+    const resetPasswordCodeRow = await db
+      .select()
+      .from(resetPasswordCodesTable)
+      .where(eq(resetPasswordCodesTable.code, hashedResetCode))
+      .get();
+
+    const isWithinExpiration =
+      resetPasswordCodeRow !== undefined && isWithinExpirationDate(resetPasswordCodeRow.expiresAt);
+
+    if (!isWithinExpiration) {
+      throw new Error('Reset code expired');
+    }
+
+    const userDesiringReset = await getUserByResetPasswordCode(hashedResetCode);
+
+    if (!userDesiringReset) {
+      throw new Error('Reset code not found');
+    }
+
+    if (loggedInUserId && loggedInUserId !== userDesiringReset.id) {
+      throw new Error('Reset code does not match user');
+    }
+
+    const passwordHash = await createArgonHash(password);
+    await db.delete(resetPasswordCodesTable).where(eq(resetPasswordCodesTable.userId, userDesiringReset.id)).execute();
+    const user = await db
+      .update(usersTable)
+      .set({ passwordHash })
+      .where(eq(usersTable.id, userDesiringReset.id))
+      .returning()
+      .get();
+    return user;
+  } catch (error) {
+    console.error('Error resetting password', error);
+    throw error;
+  }
+};
+
+export const changeUserEmail = async (userId: string, newEmail: string) => {
+  try {
+    const existingUser = await getUserByEmail(newEmail);
+    if (existingUser) {
+      throw new Error('Email already in use');
+    }
+    await db.update(usersTable).set({ email: newEmail }).where(eq(usersTable.id, userId)).execute();
+    await sendVerificationEmail(userId, newEmail);
+  } catch (error) {
+    console.error('Error changing user email', error);
+    throw error;
+  }
+};
+
+export const resendVerifyEmail = async (userId: string) => {
+  try {
+    const user = await getUser(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    await sendVerificationEmail(userId, user.email);
+  } catch (error) {
+    console.error('Error resending verification email', error);
+    throw error;
+  }
+};
+
+export const verifyEmail = async (userId: string, code: string) => {
+  try {
+    const hashedCode = await createSha256Hash(code);
+
+    const verificationCode = await db
+      .select()
+      .from(emailVerificationCodesTable)
+      .where(eq(emailVerificationCodesTable.userId, userId))
+      .get();
+    if (
+      !verificationCode ||
+      !isWithinExpirationDate(verificationCode.expiresAt) ||
+      verificationCode.code !== hashedCode
+    ) {
+      throw new Error('Invalid verification code');
+    }
+
+    await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, userId)).execute();
+    await db.delete(emailVerificationCodesTable).where(eq(emailVerificationCodesTable.userId, userId));
+  } catch (error) {
+    console.error('Error verifying email', error);
     throw error;
   }
 };

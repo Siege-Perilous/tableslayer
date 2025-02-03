@@ -1,30 +1,29 @@
-import { invalidateAll } from '$app/navigation';
-import type { InsertParty } from '$lib/db/app/schema';
-import { createMutation } from '@tanstack/svelte-query';
+import type { InsertParty, SelectParty } from '$lib/db/app/schema';
+import { mutationFactory } from '$lib/factories';
 
-export const createUpdatePartyMutation = () => {
-  return createMutation<
-    { success: boolean; errors?: { message: string; path: string[] }[] },
-    Error,
-    { partyId: string; partyData: Partial<InsertParty> }
+export const useUpdatePartyMutation = () => {
+  return mutationFactory<
+    { partyId: string; partyData: Partial<InsertParty> },
+    { success: boolean; party: SelectParty }
   >({
     mutationKey: ['updateParty'],
-    mutationFn: async ({ partyId, partyData }) => {
-      const response = await fetch('/api/party/updateParty', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partyId, partyData })
-      });
+    endpoint: '/api/party/updateParty',
+    method: 'POST'
+  });
+};
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(JSON.stringify({ message: `Failed to update party: ${response.statusText}`, ...data }));
-      }
+export const useCreatePartyMutation = () => {
+  return mutationFactory<{ partyData?: Partial<InsertParty> }, { success: boolean; party: SelectParty }>({
+    mutationKey: ['updateParty'],
+    endpoint: '/api/party/createParty',
+    method: 'POST'
+  });
+};
 
-      return data;
-    },
-    onSuccess: async () => {
-      await invalidateAll();
-    }
+export const useDeletePartyMutation = () => {
+  return mutationFactory<{ partyId: string }>({
+    mutationKey: ['deleteParty'],
+    endpoint: '/api/party/deleteParty',
+    method: 'POST'
   });
 };

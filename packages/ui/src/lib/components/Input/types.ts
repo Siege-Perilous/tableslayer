@@ -1,6 +1,5 @@
-import type { LabelProps as FormSnapLabelProps } from 'formsnap';
 import type { Snippet } from 'svelte';
-import type { HTMLInputAttributes } from 'svelte/elements';
+import type { HTMLInputAttributes, HTMLLabelAttributes } from 'svelte/elements';
 
 export type InputProps = {
   isDisabled?: boolean;
@@ -9,10 +8,10 @@ export type InputProps = {
 } & HTMLInputAttributes;
 
 export type FileInputProps = {
-  files: FileList;
+  files: FileList | null;
 } & InputProps;
 
 export type LabelProps = {
   children: Snippet;
   props?: Record<string, unknown>;
-} & FormSnapLabelProps;
+} & HTMLLabelAttributes;

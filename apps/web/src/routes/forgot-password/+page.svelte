@@ -1,40 +1,45 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import SuperDebug from 'sveltekit-superforms';
-  import { forgotPasswordSchema } from '$lib/schemas';
-  import { Input, MessageError, Button, FSControl, FieldErrors, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, Button, FormControl, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { useAuthForgotPasswordMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { goto } from '$app/navigation';
+  let email = $state('');
+  let formIsLoading = $state(false);
+  let forgotPasswordError = $state<FormMutationError | undefined>(undefined);
 
-  let { data } = $props();
-  const form = superForm(data.forgotPasswordForm, {
-    validators: zodClient(forgotPasswordSchema)
-  });
-
-  const { form: formData, enhance, message } = form;
+  const forgotPassword = useAuthForgotPasswordMutation();
+  const handleForgotPassword = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () => $forgotPassword.mutateAsync({ email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        forgotPasswordError = error;
+      },
+      onSuccess: () => {
+        goto('/forgot-password/confirm');
+      },
+      toastMessages: {
+        success: { title: 'Check your email' },
+        error: { title: 'Error sending password reset email', body: (error) => error.message }
+      }
+    });
+  };
 </script>
 
 <Panel class="panel--forgot">
   <Title as="h1" size="md">Forgot password?</Title>
   <Spacer size={8} />
-  <form method="post" use:enhance>
-    <Field {form} name="email">
-      <FSControl label="Email">
-        {#snippet content({ props })}
-          <Input {...props} type="text" bind:value={$formData.email} />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
-    {#if $message}
-      <Spacer />
-      <MessageError message={$message} />
-    {/if}
+  <form onsubmit={handleForgotPassword}>
+    <FormControl label="Email" name="email" errors={forgotPasswordError && forgotPasswordError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="text" bind:value={email} />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Button type="submit">Submit</Button>
+    <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
   </form>
 </Panel>
-<SuperDebug data={$formData} display={false} />
 
 <style>
   :global(.panel.panel--forgot) {

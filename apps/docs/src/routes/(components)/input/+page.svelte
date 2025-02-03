@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Input, Spacer, Control } from '@tableslayer/ui';
+  import { Button, Input, Spacer, FormControl } from '@tableslayer/ui';
   import { Example } from '$lib/components';
 </script>
 
@@ -11,19 +11,23 @@
 <Spacer size={8} />
 
 <Example title="Input with label" propsName="Label">
-  <Control label="First Name">
-    <Input placeholder="Dave" type="text" />
-  </Control>
+  <FormControl label="First Name" name="firstName">
+    {#snippet input({ inputProps })}
+      <Input {...inputProps} placeholder="Dave" type="text" />
+    {/snippet}
+  </FormControl>
 </Example>
 
 <Example title="Input with start / end props" propsName="Label">
-  <Control label="First Name">
+  <FormControl label="First Name" name="firstName">
     {#snippet start()}
       start
     {/snippet}
-    <Input placeholder="Dave" type="text" />
+    {#snippet input({ inputProps })}
+      <Input {...inputProps} placeholder="Dave" type="text" />
+    {/snippet}
     {#snippet end()}
       end
     {/snippet}
-  </Control>
+  </FormControl>
 </Example>

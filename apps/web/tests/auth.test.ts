@@ -34,7 +34,7 @@ test.describe('Auth tests', () => {
     await page.getByTestId('email').fill('wrong@example.com');
     await page.getByTestId('password').fill('wrongpassword');
     await page.getByTestId('loginSubmit').click();
-    await expect(page.getByTestId('messageError')).toBeVisible();
+    await expect(page.getByTestId('formError')).toBeVisible();
   });
 });
 

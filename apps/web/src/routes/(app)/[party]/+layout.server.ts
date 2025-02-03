@@ -1,4 +1,3 @@
-import { deletePartySchema, renamePartySchema } from '$lib/schemas';
 import {
   getPartyFromSlug,
   getPartyGameSessions,
@@ -7,8 +6,6 @@ import {
   isUserInParty
 } from '$lib/server';
 import { error, redirect } from '@sveltejs/kit';
-import { superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
 import type { LayoutServerLoad } from './$types';
 
 export const load = (async ({ params, parent }) => {
@@ -27,15 +24,10 @@ export const load = (async ({ params, parent }) => {
   const isPartyAdmin = await isUserAdminInParty(user.id, party.id);
   const members = (await getPartyMembers(party.id)) || [];
 
-  const deletePartyForm = await superValidate(zod(deletePartySchema));
-  const renamePartyForm = await superValidate(zod(renamePartySchema));
-
   return {
     members,
     gameSessions,
     party,
-    isPartyAdmin,
-    deletePartyForm,
-    renamePartyForm
+    isPartyAdmin
   };
 }) satisfies LayoutServerLoad;

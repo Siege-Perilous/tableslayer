@@ -1,14 +1,19 @@
 <script lang="ts">
   import type { IconButtonProps } from './types';
 
-  let { children, size = 'md', variant = 'primary', ...restProps }: IconButtonProps = $props();
+  let { children, size = 'md', href, as, variant = 'primary', ...restProps }: IconButtonProps = $props();
 
   const iconBtnClasses = $derived(['iconBtn', `iconBtn--${size}`, `iconBtn--${variant}`, restProps.class ?? '']);
+  const component = as ?? 'button';
+  let iconButtonProps = $state({});
+  if (component === 'a') {
+    iconButtonProps = { href };
+  }
 </script>
 
-<button {...restProps} class={iconBtnClasses}>
+<svelte:element this={component} {...iconButtonProps} {...restProps} class={iconBtnClasses}>
   {@render children()}
-</button>
+</svelte:element>
 
 <style>
   :global(.light) {

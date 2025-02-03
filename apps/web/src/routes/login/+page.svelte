@@ -1,29 +1,33 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import SuperDebug from 'sveltekit-superforms';
-  import { loginSchema } from '$lib/schemas';
-  import {
-    Input,
-    MessageError,
-    Button,
-    FSControl,
-    FieldErrors,
-    Title,
-    Link,
-    Text,
-    Spacer,
-    Panel
-  } from '@tableslayer/ui';
+  import { useAuthLoginMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { goto } from '$app/navigation';
+  import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown } from '$lib/components';
+  let email = $state('');
+  let password = $state('');
+  let formIsLoading = $state(false);
+  let loginErrors = $state<FormMutationError | undefined>(undefined);
 
-  let { data } = $props();
-  const form = superForm(data.loginForm, {
-    validators: zodClient(loginSchema),
-    resetForm: true
-  });
-  const { form: formData, enhance, message } = form;
+  const login = useAuthLoginMutation();
+
+  const handleLogin = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () => $login.mutateAsync({ email, password }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        loginErrors = error;
+      },
+      onSuccess: () => {
+        goto('/profile');
+      },
+      toastMessages: {
+        success: { title: 'Welcome back!' },
+        error: { title: 'Error logging in', body: (error) => error.message }
+      }
+    });
+  };
 </script>
 
 <IllustrationTown />
@@ -35,33 +39,24 @@
     <Link href="/signup">Create a new account</Link> or <Link href="/forgot-password">recover your password</Link>.
   </Text>
   <Spacer size={8} />
-  <form method="POST" action="?/login" use:enhance>
-    <Field {form} name="email">
-      <FSControl label="Email">
-        {#snippet content({ props })}
-          <Input {...props} type="email" bind:value={$formData.email} data-testid="email" />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+  <form onsubmit={handleLogin}>
+    <FormControl label="Email" name="email" errors={loginErrors && loginErrors.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="email" bind:value={email} data-testid="email" />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="password">
-      <FSControl label="Password">
-        {#snippet content({ props })}
-          <Input type="password" {...props} bind:value={$formData.password} data-testid="password" />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
-    {#if $message}
-      <MessageError message={$message} />
-    {/if}
+    <FormControl label="Password" name="password" errors={loginErrors && loginErrors.errors}>
+      {#snippet input({ inputProps })}
+        <Input type="password" {...inputProps} bind:value={password} data-testid="password" />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Button data-testid="loginSubmit">Sign in</Button>
+    <Button data-testid="loginSubmit" disabled={formIsLoading}>Sign in</Button>
+    <FormError error={loginErrors} />
   </form>
   <Spacer />
 </Panel>
-<SuperDebug data={$formData} display={false} />
 
 <style>
   :global(.panel.login) {

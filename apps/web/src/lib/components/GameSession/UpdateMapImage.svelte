@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { handleMutation } from '$lib/factories';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
     hiddenFileInput?.click();
@@ -6,12 +7,13 @@
 </script>
 
 <script lang="ts">
-  import { createUpdateSceneMapImageMutation } from '$lib/queries';
-  import { addToast } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
-  let { sceneId, dbName }: { sceneId: string; dbName: string } = $props();
 
-  const updateSceneMapImage = createUpdateSceneMapImageMutation();
+  import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
+  let { sceneId, dbName, partyId }: { sceneId: string; dbName: string; partyId: string } = $props();
+
+  const uploadFile = useUploadFileMutation();
+  const updateScene = useUpdateSceneMutation();
 
   async function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -19,31 +21,37 @@
     const pickedFile = input.files[0];
     input.value = '';
 
-    try {
-      await $updateSceneMapImage.mutateAsync({
-        sceneId,
-        dbName,
-        file: pickedFile
-      });
+    const uploadedFile = await handleMutation({
+      mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'map' }),
+      formLoadingState: () => console.log('Uploading file...'),
+      toastMessages: {
+        success: { title: 'File uploaded' },
+        error: { title: 'Error uploading file', body: (err) => err.message || 'Unknown error' }
+      }
+    });
 
-      await invalidateAll();
+    if (!uploadedFile) return;
 
-      addToast({
-        data: {
-          title: 'Map updated',
-          type: 'success'
-        }
-      });
-    } catch (error: unknown) {
-      console.error('Error uploading map image:', error);
-      addToast({
-        data: {
-          title: 'Error updating map',
-          body: error instanceof Error ? error.message : 'Unknown error',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateScene.mutateAsync({
+          dbName,
+          sceneId,
+          partyId,
+          sceneData: {
+            mapLocation: uploadedFile.location
+          }
+        }),
+      onSuccess: () => {
+        input.value = '';
+        invalidateAll();
+      },
+      formLoadingState: () => console.log('Updating map...'),
+      toastMessages: {
+        success: { title: 'Map updated' },
+        error: { title: 'Error updating map', body: (err) => err.message || 'Unknown error' }
+      }
+    });
   }
 </script>
 

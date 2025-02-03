@@ -62,6 +62,7 @@
   --inputBg: #f5f5f5;
   --inputFocusBg: #fff;
   --inputBorderColor: var(--contrastMedium);
+  --popoverBg: var(--contrastLowest);
   color: var(--fg);
 }
 
@@ -86,6 +87,7 @@
   --inputBg: #1c1c1c;
   --inputFocusBg: #222;
   --inputBorderColor: var(--contrastMedium);
+  --popoverBg: var(--bg);
   color: var(--fg);
 }
 

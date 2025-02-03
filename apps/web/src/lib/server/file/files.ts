@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import { filesTable, userFilesTable } from '$lib/db/app/schema';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -115,7 +116,11 @@ export const uploadFileFromInput = async (file: File, userId: string, destinatio
     const fileRow = await db.insert(filesTable).values({ location: fullPath }).returning().get();
     const fileToUserRow = await db.insert(userFilesTable).values({ userId, fileId: fileRow.id }).returning().get();
 
-    return fileToUserRow;
+    return {
+      userId: fileToUserRow.userId,
+      fileId: fileToUserRow.fileId,
+      location: fileRow.location
+    };
   } catch (error) {
     console.error('Error uploading from file input:', error);
     throw error;
@@ -175,6 +180,43 @@ export const getR2FileInfo = async (fileName: string) => {
     };
   } catch (error) {
     console.error('Error fetching asset info from R2:', error);
+    throw error;
+  }
+};
+
+export const generatePresignedReadUrl = async (fileName: string): Promise<string> => {
+  const command = new GetObjectCommand({
+    Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+    Key: fileName
+  });
+
+  const signedUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
+  return signedUrl;
+};
+
+export const generatePresignedWriteUrl = async (fileName: string, contentType: string): Promise<string> => {
+  console.log('Generating signed URL for:', { fileName, contentType });
+  const command = new PutObjectCommand({
+    Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+    Key: fileName,
+    ContentType: contentType
+  });
+
+  const signedUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
+  return signedUrl;
+};
+
+export const createUserFileFromLocation = async (location: string, userId: string) => {
+  try {
+    const fileRow = await db.insert(filesTable).values({ location }).returning().get();
+    const fileToUserRow = await db.insert(userFilesTable).values({ userId, fileId: fileRow.id }).returning().get();
+    return {
+      userId: fileToUserRow.userId,
+      fileId: fileToUserRow.fileId,
+      location: fileRow.location
+    };
+  } catch (error) {
+    console.error('Error creating file from location:', error);
     throw error;
   }
 };

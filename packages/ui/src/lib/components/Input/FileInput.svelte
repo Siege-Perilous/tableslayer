@@ -19,7 +19,7 @@
 
   // Create a derived value for preview URLs based on `files`
   let previewUrls = $derived.by(() => {
-    if (files.length > 0) {
+    if (files && files.length > 0) {
       const urls = [];
       for (const file of files) {
         if (
