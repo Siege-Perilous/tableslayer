@@ -1,10 +1,13 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
+  import { handleMutation } from '$lib/factories';
+  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
-  import { createUpdateSceneMutation, createUploadFogFromBlobMutation } from '$lib/queries';
+  import { useUpdateSceneMutation, useUploadFogFromBlobMutation } from '$lib/queries';
+  import { type ZodIssue } from 'zod';
+  import { convertPropsToSceneDetails } from '$lib/utils';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -17,14 +20,14 @@
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, deleteSceneForm, party, activeScene } =
-    $derived(data);
+  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let errors = $state<ZodIssue[] | undefined>(undefined);
 
   onMount(() => {
     socket = setupGameSessionWebSocket(
@@ -44,8 +47,8 @@
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSettings.isPaused);
   };
 
-  const updateSceneMutation = createUpdateSceneMutation();
-  const createFogMutation = createUploadFogFromBlobMutation();
+  const updateSceneMutation = useUpdateSceneMutation();
+  const createFogMutation = useUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -233,66 +236,75 @@
 
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
 
-  $effect(() => {
-    if ($updateSceneMutation.isSuccess) {
-      addToast({
-        data: {
-          title: 'Scene saved!',
-          type: 'success'
-        }
-      });
-    }
-
-    if ($updateSceneMutation.isError) {
-      console.error('error saving scene', $updateSceneMutation.error);
-      addToast({
-        data: {
-          title: 'Error updating scene',
-          body: $updateSceneMutation.error.message,
-          type: 'danger'
-        }
-      });
-    }
-  });
-
   const onFogUpdate = async (blob: Promise<Blob>) => {
     const fogBlob = await blob;
-    const fog = await $createFogMutation.mutateAsync({
-      blob: fogBlob,
-      sceneId: selectedScene.id
-    });
 
-    if (fog) {
-      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
-      socketUpdate();
-      console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
-    }
+    await handleMutation({
+      mutation: () =>
+        $createFogMutation.mutateAsync({
+          blob: fogBlob,
+          sceneId: selectedScene.id
+        }),
+      formLoadingState: () => console.log('fog is uploading'),
+      onSuccess: (fog) => {
+        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+        socketUpdate();
+        console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
+      },
+      toastMessages: {
+        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+      }
+    });
+  };
+
+  let lastSavedData = '';
+  let dirtyData = '';
+  const updateDirtyData = () => {
+    dirtyData = JSON.stringify(convertPropsToSceneDetails(stageProps));
   };
 
   const saveScene = async () => {
-    console.log('Saving scene...');
-    $updateSceneMutation.mutate({
-      sceneId: selectedScene.id,
-      dbName: gameSession.dbName,
-      stageProps
+    if (dirtyData === lastSavedData) return;
+
+    await handleMutation({
+      mutation: () =>
+        $updateSceneMutation.mutateAsync({
+          sceneId: selectedScene.id,
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneData: JSON.parse(dirtyData)
+        }),
+      formLoadingState: () => console.log('stage is loading'),
+      onError: (error) => {
+        console.log('Error saving scene:', error);
+      },
+      onSuccess: () => {
+        lastSavedData = dirtyData;
+      },
+      toastMessages: {
+        success: { title: 'Scene saved!' },
+        error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
+      }
     });
   };
 
-  // Save the scene every 3 seconds based on the stage props
+  // This effect will run whenever `stageProps` changes.
   $effect(() => {
-    // Snapshot is needed to track reactivity
-    $state.snapshot(stageProps);
+    // Recompute the “dirty” data from stageProps
+    updateDirtyData();
 
-    if (saveTimer) {
-      clearTimeout(saveTimer);
+    if (dirtyData !== lastSavedData) {
+      if (saveTimer) clearTimeout(saveTimer);
+
+      saveTimer = setTimeout(() => {
+        saveScene();
+      }, 3000);
     }
 
-    saveTimer = setTimeout(() => {
-      saveScene();
-    }, 3000);
-
     return () => {
-      if (saveTimer) clearTimeout(saveTimer);
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
     };
   });
 </script>
@@ -309,15 +321,7 @@
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
     >
-      <SceneSelector
-        {deleteSceneForm}
-        {selectedSceneNumber}
-        {gameSession}
-        {scenes}
-        {party}
-        {activeScene}
-        createSceneForm={data.createSceneForm}
-      />
+      <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
     <PaneResizer class="resizer">
       <button
@@ -345,6 +349,7 @@
           {party}
           {gameSession}
           {gameSettings}
+          {errors}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
       </div>

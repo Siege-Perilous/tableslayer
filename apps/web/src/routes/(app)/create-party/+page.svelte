@@ -1,61 +1,73 @@
 <script lang="ts">
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import { createPartySchema } from '$lib/schemas';
-  import {
-    Input,
-    FileInput,
-    MessageError,
-    Button,
-    FSControl,
-    FieldErrors,
-    Title,
-    Spacer,
-    Panel
-  } from '@tableslayer/ui';
+  import { Input, FileInput, Button, Title, Spacer, Panel, FormControl } from '@tableslayer/ui';
+  import { useUploadFileMutation, useCreatePartyMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
-  let { data } = $props();
-  const form = superForm(data.createPartyForm, {
-    validators: zodClient(createPartySchema),
-    invalidateAll: 'force'
-  });
-  const { form: formData, enhance, message } = form;
-  let file = $state(fileProxy(formData, 'file'));
+  let file = $state<FileList | null>(null);
+  let partyName = $state('');
+  let formIsLoading = $state(false);
+  let createPartyError = $state<FormMutationError | undefined>(undefined);
+
+  const uploadFile = useUploadFileMutation();
+  const createParty = useCreatePartyMutation();
+
+  const handleCreateParty = async (e: Event) => {
+    e.preventDefault();
+    let avatarFileId: number | undefined = undefined;
+    if (file && file.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'avatar' }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'Image uploaded' },
+          error: { title: 'Error uploading image', body: (error) => error.message }
+        }
+      });
+
+      if (!uploadedFile) return; // ✅ TypeScript now understands uploadedFile is possibly undefined
+      avatarFileId = uploadedFile.fileId;
+    }
+
+    const response = await handleMutation({
+      mutation: () =>
+        $createParty.mutateAsync({
+          partyData: { name: partyName, avatarFileId }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => (createPartyError = error),
+      toastMessages: {
+        success: { title: 'Party created successfully' },
+        error: { title: 'Error creating party', body: (error) => error.message }
+      }
+    });
+
+    if (response) {
+      goto(`/${response.party.slug}`);
+    }
+  };
 </script>
 
 <Panel class="createPartyPanel">
   <Title as="h1" size="md" data-testid="createParty">Create a new party</Title>
   <Spacer size={8} />
-  <form method="POST" enctype="multipart/form-data" action="?/createParty" use:enhance>
-    <Field {form} name="name">
-      <FSControl label="Party name">
-        {#snippet content({ props })}
-          <Input {...props} type="text" bind:value={$formData.name} hideAutocomplete />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
+  <form onsubmit={handleCreateParty}>
+    <FormControl label="Party name" name="name" errors={createPartyError && createPartyError.errors}>
+      {#snippet input({ inputProps })}
+        <Input {...inputProps} type="text" bind:value={partyName} hideAutocomplete />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Field {form} name="file">
-      <FSControl label="Party avatar">
-        {#snippet content({ props })}
-          <FileInput {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
-        {/snippet}
-      </FSControl>
-      <FieldErrors />
-    </Field>
-    {#if $message}
-      <Spacer />
-      <MessageError message={$message} />
-    {/if}
+    <FormControl label="Party avatar" name="avatar" errors={createPartyError && createPartyError.errors}>
+      {#snippet input({ inputProps })}
+        <FileInput {...inputProps} type="file" accept="image/*" bind:files={file} />
+      {/snippet}
+    </FormControl>
     <Spacer />
-    <Button data-testid="createPartySubmit">Create party</Button>
+    <Button data-testid="createPartySubmit" disabled={formIsLoading} isLoading={formIsLoading}>Create party</Button>
   </form>
   <Spacer />
 </Panel>
-<SuperDebug data={$formData} display={false} />
 
 <style>
   :global(.panel.createPartyPanel) {

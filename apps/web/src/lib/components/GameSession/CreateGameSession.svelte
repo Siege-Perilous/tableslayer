@@ -1,40 +1,46 @@
 <script lang="ts">
-  import type { HTMLAttributes } from 'svelte/elements';
-  import { Panel, Title, Input, FSControl, MessageError, Button, Spacer } from '@tableslayer/ui';
-  import { type SuperValidated } from 'sveltekit-superforms/client';
-  import { type CreateGameSessionFormType } from '$lib/schemas';
-  import { createGameSessionSchema } from '$lib/schemas';
-  import { superForm } from 'sveltekit-superforms/client';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { Field } from 'formsnap';
-  import SuperDebug from 'sveltekit-superforms';
+  import { Panel, FormControl, Title, Input, Button, Spacer } from '@tableslayer/ui';
+  import { useCreateGameSessionMutation } from '$lib/queries';
+  import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
 
   let {
-    partyId,
-    createGameSessionForm
+    partyId
   }: {
     partyId: string;
-    createGameSessionForm: SuperValidated<CreateGameSessionFormType> & HTMLAttributes<HTMLDivElement>;
   } = $props();
   let formIsOpen = $state(false);
+  let gameSessionName = $state('');
+  let createGameSessionError = $state<FormMutationError | undefined>(undefined);
+
+  const createGameSession = useCreateGameSessionMutation();
+
+  const handleCreateGameSession = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () =>
+        $createGameSession.mutateAsync({
+          partyId,
+          gameSessionData: { name: gameSessionName }
+        }),
+      formLoadingState: () => {},
+      onError: (err) => {
+        createGameSessionError = err;
+      },
+      onSuccess: () => {
+        createGameSessionError = undefined;
+        formIsOpen = false;
+      },
+      toastMessages: {
+        success: { title: 'Game session created' },
+        error: { title: 'Error creating game session', body: (err) => err.message }
+      }
+    });
+  };
 
   const handleOpenForm = () => {
     formIsOpen = true;
   };
-
-  const createGameSessionSuperForm = superForm(createGameSessionForm, {
-    id: 'createGameSession',
-    resetForm: true,
-    validators: zodClient(createGameSessionSchema),
-    invalidateAll: 'force'
-  });
-
-  const {
-    form: createGameSessionFormData,
-    enhance: createGameSessionEnhance,
-    message: createGameSessionMessage
-  } = createGameSessionSuperForm;
-  $createGameSessionFormData.partyId = partyId;
 </script>
 
 {#if !formIsOpen}
@@ -43,24 +49,16 @@
   </Panel>
 {:else}
   <Panel class="createSessionPanel">
-    <form method="POST" action="?/createGameSession" use:createGameSessionEnhance>
-      <Field form={createGameSessionSuperForm} name="name">
-        <FSControl label="Session name">
-          {#snippet content({ props })}
-            <Input {...props} bind:value={$createGameSessionFormData.name} autocomplete="off" />
-          {/snippet}
-        </FSControl>
-      </Field>
+    <form onsubmit={handleCreateGameSession}>
+      <FormControl label="Session name" name="name" errors={createGameSessionError && createGameSessionError.errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} bind:value={gameSessionName} autocomplete="off" />
+        {/snippet}
+      </FormControl>
       <Spacer />
-      <input type="hidden" name="partyId" value={$createGameSessionFormData.partyId} />
       <Button type="submit">Create</Button>
       <Button type="button" variant="danger" onclick={() => (formIsOpen = false)}>Cancel</Button>
-      {#if $createGameSessionMessage}
-        <MessageError message={$createGameSessionMessage} />
-      {/if}
     </form>
-
-    <SuperDebug data={$createGameSessionFormData} display={false} />
   </Panel>
 {/if}
 
@@ -73,6 +71,7 @@
       width: 100%;
       gap: 2rem;
       height: 100%;
+      min-height: 270px;
       transition: border-color 0.2s var(--ease-in-2);
       align-items: center;
       justify-content: center;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createSelect, melt } from '@melt-ui/svelte';
-  import { IconChevronDown } from '@tabler/icons-svelte';
+  import { IconSelector } from '@tabler/icons-svelte';
   import type { SelectProps } from '../';
   import { Icon } from '../';
 
@@ -40,13 +40,14 @@
   });
 
   let selectClasses = $derived(['select', variant && `select--${variant}`]);
+  console.log($selectedLabel);
 </script>
 
 <div {...restProps} class={selectClasses}>
   <button class="select__trigger" use:melt={$trigger} aria-label="Food">
     {selectedPrefix}
     {$selectedLabel || 'Select'}
-    <Icon Icon={IconChevronDown} />
+    <Icon Icon={IconSelector} />
   </button>
   {#if $open}
     <div class="select__menu" use:melt={$menu}>

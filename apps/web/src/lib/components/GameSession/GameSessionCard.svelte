@@ -1,10 +1,8 @@
 <script lang="ts">
   import {
-    FSControl,
     Spacer,
     Button,
     Hr,
-    MessageError,
     Input,
     LinkBox,
     Panel,
@@ -15,66 +13,29 @@
     LinkOverlay,
     Popover,
     IconButton,
-    Icon
+    Icon,
+    FormControl,
+    ConfirmActionButton
   } from '@tableslayer/ui';
-  import { superForm, type SuperValidated } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import {
-    deleteGameSessionSchema,
-    renameGameSessionSchema,
-    type DeleteGameSessionFormType,
-    type RenameGameSessionFormType
-  } from '$lib/schemas';
+  import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import type { SelectGameSession, SelectParty } from '$lib/db';
   import type { Thumb } from '$lib/server';
-  import { zodClient } from 'sveltekit-superforms/adapters';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
-  import SuperDebug from 'sveltekit-superforms';
 
   let {
     party,
     session,
-    deleteGameSessionForm,
-    renameGameSessionForm,
     isPartyAdmin
   }: {
     party: SelectParty & Thumb;
     session: SelectGameSession;
-    deleteGameSessionForm: SuperValidated<DeleteGameSessionFormType>;
-    renameGameSessionForm: SuperValidated<RenameGameSessionFormType>;
     isPartyAdmin: boolean;
   } = $props();
 
-  const deleteGameSessionSuperForm = superForm(deleteGameSessionForm, {
-    id: `deleteGameSession-${session.id}`,
-    validators: zodClient(deleteGameSessionSchema),
-    invalidateAll: 'force'
-  });
-
-  const {
-    form: deleteGameSessionFormData,
-    enhance: deleteGameSessionEnhance,
-    message: deleteGameSessionMessage
-  } = deleteGameSessionSuperForm;
-
-  $deleteGameSessionFormData.sessionId = session.id;
-  $deleteGameSessionFormData.partyId = party.id;
-
-  const renameGameSessionSuperForm = superForm(renameGameSessionForm, {
-    id: `renameGameSession-${session.id}`,
-    validators: zodClient(renameGameSessionSchema),
-    invalidateAll: 'force'
-  });
-
-  const {
-    form: renameGameSessionFormData,
-    enhance: renameGameSessionEnhance,
-    message: renameGameSessionMessage
-  } = renameGameSessionSuperForm;
-
-  $renameGameSessionFormData.sessionId = session.id;
-  $renameGameSessionFormData.partyId = party.id;
-  $renameGameSessionFormData.name = session.name;
+  let gameSessionName = $state(session.name);
+  let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
+  let formIsLoading = $state(false);
 
   const images = [
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/01.jpeg',
@@ -83,6 +44,49 @@
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/04.jpeg',
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/12.jpeg'
   ];
+
+  const renameGameSession = useUpdateGameSessionMutation();
+
+  const handleRenameGameSession = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () =>
+        $renameGameSession.mutateAsync({
+          partyId: party.id,
+          gameSessionId: session.id,
+          gameSessionData: { name: gameSessionName }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        renameGameSessionErrors = error;
+      },
+      onSuccess: () => {
+        renameGameSessionErrors = undefined;
+      },
+      toastMessages: {
+        success: { title: `Game session renamed to ${gameSessionName}` },
+        error: { title: 'Error renaming game session', body: (error) => error.message }
+      }
+    });
+  };
+
+  const deleteGameSession = useDeleteGameSessionMutation();
+
+  const handleDeleteGameSession = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () =>
+        $deleteGameSession.mutateAsync({
+          partyId: party.id,
+          gameSessionId: session.id
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Game session deleted' },
+        error: { title: 'Error deleting game session', body: (error) => error.message }
+      }
+    });
+  };
 </script>
 
 <LinkBox>
@@ -94,63 +98,55 @@
     ></div>
     {#if isPartyAdmin}
       <div class="gameSessionCard__popover">
-        <Popover positioning={{ placement: 'bottom-end' }}>
+        <Popover>
           {#snippet trigger()}
-            <Icon Icon={IconChevronDown} />
+            <IconButton as="div" variant="ghost">
+              <Icon Icon={IconChevronDown} />
+            </IconButton>
           {/snippet}
           {#snippet content()}
             <div class="gameSessionCard__popoverContent">
-              <form method="post" action="?/renameGameSession" use:renameGameSessionEnhance>
+              <form onsubmit={handleRenameGameSession}>
                 <div class="gameSessionCard__renameField">
                   <div>
-                    <Field form={renameGameSessionSuperForm} name="name">
-                      <FSControl label="Rename session">
-                        {#snippet content({ props })}
-                          <Input {...props} bind:value={$renameGameSessionFormData.name} hideAutocomplete />
-                        {/snippet}
-                      </FSControl>
-                    </Field>
-                    <input type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
-                    <input type="hidden" name="partyId" value={$renameGameSessionFormData.sessionId} />
+                    <FormControl
+                      label="Rename session"
+                      name="name"
+                      errors={renameGameSessionErrors && renameGameSessionErrors.errors}
+                    >
+                      {#snippet input({ inputProps })}
+                        <Input {...inputProps} bind:value={gameSessionName} hideAutocomplete />
+                      {/snippet}
+                    </FormControl>
                   </div>
-                  <IconButton type="submit" class="gameSessionCard__renameFieldBtn">
+                  <IconButton class="gameSessionCard__renameFieldBtn">
                     <Icon Icon={IconCheck} />
                   </IconButton>
                 </div>
                 <Spacer size={2} />
-                <Text size="0.875rem" color="var(--fgMuted)"
-                  >Renaming your game session will change the URL and break all links.</Text
-                >
+                <Text size="0.875rem" color="var(--fgMuted)">
+                  Renaming your game session will change the URL and break all links.
+                </Text>
               </form>
-              {#if $renameGameSessionMessage}
-                <Spacer />
-                <MessageError message={$renameGameSessionMessage} />
-              {/if}
-              <SuperDebug data={$renameGameSessionFormData} display={false} />
               <Spacer />
               <Hr />
               <Spacer />
-              <form method="post" action="?/deleteGameSession" use:deleteGameSessionEnhance>
-                <Field form={deleteGameSessionSuperForm} name="sessionId">
-                  <FSControl>
-                    {#snippet content({ props })}
-                      <input {...props} type="hidden" name="sessionId" value={$renameGameSessionFormData.sessionId} />
-                    {/snippet}
-                  </FSControl>
-                </Field>
-                <Field form={deleteGameSessionSuperForm} name="partyId">
-                  <FSControl>
-                    {#snippet content({ props })}
-                      <input {...props} type="hidden" name="partyId" value={$renameGameSessionFormData.partyId} />
-                    {/snippet}
-                  </FSControl>
-                </Field>
-                {#if $deleteGameSessionMessage}
-                  <Spacer />
-                  <MessageError message={$deleteGameSessionMessage} />
-                {/if}
-                <Button type="submit" variant="danger">Delete session</Button>
-              </form>
+              <ConfirmActionButton actionButtonText="Confirm delete" action={handleDeleteGameSession}>
+                {#snippet trigger({ triggerProps })}
+                  <Button
+                    {...triggerProps}
+                    variant="danger"
+                    type="button"
+                    disabled={formIsLoading}
+                    isLoading={formIsLoading}>Delete session</Button
+                  >
+                {/snippet}
+                {#snippet actionMessage()}
+                  <Text size="0.875rem" color="var(--fgDanger)">
+                    You will lose all data associated with this game session. This can not be undone
+                  </Text>
+                {/snippet}
+              </ConfirmActionButton>
             </div>
           {/snippet}
         </Popover>

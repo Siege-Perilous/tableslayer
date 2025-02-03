@@ -4,18 +4,33 @@
   let { data } = $props();
   const { user } = data;
   import { IllustrationOverlook, Logo } from '$lib/components';
-  import { notifySchema } from '$lib/schemas';
-  import { superForm } from 'sveltekit-superforms/client';
-  import { Field } from 'formsnap';
-  import { zodClient } from 'sveltekit-superforms/adapters';
-  import { MessageError, FieldErrors, Input, FSControl } from '@tableslayer/ui';
+  import { Input, FormControl } from '@tableslayer/ui';
+  import { useAddEmailToAudienceMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
+  let email = $state('');
+  let formIsLoading = $state(false);
+  let formError = $state<FormMutationError | undefined>(undefined);
+  let formCompleted = $state(false);
 
-  const notifySuperForm = superForm(data.notifyForm, {
-    validators: zodClient(notifySchema),
-    resetForm: true
-  });
+  const addEmailToAudience = useAddEmailToAudienceMutation();
 
-  const { form: notifyForm, enhance: notifyEnhance, message: notifyMessage } = notifySuperForm;
+  const handleAddEmailToAudience = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () => $addEmailToAudience.mutateAsync({ email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        formError = error;
+      },
+      onSuccess: () => {
+        formCompleted = true;
+      },
+      toastMessages: {
+        success: { title: 'Thanks!', body: "We'll be in touch soon." },
+        error: { title: 'Error', body: (error) => error.message }
+      }
+    });
+  };
 </script>
 
 <IllustrationOverlook />
@@ -36,26 +51,22 @@
       <Button href="/login" class="btn">Log in</Button>
       <Button href="/signup" class="btn">Sign up</Button>
     </div>
-  {:else if !$notifyMessage || ($notifyMessage && $notifyMessage.type !== 'success')}
+  {:else if !formCompleted}
     <Text color="var(--fgMuted)">Interested in joining the beta? Sign up for updates.</Text>
     <Spacer size={4} />
-    <form method="POST" action="?/notify" use:notifyEnhance>
-      <Field form={notifySuperForm} name="email">
-        <FSControl label="Email">
-          {#snippet content({ props })}
-            <Input {...props} type="email" bind:value={$notifyForm.email} data-testid="email" />
-          {/snippet}
-        </FSControl>
-        <FieldErrors />
-      </Field>
+    <form onsubmit={handleAddEmailToAudience}>
+      <FormControl label="Email" name="email" errors={formError && formError.errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="email" bind:value={email} data-testid="email" />
+        {/snippet}
+      </FormControl>
       <Spacer />
-      <Button data-testid="notifySubmit">Add me to the beta</Button>
+      <Button data-testid="notifySubmit" type="submit" disabled={formIsLoading} isLoading={formIsLoading}
+        >Add me to the beta</Button
+      >
     </form>
   {:else}
-    <Text size="1.5rem">Thanks. We'll contact you soon.</Text>
-  {/if}
-  {#if $notifyMessage}
-    <MessageError message={$notifyMessage} />
+    <Text size="1.5rem" color="var(--fgPrimary)">Thanks. We'll be in touch soon.</Text>
   {/if}
 </Panel>
 

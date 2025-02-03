@@ -1,20 +1,10 @@
 <script lang="ts">
-  import { createUpdatePartyMutation } from '$lib/queries';
-  import {
-    Button,
-    IconButton,
-    Icon,
-    Control,
-    Input,
-    Panel,
-    Select,
-    Spacer,
-    Text,
-    Title,
-    addToast
-  } from '@tableslayer/ui';
-  import type { SelectParty } from '$lib/db/app/schema';
+  import { useUpdatePartyMutation } from '$lib/queries';
+  import { handleMutation } from '$lib/factories';
+  import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title } from '@tableslayer/ui';
+  import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
+  import { type ZodIssue } from 'zod';
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 
@@ -31,6 +21,8 @@
     party: SelectParty & Thumb;
   } = $props();
 
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let isPartyDataChanged = false;
   let defaultSelected = $derived(getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY));
   let padding = $state(party.defaultDisplayPaddingX);
   let partyData = $state({
@@ -45,6 +37,7 @@
     defaultDisplayPaddingX: party.defaultDisplayPaddingX,
     defaultDisplayPaddingY: party.defaultDisplayPaddingY
   });
+  let errors = $state<ZodIssue[] | undefined>(undefined);
 
   const handleSelectedResolution = (selected: TvResolution) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
@@ -68,34 +61,43 @@
     partyData.defaultDisplayPaddingY = padding;
   });
 
-  const updateParty = createUpdatePartyMutation();
+  const updateParty = useUpdatePartyMutation();
 
   const save = async () => {
-    $updateParty.mutateAsync({
-      partyId: party.id,
-      partyData: partyData
+    await handleMutation({
+      mutation: () => $updateParty.mutateAsync({ partyId: party.id, partyData }),
+      formLoadingState: () => {},
+      toastMessages: {
+        success: { title: 'Default settings updated' },
+        error: { title: 'Error updating party', body: (err) => err.message || 'Error updating party' }
+      }
     });
   };
 
+  const handleValidation = () => {
+    errors = updatePartySchema.safeParse(partyData).error?.errors;
+  };
+
   $effect(() => {
-    if ($updateParty.isSuccess) {
-      addToast({
-        data: {
-          title: 'Default settings updated',
-          type: 'success'
-        }
-      });
+    $state.snapshot(partyData);
+
+    if (!isPartyDataChanged) {
+      isPartyDataChanged = true;
+      return;
     }
 
-    if ($updateParty.isError) {
-      console.log('zod', JSON.parse($updateParty.error.message));
-      addToast({
-        data: {
-          title: 'Error updating default settings',
-          type: 'danger'
-        }
-      });
+    if (saveTimer) {
+      clearTimeout(saveTimer);
     }
+
+    saveTimer = setTimeout(() => {
+      save();
+    }, 3000);
+    return () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+      }
+    };
   });
 </script>
 
@@ -106,37 +108,39 @@
 <Panel class="defaultSettings">
   <Spacer />
   <div class="defaultSettings__grid">
-    <Control label="TV size">
-      {#snippet content({ id })}
+    <FormControl label="TV size" name="defaultTvSize" {errors}>
+      {#snippet input({ inputProps })}
         <Input
-          {id}
+          {...inputProps}
           type="number"
           name="defaultTvSize"
           bind:value={partyData.defaultTvSize}
           oninput={() => handleTvSizeChange(partyData.defaultTvSize)}
+          onblur={handleValidation}
         />
       {/snippet}
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
-    <Control label="Resolution">
-      {#snippet content({ id })}
+    </FormControl>
+    <FormControl label="Resolution" name="defaultDisplayResolutionX" {errors}>
+      {#snippet input({ inputProps })}
         <Select
-          ids={{ trigger: id }}
+          ids={{ trigger: inputProps.id as string }}
           onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+          {...inputProps}
           {defaultSelected}
           options={selectTvResolutionOptions}
         />
       {/snippet}
-    </Control>
-    <Control label="Grid type">
-      {#snippet content({ id })}
+    </FormControl>
+    <FormControl label="Grid type" name="defaultGridType" {errors}>
+      {#snippet input({ inputProps })}
         <IconButton
           type="button"
           variant={partyData.defaultGridType === 0 ? 'primary' : 'ghost'}
           onclick={() => handleGridTypeChange(0)}
-          {id}
+          {...inputProps}
         >
           <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
         </IconButton>
@@ -145,38 +149,44 @@
           type="button"
           variant={partyData.defaultGridType === 1 ? 'primary' : 'ghost'}
           onclick={() => handleGridTypeChange(1)}
+          {...inputProps}
         >
           <Icon Icon={IconHexagons} size="20px" stroke={2} />
         </IconButton>
       {/snippet}
-    </Control>
-    <Control label="Grid size">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="defaultGridSpacing" bind:value={partyData.defaultGridSpacing} />
+    </FormControl>
+    <FormControl label="Grid size" name="defaultGridSpacing" {errors}>
+      {#snippet input({ inputProps })}
+        <Input
+          type="number"
+          {...inputProps}
+          name="defaultGridSpacing"
+          onblur={handleValidation}
+          bind:value={partyData.defaultGridSpacing}
+        />
       {/snippet}
       {#snippet end()}
         in.
       {/snippet}
-    </Control>
-    <Control label="Line thickness">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="defaultLineThickness" bind:value={partyData.defaultLineThickness} />
+    </FormControl>
+    <FormControl label="Line thickness" name="defaultLineThickness" {errors}>
+      {#snippet input({ inputProps })}
+        <Input type="number" {...inputProps} onblur={handleValidation} bind:value={partyData.defaultLineThickness} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
-    </Control>
-    <Control label="Padding">
-      {#snippet content({ id })}
-        <Input type="number" {id} name="padding" bind:value={padding} />
+    </FormControl>
+    <FormControl label="Padding" name="defaultDisplayPaddingX" {errors}>
+      {#snippet input({ inputProps })}
+        <Input type="number" {...inputProps} onblur={handleValidation} bind:value={padding} />
       {/snippet}
       {#snippet end()}
         px
       {/snippet}
-    </Control>
+    </FormControl>
   </div>
   <Spacer />
-  <Button onclick={() => save()}>Save</Button>
   <div class="superFormHack">
     {party.defaultTvSize}
   </div>

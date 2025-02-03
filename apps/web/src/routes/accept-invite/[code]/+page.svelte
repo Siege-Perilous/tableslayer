@@ -3,7 +3,6 @@
   const { invite, user } = data;
   import { PartyInviteResponse } from '$lib/components';
   import { Avatar, Button, Panel, Spacer, Title } from '@tableslayer/ui';
-  console.log('invite in client', invite);
   import { page } from '$app/state';
 </script>
 
@@ -33,7 +32,7 @@
     </p>
 
     <Spacer size={8} />
-    <PartyInviteResponse {invite} willRedirectToParty />
+    <PartyInviteResponse {invite} />
   {:else}
     <Title as="h1" size="lg">You aren't logged in</Title>
     <Spacer size={4} />

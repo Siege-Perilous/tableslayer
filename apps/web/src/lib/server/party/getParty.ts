@@ -7,9 +7,10 @@ import {
   usersTable,
   type PartyRole,
   type SelectParty,
+  type SelectPartyMember,
   type SelectUser
 } from '$lib/db/app/schema';
-import { getFile, transformImage, type Thumb } from '$lib/server';
+import { getFile, isUserOnlyAdminInParty, transformImage, UserIsLastAdminInParty, type Thumb } from '$lib/server';
 import { error } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 
@@ -183,4 +184,50 @@ export const getPartyFromGameSessionDbName = async (dbName: string) => {
   }
 
   return party;
+};
+
+export const deletePartyMember = async (userId: string, partyId: string) => {
+  try {
+    const isOnlyAdmin = await isUserOnlyAdminInParty(userId, partyId);
+    if (isOnlyAdmin) {
+      throw new UserIsLastAdminInParty('Cannot remove the last admin');
+    }
+    await db
+      .delete(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .execute();
+  } catch (error) {
+    console.error('Error deleting party member', error);
+    throw error;
+  }
+};
+
+export const updatePartyMember = async (partyMemberData: Partial<SelectPartyMember>) => {
+  if (!partyMemberData.userId || !partyMemberData.partyId) {
+    throw new Error('userId and partyId are required');
+  }
+  const isOnlyAdmin = await isUserOnlyAdminInParty(partyMemberData.userId, partyMemberData.partyId);
+
+  if (isOnlyAdmin && partyMemberData.role !== 'admin') {
+    throw new UserIsLastAdminInParty('Cannot remove the last admin');
+  }
+
+  try {
+    const partyMember = await db
+      .update(partyMemberTable)
+      .set(partyMemberData)
+      .where(
+        and(eq(partyMemberTable.partyId, partyMemberData.partyId), eq(partyMemberTable.userId, partyMemberData.userId))
+      )
+      .returning()
+      .get();
+
+    if (!partyMember) {
+      throw new Error('Party member not found');
+    }
+    return partyMember;
+  } catch (error) {
+    console.error('Error updating party member', error);
+    throw error;
+  }
 };

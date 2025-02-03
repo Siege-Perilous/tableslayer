@@ -1,120 +1,129 @@
 <script lang="ts">
-  import SuperDebug, { fileProxy } from 'sveltekit-superforms';
-  import { Button, FSControl, FileInput, Icon, Spacer, MessageError, ContextMenu, addToast } from '@tableslayer/ui';
+  import { Button, FileInput, Icon, Spacer, ContextMenu, FormControl } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
-  import {
-    createSceneSchema,
-    deleteSceneSchema,
-    type CreateSceneFormType,
-    type DeleteSceneFormType
-  } from '$lib/schemas';
-  import type { SuperValidated } from 'sveltekit-superforms';
-  import { superForm } from 'sveltekit-superforms';
-  import { zodClient } from 'sveltekit-superforms/adapters';
   import type { SelectGameSession } from '$lib/db/app/schema';
-  import { Field } from 'formsnap';
   import { type Thumb } from '$lib/server';
-  import { createSetActiveSceneMutation } from '$lib/queries';
+  import {
+    useUpdateGameSessionSettingsMutation,
+    useUploadFileMutation,
+    useCreateSceneMutation,
+    useDeleteSceneMutation
+  } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
 
   let {
     scenes,
-    createSceneForm,
     gameSession,
     selectedSceneNumber,
-    deleteSceneForm,
     activeScene,
     party
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
-    createSceneForm: SuperValidated<CreateSceneFormType>;
-    deleteSceneForm: SuperValidated<DeleteSceneFormType>;
     gameSession: SelectGameSession;
     selectedSceneNumber: number;
     party: SelectParty & Thumb;
     activeScene: SelectScene | (SelectScene & Thumb) | null;
   } = $props();
 
-  const createSceneSuperForm = superForm(createSceneForm, {
-    validators: zodClient(createSceneSchema),
-    resetForm: true,
-    invalidateAll: 'force',
-    delayMs: 50,
-    onResult: (result) => {
-      if (result) {
-        console.log('scene createed', result, $createSceneData);
-        createSceneReset();
-      }
-    }
-  });
+  let file = $state<FileList | null>(null);
+  let formIsLoading = $state(false);
+  let sceneBeingDeleted = $state('');
+  let createSceneErrors = $state<FormMutationError | undefined>(undefined);
 
-  const deleteSceneSuperForm = superForm(deleteSceneForm, {
-    resetForm: true,
-    validators: zodClient(deleteSceneSchema),
-    invalidateAll: 'force',
-    delayMs: 500
-  });
+  const uploadFile = useUploadFileMutation();
+  const createNewScene = useCreateSceneMutation();
+  const updateSettings = useUpdateGameSessionSettingsMutation();
+  const deleteScene = useDeleteSceneMutation();
 
-  const {
-    form: createSceneData,
-    enhance: createSceneEnhance,
-    message: createSceneMessage,
-    formId: createSceneFormId,
-    reset: createSceneReset,
-    delayed: createSceneDelayed
-  } = createSceneSuperForm;
+  const handleCreateScene = async (order: number) => {
+    formIsLoading = true;
+    let mapLocation: string | undefined = undefined;
 
-  const {
-    form: deleteSceneData,
-    enhance: deleteSceneEnhance,
-    message: deleteSceneMessage,
-    formId: deleteSceneFormId,
-    delayed: deleteSceneDelayed
-  } = deleteSceneSuperForm;
-
-  $effect(() => {
-    $createSceneFormId = new Date().getTime().toString();
-    $createSceneData.name = 'test';
-    $createSceneData.dbName = gameSession.dbName;
-    $createSceneData.order = scenes.length + 1;
-  });
-
-  let file = $state(fileProxy(createSceneData, 'file'));
-
-  const onCreateScene = (order: number) => {
-    $createSceneData.dbName = gameSession.dbName;
-    $createSceneData.name = 'test';
-    $createSceneFormId = `createScene-${order}`;
-    $createSceneData.order = order;
-    setTimeout(() => createSceneSuperForm.submit(), 50);
-  };
-
-  const setActiveScene = createSetActiveSceneMutation();
-  const handleSetActiveScene = async (sceneId: string) => {
-    await $setActiveScene.mutateAsync({ dbName: gameSession.dbName, sceneId: sceneId, partyId: party.id });
-  };
-  const onDeleteScene = (sceneId: string) => {
-    $deleteSceneFormId = sceneId;
-    $deleteSceneData.sceneId = sceneId;
-    $deleteSceneData.dbName = gameSession.dbName;
-    setTimeout(() => deleteSceneSuperForm.submit(), 50);
-  };
-
-  let sceneInputClasses = $derived(['scene', $createSceneDelayed && 'scene--isLoading']);
-
-  $effect(() => {
-    if ($createSceneDelayed) {
-      addToast({
-        data: {
-          title: 'Building scene',
-          type: 'loading'
+    if (file && file.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'map' }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'File uploaded' },
+          error: { title: 'Error uploading file', body: (error) => error.message }
         }
       });
+
+      if (!uploadedFile) return;
+      mapLocation = uploadedFile.location;
     }
-  });
+
+    await handleMutation({
+      mutation: () =>
+        $createNewScene.mutateAsync({
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneData: {
+            name: 'New Scene',
+            order,
+            mapLocation
+          }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        createSceneErrors = error;
+        console.log('Error creating scene:', error);
+      },
+      onSuccess: () => {
+        file = null;
+      },
+      toastMessages: {
+        success: { title: 'Scene created successfully' },
+        error: { title: 'Error creating scene' }
+      }
+    });
+  };
+
+  const handleSetActiveScene = async (sceneId: string) => {
+    await handleMutation({
+      mutation: () =>
+        $updateSettings.mutateAsync({
+          dbName: gameSession.dbName,
+          settings: { activeSceneId: sceneId },
+          partyId: party.id
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Active scene set' },
+        error: { title: 'Error setting active scene', body: (error) => error.message }
+      }
+    });
+  };
+
+  const handleDeleteScene = async (sceneId: string) => {
+    sceneBeingDeleted = sceneId;
+
+    await handleMutation({
+      mutation: () =>
+        $deleteScene.mutateAsync({
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneId
+        }),
+      onSuccess: () => {
+        sceneBeingDeleted = '';
+      },
+      onError: () => {
+        sceneBeingDeleted = '';
+      },
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Scene deleted' },
+        error: { title: 'Error deleting scene', body: (error) => error.message || 'Error deleting scene' }
+      }
+    });
+  };
+
+  let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
 
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
@@ -126,47 +135,30 @@
 
 <div class="scenes">
   <div class="scene__input">
-    <form method="post" enctype="multipart/form-data" action="?/createScene" use:createSceneEnhance>
-      <input type="hidden" name="dbName" bind:value={$createSceneData.dbName} />
-      <input type="hidden" name="order" bind:value={$createSceneData.order} />
-      <input type="hidden" name="name" bind:value={$createSceneData.name} />
-      <div class={sceneInputClasses}>
-        <Field form={createSceneSuperForm} name="file">
-          <FSControl>
-            {#snippet content({ props })}
-              <FileInput variant="dropzone" {...props} type="file" accept="image/png, image/jpeg" bind:files={$file} />
-            {/snippet}
-          </FSControl>
-        </Field>
-      </div>
-      {#if $createSceneMessage}
-        <Spacer />
-        <MessageError message={$createSceneMessage} />
-      {/if}
-      <Spacer />
-      <Button type="submit" variant="ghost" class="scene__inputBtn">
-        {#snippet start()}
-          <Icon Icon={IconPlus} />
+    <div class={sceneInputClasses}>
+      <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
+        {#snippet input({ inputProps })}
+          <FileInput variant="dropzone" {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
         {/snippet}
-        Add new scene
-      </Button>
-    </form>
-    <SuperDebug data={$createSceneData} display={false} />
+      </FormControl>
+    </div>
+    <Spacer />
+    <Button onclick={() => handleCreateScene(scenes.length + 1)} variant="ghost" class="scene__inputBtn">
+      {#snippet start()}
+        <Icon Icon={IconPlus} />
+      {/snippet}
+      Add new scene
+    </Button>
   </div>
   <div class="scene__list">
     {#each scenes as scene}
-      {@const sceneSelectorClasses = [
-        'scene',
-        scene.order === selectedSceneNumber && 'scene--isSelected',
-        $deleteSceneDelayed && $deleteSceneFormId === scene.id && 'scene--isLoading'
-      ]}
       <ContextMenu
         items={[
-          { label: 'New scene', onclick: () => onCreateScene(scene.order + 1) },
+          { label: 'New scene', onclick: () => handleCreateScene(scene.order + 1) },
           {
             label: 'Delete',
             onclick: () => {
-              onDeleteScene(scene.id);
+              handleDeleteScene(scene.id);
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
@@ -181,7 +173,11 @@
           <a
             href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
             id={`scene-${scene.order}`}
-            class={sceneSelectorClasses}
+            class={[
+              'scene',
+              scene.order === selectedSceneNumber && 'scene--isSelected',
+              sceneBeingDeleted === scene.id && 'scene--isLoading'
+            ]}
             style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
           >
             {#if activeScene && activeScene.id === scene.id}
@@ -197,15 +193,7 @@
     {/each}
   </div>
 
-  <form method="post" action="?/deleteScene" use:deleteSceneEnhance>
-    <input type="hidden" name="dbName" bind:value={$deleteSceneData.dbName} />
-    <input type="hidden" name="sceneId" bind:value={$deleteSceneData.sceneId} />
-  </form>
-  {#if $deleteSceneMessage}
-    <Spacer />
-    <MessageError message={$deleteSceneMessage} />
-  {/if}
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} />
+  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
 </div>
 
 <style>
