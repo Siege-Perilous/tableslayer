@@ -513,6 +513,7 @@
   {#if showInputs}
     <div class="colorPicker__inputs colorPicker__inputs--{selectedFormat}">
       <Select
+        value={selectedFormat}
         defaultSelected={formatOptions[0] as FormatOption}
         options={formatOptions}
         onSelectedChange={handleFormatChange}
