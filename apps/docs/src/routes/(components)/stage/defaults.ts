@@ -93,10 +93,7 @@ export const StageDefaultProps: StageProps = {
   },
   weather: {
     camera: {
-      position: { x: 0, y: 0, z: -500 },
-      fov: 100,
-      near: 1,
-      far: 10000
+      fov: 100
     },
     particles: {
       count: 1000,
@@ -109,8 +106,8 @@ export const StageDefaultProps: StageProps = {
       spawnArea: { minRadius: 0.03, maxRadius: 0.1 },
       initialVelocity: { x: 0, y: 0, z: 0 },
       force: {
-        linear: { x: 0, y: 0, z: 0 },
-        exponential: { x: 0, y: 0, z: 100 },
+        linear: { x: 0, y: 0, z: 1 },
+        exponential: { x: 0, y: 0, z: 0 },
         sinusoidal: {
           amplitude: { x: 0, y: 0, z: 0 },
           frequency: { x: 5, y: 5, z: 5 }

@@ -17,6 +17,9 @@
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let scene: THREE.Scene | undefined = $state(undefined);
+  let rtCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
+
+  $inspect(rtCamera);
 
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
@@ -26,11 +29,6 @@
       format: THREE.RGBAFormat,
       stencilBuffer: false
     })
-  );
-
-  // Create camera for render target
-  const rtCamera = $derived(
-    new THREE.PerspectiveCamera(props.camera.fov, aspectRatio, props.camera.near, props.camera.far)
   );
 
   // Create quad material using render target texture
@@ -46,9 +44,10 @@
 
   // Position the render target camera
   $effect(() => {
-    if (!mapSize) return;
+    if (!mapSize || !rtCamera) return;
     rtCamera.aspect = aspectRatio;
     rtCamera.fov = props.camera.fov;
+    rtCamera.position.set(0, 0, 0);
     rtCamera.position.z = -1 / 2 / Math.tan((DEG2RAD * props.camera.fov) / 2);
     rtCamera.far = -rtCamera.position.z;
     rtCamera.lookAt(0, 0, 0);
@@ -56,7 +55,7 @@
 
   // Custom render task
   useTask((state) => {
-    if (!scene) return;
+    if (!scene || !rtCamera) return;
 
     scene.visible = true;
 
@@ -75,6 +74,7 @@
 
 <!-- Hidden scene that renders to the render target -->
 <T.Scene bind:ref={scene} visible={false}>
+  <T.PerspectiveCamera bind:ref={rtCamera} />
   <ParticleSystem props={props.particles} />
 </T.Scene>
 

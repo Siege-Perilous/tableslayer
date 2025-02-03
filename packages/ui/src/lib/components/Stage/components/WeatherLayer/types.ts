@@ -6,10 +6,7 @@ export enum WeatherType {
 
 export interface WeatherLayerProps {
   camera: {
-    position: { x: number; y: number; z: number };
     fov: number;
-    near: number;
-    far: number;
   };
   particles: ParticleSystemProps;
 }

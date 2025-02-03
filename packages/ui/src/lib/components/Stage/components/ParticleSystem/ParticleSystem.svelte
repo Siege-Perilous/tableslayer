@@ -13,6 +13,8 @@
 
   const { props }: Props = $props();
 
+  let mesh: THREE.Mesh | undefined = $state(undefined);
+
   const geometry = $derived.by(() => {
     const geometry = new THREE.BufferGeometry();
 
@@ -149,7 +151,7 @@
   });
 </script>
 
-<T.Mesh {geometry}>
+<T.Mesh bind:ref={mesh} {geometry}>
   <T.ShaderMaterial
     is={material}
     {vertexShader}
