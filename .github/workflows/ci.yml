@@ -32,7 +32,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - run: pnpm tsc
+      - name: Typescript check
+        run: pnpm tsc
+      - name: Svelte check
+        run: pnpm check
   create_database:
     if: github.event.pull_request.draft == false
     name: 'Turso'

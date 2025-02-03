@@ -6,6 +6,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "tsc": "turbo run tsc",
+    "check": "turbo run check",
     "format-check": "prettier --check .",
     "format-write": "prettier --write .",
     "prepare": "husky"
