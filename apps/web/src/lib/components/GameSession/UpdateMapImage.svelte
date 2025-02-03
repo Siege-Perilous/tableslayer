@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { handleMutation } from '$lib/factories';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
     hiddenFileInput?.click();
@@ -9,7 +10,6 @@
   import { invalidateAll } from '$app/navigation';
 
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  import { addToast } from '@tableslayer/ui';
   let { sceneId, dbName, partyId }: { sceneId: string; dbName: string; partyId: string } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -21,39 +21,37 @@
     const pickedFile = input.files[0];
     input.value = '';
 
-    try {
-      const uploadedFile = await $uploadFile.mutateAsync({
-        file: pickedFile,
-        folder: 'map'
-      });
+    const uploadedFile = await handleMutation({
+      mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'map' }),
+      formLoadingState: () => console.log('Uploading file...'),
+      toastMessages: {
+        success: { title: 'File uploaded' },
+        error: { title: 'Error uploading file', body: (err) => err.message || 'Unknown error' }
+      }
+    });
 
-      await $updateScene.mutateAsync({
-        dbName,
-        sceneId,
-        partyId,
-        sceneData: {
-          mapLocation: uploadedFile.location
-        }
-      });
+    if (!uploadedFile) return;
 
-      input.value = '';
-      invalidateAll();
-      addToast({
-        data: {
-          title: 'Map updated',
-          type: 'success'
-        }
-      });
-    } catch (error: unknown) {
-      console.error('Error uploading map image:', error);
-      addToast({
-        data: {
-          title: 'Error updating map',
-          body: error instanceof Error ? error.message : 'Unknown error',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateScene.mutateAsync({
+          dbName,
+          sceneId,
+          partyId,
+          sceneData: {
+            mapLocation: uploadedFile.location
+          }
+        }),
+      onSuccess: () => {
+        input.value = '';
+        invalidateAll();
+      },
+      formLoadingState: () => console.log('Updating map...'),
+      toastMessages: {
+        success: { title: 'Map updated' },
+        error: { title: 'Error updating map', body: (err) => err.message || 'Unknown error' }
+      }
+    });
   }
 </script>
 

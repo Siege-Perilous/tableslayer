@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useUpdatePartyMutation } from '$lib/queries';
-  import { type FormMutationError } from '$lib/factories';
-  import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title, addToast } from '@tableslayer/ui';
+  import { handleMutation } from '$lib/factories';
+  import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { type ZodIssue } from 'zod';
@@ -64,25 +64,14 @@
   const updateParty = useUpdatePartyMutation();
 
   const save = async () => {
-    try {
-      await $updateParty.mutateAsync({ partyId: party.id, partyData });
-      errors = undefined;
-      addToast({
-        data: {
-          title: 'Default settings updated',
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      errors = error.errors;
-      addToast({
-        data: {
-          title: error.message || 'Error updating party',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $updateParty.mutateAsync({ partyId: party.id, partyData }),
+      formLoadingState: () => {},
+      toastMessages: {
+        success: { title: 'Default settings updated' },
+        error: { title: 'Error updating party', body: (err) => err.message || 'Error updating party' }
+      }
+    });
   };
 
   const handleValidation = () => {

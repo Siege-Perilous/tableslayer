@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Input, addToast, Button, FormControl, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, Button, FormControl, Title, Spacer, Panel } from '@tableslayer/ui';
   import { useAuthForgotPasswordMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
   let email = $state('');
   let formIsLoading = $state(false);
@@ -10,29 +10,20 @@
   const forgotPassword = useAuthForgotPasswordMutation();
   const handleForgotPassword = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $forgotPassword.mutateAsync({ email });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Check your email',
-          type: 'success'
-        }
-      });
-      goto('/forgot-password/confirm');
-    } catch (e) {
-      forgotPasswordError = e as FormMutationError;
-      formIsLoading = false;
-      console.log(forgotPasswordError);
-      addToast({
-        data: {
-          title: 'Error sending password reset email',
-          body: forgotPasswordError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $forgotPassword.mutateAsync({ email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        forgotPasswordError = error;
+      },
+      onSuccess: () => {
+        goto('/forgot-password/confirm');
+      },
+      toastMessages: {
+        success: { title: 'Check your email' },
+        error: { title: 'Error sending password reset email', body: (error) => error.message }
+      }
+    });
   };
 </script>
 

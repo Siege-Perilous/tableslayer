@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Panel, FormControl, Title, Input, Button, Spacer, addToast } from '@tableslayer/ui';
+  import { Panel, FormControl, Title, Input, Button, Spacer } from '@tableslayer/ui';
   import { useCreateGameSessionMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
 
   let {
     partyId
@@ -16,29 +17,25 @@
 
   const handleCreateGameSession = async (e: Event) => {
     e.preventDefault();
-    try {
-      await $createGameSession.mutateAsync({
-        partyId,
-        gameSessionData: { name: gameSessionName }
-      });
-      createGameSessionError = undefined;
-      formIsOpen = false;
-      addToast({
-        data: {
-          title: `Game session created`,
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      createGameSessionError = error;
-      addToast({
-        data: {
-          title: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $createGameSession.mutateAsync({
+          partyId,
+          gameSessionData: { name: gameSessionName }
+        }),
+      formLoadingState: () => {},
+      onError: (err) => {
+        createGameSessionError = err;
+      },
+      onSuccess: () => {
+        createGameSessionError = undefined;
+        formIsOpen = false;
+      },
+      toastMessages: {
+        success: { title: 'Game session created' },
+        error: { title: 'Error creating game session', body: (err) => err.message }
+      }
+    });
   };
 
   const handleOpenForm = () => {

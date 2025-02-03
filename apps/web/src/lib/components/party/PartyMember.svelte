@@ -1,7 +1,6 @@
 <script lang="ts">
   import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
   import {
-    addToast,
     Hr,
     Text,
     Avatar,
@@ -15,7 +14,7 @@
   } from '@tableslayer/ui';
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
   import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
   type PartyMember = SelectUser & {
@@ -45,58 +44,39 @@
 
   const handleDeletePartyMember = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id });
-      if (member.id === user.id) {
-        goto('/profile');
+    await handleMutation({
+      mutation: () => $deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        if (member.id === user.id) {
+          goto('/profile');
+        }
+      },
+      onError: (error) => {
+        console.log('member removed error', error);
+      },
+      toastMessages: {
+        success: { title: 'Member removed', body: `${member.name || member.email} has been removed from the party` },
+        error: { title: 'Error removing member', body: (err) => err.message }
       }
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Member removed',
-          body: `${member.name || member.email} has been removed from the party`,
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      formIsLoading = false;
-      console.log('member removed error', error);
-      addToast({
-        data: {
-          title: 'Error removing member',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    });
   };
   const handleSelectedRole = async (selected: RoleOption) => {
     role = selected.value;
-    formIsLoading = true;
     console.log('selected', selected);
-    try {
-      await $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role });
-      formIsLoading = false;
-      addToast({
-        data: {
+
+    await handleMutation({
+      mutation: () => $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: {
           title: 'Member role updated',
-          body: `${member.name || member.email}'s role has been updated to ${role}`,
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: 'Error updating member role',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-      formIsLoading = false;
-    }
+          body: `${member.name || member.email}'s role has been updated to ${role}`
+        },
+        error: { title: 'Error updating member role', body: (err) => err.message }
+      }
+    });
+
     console.log('selected', selected);
     return selected;
   };

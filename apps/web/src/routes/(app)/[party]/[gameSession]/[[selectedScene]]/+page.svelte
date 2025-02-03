@@ -1,8 +1,8 @@
 <script lang="ts">
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
-  import { type FormMutationError } from '$lib/factories';
-  import { Stage, type StageExports, type StageProps, MapLayerType, addToast } from '@tableslayer/ui';
+  import { handleMutation } from '$lib/factories';
+  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUploadFogFromBlobMutation } from '$lib/queries';
@@ -238,17 +238,25 @@
 
   const onFogUpdate = async (blob: Promise<Blob>) => {
     const fogBlob = await blob;
-    const fog = await $createFogMutation.mutateAsync({
-      blob: fogBlob,
-      sceneId: selectedScene.id
-    });
 
-    if (fog) {
-      stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
-      socketUpdate();
-      console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
-    }
+    await handleMutation({
+      mutation: () =>
+        $createFogMutation.mutateAsync({
+          blob: fogBlob,
+          sceneId: selectedScene.id
+        }),
+      formLoadingState: () => console.log('fog is uploading'),
+      onSuccess: (fog) => {
+        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+        socketUpdate();
+        console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
+      },
+      toastMessages: {
+        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+      }
+    });
   };
+
   let lastSavedData = '';
   let dirtyData = '';
   const updateDirtyData = () => {
@@ -258,33 +266,26 @@
   const saveScene = async () => {
     if (dirtyData === lastSavedData) return;
 
-    try {
-      await $updateSceneMutation.mutateAsync({
-        sceneId: selectedScene.id,
-        dbName: gameSession.dbName,
-        partyId: party.id,
-        sceneData: JSON.parse(dirtyData)
-      });
-      errors = undefined;
-      addToast({
-        data: {
-          title: 'Scene saved!',
-          type: 'success'
-        }
-      });
-
-      // Now that we've successfully saved, the lastSavedData is the dirtyData
-      lastSavedData = dirtyData;
-    } catch (e) {
-      const error = e as FormMutationError;
-      errors = error.errors;
-      addToast({
-        data: {
-          title: error.message || 'Error saving scene',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateSceneMutation.mutateAsync({
+          sceneId: selectedScene.id,
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneData: JSON.parse(dirtyData)
+        }),
+      formLoadingState: () => console.log('stage is loading'),
+      onError: (error) => {
+        console.log('Error saving scene:', error);
+      },
+      onSuccess: () => {
+        lastSavedData = dirtyData;
+      },
+      toastMessages: {
+        success: { title: 'Scene saved!' },
+        error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
+      }
+    });
   };
 
   // This effect will run whenever `stageProps` changes.

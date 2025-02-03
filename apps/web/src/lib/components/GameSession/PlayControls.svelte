@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { Spacer, Button, Text, Hr, addToast } from '@tableslayer/ui';
+  import { Spacer, Button, Text, Hr } from '@tableslayer/ui';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectGameSettings } from '$lib/db/gs/schema';
   import { useUpdateGameSessionSettingsMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
 
   let {
     socketUpdate,
@@ -27,56 +27,40 @@
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
-    try {
-      await $updateSettings.mutateAsync({
-        dbName: gameSession.dbName,
-        settings: { activeSceneId: selectedScene.id },
-        partyId: party.id
-      });
-
-      addToast({
-        data: {
-          title: 'Active scene set',
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: error.message || 'Error setting active scene',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateSettings.mutateAsync({
+          dbName: gameSession.dbName,
+          settings: { activeSceneId: selectedScene.id },
+          partyId: party.id
+        }),
+      formLoadingState: () => {},
+      toastMessages: {
+        success: { title: 'Active scene set' },
+        error: { title: 'Error setting active scene', body: (err) => err.message || 'Error setting active scene' }
+      }
+    });
   };
 
   const handleToggleGamePause = async () => {
     if (!selectedScene) return;
 
-    try {
-      await $updateSettings.mutateAsync({
-        dbName: gameSession.dbName,
-        settings: { isPaused: !gameSettings.isPaused },
-        partyId: party.id
-      });
-      socketUpdate();
-
-      addToast({
-        data: {
-          title: 'Playfield paused',
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: error.message || 'Error pausing playfield',
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateSettings.mutateAsync({
+          dbName: gameSession.dbName,
+          settings: { isPaused: !gameSettings.isPaused },
+          partyId: party.id
+        }),
+      formLoadingState: () => {},
+      onSuccess: () => {
+        socketUpdate();
+      },
+      toastMessages: {
+        success: { title: 'Playfield paused' },
+        error: { title: 'Error pausing playfield', body: (err) => err.message || 'Error pausing playfield' }
+      }
+    });
   };
 </script>
 

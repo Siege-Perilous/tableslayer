@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Hr, Text, Avatar, Icon, Popover, Spacer, Button, addToast } from '@tableslayer/ui';
+  import { Hr, Text, Avatar, Icon, Popover, Spacer, Button } from '@tableslayer/ui';
   import { IconChevronDown } from '@tabler/icons-svelte';
   import { useDeletePartyInviteMutation, useResendPartyInviteMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
 
   let {
     email,
@@ -20,36 +20,30 @@
   const handleDeletePartyInvite = async (e: Event) => {
     console.log('delete');
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $deletePartyInvite.mutateAsync({ partyId, email });
-      formIsLoading = false;
-      addToast({
-        data: { title: 'Invite cancelled', body: `Invite for ${email} has been cancelled`, type: 'success' }
-      });
-    } catch (e) {
-      formIsLoading = false;
-      const error = e as FormMutationError;
-      addToast({ data: { title: 'Error cancelling invite', body: error.message, type: 'danger' } });
-    }
+
+    await handleMutation({
+      mutation: () => $deletePartyInvite.mutateAsync({ partyId, email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Invite cancelled', body: `Invite for ${email} has been cancelled` },
+        error: { title: 'Error cancelling invite', body: (err) => err.message }
+      }
+    });
   };
 
   const resendPartyInvite = useResendPartyInviteMutation();
 
   const handleResendPartyInvite = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $resendPartyInvite.mutateAsync({ partyId, email });
-      formIsLoading = false;
-      addToast({
-        data: { title: 'Invite resent', body: `Invite for ${email} has been resent`, type: 'success' }
-      });
-    } catch (e) {
-      formIsLoading = false;
-      const error = e as FormMutationError;
-      addToast({ data: { title: 'Error resending invite', body: error.message, type: 'danger' } });
-    }
+
+    await handleMutation({
+      mutation: () => $resendPartyInvite.mutateAsync({ partyId, email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Invite resent', body: `Invite for ${email} has been resent` },
+        error: { title: 'Error resending invite', body: (err) => err.message }
+      }
+    });
   };
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { useAuthLoginMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
-  import { addToast, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
+  import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown } from '$lib/components';
   let email = $state('');
   let password = $state('');
@@ -13,28 +13,20 @@
 
   const handleLogin = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $login.mutateAsync({ email, password });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Welcome back!',
-          type: 'success'
-        }
-      });
-      goto('/profile');
-    } catch (e) {
-      loginErrors = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error logging in',
-          body: loginErrors.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $login.mutateAsync({ email, password }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        loginErrors = error;
+      },
+      onSuccess: () => {
+        goto('/profile');
+      },
+      toastMessages: {
+        success: { title: 'Welcome back!' },
+        error: { title: 'Error logging in', body: (error) => error.message }
+      }
+    });
   };
 </script>
 
@@ -61,6 +53,7 @@
     </FormControl>
     <Spacer />
     <Button data-testid="loginSubmit" disabled={formIsLoading}>Sign in</Button>
+    <FormError error={loginErrors} />
   </form>
   <Spacer />
 </Panel>

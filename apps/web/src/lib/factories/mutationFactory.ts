@@ -1,4 +1,5 @@
 import { invalidateAll } from '$app/navigation';
+import { addToast } from '@tableslayer/ui';
 import { createMutation } from '@tanstack/svelte-query';
 import { type ZodIssue } from 'zod';
 
@@ -66,8 +67,65 @@ export function mutationFactory<
       if (config.onSuccess) {
         config.onSuccess();
       } else {
+        console.log('Invalidating all queries');
         await invalidateAll();
       }
     }
   });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface MutationConfig<T = any> {
+  mutation: () => Promise<T>;
+  formLoadingState: (loading: boolean) => void;
+  onError?: (error: FormMutationError | undefined) => void;
+  onSuccess?: (result: T) => void;
+  toastMessages: {
+    success?: { title: string; body?: string };
+    error?: { title: string; body?: string | ((error: FormMutationError) => string) };
+  };
+}
+
+export async function handleMutation<T>({
+  mutation,
+  formLoadingState,
+  onError,
+  onSuccess,
+  toastMessages
+}: MutationConfig<T>): Promise<T | undefined> {
+  formLoadingState(true);
+  try {
+    const result = await mutation(); // Capture the mutation's return value
+    formLoadingState(false);
+    if (toastMessages.success) {
+      addToast({
+        data: {
+          title: toastMessages.success.title,
+          body: toastMessages.success.body ?? '',
+          type: 'success'
+        }
+      });
+    }
+    onSuccess?.(result); // Pass the result to the onSuccess callback
+    return result; // Return the mutation's result
+  } catch (e) {
+    const error = e as FormMutationError;
+    if (onError) {
+      onError(error);
+    }
+    formLoadingState(false);
+    if (toastMessages.error) {
+      addToast({
+        data: {
+          title: toastMessages.error.title,
+          body:
+            typeof toastMessages.error.body === 'function'
+              ? toastMessages.error.body(error)
+              : (toastMessages.error.body ?? ''),
+          type: 'danger'
+        }
+      });
+    }
+    return undefined; // Return undefined on error
+  }
 }

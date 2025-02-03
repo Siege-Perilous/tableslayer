@@ -6,13 +6,13 @@
   import { useUpdatePartyMutation, useDeletePartyMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { goto } from '$app/navigation';
+  import { handleMutation } from '$lib/factories';
 
   import {
     Avatar,
     Button,
     ConfirmActionButton,
     Spacer,
-    addToast,
     Hr,
     Input,
     FormControl,
@@ -39,55 +39,37 @@
 
   const handleDeleteParty = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $deleteParty.mutateAsync({ partyId: party.id });
-      formIsLoading = false;
-      goto('/profile');
-    } catch (e) {
-      const error = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error deleting party',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $deleteParty.mutateAsync({ partyId: party.id }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => goto('/profile'),
+      toastMessages: {
+        success: { title: 'Party deleted successfully' },
+        error: { title: 'Error deleting party', body: (error) => error.message }
+      }
+    });
   };
 
   const handleRenameParty = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      const { party: updatedParty } = await $updateParty.mutateAsync({
-        partyId: party.id,
-        partyData: { name: partyName }
-      });
-      console.log('Party renamed:', updatedParty);
-      addToast({
-        data: {
-          title: 'Party renamed',
-          type: 'success'
-        }
-      });
-      formIsLoading = false;
-      goto('/' + updatedParty.slug);
-    } catch (e) {
-      const error = e as FormMutationError;
-      renamePartyErrors = error;
-      console.log('Error renaming party:', error);
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error renaming party',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-      formIsLoading = false;
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { name: partyName }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => (renamePartyErrors = error),
+      onSuccess: (result) => {
+        const updatedParty = result.party;
+        console.log('Party renamed:', updatedParty);
+        goto('/' + updatedParty.slug);
+      },
+      toastMessages: {
+        success: { title: 'Party renamed successfully' },
+        error: { title: 'Error renaming party', body: (error) => error.message }
+      }
+    });
   };
 </script>
 

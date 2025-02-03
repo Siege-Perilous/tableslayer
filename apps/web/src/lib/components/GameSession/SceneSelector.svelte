@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, FileInput, Icon, Spacer, ContextMenu, addToast, FormControl } from '@tableslayer/ui';
+  import { Button, FileInput, Icon, Spacer, ContextMenu, FormControl } from '@tableslayer/ui';
   import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
@@ -13,8 +13,7 @@
     useCreateSceneMutation,
     useDeleteSceneMutation
   } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
-  import type { ZodIssue } from 'zod';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
 
   let {
     scenes,
@@ -33,7 +32,7 @@
   let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
   let sceneBeingDeleted = $state('');
-  let createSceneErrors = $state<ZodIssue[] | undefined>(undefined);
+  let createSceneErrors = $state<FormMutationError | undefined>(undefined);
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
@@ -42,99 +41,86 @@
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
-    try {
-      let mapLocation: string | undefined = undefined;
+    let mapLocation: string | undefined = undefined;
 
-      if (file && file.length) {
-        const uploadedFile = await $uploadFile.mutateAsync({
-          file: file[0],
-          folder: 'map'
-        });
-        mapLocation = uploadedFile.location;
-      }
-
-      await $createNewScene.mutateAsync({
-        dbName: gameSession.dbName,
-        partyId: party.id,
-        sceneData: {
-          name: 'New Scene',
-          order,
-          mapLocation
+    if (file && file.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'map' }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'File uploaded' },
+          error: { title: 'Error uploading file', body: (error) => error.message }
         }
       });
 
-      addToast({
-        data: {
-          title: 'Scene created successfully',
-          type: 'success'
-        }
-      });
-      formIsLoading = false;
-      file = null;
-    } catch (e) {
-      const error = e as FormMutationError;
-      createSceneErrors = error.errors;
-      console.log('Error creating scene:', error);
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error creating scene',
-          type: 'danger'
-        }
-      });
+      if (!uploadedFile) return;
+      mapLocation = uploadedFile.location;
     }
+
+    await handleMutation({
+      mutation: () =>
+        $createNewScene.mutateAsync({
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneData: {
+            name: 'New Scene',
+            order,
+            mapLocation
+          }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        createSceneErrors = error;
+        console.log('Error creating scene:', error);
+      },
+      onSuccess: () => {
+        file = null;
+      },
+      toastMessages: {
+        success: { title: 'Scene created successfully' },
+        error: { title: 'Error creating scene' }
+      }
+    });
   };
 
   const handleSetActiveScene = async (sceneId: string) => {
-    try {
-      await $updateSettings.mutateAsync({
-        dbName: gameSession.dbName,
-        settings: { activeSceneId: sceneId },
-        partyId: party.id
-      });
-
-      addToast({
-        data: {
-          title: 'Active scene set',
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $updateSettings.mutateAsync({
+          dbName: gameSession.dbName,
+          settings: { activeSceneId: sceneId },
+          partyId: party.id
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Active scene set' },
+        error: { title: 'Error setting active scene', body: (error) => error.message }
+      }
+    });
   };
 
-  const handleDeleteScene = (sceneId: string) => {
+  const handleDeleteScene = async (sceneId: string) => {
     sceneBeingDeleted = sceneId;
-    try {
-      $deleteScene.mutateAsync({
-        dbName: gameSession.dbName,
-        partyId: party.id,
-        sceneId
-      });
-      addToast({
-        data: {
-          title: 'Scene deleted',
-          type: 'success'
-        }
-      });
-      sceneBeingDeleted = '';
-    } catch (e) {
-      sceneBeingDeleted = '';
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: error.message || 'Error deleting scene',
-          type: 'danger'
-        }
-      });
-    }
+
+    await handleMutation({
+      mutation: () =>
+        $deleteScene.mutateAsync({
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneId
+        }),
+      onSuccess: () => {
+        sceneBeingDeleted = '';
+      },
+      onError: () => {
+        sceneBeingDeleted = '';
+      },
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Scene deleted' },
+        error: { title: 'Error deleting scene', body: (error) => error.message || 'Error deleting scene' }
+      }
+    });
   };
 
   let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
@@ -150,7 +136,7 @@
 <div class="scenes">
   <div class="scene__input">
     <div class={sceneInputClasses}>
-      <FormControl name="file" errors={createSceneErrors}>
+      <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
         {#snippet input({ inputProps })}
           <FileInput variant="dropzone" {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
         {/snippet}

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Spacer, Hr, Icon, IconButton, Input, FormControl, addToast } from '@tableslayer/ui';
+  import { Spacer, Hr, Icon, IconButton, Input, FormControl } from '@tableslayer/ui';
   import { useCreatePartyInviteMutation } from '$lib/queries';
   import { type SelectParty } from '$lib/db/app/schema';
   import { IconMail } from '@tabler/icons-svelte';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   let { isPartyAdmin, party }: { isPartyAdmin: boolean; party: SelectParty } = $props();
 
   let email = $state('');
@@ -13,34 +13,26 @@
   const createPartyInvite = useCreatePartyInviteMutation();
   const handleCreatePartyInvite = async (e: Event) => {
     e.preventDefault();
-    try {
-      formIsLoading = true;
-      await $createPartyInvite.mutateAsync({
-        email,
-        partyId: party.id,
-        role: 'viewer'
-      });
-      addToast({
-        data: {
-          title: 'Invite sent!',
-          body: `Invite sent to ${email}`,
-          type: 'success'
-        }
-      });
-      email = '';
-      formIsLoading = false;
-      error = undefined;
-    } catch (e) {
-      error = e as FormMutationError;
-      addToast({
-        data: {
-          title: 'Error sending invite',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-      formIsLoading = false;
-    }
+    await handleMutation({
+      mutation: () =>
+        $createPartyInvite.mutateAsync({
+          email,
+          partyId: party.id,
+          role: 'viewer'
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (err) => {
+        error = err;
+      },
+      onSuccess: () => {
+        email = '';
+        error = undefined;
+      },
+      toastMessages: {
+        success: { title: 'Invite sent!', body: `Invite sent to ${email}` },
+        error: { title: 'Error sending invite', body: (err) => err.message }
+      }
+    });
   };
 </script>
 

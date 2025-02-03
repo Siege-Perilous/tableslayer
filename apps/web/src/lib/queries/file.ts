@@ -4,10 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Uploads fog to R2, does not create a user file entry because they are throwaway
 export const useUploadFogFromBlobMutation = () => {
-  return mutationFactory<{ blob: Blob }, { location: string }, Error>({
+  return mutationFactory<{ blob: Blob; sceneId: string }, { location: string }, Error>({
     mutationKey: ['uploadFog'],
-    mutationFn: async ({ blob }) => {
-      const fileName = `fog/${uuidv4()}.png`;
+    mutationFn: async ({ blob, sceneId }) => {
+      const fileName = `fog/${sceneId}.png`;
       const contentType = 'image/png';
       const file = new File([blob], fileName, { type: contentType });
       // Step 1: Fetch Presigned URL

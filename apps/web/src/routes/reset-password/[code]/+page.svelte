@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { addToast, Input, FormControl, Button, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, FormControl, Button, Title, Spacer, Panel } from '@tableslayer/ui';
   import { useAuthResetPasswordMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
   let { data } = $props();
@@ -15,33 +15,26 @@
 
   const handleResetPassword = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $resetPassword.mutateAsync({
-        email: userDesiringReset.email,
-        password,
-        confirmPassword,
-        code: resetCode
-      });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Password reset',
-          type: 'success'
-        }
-      });
-      goto('/profile');
-    } catch (e) {
-      resetPasswordError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error resetting password',
-          body: resetPasswordError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $resetPassword.mutateAsync({
+          email: userDesiringReset.email,
+          password,
+          confirmPassword,
+          code: resetCode
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        resetPasswordError = error;
+      },
+      onSuccess: () => {
+        goto('/profile');
+      },
+      toastMessages: {
+        success: { title: 'Password reset' },
+        error: { title: 'Error resetting password', body: (error) => error.message }
+      }
+    });
   };
 </script>
 

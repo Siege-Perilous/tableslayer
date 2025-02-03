@@ -14,12 +14,11 @@
     Popover,
     IconButton,
     Icon,
-    addToast,
     FormControl,
     ConfirmActionButton
   } from '@tableslayer/ui';
   import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import type { SelectGameSession, SelectParty } from '$lib/db';
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
@@ -36,6 +35,7 @@
 
   let gameSessionName = $state(session.name);
   let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
+  let formIsLoading = $state(false);
 
   const images = [
     'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/01.jpeg',
@@ -49,57 +49,43 @@
 
   const handleRenameGameSession = async (e: Event) => {
     e.preventDefault();
-    try {
-      await $renameGameSession.mutateAsync({
-        partyId: party.id,
-        gameSessionId: session.id,
-        gameSessionData: { name: gameSessionName }
-      });
-      addToast({
-        data: {
-          title: `Game session renamed to ${gameSessionName}`,
-          type: 'success'
-        }
-      });
-      renameGameSessionErrors = undefined;
-    } catch (e) {
-      const error = e as FormMutationError;
-      renameGameSessionErrors = error;
-      addToast({
-        data: {
-          title: 'Error renaming game session',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $renameGameSession.mutateAsync({
+          partyId: party.id,
+          gameSessionId: session.id,
+          gameSessionData: { name: gameSessionName }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        renameGameSessionErrors = error;
+      },
+      onSuccess: () => {
+        renameGameSessionErrors = undefined;
+      },
+      toastMessages: {
+        success: { title: `Game session renamed to ${gameSessionName}` },
+        error: { title: 'Error renaming game session', body: (error) => error.message }
+      }
+    });
   };
 
   const deleteGameSession = useDeleteGameSessionMutation();
 
   const handleDeleteGameSession = async (e: Event) => {
     e.preventDefault();
-    try {
-      await $deleteGameSession.mutateAsync({
-        partyId: party.id,
-        gameSessionId: session.id
-      });
-      addToast({
-        data: {
-          title: `Game session deleted`,
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      const error = e as FormMutationError;
-      addToast({
-        data: {
-          title: 'Error deleting game session',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () =>
+        $deleteGameSession.mutateAsync({
+          partyId: party.id,
+          gameSessionId: session.id
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Game session deleted' },
+        error: { title: 'Error deleting game session', body: (error) => error.message }
+      }
+    });
   };
 </script>
 
@@ -147,7 +133,13 @@
               <Spacer />
               <ConfirmActionButton actionButtonText="Confirm delete" action={handleDeleteGameSession}>
                 {#snippet trigger({ triggerProps })}
-                  <Button {...triggerProps} variant="danger" type="button">Delete session</Button>
+                  <Button
+                    {...triggerProps}
+                    variant="danger"
+                    type="button"
+                    disabled={formIsLoading}
+                    isLoading={formIsLoading}>Delete session</Button
+                  >
                 {/snippet}
                 {#snippet actionMessage()}
                   <Text size="0.875rem" color="var(--fgDanger)">

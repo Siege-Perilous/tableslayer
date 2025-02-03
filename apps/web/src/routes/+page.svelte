@@ -1,12 +1,12 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Text, Spacer, Button, Panel, Hr, addToast } from '@tableslayer/ui';
+  import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
   import { IllustrationOverlook, Logo } from '$lib/components';
   import { Input, FormControl } from '@tableslayer/ui';
   import { useAddEmailToAudienceMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   let email = $state('');
   let formIsLoading = $state(false);
   let formError = $state<FormMutationError | undefined>(undefined);
@@ -16,29 +16,20 @@
 
   const handleAddEmailToAudience = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $addEmailToAudience.mutateAsync({ email });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Thanks!',
-          body: "We'll be in touch soon.",
-          type: 'success'
-        }
-      });
-      formCompleted = true;
-    } catch (e) {
-      formError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error',
-          body: formError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $addEmailToAudience.mutateAsync({ email }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        formError = error;
+      },
+      onSuccess: () => {
+        formCompleted = true;
+      },
+      toastMessages: {
+        success: { title: 'Thanks!', body: "We'll be in touch soon." },
+        error: { title: 'Error', body: (error) => error.message }
+      }
+    });
   };
 </script>
 

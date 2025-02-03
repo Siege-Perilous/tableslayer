@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Button, Icon, addToast } from '@tableslayer/ui';
+  import { Button, Icon } from '@tableslayer/ui';
   import { IconX, IconCheck } from '@tabler/icons-svelte';
   import type { SelectParty, SelectPartyInvite, SeletUser } from '$lib/db/schema';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
   let {
     invite
@@ -21,33 +21,17 @@
 
   const handleRespondToInvite = (accepted: boolean) => async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $respondToPartyInvite.mutateAsync({ code, accepted });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Success',
-          body: `You have ${accepted ? 'accepted' : 'declined'} the invite`,
-          type: 'success'
-        }
-      });
-      if (accepted) {
-        goto(`/${invite.party.slug}`);
-      } else {
-        goto('/profile');
+    await handleMutation({
+      mutation: () => $respondToPartyInvite.mutateAsync({ code, accepted }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        goto(accepted ? `/${invite.party.slug}` : '/profile');
+      },
+      toastMessages: {
+        success: { title: 'Success', body: `You have ${accepted ? 'accepted' : 'declined'} the invite` },
+        error: { title: 'Error', body: (err) => err.message }
       }
-    } catch (e) {
-      const error = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error',
-          body: error.message,
-          type: 'danger'
-        }
-      });
-    }
+    });
   };
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { Input, FileInput, Button, Title, Spacer, Panel, FormControl, addToast } from '@tableslayer/ui';
+  import { Input, FileInput, Button, Title, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { useUploadFileMutation, useCreatePartyMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
   let file = $state<FileList | null>(null);
@@ -14,43 +14,36 @@
 
   const handleCreateParty = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      let avatarFileId: number | undefined = undefined;
+    let avatarFileId: number | undefined = undefined;
+    if (file && file.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'avatar' }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'Image uploaded' },
+          error: { title: 'Error uploading image', body: (error) => error.message }
+        }
+      });
 
-      if (file && file.length) {
-        const uploadedFile = await $uploadFile.mutateAsync({
-          file: file[0],
-          folder: 'avatar'
-        });
-        avatarFileId = uploadedFile.fileId;
+      if (!uploadedFile) return; // ✅ TypeScript now understands uploadedFile is possibly undefined
+      avatarFileId = uploadedFile.fileId;
+    }
+
+    const response = await handleMutation({
+      mutation: () =>
+        $createParty.mutateAsync({
+          partyData: { name: partyName, avatarFileId }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => (createPartyError = error),
+      toastMessages: {
+        success: { title: 'Party created successfully' },
+        error: { title: 'Error creating party', body: (error) => error.message }
       }
+    });
 
-      const response = await $createParty.mutateAsync({
-        partyData: {
-          name: partyName,
-          avatarFileId: avatarFileId
-        }
-      });
-
-      addToast({
-        data: {
-          title: 'Party created successfully',
-          type: 'success'
-        }
-      });
-      formIsLoading = false;
-      createPartyError = undefined;
+    if (response) {
       goto(`/${response.party.slug}`);
-    } catch (e) {
-      createPartyError = e as FormMutationError;
-      addToast({
-        data: {
-          title: createPartyError.message,
-          type: 'danger'
-        }
-      });
-      formIsLoading = false;
     }
   };
 </script>
@@ -67,7 +60,7 @@
     <Spacer />
     <FormControl label="Party avatar" name="avatar" errors={createPartyError && createPartyError.errors}>
       {#snippet input({ inputProps })}
-        <FileInput {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
+        <FileInput {...inputProps} type="file" accept="image/*" bind:files={file} />
       {/snippet}
     </FormControl>
     <Spacer />

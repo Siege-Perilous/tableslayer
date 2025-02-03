@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { addToast, Button, FormControl, Input } from '@tableslayer/ui';
+  import { Button, FormControl, Input } from '@tableslayer/ui';
   import {
     useAuthVerifyEmailMutation,
     useAuthResendVerificationEmailMutation,
     useAuthChangeEmailMutation
   } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
   let { data } = $props();
@@ -16,7 +16,6 @@
   let newEmail = $state('');
   let verifyCode = $state('');
   let verifyEmailError = $state<FormMutationError | undefined>(undefined);
-  let resendEmailError = $state<FormMutationError | undefined>(undefined);
   let changeEmailError = $state<FormMutationError | undefined>(undefined);
 
   const verifyEmail = useAuthVerifyEmailMutation();
@@ -25,79 +24,50 @@
 
   const handleVerifyEmail = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $verifyEmail.mutateAsync({ code: verifyCode });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Email verified',
-          type: 'success'
-        }
-      });
-      goto('/profile');
-    } catch (e) {
-      verifyEmailError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error verifying email',
-          body: verifyEmailError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $verifyEmail.mutateAsync({ code: verifyCode }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        verifyEmailError = error;
+      },
+      onSuccess: () => {
+        goto('/profile');
+      },
+      toastMessages: {
+        success: { title: 'Email verified' },
+        error: { title: 'Error verifying email', body: (error) => error.message }
+      }
+    });
   };
 
   const handleResendEmail = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $resendEmail.mutateAsync({ userId: user.id });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Verification email resent',
-          type: 'success'
-        }
-      });
-    } catch (e) {
-      resendEmailError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error resending verification email',
-          body: resendEmailError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $resendEmail.mutateAsync({ userId: user.id }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      toastMessages: {
+        success: { title: 'Verification email resent' },
+        error: { title: 'Error resending verification email', body: (error) => error.message }
+      }
+    });
   };
 
   const handleChangeEmail = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $changeEmail.mutateAsync({ newEmail });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Email changed',
-          type: 'success'
-        }
-      });
-      isChangingEmail = false;
-    } catch (e) {
-      changeEmailError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error changing email',
-          body: changeEmailError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $changeEmail.mutateAsync({ newEmail }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        changeEmailError = error;
+      },
+      onSuccess: () => {
+        isChangingEmail = false;
+      },
+      toastMessages: {
+        success: { title: 'Email changed' },
+        error: { title: 'Error changing email', body: (error) => error.message }
+      }
+    });
   };
 </script>
 

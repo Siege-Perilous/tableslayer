@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Input, addToast, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
+  import { Input, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { IllustrationOverlook } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
   let email = $state('');
@@ -14,28 +14,20 @@
 
   const handleSignup = async (e: Event) => {
     e.preventDefault();
-    formIsLoading = true;
-    try {
-      await $signup.mutateAsync({ email, password, confirmPassword });
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Welcome to Table Slayer!',
-          type: 'success'
-        }
-      });
-      goto('/verify-email');
-    } catch (e) {
-      signupError = e as FormMutationError;
-      formIsLoading = false;
-      addToast({
-        data: {
-          title: 'Error signing up',
-          body: signupError.message,
-          type: 'danger'
-        }
-      });
-    }
+    await handleMutation({
+      mutation: () => $signup.mutateAsync({ email, password, confirmPassword }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        signupError = error;
+      },
+      onSuccess: () => {
+        goto('/verify-email');
+      },
+      toastMessages: {
+        success: { title: 'Welcome to Table Slayer!' },
+        error: { title: 'Error signing up', body: (error) => error.message }
+      }
+    });
   };
 </script>
 
