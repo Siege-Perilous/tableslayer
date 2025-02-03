@@ -1,8 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { type Size, T, useLoader } from '@threlte/core';
+  import { T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
   import { MapLayerType } from './types';
+  import type { Size } from '../../types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';

@@ -60,8 +60,8 @@
   },
   "dependencies": {
     "@tabler/icons-svelte": "^3.28.1",
-    "@threlte/core": "8.0.0-next.21",
-    "@threlte/extras": "9.0.0-next.28",
+    "@threlte/core": "8.0.1",
+    "@threlte/extras": "9.0.1",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",

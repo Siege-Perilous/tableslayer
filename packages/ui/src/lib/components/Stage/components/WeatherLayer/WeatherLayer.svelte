@@ -1,9 +1,10 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
   import { type WeatherLayerProps } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import { DEG2RAD } from 'three/src/math/MathUtils';
+  import type { Size } from '../../types';
 
   interface Props {
     props: WeatherLayerProps;

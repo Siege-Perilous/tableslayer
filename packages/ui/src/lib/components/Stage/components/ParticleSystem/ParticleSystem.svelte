@@ -25,7 +25,8 @@
 
     // Initialize particles
     for (let i = 0; i < props.count; i++) {
-      const radius = 0.03 + Math.random();
+      const radius =
+        Math.random() * (props.spawnArea.maxRadius - props.spawnArea.minRadius) + props.spawnArea.minRadius;
       const angle = Math.random() * 2 * Math.PI;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
@@ -99,10 +100,9 @@
 
       // Random attributes (same for all vertices of quad)
       const seed = Math.random();
-      const ageOffset = Math.random() * props.lifetime;
+      const ageOffset = (props.lifetime * (i + 1)) / props.count;
 
       for (let v = 0; v < 4; v++) {
-        seeds[i * 4 + v] = seed;
         ageOffsets[i * 4 + v] = ageOffset;
       }
     }
@@ -110,7 +110,6 @@
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
-    geometry.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
 
     return geometry;

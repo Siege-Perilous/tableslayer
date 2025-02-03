@@ -391,13 +391,13 @@
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.x}
             label="Amplitude X"
             min={0}
-            max={0.1}
+            max={0.05}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.amplitude.y}
             label="Amplitude Y"
             min={0}
-            max={0.1}
+            max={0.05}
           />
           <Slider
             bind:value={stageProps.weather.particles.force.sinusoidal.frequency.x}
@@ -432,13 +432,13 @@
       </Folder>
 
       <Folder title="Size" expanded={false}>
-        <Slider bind:value={stageProps.weather.particles.size.min} label="Min Size" min={0.001} max={0.1} />
-        <Slider bind:value={stageProps.weather.particles.size.max} label="Max Size" min={0.001} max={0.1} />
+        <Slider bind:value={stageProps.weather.particles.size.min} label="Min" min={0.001} max={0.1} />
+        <Slider bind:value={stageProps.weather.particles.size.max} label="Max" min={0.001} max={0.1} />
       </Folder>
 
-      <Folder title="Spawn Area" expanded={false}>
-        <Slider bind:value={stageProps.weather.particles.spawnArea.width} label="Width" min={1} step={1} />
-        <Slider bind:value={stageProps.weather.particles.spawnArea.height} label="Height" min={1} step={1} />
+      <Folder title="Spawn Radius" expanded={false}>
+        <Slider bind:value={stageProps.weather.particles.spawnArea.minRadius} label="Min" min={0} max={1} />
+        <Slider bind:value={stageProps.weather.particles.spawnArea.maxRadius} label="Max" min={0} max={1} />
       </Folder>
     </Folder>
   </Folder>

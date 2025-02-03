@@ -106,7 +106,7 @@ export const StageDefaultProps: StageProps = {
       fadeInTime: 1.0,
       fadeOutTime: 1.0,
       lifetime: 5,
-      spawnArea: { width: 1920, height: 1080 },
+      spawnArea: { minRadius: 0.03, maxRadius: 0.1 },
       initialVelocity: { x: 0, y: 0, z: 0 },
       force: {
         linear: { x: 0, y: 0, z: 0 },

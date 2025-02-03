@@ -1,8 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { getContext } from 'svelte';
-  import { T, type Size } from '@threlte/core';
+  import { T } from '@threlte/core';
   import { ToolType, type FogOfWarLayerProps } from './types';
+  import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
   import InputManager from '../InputManager/InputManager.svelte';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';

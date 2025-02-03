@@ -1,7 +1,8 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { onDestroy, onMount } from 'svelte';
-  import { type Size, useThrelte } from '@threlte/core';
+  import { useThrelte } from '@threlte/core';
+  import type { Size } from '../../types';
 
   interface Props {
     isActive: boolean;

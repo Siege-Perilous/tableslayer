@@ -66,7 +66,7 @@ export interface ParticleSystemProps {
     max: number;
   };
   spawnArea: {
-    width: number;
-    height: number;
+    minRadius: number;
+    maxRadius: number;
   };
 }
