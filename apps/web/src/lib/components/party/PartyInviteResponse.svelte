@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Icon } from '@tableslayer/ui';
   import { IconX, IconCheck } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectPartyInvite, SeletUser } from '$lib/db/schema';
+  import type { SelectParty, SelectPartyInvite, SelectUser } from '$lib/db/app/schema';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
@@ -11,7 +11,7 @@
     invite: {
       invite: SelectPartyInvite;
       party: SelectParty;
-      invitedByUser: SeletUser | undefined;
+      invitedByUser: SelectUser | undefined;
     };
   } = $props();
   let formIsLoading = $state(false);

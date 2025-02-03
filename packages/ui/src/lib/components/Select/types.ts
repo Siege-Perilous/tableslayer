@@ -5,4 +5,5 @@ export type SelectProps = CreateSelectProps & {
   options: Record<string, ListboxOption[]> | ListboxOption[];
   variant?: 'default' | 'transparent';
   selectedPrefix?: string;
+  value: string;
 };
