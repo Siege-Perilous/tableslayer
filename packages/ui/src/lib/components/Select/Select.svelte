@@ -80,7 +80,9 @@
       selected = [value];
       closeMenu();
     }
-    onSelectedChange(selected);
+    if (onSelectedChange) {
+      onSelectedChange(selected);
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
