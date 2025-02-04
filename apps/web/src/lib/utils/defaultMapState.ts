@@ -5,6 +5,7 @@ import {
   PingEditMode,
   SceneRotation,
   ToolType,
+  WeatherType,
   type StageProps
 } from '@tableslayer/ui';
 
@@ -92,15 +93,11 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#AD0000',
-    angle: 20,
-    opacity: 0.9,
-    intensity: 0.5,
-    speed: 10.0,
-    scale: {
-      x: 5.0,
-      y: 100.0
-    },
-    weatherType: 0
+    color: '#ffffff',
+    fov: 50,
+    intensity: 1,
+    opacity: 1,
+    type: WeatherType.Rain,
+    custom: null
   }
 };

@@ -9,7 +9,8 @@ import {
   PingEditMode,
   SceneRotation,
   type StageProps,
-  ToolType
+  ToolType,
+  WeatherType
 } from '@tableslayer/ui';
 
 // Map activeScene properties to StageProps
@@ -113,16 +114,12 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      color: '#AD0000',
-      angle: 20,
-      opacity: 0,
-      intensity: 0.5,
-      speed: 10.0,
-      scale: {
-        x: 5.0,
-        y: 100.0
-      },
-      weatherType: 0
+      color: '#ffffff',
+      fov: 50,
+      intensity: 1,
+      opacity: 1,
+      type: WeatherType.Rain,
+      custom: null
     }
   };
 };

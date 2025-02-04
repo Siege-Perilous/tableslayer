@@ -100,7 +100,6 @@
       indices[indexBaseIdx + 5] = vertexBaseIdx + 2;
 
       // Random attributes (same for all vertices of quad)
-      const seed = Math.random();
       const ageOffset = (props.lifetime * (i + 1)) / props.count;
 
       for (let v = 0; v < 4; v++) {

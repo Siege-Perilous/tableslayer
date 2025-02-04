@@ -150,7 +150,7 @@
     stageProps.ping.locations = [];
   }
 
-  async function onFogUpdate(blob: Promise<Blob>) {
+  async function onFogUpdate() {
     // No-op
   }
 

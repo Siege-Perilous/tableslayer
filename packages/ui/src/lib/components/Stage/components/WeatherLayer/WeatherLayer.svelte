@@ -83,7 +83,7 @@
   });
 
   // Custom render task
-  useTask((state) => {
+  useTask(() => {
     if (!scene || !rtCamera) return;
 
     scene.visible = true;
