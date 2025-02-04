@@ -13,10 +13,9 @@ export type SelectProps = {
   selectedPrefix?: Snippet;
   selected: string[];
   options: SelectOptions;
-  onSelectedChange: (selected: string[]) => void;
+  onSelectedChange?: (selected: string[]) => void;
   positioning?: {
     placement?: Placement;
     offset?: number;
   };
-  restProps?: Record<string, unknown>;
 } & HTMLButtonAttributes;

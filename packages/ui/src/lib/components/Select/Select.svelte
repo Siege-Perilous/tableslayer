@@ -80,7 +80,9 @@
       selected = [value];
       closeMenu();
     }
-    onSelectedChange(selected);
+    if (onSelectedChange) {
+      onSelectedChange(selected);
+    }
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -138,7 +140,7 @@
 
 <svelte:window onclick={handleGlobalClick} />
 
-<div class={`select select--${variant}`} {...restProps}>
+<div class={`select select--${variant}`}>
   <button
     bind:this={button}
     class="select__button"
@@ -147,6 +149,7 @@
     aria-haspopup="listbox"
     aria-expanded={isOpen}
     aria-disabled={disabled}
+    {...restProps}
   >
     <div class="select__selected">
       {#if selected.length > 0}

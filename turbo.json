@@ -66,6 +66,10 @@
       "dependsOn": ["^tsc"],
       "outputs": []
     },
+    "check": {
+      "dependsOn": ["^check"],
+      "outputs": []
+    },
     "lint": {},
     "test": {
       "dependsOn": ["^build"]
