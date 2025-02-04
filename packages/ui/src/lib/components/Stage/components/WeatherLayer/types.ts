@@ -1,12 +1,17 @@
 import type { ParticleSystemProps } from '../ParticleSystem/types';
 
 export enum WeatherType {
-  Rain = 0
+  None = 0,
+  Rain = 1,
+  Snow = 2,
+  Custom = 99
 }
 
 export interface WeatherLayerProps {
-  camera: {
-    fov: number;
-  };
-  particles: ParticleSystemProps;
+  color: string;
+  custom: ParticleSystemProps | null;
+  fov: number;
+  intensity: number;
+  opacity: number;
+  type: WeatherType;
 }

@@ -2,9 +2,9 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  ParticleType,
   PingEditMode,
   ToolType,
+  WeatherType,
   type StageProps
 } from '@tableslayer/ui';
 
@@ -92,30 +92,65 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    camera: {
-      fov: 100
-    },
-    particles: {
-      count: 1000,
-      type: ParticleType.Rain,
-      color: '#ffffff',
-      opacity: 1,
-      fadeInTime: 1.0,
-      fadeOutTime: 1.0,
-      lifetime: 5,
-      spawnArea: { minRadius: 0.03, maxRadius: 0.1 },
-      initialVelocity: { x: 0, y: 0, z: 0 },
+    color: '#ffffff',
+    fov: 100,
+    intensity: 1,
+    opacity: 1,
+    type: WeatherType.Rain,
+    custom: {
+      count: 1740,
+      type: 2,
+      color: '#42d8d3',
+      opacity: 0.35,
+      fadeInTime: 0.36999999999999994,
+      fadeOutTime: 0.36999999999999994,
+      lifetime: 1.5869565217391304,
+      spawnArea: {
+        minRadius: 0.05859375,
+        maxRadius: 0.6020720108695652
+      },
+      initialVelocity: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
       force: {
-        linear: { x: 0, y: 0, z: 1 },
-        exponential: { x: 0, y: 0, z: 0 },
+        linear: {
+          x: 0,
+          y: 0,
+          z: 1
+        },
+        exponential: {
+          x: 0,
+          y: 0,
+          z: 0
+        },
         sinusoidal: {
-          amplitude: { x: 0, y: 0, z: 0 },
-          frequency: { x: 5, y: 5, z: 5 }
+          amplitude: {
+            x: 0,
+            y: 0,
+            z: 0
+          },
+          frequency: {
+            x: 5,
+            y: 5,
+            z: 5
+          }
         }
       },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1 },
-      size: { min: 0.01, max: 0.01 }
+      rotation: {
+        x: 0,
+        y: 0,
+        z: 90
+      },
+      scale: {
+        x: 1,
+        y: 2.717391304347826
+      },
+      size: {
+        min: 0.007456521739130435,
+        max: 0.018217391304347828
+      }
     }
   }
 };

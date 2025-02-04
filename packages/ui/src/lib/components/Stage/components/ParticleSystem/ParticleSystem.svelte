@@ -18,11 +18,12 @@
   const geometry = $derived.by(() => {
     const geometry = new THREE.BufferGeometry();
 
+    console.log('the count is', props.count);
+
     // Initialize particle attributes - 4 vertices per quad
     const positions = new Float32Array(props.count * 12); // 4 vertices * 3 coords
     const uvs = new Float32Array(props.count * 8); // 4 vertices * 2 coords
     const indices = new Uint32Array(props.count * 6); // 2 triangles * 3 vertices
-    const seeds = new Float32Array(props.count * 4); // 4 vertices
     const ageOffsets = new Float32Array(props.count * 4); // 4 vertices
 
     // Initialize particles
