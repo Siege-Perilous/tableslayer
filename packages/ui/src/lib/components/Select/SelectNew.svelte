@@ -1,29 +1,11 @@
 <script lang="ts">
-  import { computePosition, offset, flip, shift, platform, type Placement } from '@floating-ui/dom';
+  import { computePosition, offset, flip, shift, platform } from '@floating-ui/dom';
   import type { Snippet } from 'svelte';
   import { onDestroy, tick } from 'svelte';
   import { IconSelector } from '@tabler/icons-svelte';
   import { Icon } from '../Icon';
   import { Text } from '../Text';
-
-  type Option = { label: string | Snippet; value: string; [key: string]: unknown };
-  type GroupedOptions = Record<string, Option[]>;
-  type Options = Option[] | GroupedOptions;
-
-  type Props = {
-    disabled?: boolean;
-    multiple?: boolean;
-    variant?: 'default' | 'transparent';
-    selectedPrefix?: Snippet;
-    selected: string[];
-    options: Options;
-    onSelectedChange: (selected: string[]) => void;
-    positioning?: {
-      placement?: Placement;
-      offset?: number;
-    };
-    restProps?: Record<string, unknown>;
-  };
+  import type { SelectProps, SelectOption } from './types';
 
   let {
     disabled = false,
@@ -35,7 +17,7 @@
     onSelectedChange,
     positioning = { placement: 'bottom-start', offset: 8 },
     ...restProps
-  }: Props = $props();
+  }: SelectProps = $props();
 
   let button: HTMLElement | null = null;
   let menu = $state<HTMLElement | null>(null);
@@ -128,7 +110,7 @@
     }
   }
 
-  function getFlatOptions(): Option[] {
+  function getFlatOptions(): SelectOption[] {
     return Array.isArray(options) ? options : Object.values(options).flat();
   }
 
@@ -148,7 +130,7 @@
     // Cleanup logic if needed
   });
 
-  function getOptionIndex(option: Option): number {
+  function getOptionIndex(option: SelectOption): number {
     const flat = getFlatOptions();
     return flat.findIndex((o) => o.value === option.value);
   }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SelectNew } from '@tableslayer/ui';
+  import { Select } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   const optionsWithGroups = {
     'Group 1': [
@@ -18,7 +18,7 @@
 {/snippet}
 
 <Example title="Avatar" propsName="Avatar">
-  <SelectNew
+  <Select
     options={[
       { label: labelOne, value: 'option1' },
       { label: 'Option 2', value: 'option2' },
@@ -27,5 +27,5 @@
     ]}
     selected={[]}
   />
-  <SelectNew options={optionsWithGroups} multiple={true} selected={['option3']} />
+  <Select options={optionsWithGroups} multiple={true} selected={['option3']} />
 </Example>

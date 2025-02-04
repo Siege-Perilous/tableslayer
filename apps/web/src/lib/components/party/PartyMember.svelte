@@ -32,9 +32,8 @@
 
   let { member, user, isPartyAdmin }: PartyMemberProps = $props();
 
-  let role = $state<PartyRole>(member.role);
+  let selectedRole = $state<PartyRole>(member.role);
   const roleOptions: RoleOption[] = VALID_PARTY_ROLES.map((role) => ({ value: role, label: role }));
-  let defaultRole = $derived(roleOptions.find((option) => option.value === role));
 
   const isSelf = member.id === user.id;
 
@@ -61,17 +60,18 @@
       }
     });
   };
-  const handleSelectedRole = async (selected: RoleOption) => {
-    role = selected.value;
+  const handleSelectedRole = async (selected: PartyRole) => {
+    selectedRole = selected;
     console.log('selected', selected);
 
     await handleMutation({
-      mutation: () => $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role }),
+      mutation: () =>
+        $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role: selectedRole }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: {
           title: 'Member role updated',
-          body: `${member.name || member.email}'s role has been updated to ${role}`
+          body: `${member.name || member.email}'s role has been updated to ${selectedRole}`
         },
         error: { title: 'Error updating member role', body: (err) => err.message }
       }
@@ -80,6 +80,9 @@
     console.log('selected', selected);
     return selected;
   };
+  $effect(() => {
+    selectedRole = member.role;
+  });
 </script>
 
 {#snippet partyMember()}
@@ -95,6 +98,9 @@
       <Icon Icon={IconCrown} size="1.5rem" color="var(--fgPrimary)" />
     {/if}
   </div>
+{/snippet}
+{#snippet selectionPrefix()}
+  Role:
 {/snippet}
 
 {#if isPartyAdmin || isSelf}
@@ -112,9 +118,9 @@
                 {...inputProps}
                 options={roleOptions}
                 name="role"
-                defaultSelected={defaultRole}
-                selectedPrefix="Role: "
-                onSelectedChange={(selected) => handleSelectedRole(selected.next as RoleOption)}
+                selected={[selectedRole as string]}
+                selectedPrefix={selectionPrefix}
+                onSelectedChange={(selected) => handleSelectedRole(selected[0] as PartyRole)}
               />
             {/snippet}
           </FormControl>
