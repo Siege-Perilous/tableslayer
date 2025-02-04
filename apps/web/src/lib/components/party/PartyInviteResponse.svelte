@@ -10,7 +10,7 @@
   }: {
     invite: {
       invite: SelectPartyInvite;
-      party: SelectParty;
+      party: SelectParty | null;
       invitedByUser: SelectUser | undefined;
     };
   } = $props();
@@ -25,7 +25,7 @@
       mutation: () => $respondToPartyInvite.mutateAsync({ code, accepted }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        goto(accepted ? `/${invite.party.slug}` : '/profile');
+        goto(accepted ? `/${invite.party?.slug}` : '/profile');
       },
       toastMessages: {
         success: { title: 'Success', body: `You have ${accepted ? 'accepted' : 'declined'} the invite` },

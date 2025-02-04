@@ -106,12 +106,7 @@ export const getPartyInvitesForCode = async (code: string) => {
     const invitesWithPartyInfo = await db
       .select({
         invite: partyInviteTable,
-        party: {
-          id: partyTable.id,
-          name: partyTable.name,
-          slug: partyTable.slug,
-          avatarFileId: partyTable.avatarFileId
-        }
+        party: partyTable
       })
       .from(partyInviteTable)
       .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
