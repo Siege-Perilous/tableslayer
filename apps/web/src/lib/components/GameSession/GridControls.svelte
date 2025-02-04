@@ -18,7 +18,6 @@
     IconButton
   } from '@tableslayer/ui';
   import {
-    type TvResolution,
     selectTvResolutionOptions,
     tvResolutionOptions,
     getResolutionOption,
@@ -56,9 +55,9 @@
   let gridHex = $state(to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity));
   let gridTypeLabel = $derived(stageProps.grid.gridType === 0 ? 'Square size' : 'Hex size');
   let tvDiagnalSize = $state(getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y));
-  let defaultSelectedResoltion = $derived(
-    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)
-  );
+  let selected = $state([
+    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)?.value || ''
+  ]);
 
   // Turn the local concept of TV size into the stageProps format
   const handleTvSizeChange = (diagonalSize: number) => {
@@ -72,8 +71,8 @@
   };
 
   // We provide typical TV sizes as options, but save them as x and y values
-  const handleSelectedResolution = (selected: TvResolution) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
+  const handleSelectedResolution = (newSelected: string) => {
+    const selectedResolution = tvResolutionOptions.find((option) => option.value === newSelected)!;
     stageProps.display.resolution = {
       x: selectedResolution.width,
       y: selectedResolution.height
@@ -117,6 +116,7 @@
   $effect(() => {
     gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
     tvDiagnalSize = getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y);
+    selected = [getResolutionOption(stageProps.display.resolution.x, stageProps.display.resolution.y)?.value || ''];
 
     if (stageProps.display.padding.x !== localPadding) {
       localPadding = stageProps.display.padding.x;
@@ -143,10 +143,11 @@
   <FormControl label="Resolution" name="displayResolutionX" {errors}>
     {#snippet input({ inputProps })}
       <Select
-        ids={{ trigger: inputProps.id as string }}
-        defaultSelected={defaultSelectedResoltion}
-        onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
+        {selected}
+        id={inputProps.id as string}
+        onSelectedChange={(selected) => handleSelectedResolution(selected[0])}
         options={selectTvResolutionOptions}
+        {...inputProps}
       />
     {/snippet}
   </FormControl>

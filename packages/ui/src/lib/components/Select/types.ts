@@ -1,8 +1,22 @@
-import type { CreateSelectProps } from '@melt-ui/svelte';
-import type { ListboxOption } from '@melt-ui/svelte/dist/builders/listbox/types';
+import type { Placement } from '@floating-ui/dom';
+import type { Snippet } from 'svelte';
+import type { HTMLButtonAttributes } from 'svelte/elements';
 
-export type SelectProps = CreateSelectProps & {
-  options: Record<string, ListboxOption[]> | ListboxOption[];
+export type SelectOption = { label: string | Snippet; value: string; [key: string]: unknown };
+export type SelectGroupedOptions = Record<string, SelectOption[]>;
+export type SelectOptions = SelectOption[] | SelectGroupedOptions;
+
+export type SelectProps = {
+  disabled?: boolean;
+  multiple?: boolean;
   variant?: 'default' | 'transparent';
-  selectedPrefix?: string;
-};
+  selectedPrefix?: Snippet;
+  selected: string[];
+  options: SelectOptions;
+  onSelectedChange: (selected: string[]) => void;
+  positioning?: {
+    placement?: Placement;
+    offset?: number;
+  };
+  restProps?: Record<string, unknown>;
+} & HTMLButtonAttributes;
