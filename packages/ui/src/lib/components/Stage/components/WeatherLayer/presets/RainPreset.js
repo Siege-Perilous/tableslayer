@@ -49,7 +49,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.02,
-    max: 0.03
+    min: 0.004,
+    max: 0.005
   }
 };

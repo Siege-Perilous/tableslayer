@@ -1,5 +1,5 @@
 import snow from './particles/images/circle_05.png';
-import rain from './particles/images/trace_01.png';
+import rain from './particles/images/trace_07.png';
 
 export enum ParticleType {
   Snow = 1,

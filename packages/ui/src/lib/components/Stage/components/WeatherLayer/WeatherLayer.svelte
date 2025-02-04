@@ -23,11 +23,13 @@
   let scene: THREE.Scene | undefined = $state(undefined);
   let rtCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
 
-  const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
+  const width = $derived(mapSize?.width ?? 1);
+  const height = $derived(mapSize?.height ?? 1);
+  const aspectRatio = $derived(width / height);
 
   // Create render target
   const renderTarget = $derived(
-    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
+    new THREE.WebGLRenderTarget(width, height, {
       format: THREE.RGBAFormat,
       stencilBuffer: false
     })
@@ -64,7 +66,7 @@
 
     // Override some of the preset values with the UI selections
     preset.opacity = props.opacity;
-    preset.count = Math.floor(props.intensity * 1000);
+    preset.count = Math.floor(props.intensity * 10000);
     preset.color = props.color;
 
     return preset;

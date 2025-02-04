@@ -352,7 +352,6 @@
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
     <Color bind:value={stageProps.weather.color} label="Color" />
-    <Slider bind:value={stageProps.weather.fov} label="FOV" min={1} max={180} step={1} />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
 

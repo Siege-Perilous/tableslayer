@@ -1,11 +1,11 @@
 export default {
-  count: 1740,
+  count: 1000,
   type: 1,
   color: '#42d8d3',
   opacity: 0.76,
-  fadeInTime: 1,
-  fadeOutTime: 5.6499999999999995,
-  lifetime: 6.573029891304348,
+  fadeInTime: 4,
+  fadeOutTime: 3,
+  lifetime: 7,
   spawnArea: {
     minRadius: 0.1409646739130435,
     maxRadius: 0.6020720108695652
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 1
+      z: 0.1
     },
     exponential: {
       x: 0,
@@ -28,8 +28,8 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.06,
-        y: 0.03,
+        x: 0.02,
+        y: 0.01,
         z: 0
       },
       frequency: {
@@ -49,7 +49,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.012803328804347827,
-    max: 0.018217391304347828
+    min: 0.005,
+    max: 0.01
   }
 };
