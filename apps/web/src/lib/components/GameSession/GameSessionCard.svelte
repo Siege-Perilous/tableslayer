@@ -19,7 +19,7 @@
   } from '@tableslayer/ui';
   import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
-  import type { SelectGameSession, SelectParty } from '$lib/db';
+  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
 

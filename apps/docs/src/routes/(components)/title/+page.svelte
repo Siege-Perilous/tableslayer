@@ -5,11 +5,11 @@
 
 <Example title="Loader" propsName="Title">
   <div class="flex">
-    <Title size="xs">Extra small</Title>
-    <Title size="sm">Small</Title>
-    <Title size="md">Medium</Title>
-    <Title size="lg">Large</Title>
-    <Title size="xl">Extra large</Title>
+    <Title size="xs" as="h3">Extra small</Title>
+    <Title size="sm" as="h3">Small</Title>
+    <Title size="md" as="h3">Medium</Title>
+    <Title size="lg" as="h3">Large</Title>
+    <Title size="xl" as="h3">Extra large</Title>
   </div>
 </Example>
 

@@ -3,6 +3,6 @@
   import { Example } from '$lib/components';
 </script>
 
-<Example title="Loader">
+<Example title="Loader" propsName="LoaderProps">
   <Loader />
 </Example>
