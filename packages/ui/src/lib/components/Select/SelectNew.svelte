@@ -138,7 +138,7 @@
 
 <svelte:window onclick={handleGlobalClick} />
 
-<div class={`select select--${variant}`}>
+<div class={`select select--${variant}`} {...restProps}>
   <button
     bind:this={button}
     class="select__button"
@@ -147,9 +147,8 @@
     aria-haspopup="listbox"
     aria-expanded={isOpen}
     aria-disabled={disabled}
-    {...restProps}
   >
-    <div class="select__selected">
+    <span class="select__selected">
       {#if selected.length > 0}
         {#if selectedPrefix}
           {@render selectedPrefix()}
@@ -164,7 +163,7 @@
       {:else}
         <Text color="var(--fgMuted)">Select an option</Text>
       {/if}
-    </div>
+    </span>
     <Icon Icon={IconSelector} color="var(--fgMuted)" class="select__icon" />
   </button>
 
@@ -254,10 +253,9 @@
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);
-    padding: 0 0.75rem;
+    padding: 0 1.25rem;
     background: var(--inputBg);
     cursor: pointer;
-    gap: 0.5rem;
     &:focus-visible {
       outline: none;
       border-color: var(--fg);
@@ -271,7 +269,7 @@
     border: var(--borderThin);
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-1);
-    min-width: 100%;
+    width: 100%;
     z-index: 1000;
     padding: 0.25rem;
     list-style: none;

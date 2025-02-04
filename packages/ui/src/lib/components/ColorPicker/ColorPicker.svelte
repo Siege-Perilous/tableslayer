@@ -439,13 +439,11 @@
   const displayHue = () => (isNaN(color.hue) ? lastValidHue : color.hue);
 
   // @ts-expect-error Can't figure out how to type this to FormatOption
-  const handleFormatChange = ({ next }) => {
-    selectedFormat = next.value;
+  const handleFormatChange = (selected) => {
+    selectedFormat = selected[0];
+    console.log('selected', selected);
     updateColorInputs();
-    return next;
   };
-
-  type FormatOption = { value: ColorPickerFormats; label: string };
 
   const formatOptions = [
     { value: 'hex', label: 'HEX' },
@@ -512,12 +510,7 @@
 
   {#if showInputs}
     <div class="colorPicker__inputs colorPicker__inputs--{selectedFormat}">
-      <Select
-        value={selectedFormat}
-        defaultSelected={formatOptions[0] as FormatOption}
-        options={formatOptions}
-        onSelectedChange={handleFormatChange}
-      />
+      <Select selected={[formatOptions[0].value]} options={formatOptions} onSelectedChange={handleFormatChange} />
 
       <!-- Inputs based on selected format -->
       {#if selectedFormat === 'hex'}
