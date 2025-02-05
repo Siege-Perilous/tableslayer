@@ -40,6 +40,9 @@
       border-color: var(--inputBorderColor);
     }
   }
+  .input[type='text'] {
+    cursor: text;
+  }
   [data-fs-error],
   [aria-invalid='true'] {
     border-color: var(--fgDanger);

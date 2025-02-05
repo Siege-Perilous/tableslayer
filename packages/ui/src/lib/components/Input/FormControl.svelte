@@ -10,7 +10,18 @@
     /**
      * The input component that will be rendered
      */
-    input: Snippet<[{ inputProps: Record<string, unknown> }]>;
+    input: Snippet<
+      [
+        {
+          inputProps: {
+            id: string;
+            name: string;
+            'aria-describedby'?: string;
+            'aria-invalid'?: boolean;
+          };
+        }
+      ]
+    >;
     /**
      * The label for the input
      */

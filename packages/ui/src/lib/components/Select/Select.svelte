@@ -156,11 +156,13 @@
         {#if selectedPrefix}
           {@render selectedPrefix()}
         {/if}
-        {#each selectedOptions as label}
+        {#each selectedOptions as label, i}
           {#if isSnippet(label)}
-            {@render label()}
+            <div>{@render label()}</div>
           {:else}
-            {label}
+            <div>{label}</div>
+          {/if}
+          {#if i < selectedOptions.length - 1}<span>,</span>
           {/if}
         {/each}
       {:else}
@@ -251,12 +253,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 2rem;
+    min-height: 2rem;
     font-family: var(--font-sans);
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);
-    padding: 0 0.75rem;
+    padding: 0.125rem 0.75rem;
     background: var(--inputBg);
     cursor: pointer;
     gap: 0.5rem;
@@ -264,6 +266,11 @@
       outline: none;
       border-color: var(--fg);
       background: var(--inputFocusBg);
+    }
+    > div {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
@@ -286,6 +293,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    font-size: 0.875rem;
     gap: 0.5rem;
     border: solid 2px transparent;
     gap: 1rem;
@@ -324,5 +332,11 @@
   .select__space {
     width: 0.5rem;
     height: 0.5rem;
+  }
+  .select__selected {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
   }
 </style>

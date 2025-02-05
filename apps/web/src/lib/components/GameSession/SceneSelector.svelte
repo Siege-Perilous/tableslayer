@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, IconButton, FileInput, Icon, Spacer, ContextMenu, FormControl, Input } from '@tableslayer/ui';
-  import { IconPlus, IconScreenShare, IconCheck } from '@tabler/icons-svelte';
+  import { IconPlus, IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
@@ -212,14 +212,19 @@
             {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
               <div class="scene__rename">
                 <form onsubmit={() => handleRenameScene(scene.id)}>
-                  <FormControl label="Name" name="name">
-                    {#snippet input({ inputProps })}
-                      <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
-                    {/snippet}
-                  </FormControl>
-                  <IconButton type="submit">
-                    <Icon Icon={IconCheck} />
-                  </IconButton>
+                  <div class="scene__renameInput">
+                    <FormControl label="Name" name="name">
+                      {#snippet input({ inputProps })}
+                        <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
+                      {/snippet}
+                    </FormControl>
+                    <IconButton type="submit">
+                      <Icon Icon={IconCheck} />
+                    </IconButton>
+                    <IconButton>
+                      <Icon Icon={IconX} />
+                    </IconButton>
+                  </div>
                 </form>
               </div>
             {/if}
@@ -230,7 +235,7 @@
                   <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
                 </div>
               {/if}
-              <div class="scene__text">{scene.order} - {scene.name}</div>
+              <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
             </a>
           </div>
         {/snippet}
@@ -289,14 +294,21 @@
   }
   .scene__rename {
     gap: 1rem;
-    background: var(--popoverBg);
-    padding: 1rem;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    padding: 2rem;
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 3;
+  }
+  .scene__renameInput {
+    display: flex;
+    align-items: end;
+    gap: 0.5rem;
   }
   .scene--isSelected {
     border-width: 2px;
