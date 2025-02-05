@@ -11,7 +11,7 @@ export function apiFactory<BodyType>(
     validationErrorMessage = 'Validation errors occurred.',
     unexpectedErrorMessage = 'An unexpected error occurred.'
   }: {
-    validationSchema: z.ZodType<BodyType>; // Zod schema is required to validate and type the body
+    validationSchema?: z.ZodType<BodyType>; // Zod schema is required to validate and type the body
     unauthorizedMessage?: string; // Custom unauthorized error message
     validationErrorMessage?: string; // Custom validation error message
     unexpectedErrorMessage?: string; // Custom unexpected error message
@@ -19,8 +19,13 @@ export function apiFactory<BodyType>(
 ): RequestHandler {
   return async (event) => {
     try {
-      // Validate the body using the provided schema
-      const body: BodyType = validationSchema.parse(await event.request.json());
+      let body: BodyType;
+
+      if (validationSchema) {
+        body = validationSchema.parse(await event.request.json());
+      } else {
+        body = (await event.request.json()) as BodyType;
+      }
 
       // Pass the validated body to the handler
       const result = await handler({ ...event, body });

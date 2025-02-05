@@ -25,7 +25,9 @@
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
-        "BODY_SIZE_LIMIT"
+        "BODY_SIZE_LIMIT",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_KEY"
       ],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
@@ -48,7 +50,9 @@
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
-        "BODY_SIZE_LIMIT"
+        "BODY_SIZE_LIMIT",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_KEY"
       ],
       "persistent": true,
       "cache": false

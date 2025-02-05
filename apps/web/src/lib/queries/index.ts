@@ -6,4 +6,5 @@ export * from './parties';
 export * from './partyInvites';
 export * from './partyMembers';
 export * from './scenes';
+export * from './stripe';
 export * from './users';
