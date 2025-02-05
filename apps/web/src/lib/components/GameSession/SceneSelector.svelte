@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, IconButton, FileInput, Icon, Spacer, ContextMenu, FormControl, Input } from '@tableslayer/ui';
-  import { IconPlus, IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
+  import { IconButton, FileInput, Icon, ContextMenu, FormControl, Input } from '@tableslayer/ui';
+  import { IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
@@ -155,11 +155,16 @@
 
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
-    console.log('changing map image', sceneId);
     contextSceneId = sceneId;
     openFileDialog();
   };
-  $inspect(renamingScenes);
+
+  const handleFileChange = (event: Event) => {
+    event.preventDefault();
+    if (file && file.length) {
+      handleCreateScene(scenes.length + 1);
+    }
+  };
 </script>
 
 <div class="scenes">
@@ -167,17 +172,17 @@
     <div class={sceneInputClasses}>
       <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
         {#snippet input({ inputProps })}
-          <FileInput variant="dropzone" {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
+          <FileInput
+            variant="dropzone"
+            {...inputProps}
+            type="file"
+            accept="image/png, image/jpeg"
+            bind:files={file}
+            onchange={handleFileChange}
+          />
         {/snippet}
       </FormControl>
     </div>
-    <Spacer />
-    <Button onclick={() => handleCreateScene(scenes.length + 1)} variant="ghost" class="scene__inputBtn">
-      {#snippet start()}
-        <Icon Icon={IconPlus} />
-      {/snippet}
-      Add new scene
-    </Button>
   </div>
   <div class="scene__list">
     {#each scenes as scene}
@@ -218,11 +223,11 @@
                         <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
                       {/snippet}
                     </FormControl>
-                    <IconButton type="submit">
+                    <IconButton>
                       <Icon Icon={IconCheck} />
                     </IconButton>
                     <IconButton>
-                      <Icon Icon={IconX} />
+                      <Icon Icon={IconX} onclick={() => (renamingScenes[scene.id] = null)} />
                     </IconButton>
                   </div>
                 </form>
