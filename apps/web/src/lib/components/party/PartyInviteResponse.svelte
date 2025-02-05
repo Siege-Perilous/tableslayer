@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Icon } from '@tableslayer/ui';
   import { IconX, IconCheck } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectPartyInvite, SeletUser } from '$lib/db/schema';
+  import type { SelectParty, SelectPartyInvite, SelectUser } from '$lib/db/app/schema';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
@@ -10,8 +10,8 @@
   }: {
     invite: {
       invite: SelectPartyInvite;
-      party: SelectParty;
-      invitedByUser: SeletUser | undefined;
+      party: SelectParty | null;
+      invitedByUser: SelectUser | undefined;
     };
   } = $props();
   let formIsLoading = $state(false);
@@ -25,7 +25,7 @@
       mutation: () => $respondToPartyInvite.mutateAsync({ code, accepted }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        goto(accepted ? `/${invite.party.slug}` : '/profile');
+        goto(accepted ? `/${invite.party?.slug}` : '/profile');
       },
       toastMessages: {
         success: { title: 'Success', body: `You have ${accepted ? 'accepted' : 'declined'} the invite` },

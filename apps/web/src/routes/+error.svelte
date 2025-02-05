@@ -9,7 +9,7 @@
     {page.status}
   </Title>
   <Text color="var(--fgMuted)" size="2rem">
-    {page.error.message}
+    {page.error ? page.error.message : 'Something went wrong'}
   </Text>
 </div>
 
