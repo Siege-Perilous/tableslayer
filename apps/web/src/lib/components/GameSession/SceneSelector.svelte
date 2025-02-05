@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, FileInput, Icon, Spacer, ContextMenu, FormControl } from '@tableslayer/ui';
-  import { IconPlus, IconScreenShare } from '@tabler/icons-svelte';
+  import { IconButton, FileInput, Icon, ContextMenu, FormControl, Input } from '@tableslayer/ui';
+  import { IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
   import type { SelectScene } from '$lib/db/gs/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
@@ -11,9 +11,11 @@
     useUpdateGameSessionSettingsMutation,
     useUploadFileMutation,
     useCreateSceneMutation,
-    useDeleteSceneMutation
+    useDeleteSceneMutation,
+    useUpdateSceneMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     scenes,
@@ -33,11 +35,13 @@
   let formIsLoading = $state(false);
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
+  let renamingScenes = $state<Record<string, string | null>>({});
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
   const updateSettings = useUpdateGameSessionSettingsMutation();
   const deleteScene = useDeleteSceneMutation();
+  const updateScene = useUpdateSceneMutation();
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -123,13 +127,43 @@
     });
   };
 
+  const handleRenameScene = async (sceneId: string) => {
+    const name = renamingScenes[sceneId];
+    if (!name) return;
+
+    await handleMutation({
+      mutation: () =>
+        $updateScene.mutateAsync({
+          dbName: gameSession.dbName,
+          partyId: party.id,
+          sceneId,
+          sceneData: { name }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        renamingScenes[sceneId] = null;
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Scene renamed' },
+        error: { title: 'Error renaming scene', body: (error) => error.message || 'Error renaming scene' }
+      }
+    });
+  };
+
   let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
 
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
-    console.log('changing map image', sceneId);
     contextSceneId = sceneId;
     openFileDialog();
+  };
+
+  const handleFileChange = (event: Event) => {
+    event.preventDefault();
+    if (file && file.length) {
+      handleCreateScene(scenes.length + 1);
+    }
   };
 </script>
 
@@ -138,17 +172,17 @@
     <div class={sceneInputClasses}>
       <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
         {#snippet input({ inputProps })}
-          <FileInput variant="dropzone" {...inputProps} type="file" accept="image/png, image/jpeg" bind:files={file} />
+          <FileInput
+            variant="dropzone"
+            {...inputProps}
+            type="file"
+            accept="image/png, image/jpeg"
+            bind:files={file}
+            onchange={handleFileChange}
+          />
         {/snippet}
       </FormControl>
     </div>
-    <Spacer />
-    <Button onclick={() => handleCreateScene(scenes.length + 1)} variant="ghost" class="scene__inputBtn">
-      {#snippet start()}
-        <Icon Icon={IconPlus} />
-      {/snippet}
-      Add new scene
-    </Button>
   </div>
   <div class="scene__list">
     {#each scenes as scene}
@@ -162,6 +196,7 @@
             }
           },
           { label: 'Duplicate scene', onclick: () => console.log('add') },
+          { label: 'Rename scene', onclick: () => (renamingScenes[scene.id] = scene.name) },
           { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) },
           {
             label: 'Update map image',
@@ -170,8 +205,7 @@
         ]}
       >
         {#snippet trigger()}
-          <a
-            href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
+          <div
             id={`scene-${scene.order}`}
             class={[
               'scene',
@@ -180,14 +214,35 @@
             ]}
             style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
           >
-            {#if activeScene && activeScene.id === scene.id}
-              <div class="scene__projectedIcon">
-                Active
-                <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+            {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
+              <div class="scene__rename">
+                <form onsubmit={() => handleRenameScene(scene.id)}>
+                  <div class="scene__renameInput">
+                    <FormControl label="Name" name="name">
+                      {#snippet input({ inputProps })}
+                        <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
+                      {/snippet}
+                    </FormControl>
+                    <IconButton>
+                      <Icon Icon={IconCheck} />
+                    </IconButton>
+                    <IconButton>
+                      <Icon Icon={IconX} onclick={() => (renamingScenes[scene.id] = null)} />
+                    </IconButton>
+                  </div>
+                </form>
               </div>
             {/if}
-            <div class="scene__text">{scene.order} - {scene.name}</div>
-          </a>
+            <a href={`/${party.slug}/${gameSession.slug}/${scene.order}`} class="scene__link">
+              {#if activeScene && activeScene.id === scene.id}
+                <div class="scene__projectedIcon">
+                  Active
+                  <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
+                </div>
+              {/if}
+              <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
+            </a>
+          </div>
         {/snippet}
       </ContextMenu>
     {/each}
@@ -216,7 +271,6 @@
     overflow: hidden;
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
-    cursor: pointer;
     display: block;
     background-color: var(--contrastLow);
     -webkit-touch-callout: none;
@@ -234,6 +288,32 @@
   }
   .scene:hover:not(.scene--isSelected) {
     border-color: var(--primary-800);
+  }
+  .scene__link {
+    content: '';
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+  .scene__rename {
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    padding: 2rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+  }
+  .scene__renameInput {
+    display: flex;
+    align-items: end;
+    gap: 0.5rem;
   }
   .scene--isSelected {
     border-width: 2px;

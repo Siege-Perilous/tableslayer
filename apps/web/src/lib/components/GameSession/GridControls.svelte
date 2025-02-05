@@ -144,7 +144,6 @@
     {#snippet input({ inputProps })}
       <Select
         {selected}
-        id={inputProps.id as string}
         onSelectedChange={(selected) => handleSelectedResolution(selected[0])}
         options={selectTvResolutionOptions}
         {...inputProps}
