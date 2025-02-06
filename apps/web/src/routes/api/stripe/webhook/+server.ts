@@ -1,3 +1,4 @@
+import type { SelectParty } from '$lib/db/app/schema';
 import { getParty, getPartyByStripeSubscriptionId, updateParty } from '$lib/server';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import Stripe from 'stripe';
@@ -6,8 +7,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const PARTY_PLAN_PRICE_IDS = {
   free: null,
-  annual: 'price_1QpI0ZBBgc5xdbaet9uqA0Iy',
-  lifetime: 'price_1QpHyyBBgc5xdbaetvqgzQL9'
+  annual: process.env.STRIPE_ANNUAL_ID!,
+  lifetime: process.env.STRIPE_LIFETIME_ID!
 } as const;
 
 export const POST: RequestHandler = async (event) => {
@@ -29,10 +30,9 @@ export const POST: RequestHandler = async (event) => {
       return json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
-    // Handle Stripe events
     switch (stripeEvent.type) {
       /**
-       * 1. Checkout session completed
+       * ✅ 1. Checkout session completed: Apply the plan and store Stripe IDs.
        */
       case 'checkout.session.completed': {
         const session = stripeEvent.data.object as Stripe.Checkout.Session;
@@ -43,6 +43,8 @@ export const POST: RequestHandler = async (event) => {
         });
 
         const partyId = fullSession.client_reference_id;
+        const stripeCustomerId = fullSession.customer as string;
+        const stripeCheckoutSessionId = fullSession.id;
         const subscriptionId = fullSession.subscription as string | null;
 
         if (!partyId) {
@@ -55,6 +57,7 @@ export const POST: RequestHandler = async (event) => {
           throw new Error(`Party ${partyId} not found`);
         }
 
+        // Determine the plan based on the price ID in line_items
         const lineItemPriceId = fullSession.line_items?.data?.[0]?.price?.id;
 
         const plan = Object.keys(PARTY_PLAN_PRICE_IDS).find((key) => {
@@ -66,36 +69,42 @@ export const POST: RequestHandler = async (event) => {
           throw new Error('Invalid plan mapping');
         }
 
+        // Update party details (ensure customer and session IDs are stored)
+        const partyUpdates: Partial<SelectParty> = { plan };
+
+        if (party.stripeCustomerId !== stripeCustomerId) {
+          partyUpdates.stripeCustomerId = stripeCustomerId;
+        }
+
+        if (party.stripeCheckoutSessionId !== stripeCheckoutSessionId) {
+          partyUpdates.stripeCheckoutSessionId = stripeCheckoutSessionId;
+        }
+
         if (plan === 'lifetime') {
-          await updateParty(partyId, {
-            plan,
-            stripeSubscriptionId: null,
-            planNextBillingDate: null,
-            planExpirationDate: null
-          });
+          partyUpdates.stripeSubscriptionId = null;
+          partyUpdates.planNextBillingDate = null;
+          partyUpdates.planExpirationDate = null;
           console.log(`✅ Lifetime plan purchased: Party ${partyId} upgraded to ${plan}`);
         } else {
           if (!subscriptionId) {
             throw new Error('Subscription ID is required for non-lifetime plans');
           }
-          await updateParty(partyId, {
-            plan,
-            stripeSubscriptionId: subscriptionId,
-            planNextBillingDate: null,
-            planExpirationDate: null
-          });
+          partyUpdates.stripeSubscriptionId = subscriptionId;
+          partyUpdates.planNextBillingDate = null;
+          partyUpdates.planExpirationDate = null;
           console.log(`✅ Subscription plan purchased: Party ${partyId} upgraded to ${plan}`);
         }
+
+        await updateParty(partyId, partyUpdates);
         break;
       }
 
       /**
-       * 2. Invoice payment succeeded
+       * ✅ 2. Invoice payment succeeded: Update next billing date.
        */
       case 'invoice.payment_succeeded': {
         const invoice = stripeEvent.data.object as Stripe.Invoice;
         const subscriptionId = invoice.subscription as string;
-
         const planNextBillingDate = invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000) : null;
 
         const party = await getPartyByStripeSubscriptionId(subscriptionId);
@@ -109,16 +118,13 @@ export const POST: RequestHandler = async (event) => {
           break;
         }
 
-        await updateParty(party.id, {
-          planNextBillingDate,
-          planExpirationDate: null
-        });
+        await updateParty(party.id, { planNextBillingDate, planExpirationDate: null });
         console.log(`✅ Payment received: Party ${party.name} next bill is on ${planNextBillingDate}`);
         break;
       }
 
       /**
-       * 3. Subscription deleted
+       * ✅ 3. Subscription deleted: Downgrade to free.
        */
       case 'customer.subscription.deleted': {
         const subscription = stripeEvent.data.object as Stripe.Subscription;
@@ -131,24 +137,19 @@ export const POST: RequestHandler = async (event) => {
             break;
           }
 
-          await updateParty(party.id, {
-            plan: 'free',
-            planNextBillingDate: null,
-            planExpirationDate: null
-          });
+          await updateParty(party.id, { plan: 'free', planNextBillingDate: null, planExpirationDate: null });
           console.log(`🚨 Subscription ${subscriptionId} canceled. Party ${party.id} downgraded to free.`);
         }
         break;
       }
 
       /**
-       * 4. Subscription updated
+       * ✅ 4. Subscription updated: Update billing details or apply expiration.
        */
       case 'customer.subscription.updated': {
         const subscription = stripeEvent.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
         const status = subscription.status;
-
         const nextBillTimestamp = subscription.current_period_end
           ? new Date(subscription.current_period_end * 1000)
           : null;
@@ -164,24 +165,16 @@ export const POST: RequestHandler = async (event) => {
 
         if (wasCanceled) {
           if (status === 'canceled') {
-            await updateParty(party.id, {
-              plan: 'free',
-              planNextBillingDate: null
-            });
+            await updateParty(party.id, { plan: 'free', planNextBillingDate: null });
             console.log(`🚨 Subscription ${subscriptionId} expired. Party ${party.id} downgraded to free.`);
           } else {
-            await updateParty(party.id, {
-              planNextBillingDate: null,
-              planExpirationDate: nextBillTimestamp
-            });
+            await updateParty(party.id, { planNextBillingDate: null, planExpirationDate: nextBillTimestamp });
             console.log(
               `🚨 Subscription ${subscriptionId} canceled. Party ${party.id} will expire on ${nextBillTimestamp}`
             );
           }
         } else {
-          await updateParty(party.id, {
-            planNextBillingDate: nextBillTimestamp
-          });
+          await updateParty(party.id, { planNextBillingDate: nextBillTimestamp });
           console.log(`🔄 Subscription updated: Party ${party.id} next bill is ${nextBillTimestamp}`);
         }
         break;
