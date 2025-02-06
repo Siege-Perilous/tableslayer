@@ -1,10 +1,16 @@
-import { PARTY_PLAN_PRICE_IDS, VALID_PARTY_PLANS } from '$lib/db/app/schema';
+import { VALID_PARTY_PLANS } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { getParty, getUser } from '$lib/server';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+const PARTY_PLAN_PRICE_IDS = {
+  free: null,
+  annual: 'price_1QpI0ZBBgc5xdbaet9uqA0Iy',
+  lifetime: 'price_1QpHyyBBgc5xdbaetvqgzQL9'
+} as const;
 
 const validationSchema = z.object({
   plan: z.enum(VALID_PARTY_PLANS),
@@ -39,6 +45,9 @@ export const POST = apiFactory(
         throw new Error('Invalid party plan');
       }
 
+      // Determine mode dynamically
+      const mode = plan === 'lifetime' ? 'payment' : 'subscription';
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -47,9 +56,9 @@ export const POST = apiFactory(
             quantity: 1
           }
         ],
-        mode: 'subscription',
-        success_url: `${process.env.PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.PUBLIC_BASE_URL}/cancel`,
+        mode,
+        success_url: `${process.env.BASE_URL}/${party.slug}/?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.BASE_URL}/${party.slug}/cancel`,
         metadata: { partyId, userId, userEmail: user.email },
         client_reference_id: partyId
       });

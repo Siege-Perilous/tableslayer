@@ -136,11 +136,6 @@ export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCod
 // PARTY
 //
 export const VALID_PARTY_PLANS = ['free', 'annual', 'lifetime'] as const;
-export const PARTY_PLAN_PRICE_IDS = {
-  free: null,
-  annual: 'prod_RiZ3AJVBffrJYb',
-  lifetime: 'prod_RiZ744HgaUsb2m'
-} as const;
 
 export const partyTable = sqliteTable(
   'party',
@@ -182,7 +177,6 @@ export const partyTable = sqliteTable(
   })
 );
 
-export type PartyPanIds = (typeof PARTY_PLAN_PRICE_IDS)[keyof typeof PARTY_PLAN_PRICE_IDS];
 export type PartyPlan = (typeof VALID_PARTY_PLANS)[number];
 
 export type InsertParty = typeof partyTable.$inferInsert;
