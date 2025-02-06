@@ -169,6 +169,7 @@ export const partyTable = sqliteTable(
     planExpirationDate: integer('plan_expiration_date', { mode: 'timestamp' }),
     stripeCheckoutSessionId: text('stripe_checkout_session_id'),
     stripeCustomerId: text('stripe_customer_id'),
+    lemonSqueezyCheckoutId: text('lemon_squeezy_checkout_id'),
     plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
   (table) => ({

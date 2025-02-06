@@ -12,6 +12,7 @@
     "test": "pnpm run test:integration && pnpm run test:unit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "devwebhooks": "smee -u https://smee.io/8cXKVPZb3wYvKCn -t http://localhost:5174/api/lemonsqueezy/webhook",
     "lint": "eslint .",
     "test:integration": "playwright test",
     "test:unit": "vitest",
@@ -32,6 +33,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "=3.712.0",
     "@aws-sdk/s3-request-presigner": "=3.712.0",
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@libsql/client": "^0.14.0",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@melt-ui/pp": "^0.3.2",
@@ -75,6 +77,7 @@
     "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.30.4",
     "lucia": "^3.2.2",
+    "smee-client": "^2.0.4",
     "svelte": "5.19.6",
     "svelte-check": "^4.1.4",
     "tslib": "^2.8.1",
