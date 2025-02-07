@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
-  import { IconCheck, IconX, IconGhost3 } from '@tabler/icons-svelte';
+  import { IconCheck, IconX, IconStar, IconGhost3 } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
   const example = `import { Button, Icon } from '@tableslayer/ui';
 import { IconCheck } from '@tabler/icons-svelte';
@@ -45,6 +45,12 @@ import { IconCheck } from '@tabler/icons-svelte';
       <Icon Icon={IconGhost3} size="1.25rem" />
     {/snippet}
     Ghost
+  </Button>
+  <Button variant="special">
+    {#snippet start()}
+      <Icon Icon={IconStar} size="1.25rem" />
+    {/snippet}
+    Special
   </Button>
   <Button variant="link" class="something">Link</Button>
 </Example>
