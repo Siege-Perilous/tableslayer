@@ -74,6 +74,14 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     shadowSpread: 'gridShadowSpread'
   });
 
+  setNestedIfExists(stageProps, details, 'weather', {
+    type: 'weatherType',
+    color: 'weatherColor',
+    fov: 'weatherFov',
+    intensity: 'weatherIntensity',
+    opacity: 'weatherOpacity'
+  });
+
   setNestedIfExists(stageProps, details, 'map', {
     rotation: 'mapRotation',
     'offset.x': 'mapOffsetX',

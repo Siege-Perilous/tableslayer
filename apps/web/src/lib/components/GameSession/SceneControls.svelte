@@ -30,7 +30,7 @@
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/gs/schema';
   import { type ZodIssue } from 'zod';
-  import { GridControls, MapControls, FogControls, PlayControls } from './';
+  import { GridControls, WeatherControls, MapControls, FogControls, PlayControls } from './';
 
   let {
     socketUpdate,
@@ -254,6 +254,8 @@
               />
             {:else if scene.id === 'play'}
               <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {gameSettings} />
+            {:else if scene.id === 'weather'}
+              <WeatherControls {stageProps} {socketUpdate} {errors} />
             {/if}
           {/snippet}
         </Popover>

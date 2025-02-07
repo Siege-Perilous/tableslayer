@@ -1,17 +1,119 @@
 <script lang="ts">
-  import { T } from '@threlte/core';
-  import { type WeatherProps } from './types';
-  import WeatherMaterial from './WeatherMaterial.svelte';
+  import * as THREE from 'three';
+  import { T, useTask, useThrelte } from '@threlte/core';
+  import { WeatherType, type WeatherLayerProps } from './types';
+  import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
+  import { DEG2RAD } from 'three/src/math/MathUtils';
+  import type { Size } from '../../types';
+
+  import SnowPreset from './presets/SnowPreset';
+  import RainPreset from './presets/RainPreset';
+  import type { ParticleSystemProps } from '../ParticleSystem/types';
 
   interface Props {
-    props: WeatherProps;
-    resolution: { x: number; y: number };
+    props: WeatherLayerProps;
+    mapSize: Size | null;
   }
 
-  const { props, resolution }: Props = $props();
+  const { props, mapSize }: Props = $props();
+
+  const { renderer } = useThrelte();
+
+  let mesh: THREE.Mesh = $state(new THREE.Mesh());
+  let particleScene: THREE.Scene | undefined = $state(undefined);
+  let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
+
+  const aspectRatio = $derived(mapSize ? mapSize.width / mapSize.height : 1);
+
+  // Create render target
+  const renderTarget = $derived(
+    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
+      format: THREE.RGBAFormat,
+      stencilBuffer: false
+    })
+  );
+
+  // Create quad material using render target texture
+  const quadMaterial = $derived(
+    new THREE.MeshBasicMaterial({
+      map: renderTarget.texture,
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      blending: THREE.AdditiveBlending
+    })
+  );
+
+  let particleProps = $derived.by(() => {
+    let preset: ParticleSystemProps;
+
+    switch (props.type) {
+      case WeatherType.Snow:
+        preset = { ...SnowPreset };
+        break;
+      case WeatherType.Rain:
+        preset = { ...RainPreset };
+        break;
+      case WeatherType.Custom:
+        preset = { ...(props.custom || RainPreset) };
+        break;
+      default:
+        // Fallback to rain preset
+        preset = { ...RainPreset };
+    }
+
+    // Override some of the preset values with the UI selections
+    preset.opacity = props.opacity;
+    preset.count = Math.floor(props.intensity * 10000);
+    preset.color = props.color;
+
+    return preset;
+  });
+
+  // Position the render target camera
+  $effect(() => {
+    if (!mapSize || !particleCamera) return;
+    particleCamera.aspect = aspectRatio;
+    particleCamera.fov = props.fov;
+    particleCamera.far = -particleCamera.position.z;
+    particleCamera.position.set(0, 0, -1 / 2 / Math.tan((DEG2RAD * props.fov) / 2));
+    particleCamera.rotation.x = Math.PI;
+    particleCamera.updateMatrixWorld();
+    particleCamera.updateProjectionMatrix();
+  });
+
+  // Custom render task
+  useTask(() => {
+    if (!particleScene || !particleCamera) return;
+
+    particleScene.visible = true;
+
+    // Render particles to render target
+    renderer.setRenderTarget(renderTarget);
+    renderer.clear();
+    renderer.render(particleScene, particleCamera);
+
+    // Restore original render target
+    renderer.setRenderTarget(null);
+
+    particleScene.visible = false;
+    quadMaterial.needsUpdate = true;
+  });
 </script>
 
-<T.Mesh scale={[resolution.x, resolution.y, 1]}>
-  <WeatherMaterial {props} {resolution} />
-  <T.PlaneGeometry />
+<!-- Hidden scene that renders to the render target -->
+<T.Scene bind:ref={particleScene} visible={false}>
+  <T.PerspectiveCamera bind:ref={particleCamera} />
+  <ParticleSystem props={particleProps} />
+</T.Scene>
+
+<T.Mesh
+  bind:ref={mesh}
+  name="WeatherLayer"
+  renderOrder={50}
+  visible={props.type !== WeatherType.None}
+  scale={[1, 1, 1]}
+>
+  <T.MeshBasicMaterial is={quadMaterial} />
+  <T.PlaneGeometry args={[1, 1]} />
 </T.Mesh>

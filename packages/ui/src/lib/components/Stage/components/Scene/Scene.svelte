@@ -5,7 +5,6 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
-  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
 
@@ -125,9 +124,8 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} z={0} />
+  <MapLayer bind:this={mapLayer} {props} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
-  <WeatherLayer props={props.weather} resolution={props.display.resolution} />
 </T.Object3D>

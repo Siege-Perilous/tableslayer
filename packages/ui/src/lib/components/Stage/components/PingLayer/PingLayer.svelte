@@ -1,11 +1,12 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, type Size } from '@threlte/core';
+  import { T } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import PingMaterial from './PingMaterial.svelte';
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
+  import type { Size } from '../../types';
 
   interface Props {
     props: PingLayerProps;

@@ -1,17 +1,18 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { type Size, T, useLoader } from '@threlte/core';
+  import { T, useLoader } from '@threlte/core';
   import { TextureLoader } from 'three';
   import { MapLayerType } from './types';
+  import type { Size } from '../../types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
+  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
 
   interface Props {
     props: StageProps;
-    z: number;
   }
 
   const { props }: Props = $props();
@@ -105,6 +106,8 @@
     <T.MeshBasicMaterial map={image} transparent={true} />
     <T.PlaneGeometry />
   </T.Mesh>
+
+  <WeatherLayer props={props.weather} {mapSize} />
 
   <FogOfWarLayer
     bind:this={fogOfWarLayer}
