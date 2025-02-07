@@ -1,8 +1,23 @@
-import { DrawMode, GridType, MapLayerType, PingEditMode, ToolType, type StageProps } from '@tableslayer/ui';
+import {
+  DrawMode,
+  GridType,
+  MapLayerType,
+  PingEditMode,
+  ToolType,
+  WeatherType,
+  type StageProps
+} from '@tableslayer/ui';
+
+//import map1Url from './map1.png';
+import map2Url from './map2.png';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
-  backgroundColor: '#0b0b0c',
+  backgroundColor: '#404040',
+  debug: {
+    enableStats: true,
+    loggingRate: 30
+  },
   display: {
     padding: { x: 16, y: 16 },
     size: { x: 17.77, y: 10.0 },
@@ -30,15 +45,15 @@ export const StageDefaultProps: StageProps = {
       speed: 0.2
     },
     noise: {
-      baseColor: '#666666',
+      baseColor: '#000000',
       fogColor1: '#888888',
       fogColor2: '#aaaaaa',
       fogColor3: '#cccccc',
-      fogColor4: '#eeeeee',
+      fogColor4: '#808080',
       speed: { x: -0.015, y: 0.01, z: -0.05, w: 0.1 },
       frequency: { x: 0.0008, y: 0.002, z: 0.001, w: 0.001 },
       offset: { x: -0.4, y: -0.2, z: -0.3, w: -0.25 },
-      amplitude: { x: 0.6, y: 0.5, z: 0.5, w: 1 },
+      amplitude: { x: 0.0, y: 0.0, z: 0.0, w: 0.8 },
       persistence: { x: 0.4, y: 0.4, z: 0.3, w: 0.48 },
       lacunarity: { x: 2.5, y: 2.5, z: 2.5, w: 2 },
       levels: { x: 6, y: 4, z: 3, w: 6 }
@@ -48,7 +63,7 @@ export const StageDefaultProps: StageProps = {
     gridType: GridType.Square,
     spacing: 1,
     opacity: 0.25,
-    lineColor: '#000000',
+    lineColor: '#ffffff',
     lineThickness: 1.0,
     shadowOpacity: 0.4,
     shadowBlur: 0.5,
@@ -62,7 +77,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/maps/01.jpeg'
+    url: map2Url
   },
   ping: {
     color: '#ff0000',
@@ -84,15 +99,65 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#a0a0f0',
-    angle: 20,
-    opacity: 0.7,
-    intensity: 0.3,
-    speed: 10.0,
-    scale: {
-      x: 5.0,
-      y: 100.0
-    },
-    weatherType: 0
+    color: '#ffffff',
+    fov: 50,
+    intensity: 1,
+    opacity: 1,
+    type: WeatherType.Rain,
+    custom: {
+      count: 1740,
+      type: 2,
+      color: '#42d8d3',
+      opacity: 0.35,
+      fadeInTime: 0.36999999999999994,
+      fadeOutTime: 0.36999999999999994,
+      lifetime: 1.5869565217391304,
+      spawnArea: {
+        minRadius: 0.05859375,
+        maxRadius: 0.6020720108695652
+      },
+      initialVelocity: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      force: {
+        linear: {
+          x: 0,
+          y: 0,
+          z: 1
+        },
+        exponential: {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        sinusoidal: {
+          amplitude: {
+            x: 0,
+            y: 0,
+            z: 0
+          },
+          frequency: {
+            x: 5,
+            y: 5,
+            z: 5
+          }
+        }
+      },
+      rotation: {
+        x: 0,
+        y: 0,
+        z: 90
+      },
+      scale: {
+        x: 1,
+        y: 2.717391304347826
+      },
+      size: {
+        min: 0.007456521739130435,
+        max: 0.018217391304347828
+      }
+    }
   }
 };

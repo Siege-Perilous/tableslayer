@@ -23,6 +23,10 @@ export const buildSceneProps = (
   return {
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
+    debug: {
+      enableStats: false,
+      loggingRate: 30
+    },
     display: {
       padding: {
         x: activeScene.displayPaddingX,
@@ -113,16 +117,12 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      color: '#AD0000',
-      angle: 20,
-      opacity: 0,
-      intensity: 0.5,
-      speed: 10.0,
-      scale: {
-        x: 5.0,
-        y: 100.0
-      },
-      weatherType: 0
+      color: activeScene.weatherColor,
+      fov: activeScene.weatherFov,
+      intensity: activeScene.weatherIntensity,
+      opacity: activeScene.weatherOpacity,
+      type: activeScene.weatherType,
+      custom: null
     }
   };
 };
