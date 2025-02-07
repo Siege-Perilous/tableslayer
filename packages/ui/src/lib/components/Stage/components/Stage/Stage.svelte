@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Canvas } from '@threlte/core';
+  import { Canvas, T } from '@threlte/core';
   import type { StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
   import type { SceneExports } from '../Scene/types';
@@ -37,8 +37,13 @@
   };
 </script>
 
-<div style="background-color: {props.backgroundColor}; height: 100%; width: 100%;">
+<div style="height: 100%; width: 100%;">
   <Canvas>
+    <T.Mesh position={[0, 0, -1]} scale={[1000, 1000, 1]}>
+      <T.PlaneGeometry />
+      <T.MeshBasicMaterial color={props.backgroundColor} />
+    </T.Mesh>
+
     <Scene bind:this={sceneRef} {props} />
     {#if props.debug.enableStats}
       <PerfMonitor logsPerSecond={props.debug.loggingRate} anchorX={'right'} anchorY={'bottom'} />

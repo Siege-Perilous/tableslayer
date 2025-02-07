@@ -27,7 +27,6 @@
   const composer = new EffectComposer(renderer);
 
   onMount(() => {
-    renderer.setClearColor(0, 0);
     let before = autoRender.current;
     autoRender.set(false);
     fit();
