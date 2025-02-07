@@ -41,6 +41,10 @@ export enum StageLayerZ {}
 export type StageProps = {
   activeLayer: MapLayerType;
   backgroundColor: string;
+  debug: {
+    enableStats: boolean;
+    loggingRate: number;
+  };
   display: DisplayProps;
   fogOfWar: FogOfWarLayerProps;
   grid: GridLayerProps;

@@ -8,9 +8,16 @@ import {
   type StageProps
 } from '@tableslayer/ui';
 
+//import map1Url from './map1.png';
+import map2Url from './map2.png';
+
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
+  debug: {
+    enableStats: true,
+    loggingRate: 30
+  },
   display: {
     padding: { x: 16, y: 16 },
     size: { x: 17.77, y: 10.0 },
@@ -70,7 +77,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/maps/01.jpeg'
+    url: map2Url
   },
   ping: {
     color: '#ff0000',

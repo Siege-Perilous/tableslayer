@@ -352,6 +352,7 @@
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
     <Color bind:value={stageProps.weather.color} label="Color" />
+    <Slider bind:value={stageProps.weather.fov} label="FOV" min={10} max={180} step={1} />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
 
@@ -458,6 +459,11 @@
         </Folder>
       </Folder>
     {/if}
+  </Folder>
+
+  <Folder title="Debug" expanded={false}>
+    <List bind:value={stageProps.debug.enableStats} label="Enable Stats" options={{ Yes: true, No: false }} />
+    <Slider bind:value={stageProps.debug.loggingRate} label="Logging Rate" min={0} max={10} step={1} />
   </Folder>
 
   <Button

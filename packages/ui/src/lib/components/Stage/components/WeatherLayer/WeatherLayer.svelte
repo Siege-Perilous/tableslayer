@@ -23,13 +23,11 @@
   let scene: THREE.Scene | undefined = $state(undefined);
   let rtCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
 
-  const width = $derived(mapSize?.width ?? 1);
-  const height = $derived(mapSize?.height ?? 1);
-  const aspectRatio = $derived(width / height);
+  const aspectRatio = $derived(mapSize ? mapSize.width / mapSize.height : 1);
 
   // Create render target
   const renderTarget = $derived(
-    new THREE.WebGLRenderTarget(width, height, {
+    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
       format: THREE.RGBAFormat,
       stencilBuffer: false
     })
@@ -80,6 +78,7 @@
     rtCamera.position.set(0, 0, -1 / 2 / Math.tan((DEG2RAD * props.fov) / 2));
     rtCamera.far = -rtCamera.position.z;
     rtCamera.lookAt(0, 0, 0);
+    rtCamera.updateProjectionMatrix();
   });
 
   // Custom render task
@@ -107,7 +106,13 @@
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
-<T.Mesh bind:ref={mesh} name="WeatherLayer" renderOrder={50} visible={props.type !== WeatherType.None}>
+<T.Mesh
+  bind:ref={mesh}
+  name="WeatherLayer"
+  renderOrder={50}
+  visible={props.type !== WeatherType.None}
+  scale={[1, 1, 1]}
+>
   <T.MeshBasicMaterial is={quadMaterial} />
   <T.PlaneGeometry args={[1, 1]} />
 </T.Mesh>

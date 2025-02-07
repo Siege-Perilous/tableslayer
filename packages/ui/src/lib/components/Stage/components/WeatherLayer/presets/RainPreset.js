@@ -7,7 +7,7 @@ export default {
   fadeOutTime: 1.5,
   lifetime: 3,
   spawnArea: {
-    minRadius: 0.1,
+    minRadius: 0.04,
     maxRadius: 0.4
   },
   initialVelocity: {

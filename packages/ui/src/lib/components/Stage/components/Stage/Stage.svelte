@@ -40,6 +40,8 @@
 <div style="background-color: {props.backgroundColor}; height: 100%; width: 100%;">
   <Canvas>
     <Scene bind:this={sceneRef} {props} />
-    <PerfMonitor logsPerSecond={30} anchorX={'right'} anchorY={'bottom'} />
+    {#if props.debug.enableStats}
+      <PerfMonitor logsPerSecond={props.debug.loggingRate} anchorX={'right'} anchorY={'bottom'} />
+    {/if}
   </Canvas>
 </div>
