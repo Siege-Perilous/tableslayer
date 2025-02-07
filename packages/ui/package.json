@@ -52,7 +52,7 @@
     "@types/marked": "^6.0.0",
     "@types/three": "0.172.0",
     "marked": "^15.0.6",
-    "svelte": "5.19.0",
+    "svelte": "5.19.6",
     "svelte-check": "^4.1.4",
     "typedoc": "^0.27.6",
     "typescript": "^5.7.3",
@@ -60,12 +60,13 @@
   },
   "dependencies": {
     "@tabler/icons-svelte": "^3.29.0",
+    "@floating-ui/dom": "^1.6.13",
     "@threlte/core": "8.0.1",
     "@threlte/extras": "9.0.1",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
     "postprocessing": "6.36.6",
-    "shiki": "^1.29.2",
+    "shiki": "^2.2.0",
     "three": "0.172.0",
     "zod": "^3.24.1"
   },

@@ -8,13 +8,7 @@
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 
-  import {
-    type TvResolution,
-    tvResolutionOptions,
-    getTvDimensions,
-    selectTvResolutionOptions,
-    getResolutionOption
-  } from '$lib/utils';
+  import { tvResolutionOptions, getTvDimensions, selectTvResolutionOptions, getResolutionOption } from '$lib/utils';
   let {
     party
   }: {
@@ -23,7 +17,9 @@
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let isPartyDataChanged = false;
-  let defaultSelected = $derived(getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY));
+  let selected = $derived([
+    getResolutionOption(party.defaultDisplayResolutionX, party.defaultDisplayResolutionY)?.value || ''
+  ]);
   let padding = $state(party.defaultDisplayPaddingX);
   let partyData = $state({
     defaultTvSize: party.defaultTvSize,
@@ -39,8 +35,8 @@
   });
   let errors = $state<ZodIssue[] | undefined>(undefined);
 
-  const handleSelectedResolution = (selected: TvResolution) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected.value)!;
+  const handleSelectedResolution = (selected: string) => {
+    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected)!;
     partyData.defaultDisplayResolutionX = selectedResolution.width;
     partyData.defaultDisplayResolutionY = selectedResolution.height;
     return selectedResolution;
@@ -126,11 +122,10 @@
     <FormControl label="Resolution" name="defaultDisplayResolutionX" {errors}>
       {#snippet input({ inputProps })}
         <Select
-          ids={{ trigger: inputProps.id as string }}
-          onSelectedChange={(selected) => handleSelectedResolution(selected.next as TvResolution)}
-          {...inputProps}
-          {defaultSelected}
+          {selected}
+          onSelectedChange={(selected) => handleSelectedResolution(selected[0])}
           options={selectTvResolutionOptions}
+          {...inputProps}
         />
       {/snippet}
     </FormControl>

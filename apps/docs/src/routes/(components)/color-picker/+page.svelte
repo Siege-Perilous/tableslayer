@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ColorPicker, Spacer, ColorPickerSwatch, Input } from '@tableslayer/ui';
+  import { ColorPicker, Spacer, ColorPickerSwatch, Input, type ColorUpdatePayload } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import { onMount } from 'svelte';
   let hex = $state('#ff0000ff');
@@ -10,7 +10,7 @@
     hexInputValue = hex;
   });
 
-  const handleColorUpdate = (colorData) => {
+  const handleColorUpdate = (colorData: ColorUpdatePayload) => {
     hexInputValue = colorData.hex;
     hexInputError = '';
   };

@@ -1,29 +1,20 @@
 <script lang="ts">
   import type { CodeBlockProps } from './types';
   import { onMount } from 'svelte';
-  import { createHighlighter } from 'shiki';
-  import { createCssVariablesTheme } from 'shiki/theme-css-variables';
+  import { codeToHtml } from 'shiki';
 
   let { code, lang = 'svelte', variant = 'default' }: CodeBlockProps = $props();
 
   let highlightedCode = $state('');
 
-  const theme = createCssVariablesTheme({
-    name: 'css-variables',
-    variablePrefix: '--shiki-',
-    variableDefaults: {},
-    fontStyle: true
-  });
-
   onMount(async () => {
-    const highlighter = await createHighlighter({
-      langs: ['svelte', 'css', 'javascript', 'typescript'],
-      themes: [theme]
-    });
-
-    highlightedCode = highlighter.codeToHtml(code, {
+    highlightedCode = await codeToHtml(code, {
       lang: lang,
-      theme: 'css-variables'
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark'
+      },
+      defaultColor: false // Forces shiki to use light / dark css vars which we need for nesting
     });
   });
 
@@ -36,35 +27,6 @@
 </span>
 
 <style>
-  :global(.light) {
-    color-scheme: light;
-    --shiki-foreground: var(--fg);
-    --shiki-background: var(--contrastLowest);
-    --shiki-token-constant: #d33682;
-    --shiki-token-string: #2aa198;
-    --shiki-token-comment: #93a1a1;
-    --shiki-token-keyword: #6c71c4;
-    --shiki-token-parameter: #b58900;
-    --shiki-token-function: #268bd2;
-    --shiki-token-string-expression: #073642;
-    --shiki-token-punctuation: #657b83;
-    --shiki-token-link: #cb4b16;
-  }
-
-  :global(.dark) {
-    color-scheme: dark;
-    --shiki-foreground: var(--fg);
-    --shiki-background: var(--contrastLowest);
-    --shiki-token-constant: #ff79c6;
-    --shiki-token-string: #f1fa8c;
-    --shiki-token-comment: #6272a4;
-    --shiki-token-keyword: #8be9fd;
-    --shiki-token-parameter: #bd93f9;
-    --shiki-token-function: #50fa7b;
-    --shiki-token-string-expression: #f8f8f2;
-    --shiki-token-punctuation: #ffb86c;
-    --shiki-token-link: #ff5555;
-  }
   :global(.shiki) {
     font-family: var(--font-mono);
     padding: var(--size-4);
@@ -87,5 +49,54 @@
     display: inline-block;
     width: auto;
     overflow-x: unset;
+  }
+  :global {
+    /* Default: Inherit colors from inline styles (Shiki sets both light & dark variables inline) */
+    .shiki,
+    .shiki span {
+      color: var(--shiki-light) !important;
+      background-color: var(--contrastLowest) !important;
+      font-style: var(--shiki-light-font-style) !important;
+      font-weight: var(--shiki-light-font-weight) !important;
+      text-decoration: var(--shiki-light-text-decoration) !important;
+    }
+
+    /* In light mode, just inherit (Shiki's inline styles apply the light theme by default) */
+    .light .shiki,
+    .light .shiki span {
+      color: var(--shiki-light) !important;
+      background-color: var(--contrastLowest) !important;
+      font-style: var(--shiki-light-font-style) !important;
+      font-weight: var(--shiki-light-font-weight) !important;
+      text-decoration: var(--shiki-light-text-decoration) !important;
+    }
+
+    /* In dark mode, override with the Shiki dark theme variables */
+    .dark .shiki,
+    .dark .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--contrastLowest) !important;
+      font-style: var(--shiki-dark-font-style) !important;
+      font-weight: var(--shiki-dark-font-weight) !important;
+      text-decoration: var(--shiki-dark-text-decoration) !important;
+    }
+    .dark .light .shiki,
+    .dark .light .shiki span {
+      color: var(--shiki-light) !important;
+      background-color: var(--contrastLowest) !important;
+      font-style: var(--shiki-light-font-style) !important;
+      font-weight: var(--shiki-light-font-weight) !important;
+      text-decoration: var(--shiki-light-text-decoration) !important;
+    }
+
+    /* Handle nested dark inside light: force dark mode variables */
+    .light .dark .shiki,
+    .light .dark .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--contrastLowest) !important;
+      font-style: var(--shiki-dark-font-style) !important;
+      font-weight: var(--shiki-dark-font-weight) !important;
+      text-decoration: var(--shiki-dark-text-decoration) !important;
+    }
   }
 </style>
