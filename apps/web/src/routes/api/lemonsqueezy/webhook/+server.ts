@@ -1,3 +1,4 @@
+import { dev } from '$app/environment';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import crypto from 'node:crypto';
 
@@ -12,12 +13,25 @@ lemonSqueezySetup({
   }
 });
 
-const PARTY_PLAN_PRODUCT_IDS = {
-  free: null,
-  annual: process.env.LEMONSQUEEZY_ANNUAL_ID!,
-  lifetime: process.env.LEMONSQUEEZY_LIFETIME_ID!
-} as const;
+// LS stores ids as numbers. ENV vars are strings.
+const annualId = Number(process.env.LEMONSQUEEZY_VARIANT_ANNUAL_ID!);
+const lifetimeId = Number(process.env.LEMONSQUEEZY_VARIANT_LIFETIME_ID!);
+const monthlyId = Number(process.env.LEMONSQUEEZY_VARIANT_MONTHLY_ID!);
 
+function planNameFromVariantId(variantId: number) {
+  switch (variantId) {
+    case lifetimeId:
+      return 'lifetime';
+    case annualId:
+      return 'annual';
+    case monthlyId:
+      return 'monthly';
+    default:
+      return 'free';
+  }
+}
+
+// Verify the webhook comes from LemonSqueezy
 function verifyLemonSqueezySignature(request: Request, rawBody: string) {
   const signatureHeader = request.headers.get('X-Signature');
   if (!signatureHeader) {
@@ -37,57 +51,58 @@ export const POST: RequestHandler = async (event) => {
   try {
     const rawBody = await event.request.text();
 
-    console.log(rawBody);
+    if (!dev) {
+      verifyLemonSqueezySignature(event.request, rawBody);
+    }
 
     const webhookEvent = JSON.parse(rawBody);
     const partyId = webhookEvent.meta.custom_data.party_id;
-    const userId = webhookEvent.meta.custom_data.user_id;
     const eventType = webhookEvent?.meta?.event_name;
     const lemonSqueezyCustomerId = webhookEvent.data.attributes.customer_id;
 
+    // Payload is a json:api response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sync = async (payload: any) => {
+      const variantId = Number(payload.data.attributes.first_order_item.variant_id);
+      const planStatus = payload.data.attributes.status;
+      let planNextBillingDate = null;
+      if (payload.data.attributes.renews_at) {
+        planNextBillingDate = new Date(payload.data.attributes.renews_at * 1000);
+      }
+
+      let planExpirationDate = null;
+      if (payload.data.attributes.ends_at) {
+        planExpirationDate = new Date(payload.data.attributes.ends_at * 1000);
+      }
+
+      const plan = planNameFromVariantId(variantId);
+      const updates: Partial<SelectParty> = {
+        lemonSqueezyCustomerId,
+        plan,
+        planStatus,
+        planNextBillingDate,
+        planExpirationDate
+      };
+      const party = await updateParty(partyId, updates);
+      return party;
+    };
+
     switch (eventType) {
       case 'order_created': {
-        const isLifetime = (webhookEvent.data.attributes.first_order_item.product_id = 444662);
-        const updates: Partial<SelectParty> = {
-          lemonSqueezyCustomerId
-        };
-        if (isLifetime) {
-          updates.plan = 'lifetime';
-          updates.planNextBillingDate = null;
-          updates.planExpirationDate = null;
-        }
-        await updateParty(partyId, updates);
+        const party = await sync(webhookEvent);
+        console.log('Order created', party);
         break;
       }
 
       case 'subscription_created': {
-        const status = webhookEvent.data.attributes.status;
-        if (status !== 'active') {
-          break;
-        }
-        const updates: Partial<SelectParty> = {
-          plan: 'annual',
-          planNextBillingDate: new Date(webhookEvent.data.attributes.renews_at * 1000),
-          planExpirationDate: new Date(webhookEvent.data.attributes.ends_at * 1000)
-        };
-
-        await updateParty(partyId, updates);
+        const party = await sync(webhookEvent);
+        console.log('Subscription created', party);
         break;
       }
 
       case 'subscription_updated': {
-        const status = webhookEvent.data.attributes.status;
-        let updates: Partial<SelectParty> = {};
-        if (status === 'active') {
-          updates = {
-            plan: 'annual',
-            planNextBillingDate: new Date(webhookEvent.data.attributes.renews_at * 1000),
-            planExpirationDate: new Date(webhookEvent.data.attributes.ends_at * 1000)
-          };
-          break;
-        }
-
-        await updateParty(partyId, updates);
+        const party = await sync(webhookEvent);
+        console.log('Subscription updated', party);
         break;
       }
 

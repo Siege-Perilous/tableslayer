@@ -135,7 +135,7 @@ export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCod
 // PARTY
 // PARTY
 //
-export const VALID_PARTY_PLANS = ['free', 'annual', 'lifetime'] as const;
+export const VALID_PARTY_PLANS = ['free', 'monthly', 'annual', 'lifetime'] as const;
 
 export const partyTable = sqliteTable(
   'party',
@@ -170,7 +170,7 @@ export const partyTable = sqliteTable(
     planStatus: text('plan_status'),
     stripeCheckoutSessionId: text('stripe_checkout_session_id'),
     stripeCustomerId: text('stripe_customer_id'),
-    lemonSqueezyCustomerId: text('lemon_squeezy_customer_id'),
+    lemonSqueezyCustomerId: integer('lemon_squeezy_customer_id'),
     plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
   (table) => ({

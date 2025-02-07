@@ -13,11 +13,16 @@ lemonSqueezySetup({
 
 const LEMON_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID!;
 
-const PARTY_PLAN_PRODUCT_IDS = {
-  free: null,
-  annual: process.env.LEMONSQUEEZY_ANNUAL_ID!,
-  lifetime: process.env.LEMONSQUEEZY_LIFETIME_ID!
-} as const;
+const annualId = Number(process.env.LEMONSQUEEZY_VARIANT_ANNUAL_ID!);
+const lifetimeId = Number(process.env.LEMONSQUEEZY_VARIANT_LIFETIME_ID!);
+const monthlyId = Number(process.env.LEMONSQUEEZY_VARIANT_MONTHLY_ID!);
+
+const PARTY_PLAN_VARIANT_IDS = {
+  annual: annualId,
+  lifetime: lifetimeId,
+  monthly: monthlyId,
+  free: null
+};
 
 const validationSchema = z.object({
   plan: z.enum(VALID_PARTY_PLANS),
@@ -47,7 +52,7 @@ export const POST = apiFactory(
         throw new Error('Party not found');
       }
 
-      const variantId = PARTY_PLAN_PRODUCT_IDS[plan];
+      const variantId = PARTY_PLAN_VARIANT_IDS[plan];
       if (!variantId) {
         throw new Error('Invalid party plan');
       }
@@ -55,7 +60,7 @@ export const POST = apiFactory(
       // Create a checkout session with LemonSqueezy SDK
       const newCheckout: NewCheckout = {
         checkoutOptions: {
-          embed: true,
+          embed: false,
           media: false,
           logo: true
         },
