@@ -1,6 +1,6 @@
 import { VALID_PARTY_PLANS } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { getParty, getUser, updateParty } from '$lib/server';
+import { getParty, getUser } from '$lib/server';
 import { createCheckout, lemonSqueezySetup, type NewCheckout } from '@lemonsqueezy/lemonsqueezy.js';
 import { z } from 'zod';
 
@@ -86,11 +86,7 @@ export const POST = apiFactory(
         throw new Error('Failed to create LemonSqueezy checkout session');
       }
 
-      const lemonSqueezyCheckoutId = data.data.id;
       const checkoutUrl = data.data.attributes.url;
-
-      // Store checkout session ID
-      await updateParty(partyId, { lemonSqueezyCheckoutId });
 
       return { url: checkoutUrl };
     } catch (error) {

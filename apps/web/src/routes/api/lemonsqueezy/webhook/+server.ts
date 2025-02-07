@@ -1,7 +1,9 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import crypto from 'node:crypto';
 
-import { lemonSqueezySetup, type Webhook } from '@lemonsqueezy/lemonsqueezy.js';
+import type { SelectParty } from '$lib/db/app/schema';
+import { updateParty } from '$lib/server';
+import { lemonSqueezySetup } from '@lemonsqueezy/lemonsqueezy.js';
 
 lemonSqueezySetup({
   apiKey: process.env.LEMONSQUEEZY_API_KEY!,
@@ -35,14 +37,65 @@ export const POST: RequestHandler = async (event) => {
   try {
     const rawBody = await event.request.text();
 
-    //  verifyLemonSqueezySignature(event.request, rawBody);
+    console.log(rawBody);
 
-    const webhookEvent: Webhook = JSON.parse(rawBody);
+    const webhookEvent = JSON.parse(rawBody);
+    const partyId = webhookEvent.meta.custom_data.party_id;
+    const userId = webhookEvent.meta.custom_data.user_id;
     const eventType = webhookEvent?.meta?.event_name;
+    const lemonSqueezyCustomerId = webhookEvent.data.attributes.customer_id;
+
+    switch (eventType) {
+      case 'order_created': {
+        const isLifetime = (webhookEvent.data.attributes.first_order_item.product_id = 444662);
+        const updates: Partial<SelectParty> = {
+          lemonSqueezyCustomerId
+        };
+        if (isLifetime) {
+          updates.plan = 'lifetime';
+          updates.planNextBillingDate = null;
+          updates.planExpirationDate = null;
+        }
+        await updateParty(partyId, updates);
+        break;
+      }
+
+      case 'subscription_created': {
+        const status = webhookEvent.data.attributes.status;
+        if (status !== 'active') {
+          break;
+        }
+        const updates: Partial<SelectParty> = {
+          plan: 'annual',
+          planNextBillingDate: new Date(webhookEvent.data.attributes.renews_at * 1000),
+          planExpirationDate: new Date(webhookEvent.data.attributes.ends_at * 1000)
+        };
+
+        await updateParty(partyId, updates);
+        break;
+      }
+
+      case 'subscription_updated': {
+        const status = webhookEvent.data.attributes.status;
+        let updates: Partial<SelectParty> = {};
+        if (status === 'active') {
+          updates = {
+            plan: 'annual',
+            planNextBillingDate: new Date(webhookEvent.data.attributes.renews_at * 1000),
+            planExpirationDate: new Date(webhookEvent.data.attributes.ends_at * 1000)
+          };
+          break;
+        }
+
+        await updateParty(partyId, updates);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${eventType}`);
+    }
 
     console.log(`Received LemonSqueezy webhook: ${eventType}`);
-
-    console.log(webhookEvent.meta);
 
     return json({ received: true });
   } catch (err) {

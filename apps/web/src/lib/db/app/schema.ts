@@ -167,9 +167,10 @@ export const partyTable = sqliteTable(
     stripeSubscriptionId: text('stripe_subscription_id'),
     planNextBillingDate: integer('plan_next_billing_date', { mode: 'timestamp' }),
     planExpirationDate: integer('plan_expiration_date', { mode: 'timestamp' }),
+    planStatus: text('plan_status'),
     stripeCheckoutSessionId: text('stripe_checkout_session_id'),
     stripeCustomerId: text('stripe_customer_id'),
-    lemonSqueezyCheckoutId: text('lemon_squeezy_checkout_id'),
+    lemonSqueezyCustomerId: text('lemon_squeezy_customer_id'),
     plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
   (table) => ({

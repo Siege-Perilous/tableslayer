@@ -152,6 +152,10 @@
       transparent 100%
     );
   }
+  .btn--special {
+    border: var(--btn-borderHover);
+    background: var(--primary-900);
+  }
   .btn:hover {
     background-color: var(--btn-bgHover);
     border: var(--btn-borderHover);
