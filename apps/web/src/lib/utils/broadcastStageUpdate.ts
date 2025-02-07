@@ -31,6 +31,7 @@ export const broadcastStageUpdate = (
         map: stageProps.map,
         scene: stageProps.scene,
         display: stageProps.display,
+        weather: stageProps.weather,
         ping: stageProps.ping
       }
     };
@@ -51,6 +52,7 @@ export const broadcastStageUpdate = (
         map: newStageProps.map,
         scene: newStageProps.scene,
         display: newStageProps.display,
+        weather: newStageProps.weather,
         ping: newStageProps.ping
       }
     };
