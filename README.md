@@ -41,6 +41,10 @@ Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any
 - Vanilla CSS
 - Global variables are stored in [a global CSS file](https://github.com/Siege-Perilous/tableslayer/blob/main/packages/ui/styles/globals.css) that can be imported into a top level [layout file](https://github.com/Siege-Perilous/tableslayer/blob/main/apps/web/src/routes/%252Blayout.svelte).
 
+## Billing
+
+Billing is handled through [Lemon Squeezy](https://lemonsqueezy.com). To test the billing system locally you will need to set up webhook forwarding through a service like [smee.io](https://smee.io) and then add that forwarding address to Lemon Squeezy.
+
 ### Tech
 
 This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://vitejs.dev/).
