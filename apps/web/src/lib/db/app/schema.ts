@@ -135,7 +135,7 @@ export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCod
 // PARTY
 // PARTY
 //
-export const VALID_PARTY_PLANS = ['free', 'monthly', 'annual', 'lifetime'] as const;
+export const VALID_PARTY_PLANS = ['free', 'monthly', 'yearly', 'lifetime'] as const;
 
 export const partyTable = sqliteTable(
   'party',

@@ -13,12 +13,12 @@ lemonSqueezySetup({
 
 const LEMON_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID!;
 
-const annualId = Number(process.env.LEMONSQUEEZY_VARIANT_ANNUAL_ID!);
+const yearlyId = Number(process.env.LEMONSQUEEZY_VARIANT_YEARLY_ID!);
 const lifetimeId = Number(process.env.LEMONSQUEEZY_VARIANT_LIFETIME_ID!);
 const monthlyId = Number(process.env.LEMONSQUEEZY_VARIANT_MONTHLY_ID!);
 
 const PARTY_PLAN_VARIANT_IDS = {
-  annual: annualId,
+  yearly: yearlyId,
   lifetime: lifetimeId,
   monthly: monthlyId,
   free: null

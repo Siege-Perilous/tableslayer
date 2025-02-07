@@ -14,7 +14,7 @@ lemonSqueezySetup({
 });
 
 // LS stores ids as numbers. ENV vars are strings.
-const annualId = Number(process.env.LEMONSQUEEZY_VARIANT_ANNUAL_ID!);
+const yearlyId = Number(process.env.LEMONSQUEEZY_VARIANT_YEARLY_ID!);
 const lifetimeId = Number(process.env.LEMONSQUEEZY_VARIANT_LIFETIME_ID!);
 const monthlyId = Number(process.env.LEMONSQUEEZY_VARIANT_MONTHLY_ID!);
 
@@ -22,8 +22,8 @@ function planNameFromVariantId(variantId: number | null) {
   switch (variantId) {
     case lifetimeId:
       return 'lifetime';
-    case annualId:
-      return 'annual';
+    case yearlyId:
+      return 'yearly';
     case monthlyId:
       return 'monthly';
     default:

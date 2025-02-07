@@ -42,7 +42,7 @@
     <Spacer />
     <div class="partyUpgrade__buttons">
       <Button onclick={() => handleUpgrade('monthly')} variant="special">$5 - monthly</Button>
-      <Button onclick={() => handleUpgrade('annual')} variant="special">$40 - yearly</Button>
+      <Button onclick={() => handleUpgrade('yearly')} variant="special">$40 - yearly</Button>
       <Button onclick={() => handleUpgrade('lifetime')} variant="special">$85 - lifetime</Button>
     </div>
     <Text>plan: {party.plan}</Text>
