@@ -96,7 +96,7 @@ export const StageDefaultProps: StageProps = {
     color: '#ffffff',
     fov: 50,
     intensity: 1,
-    opacity: 1,
+    opacity: 0,
     type: WeatherType.Rain,
     custom: null
   }
