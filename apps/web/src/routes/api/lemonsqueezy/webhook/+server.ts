@@ -18,7 +18,7 @@ const annualId = Number(process.env.LEMONSQUEEZY_VARIANT_ANNUAL_ID!);
 const lifetimeId = Number(process.env.LEMONSQUEEZY_VARIANT_LIFETIME_ID!);
 const monthlyId = Number(process.env.LEMONSQUEEZY_VARIANT_MONTHLY_ID!);
 
-function planNameFromVariantId(variantId: number) {
+function planNameFromVariantId(variantId: number | null) {
   switch (variantId) {
     case lifetimeId:
       return 'lifetime';
@@ -63,16 +63,25 @@ export const POST: RequestHandler = async (event) => {
     // Payload is a json:api response
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sync = async (payload: any) => {
-      const variantId = Number(payload.data.attributes.first_order_item.variant_id);
+      let variantId;
+      if (payload.data.attributes.first_order_item) {
+        variantId = Number(payload.data.attributes.first_order_item.variant_id);
+        console.log('variantId from order', variantId);
+      } else if (payload.data.attributes.variant_id) {
+        variantId = Number(payload.data.attributes.variant_id);
+        console.log('variantId from subscription', variantId);
+      } else {
+        variantId = null;
+      }
       const planStatus = payload.data.attributes.status;
       let planNextBillingDate = null;
       if (payload.data.attributes.renews_at) {
-        planNextBillingDate = new Date(payload.data.attributes.renews_at * 1000);
+        planNextBillingDate = new Date(payload.data.attributes.renews_at);
       }
 
       let planExpirationDate = null;
       if (payload.data.attributes.ends_at) {
-        planExpirationDate = new Date(payload.data.attributes.ends_at * 1000);
+        planExpirationDate = new Date(payload.data.attributes.ends_at);
       }
 
       const plan = planNameFromVariantId(variantId);
@@ -86,6 +95,8 @@ export const POST: RequestHandler = async (event) => {
       const party = await updateParty(partyId, updates);
       return party;
     };
+
+    console.log(`Received LemonSqueezy webhook: ${eventType}`);
 
     switch (eventType) {
       case 'order_created': {
@@ -110,7 +121,7 @@ export const POST: RequestHandler = async (event) => {
         console.log(`Unhandled event type: ${eventType}`);
     }
 
-    console.log(`Received LemonSqueezy webhook: ${eventType}`);
+    console.log(`Processed LemonSqueezy webhook ${eventType}`);
 
     return json({ received: true });
   } catch (err) {
