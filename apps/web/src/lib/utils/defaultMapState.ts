@@ -11,6 +11,10 @@ import {
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
+  debug: {
+    enableStats: false,
+    loggingRate: 30
+  },
   backgroundColor: '#0b0b0c',
   display: {
     padding: { x: 16, y: 16 },
