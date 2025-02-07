@@ -7,7 +7,7 @@ export default {
   fadeOutTime: 3,
   lifetime: 7,
   spawnArea: {
-    minRadius: 0.07,
+    minRadius: 0.05,
     maxRadius: 0.6020720108695652
   },
   initialVelocity: {
@@ -28,8 +28,8 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.02,
-        y: 0.01,
+        x: 0.005,
+        y: 0.003,
         z: 0
       },
       frequency: {

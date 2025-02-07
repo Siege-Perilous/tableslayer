@@ -25,7 +25,7 @@ void main() {
 
   vec3 velocity = uInitialVelocity + vAge * uLinearForceAmplitude;
   velocity += uExponentialForceAmplitude * exp(vAge);
-  velocity += uSinusoidalForceAmplitude * sin(vAge * uSinusoidalForceFrequency);
+  velocity += uSinusoidalForceAmplitude * sin(vAge * uSinusoidalForceFrequency + vAge);
 
   vec3 pos = position + vAge * velocity;
 

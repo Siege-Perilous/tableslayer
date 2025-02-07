@@ -20,8 +20,8 @@
   const { renderer } = useThrelte();
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let scene: THREE.Scene | undefined = $state(undefined);
-  let rtCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
+  let particleScene: THREE.Scene | undefined = $state(undefined);
+  let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
 
   const aspectRatio = $derived(mapSize ? mapSize.width / mapSize.height : 1);
 
@@ -72,37 +72,38 @@
 
   // Position the render target camera
   $effect(() => {
-    if (!mapSize || !rtCamera) return;
-    rtCamera.aspect = aspectRatio;
-    rtCamera.fov = props.fov;
-    rtCamera.position.set(0, 0, -1 / 2 / Math.tan((DEG2RAD * props.fov) / 2));
-    rtCamera.far = -rtCamera.position.z;
-    rtCamera.lookAt(0, 0, 0);
-    rtCamera.updateProjectionMatrix();
+    if (!mapSize || !particleCamera) return;
+    particleCamera.aspect = aspectRatio;
+    particleCamera.fov = props.fov;
+    particleCamera.far = -particleCamera.position.z;
+    particleCamera.position.set(0, 0, -1 / 2 / Math.tan((DEG2RAD * props.fov) / 2));
+    particleCamera.rotation.x = Math.PI;
+    particleCamera.updateMatrixWorld();
+    particleCamera.updateProjectionMatrix();
   });
 
   // Custom render task
   useTask(() => {
-    if (!scene || !rtCamera) return;
+    if (!particleScene || !particleCamera) return;
 
-    scene.visible = true;
+    particleScene.visible = true;
 
     // Render particles to render target
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
-    renderer.render(scene, rtCamera);
+    renderer.render(particleScene, particleCamera);
 
     // Restore original render target
     renderer.setRenderTarget(null);
 
-    scene.visible = false;
+    particleScene.visible = false;
     quadMaterial.needsUpdate = true;
   });
 </script>
 
 <!-- Hidden scene that renders to the render target -->
-<T.Scene bind:ref={scene} visible={false}>
-  <T.PerspectiveCamera bind:ref={rtCamera} />
+<T.Scene bind:ref={particleScene} visible={false}>
+  <T.PerspectiveCamera bind:ref={particleCamera} />
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
