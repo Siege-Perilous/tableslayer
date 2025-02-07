@@ -33,7 +33,70 @@ export interface DisplayProps {
   resolution: { x: number; y: number };
 }
 
-export enum StageLayerZ {}
+/**
+ * Properties for post-processing effects
+ */
+export interface PostProcessingProps {
+  /**
+   * Bloom effect properties
+   */
+  bloom: {
+    /**
+     * Whether the bloom effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * Overall intensity of the bloom effect (0-1)
+     */
+    intensity: number;
+
+    /**
+     * Luminance threshold for what pixels will bloom (0-1)
+     */
+    threshold: number;
+
+    /**
+     * How smoothly the bloom transitions at the threshold (0-1)
+     */
+    smoothing: number;
+
+    /**
+     * Radius of the bloom effect
+     */
+    radius: number;
+
+    /**
+     * Levels of the bloom effect
+     */
+    levels: number;
+
+    /**
+     * Whether to apply mipmap blur
+     */
+    mipmapBlur: boolean;
+  };
+
+  /**
+   * Vignette effect properties
+   */
+  vignette: {
+    /**
+     * Whether the vignette effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * How far from the center the vignette starts (0-1)
+     */
+    offset: number;
+
+    /**
+     * How dark the vignette effect is (0-1)
+     */
+    darkness: number;
+  };
+}
 
 /**
  * Properties for the Stage component
@@ -52,6 +115,7 @@ export type StageProps = {
   ping: PingLayerProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
+  postProcessing: PostProcessingProps;
 };
 
 export interface StageExports {

@@ -111,6 +111,6 @@
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]}>
+<T.Mesh bind:ref={pingMesh} name="pingLayer" position={[-0.5, -0.5, 0]}>
   <PingMaterial {props} />
 </T.Mesh>

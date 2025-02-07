@@ -1,7 +1,8 @@
 <script lang="ts">
+  import * as THREE from 'three';
   import { getContext, onMount, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
-  import { EffectComposer, EffectPass, RenderPass, VignetteEffect } from 'postprocessing';
+  import { EffectComposer, EffectPass, RenderPass, BloomEffect, VignetteEffect, BlendFunction } from 'postprocessing';
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
@@ -20,13 +21,13 @@
 
   let mapLayer: MapLayerExports;
 
-  // TODO: Add post-processing effects
+  // Create separate scenes
+  const otherStuff: THREE.Object3D[] = [];
+
   const composer = new EffectComposer(renderer);
-  const renderPass = new RenderPass(scene);
-  composer.addPass(renderPass);
-  composer.addPass(new EffectPass($camera, new VignetteEffect({ offset: 0.2 })));
 
   onMount(() => {
+    renderer.setClearColor(0, 0);
     let before = autoRender.current;
     autoRender.set(false);
     fit();
@@ -34,6 +35,78 @@
       autoRender.set(before);
     };
   });
+
+  // Effect to handle scene separation after layers are set up
+  $effect(() => {
+    // Move grid and ping layers to overlay scene if they exist
+    const gridLayer = scene.getObjectByName('gridLayer');
+    const pingLayer = scene.getObjectByName('pingLayer');
+
+    if (gridLayer) {
+      otherStuff.push(gridLayer);
+    }
+
+    if (pingLayer) {
+      otherStuff.push(pingLayer);
+    }
+  });
+
+  // Effect to update post-processing settings when props change
+  $effect(() => {
+    composer.setSize($size.width, $size.height);
+    composer.removeAllPasses();
+
+    const bloomEffect = new BloomEffect({
+      intensity: props.postProcessing.bloom.intensity,
+      mipmapBlur: props.postProcessing.bloom.mipmapBlur,
+      radius: props.postProcessing.bloom.radius,
+      levels: props.postProcessing.bloom.levels,
+      luminanceThreshold: props.postProcessing.bloom.threshold,
+      luminanceSmoothing: props.postProcessing.bloom.smoothing
+    });
+
+    const vignetteEffect = new VignetteEffect({
+      offset: props.postProcessing?.vignette?.offset ?? 0.5,
+      darkness: props.postProcessing?.vignette?.darkness ?? 0.5,
+      blendFunction: BlendFunction.NORMAL
+    });
+
+    const renderPass = new RenderPass(scene, $camera);
+    const bloomPass = new EffectPass($camera, bloomEffect);
+    const vignettePass = new EffectPass($camera, vignetteEffect);
+
+    composer.addPass(renderPass);
+    if (props.postProcessing.bloom.enabled) {
+      composer.addPass(bloomPass);
+    }
+    if (props.postProcessing.vignette.enabled) {
+      composer.addPass(vignettePass);
+    }
+  });
+
+  // Whenever the scene or display properties change, update the clipping planes
+  $effect(() => {
+    updateClippingPlanes(props.scene, props.display);
+    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+  });
+
+  // Custom render task to handle both scenes
+  useTask(
+    (dt) => {
+      if (!scene || !renderer) return;
+
+      // otherStuff.forEach((child) => (child.visible = false));
+
+      // Render post-processed main scene
+      composer.render(dt);
+
+      // Render overlay scene normally
+      // renderer.autoClear = false;
+      //renderer.render(overlayScene, $camera);
+      //renderer.autoClear = true;
+    },
+    { stage: renderStage }
+  );
 
   export function fill() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
@@ -80,25 +153,6 @@
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
-
-  $effect(() => {
-    renderPass.mainCamera = $camera;
-    composer.setSize($size.width, $size.height);
-  });
-
-  // Whenever the scene or display properties change, update the clipping planes
-  $effect(() => {
-    updateClippingPlanes(props.scene, props.display);
-    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
-  });
-
-  useTask(
-    (dt) => {
-      if (!scene || !renderer) return;
-      composer.render(dt);
-    },
-    { stage: renderStage }
-  );
 
   export const map = {
     fill: () => mapLayer.fill(),

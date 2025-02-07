@@ -97,12 +97,13 @@
 
 <!-- Map -->
 <T.Object3D
+  name="mapLayer"
   position={[props.map.offset.x, props.map.offset.y, 0]}
   rotation.z={(props.map.rotation / 180.0) * Math.PI}
   scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh>
+  <T.Mesh name="mapImage">
     <T.MeshBasicMaterial map={image} transparent={true} />
     <T.PlaneGeometry />
   </T.Mesh>

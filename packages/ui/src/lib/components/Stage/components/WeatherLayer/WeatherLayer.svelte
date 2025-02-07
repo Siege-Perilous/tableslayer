@@ -109,7 +109,7 @@
 
 <T.Mesh
   bind:ref={mesh}
-  name="WeatherLayer"
+  name="weatherLayer"
   renderOrder={50}
   visible={props.type !== WeatherType.None}
   scale={[1, 1, 1]}

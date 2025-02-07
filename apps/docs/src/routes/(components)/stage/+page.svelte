@@ -341,6 +341,50 @@
     <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
   </Folder>
 
+  <Folder title="Post Processing" expanded={false}>
+    <Folder title="Bloom" expanded={false}>
+      <List bind:value={stageProps.postProcessing.bloom.enabled} label="Enabled" options={{ Yes: true, No: false }} />
+      <List
+        bind:value={stageProps.postProcessing.bloom.mipmapBlur}
+        label="Mipmap Blur"
+        options={{ Yes: true, No: false }}
+      />
+      <Slider
+        bind:value={stageProps.postProcessing.bloom.intensity}
+        label="Bloom Intensity"
+        min={0}
+        max={3}
+        step={0.1}
+      />
+      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Bloom Radius" min={0} max={1} step={0.01} />
+      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Bloom Levels" min={1} max={16} step={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.threshold} label="Threshold" min={0} max={1} step={0.01} />
+      <Slider bind:value={stageProps.postProcessing.bloom.smoothing} label="Smoothing" min={0} max={1} step={0.01} />
+    </Folder>
+
+    <Folder title="Vignette" expanded={false}>
+      <List
+        bind:value={stageProps.postProcessing.vignette.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
+      <Slider
+        bind:value={stageProps.postProcessing.vignette.offset}
+        label="Vignette Offset"
+        min={0}
+        max={1}
+        step={0.1}
+      />
+      <Slider
+        bind:value={stageProps.postProcessing.vignette.darkness}
+        label="Vignette Darkness"
+        min={0}
+        max={1}
+        step={0.1}
+      />
+    </Folder>
+  </Folder>
+
   <Folder title="Scene" expanded={false}>
     <Color bind:value={stageProps.backgroundColor} label="Background Color" />
     <Button on:click={() => (stageProps.scene.offset = { x: 0, y: 0 })} title="Center" />
