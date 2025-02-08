@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte } from '@threlte/core';
+  import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
   import { WeatherType, type WeatherLayerProps } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import { DEG2RAD } from 'three/src/math/MathUtils';
@@ -10,12 +10,12 @@
   import RainPreset from './presets/RainPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
-  interface Props {
+  interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: WeatherLayerProps;
     mapSize: Size | null;
   }
 
-  const { props, mapSize }: Props = $props();
+  const { props, mapSize, ...meshProps }: Props = $props();
 
   const { renderer } = useThrelte();
 
@@ -107,13 +107,7 @@
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
-<T.Mesh
-  bind:ref={mesh}
-  name="weatherLayer"
-  renderOrder={50}
-  visible={props.type !== WeatherType.None}
-  scale={[1, 1, 1]}
->
+<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
   <T.MeshBasicMaterial is={quadMaterial} />
   <T.PlaneGeometry args={[1, 1]} />
 </T.Mesh>

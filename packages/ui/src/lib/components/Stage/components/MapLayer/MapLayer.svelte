@@ -10,6 +10,7 @@
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
+  import { SceneLayer } from '../Scene/types';
 
   interface Props {
     props: StageProps;
@@ -103,18 +104,19 @@
   scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh name="mapImage">
+  <T.Mesh name="mapImage" layers={[SceneLayer.Main]}>
     <T.MeshBasicMaterial map={image} transparent={true} />
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <WeatherLayer props={props.weather} {mapSize} />
+  <WeatherLayer props={props.weather} {mapSize} layers={[SceneLayer.Main]} />
 
   <FogOfWarLayer
     bind:this={fogOfWarLayer}
     props={props.fogOfWar}
     isActive={props.activeLayer === MapLayerType.FogOfWar}
     {mapSize}
+    layers={[SceneLayer.Main]}
   />
 
   <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} {mapSize} />

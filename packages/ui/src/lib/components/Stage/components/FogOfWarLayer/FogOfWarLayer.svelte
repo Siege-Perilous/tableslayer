@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { getContext } from 'svelte';
-  import { T } from '@threlte/core';
+  import { T, type Props as ThrelteProps } from '@threlte/core';
   import { ToolType, type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
@@ -9,14 +9,15 @@
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
+  import { SceneLayer } from '../Scene/types';
 
-  interface Props {
+  interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: FogOfWarLayerProps;
     isActive: boolean;
     mapSize: Size | null;
   }
 
-  const { props, isActive, mapSize }: Props = $props();
+  const { props, isActive, mapSize, ...meshProps }: Props = $props();
 
   const onFogUpdate = getContext<Callbacks>('callbacks').onFogUpdate;
 
@@ -182,16 +183,17 @@ Invisible mesh used for input detection.
 The plane geometry is larger than the map size to allow cursor 
 events to be detected outside of the fog of war layer.
 -->
-<T.Mesh bind:ref={mesh} name="fogOfWarInput" visible={false}>
+<T.Mesh bind:ref={mesh} name="fogOfWarInput" layer={SceneLayer.Input}>
+  <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry args={[10, 10]} />
 </T.Mesh>
 
 <T.Mesh name="fogOfWarToolOutline" position.z={-10} renderOrder={300}>
-  <T is={outlineMaterial} />
+  <T is={outlineMaterial} transparent={true} opacity={0.0} depthTest={false} />
   <T.PlaneGeometry />
 </T.Mesh>
 
-<T.Mesh name="fogOfWar" renderOrder={200}>
+<T.Mesh name="fogOfWar" renderOrder={200} {...meshProps}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

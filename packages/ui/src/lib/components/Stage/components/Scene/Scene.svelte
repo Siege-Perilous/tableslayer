@@ -2,13 +2,23 @@
   import * as THREE from 'three';
   import { getContext, onMount, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
-  import { EffectComposer, EffectPass, RenderPass, BloomEffect, VignetteEffect, BlendFunction } from 'postprocessing';
+  import {
+    EffectComposer,
+    EffectPass,
+    RenderPass,
+    BloomEffect,
+    VignetteEffect,
+    ChromaticAberrationEffect,
+    BlendFunction,
+    ToneMappingEffect,
+    ToneMappingMode
+  } from 'postprocessing';
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-
+  import { SceneLayer } from './types';
   interface Props {
     props: StageProps;
   }
@@ -18,11 +28,7 @@
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
-
   let mapLayer: MapLayerExports;
-
-  // Create separate scenes
-  const otherStuff: THREE.Object3D[] = [];
 
   const composer = new EffectComposer(renderer);
 
@@ -35,19 +41,17 @@
     };
   });
 
-  // Effect to handle scene separation after layers are set up
+  // Setup camera and renderer in effect
   $effect(() => {
-    // Move grid and ping layers to overlay scene if they exist
-    const gridLayer = scene.getObjectByName('gridLayer');
-    const pingLayer = scene.getObjectByName('pingLayer');
+    if (!camera || !renderer) return;
 
-    if (gridLayer) {
-      otherStuff.push(gridLayer);
-    }
+    // Configure camera to see both layers
+    $camera.layers.disableAll();
+    $camera.layers.enable(SceneLayer.Main);
+    $camera.layers.enable(SceneLayer.Overlay);
 
-    if (pingLayer) {
-      otherStuff.push(pingLayer);
-    }
+    // Configure renderer
+    renderer.setClearColor(0, 0);
   });
 
   // Effect to update post-processing settings when props change
@@ -55,32 +59,52 @@
     composer.setSize($size.width, $size.height);
     composer.removeAllPasses();
 
-    const bloomEffect = new BloomEffect({
-      intensity: props.postProcessing.bloom.intensity,
-      mipmapBlur: props.postProcessing.bloom.mipmapBlur,
-      radius: props.postProcessing.bloom.radius,
-      levels: props.postProcessing.bloom.levels,
-      luminanceThreshold: props.postProcessing.bloom.threshold,
-      luminanceSmoothing: props.postProcessing.bloom.smoothing
-    });
-
-    const vignetteEffect = new VignetteEffect({
-      offset: props.postProcessing?.vignette?.offset ?? 0.5,
-      darkness: props.postProcessing?.vignette?.darkness ?? 0.5,
-      blendFunction: BlendFunction.NORMAL
-    });
-
     const renderPass = new RenderPass(scene, $camera);
-    const bloomPass = new EffectPass($camera, bloomEffect);
-    const vignettePass = new EffectPass($camera, vignetteEffect);
-
     composer.addPass(renderPass);
-    if (props.postProcessing.bloom.enabled) {
-      composer.addPass(bloomPass);
+
+    if (props.postProcessing.enabled) {
+      if (props.postProcessing.bloom.enabled) {
+        const bloomEffect = new BloomEffect({
+          intensity: props.postProcessing.bloom.intensity,
+          mipmapBlur: props.postProcessing.bloom.mipmapBlur,
+          radius: props.postProcessing.bloom.radius,
+          levels: props.postProcessing.bloom.levels,
+          luminanceThreshold: props.postProcessing.bloom.threshold,
+          luminanceSmoothing: props.postProcessing.bloom.smoothing
+        });
+        composer.addPass(new EffectPass($camera, bloomEffect));
+      }
+
+      if (props.postProcessing.chromaticAberration.enabled) {
+        const chromaticAberrationEffect = new ChromaticAberrationEffect({
+          offset: new THREE.Vector2(props.postProcessing.chromaticAberration.offset),
+          radialModulation: true,
+          modulationOffset: 0.025
+        });
+        composer.addPass(new EffectPass($camera, chromaticAberrationEffect));
+      }
+
+      if (props.postProcessing.vignette.enabled) {
+        const vignetteEffect = new VignetteEffect({
+          offset: props.postProcessing.vignette.offset,
+          darkness: props.postProcessing.vignette.darkness,
+          blendFunction: BlendFunction.NORMAL
+        });
+        composer.addPass(new EffectPass($camera, vignetteEffect));
+      }
     }
-    if (props.postProcessing.vignette.enabled) {
-      composer.addPass(vignettePass);
-    }
+
+    // Add final tonemapping pass
+    const toneMappingPass = new EffectPass(
+      $camera,
+      new ToneMappingEffect({
+        mode:
+          props.postProcessing.enabled && props.postProcessing.toneMapping.enabled
+            ? props.postProcessing.toneMapping.mode
+            : ToneMappingMode.LINEAR
+      })
+    );
+    composer.addPass(toneMappingPass);
   });
 
   // Whenever the scene or display properties change, update the clipping planes
@@ -89,20 +113,24 @@
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
-  // Custom render task to handle both scenes
+  // Custom render task
   useTask(
     (dt) => {
-      if (!scene || !renderer) return;
+      if (!scene || !renderer || !camera) return;
 
-      // otherStuff.forEach((child) => (child.visible = false));
-
-      // Render post-processed main scene
+      // Render main scene with post-processing
+      camera.current.layers.set(SceneLayer.Main);
       composer.render(dt);
 
-      // Render overlay scene normally
-      // renderer.autoClear = false;
-      //renderer.render(overlayScene, $camera);
-      //renderer.autoClear = true;
+      // Render overlays (grid/ping)without post-processing
+      camera.current.layers.set(SceneLayer.Overlay);
+
+      renderer.autoClear = false;
+      renderer.render(scene, camera.current);
+      renderer.autoClear = true;
+
+      // Reset camera back to main layer
+      camera.current.layers.set(SceneLayer.Main);
     },
     { stage: renderStage }
   );

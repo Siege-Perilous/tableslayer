@@ -7,6 +7,7 @@ import {
   WeatherType,
   type StageProps
 } from '@tableslayer/ui';
+import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
@@ -22,7 +23,7 @@ export const StageDefaultProps: StageProps = {
   },
   fogOfWar: {
     url: null,
-    opacity: 1,
+    opacity: 1.0,
     outline: {
       color: '#000000',
       opacity: 1,
@@ -88,14 +89,25 @@ export const StageDefaultProps: StageProps = {
     thickness: 0.1
   },
   postProcessing: {
+    enabled: true,
     bloom: {
       enabled: true,
-      intensity: 2.0,
-      threshold: 0.2,
+      intensity: 0.6,
+      threshold: 0.5,
       smoothing: 0.3,
       radius: 0.5,
-      levels: 16,
+      levels: 10,
       mipmapBlur: true
+    },
+    chromaticAberration: {
+      enabled: true,
+      offset: 0.003
+    },
+    toneMapping: {
+      enabled: true,
+      mode: ToneMappingMode.NEUTRAL,
+      maxLuminance: 10,
+      whitePoint: 1.0
     },
     vignette: {
       enabled: true,

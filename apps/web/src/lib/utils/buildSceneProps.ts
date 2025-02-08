@@ -11,6 +11,7 @@ import {
   type StageProps,
   ToolType
 } from '@tableslayer/ui';
+import { ToneMappingMode } from 'postprocessing';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
@@ -96,6 +97,32 @@ export const buildSceneProps = (
       },
       zoom: activeScene.mapZoom,
       url: thumbUrl
+    },
+    postProcessing: {
+      bloom: {
+        enabled: true,
+        intensity: 0.5,
+        threshold: 0.5,
+        smoothing: 0.5,
+        radius: 0.5,
+        levels: 0.5,
+        mipmapBlur: true
+      },
+      chromaticAberration: {
+        enabled: true,
+        offset: 0.005
+      },
+      toneMapping: {
+        enabled: true,
+        mode: ToneMappingMode.NEUTRAL,
+        maxLuminance: 10,
+        whitePoint: 1.0
+      },
+      vignette: {
+        enabled: true,
+        offset: 0.5,
+        darkness: 0.5
+      }
     },
     scene: {
       offset: {

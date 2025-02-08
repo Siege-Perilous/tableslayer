@@ -75,6 +75,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      postprocessing:
+        specifier: ^6.36.6
+        version: 6.36.6(three@0.173.0)
       svelte:
         specifier: 5.19.6
         version: 5.19.6
@@ -8607,6 +8610,10 @@ snapshots:
   postprocessing@6.36.6(three@0.172.0):
     dependencies:
       three: 0.172.0
+
+  postprocessing@6.36.6(three@0.173.0):
+    dependencies:
+      three: 0.173.0
 
   prelude-ls@1.2.1: {}
 

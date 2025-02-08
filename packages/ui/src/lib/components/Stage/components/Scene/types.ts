@@ -5,6 +5,12 @@ export enum SceneRotation {
   Deg270 = 270
 }
 
+export enum SceneLayer {
+  Main = 0,
+  Overlay = 1,
+  Input = 2
+}
+
 export interface SceneLayerProps {
   /**
    * The position of the scene layer within the canvas

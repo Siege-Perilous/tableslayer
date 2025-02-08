@@ -88,6 +88,22 @@ export const StageDefaultProps: StageProps = {
     sharpness: 0.95,
     thickness: 0.1
   },
+  postProcessing: {
+    bloom: {
+      enabled: true,
+      intensity: 0.5,
+      threshold: 0.5,
+      smoothing: 0.5,
+      radius: 0.5,
+      levels: 0.5,
+      mipmapBlur: true
+    },
+    vignette: {
+      enabled: true,
+      offset: 0.5,
+      darkness: 0.5
+    }
+  },
   scene: {
     offset: {
       x: 0,

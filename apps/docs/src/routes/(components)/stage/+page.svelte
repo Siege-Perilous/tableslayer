@@ -15,6 +15,7 @@
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
+  import { ToneMappingMode } from 'postprocessing';
 
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
@@ -342,32 +343,62 @@
   </Folder>
 
   <Folder title="Post Processing" expanded={false}>
+    <Binding object={stageProps.postProcessing} key="enabled" label="Enabled" />
     <Folder title="Bloom" expanded={false}>
-      <List bind:value={stageProps.postProcessing.bloom.enabled} label="Enabled" options={{ Yes: true, No: false }} />
+      <Binding object={stageProps.postProcessing.bloom} key="enabled" label="Enabled" />
       <List
         bind:value={stageProps.postProcessing.bloom.mipmapBlur}
         label="Mipmap Blur"
         options={{ Yes: true, No: false }}
       />
+      <Slider bind:value={stageProps.postProcessing.bloom.intensity} label="Bloom Intensity" min={0} max={10} />
+      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Bloom Radius" min={0} max={0.5} />
+      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Bloom Levels" min={1} max={16} step={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.threshold} label="Threshold" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.smoothing} label="Smoothing" min={0} max={1} />
+    </Folder>
+
+    <Folder title="Chromatic Aberration" expanded={false}>
+      <Binding object={stageProps.postProcessing.chromaticAberration} key="enabled" label="Enabled" />
+      <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
+    </Folder>
+
+    <Folder title="Tone Mapping" expanded={false}>
+      <Binding object={stageProps.postProcessing.toneMapping} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.toneMapping.mode}
+        label="Mode"
+        options={{
+          ACES_FILMIC: ToneMappingMode.ACES_FILMIC,
+          AGX: ToneMappingMode.AGX,
+          CINEON: ToneMappingMode.CINEON,
+          LINEAR: ToneMappingMode.LINEAR,
+          NEUTRAL: ToneMappingMode.NEUTRAL,
+          OPTIMIZED_CINEON: ToneMappingMode.OPTIMIZED_CINEON,
+          REINHARD: ToneMappingMode.REINHARD,
+          REINHARD2: ToneMappingMode.REINHARD2,
+          REINHARD2_ADAPTIVE: ToneMappingMode.REINHARD2_ADAPTIVE,
+          UNCHARTED2: ToneMappingMode.UNCHARTED2
+        }}
+      />
       <Slider
-        bind:value={stageProps.postProcessing.bloom.intensity}
-        label="Bloom Intensity"
-        min={0}
-        max={3}
+        bind:value={stageProps.postProcessing.toneMapping.maxLuminance}
+        label="Max Luminance"
+        min={1}
+        max={32}
         step={0.1}
       />
-      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Bloom Radius" min={0} max={1} step={0.01} />
-      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Bloom Levels" min={1} max={16} step={1} />
-      <Slider bind:value={stageProps.postProcessing.bloom.threshold} label="Threshold" min={0} max={1} step={0.01} />
-      <Slider bind:value={stageProps.postProcessing.bloom.smoothing} label="Smoothing" min={0} max={1} step={0.01} />
+      <Slider
+        bind:value={stageProps.postProcessing.toneMapping.whitePoint}
+        label="White Point"
+        min={0}
+        max={10}
+        step={0.1}
+      />
     </Folder>
 
     <Folder title="Vignette" expanded={false}>
-      <List
-        bind:value={stageProps.postProcessing.vignette.enabled}
-        label="Enabled"
-        options={{ Yes: true, No: false }}
-      />
+      <Binding object={stageProps.postProcessing.vignette} key="enabled" label="Enabled" />
       <Slider
         bind:value={stageProps.postProcessing.vignette.offset}
         label="Vignette Offset"

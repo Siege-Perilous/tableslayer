@@ -1,3 +1,4 @@
+import type { ToneMappingMode } from 'postprocessing';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
@@ -37,6 +38,11 @@ export interface DisplayProps {
  * Properties for post-processing effects
  */
 export interface PostProcessingProps {
+  /**
+   * Whether post-processing is enabled
+   */
+  enabled: boolean;
+
   /**
    * Bloom effect properties
    */
@@ -78,6 +84,21 @@ export interface PostProcessingProps {
   };
 
   /**
+   * Chromatic aberration effect properties
+   */
+  chromaticAberration: {
+    /**
+     * Whether the chromatic aberration effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The offset of the chromatic aberration effect
+     */
+    offset: number;
+  };
+
+  /**
    * Vignette effect properties
    */
   vignette: {
@@ -96,6 +117,31 @@ export interface PostProcessingProps {
      */
     darkness: number;
   };
+
+  /**
+   * Tone mapping effect properties
+   */
+  toneMapping: {
+    /**
+     * Whether the tone mapping effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The mode of the tone mapping effect
+     */
+    mode: ToneMappingMode;
+
+    /**
+     * The maximum luminance of the tone mapping effect
+     */
+    maxLuminance: number;
+
+    /**
+     * The white point of the tone mapping effect
+     */
+    whitePoint: number;
+  };
 }
 
 /**
@@ -113,9 +159,9 @@ export type StageProps = {
   grid: GridLayerProps;
   map: MapLayerProps;
   ping: PingLayerProps;
+  postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
-  postProcessing: PostProcessingProps;
 };
 
 export interface StageExports {
