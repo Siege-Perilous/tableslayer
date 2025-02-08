@@ -105,9 +105,7 @@ export const StageDefaultProps: StageProps = {
     },
     toneMapping: {
       enabled: true,
-      mode: ToneMappingMode.NEUTRAL,
-      maxLuminance: 10,
-      whitePoint: 1.0
+      mode: ToneMappingMode.NEUTRAL
     },
     vignette: {
       enabled: true,

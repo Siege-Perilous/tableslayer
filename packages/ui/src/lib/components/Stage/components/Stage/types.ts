@@ -99,6 +99,21 @@ export interface PostProcessingProps {
   };
 
   /**
+   * Tone mapping effect properties
+   */
+  toneMapping: {
+    /**
+     * Whether the tone mapping effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The mode of the tone mapping effect
+     */
+    mode: ToneMappingMode;
+  };
+
+  /**
    * Vignette effect properties
    */
   vignette: {
@@ -116,31 +131,6 @@ export interface PostProcessingProps {
      * How dark the vignette effect is (0-1)
      */
     darkness: number;
-  };
-
-  /**
-   * Tone mapping effect properties
-   */
-  toneMapping: {
-    /**
-     * Whether the tone mapping effect is enabled
-     */
-    enabled: boolean;
-
-    /**
-     * The mode of the tone mapping effect
-     */
-    mode: ToneMappingMode;
-
-    /**
-     * The maximum luminance of the tone mapping effect
-     */
-    maxLuminance: number;
-
-    /**
-     * The white point of the tone mapping effect
-     */
-    whitePoint: number;
   };
 }
 

@@ -8,6 +8,7 @@ import {
   WeatherType,
   type StageProps
 } from '@tableslayer/ui';
+import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
@@ -89,6 +90,7 @@ export const StageDefaultProps: StageProps = {
     thickness: 0.1
   },
   postProcessing: {
+    enabled: true,
     bloom: {
       enabled: true,
       intensity: 0.5,
@@ -97,6 +99,14 @@ export const StageDefaultProps: StageProps = {
       radius: 0.5,
       levels: 0.5,
       mipmapBlur: true
+    },
+    chromaticAberration: {
+      enabled: true,
+      offset: 0.001
+    },
+    toneMapping: {
+      enabled: true,
+      mode: ToneMappingMode.NEUTRAL
     },
     vignette: {
       enabled: true,

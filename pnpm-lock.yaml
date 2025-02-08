@@ -226,6 +226,9 @@ importers:
       lucia:
         specifier: ^3.2.2
         version: 3.2.2
+      postprocessing:
+        specifier: ^6.36.6
+        version: 6.36.6(three@0.173.0)
       svelte:
         specifier: 5.19.6
         version: 5.19.6

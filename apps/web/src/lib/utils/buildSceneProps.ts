@@ -99,6 +99,7 @@ export const buildSceneProps = (
       url: thumbUrl
     },
     postProcessing: {
+      enabled: true,
       bloom: {
         enabled: true,
         intensity: 0.5,
@@ -110,13 +111,11 @@ export const buildSceneProps = (
       },
       chromaticAberration: {
         enabled: true,
-        offset: 0.005
+        offset: 0.001
       },
       toneMapping: {
         enabled: true,
-        mode: ToneMappingMode.NEUTRAL,
-        maxLuminance: 10,
-        whitePoint: 1.0
+        mode: ToneMappingMode.NEUTRAL
       },
       vignette: {
         enabled: true,
