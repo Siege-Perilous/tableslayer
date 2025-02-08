@@ -351,9 +351,9 @@
         label="Mipmap Blur"
         options={{ Yes: true, No: false }}
       />
-      <Slider bind:value={stageProps.postProcessing.bloom.intensity} label="Bloom Intensity" min={0} max={10} />
-      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Bloom Radius" min={0} max={0.5} />
-      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Bloom Levels" min={1} max={16} step={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.intensity} label="Intensity" min={0} max={10} />
+      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Radius" min={0} max={0.5} />
+      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Levels" min={1} max={16} step={1} />
       <Slider bind:value={stageProps.postProcessing.bloom.threshold} label="Threshold" min={0} max={1} />
       <Slider bind:value={stageProps.postProcessing.bloom.smoothing} label="Smoothing" min={0} max={1} />
     </Folder>
@@ -381,38 +381,12 @@
           UNCHARTED2: ToneMappingMode.UNCHARTED2
         }}
       />
-      <Slider
-        bind:value={stageProps.postProcessing.toneMapping.maxLuminance}
-        label="Max Luminance"
-        min={1}
-        max={32}
-        step={0.1}
-      />
-      <Slider
-        bind:value={stageProps.postProcessing.toneMapping.whitePoint}
-        label="White Point"
-        min={0}
-        max={10}
-        step={0.1}
-      />
     </Folder>
 
     <Folder title="Vignette" expanded={false}>
       <Binding object={stageProps.postProcessing.vignette} key="enabled" label="Enabled" />
-      <Slider
-        bind:value={stageProps.postProcessing.vignette.offset}
-        label="Vignette Offset"
-        min={0}
-        max={1}
-        step={0.1}
-      />
-      <Slider
-        bind:value={stageProps.postProcessing.vignette.darkness}
-        label="Vignette Darkness"
-        min={0}
-        max={1}
-        step={0.1}
-      />
+      <Slider bind:value={stageProps.postProcessing.vignette.offset} label="Offset" min={0} max={1} step={0.1} />
+      <Slider bind:value={stageProps.postProcessing.vignette.darkness} label="Darkness" min={0} max={1} step={0.1} />
     </Folder>
   </Folder>
 
