@@ -46,7 +46,7 @@
 {#if !formIsOpen}
   <Panel onclick={handleOpenForm} class="createSessionPanel hover">
     <Title as="p" size="sm">Create a new session</Title>
-    <Text size="0.875rem" color="var(--fgMuted)">Game sessions contain a group of battle scenes</Text>
+    <Text size="0.875rem" color="var(--fgMuted)">Game sessions contain a collection of battle scenes</Text>
   </Panel>
 {:else}
   <Panel class="createSessionPanel">

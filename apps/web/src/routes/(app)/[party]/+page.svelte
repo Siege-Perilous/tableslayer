@@ -33,8 +33,10 @@
       </div>
     </main>
     <aside>
-      <PartyUpgrade {party} />
-      <Spacer />
+      {#if isPartyAdmin}
+        <PartyUpgrade {party} />
+        <Spacer />
+      {/if}
       <Title as="h2" size="sm">Party members</Title>
       <Spacer />
       <Panel class="partyMembers__aside">
