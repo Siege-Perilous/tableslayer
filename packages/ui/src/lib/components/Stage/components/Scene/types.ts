@@ -1,3 +1,6 @@
+import type { ToneMappingMode } from 'postprocessing';
+import type { LUT } from '../Scene/luts/luts';
+
 export enum SceneRotation {
   Deg0 = 0,
   Deg90 = 90,
@@ -41,5 +44,120 @@ export interface SceneExports {
   map: {
     fit: () => void;
     fill: () => void;
+  };
+}
+
+/**
+ * Properties for post-processing effects
+ */
+export interface PostProcessingProps {
+  /**
+   * Whether post-processing is enabled
+   */
+  enabled: boolean;
+
+  /**
+   * Bloom effect properties
+   */
+  bloom: {
+    /**
+     * Whether the bloom effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * Overall intensity of the bloom effect (0-1)
+     */
+    intensity: number;
+
+    /**
+     * Luminance threshold for what pixels will bloom (0-1)
+     */
+    threshold: number;
+
+    /**
+     * How smoothly the bloom transitions at the threshold (0-1)
+     */
+    smoothing: number;
+
+    /**
+     * Radius of the bloom effect
+     */
+    radius: number;
+
+    /**
+     * Levels of the bloom effect
+     */
+    levels: number;
+
+    /**
+     * Whether to apply mipmap blur
+     */
+    mipmapBlur: boolean;
+  };
+
+  /**
+   * Chromatic aberration effect properties
+   */
+  chromaticAberration: {
+    /**
+     * Whether the chromatic aberration effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The offset of the chromatic aberration effect
+     */
+    offset: number;
+  };
+
+  /**
+   * LUT effect properties
+   */
+  lut: {
+    /**
+     * Whether the LUT3D effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The name of the LUT to use
+     */
+    name: LUT;
+  };
+
+  /**
+   * Tone mapping effect properties
+   */
+  toneMapping: {
+    /**
+     * Whether the tone mapping effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * The mode of the tone mapping effect
+     */
+    mode: ToneMappingMode;
+  };
+
+  /**
+   * Vignette effect properties
+   */
+  vignette: {
+    /**
+     * Whether the vignette effect is enabled
+     */
+    enabled: boolean;
+
+    /**
+     * How far from the center the vignette starts (0-1)
+     */
+    offset: number;
+
+    /**
+     * How dark the vignette effect is (0-1)
+     */
+    darkness: number;
   };
 }

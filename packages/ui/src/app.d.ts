@@ -20,4 +20,9 @@ declare module '*.png' {
   export default value;
 }
 
+declare module '*.cube' {
+  const value: string;
+  export default value;
+}
+
 export {};

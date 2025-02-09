@@ -1,6 +1,7 @@
 import {
   DrawMode,
   GridType,
+  LUT,
   MapLayerType,
   PingEditMode,
   ToolType,
@@ -102,6 +103,10 @@ export const StageDefaultProps: StageProps = {
     chromaticAberration: {
       enabled: true,
       offset: 0.003
+    },
+    lut: {
+      enabled: true,
+      name: LUT.BlueArchitecture
     },
     toneMapping: {
       enabled: true,

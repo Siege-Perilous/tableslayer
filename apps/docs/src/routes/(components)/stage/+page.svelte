@@ -11,7 +11,8 @@
     PingEditMode,
     SceneRotation,
     ParticleType,
-    WeatherType
+    WeatherType,
+    LUT
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
@@ -56,6 +57,22 @@
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
     Hex: GridType.Hex
+  };
+
+  const lutOptions: ListOptions<LUT> = {
+    BlueArchitecture: LUT.BlueArchitecture,
+    BlueHour: LUT.BlueHour,
+    ColdChrome: LUT.ColdChrome,
+    CrispAutumn: LUT.CrispAutumn,
+    DarkAndSomber: LUT.DarkAndSomber,
+    HardBoost: LUT.HardBoost,
+    LongBeachMorning: LUT.LongBeachMorning,
+    LushGreen: LUT.LushGreen,
+    MagicHour: LUT.MagicHour,
+    NaturalBoost: LUT.NaturalBoost,
+    OrangeAndBlue: LUT.OrangeAndBlue,
+    SoftBlackAndWhite: LUT.SoftBlackAndWhite,
+    Waves: LUT.Waves
   };
 
   const particleTypeOptions: ListOptions<number> = {
@@ -361,6 +378,11 @@
     <Folder title="Chromatic Aberration" expanded={false}>
       <Binding object={stageProps.postProcessing.chromaticAberration} key="enabled" label="Enabled" />
       <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
+    </Folder>
+
+    <Folder title="LUT" expanded={false}>
+      <Binding object={stageProps.postProcessing.lut} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.lut.name} label="LUT" options={lutOptions} />
     </Folder>
 
     <Folder title="Tone Mapping" expanded={false}>

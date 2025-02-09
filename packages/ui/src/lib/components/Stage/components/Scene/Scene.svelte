@@ -11,8 +11,11 @@
     ChromaticAberrationEffect,
     BlendFunction,
     ToneMappingEffect,
-    ToneMappingMode
+    ToneMappingMode,
+    LUT3DEffect,
+    LookupTexture
   } from 'postprocessing';
+  import { getLUT } from './luts/luts';
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
@@ -91,6 +94,24 @@
           blendFunction: BlendFunction.NORMAL
         });
         composer.addPass(new EffectPass($camera, vignetteEffect));
+      }
+
+      if (props.postProcessing.lut.enabled) {
+        const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
+          blendFunction: BlendFunction.SET
+        });
+        lutEffect.setSize($size.width, $size.height);
+
+        // Need to convert the LUT to a LookupTexture
+        Promise.resolve(getLUT(props.postProcessing.lut.name))
+          .then((lut) => {
+            if (!lut) return;
+            lutEffect.lut.dispose();
+            lutEffect.lut = lut;
+          })
+          .catch((error) => console.error(error));
+
+        composer.addPass(new EffectPass($camera, lutEffect));
       }
     }
 
