@@ -75,7 +75,7 @@
       <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__btn">Manage subscription</Button>
     {/if}
   {:else}
-    <Text weight={800}>Upgrade your party</Text>
+    <Text weight={800}>Your party is limited</Text>
     <Spacer size={2} />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
       Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span> with an upgraded account. Table
