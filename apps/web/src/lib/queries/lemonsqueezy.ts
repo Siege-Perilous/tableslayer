@@ -8,3 +8,11 @@ export const useLemonSqueezyCheckout = () => {
     method: 'POST'
   });
 };
+
+export const useLemonSqueezyCustomerPortal = () => {
+  return mutationFactory<{ customerId: number }, { url: string }>({
+    mutationKey: ['lemonsqueezyCustomerPortal'],
+    endpoint: '/api/lemonsqueezy/customerPortal',
+    method: 'POST'
+  });
+};

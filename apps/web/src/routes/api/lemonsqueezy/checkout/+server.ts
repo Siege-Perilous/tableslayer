@@ -61,8 +61,8 @@ export const POST = apiFactory(
       const newCheckout: NewCheckout = {
         checkoutOptions: {
           embed: false,
-          media: false,
-          logo: true
+          media: true,
+          logo: false
         },
         checkoutData: {
           email: user.email,
