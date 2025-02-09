@@ -59,21 +59,9 @@
     Hex: GridType.Hex
   };
 
-  const lutOptions: ListOptions<LUT> = {
-    BlueArchitecture: LUT.BlueArchitecture,
-    BlueHour: LUT.BlueHour,
-    ColdChrome: LUT.ColdChrome,
-    CrispAutumn: LUT.CrispAutumn,
-    DarkAndSomber: LUT.DarkAndSomber,
-    HardBoost: LUT.HardBoost,
-    LongBeachMorning: LUT.LongBeachMorning,
-    LushGreen: LUT.LushGreen,
-    MagicHour: LUT.MagicHour,
-    NaturalBoost: LUT.NaturalBoost,
-    OrangeAndBlue: LUT.OrangeAndBlue,
-    SoftBlackAndWhite: LUT.SoftBlackAndWhite,
-    Waves: LUT.Waves
-  };
+  const lutOptions: ListOptions<LUT> = Object.fromEntries(
+    Object.values(LUT).map((value) => [value.replace(/([A-Z])/g, ' $1').trim(), value])
+  );
 
   const particleTypeOptions: ListOptions<number> = {
     Snow: ParticleType.Snow,

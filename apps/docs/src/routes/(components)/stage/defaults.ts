@@ -106,7 +106,7 @@ export const StageDefaultProps: StageProps = {
     },
     lut: {
       enabled: true,
-      name: LUT.BlueArchitecture
+      name: LUT.Warm
     },
     toneMapping: {
       enabled: true,

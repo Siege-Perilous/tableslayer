@@ -6,19 +6,12 @@ const loadingManager = new THREE.LoadingManager();
 const lutLoader = new LUTCubeLoader(loadingManager);
 
 export enum LUT {
-  BlueArchitecture = 'BlueArchitecture',
-  BlueHour = 'BlueHour',
-  ColdChrome = 'ColdChrome',
-  CrispAutumn = 'CrispAutumn',
-  DarkAndSomber = 'DarkAndSomber',
-  HardBoost = 'HardBoost',
-  LongBeachMorning = 'LongBeachMorning',
-  LushGreen = 'LushGreen',
-  MagicHour = 'MagicHour',
-  NaturalBoost = 'NaturalBoost',
-  OrangeAndBlue = 'OrangeAndBlue',
-  SoftBlackAndWhite = 'SoftBlackAndWhite',
-  Waves = 'Waves'
+  Cool = 'Cool',
+  Grayscale = 'Grayscale',
+  Plum = 'Plum',
+  Spooky = 'Spooky',
+  Vibrant = 'Vibrant',
+  Warm = 'Warm'
 }
 
 /**
@@ -31,6 +24,7 @@ export const getLUT = async (lut: LUT): Promise<LookupTexture | null> => {
   const result = await lutLoader.loadAsync(lutUrl);
   try {
     const lookupTexture = LookupTexture.from(result.texture3D);
+    lookupTexture.colorSpace = THREE.LinearSRGBColorSpace;
     return lookupTexture;
   } catch (error) {
     console.error(error);
