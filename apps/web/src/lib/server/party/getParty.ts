@@ -231,3 +231,17 @@ export const updatePartyMember = async (partyMemberData: Partial<SelectPartyMemb
     throw error;
   }
 };
+
+export const getPartyByStripeSubscriptionId = async (stripeSubscriptionId: string) => {
+  const party = await db
+    .select()
+    .from(partyTable)
+    .where(eq(partyTable.stripeSubscriptionId, stripeSubscriptionId))
+    .get();
+
+  if (!party) {
+    throw new Error('Party not found');
+  }
+
+  return party;
+};
