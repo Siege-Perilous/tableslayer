@@ -13,7 +13,7 @@
   const { grid, display, sceneZoom }: Props = $props();
 </script>
 
-<T.Mesh scale={[display.resolution.x, display.resolution.y, 1]}>
+<T.Mesh scale={[display.resolution.x, display.resolution.y, 1]} renderOrder={1000}>
   <GridMaterial {grid} {display} {sceneZoom} />
   <T.PlaneGeometry />
 </T.Mesh>

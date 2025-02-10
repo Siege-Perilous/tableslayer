@@ -67,8 +67,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/config-typescript
       '@threlte/core':
-        specifier: 8.0.0-next.15
-        version: 8.0.0-next.15(svelte@5.19.6)(three@0.173.0)
+        specifier: 8.0.1
+        version: 8.0.1(svelte@5.19.6)(three@0.173.0)
+      '@threlte/extras':
+        specifier: 9.0.1
+        version: 9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.173.0)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -281,11 +284,11 @@ importers:
         specifier: ^3.29.0
         version: 3.29.0(svelte@5.19.6)
       '@threlte/core':
-        specifier: 8.0.0-next.21
-        version: 8.0.0-next.21(svelte@5.19.6)(three@0.172.0)
+        specifier: 8.0.1
+        version: 8.0.1(svelte@5.19.6)(three@0.172.0)
       '@threlte/extras':
-        specifier: 9.0.0-next.28
-        version: 9.0.0-next.28(@types/three@0.172.0)(svelte@5.19.6)(three@0.172.0)
+        specifier: 9.0.1
+        version: 9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.172.0)
       chroma-js:
         specifier: ^3.1.2
         version: 3.1.2
@@ -313,16 +316,16 @@ importers:
         version: 0.86.2(svelte@5.19.6)
       '@sveltejs/adapter-auto':
         specifier: ^4.0.0
-        version: 4.0.0(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))
+        version: 4.0.0(@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))
       '@sveltejs/adapter-vercel':
-        specifier: ^5.5.3
-        version: 5.5.3(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(rollup@4.27.3)
+        specifier: ^5.6.1
+        version: 5.6.1(@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(rollup@4.27.3)
       '@sveltejs/kit':
-        specifier: ^2.16.1
-        version: 2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
+        specifier: ^2.17.1
+        version: 2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
       '@sveltejs/package':
-        specifier: ^2.3.9
-        version: 2.3.9(svelte@5.19.6)(typescript@5.7.3)
+        specifier: ^2.3.10
+        version: 2.3.10(svelte@5.19.6)(typescript@5.7.3)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.0.3
         version: 5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
@@ -2122,6 +2125,11 @@ packages:
     peerDependencies:
       '@sveltejs/kit': ^2.4.0
 
+  '@sveltejs/adapter-vercel@5.6.1':
+    resolution: {integrity: sha512-ljeLT7p4VQtO9ux4p7MqSkNv+yMw9LcD0K8hl0TK495DhBbaBwOCx9jcp3+/RqGPzsTvTRJSiPRafIfiCjQqjQ==}
+    peerDependencies:
+      '@sveltejs/kit': ^2.4.0
+
   '@sveltejs/kit@2.16.1':
     resolution: {integrity: sha512-2pF5sgGJx9brYZ/9nNDYnh5KX0JguPF14dnvvtf/MqrvlWrDj/e7Rk3LBJPecFLLK1GRs6ZniD24gFPqZm/NFw==}
     engines: {node: '>=18.13'}
@@ -2131,8 +2139,17 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.3 || ^6.0.0
 
-  '@sveltejs/package@2.3.9':
-    resolution: {integrity: sha512-POIiQknGmcGCcM7ZbFG7cjsJ51GndFOY3PTXa8XFzZ+C/GJfx/JufvVXiWcXVsteP74FeXSSgcC+b5sIayXXKw==}
+  '@sveltejs/kit@2.17.1':
+    resolution: {integrity: sha512-CpoGSLqE2MCmcQwA2CWJvOsZ9vW+p/1H3itrFykdgajUNAEyQPbsaSn7fZb6PLHQwe+07njxje9ss0fjZoCAyw==}
+    engines: {node: '>=18.13'}
+    hasBin: true
+    peerDependencies:
+      '@sveltejs/vite-plugin-svelte': ^3.0.0 || ^4.0.0-next.1 || ^5.0.0
+      svelte: ^4.0.0 || ^5.0.0-next.0
+      vite: ^5.0.3 || ^6.0.0
+
+  '@sveltejs/package@2.3.10':
+    resolution: {integrity: sha512-A4fQacgjJ7C/7oSmxR61/TdB14u6ecyMZ8V9JCR5Lol0bLj/PdJPU4uFodFBsKzO3iFiJMpNTgZZ+zYsYZNpUg==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     peerDependencies:
@@ -2177,20 +2194,14 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.0.0-next.15':
-    resolution: {integrity: sha512-6V304eNyvbnQocwJiaCv4eTi9F2dcZhI65LVuk4UWHVPQbLCyLAJmBGJTAxRZm9i4tTVsBwpz9YjPYLsKg8uwQ==}
+  '@threlte/core@8.0.1':
+    resolution: {integrity: sha512-vy1xRQppJFNmfPTeiRQue+KmYFsbPgVhwuYXRTvVrwPeD2oYz43gxUeOpe1FACeGKxrxZykeKJF5ebVvl7gBxw==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.155'
 
-  '@threlte/core@8.0.0-next.21':
-    resolution: {integrity: sha512-4dYEEFlDOQs0EdqX5DayPO6MAgI4VzIVpDtuHhVgxWJTOv9DDCmuZbMzkr9AHN7jVDo3wyQ8t4881VikFpUhxQ==}
-    peerDependencies:
-      svelte: '>=5'
-      three: '>=0.155'
-
-  '@threlte/extras@9.0.0-next.28':
-    resolution: {integrity: sha512-vsDvKcRtSlkWVDwCeJ1eONZX45K+ySSPpzmGYJx82iahPDQc4R+Igo8JA/sxRSIAGL3NvmnMiHIzf1xzuT9jYA==}
+  '@threlte/extras@9.0.1':
+    resolution: {integrity: sha512-xI0s5a/9NdBbUSaYCnTHfnVl44kZQUTuTPfzwv4gmMM2r2HewM5QsMDBBwBTcuVcYqkM9aUKl+5MWa20LnH/mg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.155'
@@ -2520,6 +2531,11 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
+  camera-controls@2.9.0:
+    resolution: {integrity: sha512-TpCujnP0vqPppTXXJRYpvIy0xq9Tro6jQf2iYUxlDpPCNxkvE/XGaTuwIxnhINOkVP/ob2CRYXtY3iVYXeMEzA==}
+    peerDependencies:
+      three: '>=0.126.1'
+
   caniuse-lite@1.0.30001695:
     resolution: {integrity: sha512-vHyLade6wTgI2u1ec3WQBxv+2BrTERV28UXQu9LO6lZ9pYeMk34vjXFLOxo1A4UBA8XTL4njRQZdno/yYaSmWw==}
 
@@ -2554,6 +2570,10 @@ packages:
 
   chokidar@4.0.1:
     resolution: {integrity: sha512-n8enUVCED/KVRQlab1hr3MVpcVMvxtZjmEa956u+4YijlmQED223XMSYj2tLuKvr4jcCTzNNMpQDUer72MMmzA==}
+    engines: {node: '>= 14.16.0'}
+
+  chokidar@4.0.3:
+    resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
 
   chownr@3.0.0:
@@ -4184,10 +4204,16 @@ packages:
     peerDependencies:
       three: '>= 0.151.0'
 
-  three-perf@1.0.10:
-    resolution: {integrity: sha512-lCur/i8U6m0ysWYhQ1yFGWOZB0QA2oVsDsfynYd65HhXxLxJfiAt8OsXmpv9PnTLacfaZclBcZHUOB9QKk3eaw==}
+  three-perf@https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169:
+    resolution: {tarball: https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169}
+    version: 1.0.10
     peerDependencies:
-      three: '>=0.151'
+      three: '>=0.170'
+
+  three-viewport-gizmo@2.0.2:
+    resolution: {integrity: sha512-PtdBqtPZbXoQgxXAla393iPs+ox0HbZVKqA1ym3w4z7Og0Ihevg/odxjEYA9R6xwtIqS5qgsz8RyK3z8lFHtpQ==}
+    peerDependencies:
+      three: '>=0.162.0 <1.0.0'
 
   three@0.172.0:
     resolution: {integrity: sha512-6HMgMlzU97MsV7D/tY8Va38b83kz8YJX+BefKjspMNAv0Vx6dxMogHOrnRl/sbMIs3BPUKijPqDqJ/+UwJbIow==}
@@ -4233,23 +4259,18 @@ packages:
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
 
-  troika-three-text@0.47.2:
-    resolution: {integrity: sha512-qylT0F+U7xGs+/PEf3ujBdJMYWbn0Qci0kLqI5BJG2kW1wdg4T1XSxneypnF05DxFqJhEzuaOR9S2SjiyknMng==}
+  troika-three-text@0.50.3:
+    resolution: {integrity: sha512-UzbIrgV3fOFmFbFfWIBcBEXEyQovs+LLu15E5xGpSQbo1oZH49A+J9bul4H8H0xLtaLkRTO+LqEsmkaeDtZQfg==}
     peerDependencies:
       three: '>=0.125.0'
 
-  troika-three-text@0.49.1:
-    resolution: {integrity: sha512-lXGWxgjJP9kw4i4Wh+0k0Q/7cRfS6iOME4knKht/KozPu9GcFA9NnNpRvehIhrUawq9B0ZRw+0oiFHgRO+4Wig==}
+  troika-three-text@0.52.3:
+    resolution: {integrity: sha512-jLhiwgV8kEkwWjvK12f2fHVpbOC75p7SgPQ0cgcz+IMtN5Bdyg4EuFdwuTOVu9ga8UeYdKBpzd1AxviyixtYTQ==}
     peerDependencies:
       three: '>=0.125.0'
 
-  troika-three-utils@0.47.2:
-    resolution: {integrity: sha512-/28plhCxfKtH7MSxEGx8e3b/OXU5A0xlwl+Sbdp0H8FXUHKZDoksduEKmjQayXYtxAyuUiCRunYIv/8Vi7aiyg==}
-    peerDependencies:
-      three: '>=0.125.0'
-
-  troika-three-utils@0.49.0:
-    resolution: {integrity: sha512-umitFL4cT+Fm/uONmaQEq4oZlyRHWwVClaS6ZrdcueRvwc2w+cpNQ47LlJKJswpqtMFWbEhOLy0TekmcPZOdYA==}
+  troika-three-utils@0.50.3:
+    resolution: {integrity: sha512-asQWCESikU58y9cz4OgIjCRlITkDTwf7ds8T9IyWxn7OB2A7XItg2UbHjfexwooTefM+BYbEC4ZKxOUBfbNVLA==}
     peerDependencies:
       three: '>=0.125.0'
 
@@ -4258,11 +4279,11 @@ packages:
     peerDependencies:
       three: '>=0.125.0'
 
-  troika-worker-utils@0.47.2:
-    resolution: {integrity: sha512-mzss4MeyzUkYBppn4x5cdAqrhBHFEuVmMMgLMTyFV23x6GvQMyo+/R5E5Lsbrt7WSt5RfvewjcwD1DChRTA9lA==}
+  troika-worker-utils@0.50.0:
+    resolution: {integrity: sha512-BxNk0w6+d9NYd7El/3RzlzH/F2vovJI1FX9Zb+D7fArVM1EsUXj6+wVwJSrfucy6/HYhfbZPu/lD6Miiw9Byiw==}
 
-  troika-worker-utils@0.49.0:
-    resolution: {integrity: sha512-1xZHoJrG0HFfCvT/iyN41DvI/nRykiBtHqFkGaGgJwq5iXfIZFBiPPEHFpPpgyKM3Oo5ITHXP5wM2TNQszYdVg==}
+  troika-worker-utils@0.52.0:
+    resolution: {integrity: sha512-W1CpvTHykaPH5brv5VHLfQo9D1OYuo0cSBEUQFFT/nBUzM8iD6Lq2/tgG/f1OelbAS1WtaTPQzE5uM49egnngw==}
 
   ts-api-utils@2.0.0:
     resolution: {integrity: sha512-xCt/TOAc+EOHS1XPnijD3/yzpH6qg2xppZO1YDqGoVsNXfQfzHpOdNuXwrwOU8u4ITXJyDCTyt8w5g1sZv9ynQ==}
@@ -6793,6 +6814,11 @@ snapshots:
       '@sveltejs/kit': 2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
       import-meta-resolve: 4.1.0
 
+  '@sveltejs/adapter-auto@4.0.0(@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))':
+    dependencies:
+      '@sveltejs/kit': 2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
+      import-meta-resolve: 4.1.0
+
   '@sveltejs/adapter-node@5.2.12(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))':
     dependencies:
       '@rollup/plugin-commonjs': 28.0.2(rollup@4.27.3)
@@ -6808,6 +6834,16 @@ snapshots:
   '@sveltejs/adapter-vercel@5.5.3(@sveltejs/kit@2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(rollup@4.27.3)':
     dependencies:
       '@sveltejs/kit': 2.16.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
+      '@vercel/nft': 0.29.0(rollup@4.27.3)
+      esbuild: 0.24.2
+    transitivePeerDependencies:
+      - encoding
+      - rollup
+      - supports-color
+
+  '@sveltejs/adapter-vercel@5.6.1(@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(rollup@4.27.3)':
+    dependencies:
+      '@sveltejs/kit': 2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
       '@vercel/nft': 0.29.0(rollup@4.27.3)
       esbuild: 0.24.2
     transitivePeerDependencies:
@@ -6832,9 +6868,26 @@ snapshots:
       svelte: 5.19.6
       vite: 6.0.11(@types/node@22.9.1)(yaml@2.7.0)
 
-  '@sveltejs/package@2.3.9(svelte@5.19.6)(typescript@5.7.3)':
+  '@sveltejs/kit@2.17.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0)))(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))':
     dependencies:
-      chokidar: 4.0.1
+      '@sveltejs/vite-plugin-svelte': 5.0.3(svelte@5.19.6)(vite@6.0.11(@types/node@22.9.1)(yaml@2.7.0))
+      '@types/cookie': 0.6.0
+      cookie: 0.6.0
+      devalue: 5.1.1
+      esm-env: 1.2.2
+      import-meta-resolve: 4.1.0
+      kleur: 4.1.5
+      magic-string: 0.30.17
+      mrmime: 2.0.0
+      sade: 1.8.1
+      set-cookie-parser: 2.7.1
+      sirv: 3.0.0
+      svelte: 5.19.6
+      vite: 6.0.11(@types/node@22.9.1)(yaml@2.7.0)
+
+  '@sveltejs/package@2.3.10(svelte@5.19.6)(typescript@5.7.3)':
+    dependencies:
+      chokidar: 4.0.3
       kleur: 4.1.5
       sade: 1.8.1
       semver: 7.6.3
@@ -6894,26 +6947,52 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.0.0-next.15(svelte@5.19.6)(three@0.173.0)':
+  '@threejs-kit/instanced-sprite-mesh@2.5.0(@types/three@0.172.0)(three@0.173.0)':
+    dependencies:
+      diet-sprite: 0.0.1
+      earcut: 2.2.4
+      maath: 0.10.8(@types/three@0.172.0)(three@0.173.0)
+      three: 0.173.0
+      three-instanced-uniforms-mesh: 0.52.0(three@0.173.0)
+      troika-three-utils: 0.52.0(three@0.173.0)
+    transitivePeerDependencies:
+      - '@types/three'
+
+  '@threlte/core@8.0.1(svelte@5.19.6)(three@0.172.0)':
+    dependencies:
+      mitt: 3.0.1
+      svelte: 5.19.6
+      three: 0.172.0
+
+  '@threlte/core@8.0.1(svelte@5.19.6)(three@0.173.0)':
     dependencies:
       mitt: 3.0.1
       svelte: 5.19.6
       three: 0.173.0
 
-  '@threlte/core@8.0.0-next.21(svelte@5.19.6)(three@0.172.0)':
-    dependencies:
-      mitt: 3.0.1
-      svelte: 5.19.6
-      three: 0.172.0
-
-  '@threlte/extras@9.0.0-next.28(@types/three@0.172.0)(svelte@5.19.6)(three@0.172.0)':
+  '@threlte/extras@9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.172.0)':
     dependencies:
       '@threejs-kit/instanced-sprite-mesh': 2.5.0(@types/three@0.172.0)(three@0.172.0)
+      camera-controls: 2.9.0(three@0.172.0)
       svelte: 5.19.6
       three: 0.172.0
       three-mesh-bvh: 0.7.6(three@0.172.0)
-      three-perf: 1.0.10(three@0.172.0)
-      troika-three-text: 0.49.1(three@0.172.0)
+      three-perf: https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169(three@0.172.0)
+      three-viewport-gizmo: 2.0.2(three@0.172.0)
+      troika-three-text: 0.50.3(three@0.172.0)
+    transitivePeerDependencies:
+      - '@types/three'
+
+  '@threlte/extras@9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.173.0)':
+    dependencies:
+      '@threejs-kit/instanced-sprite-mesh': 2.5.0(@types/three@0.172.0)(three@0.173.0)
+      camera-controls: 2.9.0(three@0.173.0)
+      svelte: 5.19.6
+      three: 0.173.0
+      three-mesh-bvh: 0.7.6(three@0.173.0)
+      three-perf: https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169(three@0.173.0)
+      three-viewport-gizmo: 2.0.2(three@0.173.0)
+      troika-three-text: 0.50.3(three@0.173.0)
     transitivePeerDependencies:
       - '@types/three'
 
@@ -7288,6 +7367,14 @@ snapshots:
 
   callsites@3.1.0: {}
 
+  camera-controls@2.9.0(three@0.172.0):
+    dependencies:
+      three: 0.172.0
+
+  camera-controls@2.9.0(three@0.173.0):
+    dependencies:
+      three: 0.173.0
+
   caniuse-lite@1.0.30001695: {}
 
   ccount@2.0.1: {}
@@ -7326,6 +7413,10 @@ snapshots:
       fsevents: 2.3.3
 
   chokidar@4.0.1:
+    dependencies:
+      readdirp: 4.0.2
+
+  chokidar@4.0.3:
     dependencies:
       readdirp: 4.0.2
 
@@ -8208,6 +8299,11 @@ snapshots:
       '@types/three': 0.172.0
       three: 0.172.0
 
+  maath@0.10.8(@types/three@0.172.0)(three@0.173.0):
+    dependencies:
+      '@types/three': 0.172.0
+      three: 0.173.0
+
   magic-string@0.30.13:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -8964,15 +9060,38 @@ snapshots:
       three: 0.172.0
       troika-three-utils: 0.52.0(three@0.172.0)
 
+  three-instanced-uniforms-mesh@0.52.0(three@0.173.0):
+    dependencies:
+      three: 0.173.0
+      troika-three-utils: 0.52.0(three@0.173.0)
+
   three-mesh-bvh@0.7.6(three@0.172.0):
     dependencies:
       three: 0.172.0
 
-  three-perf@1.0.10(three@0.172.0):
+  three-mesh-bvh@0.7.6(three@0.173.0):
+    dependencies:
+      three: 0.173.0
+
+  three-perf@https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169(three@0.172.0):
     dependencies:
       three: 0.172.0
-      troika-three-text: 0.47.2(three@0.172.0)
+      troika-three-text: 0.52.3(three@0.172.0)
       tweakpane: 3.1.10
+
+  three-perf@https://codeload.github.com/jerzakm/three-perf/tar.gz/322d7d38a17069f2b6e9734913edad0fc4a29169(three@0.173.0):
+    dependencies:
+      three: 0.173.0
+      troika-three-text: 0.52.3(three@0.173.0)
+      tweakpane: 3.1.10
+
+  three-viewport-gizmo@2.0.2(three@0.172.0):
+    dependencies:
+      three: 0.172.0
+
+  three-viewport-gizmo@2.0.2(three@0.173.0):
+    dependencies:
+      three: 0.173.0
 
   three@0.172.0: {}
 
@@ -9005,37 +9124,57 @@ snapshots:
 
   trim-lines@3.0.1: {}
 
-  troika-three-text@0.47.2(three@0.172.0):
+  troika-three-text@0.50.3(three@0.172.0):
     dependencies:
       bidi-js: 1.0.3
       three: 0.172.0
-      troika-three-utils: 0.47.2(three@0.172.0)
-      troika-worker-utils: 0.47.2
+      troika-three-utils: 0.50.3(three@0.172.0)
+      troika-worker-utils: 0.50.0
       webgl-sdf-generator: 1.1.1
 
-  troika-three-text@0.49.1(three@0.172.0):
+  troika-three-text@0.50.3(three@0.173.0):
+    dependencies:
+      bidi-js: 1.0.3
+      three: 0.173.0
+      troika-three-utils: 0.50.3(three@0.173.0)
+      troika-worker-utils: 0.50.0
+      webgl-sdf-generator: 1.1.1
+
+  troika-three-text@0.52.3(three@0.172.0):
     dependencies:
       bidi-js: 1.0.3
       three: 0.172.0
-      troika-three-utils: 0.49.0(three@0.172.0)
-      troika-worker-utils: 0.49.0
+      troika-three-utils: 0.52.0(three@0.172.0)
+      troika-worker-utils: 0.52.0
       webgl-sdf-generator: 1.1.1
 
-  troika-three-utils@0.47.2(three@0.172.0):
+  troika-three-text@0.52.3(three@0.173.0):
+    dependencies:
+      bidi-js: 1.0.3
+      three: 0.173.0
+      troika-three-utils: 0.52.0(three@0.173.0)
+      troika-worker-utils: 0.52.0
+      webgl-sdf-generator: 1.1.1
+
+  troika-three-utils@0.50.3(three@0.172.0):
     dependencies:
       three: 0.172.0
 
-  troika-three-utils@0.49.0(three@0.172.0):
+  troika-three-utils@0.50.3(three@0.173.0):
     dependencies:
-      three: 0.172.0
+      three: 0.173.0
 
   troika-three-utils@0.52.0(three@0.172.0):
     dependencies:
       three: 0.172.0
 
-  troika-worker-utils@0.47.2: {}
+  troika-three-utils@0.52.0(three@0.173.0):
+    dependencies:
+      three: 0.173.0
 
-  troika-worker-utils@0.49.0: {}
+  troika-worker-utils@0.50.0: {}
+
+  troika-worker-utils@0.52.0: {}
 
   ts-api-utils@2.0.0(typescript@5.7.3):
     dependencies:

@@ -3,7 +3,7 @@ import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
 import type { PingLayerProps } from '../PingLayer/types';
 import type { SceneLayerProps } from '../Scene/types';
-import type { WeatherProps } from '../WeatherLayer/types';
+import type { WeatherLayerProps } from '../WeatherLayer/types';
 
 export interface Callbacks {
   onFogUpdate: (blob: Promise<Blob>) => void;
@@ -41,13 +41,17 @@ export enum StageLayerZ {}
 export type StageProps = {
   activeLayer: MapLayerType;
   backgroundColor: string;
+  debug: {
+    enableStats: boolean;
+    loggingRate: number;
+  };
   display: DisplayProps;
   fogOfWar: FogOfWarLayerProps;
   grid: GridLayerProps;
   map: MapLayerProps;
   ping: PingLayerProps;
   scene: SceneLayerProps;
-  weather: WeatherProps;
+  weather: WeatherLayerProps;
 };
 
 export interface StageExports {

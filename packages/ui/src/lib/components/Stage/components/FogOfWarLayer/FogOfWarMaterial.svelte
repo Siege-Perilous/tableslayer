@@ -1,8 +1,9 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte, type Size } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy, untrack } from 'svelte';
+  import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
