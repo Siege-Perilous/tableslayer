@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Panel, FormControl, Title, Input, Button, Spacer } from '@tableslayer/ui';
+  import { Panel, FormControl, Title, Input, Button, Spacer, Text } from '@tableslayer/ui';
   import { useCreateGameSessionMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { handleMutation } from '$lib/factories';
@@ -45,7 +45,8 @@
 
 {#if !formIsOpen}
   <Panel onclick={handleOpenForm} class="createSessionPanel hover">
-    <Title as="p" size="sm">Create new session</Title>
+    <Title as="p" size="sm">Create a new session</Title>
+    <Text size="0.875rem" color="var(--fgMuted)">Game sessions contain a collection of battle scenes</Text>
   </Panel>
 {:else}
   <Panel class="createSessionPanel">
@@ -69,7 +70,7 @@
       display: flex;
       flex-direction: column;
       width: 100%;
-      gap: 2rem;
+      gap: 1rem;
       height: 100%;
       min-height: 270px;
       transition: border-color 0.2s var(--ease-in-2);

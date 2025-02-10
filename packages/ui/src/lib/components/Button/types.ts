@@ -19,7 +19,7 @@ export type _ButtonProps = {
    * @default md
    */
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'primary' | 'ghost' | 'danger' | 'link';
+  variant?: 'primary' | 'ghost' | 'danger' | 'link' | 'special';
   href?: string;
 };
 

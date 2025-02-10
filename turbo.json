@@ -25,7 +25,18 @@
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
-        "BODY_SIZE_LIMIT"
+        "BODY_SIZE_LIMIT",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_KEY",
+        "STRIPE_LIFETIME_ID",
+        "STRIPE_YEARLY_ID",
+        "LEMONSQUEEZY_API_KEY",
+        "LEMONSQUEEZY_WEBHOOK_KEY",
+        "LEMONSQUEEZY_PRODUCT_ID",
+        "LEMONSQUEEZY_VARIANT_YEARLY_ID",
+        "LEMONSQUEEZY_VARIANT_LIFETIME_ID",
+        "LEMONSQUEEZY_VARIANT_MONTHLY_ID",
+        "LEMONSQUEEZY_STORE_ID"
       ],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
@@ -48,7 +59,18 @@
         "CLOUDFLARE_R2_BUCKET_NAME",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
-        "BODY_SIZE_LIMIT"
+        "BODY_SIZE_LIMIT",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_KEY",
+        "STRIPE_LIFETIME_ID",
+        "STRIPE_YEARLY_ID",
+        "LEMONSQUEEZY_API_KEY",
+        "LEMONSQUEEZY_WEBHOOK_KEY",
+        "LEMONSQUEEZY_PRODUCT_ID",
+        "LEMONSQUEEZY_VARIANT_YEARLY_ID",
+        "LEMONSQUEEZY_VARIANT_LIFETIME_ID",
+        "LEMONSQUEEZY_VARIANT_MONTHLY_ID",
+        "LEMONSQUEEZY_STORE_ID"
       ],
       "persistent": true,
       "cache": false
