@@ -35,6 +35,14 @@ jobs:
           SENTRY_DSN=${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           GITHUB_PR_NUMBER=0
+          BASE_URL=https://tableslayer.com
+          LEMONSQUEEZY_API_KEY=${{ secrets.LEMONSQUEEZY_API_KEY }}
+          LEMONSQUEEZY_PRODUCT_ID=${{ secrets.LEMONSQUEEZY_PRODUCT_ID }}
+          LEMONSQUEEZY_VARIANT_LIFETIME_ID=${{ secrets.LEMONSQUEEZY_VARIANT_LIFETIME_ID }}
+          LEMONSQUEEZY_VARIANT_YEARLY_ID=${{ secrets.LEMONSQUEEZY_VARIANT_YEARLY_ID }}
+          LEMONSQUEEZY_VARIANT_MONTHLY_ID=${{ secrets.LEMONSQUEEZY_VARIANT_MONTHLY_ID }}
+          LEMONSQUEEZY_STORE_ID=${{ secrets.LEMONSQUEEZY_STORE_ID }}
+          LEMONSQUEEZY_WEBHOOK_KEY=${{ secrets.LEMONSQUEEZY_WEBHOOK_KEY }}
           EOF
       - name: Deploy fly productions
         run: |
