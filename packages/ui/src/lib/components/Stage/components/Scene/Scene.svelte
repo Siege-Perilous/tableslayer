@@ -12,8 +12,7 @@
     BlendFunction,
     ToneMappingEffect,
     ToneMappingMode,
-    LUT3DEffect,
-    LookupTexture
+    LUT3DEffect
   } from 'postprocessing';
   import { getLUT } from './luts';
   import { type Callbacks, type StageProps } from '../Stage/types';

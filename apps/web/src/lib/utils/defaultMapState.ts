@@ -104,6 +104,10 @@ export const StageDefaultProps: StageProps = {
       enabled: true,
       offset: 0.001
     },
+    lut: {
+      enabled: true,
+      url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
+    },
     toneMapping: {
       enabled: true,
       mode: ToneMappingMode.NEUTRAL
