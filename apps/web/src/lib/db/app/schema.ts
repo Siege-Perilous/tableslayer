@@ -134,6 +134,8 @@ export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCod
 // PARTY
 // PARTY
 // PARTY
+//
+export const VALID_PARTY_PLANS = ['free', 'monthly', 'yearly', 'lifetime'] as const;
 
 export const partyTable = sqliteTable(
   'party',
@@ -161,7 +163,15 @@ export const partyTable = sqliteTable(
     defaultDisplayPaddingX: integer('default_display_padding_x').notNull().default(16),
     defaultDisplayPaddingY: integer('default_display_padding_y').notNull().default(16),
     defaultGridSpacing: integer('default_grid_spacing').notNull().default(1),
-    defaultLineThickness: integer('default_line_thickness').notNull().default(1)
+    defaultLineThickness: integer('default_line_thickness').notNull().default(1),
+    stripeSubscriptionId: text('stripe_subscription_id'),
+    planNextBillingDate: integer('plan_next_billing_date', { mode: 'timestamp' }),
+    planExpirationDate: integer('plan_expiration_date', { mode: 'timestamp' }),
+    planStatus: text('plan_status'),
+    stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+    stripeCustomerId: text('stripe_customer_id'),
+    lemonSqueezyCustomerId: integer('lemon_squeezy_customer_id'),
+    plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
   (table) => ({
     protectedSlugCheck: check(
@@ -170,6 +180,8 @@ export const partyTable = sqliteTable(
     )
   })
 );
+
+export type PartyPlan = (typeof VALID_PARTY_PLANS)[number];
 
 export type InsertParty = typeof partyTable.$inferInsert;
 export type SelectParty = typeof partyTable.$inferSelect;
@@ -180,6 +192,8 @@ export const updatePartySchema = createUpdateSchema(partyTable);
 // PARTY MEMBERS
 // PARTY MEMBERS
 // PARTY MEMBERS
+//
+export const VALID_PARTY_ROLES = ['admin', 'editor', 'viewer'] as const;
 
 export const partyMemberTable = sqliteTable(
   'party_member',
@@ -190,7 +204,7 @@ export const partyMemberTable = sqliteTable(
     userId: text('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: text('role', { enum: ['admin', 'editor', 'viewer'] }).notNull()
+    role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
   },
   (table) => {
     return {
@@ -199,7 +213,6 @@ export const partyMemberTable = sqliteTable(
   }
 );
 
-export const VALID_PARTY_ROLES = ['admin', 'editor', 'viewer'] as const;
 export type PartyRole = (typeof VALID_PARTY_ROLES)[number];
 
 export type InsertPartyMember = typeof partyMemberTable.$inferInsert;

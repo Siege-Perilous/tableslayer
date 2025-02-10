@@ -80,6 +80,7 @@
     --btn-borderHover: solid 2px var(--primary-600);
     --btn-color: var(--fg);
     --btn-dangerStripesHover: var(--primary-300);
+    --btn-bgSpecial: var(--primary-100);
   }
 
   :global(.dark) {
@@ -90,6 +91,7 @@
     --btn-borderHover: solid 2px var(--primary-500);
     --btn-color: var(--fg);
     --btn-dangerStripesHover: var(--primary-700);
+    --btn-bgSpecial: var(--primary-900);
   }
 
   .btn {
@@ -151,6 +153,10 @@
       transparent 60%,
       transparent 100%
     );
+  }
+  .btn--special {
+    border: var(--btn-borderHover);
+    background: var(--btn-bgSpecial);
   }
   .btn:hover {
     background-color: var(--btn-bgHover);

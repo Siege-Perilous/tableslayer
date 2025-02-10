@@ -7,7 +7,8 @@
     CreateGameSession,
     GameSessionCard,
     DefaultPartySettings,
-    InvitePartyMember
+    InvitePartyMember,
+    PartyUpgrade
   } from '$lib/components';
 
   let { data } = $props();
@@ -32,6 +33,10 @@
       </div>
     </main>
     <aside>
+      {#if isPartyAdmin}
+        <PartyUpgrade {party} />
+        <Spacer />
+      {/if}
       <Title as="h2" size="sm">Party members</Title>
       <Spacer />
       <Panel class="partyMembers__aside">

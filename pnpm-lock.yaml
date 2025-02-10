@@ -102,6 +102,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: '=3.712.0'
         version: 3.712.0
+      '@lemonsqueezy/lemonsqueezy.js':
+        specifier: ^4.0.0
+        version: 4.0.0
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -223,6 +226,9 @@ importers:
       lucia:
         specifier: ^3.2.2
         version: 3.2.2
+      smee-client:
+        specifier: ^2.0.4
+        version: 2.0.4
       svelte:
         specifier: 5.19.6
         version: 5.19.6
@@ -1179,6 +1185,10 @@ packages:
     resolution: {integrity: sha512-cyG1zBeJhQiM32cAsY7xfTnrsqoTLA6c5l+TfvXqi/ik3BSP769Ti/YL+nEsdL63Rm0FL0DwqUNF4wZtORJxsw==}
     peerDependencies:
       tweakpane: ^4.0.0
+
+  '@lemonsqueezy/lemonsqueezy.js@4.0.0':
+    resolution: {integrity: sha512-xcY1/lDrY7CpIF98WKiL1ElsfoVhddP7FT0fw7ssOzrFqQsr44HgolKrQZxd9SywsCPn12OTOUieqDIokI3mFg==}
+    engines: {node: '>=20'}
 
   '@libsql/client@0.14.0':
     resolution: {integrity: sha512-/9HEKfn6fwXB5aTEEoMeFh4CtG0ZzbncBb1e++OCdVpgKZ/xyMsIVYXm0w7Pv4RUel803vE6LwniB3PqD72R0Q==}
@@ -2615,6 +2625,10 @@ packages:
     resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
     engines: {node: '>=14'}
 
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+
   commander@13.1.0:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
     engines: {node: '>=18'}
@@ -3022,6 +3036,10 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+
+  eventsource@2.0.2:
+    resolution: {integrity: sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==}
+    engines: {node: '>=12.0.0'}
 
   execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
@@ -4034,6 +4052,10 @@ packages:
     resolution: {integrity: sha512-h+z7HKHYXj6wJU+AnS/+IH8Uh9fdcX1Lrhg1/VMdf9PwoBQXFcXiAdsy2tSK0P6gKwJLXp02r90ahUCqHk9rrw==}
     engines: {node: '>=8.0.0'}
 
+  smee-client@2.0.4:
+    resolution: {integrity: sha512-RxXCs0mfaxpI8JF4SeTM51XtRiprzW5g20HVt4aTQ36EB+RaN0aj0m/4EbXLGdfPlqahQ09d3UnJYmALN2CbYw==}
+    hasBin: true
+
   socket.io-adapter@2.5.5:
     resolution: {integrity: sha512-eLDQas5dzPgOWCk9GuuJC2lBqItuhKI4uxGgo9aIV7MYbk2h9Q6uULEh8WBzThoI7l+qU9Ast9fVUmkqPP9wYg==}
 
@@ -4392,6 +4414,10 @@ packages:
 
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
+
+  validator@13.12.0:
+    resolution: {integrity: sha512-c1Q0mCiPlgdTVVVIJIrBuxNicYE+t/7oKeI9MWLj3fh/uq2Pxh/3eeWbVZ4OcGW1TUf53At0njHw5SMdA3tmMg==}
+    engines: {node: '>= 0.10'}
 
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
@@ -5631,6 +5657,8 @@ snapshots:
     dependencies:
       '@tweakpane/core': 2.0.5
       tweakpane: 4.0.5
+
+  '@lemonsqueezy/lemonsqueezy.js@4.0.0': {}
 
   '@libsql/client@0.14.0':
     dependencies:
@@ -7437,6 +7465,8 @@ snapshots:
 
   commander@10.0.1: {}
 
+  commander@12.1.0: {}
+
   commander@13.1.0: {}
 
   commondir@1.0.1: {}
@@ -7834,6 +7864,8 @@ snapshots:
   esutils@2.0.3: {}
 
   eventemitter3@5.0.1: {}
+
+  eventsource@2.0.2: {}
 
   execa@8.0.1:
     dependencies:
@@ -8810,6 +8842,12 @@ snapshots:
 
   slugify@1.6.6: {}
 
+  smee-client@2.0.4:
+    dependencies:
+      commander: 12.1.0
+      eventsource: 2.0.2
+      validator: 13.12.0
+
   socket.io-adapter@2.5.5:
     dependencies:
       debug: 4.3.7
@@ -9263,6 +9301,8 @@ snapshots:
 
   v8-compile-cache-lib@3.0.1:
     optional: true
+
+  validator@13.12.0: {}
 
   vary@1.1.2: {}
 
