@@ -1,5 +1,4 @@
 import type { ToneMappingMode } from 'postprocessing';
-import type { LUT } from '../Scene/luts/luts';
 
 export enum SceneRotation {
   Deg0 = 0,
@@ -121,9 +120,9 @@ export interface PostProcessingProps {
     enabled: boolean;
 
     /**
-     * The name of the LUT to use
+     * The URL of the LUT to use
      */
-    name: LUT;
+    url: string;
   };
 
   /**

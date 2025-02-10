@@ -1,7 +1,6 @@
 import {
   DrawMode,
   GridType,
-  LUT,
   MapLayerType,
   PingEditMode,
   ToolType,
@@ -106,7 +105,7 @@ export const StageDefaultProps: StageProps = {
     },
     lut: {
       enabled: true,
-      name: LUT.Warm
+      url: 'http://files.tableslayer.com/stage/luts/Warm.cube'
     },
     toneMapping: {
       enabled: true,

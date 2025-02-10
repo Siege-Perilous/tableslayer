@@ -11,8 +11,7 @@
     PingEditMode,
     SceneRotation,
     ParticleType,
-    WeatherType,
-    LUT
+    WeatherType
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
@@ -59,9 +58,14 @@
     Hex: GridType.Hex
   };
 
-  const lutOptions: ListOptions<LUT> = Object.fromEntries(
-    Object.values(LUT).map((value) => [value.replace(/([A-Z])/g, ' $1').trim(), value])
-  );
+  const lutOptions: ListOptions<string> = {
+    Cool: 'http://files.tableslayer.com/stage/luts/Cool.cube',
+    Grayscale: 'http://files.tableslayer.com/stage/luts/Grayscale.cube',
+    Plum: 'http://files.tableslayer.com/stage/luts/Plum.cube',
+    Spooky: 'http://files.tableslayer.com/stage/luts/Spooky.cube',
+    Vibrant: 'http://files.tableslayer.com/stage/luts/Vibrant.cube',
+    Warm: 'http://files.tableslayer.com/stage/luts/Warm.cube'
+  };
 
   const particleTypeOptions: ListOptions<number> = {
     Snow: ParticleType.Snow,
@@ -370,7 +374,7 @@
 
     <Folder title="LUT" expanded={false}>
       <Binding object={stageProps.postProcessing.lut} key="enabled" label="Enabled" />
-      <List bind:value={stageProps.postProcessing.lut.name} label="LUT" options={lutOptions} />
+      <List bind:value={stageProps.postProcessing.lut.url} label="LUT" options={lutOptions} />
     </Folder>
 
     <Folder title="Tone Mapping" expanded={false}>
