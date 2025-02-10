@@ -109,7 +109,7 @@ jobs:
             HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
               -H "$AUTH_HEADER" \
               -H "Content-Type: application/json" \
-              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts"} }' \
+              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts-session"} }' \
               "$API_BASE_URL")
 
             HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)

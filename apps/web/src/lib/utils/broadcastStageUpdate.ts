@@ -1,4 +1,4 @@
-import type { SelectScene } from '$lib/db/gs/schema';
+import type { SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import type { StageProps } from '@tableslayer/ui';
 import type { Socket } from 'socket.io-client';

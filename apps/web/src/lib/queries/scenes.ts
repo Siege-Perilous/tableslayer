@@ -1,8 +1,8 @@
-import type { SelectScene } from '$lib/db/gs/schema';
+import type { SelectScene } from '$lib/db/app/schema';
 import { mutationFactory } from '$lib/factories';
 
 export const useUpdateSceneMutation = () => {
-  return mutationFactory<{ dbName: string; partyId: string; sceneId: string; sceneData: Partial<SelectScene> }>({
+  return mutationFactory<{ partyId: string; sceneId: string; sceneData: Partial<SelectScene> }>({
     mutationKey: ['updateScene'],
     endpoint: '/api/scenes/updateScene',
     method: 'POST',
@@ -13,7 +13,7 @@ export const useUpdateSceneMutation = () => {
 };
 
 export const useCreateSceneMutation = () => {
-  return mutationFactory<{ dbName: string; partyId: string; sceneData: Partial<SelectScene> }>({
+  return mutationFactory<{ partyId: string; sceneData: Partial<SelectScene> }>({
     mutationKey: ['insertScene'],
     endpoint: '/api/scenes/createScene',
     method: 'POST'
@@ -21,7 +21,7 @@ export const useCreateSceneMutation = () => {
 };
 
 export const useDeleteSceneMutation = () => {
-  return mutationFactory<{ dbName: string; partyId: string; sceneId: string }>({
+  return mutationFactory<{ gameSessionId: string; partyId: string; sceneId: string }>({
     mutationKey: ['deleteScene'],
     endpoint: '/api/scenes/deleteScene',
     method: 'POST'

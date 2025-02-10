@@ -20,7 +20,7 @@
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, gameSettings, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
@@ -44,7 +44,7 @@
   });
 
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSettings.isPaused);
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
   };
 
   const updateSceneMutation = useUpdateSceneMutation();
@@ -273,7 +273,6 @@
       mutation: () =>
         $updateSceneMutation.mutateAsync({
           sceneId: selectedScene.id,
-          dbName: gameSession.dbName,
           partyId: party.id,
           sceneData: JSON.parse(dirtyData)
         }),
@@ -351,7 +350,6 @@
           {socketUpdate}
           {party}
           {gameSession}
-          {gameSettings}
           {errors}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />

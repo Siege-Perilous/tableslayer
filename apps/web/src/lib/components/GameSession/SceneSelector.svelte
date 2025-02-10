@@ -1,18 +1,17 @@
 <script lang="ts">
   import { IconButton, FileInput, Icon, ContextMenu, FormControl, Input } from '@tableslayer/ui';
   import { IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
-  import type { SelectScene } from '$lib/db/gs/schema';
-  import type { SelectParty } from '$lib/db/app/schema';
+  import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
-    useUpdateGameSessionSettingsMutation,
     useUploadFileMutation,
     useCreateSceneMutation,
     useDeleteSceneMutation,
-    useUpdateSceneMutation
+    useUpdateSceneMutation,
+    useUpdateGameSessionMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
@@ -39,9 +38,9 @@
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
-  const updateSettings = useUpdateGameSessionSettingsMutation();
   const deleteScene = useDeleteSceneMutation();
   const updateScene = useUpdateSceneMutation();
+  const updateGameSession = useUpdateGameSessionMutation();
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -64,9 +63,9 @@
     await handleMutation({
       mutation: () =>
         $createNewScene.mutateAsync({
-          dbName: gameSession.dbName,
           partyId: party.id,
           sceneData: {
+            gameSessionId: gameSession.id,
             name: 'New Scene',
             order,
             mapLocation
@@ -90,9 +89,9 @@
   const handleSetActiveScene = async (sceneId: string) => {
     await handleMutation({
       mutation: () =>
-        $updateSettings.mutateAsync({
-          dbName: gameSession.dbName,
-          settings: { activeSceneId: sceneId },
+        $updateGameSession.mutateAsync({
+          gameSessionId: gameSession.id,
+          gameSessionData: { activeSceneId: sceneId },
           partyId: party.id
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
@@ -109,7 +108,7 @@
     await handleMutation({
       mutation: () =>
         $deleteScene.mutateAsync({
-          dbName: gameSession.dbName,
+          gameSessionId: gameSession.id,
           partyId: party.id,
           sceneId
         }),
@@ -134,7 +133,6 @@
     await handleMutation({
       mutation: () =>
         $updateScene.mutateAsync({
-          dbName: gameSession.dbName,
           partyId: party.id,
           sceneId,
           sceneData: { name }
@@ -248,7 +246,7 @@
     {/each}
   </div>
 
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
+  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} />
 </div>
 
 <style>

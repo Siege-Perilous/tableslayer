@@ -8,18 +8,18 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     selectedSceneNumber = 1;
   }
 
-  let scenes = await getScenes(gameSession.dbName);
+  let scenes = await getScenes(gameSession.id);
 
   if (scenes.length === 0) {
-    await createScene(gameSession.dbName, { name: 'Scene 1' });
-    scenes = await getScenes(gameSession.dbName);
+    await createScene({ name: 'Scene 1', gameSessionId: gameSession.id });
+    scenes = await getScenes(gameSession.id);
   }
 
   // check if activeSceneNumber is valid
   if (selectedSceneNumber < 1 || selectedSceneNumber > scenes.length) {
     selectedSceneNumber = 1;
   }
-  const selectedScene = await getSceneFromOrder(gameSession.dbName, selectedSceneNumber);
+  const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
 
   return {
     scenes,

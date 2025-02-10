@@ -21,7 +21,7 @@
   let editorSceneRotation = $state(data.activeScene.sceneRotation);
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
   let stageIsLoading: boolean = $state(true);
-  let gameIsPaused = $state(data.gameSettings.isPaused);
+  let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   const fadeOutDelay = 5000;
 

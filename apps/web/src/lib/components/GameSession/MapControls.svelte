@@ -1,8 +1,7 @@
 <script lang="ts">
   import { Icon, FormControl, Spacer, type StageProps, Input, Button, IconButton, Text, Hr } from '@tableslayer/ui';
-  import type { SelectScene } from '$lib/db/gs/schema';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
-  import type { SelectGameSettings } from '$lib/db/gs/schema';
+  import type { SelectScene } from '$lib/db/app/schema';
+  import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
@@ -11,7 +10,6 @@
   let {
     socketUpdate,
     stageProps = $bindable(),
-    gameSession,
     selectedScene,
     handleMapFill,
     handleMapFit,
@@ -23,13 +21,11 @@
     activeControl: string;
     stageProps: StageProps;
     party: SelectParty & Thumb;
-    gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
     handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    gameSettings: SelectGameSettings;
     errors: ZodIssue[] | undefined;
   } = $props();
 
@@ -93,7 +89,7 @@
     <Button onclick={handleMapFill}>Fill in scene</Button>
     <Button onclick={handleMapFit}>Fit in scene</Button>
   </div>
-  <UpdateMapImage sceneId={contextSceneId} dbName={gameSession.dbName} partyId={party.id} />
+  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} />
 </div>
 
 <style>

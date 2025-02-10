@@ -7,7 +7,7 @@ import {
   type SelectUser
 } from '$lib/db/app/schema';
 import {
-  createGameSessionDb,
+  createGameSession,
   createRandomNamedParty,
   getFile,
   getGravatarDisplayName,
@@ -130,7 +130,7 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
     });
 
     // Create a game session database
-    await createGameSessionDb(party.id);
+    await createGameSession(party.id);
 
     // Create an email verification code
     await db

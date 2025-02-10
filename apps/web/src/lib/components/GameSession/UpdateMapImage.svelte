@@ -10,7 +10,7 @@
   import { invalidateAll } from '$app/navigation';
 
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  let { sceneId, dbName, partyId }: { sceneId: string; dbName: string; partyId: string } = $props();
+  let { sceneId, partyId }: { sceneId: string; partyId: string } = $props();
 
   const uploadFile = useUploadFileMutation();
   const updateScene = useUpdateSceneMutation();
@@ -35,7 +35,6 @@
     await handleMutation({
       mutation: () =>
         $updateScene.mutateAsync({
-          dbName,
           sceneId,
           partyId,
           sceneData: {
