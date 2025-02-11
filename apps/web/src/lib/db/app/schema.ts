@@ -164,12 +164,9 @@ export const partyTable = sqliteTable(
     defaultDisplayPaddingY: integer('default_display_padding_y').notNull().default(16),
     defaultGridSpacing: integer('default_grid_spacing').notNull().default(1),
     defaultLineThickness: integer('default_line_thickness').notNull().default(1),
-    stripeSubscriptionId: text('stripe_subscription_id'),
     planNextBillingDate: integer('plan_next_billing_date', { mode: 'timestamp' }),
     planExpirationDate: integer('plan_expiration_date', { mode: 'timestamp' }),
     planStatus: text('plan_status'),
-    stripeCheckoutSessionId: text('stripe_checkout_session_id'),
-    stripeCustomerId: text('stripe_customer_id'),
     lemonSqueezyCustomerId: integer('lemon_squeezy_customer_id'),
     plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
@@ -263,9 +260,10 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
-    // The name of the database in Turso
-    // Delete a gameSession with deleteGameSession() to delete the database as well
-    dbName: text('db_name').unique().notNull()
+    // TypeScript needs a way out of the circular reference
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    activeSceneId: text('active_scene_id').references((): any => sceneTable.id, { onDelete: 'set null' }),
+    isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false)
   },
   (table) => ({
     uniqueNameWithinParty: uniqueIndex('unique_party_name').on(table.partyId, table.slug)
@@ -277,3 +275,68 @@ export type InsertGameSession = typeof gameSessionTable.$inferInsert;
 export const insertGameSessionSchema = createInsertSchema(gameSessionTable);
 export const selectGameSessionSchema = createSelectSchema(gameSessionTable);
 export const updateGameSessionSchema = createUpdateSchema(gameSessionTable);
+
+// SCENES
+// SCENES
+// SCENES
+
+export const sceneTable = sqliteTable(
+  'scene',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    gameSessionId: text('session_id')
+      .references(() => gameSessionTable.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: text('name').notNull().default('New Scene'),
+    order: integer('order').notNull(),
+    backgroundColor: text('background_color').notNull().default('#0b0b0c'),
+    displayPaddingX: integer('display_padding_x').notNull().default(16),
+    displayPaddingY: integer('display_padding_y').notNull().default(16),
+    displaySizeX: real('display_size_x').notNull().default(17.77),
+    displaySizeY: real('display_size_y').notNull().default(10.0),
+    displayResolutionX: integer('display_resolution_x').notNull().default(1920),
+    displayResolutionY: integer('display_resolution_y').notNull().default(1080),
+    fogOfWarUrl: text('fog_of_war_url'),
+    fogOfWarColor: text('fog_of_war_color').notNull().default('#000'),
+    fogOfWarOpacity: real('fog_of_war_opacity').notNull().default(0.9),
+    mapLocation: text('map_location'),
+    mapRotation: integer('map_rotation').notNull().default(0),
+    mapOffsetX: real('map_offset_x').notNull().default(0),
+    mapOffsetY: real('map_offset_y').notNull().default(0),
+    mapZoom: real('map_zoom').notNull().default(1.0),
+    gridType: integer('grid_type').notNull().default(0),
+    gridSpacing: integer('grid_spacing').notNull().default(1),
+    gridOpacity: real('grid_opacity').notNull().default(0.8),
+    gridLineColor: text('grid_line_color').notNull().default('#E6E6E6'),
+    gridLineThickness: integer('grid_line_thickness').notNull().default(1),
+    gridShadowColor: text('grid_shadow_color').notNull().default('#000000'),
+    gridShadowSpread: integer('grid_shadow_spread').notNull().default(2),
+    gridShadowBlur: real('grid_shadow_blur').notNull().default(0.5),
+    gridShadowOpacity: real('grid_shadow_opacity').notNull().default(0.4),
+    sceneOffsetX: integer('scene_offset_x').notNull().default(0),
+    sceneOffsetY: integer('scene_offset_y').notNull().default(0),
+    sceneRotation: integer('scene_rotation').notNull().default(0),
+    weatherColor: text('weather_color').notNull().default('#FFFFFF'),
+    weatherFov: integer('weather_fov').notNull().default(50),
+    weatherIntensity: real('weather_intensity').notNull().default(1),
+    weatherOpacity: real('weather_opacity').notNull().default(0.5),
+    weatherType: integer('weather_type').notNull().default(0)
+  },
+  (table) => ({
+    uniqueSessionSceneOrder: uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
+    checkFogOfWarOpacityCheck: check(
+      'protected_fog_of_war_opacity',
+      sql`${table.fogOfWarOpacity} >= 0 AND ${table.fogOfWarOpacity} <= 1`
+    ),
+    checkGridOpacityCheck: check('protected_grid_opacity', sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`)
+  })
+);
+
+export type InsertScene = typeof sceneTable.$inferInsert;
+export type SelectScene = typeof sceneTable.$inferSelect;
+export const selectSceneSchema = createSelectSchema(sceneTable);
+export const insertSceneSchema = createInsertSchema(sceneTable);
+export const updateSceneSchema = createUpdateSchema(sceneTable);

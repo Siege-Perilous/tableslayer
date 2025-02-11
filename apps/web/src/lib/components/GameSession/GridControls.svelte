@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { SelectScene } from '$lib/db/gs/schema';
-  import type { SelectGameSettings } from '$lib/db/gs/schema';
+  import type { SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import { type ZodIssue } from 'zod';
@@ -44,7 +43,6 @@
     handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    gameSettings: SelectGameSettings;
     errors: ZodIssue[] | undefined;
   } = $props();
 

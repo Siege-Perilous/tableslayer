@@ -26,9 +26,8 @@
   } from '@tabler/icons-svelte';
   import { writable } from 'svelte/store';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
-  import type { SelectGameSettings } from '$lib/db/gs/schema';
   import type { Thumb } from '$lib/server';
-  import type { SelectScene } from '$lib/db/gs/schema';
+  import type { SelectScene } from '$lib/db/app/schema';
   import { type ZodIssue } from 'zod';
   import { GridControls, WeatherControls, MapControls, FogControls, PlayControls } from './';
 
@@ -44,7 +43,6 @@
     handleSceneFit,
     handleMapFill,
     handleMapFit,
-    gameSettings,
     errors
   }: {
     socketUpdate: () => void;
@@ -58,7 +56,6 @@
     handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    gameSettings: SelectGameSettings;
     errors: ZodIssue[] | undefined;
   } = $props();
 
@@ -97,7 +94,7 @@
     },
     {
       id: 'play',
-      icon: gameSettings.isPaused ? IconScreenShareOff : IconScreenShare,
+      icon: gameSession.isPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
       mapLayer: MapLayerType.None
     }
@@ -231,7 +228,6 @@
                 {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
-                {gameSettings}
                 {errors}
               />
             {:else if scene.id === 'fog'}
@@ -243,17 +239,15 @@
                 {handleSelectActiveControl}
                 {activeControl}
                 {party}
-                {gameSession}
                 {selectedScene}
                 {activeScene}
                 {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
-                {gameSettings}
                 {errors}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {gameSettings} />
+              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
             {:else if scene.id === 'weather'}
               <WeatherControls {stageProps} {socketUpdate} {errors} />
             {/if}

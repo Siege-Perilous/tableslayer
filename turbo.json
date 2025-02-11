@@ -1,12 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "web#migrate": {
+      "outputs": [],
+      "env": ["TURSO_APP_DB_URL", "TURSO_APP_DB_AUTH_TOKEN"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT", ".env*"],
       "outputs": [".svelte-kit/**", ".vercel/**"]
     },
     "web#build": {
+      "dependsOn": ["^web#migrate"],
       "env": [
         "ENV_NAME",
         "GITHUB_PR_NUMBER",

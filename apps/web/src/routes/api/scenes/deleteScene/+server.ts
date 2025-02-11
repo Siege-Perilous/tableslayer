@@ -3,20 +3,20 @@ import { deleteScene, isUserInParty } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
-  dbName: z.string(),
+  gameSessionId: z.string(),
   partyId: z.string(),
   sceneId: z.string()
 });
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { dbName, partyId, sceneId } = body;
+    const { gameSessionId, partyId, sceneId } = body;
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
     }
 
-    await deleteScene(dbName, sceneId);
+    await deleteScene(gameSessionId, sceneId);
 
     return { success: true };
   },

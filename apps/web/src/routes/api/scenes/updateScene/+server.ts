@@ -1,10 +1,9 @@
-import { updateSceneSchema } from '$lib/db/gs/schema';
+import { updateSceneSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { isUserInParty, updateScene } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
-  dbName: z.string(),
   sceneId: z.string(),
   sceneData: updateSceneSchema,
   partyId: z.string()
@@ -12,7 +11,7 @@ const validationSchema = z.object({
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { sceneId, dbName, partyId, sceneData } = body;
+    const { sceneId, partyId, sceneData } = body;
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
@@ -20,7 +19,7 @@ export const POST = apiFactory(
 
     const userId = locals.user.id;
 
-    await updateScene(dbName, userId, sceneId, sceneData);
+    await updateScene(userId, sceneId, sceneData);
 
     return { success: true };
   },
