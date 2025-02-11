@@ -32,6 +32,7 @@
     transform-origin: center 120%;
     border: var(--borderThick);
     border-color: var(--fg);
+    transition: transform 0.2s var(--ease-in-2);
   }
   .cardFan__card:before {
     content: '';
@@ -92,5 +93,56 @@
   }
   .cardFan--count-5 .cardFan__card:nth-child(5) {
     transform: translate(-50%, -50%) rotate(25deg);
+  }
+
+  :global {
+    *:hover > .cardFan--count-1 .cardFan__card:nth-child(1) {
+      transform: translate(-50%, -50%) rotate(0deg) !important;
+    }
+
+    *:hover > .cardFan--count-2 .cardFan__card:nth-child(1) {
+      transform: translate(-120%, -42%) rotate(-10deg) !important;
+    }
+    *:hover > .cardFan--count-2 .cardFan__card:nth-child(2) {
+      transform: translate(20%, -42%) rotate(10deg) !important;
+    }
+
+    *:hover > .cardFan--count-3 .cardFan__card:nth-child(1) {
+      transform: translate(-130%, -45%) rotate(-10deg) !important;
+    }
+    *:hover > .cardFan--count-3 .cardFan__card:nth-child(2) {
+      transform: translate(-50%, -50%) rotate(0deg) !important;
+    }
+    *:hover > .cardFan--count-3 .cardFan__card:nth-child(3) {
+      transform: translate(30%, -45%) rotate(10deg) !important;
+    }
+
+    *:hover > .cardFan--count-4 .cardFan__card:nth-child(1) {
+      transform: translate(-140%, -42%) rotate(-10deg) !important;
+    }
+    *:hover > .cardFan--count-4 .cardFan__card:nth-child(2) {
+      transform: translate(-70%, -46%) rotate(-5deg) !important;
+    }
+    *:hover > .cardFan--count-4 .cardFan__card:nth-child(3) {
+      transform: translate(-10%, -46%) rotate(5deg) !important;
+    }
+    *:hover > .cardFan--count-4 .cardFan__card:nth-child(4) {
+      transform: translate(60%, -42%) rotate(10deg) !important;
+    }
+    *:hover > .cardFan--count-5 .cardFan__card:nth-child(1) {
+      transform: translate(-150%, -42%) rotate(-10deg) !important;
+    }
+    *:hover > .cardFan--count-5 .cardFan__card:nth-child(2) {
+      transform: translate(-100%, -46%) rotate(-5deg) !important;
+    }
+    *:hover > .cardFan--count-5 .cardFan__card:nth-child(3) {
+      transform: translate(-50%, -50%) rotate(0deg) !important;
+    }
+    *:hover > .cardFan--count-5 .cardFan__card:nth-child(4) {
+      transform: translate(0%, -46%) rotate(5deg) !important;
+    }
+    *:hover > .cardFan--count-5 .cardFan__card:nth-child(5) {
+      transform: translate(50%, -42%) rotate(10deg) !important;
+    }
   }
 </style>
