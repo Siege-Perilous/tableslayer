@@ -7,9 +7,7 @@ import {
   WeatherType,
   type StageProps
 } from '@tableslayer/ui';
-
-//import map1Url from './map1.png';
-import map2Url from './map2.png';
+import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
@@ -25,7 +23,7 @@ export const StageDefaultProps: StageProps = {
   },
   fogOfWar: {
     url: null,
-    opacity: 1,
+    opacity: 1.0,
     outline: {
       color: '#000000',
       opacity: 1,
@@ -77,7 +75,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: map2Url
+    url: 'https://files.tableslayer.com/maps/01.jpeg'
   },
   ping: {
     color: '#ff0000',
@@ -89,6 +87,35 @@ export const StageDefaultProps: StageProps = {
     pulseSpeed: 3.0,
     sharpness: 0.95,
     thickness: 0.1
+  },
+  postProcessing: {
+    enabled: true,
+    bloom: {
+      enabled: true,
+      intensity: 0.6,
+      threshold: 0.5,
+      smoothing: 0.3,
+      radius: 0.5,
+      levels: 10,
+      mipmapBlur: true
+    },
+    chromaticAberration: {
+      enabled: true,
+      offset: 0.003
+    },
+    lut: {
+      enabled: true,
+      url: 'http://files.tableslayer.com/stage/luts/Warm.cube'
+    },
+    toneMapping: {
+      enabled: true,
+      mode: ToneMappingMode.NEUTRAL
+    },
+    vignette: {
+      enabled: true,
+      offset: 0.5,
+      darkness: 0.5
+    }
   },
   scene: {
     offset: {

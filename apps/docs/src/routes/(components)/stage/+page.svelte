@@ -15,6 +15,7 @@
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
+  import { ToneMappingMode } from 'postprocessing';
 
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
@@ -55,6 +56,15 @@
   const gridTypeOptions: ListOptions<number> = {
     Square: GridType.Square,
     Hex: GridType.Hex
+  };
+
+  const lutOptions: ListOptions<string> = {
+    Cool: 'http://files.tableslayer.com/stage/luts/Cool.cube',
+    Grayscale: 'http://files.tableslayer.com/stage/luts/Grayscale.cube',
+    Plum: 'http://files.tableslayer.com/stage/luts/Plum.cube',
+    Spooky: 'http://files.tableslayer.com/stage/luts/Spooky.cube',
+    Vibrant: 'http://files.tableslayer.com/stage/luts/Vibrant.cube',
+    Warm: 'http://files.tableslayer.com/stage/luts/Warm.cube'
   };
 
   const particleTypeOptions: ListOptions<number> = {
@@ -339,6 +349,59 @@
     <Slider bind:value={stageProps.ping.sharpness} label="Edge Sharpness" min={0} max={1} />
     <Slider bind:value={stageProps.ping.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
+  </Folder>
+
+  <Folder title="Post Processing" expanded={false}>
+    <Binding object={stageProps.postProcessing} key="enabled" label="Enabled" />
+    <Folder title="Bloom" expanded={false}>
+      <Binding object={stageProps.postProcessing.bloom} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.bloom.mipmapBlur}
+        label="Mipmap Blur"
+        options={{ Yes: true, No: false }}
+      />
+      <Slider bind:value={stageProps.postProcessing.bloom.intensity} label="Intensity" min={0} max={10} />
+      <Slider bind:value={stageProps.postProcessing.bloom.radius} label="Radius" min={0} max={0.5} />
+      <Slider bind:value={stageProps.postProcessing.bloom.levels} label="Levels" min={1} max={16} step={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.threshold} label="Threshold" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.bloom.smoothing} label="Smoothing" min={0} max={1} />
+    </Folder>
+
+    <Folder title="Chromatic Aberration" expanded={false}>
+      <Binding object={stageProps.postProcessing.chromaticAberration} key="enabled" label="Enabled" />
+      <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
+    </Folder>
+
+    <Folder title="LUT" expanded={false}>
+      <Binding object={stageProps.postProcessing.lut} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.lut.url} label="LUT" options={lutOptions} />
+    </Folder>
+
+    <Folder title="Tone Mapping" expanded={false}>
+      <Binding object={stageProps.postProcessing.toneMapping} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.toneMapping.mode}
+        label="Mode"
+        options={{
+          ACES_FILMIC: ToneMappingMode.ACES_FILMIC,
+          AGX: ToneMappingMode.AGX,
+          CINEON: ToneMappingMode.CINEON,
+          LINEAR: ToneMappingMode.LINEAR,
+          NEUTRAL: ToneMappingMode.NEUTRAL,
+          OPTIMIZED_CINEON: ToneMappingMode.OPTIMIZED_CINEON,
+          REINHARD: ToneMappingMode.REINHARD,
+          REINHARD2: ToneMappingMode.REINHARD2,
+          REINHARD2_ADAPTIVE: ToneMappingMode.REINHARD2_ADAPTIVE,
+          UNCHARTED2: ToneMappingMode.UNCHARTED2
+        }}
+      />
+    </Folder>
+
+    <Folder title="Vignette" expanded={false}>
+      <Binding object={stageProps.postProcessing.vignette} key="enabled" label="Enabled" />
+      <Slider bind:value={stageProps.postProcessing.vignette.offset} label="Offset" min={0} max={1} step={0.1} />
+      <Slider bind:value={stageProps.postProcessing.vignette.darkness} label="Darkness" min={0} max={1} step={0.1} />
+    </Folder>
   </Folder>
 
   <Folder title="Scene" expanded={false}>

@@ -7,6 +7,7 @@
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
   import type { Size } from '../../types';
+  import { SceneLayer } from '../Scene/types';
 
   interface Props {
     props: PingLayerProps;
@@ -105,12 +106,12 @@
 <InputManager {isActive} target={inputMesh} layerSize={mapSize} {onMouseDown} />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} position={[0, 0, 0]}>
-  <T.MeshBasicMaterial opacity={0} transparent={true} />
+<T.Mesh bind:ref={inputMesh}>
+  <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry />
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} position={[-0.5, -0.5, 0]}>
+<T.Mesh bind:ref={pingMesh} name="pingLayer" position={[-0.5, -0.5, 0]} layers={[SceneLayer.Main]}>
   <PingMaterial {props} />
 </T.Mesh>

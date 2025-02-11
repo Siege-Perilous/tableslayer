@@ -8,6 +8,7 @@ import {
   WeatherType,
   type StageProps
 } from '@tableslayer/ui';
+import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
@@ -87,6 +88,35 @@ export const StageDefaultProps: StageProps = {
     pulseSpeed: 3.0,
     sharpness: 0.95,
     thickness: 0.1
+  },
+  postProcessing: {
+    enabled: true,
+    bloom: {
+      enabled: true,
+      intensity: 0.5,
+      threshold: 0.5,
+      smoothing: 0.5,
+      radius: 0.5,
+      levels: 0.5,
+      mipmapBlur: true
+    },
+    chromaticAberration: {
+      enabled: true,
+      offset: 0.001
+    },
+    lut: {
+      enabled: true,
+      url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
+    },
+    toneMapping: {
+      enabled: true,
+      mode: ToneMappingMode.NEUTRAL
+    },
+    vignette: {
+      enabled: true,
+      offset: 0.5,
+      darkness: 0.5
+    }
   },
   scene: {
     offset: {
