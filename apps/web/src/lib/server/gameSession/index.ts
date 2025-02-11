@@ -25,9 +25,8 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
 
   const gameSessionsWithScenes = await Promise.all(
     gameSessions.map(async (gameSession) => {
-      const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSession.id)).all();
+      const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSession.id)).limit(5);
 
-      // Ensure scenes array is always present
       const scenesWithThumbs: (SelectScene & Partial<Thumb>)[] = [];
 
       for (const scene of scenes) {
