@@ -27,23 +27,26 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
     gameSessions.map(async (gameSession) => {
       const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSession.id)).all();
 
-      const scenesWithThumbs: (SelectScene & Thumb)[] = [];
+      // Ensure scenes array is always present
+      const scenesWithThumbs: (SelectScene & Partial<Thumb>)[] = [];
 
       for (const scene of scenes) {
-        if (!scene.mapLocation) {
-          continue;
+        let thumb;
+
+        if (scene.mapLocation) {
+          thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
         }
 
-        const thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
-        const sceneWithThumb = { ...scene, thumb };
-        scenesWithThumbs.push(sceneWithThumb);
+        scenesWithThumbs.push({ ...scene, thumb: thumb });
       }
+
       return {
         ...gameSession,
         scenes: scenesWithThumbs
       };
     })
   );
+
   return gameSessionsWithScenes;
 };
 
