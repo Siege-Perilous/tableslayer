@@ -9,7 +9,7 @@
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
   import LeavesPreset from './presets/LeavesPreset';
-  import DebrisPreset from './presets/DebrisPreset';
+  import AshPreset from './presets/AshPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
@@ -63,8 +63,8 @@
       case WeatherType.Custom:
         preset = { ...(props.custom || RainPreset) };
         break;
-      case WeatherType.Debris:
-        preset = { ...DebrisPreset };
+      case WeatherType.Ash:
+        preset = { ...AshPreset };
         break;
       default:
         // Fallback to rain preset
@@ -74,7 +74,6 @@
     // Override some of the preset values with the UI selections
     preset.opacity = props.opacity;
     preset.count = Math.floor(props.intensity * preset.count);
-    preset.color = props.color;
 
     return preset;
   });

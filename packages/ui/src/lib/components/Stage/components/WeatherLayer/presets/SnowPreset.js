@@ -1,7 +1,7 @@
 export default {
   count: 2000,
   type: 1,
-  color: '#42d8d3',
+  color: '#e0e0e0',
   opacity: 0.76,
   fadeInTime: 4,
   fadeOutTime: 3,

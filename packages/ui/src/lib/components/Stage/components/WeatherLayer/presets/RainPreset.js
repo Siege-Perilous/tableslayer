@@ -1,7 +1,7 @@
 export default {
   count: 5000,
   type: 2,
-  color: '#42d8d3',
+  color: '#e0e0e0',
   opacity: 0.7,
   fadeInTime: 0,
   fadeOutTime: 1.5,
@@ -43,7 +43,7 @@ export default {
     alignRadially: true,
     offset: 270,
     velocity: 0,
-    randomize: true
+    randomize: false
   },
   scale: {
     x: 0.5,

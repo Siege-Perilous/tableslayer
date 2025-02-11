@@ -1,4 +1,4 @@
-import debris from './particles/atlases/debris.png';
+import ash from './particles/atlases/ash.png';
 import leaves from './particles/atlases/leaves.png';
 import rain from './particles/atlases/rain.png';
 import snow from './particles/atlases/snow.png';
@@ -6,7 +6,7 @@ export enum ParticleType {
   Snow = 1,
   Rain = 2,
   Leaves = 3,
-  Debris = 4
+  Ash = 4
 }
 
 export const ParticleData = {
@@ -28,8 +28,8 @@ export const ParticleData = {
     columns: 3,
     rows: 3
   },
-  [ParticleType.Debris]: {
-    url: debris,
+  [ParticleType.Ash]: {
+    url: ash,
     size: 768,
     columns: 3,
     rows: 3

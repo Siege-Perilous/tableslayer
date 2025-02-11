@@ -1,8 +1,8 @@
 export default {
-  count: 500,
+  count: 1000,
   type: 4,
-  color: '#808080',
-  opacity: 1.0,
+  color: '#505050',
+  opacity: 0.5,
   fadeInTime: 4,
   fadeOutTime: 3,
   lifetime: 10,
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.05
+      z: 0.03
     },
     exponential: {
       x: 0,
@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.015,
-    max: 0.02
+    min: 0.003,
+    max: 0.005
   }
 };

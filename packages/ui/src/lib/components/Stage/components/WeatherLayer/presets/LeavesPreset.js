@@ -1,7 +1,7 @@
 export default {
   count: 500,
   type: 3,
-  color: '#42d8d3',
+  color: '#ffffff',
   opacity: 0.76,
   fadeInTime: 3,
   fadeOutTime: 2,
@@ -42,7 +42,7 @@ export default {
   rotation: {
     alignRadially: false,
     offset: 0,
-    velocity: 1,
+    velocity: 0.2,
     randomize: true
   },
   scale: {

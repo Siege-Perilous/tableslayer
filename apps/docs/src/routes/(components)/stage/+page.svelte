@@ -68,10 +68,10 @@
   };
 
   const particleTypeOptions: ListOptions<number> = {
-    Snow: ParticleType.Snow,
-    Rain: ParticleType.Rain,
+    Ash: ParticleType.Ash,
     Leaves: ParticleType.Leaves,
-    Debris: ParticleType.Debris
+    Rain: ParticleType.Rain,
+    Snow: ParticleType.Snow
   };
 
   const sceneRotationOptions: ListOptions<number> = {
@@ -83,10 +83,10 @@
 
   const weatherTypeOptions: ListOptions<number> = {
     None: WeatherType.None,
-    Snow: WeatherType.Snow,
-    Rain: WeatherType.Rain,
+    Ash: WeatherType.Ash,
     Leaves: WeatherType.Leaves,
-    Debris: WeatherType.Debris,
+    Rain: WeatherType.Rain,
+    Snow: WeatherType.Snow,
     Custom: WeatherType.Custom
   };
 
@@ -418,7 +418,6 @@
 
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
-    <Color bind:value={stageProps.weather.color} label="Color" />
     <Slider bind:value={stageProps.weather.fov} label="FOV" min={10} max={180} step={1} />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
