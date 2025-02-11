@@ -1,23 +1,22 @@
-import { insertSceneSchema } from '$lib/db/gs/schema'; // Use or create a schema for scene creation
+import { insertSceneSchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
 import { createScene, isUserInParty } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
-  dbName: z.string(),
   partyId: z.string(),
   sceneData: insertSceneSchema
 });
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { dbName, partyId, sceneData } = body;
+    const { partyId, sceneData } = body;
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
     }
 
-    await createScene(dbName, sceneData);
+    await createScene(sceneData);
 
     return { success: true };
   },

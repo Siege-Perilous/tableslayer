@@ -1,32 +1,51 @@
-import { gsChildDb } from '$lib/db/gs';
-import {
-  sceneTable,
-  settingsTable,
-  type InsertScene,
-  type SelectGameSettings,
-  type SelectScene
-} from '$lib/db/gs/schema';
-import { eq, sql } from 'drizzle-orm';
+import { db } from '$lib/db/app';
+import { gameSessionTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
-import { getPartyFromGameSessionDbName } from '../party';
+import { getGameSession, updateGameSession } from '../gameSession';
+import { getPartyFromGameSessionId } from '../party';
 
-const reorderScenes = async (dbName: string) => {
-  const gsDb = gsChildDb(dbName);
-  const scenes = await gsDb.select().from(sceneTable).orderBy(sceneTable.order).all();
+const reorderScenes = async (gameSessionId: string) => {
+  const scenes = await db
+    .select()
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
     const desiredOrder = i + 1;
     if (scene.order !== desiredOrder) {
-      await gsDb.update(sceneTable).set({ order: desiredOrder }).where(eq(sceneTable.id, scene.id)).execute();
+      await db.update(sceneTable).set({ order: desiredOrder }).where(eq(sceneTable.id, scene.id)).execute();
     }
   }
 };
 
-export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
-  const gsDb = gsChildDb(dbName);
-  const scenes = await gsDb.select().from(sceneTable).orderBy(sceneTable.order).all();
+export const getScene = async (sceneId: string): Promise<SelectScene | (SelectScene & Thumb)> => {
+  const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
+
+  if (!scene) {
+    throw new Error('Scene not found');
+  }
+
+  if (!scene?.mapLocation) {
+    return scene;
+  }
+
+  const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+  const sceneWithThumb = { ...scene, thumb };
+  return sceneWithThumb;
+};
+
+export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
+  const scenes = await db
+    .select()
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
 
   if (!scenes || scenes.length === 0) {
     return [];
@@ -47,8 +66,8 @@ export const getScenes = async (dbName: string): Promise<(SelectScene | (SelectS
   return scenesWithThumbs;
 };
 
-export const createScene = async (dbName: string, data: Omit<InsertScene, 'order'> & { order?: number }) => {
-  const gsDb = gsChildDb(dbName);
+export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: number }) => {
+  const gameSessiondId = data.gameSessionId;
   let order = data.order;
   const name = data.name;
 
@@ -61,23 +80,24 @@ export const createScene = async (dbName: string, data: Omit<InsertScene, 'order
   }
 
   if (order === undefined) {
-    const maxOrderScene = await gsDb
+    const maxOrderScene = await db
       .select({ maxOrder: sql<number>`MAX(${sceneTable.order})` })
       .from(sceneTable)
+      .where(eq(sceneTable.gameSessionId, gameSessiondId))
       .get();
 
     order = (maxOrderScene?.maxOrder ?? 0) + 1; // Default to the next available order
   }
 
-  const scenesToShift = await gsDb
+  const scenesToShift = await db
     .select({ id: sceneTable.id, currentOrder: sceneTable.order })
     .from(sceneTable)
-    .where(sql`${sceneTable.order} >= ${order}`)
+    .where(and(eq(sceneTable.gameSessionId, gameSessiondId), gte(sceneTable.order, order)))
     .orderBy(sql`${sceneTable.order} DESC`) // Process from highest order to lowest
     .all();
 
   for (const { id, currentOrder } of scenesToShift) {
-    await gsDb
+    await db
       .update(sceneTable)
       .set({ order: currentOrder + 1 }) // Increment order
       .where(eq(sceneTable.id, id))
@@ -85,14 +105,15 @@ export const createScene = async (dbName: string, data: Omit<InsertScene, 'order
   }
 
   // Get the party's default settings
-  const party = await getPartyFromGameSessionDbName(dbName);
+  const party = await getPartyFromGameSessionId(gameSessiondId);
 
   const sceneId = uuidv4();
 
-  await gsDb
+  await db
     .insert(sceneTable)
     .values({
       id: sceneId,
+      gameSessionId: gameSessiondId,
       name,
       order,
       mapLocation: fileLocation,
@@ -108,19 +129,22 @@ export const createScene = async (dbName: string, data: Omit<InsertScene, 'order
     })
     .execute();
 
-  const scenes = await gsDb.select().from(sceneTable).all();
+  const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSessiondId)).all();
 
   if (scenes.length === 1) {
-    await setActiveScene(dbName, sceneId);
+    await setActiveScene(gameSessiondId, sceneId);
   }
 };
 
 export const getSceneFromOrder = async (
-  dbName: string,
+  gameSessiondId: string,
   order: number
 ): Promise<SelectScene | (SelectScene & Thumb)> => {
-  const db = gsChildDb(dbName);
-  const scene = await db.select().from(sceneTable).where(eq(sceneTable.order, order)).get();
+  const scene = await db
+    .select()
+    .from(sceneTable)
+    .where(and(eq(sceneTable.gameSessionId, gameSessiondId), eq(sceneTable.order, order)))
+    .get();
   if (!scene) {
     throw new Error('Scene not found');
   }
@@ -130,26 +154,44 @@ export const getSceneFromOrder = async (
     : null;
   const sceneWithThumb = { ...scene, thumb };
 
-  if (!scene) {
-    throw new Error('Scene not found');
-  }
-
   return sceneWithThumb;
 };
 
-export const deleteScene = async (dbName: string, sceneId: string) => {
-  const gsdb = gsChildDb(dbName);
+export const deleteScene = async (gameSessionId: string, sceneId: string) => {
+  // Check if the scene being deleted is the active scene
+  const gameSession = await db
+    .select({ activeSceneId: gameSessionTable.activeSceneId })
+    .from(gameSessionTable)
+    .where(eq(gameSessionTable.id, gameSessionId))
+    .get();
 
-  await gsdb.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
+  // Delete the scene
+  await db.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
 
-  // After deletion, reorder all scenes
-  await reorderScenes(dbName);
+  // If the deleted scene was the active scene, update activeSceneId to NULL or another scene
+  if (gameSession?.activeSceneId === sceneId) {
+    // Try to find another scene to set as active
+    const nextScene = await db
+      .select({ id: sceneTable.id })
+      .from(sceneTable)
+      .where(eq(sceneTable.gameSessionId, gameSessionId))
+      .orderBy(asc(sceneTable.order)) // Pick the next lowest order scene
+      .limit(1)
+      .get();
+
+    await db
+      .update(gameSessionTable)
+      .set({ activeSceneId: nextScene ? nextScene.id : null }) // Set to another scene if available, otherwise NULL
+      .where(eq(gameSessionTable.id, gameSessionId))
+      .execute();
+  }
+
+  // Reorder the remaining scenes
+  await reorderScenes(gameSessionId);
 };
 
-export const adjustSceneOrder = async (dbName: string, sceneId: string, newOrder: number) => {
-  const gsDb = gsChildDb(dbName);
-
-  const currentScene = await gsDb
+export const adjustSceneOrder = async (gameSessionId: string, sceneId: string, newOrder: number) => {
+  const currentScene = await db
     .select({ currentOrder: sceneTable.order })
     .from(sceneTable)
     .where(eq(sceneTable.id, sceneId))
@@ -167,32 +209,42 @@ export const adjustSceneOrder = async (dbName: string, sceneId: string, newOrder
 
   if (newOrder > currentOrder) {
     // If moving down, decrement `order` for rows between `currentOrder + 1` and `newOrder`
-    await gsDb
+    await db
       .update(sceneTable)
       .set({ order: sql`${sceneTable.order} - 1` })
-      .where(sql`${sceneTable.order} > ${currentOrder} AND ${sceneTable.order} <= ${newOrder}`)
+      .where(
+        and(
+          eq(sceneTable.gameSessionId, gameSessionId),
+          gt(sceneTable.order, currentOrder),
+          lte(sceneTable.order, newOrder)
+        )
+      )
       .execute();
   } else {
     // If moving up, increment `order` for rows between `newOrder` and `currentOrder - 1`
-    await gsDb
+    await db
       .update(sceneTable)
       .set({ order: sql`${sceneTable.order} + 1` })
-      .where(sql`${sceneTable.order} >= ${newOrder} AND ${sceneTable.order} < ${currentOrder}`)
+      .where(
+        and(
+          eq(sceneTable.gameSessionId, gameSessionId),
+          gte(sceneTable.order, newOrder),
+          lt(sceneTable.order, currentOrder)
+        )
+      )
       .execute();
   }
 
   // Update the target scene's order to the new order
-  await gsDb.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
+  await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
 };
 
 export const updateScene = async (
-  dbName: string,
   userId: string,
   sceneId: string,
   details: Partial<Record<keyof (typeof sceneTable)['_']['columns'], unknown>> & { file?: File }
 ) => {
-  const gsDb = gsChildDb(dbName);
-  const scene = await gsDb.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
+  const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
 
   if (!scene) {
     throw new Error('Scene not found');
@@ -217,70 +269,40 @@ export const updateScene = async (
   }
 
   if (Object.keys(updateData).length > 0) {
-    await gsDb.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
+    await db.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
   }
 };
 
-export const updateSceneMap = async (dbName: string, sceneId: string, userId: string, file: File) => {
-  const gsDb = gsChildDb(dbName);
+export const updateSceneMap = async (sceneId: string, userId: string, file: File) => {
   const fileRow = await uploadFileFromInput(file, userId, 'map');
   const fileContent = await getFile(fileRow.fileId);
   const fileLocation = fileContent.location;
 
-  await gsDb.update(sceneTable).set({ mapLocation: fileLocation }).where(eq(sceneTable.id, sceneId)).execute();
+  await db.update(sceneTable).set({ mapLocation: fileLocation }).where(eq(sceneTable.id, sceneId)).execute();
 };
 
-export const setActiveScene = async (dbName: string, sceneId: string) => {
-  const gsDb = gsChildDb(dbName);
-  // check to see if a settings row exists, create or update it
-  const settings = await gsDb.select().from(settingsTable).get();
-  if (settings) {
-    console.log('updating settings');
-    await gsDb.update(settingsTable).set({ activeSceneId: sceneId }).execute();
-  } else {
-    console.log('inserting settings');
-    await gsDb.insert(settingsTable).values({ activeSceneId: sceneId }).execute();
-  }
+export const setActiveScene = async (gameSessionId: string, sceneId: string) => {
+  await updateGameSession(gameSessionId, { activeSceneId: sceneId });
 };
 
-export const getActiveScene = async (dbName: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  const gsDb = gsChildDb(dbName);
-  const settings = await gsDb.select().from(settingsTable).get();
-
-  if (!settings || !settings.activeSceneId) {
+export const getActiveScene = async (gameSessiondId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
+  const gameSession = await getGameSession(gameSessiondId);
+  const activeSceneId = gameSession.activeSceneId;
+  if (!activeSceneId) {
     return null;
   }
 
-  const activeScene = await gsDb.select().from(sceneTable).where(eq(sceneTable.id, settings.activeSceneId)).get();
+  const activeScene = await getScene(activeSceneId);
 
   if (!activeScene) {
     return null;
   }
 
-  const thumb = activeScene.mapLocation
-    ? await transformImage(activeScene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
-    : null;
-  const activeSceneWithThumb = { ...activeScene, thumb };
-
-  return activeSceneWithThumb;
+  return activeScene;
 };
 
-export const getGameSettings = async (dbName: string): Promise<SelectGameSettings> => {
-  const gsDb = gsChildDb(dbName);
-  const settings = await gsDb.select().from(settingsTable).get();
-  if (!settings) {
-    throw new Error(`Settings not found for ${dbName}`);
-  }
-  return settings;
-};
-
-export const toggleGamePause = async (dbName: string) => {
-  console.log(`toggling game pause for ${dbName}`);
-  const gsDb = gsChildDb(dbName);
-  const settings = await gsDb.select().from(settingsTable).get();
-  if (settings) {
-    await gsDb.update(settingsTable).set({ isPaused: !settings.isPaused }).execute();
-  } else {
-    await gsDb.insert(settingsTable).values({ isPaused: true }).execute();
-  }
+export const toggleGamePause = async (gameSessionId: string) => {
+  const gameSession = await getGameSession(gameSessionId);
+  const newPausedState = !gameSession.isPaused;
+  await updateGameSession(gameSessionId, { isPaused: newPausedState });
 };

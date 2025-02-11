@@ -1,10 +1,8 @@
 <script lang="ts">
   import { Spacer, Button, Text, Hr } from '@tableslayer/ui';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import type { SelectScene } from '$lib/db/gs/schema';
-  import type { SelectGameSettings } from '$lib/db/gs/schema';
-  import { useUpdateGameSessionSettingsMutation } from '$lib/queries';
+  import { useUpdateGameSessionMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
 
   let {
@@ -12,26 +10,24 @@
     party,
     gameSession,
     selectedScene,
-    activeScene,
-    gameSettings
+    activeScene
   }: {
     socketUpdate: () => void;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
-    gameSettings: SelectGameSettings;
   } = $props();
 
-  const updateSettings = useUpdateGameSessionSettingsMutation();
+  const updateGameSession = useUpdateGameSessionMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
     await handleMutation({
       mutation: () =>
-        $updateSettings.mutateAsync({
-          dbName: gameSession.dbName,
-          settings: { activeSceneId: selectedScene.id },
+        $updateGameSession.mutateAsync({
+          gameSessionId: gameSession.id,
+          gameSessionData: { activeSceneId: selectedScene.id },
           partyId: party.id
         }),
       formLoadingState: () => {},
@@ -47,9 +43,9 @@
 
     await handleMutation({
       mutation: () =>
-        $updateSettings.mutateAsync({
-          dbName: gameSession.dbName,
-          settings: { isPaused: !gameSettings.isPaused },
+        $updateGameSession.mutateAsync({
+          gameSessionId: gameSession.id,
+          gameSessionData: { isPaused: !gameSession.isPaused },
           partyId: party.id
         }),
       formLoadingState: () => {},
@@ -82,7 +78,7 @@
     <Spacer />
   {/if}
   <Button variant="danger" onclick={handleToggleGamePause}>
-    {#if gameSettings.isPaused}Unpause playfield{:else}Pause playfield{/if}
+    {#if gameSession.isPaused}Unpause playfield{:else}Pause playfield{/if}
   </Button>
   <Spacer size={2} />
   <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>

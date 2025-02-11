@@ -1,5 +1,4 @@
 import type { InsertGameSession, SelectGameSession } from '$lib/db/app/schema';
-import type { SelectGameSettings } from '$lib/db/gs/schema';
 import { mutationFactory } from '$lib/factories';
 
 export const useCreateGameSessionMutation = () => {
@@ -9,14 +8,6 @@ export const useCreateGameSessionMutation = () => {
   >({
     mutationKey: ['createGameSession'],
     endpoint: '/api/gameSessions/createGameSession',
-    method: 'POST'
-  });
-};
-
-export const useUpdateGameSessionSettingsMutation = () => {
-  return mutationFactory<{ dbName: string; partyId: string; settings: Partial<SelectGameSettings> }>({
-    mutationKey: ['updateGameSession'],
-    endpoint: '/api/gameSessions/updateSettings',
     method: 'POST'
   });
 };

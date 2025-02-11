@@ -1,4 +1,4 @@
-import { getActiveScene, getGameSettings, getPartyFromSlug, getPartyGameSessionFromSlug, getUser } from '$lib/server';
+import { getActiveScene, getPartyFromSlug, getPartyGameSessionFromSlug, getUser } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -17,15 +17,13 @@ export const load: PageServerLoad = async (event) => {
     return redirect(302, '/login');
   }
 
-  const gameSettings = await getGameSettings(gameSession.dbName);
-  const activeScene = await getActiveScene(gameSession.dbName);
+  const activeScene = await getActiveScene(gameSession.id);
   if (!activeScene) {
     redirect(302, '/');
   }
 
   return {
     user,
-    gameSettings,
     gameSession,
     activeScene
   };

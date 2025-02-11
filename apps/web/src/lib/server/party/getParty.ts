@@ -170,8 +170,8 @@ export const isUserInParty = async (userId: string, partyId: string) => {
   }
 };
 
-export const getPartyFromGameSessionDbName = async (dbName: string) => {
-  const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.dbName, dbName)).get();
+export const getPartyFromGameSessionId = async (id: string) => {
+  const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.id, id)).get();
 
   if (!gameSession) {
     throw new Error('Game session not found');
@@ -230,18 +230,4 @@ export const updatePartyMember = async (partyMemberData: Partial<SelectPartyMemb
     console.error('Error updating party member', error);
     throw error;
   }
-};
-
-export const getPartyByStripeSubscriptionId = async (stripeSubscriptionId: string) => {
-  const party = await db
-    .select()
-    .from(partyTable)
-    .where(eq(partyTable.stripeSubscriptionId, stripeSubscriptionId))
-    .get();
-
-  if (!party) {
-    throw new Error('Party not found');
-  }
-
-  return party;
 };
