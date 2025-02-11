@@ -69,7 +69,9 @@
 
   const particleTypeOptions: ListOptions<number> = {
     Snow: ParticleType.Snow,
-    Rain: ParticleType.Rain
+    Rain: ParticleType.Rain,
+    Leaves: ParticleType.Leaves,
+    Debris: ParticleType.Debris
   };
 
   const sceneRotationOptions: ListOptions<number> = {
@@ -83,6 +85,8 @@
     None: WeatherType.None,
     Snow: WeatherType.Snow,
     Rain: WeatherType.Rain,
+    Leaves: WeatherType.Leaves,
+    Debris: WeatherType.Debris,
     Custom: WeatherType.Custom
   };
 
@@ -500,19 +504,26 @@
           </Folder>
 
           <Folder title="Rotation" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.rotation.x} label="X" min={0} max={360} step={1} />
-            <Slider bind:value={stageProps.weather.custom.rotation.y} label="Y" min={0} max={360} step={1} />
-            <Slider bind:value={stageProps.weather.custom.rotation.z} label="Z" min={0} max={360} step={1} />
+            <Binding bind:object={stageProps.weather.custom.rotation} key={'alignRadially'} label="Align Radially" />
+            <Slider bind:value={stageProps.weather.custom.rotation.offset} label="Offset" min={0} max={360} step={1} />
+            <Slider
+              bind:value={stageProps.weather.custom.rotation.velocity}
+              label="Velocity"
+              min={-10}
+              max={10}
+              step={0.01}
+            />
+            <Binding bind:object={stageProps.weather.custom.rotation} key={'randomize'} label="Randomize" />
           </Folder>
 
           <Folder title="Scale" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.scale.x} label="X" min={0} max={10} />
-            <Slider bind:value={stageProps.weather.custom.scale.y} label="Y" min={0} max={10} />
+            <Slider bind:value={stageProps.weather.custom.scale.x} label="X" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.scale.y} label="Y" min={0} max={1} />
           </Folder>
 
           <Folder title="Size" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0.001} max={0.1} />
-            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0.001} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0} max={0.01} />
+            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0} max={0.01} />
           </Folder>
 
           <Folder title="Spawn Radius" expanded={false}>

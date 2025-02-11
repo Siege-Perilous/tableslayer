@@ -4,6 +4,8 @@ export enum WeatherType {
   None = 0,
   Rain = 1,
   Snow = 2,
+  Leaves = 3,
+  Debris = 4,
   Custom = 99
 }
 

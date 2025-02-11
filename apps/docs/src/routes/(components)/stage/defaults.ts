@@ -173,9 +173,10 @@ export const StageDefaultProps: StageProps = {
         }
       },
       rotation: {
-        x: 0,
-        y: 0,
-        z: 90
+        alignRadially: false,
+        offset: 0,
+        velocity: 0,
+        randomize: true
       },
       scale: {
         x: 1,

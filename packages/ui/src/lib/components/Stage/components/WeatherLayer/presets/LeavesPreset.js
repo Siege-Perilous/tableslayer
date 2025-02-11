@@ -1,14 +1,14 @@
 export default {
-  count: 5000,
-  type: 2,
+  count: 500,
+  type: 3,
   color: '#42d8d3',
-  opacity: 0.7,
-  fadeInTime: 0,
-  fadeOutTime: 1.5,
-  lifetime: 3,
+  opacity: 0.76,
+  fadeInTime: 3,
+  fadeOutTime: 2,
+  lifetime: 5,
   spawnArea: {
-    minRadius: 0.04,
-    maxRadius: 0.4
+    minRadius: 0.03,
+    maxRadius: 0.5
   },
   initialVelocity: {
     x: 0,
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.4
+      z: 0.05
     },
     exponential: {
       x: 0,
@@ -28,29 +28,29 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0,
-        y: 0,
+        x: 0.007,
+        y: 0.007,
         z: 0
       },
       frequency: {
-        x: 5,
-        y: 5,
-        z: 5
+        x: 0.2,
+        y: 0.4,
+        z: 0
       }
     }
   },
   rotation: {
-    alignRadially: true,
-    offset: 270,
-    velocity: 0,
+    alignRadially: false,
+    offset: 0,
+    velocity: 1,
     randomize: true
   },
   scale: {
-    x: 0.5,
+    x: 1,
     y: 1
   },
   size: {
-    min: 0.001,
-    max: 0.003
+    min: 0.015,
+    max: 0.02
   }
 };

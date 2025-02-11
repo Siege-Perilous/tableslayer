@@ -8,6 +8,8 @@
 
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
+  import LeavesPreset from './presets/LeavesPreset';
+  import DebrisPreset from './presets/DebrisPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
@@ -38,9 +40,10 @@
     new THREE.MeshBasicMaterial({
       map: renderTarget.texture,
       transparent: true,
-      depthWrite: false,
-      depthTest: false,
-      blending: THREE.AdditiveBlending
+      opacity: 1.0,
+      depthWrite: true,
+      depthTest: true,
+      blending: THREE.NormalBlending
     })
   );
 
@@ -54,8 +57,14 @@
       case WeatherType.Rain:
         preset = { ...RainPreset };
         break;
+      case WeatherType.Leaves:
+        preset = { ...LeavesPreset };
+        break;
       case WeatherType.Custom:
         preset = { ...(props.custom || RainPreset) };
+        break;
+      case WeatherType.Debris:
+        preset = { ...DebrisPreset };
         break;
       default:
         // Fallback to rain preset
@@ -64,7 +73,7 @@
 
     // Override some of the preset values with the UI selections
     preset.opacity = props.opacity;
-    preset.count = Math.floor(props.intensity * 10000);
+    preset.count = Math.floor(props.intensity * preset.count);
     preset.color = props.color;
 
     return preset;
@@ -107,7 +116,7 @@
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
-<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
+<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None} renderOrder={2000}>
   <T.MeshBasicMaterial is={quadMaterial} />
   <T.PlaneGeometry args={[1, 1]} />
 </T.Mesh>

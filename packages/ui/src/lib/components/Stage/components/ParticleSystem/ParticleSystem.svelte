@@ -1,11 +1,12 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
-  import { ParticleImageURLs } from './types';
+  import { ParticleData } from './types';
   import type { ParticleSystemProps } from './types';
 
   import fragmentShader from '../../shaders/Particles.frag?raw';
   import vertexShader from '../../shaders/Particles.vert?raw';
+  import { DEG2RAD } from 'three/src/math/MathUtils';
 
   interface Props {
     props: ParticleSystemProps;
@@ -20,9 +21,12 @@
 
     // Initialize particle attributes - 4 vertices per quad
     const positions = new Float32Array(props.count * 12); // 4 vertices * 3 coords
+    const centers = new Float32Array(props.count * 12); // 1 center * 3 coords
     const uvs = new Float32Array(props.count * 8); // 4 vertices * 2 coords
     const indices = new Uint32Array(props.count * 6); // 2 triangles * 3 vertices
     const ageOffsets = new Float32Array(props.count * 4); // 4 vertices
+
+    const particle = ParticleData[props.type];
 
     // Initialize particles
     for (let i = 0; i < props.count; i++) {
@@ -35,16 +39,15 @@
 
       // Quad vertex positions (same for all 4 corners initially)
       const baseIdx = i * 12;
+
       // Generate random size for this particle
       let size = Math.random() * (props.size.max - props.size.min) + props.size.min;
       let width = size * props.scale.x;
       let height = size * props.scale.y;
 
-      const rotation = new THREE.Euler(
-        (Math.PI / 180) * props.rotation.x,
-        (Math.PI / 180) * props.rotation.y,
-        (Math.PI / 180) * props.rotation.z + angle
-      );
+      const rotation = new THREE.Euler(0, 0, props.rotation.offset * DEG2RAD);
+      rotation.z += props.rotation.alignRadially ? angle : 0;
+      rotation.z += props.rotation.randomize ? 360 * Math.random() : 0;
 
       const v1 = new THREE.Vector3(-width / 2, -height / 2, 0);
       const v2 = new THREE.Vector3(width / 2, -height / 2, 0);
@@ -78,16 +81,40 @@
       positions[baseIdx + 10] = v4.y; // Top right y
       positions[baseIdx + 11] = v4.z; // Top right z
 
+      // Set center position
+      const centerIdx = i * 12;
+      centers[centerIdx] = x;
+      centers[centerIdx + 1] = y;
+      centers[centerIdx + 2] = 0;
+      centers[centerIdx + 3] = x;
+      centers[centerIdx + 4] = y;
+      centers[centerIdx + 5] = 0;
+      centers[centerIdx + 6] = x;
+      centers[centerIdx + 7] = y;
+      centers[centerIdx + 8] = 0;
+      centers[centerIdx + 9] = x;
+      centers[centerIdx + 10] = y;
+      centers[centerIdx + 11] = 0;
+
+      // Calculate random frame from texture atlas
+      const frame = Math.floor(Math.random() * (particle.columns * particle.rows));
+      const col = frame % particle.columns;
+      const row = Math.floor(frame / particle.columns);
+
+      // Calculate UV coordinates for this frame
+      const uv0 = new THREE.Vector2(col / particle.columns, row / particle.rows);
+      const uv1 = new THREE.Vector2((col + 1) / particle.columns, (row + 1) / particle.rows);
+
       // UV coordinates for quad
       const uvBaseIdx = i * 8;
-      uvs[uvBaseIdx] = 0;
-      uvs[uvBaseIdx + 1] = 0; // bottom left
-      uvs[uvBaseIdx + 2] = 1;
-      uvs[uvBaseIdx + 3] = 0; // bottom right
-      uvs[uvBaseIdx + 4] = 0;
-      uvs[uvBaseIdx + 5] = 1; // top left
-      uvs[uvBaseIdx + 6] = 1;
-      uvs[uvBaseIdx + 7] = 1; // top right
+      uvs[uvBaseIdx] = uv0.x; // bottom left
+      uvs[uvBaseIdx + 1] = uv0.y;
+      uvs[uvBaseIdx + 2] = uv1.x; // bottom right
+      uvs[uvBaseIdx + 3] = uv0.y;
+      uvs[uvBaseIdx + 4] = uv0.x; // top left
+      uvs[uvBaseIdx + 5] = uv1.y;
+      uvs[uvBaseIdx + 6] = uv1.x; // top right
+      uvs[uvBaseIdx + 7] = uv1.y;
 
       // Indices for two triangles
       const indexBaseIdx = i * 6;
@@ -108,6 +135,7 @@
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('center', new THREE.BufferAttribute(centers, 3));
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
@@ -119,7 +147,7 @@
   const loader = new THREE.TextureLoader();
 
   // Particle texture
-  const texture = $derived(loader.load(ParticleImageURLs[props.type].url));
+  const texture = $derived(loader.load(ParticleData[props.type].url));
 
   // Create a derived value for uniforms that updates when props change
   const uniforms = $derived({
@@ -129,6 +157,7 @@
     uColor: { value: new THREE.Color(props.color) },
 
     uLifetime: { value: props.lifetime },
+    uAngularVelocity: { value: props.rotation.velocity },
     uInitialVelocity: { value: props.initialVelocity },
     uLinearForceAmplitude: { value: props.force.linear },
     uExponentialForceAmplitude: { value: props.force.exponential },
@@ -157,7 +186,7 @@
     transparent={true}
     depthWrite={false}
     depthTest={false}
-    blending={THREE.AdditiveBlending}
+    blending={THREE.NormalBlending}
     side={THREE.DoubleSide}
   />
 </T.Mesh>
