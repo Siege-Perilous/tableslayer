@@ -1,16 +1,48 @@
 import { db } from '$lib/db/app';
-import { gameSessionTable, type InsertGameSession, type SelectGameSession } from '$lib/db/app/schema';
-import { SlugConflictError } from '$lib/server';
+import {
+  gameSessionTable,
+  sceneTable,
+  type InsertGameSession,
+  type SelectGameSession,
+  type SelectScene
+} from '$lib/db/app/schema';
+import { SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
+import type { Thumb } from '../file';
 import { createScene } from '../scene';
 
 export const getPartyGameSessions = async (partyId: string): Promise<SelectGameSession[]> => {
   const gameSessions = await db.select().from(gameSessionTable).where(eq(gameSessionTable.partyId, partyId)).all();
   return gameSessions;
+};
+
+export const getPartyGameSessionsWithScenes = async (partyId: string) => {
+  const gameSessions = await getPartyGameSessions(partyId);
+
+  const gameSessionsWithScenes = await Promise.all(
+    gameSessions.map(async (gameSession) => {
+      const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSession.id)).limit(5);
+
+      const scenesWithThumbs: (SelectScene & Thumb)[] = [];
+
+      for (const scene of scenes) {
+        if (scene.mapLocation) {
+          const thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
+          const sceneWithThumb = { ...scene, thumb };
+          scenesWithThumbs.push(sceneWithThumb);
+        }
+      }
+      return {
+        ...gameSession,
+        scenes: scenesWithThumbs
+      };
+    })
+  );
+  return gameSessionsWithScenes;
 };
 
 export const getGameSession = async (gameSessionId: string): Promise<SelectGameSession> => {

@@ -1,6 +1,6 @@
 import {
   getPartyFromSlug,
-  getPartyGameSessions,
+  getPartyGameSessionsWithScenes,
   getPartyMembers,
   isUserAdminInParty,
   isUserInParty
@@ -20,7 +20,7 @@ export const load = (async ({ params, parent }) => {
     throw error(404, 'Not found');
   }
 
-  const gameSessions = (await getPartyGameSessions(party.id)) || [];
+  const gameSessions = (await getPartyGameSessionsWithScenes(party.id)) || [];
   const isPartyAdmin = await isUserAdminInParty(user.id, party.id);
   const members = (await getPartyMembers(party.id)) || [];
 

@@ -19,7 +19,7 @@
   } from '@tableslayer/ui';
   import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
 
@@ -29,7 +29,7 @@
     isPartyAdmin
   }: {
     party: SelectParty & Thumb;
-    session: SelectGameSession;
+    session: SelectGameSession & { scenes: (SelectScene & Thumb)[] };
     isPartyAdmin: boolean;
   } = $props();
 
@@ -37,13 +37,12 @@
   let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
 
-  const images = [
-    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/01.jpeg',
-    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/02.jpeg',
-    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/03.jpeg',
-    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/04.jpeg',
-    'https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,h=200/maps/12.jpeg'
-  ];
+  const images: string[] = [];
+
+  for (const scene of session.scenes) {
+    const thumb = scene.thumb.resizedUrl;
+    images.push(thumb);
+  }
 
   const renameGameSession = useUpdateGameSessionMutation();
 
@@ -93,8 +92,8 @@
   <Panel class="gameSessionCard">
     <div
       class="cardFan__image"
-      style="
-      background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url('https://files.tableslayer.com/cdn-cgi/image/fit=scale-down,w=400/maps/01.jpeg');"
+      style={`
+      background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url(${images[0]});`}
     ></div>
     {#if isPartyAdmin}
       <div class="gameSessionCard__popover">
@@ -192,7 +191,7 @@
   }
   .cardFan__image {
     background-size: 100%;
-    background-position: center;
+    background-position: top;
     filter: grayscale(0.5);
     opacity: 0.3;
     position: absolute;
