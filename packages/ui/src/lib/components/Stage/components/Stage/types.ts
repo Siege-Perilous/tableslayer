@@ -2,7 +2,7 @@ import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
 import type { PingLayerProps } from '../PingLayer/types';
-import type { SceneLayerProps } from '../Scene/types';
+import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
 export interface Callbacks {
@@ -33,8 +33,6 @@ export interface DisplayProps {
   resolution: { x: number; y: number };
 }
 
-export enum StageLayerZ {}
-
 /**
  * Properties for the Stage component
  */
@@ -50,6 +48,7 @@ export type StageProps = {
   grid: GridLayerProps;
   map: MapLayerProps;
   ping: PingLayerProps;
+  postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
 };

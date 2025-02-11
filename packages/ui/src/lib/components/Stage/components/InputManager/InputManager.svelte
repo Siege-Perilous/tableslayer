@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { useThrelte } from '@threlte/core';
   import type { Size } from '../../types';
+  import { SceneLayer } from '../Scene/types';
 
   interface Props {
     isActive: boolean;
@@ -20,6 +21,9 @@
   const { camera, renderer, size } = useThrelte();
 
   let raycaster = new THREE.Raycaster();
+  raycaster.layers.enable(SceneLayer.Overlay);
+  raycaster.layers.enable(SceneLayer.Main);
+  raycaster.layers.enable(SceneLayer.Input);
 
   // Bind events to the renderer's canvas element
   onMount(() => {
