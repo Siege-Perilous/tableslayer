@@ -36,6 +36,7 @@ jobs:
           SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           GITHUB_PR_NUMBER=0
           BASE_URL=https://tableslayer.com
+          STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}
           STRIPE_WEBHOOK_KEY=${{ secrets.STRIPE_WEBHOOK_KEY }}
           STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
           STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
