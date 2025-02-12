@@ -15,6 +15,13 @@
       "when": 1739312922706,
       "tag": "0001_gamesession-last-update",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1739375902412,
+      "tag": "0002_stripe-customer-id",
+      "breakpoints": true
     }
   ]
 }

@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { SelectParty } from '$lib/db/app/schema';
-  import { useLemonSqueezyCheckout, useLemonSqueezyCustomerPortal } from '$lib/queries';
+  import { IconSelector } from '@tabler/icons-svelte';
+  import { useStripeCheckout, useStripeCustomerPortal } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { type PartyPlan } from '$lib/db/app/schema';
-  import { Button, Text, Title, Spacer, Panel, Link } from '@tableslayer/ui';
+  import { Button, Text, Title, Spacer, Panel, Link, Popover, Hr, Icon } from '@tableslayer/ui';
   let { party }: { party: SelectParty } = $props();
 
-  const checkout = useLemonSqueezyCheckout();
-  const portal = useLemonSqueezyCustomerPortal();
+  const checkout = useStripeCheckout();
+  const portal = useStripeCustomerPortal();
 
   const handleUpgrade = async (plan: PartyPlan) => {
     await handleMutation({
@@ -26,10 +27,10 @@
   };
 
   const handleCustomerPortal = async () => {
-    if (party.lemonSqueezyCustomerId === null) return;
+    if (party.stripeCustomerId === null) return;
 
     await handleMutation({
-      mutation: () => $portal.mutateAsync({ customerId: party.lemonSqueezyCustomerId as number }),
+      mutation: () => $portal.mutateAsync({ partyId: party.id as string }),
       toastMessages: {
         error: { title: 'Error', body: (error) => error.message }
       },
@@ -66,13 +67,14 @@
     </Text>
     {#if party.plan !== 'lifetime'}
       <Spacer />
-      {#if party.planNextBillingDate}
+      {#if party.planExpirationDate}
+        <Text size="0.875rem" color="var(--fgDanger)">Your plan expires on {formatDate(party.planExpirationDate)}.</Text
+        >
+      {:else if party.planNextBillingDate}
         <Text size="0.875rem">Your plan renews on {formatDate(party.planNextBillingDate)}.</Text>
-      {:else if party.planExpirationDate}
-        <Text size="0.875rem">Your plan expires on {formatDate(party.planExpirationDate)}.</Text>
       {/if}
       <Spacer />
-      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__btn">Manage subscription</Button>
+      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage">Manage subscription</Button>
     {/if}
   {:else}
     <Text weight={800}>Your party is limited</Text>
@@ -84,19 +86,78 @@
       >.
     </Text>
     <Spacer />
-    <Button onclick={() => handleUpgrade('monthly')} variant="special" class="partyUpgrade__btn"
-      >Upgrade your party</Button
-    >
+    <Popover positioning={{ placement: 'bottom-start' }} class="partyUpgrade__popContent">
+      {#snippet trigger()}
+        <Button variant="special" class="partyUpgrade__btn">
+          Upgrade your party
+          {#snippet end()}
+            <Icon Icon={IconSelector} />
+          {/snippet}
+        </Button>
+      {/snippet}
+      {#snippet content()}
+        <div class="flex flex-col gap-2">
+          <Text weight={800}>Select a plan</Text>
+          <Spacer size={2} />
+          <Hr />
+          <Spacer size={2} />
+          <button onclick={() => handleUpgrade('monthly')} class="partyUpgrade__popBtn">
+            <span>Monthly</span>
+            <span class="partyUpgrade__price">$5</span>
+          </button>
+          <button onclick={() => handleUpgrade('yearly')} class="partyUpgrade__popBtn">
+            <span>Yearly</span>
+            <span class="partyUpgrade__price">$50</span>
+          </button>
+          <button onclick={() => handleUpgrade('lifetime')} class="partyUpgrade__popBtn">
+            <span>Lifetime</span>
+            <span class="partyUpgrade__price">$85</span>
+          </button>
+        </div>
+      {/snippet}
+    </Popover>
   {/if}
 </Panel>
 
 <style>
-  :global(.panel.partyUpgrade) {
-    padding: 1rem;
-    gap: 0.5rem;
+  :global {
+    .panel.partyUpgrade {
+      padding: 1rem;
+      gap: 0.5rem;
+    }
+    .partyUpgrade__popContent {
+      width: 260px;
+    }
+    .btn.partyUpgrade__btn {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .btn.partyUpgrade__manage {
+      width: 100%;
+    }
+    .partyUpgrade__popBtn {
+      padding: 0.25rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border: solid 2px transparent;
+      gap: 1rem;
+      &:hover,
+      &:focus-visible {
+        background-color: var(--menuItemHover);
+        border: var(--menuItemBorderHover);
+        outline: none;
+      }
+    }
   }
-  :global(.partyUpgrade__btn) {
+  :global(.partyUpgrade .popTrigger) {
     width: 100%;
+    justify-content: space-between;
+  }
+  .partyUpgrade__price {
+    font-family: var(--font-mono);
   }
   .partyUpgrade__highlight {
     font-weight: 800;
