@@ -160,7 +160,11 @@
           </Link>
         </LinkOverlay>
       </Title>
-      <Text>Last edited: {new Date().toLocaleDateString()}</Text>
+      {#if session.lastUpdated}
+        <Text>Last edited: {session.lastUpdated.toLocaleDateString()}</Text>
+      {:else}
+        <Text>New game session</Text>
+      {/if}
     </div>
   </Panel>
 </LinkBox>

@@ -263,7 +263,8 @@ export const gameSessionTable = sqliteTable(
     // TypeScript needs a way out of the circular reference
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     activeSceneId: text('active_scene_id').references((): any => sceneTable.id, { onDelete: 'set null' }),
-    isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false)
+    isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
+    lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
   (table) => ({
     uniqueNameWithinParty: uniqueIndex('unique_party_name').on(table.partyId, table.slug)
