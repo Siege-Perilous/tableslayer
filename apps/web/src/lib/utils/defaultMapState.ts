@@ -127,7 +127,6 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#ffffff',
     fov: 50,
     intensity: 1,
     opacity: 0,

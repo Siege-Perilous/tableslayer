@@ -21,7 +21,7 @@
 
     // Initialize particle attributes - 4 vertices per quad
     const positions = new Float32Array(props.count * 12); // 4 vertices * 3 coords
-    const centers = new Float32Array(props.count * 12); // 1 center * 3 coords
+    const centers = new Float32Array(props.count * 8); // 1 center * 2 coords
     const uvs = new Float32Array(props.count * 8); // 4 vertices * 2 coords
     const indices = new Uint32Array(props.count * 6); // 2 triangles * 3 vertices
     const ageOffsets = new Float32Array(props.count * 4); // 4 vertices
@@ -82,19 +82,15 @@
       positions[baseIdx + 11] = v4.z; // Top right z
 
       // Set center position
-      const centerIdx = i * 12;
+      const centerIdx = i * 8;
       centers[centerIdx] = x;
       centers[centerIdx + 1] = y;
-      centers[centerIdx + 2] = 0;
-      centers[centerIdx + 3] = x;
-      centers[centerIdx + 4] = y;
-      centers[centerIdx + 5] = 0;
+      centers[centerIdx + 2] = x;
+      centers[centerIdx + 3] = y;
+      centers[centerIdx + 4] = x;
+      centers[centerIdx + 5] = y;
       centers[centerIdx + 6] = x;
       centers[centerIdx + 7] = y;
-      centers[centerIdx + 8] = 0;
-      centers[centerIdx + 9] = x;
-      centers[centerIdx + 10] = y;
-      centers[centerIdx + 11] = 0;
 
       // Calculate random frame from texture atlas
       const frame = Math.floor(Math.random() * (particle.columns * particle.rows));
@@ -135,7 +131,7 @@
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('center', new THREE.BufferAttribute(centers, 3));
+    geometry.setAttribute('center', new THREE.BufferAttribute(centers, 2));
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));

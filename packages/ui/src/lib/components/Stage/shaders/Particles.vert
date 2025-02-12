@@ -1,6 +1,6 @@
 precision highp float;
 
-attribute vec3 center;
+attribute vec2 center;
 attribute float ageOffset;
 
 uniform sampler2D uTexture;
@@ -32,13 +32,13 @@ void main() {
   vec3 pos = position;
 
   // Apply rotation around center point
-  vec3 toCenter = pos - center;
+  vec2 toCenter = pos.xy - center;
   float angle = uAngularVelocity * vAge;
   float cosA = cos(angle);
   float sinA = sin(angle);
   mat2 rotation = mat2(cosA, -sinA, sinA, cosA);
-  vec2 rotated = rotation * toCenter.xy;
-  pos.xy = rotated + center.xy;
+  vec2 rotated = rotation * toCenter;
+  pos.xy = rotated + center;
 
   pos += vAge * velocity;
     // Scale point size based on distance from camera

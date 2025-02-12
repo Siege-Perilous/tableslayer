@@ -40,7 +40,7 @@
     new THREE.MeshBasicMaterial({
       map: renderTarget.texture,
       transparent: true,
-      opacity: 1.0,
+      opacity: props.opacity,
       depthWrite: true,
       depthTest: true,
       blending: THREE.NormalBlending

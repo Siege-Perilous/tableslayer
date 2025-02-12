@@ -147,7 +147,6 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      color: activeScene.weatherColor,
       fov: activeScene.weatherFov,
       intensity: activeScene.weatherIntensity,
       opacity: activeScene.weatherOpacity,

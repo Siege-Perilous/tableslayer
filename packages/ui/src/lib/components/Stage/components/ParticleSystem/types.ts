@@ -2,6 +2,7 @@ import ash from './particles/atlases/ash.png';
 import leaves from './particles/atlases/leaves.png';
 import rain from './particles/atlases/rain.png';
 import snow from './particles/atlases/snow.png';
+
 export enum ParticleType {
   Snow = 1,
   Rain = 2,

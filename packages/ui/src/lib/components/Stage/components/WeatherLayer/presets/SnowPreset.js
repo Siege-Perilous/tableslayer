@@ -1,8 +1,8 @@
 export default {
-  count: 2000,
+  count: 1000,
   type: 1,
   color: '#e0e0e0',
-  opacity: 0.76,
+  opacity: 1,
   fadeInTime: 4,
   fadeOutTime: 3,
   lifetime: 7,
@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.005,
-    max: 0.005
+    min: 0.01,
+    max: 0.012
   }
 };
