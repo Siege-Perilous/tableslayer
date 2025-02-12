@@ -3,7 +3,7 @@ export default {
   type: 3,
   color: '#ffffff',
   opacity: 0.5,
-  fadeInTime: 3,
+  fadeInTime: 10,
   fadeOutTime: 2,
   lifetime: 10,
   spawnArea: {
@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.01,
-    max: 0.012
+    min: 0.005,
+    max: 0.007
   }
 };

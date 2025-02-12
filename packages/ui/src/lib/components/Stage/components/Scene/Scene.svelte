@@ -12,7 +12,8 @@
     BlendFunction,
     ToneMappingEffect,
     ToneMappingMode,
-    LUT3DEffect
+    LUT3DEffect,
+    DepthOfFieldEffect
   } from 'postprocessing';
   import { getLUT } from './luts';
   import { type Callbacks, type StageProps } from '../Stage/types';
@@ -58,74 +59,89 @@
 
   // Effect to update post-processing settings when props change
   $effect(() => {
-    // Need to convert the LUT to a LookupTexture
-    Promise.resolve(getLUT(props.postProcessing.lut.url))
-      .then((lut) => {
-        composer.setSize($size.width, $size.height);
-        composer.removeAllPasses();
+    console.log('props', props);
+    // // Need to convert the LUT to a LookupTexture
+    // Promise.resolve(getLUT(props.postProcessing.lut.url))
+    //   .then((lut) => {
+    composer.setSize($size.width, $size.height);
+    composer.removeAllPasses();
 
-        const renderPass = new RenderPass(scene, $camera);
-        composer.addPass(renderPass);
+    const effects = [];
 
-        if (props.postProcessing.enabled) {
-          if (props.postProcessing.bloom.enabled) {
-            const bloomEffect = new BloomEffect({
-              intensity: props.postProcessing.bloom.intensity,
-              mipmapBlur: props.postProcessing.bloom.mipmapBlur,
-              radius: props.postProcessing.bloom.radius,
-              levels: props.postProcessing.bloom.levels,
-              luminanceThreshold: props.postProcessing.bloom.threshold,
-              luminanceSmoothing: props.postProcessing.bloom.smoothing
-            });
-            composer.addPass(new EffectPass($camera, bloomEffect));
-          }
+    const renderPass = new RenderPass(scene, $camera);
+    composer.addPass(renderPass);
 
-          if (props.postProcessing.chromaticAberration.enabled) {
-            const chromaticAberrationEffect = new ChromaticAberrationEffect({
-              offset: new THREE.Vector2(props.postProcessing.chromaticAberration.offset),
-              radialModulation: true,
-              modulationOffset: 0.025
-            });
-            composer.addPass(new EffectPass($camera, chromaticAberrationEffect));
-          }
+    if (props.postProcessing.enabled) {
+      if (props.postProcessing.bloom.enabled) {
+        const bloomEffect = new BloomEffect({
+          intensity: props.postProcessing.bloom.intensity,
+          mipmapBlur: props.postProcessing.bloom.mipmapBlur,
+          radius: props.postProcessing.bloom.radius,
+          levels: props.postProcessing.bloom.levels,
+          luminanceThreshold: props.postProcessing.bloom.threshold,
+          luminanceSmoothing: props.postProcessing.bloom.smoothing
+        });
+        effects.push(bloomEffect);
+      }
 
-          if (props.postProcessing.vignette.enabled) {
-            const vignetteEffect = new VignetteEffect({
-              offset: props.postProcessing.vignette.offset,
-              darkness: props.postProcessing.vignette.darkness,
-              blendFunction: BlendFunction.NORMAL
-            });
-            composer.addPass(new EffectPass($camera, vignetteEffect));
-          }
+      // if (props.postProcessing.depthOfField.enabled) {
+      //   const depthOfFieldEffect = new DepthOfFieldEffect(camera.current, {
+      //     focusRange: 0.01,
+      //     focusDistance: props.postProcessing.depthOfField.focus,
+      //     focalLength: props.postProcessing.depthOfField.focalLength,
+      //     bokehScale: 5.0,
+      //     height: 480
+      //   });
+      //   effects.push(depthOfFieldEffect);
+      // }
 
-          if (props.postProcessing.lut.enabled) {
-            const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
-              blendFunction: BlendFunction.SET
-            });
-            lutEffect.setSize($size.width, $size.height);
+      if (props.postProcessing.chromaticAberration.enabled) {
+        const chromaticAberrationEffect = new ChromaticAberrationEffect({
+          offset: new THREE.Vector2(props.postProcessing.chromaticAberration.offset),
+          radialModulation: true,
+          modulationOffset: 0.025
+        });
+        effects.push(chromaticAberrationEffect);
+      }
 
-            if (!lut) return;
-            lutEffect.lut.dispose();
-            lutEffect.lut = lut;
+      if (props.postProcessing.vignette.enabled) {
+        const vignetteEffect = new VignetteEffect({
+          offset: props.postProcessing.vignette.offset,
+          darkness: props.postProcessing.vignette.darkness,
+          blendFunction: BlendFunction.NORMAL
+        });
+        effects.push(vignetteEffect);
+      }
 
-            composer.addPass(new EffectPass($camera, lutEffect));
-          }
-        }
+      // if (props.postProcessing.lut.enabled) {
+      //   const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
+      //     blendFunction: BlendFunction.SET
+      //   });
+      //   lutEffect.setSize($size.width, $size.height);
 
-        // Add final tonemapping pass
-        const toneMappingPass = new EffectPass(
-          $camera,
-          new ToneMappingEffect({
-            mode:
-              props.postProcessing.enabled && props.postProcessing.toneMapping.enabled
-                ? props.postProcessing.toneMapping.mode
-                : ToneMappingMode.LINEAR
-          })
-        );
+      //   if (!lut) return;
+      //   lutEffect.lut.dispose();
+      //   lutEffect.lut = lut;
 
-        composer.addPass(toneMappingPass);
-      })
-      .catch((error) => console.error(error));
+      //   effects.push(lutEffect);
+      // }
+
+      // Add final tonemapping pass
+      const toneMappingEffect = new ToneMappingEffect({
+        mode:
+          props.postProcessing.enabled && props.postProcessing.toneMapping.enabled
+            ? props.postProcessing.toneMapping.mode
+            : ToneMappingMode.LINEAR
+      });
+      effects.push(toneMappingEffect);
+
+      const effectPass = new EffectPass($camera, ...effects);
+      composer.addPass(effectPass);
+
+      console.log(effects);
+    }
+    // })
+    // .catch((error) => console.error(error));
   });
 
   // Whenever the scene or display properties change, update the clipping planes

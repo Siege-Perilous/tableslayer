@@ -12,24 +12,32 @@
   import AshPreset from './presets/AshPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
+  import { DepthEffect, DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
+  import type { PostProcessingProps } from '../Scene/types';
+
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: WeatherLayerProps;
+    postprocessing: PostProcessingProps;
     mapSize: Size | null;
   }
 
-  const { props, mapSize, ...meshProps }: Props = $props();
+  const { props, mapSize, postprocessing, ...meshProps }: Props = $props();
 
-  const { renderer } = useThrelte();
+  const { renderer, size, renderStage } = useThrelte();
+
+  const composer = new EffectComposer(renderer);
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let particleScene: THREE.Scene | undefined = $state(undefined);
   let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
 
-  const aspectRatio = $derived(mapSize ? mapSize.width / mapSize.height : 1);
+  const aspectRatio = $derived($size.width / $size.height);
+
+  $inspect(aspectRatio);
 
   // Create render target
   const renderTarget = $derived(
-    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
+    new THREE.WebGLRenderTarget($size.width, $size.height, {
       format: THREE.RGBAFormat,
       stencilBuffer: false
     })
@@ -83,30 +91,63 @@
     if (!mapSize || !particleCamera) return;
     particleCamera.aspect = aspectRatio;
     particleCamera.fov = props.fov;
+    particleCamera.position.set(0, 0, -10);
     particleCamera.far = -particleCamera.position.z;
-    particleCamera.position.set(0, 0, -1 / 2 / Math.tan((DEG2RAD * props.fov) / 2));
     particleCamera.rotation.x = Math.PI;
     particleCamera.updateMatrixWorld();
     particleCamera.updateProjectionMatrix();
   });
 
-  // Custom render task
-  useTask(() => {
+  // Add DOF effect to the composer
+  $effect(() => {
     if (!particleScene || !particleCamera) return;
 
-    particleScene.visible = true;
+    composer.reset();
+    composer.setMainCamera(particleCamera);
+    composer.setMainScene(particleScene);
+    composer.setSize($size.width, $size.height);
+    composer.removeAllPasses();
+    composer.outputBuffer = renderTarget;
+    composer.autoRenderToScreen = false;
+    quadMaterial.map = renderTarget.texture;
 
-    // Render particles to render target
-    renderer.setRenderTarget(renderTarget);
-    renderer.clear();
-    renderer.render(particleScene, particleCamera);
+    // Add render pass
+    const renderPass = new RenderPass(particleScene, particleCamera);
+    composer.addPass(renderPass);
 
-    // Restore original render target
-    renderer.setRenderTarget(null);
+    // Add depth of field pass
+    if (postprocessing.depthOfField.enabled) {
+      const dofEffect = new DepthOfFieldEffect(particleCamera, {
+        focusDistance: postprocessing.depthOfField.focus,
+        focalLength: postprocessing.depthOfField.focalLength,
+        focusRange: postprocessing.depthOfField.focusRange,
+        bokehScale: 10,
+        height: 720
+      });
+      composer.addPass(new EffectPass(particleCamera, dofEffect));
+    }
 
-    particleScene.visible = false;
-    quadMaterial.needsUpdate = true;
+    const depthEffect = new DepthEffect();
+    //composer.addPass(new EffectPass(particleCamera, depthEffect));
   });
+
+  // Custom render task
+  useTask(
+    (dt) => {
+      if (!particleScene || !particleCamera) return;
+
+      particleScene.visible = true;
+
+      renderer.setRenderTarget(renderTarget);
+      composer.render(dt);
+      renderer.setRenderTarget(null);
+
+      particleScene.visible = false;
+      quadMaterial.map = composer.outputBuffer.texture;
+      quadMaterial.needsUpdate = true;
+    },
+    { stage: renderStage }
+  );
 </script>
 
 <!-- Hidden scene that renders to the render target -->

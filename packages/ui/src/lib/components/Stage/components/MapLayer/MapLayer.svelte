@@ -109,7 +109,7 @@
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <WeatherLayer props={props.weather} {mapSize} layers={[SceneLayer.Main]} />
+  <WeatherLayer props={props.weather} postprocessing={props.postProcessing} {mapSize} layers={[SceneLayer.Main]} />
 
   <FogOfWarLayer
     bind:this={fogOfWarLayer}

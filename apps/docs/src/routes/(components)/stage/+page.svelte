@@ -356,9 +356,9 @@
   </Folder>
 
   <Folder title="Post Processing" expanded={false}>
-    <Binding object={stageProps.postProcessing} key="enabled" label="Enabled" />
+    <List bind:value={stageProps.postProcessing.enabled} label="Enabled" options={{ Yes: true, No: false }} />
     <Folder title="Bloom" expanded={false}>
-      <Binding object={stageProps.postProcessing.bloom} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.bloom.enabled} label="Enabled" options={{ Yes: true, No: false }} />
       <List
         bind:value={stageProps.postProcessing.bloom.mipmapBlur}
         label="Mipmap Blur"
@@ -372,17 +372,37 @@
     </Folder>
 
     <Folder title="Chromatic Aberration" expanded={false}>
-      <Binding object={stageProps.postProcessing.chromaticAberration} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.chromaticAberration.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
     </Folder>
 
+    <Folder title="Depth of Field" expanded={false}>
+      <List
+        bind:value={stageProps.postProcessing.depthOfField.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focus} label="Focus" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focalLength} label="Focal Length" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focusRange} label="Focus Range" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.bokehScale} label="Bokeh Scale" min={0} max={5} />
+    </Folder>
+
     <Folder title="LUT" expanded={false}>
-      <Binding object={stageProps.postProcessing.lut} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.lut.enabled} label="Enabled" options={{ Yes: true, No: false }} />
       <List bind:value={stageProps.postProcessing.lut.url} label="LUT" options={lutOptions} />
     </Folder>
 
     <Folder title="Tone Mapping" expanded={false}>
-      <Binding object={stageProps.postProcessing.toneMapping} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.toneMapping.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <List
         bind:value={stageProps.postProcessing.toneMapping.mode}
         label="Mode"
@@ -402,7 +422,11 @@
     </Folder>
 
     <Folder title="Vignette" expanded={false}>
-      <Binding object={stageProps.postProcessing.vignette} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.vignette.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <Slider bind:value={stageProps.postProcessing.vignette.offset} label="Offset" min={0} max={1} step={0.1} />
       <Slider bind:value={stageProps.postProcessing.vignette.darkness} label="Darkness" min={0} max={1} step={0.1} />
     </Folder>

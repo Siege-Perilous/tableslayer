@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.01,
-    max: 0.012
+    min: 0.003,
+    max: 0.007
   }
 };

@@ -1,14 +1,14 @@
 export default {
-  count: 5000,
+  count: 10000,
   type: 2,
   color: '#e0e0e0',
   opacity: 0.7,
   fadeInTime: 0,
   fadeOutTime: 1.5,
-  lifetime: 3,
+  lifetime: 10,
   spawnArea: {
     minRadius: 0.04,
-    maxRadius: 0.4
+    maxRadius: 0.1
   },
   initialVelocity: {
     x: 0,
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.4
+      z: 0.1
     },
     exponential: {
       x: 0,
