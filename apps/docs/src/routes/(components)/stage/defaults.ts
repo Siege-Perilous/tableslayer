@@ -111,7 +111,7 @@ export const StageDefaultProps: StageProps = {
     },
     lut: {
       enabled: true,
-      url: 'http://files.tableslayer.com/stage/luts/Warm.cube'
+      url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
     },
     toneMapping: {
       enabled: true,
