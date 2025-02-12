@@ -9,14 +9,19 @@ import {
 import { SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 import type { Thumb } from '../file';
 import { createScene } from '../scene';
 
 export const getPartyGameSessions = async (partyId: string): Promise<SelectGameSession[]> => {
-  const gameSessions = await db.select().from(gameSessionTable).where(eq(gameSessionTable.partyId, partyId)).all();
+  const gameSessions = await db
+    .select()
+    .from(gameSessionTable)
+    .where(eq(gameSessionTable.partyId, partyId))
+    .orderBy(desc(gameSessionTable.lastUpdated))
+    .all();
   return gameSessions;
 };
 

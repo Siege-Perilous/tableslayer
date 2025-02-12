@@ -1,0 +1,1 @@
+ALTER TABLE `game_session` ADD `last_updated` integer;
