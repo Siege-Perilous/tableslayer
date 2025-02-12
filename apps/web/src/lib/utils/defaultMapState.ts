@@ -133,9 +133,9 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    fov: 50,
+    fov: 60,
     intensity: 1,
-    opacity: 0,
+    opacity: 0.0,
     type: WeatherType.Rain,
     custom: null
   }

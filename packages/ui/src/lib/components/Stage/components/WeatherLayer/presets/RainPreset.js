@@ -3,11 +3,11 @@ export default {
   type: 2,
   color: '#e0e0e0',
   opacity: 0.7,
-  fadeInTime: 0,
-  fadeOutTime: 1.5,
-  lifetime: 10,
+  fadeInTime: 2,
+  fadeOutTime: 2,
+  lifetime: 3,
   spawnArea: {
-    minRadius: 0.04,
+    minRadius: 0.02,
     maxRadius: 0.1
   },
   initialVelocity: {

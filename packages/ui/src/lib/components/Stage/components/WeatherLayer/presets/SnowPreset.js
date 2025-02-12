@@ -28,14 +28,14 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.002,
-        y: 0.003,
+        x: 0.001,
+        y: 0.002,
         z: 0
       },
       frequency: {
-        x: 3,
-        y: 1.9,
-        z: 5
+        x: 2,
+        y: 1,
+        z: 0
       }
     }
   },

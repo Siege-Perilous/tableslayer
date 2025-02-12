@@ -49,9 +49,10 @@
       transparent: true,
       opacity: props.opacity,
       blending: THREE.CustomBlending,
-      blendAlpha: 0.5,
-      blendDst: THREE.DstAlphaFactor,
-      blendSrc: THREE.SrcColorFactor
+      blendAlpha: 1,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.SrcColorFactor,
+      blendDst: THREE.OneFactor
     })
   );
 

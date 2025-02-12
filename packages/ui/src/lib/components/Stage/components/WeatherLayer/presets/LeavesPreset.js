@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.006
+      z: 0.003
     },
     exponential: {
       x: 0,
@@ -28,8 +28,8 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.003,
-        y: 0.002,
+        x: 0.002,
+        y: 0.0005,
         z: 0
       },
       frequency: {
@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.005,
-    max: 0.007
+    min: 0.003,
+    max: 0.005
   }
 };
