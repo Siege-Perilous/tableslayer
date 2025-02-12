@@ -71,7 +71,7 @@ importers:
         version: 8.0.1(svelte@5.19.6)(three@0.173.0)
       '@threlte/extras':
         specifier: 9.0.1
-        version: 9.0.1(svelte@5.19.6)(three@0.173.0)
+        version: 9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.173.0)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -105,9 +105,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: '=3.712.0'
         version: 3.712.0
-      '@lemonsqueezy/lemonsqueezy.js':
-        specifier: ^4.0.0
-        version: 4.0.0
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -1194,10 +1191,6 @@ packages:
     resolution: {integrity: sha512-cyG1zBeJhQiM32cAsY7xfTnrsqoTLA6c5l+TfvXqi/ik3BSP769Ti/YL+nEsdL63Rm0FL0DwqUNF4wZtORJxsw==}
     peerDependencies:
       tweakpane: ^4.0.0
-
-  '@lemonsqueezy/lemonsqueezy.js@4.0.0':
-    resolution: {integrity: sha512-xcY1/lDrY7CpIF98WKiL1ElsfoVhddP7FT0fw7ssOzrFqQsr44HgolKrQZxd9SywsCPn12OTOUieqDIokI3mFg==}
-    engines: {node: '>=20'}
 
   '@libsql/client@0.14.0':
     resolution: {integrity: sha512-/9HEKfn6fwXB5aTEEoMeFh4CtG0ZzbncBb1e++OCdVpgKZ/xyMsIVYXm0w7Pv4RUel803vE6LwniB3PqD72R0Q==}
@@ -3447,7 +3440,6 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
@@ -5740,8 +5732,6 @@ snapshots:
       '@tweakpane/core': 2.0.5
       tweakpane: 4.0.5
 
-  '@lemonsqueezy/lemonsqueezy.js@4.0.0': {}
-
   '@libsql/client@0.14.0':
     dependencies:
       '@libsql/core': 0.14.0
@@ -7029,11 +7019,11 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threejs-kit/instanced-sprite-mesh@2.5.0(three@0.173.0)':
+  '@threejs-kit/instanced-sprite-mesh@2.5.0(@types/three@0.172.0)(three@0.173.0)':
     dependencies:
       diet-sprite: 0.0.1
       earcut: 2.2.4
-      maath: 0.10.8(three@0.173.0)
+      maath: 0.10.8(@types/three@0.172.0)(three@0.173.0)
       three: 0.173.0
       three-instanced-uniforms-mesh: 0.52.0(three@0.173.0)
       troika-three-utils: 0.52.0(three@0.173.0)
@@ -7065,9 +7055,9 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/extras@9.0.1(svelte@5.19.6)(three@0.173.0)':
+  '@threlte/extras@9.0.1(@types/three@0.172.0)(svelte@5.19.6)(three@0.173.0)':
     dependencies:
-      '@threejs-kit/instanced-sprite-mesh': 2.5.0(three@0.173.0)
+      '@threejs-kit/instanced-sprite-mesh': 2.5.0(@types/three@0.172.0)(three@0.173.0)
       camera-controls: 2.9.0(three@0.173.0)
       svelte: 5.19.6
       three: 0.173.0
@@ -8427,8 +8417,9 @@ snapshots:
       '@types/three': 0.172.0
       three: 0.172.0
 
-  maath@0.10.8(three@0.173.0):
+  maath@0.10.8(@types/three@0.172.0)(three@0.173.0):
     dependencies:
+      '@types/three': 0.172.0
       three: 0.173.0
 
   magic-string@0.30.13:
