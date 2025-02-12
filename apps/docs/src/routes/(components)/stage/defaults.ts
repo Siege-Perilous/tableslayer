@@ -105,10 +105,9 @@ export const StageDefaultProps: StageProps = {
     },
     depthOfField: {
       enabled: true,
-      focus: 0.9,
-      focalLength: 0.05,
-      bokehScale: 5.0,
-      focusRange: 0.3
+      focus: 0.98,
+      focalLength: 0.15,
+      bokehScale: 25.0
     },
     lut: {
       enabled: true,
@@ -133,7 +132,7 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    fov: 50,
+    fov: 60,
     intensity: 0.5,
     opacity: 0.75,
     type: WeatherType.Rain,

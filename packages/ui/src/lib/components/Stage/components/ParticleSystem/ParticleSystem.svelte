@@ -35,7 +35,7 @@
       const angle = Math.random() * 2 * Math.PI;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
-      const z = -10;
+      const z = -1.01;
 
       // Quad vertex positions (same for all 4 corners initially)
       const baseIdx = i * 12;
@@ -182,6 +182,7 @@
     transparent={true}
     depthWrite={true}
     depthTest={true}
+    alphaTest={0.5}
     blending={THREE.NormalBlending}
     side={THREE.DoubleSide}
   />

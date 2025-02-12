@@ -3,9 +3,9 @@ export default {
   type: 1,
   color: '#e0e0e0',
   opacity: 1,
-  fadeInTime: 4,
-  fadeOutTime: 3,
-  lifetime: 7,
+  fadeInTime: 8,
+  fadeOutTime: 2,
+  lifetime: 10,
   spawnArea: {
     minRadius: 0.02,
     maxRadius: 0.5
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.05
+      z: 0.01
     },
     exponential: {
       x: 0,

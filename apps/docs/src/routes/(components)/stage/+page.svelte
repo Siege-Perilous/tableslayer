@@ -386,10 +386,9 @@
         label="Enabled"
         options={{ Yes: true, No: false }}
       />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.focus} label="Focus" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focus} label="Focus" min={0} max={2} />
       <Slider bind:value={stageProps.postProcessing.depthOfField.focalLength} label="Focal Length" min={0} max={1} />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.focusRange} label="Focus Range" min={0} max={1} />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.bokehScale} label="Bokeh Scale" min={0} max={5} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.bokehScale} label="Bokeh Scale" min={0} max={50} />
     </Folder>
 
     <Folder title="LUT" expanded={false}>
@@ -545,8 +544,8 @@
           </Folder>
 
           <Folder title="Size" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0} max={0.01} />
-            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0} max={0.01} />
+            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0} max={0.1} />
           </Folder>
 
           <Folder title="Spawn Radius" expanded={false}>

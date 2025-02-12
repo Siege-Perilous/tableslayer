@@ -12,7 +12,7 @@
   import AshPreset from './presets/AshPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
-  import { DepthEffect, DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
+  import { DepthEffect, DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass } from 'postprocessing';
   import type { PostProcessingProps } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
@@ -31,7 +31,7 @@
   let particleScene: THREE.Scene | undefined = $state(undefined);
   let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
 
-  const aspectRatio = $derived($size.width / $size.height);
+  const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
   $inspect(aspectRatio);
 
@@ -49,9 +49,10 @@
       map: renderTarget.texture,
       transparent: true,
       opacity: props.opacity,
-      depthWrite: true,
-      depthTest: true,
-      blending: THREE.NormalBlending
+      blending: THREE.CustomBlending,
+      blendAlpha: 0.5,
+      blendDst: THREE.DstAlphaFactor,
+      blendSrc: THREE.SrcColorFactor
     })
   );
 
@@ -91,8 +92,9 @@
     if (!mapSize || !particleCamera) return;
     particleCamera.aspect = aspectRatio;
     particleCamera.fov = props.fov;
-    particleCamera.position.set(0, 0, -10);
-    particleCamera.far = -particleCamera.position.z;
+    particleCamera.position.set(0, 0, -1);
+    particleCamera.near = 0.01;
+    particleCamera.far = 1;
     particleCamera.rotation.x = Math.PI;
     particleCamera.updateMatrixWorld();
     particleCamera.updateProjectionMatrix();
@@ -120,15 +122,12 @@
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
         focusDistance: postprocessing.depthOfField.focus,
         focalLength: postprocessing.depthOfField.focalLength,
-        focusRange: postprocessing.depthOfField.focusRange,
-        bokehScale: 10,
-        height: 720
+        bokehScale: postprocessing.depthOfField.bokehScale,
+        height: 480
       });
+      dofEffect.blurPass.kernelSize = KernelSize.VERY_LARGE;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
     }
-
-    const depthEffect = new DepthEffect();
-    //composer.addPass(new EffectPass(particleCamera, depthEffect));
   });
 
   // Custom render task
@@ -156,7 +155,7 @@
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
-<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None} renderOrder={2000}>
+<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
   <T.MeshBasicMaterial is={quadMaterial} />
   <T.PlaneGeometry args={[1, 1]} />
 </T.Mesh>

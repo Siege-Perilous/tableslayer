@@ -115,11 +115,6 @@ export interface PostProcessingProps {
     focalLength: number;
 
     /**
-     * The focus range of the bokeh effect
-     */
-    focusRange: number;
-
-    /**
      * The bokeh scale of the bokeh effect
      */
     bokehScale: number;

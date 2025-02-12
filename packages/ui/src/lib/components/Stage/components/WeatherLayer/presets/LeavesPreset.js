@@ -1,11 +1,11 @@
 export default {
-  count: 500,
+  count: 1000,
   type: 3,
   color: '#ffffff',
-  opacity: 0.5,
-  fadeInTime: 10,
-  fadeOutTime: 2,
-  lifetime: 10,
+  opacity: 1.0,
+  fadeInTime: 6,
+  fadeOutTime: 3,
+  lifetime: 8,
   spawnArea: {
     minRadius: 0.03,
     maxRadius: 0.5
@@ -28,13 +28,13 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.003,
-        y: 0.004,
+        x: 0.005,
+        y: 0.003,
         z: 0
       },
       frequency: {
-        x: 0.2,
-        y: 0.4,
+        x: 0.4,
+        y: 0.5,
         z: 0
       }
     }
