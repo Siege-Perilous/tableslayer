@@ -5,7 +5,7 @@
   import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
-  import { useUpdateSceneMutation, useUploadFogFromBlobMutation } from '$lib/queries';
+  import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { convertPropsToSceneDetails } from '$lib/utils';
   import {
@@ -48,6 +48,7 @@
   };
 
   const updateSceneMutation = useUpdateSceneMutation();
+  const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
@@ -286,6 +287,21 @@
       toastMessages: {
         success: { title: 'Scene saved!' },
         error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
+      }
+    });
+    // Empty game session update will update the lastUpdated field through Drizzle
+    await handleMutation({
+      mutation: () =>
+        $updateGameSessionMutation.mutateAsync({
+          gameSessionId: gameSession.id,
+          partyId: party.id,
+          gameSessionData: {
+            lastUpdated: new Date()
+          }
+        }),
+      formLoadingState: () => {},
+      toastMessages: {
+        error: { title: 'Error saving game session', body: (err) => err.message || 'Error saving game session' }
       }
     });
   };

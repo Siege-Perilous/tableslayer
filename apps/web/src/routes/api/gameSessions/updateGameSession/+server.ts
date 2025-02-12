@@ -6,7 +6,9 @@ import { z } from 'zod';
 const validationSchema = z.object({
   partyId: z.string(),
   gameSessionId: z.string(),
-  gameSessionData: updateGameSessionSchema.partial()
+  gameSessionData: updateGameSessionSchema.partial().extend({
+    lastUpdated: z.coerce.date().optional()
+  })
 });
 
 export const POST = apiFactory(
