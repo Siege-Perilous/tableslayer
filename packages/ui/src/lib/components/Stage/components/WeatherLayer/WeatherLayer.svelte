@@ -3,7 +3,6 @@
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
   import { WeatherType, type WeatherLayerProps } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
-  import { DEG2RAD } from 'three/src/math/MathUtils';
   import type { Size } from '../../types';
 
   import SnowPreset from './presets/SnowPreset';
@@ -12,7 +11,7 @@
   import AshPreset from './presets/AshPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
-  import { DepthEffect, DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass } from 'postprocessing';
+  import { DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass } from 'postprocessing';
   import type { PostProcessingProps } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {

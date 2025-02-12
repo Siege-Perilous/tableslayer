@@ -3,9 +3,9 @@ export default {
   type: 3,
   color: '#ffffff',
   opacity: 1.0,
-  fadeInTime: 6,
-  fadeOutTime: 3,
-  lifetime: 8,
+  fadeInTime: 8,
+  fadeOutTime: 6,
+  lifetime: 12,
   spawnArea: {
     minRadius: 0.03,
     maxRadius: 0.5
@@ -19,7 +19,7 @@ export default {
     linear: {
       x: 0,
       y: 0,
-      z: 0.01
+      z: 0.006
     },
     exponential: {
       x: 0,
@@ -28,13 +28,13 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.005,
-        y: 0.003,
+        x: 0.003,
+        y: 0.002,
         z: 0
       },
       frequency: {
-        x: 0.4,
-        y: 0.5,
+        x: 0.2,
+        y: 0.1,
         z: 0
       }
     }

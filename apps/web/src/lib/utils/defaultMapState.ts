@@ -104,6 +104,12 @@ export const StageDefaultProps: StageProps = {
       enabled: true,
       offset: 0.001
     },
+    depthOfField: {
+      enabled: true,
+      focus: 0.98,
+      focalLength: 0.15,
+      bokehScale: 25.0
+    },
     lut: {
       enabled: true,
       url: 'https://files.tableslayer.com/stage/luts/Warm.cube'

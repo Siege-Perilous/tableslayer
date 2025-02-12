@@ -1,7 +1,7 @@
 export default {
   count: 1000,
   type: 4,
-  color: '#909090',
+  color: '#c0c0c0',
   opacity: 1,
   fadeInTime: 4,
   fadeOutTime: 3,
@@ -28,8 +28,8 @@ export default {
     },
     sinusoidal: {
       amplitude: {
-        x: 0.01,
-        y: 0.007,
+        x: 0.005,
+        y: 0.008,
         z: 0
       },
       frequency: {
@@ -50,7 +50,7 @@ export default {
     y: 1
   },
   size: {
-    min: 0.003,
+    min: 0.002,
     max: 0.005
   }
 };
