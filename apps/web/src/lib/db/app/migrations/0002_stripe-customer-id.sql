@@ -1,0 +1,1 @@
+ALTER TABLE `party` ADD `stripe_customer_id` text;
