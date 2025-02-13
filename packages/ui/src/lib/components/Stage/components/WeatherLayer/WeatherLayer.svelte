@@ -32,10 +32,6 @@
 
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
-  $inspect(aspectRatio);
-  $inspect($size);
-  $inspect(mapSize);
-
   // Create render target
   const renderTarget = $derived(
     new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
@@ -92,6 +88,12 @@
   // Position the render target camera
   $effect(() => {
     if (!mapSize || !particleCamera) return;
+
+    console.log('Updating particle camera');
+    console.log('aspectRatio', aspectRatio);
+    console.log('size', $size.width, $size.height);
+    console.log('mapSize', mapSize?.width, mapSize?.height);
+
     particleCamera.aspect = aspectRatio;
     particleCamera.fov = props.fov;
     particleCamera.updateMatrixWorld();
@@ -101,6 +103,11 @@
   // Add DOF effect to the composer
   $effect(() => {
     if (!particleScene || !particleCamera) return;
+
+    console.log('Updating composer');
+    console.log('aspectRatio', aspectRatio);
+    console.log('size', $size.width, $size.height);
+    console.log('mapSize', mapSize?.width, mapSize?.height);
 
     composer.reset();
     composer.setMainCamera(particleCamera);
