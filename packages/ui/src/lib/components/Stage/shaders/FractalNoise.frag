@@ -1,6 +1,7 @@
 precision highp float;
 
 uniform float uTime;
+uniform float uAspectRatio;
 uniform vec3 uFogColor;
 uniform float uOpacity;
 
@@ -88,7 +89,8 @@ void main() {
     }
   }
 
-  float alpha = fog(vUv, uAmplitude, uFrequency, uPersistence, uLacunarity, uOffset, uLevels, uFogSpeed);
+  vec2 uv = vec2(vUv.x * uAspectRatio, vUv.y);
+  float alpha = fog(uv, uAmplitude, uFrequency, uPersistence, uLacunarity, uOffset, uLevels, uFogSpeed);
 
   gl_FragColor = vec4(uFogColor, alpha * uOpacity);
 }

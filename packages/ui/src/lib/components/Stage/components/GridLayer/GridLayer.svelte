@@ -4,7 +4,6 @@
   import { type GridLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
   import GridMaterial from './GridMaterial.svelte';
-  import { SceneLayer } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     grid: GridLayerProps;

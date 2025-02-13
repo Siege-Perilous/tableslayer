@@ -7,7 +7,6 @@
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
   import type { Size } from '../../types';
-  import { SceneLayer } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: PingLayerProps;

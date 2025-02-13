@@ -17,9 +17,12 @@
 
   const { renderStage } = useThrelte();
 
+  const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
+
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0.0 },
+      uAspectRatio: { value: 1 },
       uFogColor: { value: new THREE.Color(props.color) },
       uOpacity: { value: props.opacity },
       uFogSpeed: { value: props.speed },
@@ -47,6 +50,7 @@
   // Update uniforms when props change
   $effect(() => {
     material.uniforms.uFogColor.value.set(props.color);
+    material.uniforms.uAspectRatio.value = aspectRatio;
     material.uniforms.uOpacity.value = props.opacity;
     material.uniforms.uFogSpeed.value = props.speed;
     material.uniforms.uPersistence.value = props.persistence;

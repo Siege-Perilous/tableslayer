@@ -30,6 +30,17 @@ export const StageDefaultProps: StageProps = {
     fadeStart: 0.2,
     fadeEnd: 1.0
   },
+  fog: {
+    color: '#a0a0a0',
+    opacity: 0.3,
+    speed: 0.05,
+    persistence: 0.5,
+    lacunarity: 2.5,
+    frequency: 1.5,
+    amplitude: 0.7,
+    offset: -0.2,
+    levels: 2
+  },
   fogOfWar: {
     url: null,
     opacity: 1,
