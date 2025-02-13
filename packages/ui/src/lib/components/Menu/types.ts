@@ -1,7 +1,10 @@
+import type { Placement } from '@floating-ui/dom';
 import type { CreateRadioGroupProps } from '@melt-ui/svelte';
 import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
 import type { Snippet } from 'svelte';
+import type { HTMLButtonAttributes } from 'svelte/elements';
 import type { Writable } from 'svelte/store';
+import type { SelectOption } from '../Select';
 
 export type RadioMenuItem = {
   label: string;
@@ -20,3 +23,16 @@ export type RadioMenuProps = CreateRadioGroupProps & {
   customValue?: Writable<string>;
   footer?: Snippet<[{ close: () => void }]>;
 };
+
+export type SelectorMenuProps = {
+  trigger: Snippet;
+  variant?: 'default';
+  selected?: string;
+  options: SelectOption[];
+  onSelectedChange?: (selected: string) => void;
+  positioning?: {
+    placement?: Placement;
+    offset?: number;
+  };
+  footer?: Snippet<[{ footerProps: { close: () => void } }]>;
+} & HTMLButtonAttributes;

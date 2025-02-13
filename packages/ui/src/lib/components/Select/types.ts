@@ -9,7 +9,7 @@ export type SelectOptions = SelectOption[] | SelectGroupedOptions;
 export type SelectProps = {
   disabled?: boolean;
   multiple?: boolean;
-  variant?: 'default' | 'transparent';
+  variant?: 'default' | 'transparent' | 'iconOnly';
   selectedPrefix?: Snippet;
   selected: string[];
   options: SelectOptions;
