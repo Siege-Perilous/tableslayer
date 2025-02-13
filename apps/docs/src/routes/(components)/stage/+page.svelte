@@ -68,8 +68,10 @@
   };
 
   const particleTypeOptions: ListOptions<number> = {
-    Snow: ParticleType.Snow,
-    Rain: ParticleType.Rain
+    Ash: ParticleType.Ash,
+    Leaves: ParticleType.Leaves,
+    Rain: ParticleType.Rain,
+    Snow: ParticleType.Snow
   };
 
   const sceneRotationOptions: ListOptions<number> = {
@@ -81,8 +83,10 @@
 
   const weatherTypeOptions: ListOptions<number> = {
     None: WeatherType.None,
-    Snow: WeatherType.Snow,
+    Ash: WeatherType.Ash,
+    Leaves: WeatherType.Leaves,
     Rain: WeatherType.Rain,
+    Snow: WeatherType.Snow,
     Custom: WeatherType.Custom
   };
 
@@ -352,9 +356,9 @@
   </Folder>
 
   <Folder title="Post Processing" expanded={false}>
-    <Binding object={stageProps.postProcessing} key="enabled" label="Enabled" />
+    <List bind:value={stageProps.postProcessing.enabled} label="Enabled" options={{ Yes: true, No: false }} />
     <Folder title="Bloom" expanded={false}>
-      <Binding object={stageProps.postProcessing.bloom} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.bloom.enabled} label="Enabled" options={{ Yes: true, No: false }} />
       <List
         bind:value={stageProps.postProcessing.bloom.mipmapBlur}
         label="Mipmap Blur"
@@ -368,17 +372,36 @@
     </Folder>
 
     <Folder title="Chromatic Aberration" expanded={false}>
-      <Binding object={stageProps.postProcessing.chromaticAberration} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.chromaticAberration.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
     </Folder>
 
+    <Folder title="Depth of Field" expanded={false}>
+      <List
+        bind:value={stageProps.postProcessing.depthOfField.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focus} label="Focus" min={0} max={2} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.focalLength} label="Focal Length" min={0} max={1} />
+      <Slider bind:value={stageProps.postProcessing.depthOfField.bokehScale} label="Bokeh Scale" min={0} max={50} />
+    </Folder>
+
     <Folder title="LUT" expanded={false}>
-      <Binding object={stageProps.postProcessing.lut} key="enabled" label="Enabled" />
+      <List bind:value={stageProps.postProcessing.lut.enabled} label="Enabled" options={{ Yes: true, No: false }} />
       <List bind:value={stageProps.postProcessing.lut.url} label="LUT" options={lutOptions} />
     </Folder>
 
     <Folder title="Tone Mapping" expanded={false}>
-      <Binding object={stageProps.postProcessing.toneMapping} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.toneMapping.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <List
         bind:value={stageProps.postProcessing.toneMapping.mode}
         label="Mode"
@@ -398,7 +421,11 @@
     </Folder>
 
     <Folder title="Vignette" expanded={false}>
-      <Binding object={stageProps.postProcessing.vignette} key="enabled" label="Enabled" />
+      <List
+        bind:value={stageProps.postProcessing.vignette.enabled}
+        label="Enabled"
+        options={{ Yes: true, No: false }}
+      />
       <Slider bind:value={stageProps.postProcessing.vignette.offset} label="Offset" min={0} max={1} step={0.1} />
       <Slider bind:value={stageProps.postProcessing.vignette.darkness} label="Darkness" min={0} max={1} step={0.1} />
     </Folder>
@@ -414,7 +441,6 @@
 
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
-    <Color bind:value={stageProps.weather.color} label="Color" />
     <Slider bind:value={stageProps.weather.fov} label="FOV" min={10} max={180} step={1} />
     <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
@@ -500,19 +526,26 @@
           </Folder>
 
           <Folder title="Rotation" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.rotation.x} label="X" min={0} max={360} step={1} />
-            <Slider bind:value={stageProps.weather.custom.rotation.y} label="Y" min={0} max={360} step={1} />
-            <Slider bind:value={stageProps.weather.custom.rotation.z} label="Z" min={0} max={360} step={1} />
+            <Binding bind:object={stageProps.weather.custom.rotation} key={'alignRadially'} label="Align Radially" />
+            <Slider bind:value={stageProps.weather.custom.rotation.offset} label="Offset" min={0} max={360} step={1} />
+            <Slider
+              bind:value={stageProps.weather.custom.rotation.velocity}
+              label="Velocity"
+              min={-10}
+              max={10}
+              step={0.01}
+            />
+            <Binding bind:object={stageProps.weather.custom.rotation} key={'randomize'} label="Randomize" />
           </Folder>
 
           <Folder title="Scale" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.scale.x} label="X" min={0} max={10} />
-            <Slider bind:value={stageProps.weather.custom.scale.y} label="Y" min={0} max={10} />
+            <Slider bind:value={stageProps.weather.custom.scale.x} label="X" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.scale.y} label="Y" min={0} max={1} />
           </Folder>
 
           <Folder title="Size" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0.001} max={0.1} />
-            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0.001} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0} max={0.1} />
           </Folder>
 
           <Folder title="Spawn Radius" expanded={false}>

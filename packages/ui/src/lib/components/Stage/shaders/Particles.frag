@@ -24,5 +24,9 @@ void main() {
   opacity *= smoothstep(0.0, uFadeInTime, vAge);
   opacity *= 1.0 - smoothstep(uLifetime - uFadeOutTime, uLifetime, vAge);
 
-  gl_FragColor = vec4(textureColor.rgb * uColor, opacity);
+  if(opacity > 0.1) {
+    gl_FragColor = vec4(textureColor.rgb * uColor, opacity);
+  } else {
+    discard;
+  }
 }

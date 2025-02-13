@@ -113,6 +113,12 @@ export const buildSceneProps = (
         enabled: true,
         offset: 0.001
       },
+      depthOfField: {
+        enabled: true,
+        focus: 0.98,
+        focalLength: 0.15,
+        bokehScale: 25.0
+      },
       lut: {
         enabled: true,
         url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
@@ -147,7 +153,6 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      color: activeScene.weatherColor,
       fov: activeScene.weatherFov,
       intensity: activeScene.weatherIntensity,
       opacity: activeScene.weatherOpacity,

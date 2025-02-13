@@ -58,47 +58,51 @@
 
   // Effect to update post-processing settings when props change
   $effect(() => {
+    const { postProcessing } = $state.snapshot(props);
+
     // Need to convert the LUT to a LookupTexture
-    Promise.resolve(getLUT(props.postProcessing.lut.url))
+    Promise.resolve(getLUT(postProcessing.lut.url))
       .then((lut) => {
         composer.setSize($size.width, $size.height);
         composer.removeAllPasses();
 
+        const effects = [];
+
         const renderPass = new RenderPass(scene, $camera);
         composer.addPass(renderPass);
 
-        if (props.postProcessing.enabled) {
-          if (props.postProcessing.bloom.enabled) {
+        if (postProcessing.enabled) {
+          if (postProcessing.bloom.enabled) {
             const bloomEffect = new BloomEffect({
-              intensity: props.postProcessing.bloom.intensity,
-              mipmapBlur: props.postProcessing.bloom.mipmapBlur,
-              radius: props.postProcessing.bloom.radius,
-              levels: props.postProcessing.bloom.levels,
-              luminanceThreshold: props.postProcessing.bloom.threshold,
-              luminanceSmoothing: props.postProcessing.bloom.smoothing
+              intensity: postProcessing.bloom.intensity,
+              mipmapBlur: postProcessing.bloom.mipmapBlur,
+              radius: postProcessing.bloom.radius,
+              levels: postProcessing.bloom.levels,
+              luminanceThreshold: postProcessing.bloom.threshold,
+              luminanceSmoothing: postProcessing.bloom.smoothing
             });
-            composer.addPass(new EffectPass($camera, bloomEffect));
+            effects.push(bloomEffect);
           }
 
-          if (props.postProcessing.chromaticAberration.enabled) {
+          if (postProcessing.chromaticAberration.enabled) {
             const chromaticAberrationEffect = new ChromaticAberrationEffect({
-              offset: new THREE.Vector2(props.postProcessing.chromaticAberration.offset),
+              offset: new THREE.Vector2(postProcessing.chromaticAberration.offset),
               radialModulation: true,
               modulationOffset: 0.025
             });
-            composer.addPass(new EffectPass($camera, chromaticAberrationEffect));
+            effects.push(chromaticAberrationEffect);
           }
 
-          if (props.postProcessing.vignette.enabled) {
+          if (postProcessing.vignette.enabled) {
             const vignetteEffect = new VignetteEffect({
-              offset: props.postProcessing.vignette.offset,
-              darkness: props.postProcessing.vignette.darkness,
+              offset: postProcessing.vignette.offset,
+              darkness: postProcessing.vignette.darkness,
               blendFunction: BlendFunction.NORMAL
             });
-            composer.addPass(new EffectPass($camera, vignetteEffect));
+            effects.push(vignetteEffect);
           }
 
-          if (props.postProcessing.lut.enabled) {
+          if (postProcessing.lut.enabled) {
             const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
               blendFunction: BlendFunction.SET
             });
@@ -108,22 +112,21 @@
             lutEffect.lut.dispose();
             lutEffect.lut = lut;
 
-            composer.addPass(new EffectPass($camera, lutEffect));
+            effects.push(lutEffect);
           }
-        }
 
-        // Add final tonemapping pass
-        const toneMappingPass = new EffectPass(
-          $camera,
-          new ToneMappingEffect({
+          // Add final tonemapping pass
+          const toneMappingEffect = new ToneMappingEffect({
             mode:
-              props.postProcessing.enabled && props.postProcessing.toneMapping.enabled
-                ? props.postProcessing.toneMapping.mode
+              postProcessing.enabled && postProcessing.toneMapping.enabled
+                ? postProcessing.toneMapping.mode
                 : ToneMappingMode.LINEAR
-          })
-        );
+          });
+          effects.push(toneMappingEffect);
 
-        composer.addPass(toneMappingPass);
+          const effectPass = new EffectPass($camera, ...effects);
+          composer.addPass(effectPass);
+        }
       })
       .catch((error) => console.error(error));
   });

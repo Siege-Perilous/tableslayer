@@ -103,9 +103,15 @@ export const StageDefaultProps: StageProps = {
       enabled: true,
       offset: 0.003
     },
+    depthOfField: {
+      enabled: true,
+      focus: 0.98,
+      focalLength: 0.15,
+      bokehScale: 25.0
+    },
     lut: {
       enabled: true,
-      url: 'http://files.tableslayer.com/stage/luts/Warm.cube'
+      url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
     },
     toneMapping: {
       enabled: true,
@@ -126,10 +132,9 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    color: '#ffffff',
-    fov: 50,
-    intensity: 1,
-    opacity: 1,
+    fov: 60,
+    intensity: 0.5,
+    opacity: 0.75,
     type: WeatherType.Rain,
     custom: {
       count: 1740,
@@ -173,9 +178,10 @@ export const StageDefaultProps: StageProps = {
         }
       },
       rotation: {
-        x: 0,
-        y: 0,
-        z: 90
+        alignRadially: false,
+        offset: 0,
+        velocity: 0,
+        randomize: true
       },
       scale: {
         x: 1,
