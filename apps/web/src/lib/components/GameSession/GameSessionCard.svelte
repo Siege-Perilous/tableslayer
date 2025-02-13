@@ -155,7 +155,7 @@
     <div>
       <Title as="h3" size="sm">
         <LinkOverlay href={`${party.slug}/${session.slug}`}>
-          <Link as="span">
+          <Link as="span" class="gameSessionCard__aboveImage">
             {session.name}
           </Link>
         </LinkOverlay>
@@ -192,12 +192,15 @@
     .gameSessionCard__renameFieldBtn {
       margin-top: 1.5rem;
     }
+    .gameSessionCard__aboveImage {
+      position: relative;
+    }
   }
   .cardFan__image {
     background-size: 100%;
     background-position: top;
     filter: grayscale(0.5);
-    opacity: 0.3;
+    opacity: 0.5;
     position: absolute;
     top: 0.5rem;
     left: 0.5rem;
