@@ -21,6 +21,8 @@
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer } from './types';
+  import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
+
   interface Props {
     props: StageProps;
   }
@@ -233,4 +235,6 @@
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
+
+  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} />
 </T.Object3D>
