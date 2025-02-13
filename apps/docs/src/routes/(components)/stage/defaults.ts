@@ -9,6 +9,8 @@ import {
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
+import frostImageUrl from './overlays/frost.png?url';
+
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
@@ -20,6 +22,14 @@ export const StageDefaultProps: StageProps = {
     padding: { x: 16, y: 16 },
     size: { x: 17.77, y: 10.0 },
     resolution: { x: 1920, y: 1080 }
+  },
+  edgeOverlay: {
+    enabled: true,
+    url: frostImageUrl,
+    opacity: 0.3,
+    scale: 2.0,
+    fadeStart: 0.2,
+    fadeEnd: 1.0
   },
   fog: {
     color: '#ffffff',

@@ -22,6 +22,14 @@ export const StageDefaultProps: StageProps = {
     size: { x: 17.77, y: 10.0 },
     resolution: { x: 1920, y: 1080 }
   },
+  edgeOverlay: {
+    enabled: true,
+    url: null,
+    opacity: 0.3,
+    scale: 2.0,
+    fadeStart: 0.2,
+    fadeEnd: 1.0
+  },
   fogOfWar: {
     url: null,
     opacity: 1,

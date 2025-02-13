@@ -21,6 +21,8 @@
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer, SceneLayerOrder } from './types';
+  import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
+
   interface Props {
     props: StageProps;
   }
@@ -239,4 +241,6 @@
     layers={[SceneLayer.Overlay]}
     position.z={SceneLayerOrder.Grid}
   />
+
+  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} visible={props.edgeOverlay.enabled} />
 </T.Object3D>
