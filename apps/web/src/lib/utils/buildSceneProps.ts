@@ -42,6 +42,13 @@ export const buildSceneProps = (
         y: activeScene.displayResolutionY
       }
     },
+    edgeOverlay: {
+      url: null,
+      opacity: 0.3,
+      scale: 2.0,
+      fadeStart: 0.2,
+      fadeEnd: 1.0
+    },
     fogOfWar: {
       url: activeScene.fogOfWarUrl,
       opacity: activeScene.fogOfWarOpacity,
