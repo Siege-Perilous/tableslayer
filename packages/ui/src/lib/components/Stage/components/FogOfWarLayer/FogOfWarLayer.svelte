@@ -188,12 +188,12 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[10, 10]} />
 </T.Mesh>
 
-<T.Mesh name="fogOfWarToolOutline" position.z={-10} renderOrder={300}>
+<T.Mesh name="fogOfWarToolOutline" layers={[SceneLayer.Overlay]}>
   <T is={outlineMaterial} transparent={true} opacity={0.0} depthTest={false} />
   <T.PlaneGeometry />
 </T.Mesh>
 
-<T.Mesh name="fogOfWar" renderOrder={200} {...meshProps}>
+<T.Mesh name="fogOfWar" {...meshProps}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

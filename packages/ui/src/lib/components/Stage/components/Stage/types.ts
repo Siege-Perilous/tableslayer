@@ -1,4 +1,5 @@
 import type { EdgeOverlayProps } from '../EdgeOverlayLayer/types';
+import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
@@ -45,6 +46,7 @@ export type StageProps = {
     loggingRate: number;
   };
   display: DisplayProps;
+  fog: FogLayerProps;
   edgeOverlay: EdgeOverlayProps;
   fogOfWar: FogOfWarLayerProps;
   grid: GridLayerProps;

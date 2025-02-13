@@ -20,7 +20,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-  import { SceneLayer } from './types';
+  import { SceneLayer, SceneLayerOrder } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
 
   interface Props {
@@ -234,7 +234,18 @@
   <MapLayer bind:this={mapLayer} {props} />
 
   <!-- Map overlays that scale with the scene -->
-  <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
+  <GridLayer
+    grid={props.grid}
+    display={props.display}
+    sceneZoom={props.scene.zoom}
+    layers={[SceneLayer.Overlay]}
+    renderOrder={SceneLayerOrder.Grid}
+  />
 
-  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} visible={props.edgeOverlay.enabled} />
+  <EdgeOverlayLayer
+    props={props.edgeOverlay}
+    display={props.display}
+    visible={props.edgeOverlay.enabled}
+    renderOrder={SceneLayerOrder.EdgeOverlay}
+  />
 </T.Object3D>

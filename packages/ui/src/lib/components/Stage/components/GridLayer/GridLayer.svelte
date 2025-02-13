@@ -4,7 +4,6 @@
   import { type GridLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
   import GridMaterial from './GridMaterial.svelte';
-  import { SceneLayer } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     grid: GridLayerProps;
@@ -15,12 +14,7 @@
   const { grid, display, sceneZoom, ...meshProps }: Props = $props();
 </script>
 
-<T.Mesh
-  name="gridLayer"
-  scale={[display.resolution.x, display.resolution.y, 1]}
-  layers={[SceneLayer.Overlay]}
-  {...meshProps}
->
+<T.Mesh name="gridLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
   <GridMaterial {grid} {display} {sceneZoom} />
   <T.PlaneGeometry />
 </T.Mesh>
