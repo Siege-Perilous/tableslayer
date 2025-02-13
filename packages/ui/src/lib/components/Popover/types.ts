@@ -3,5 +3,13 @@ import type { Snippet } from 'svelte';
 export type PopoverProps = {
   isOpen?: boolean;
   trigger: Snippet;
-  content: Snippet;
+  content: Snippet<
+    [
+      {
+        contentProps: {
+          close: () => void;
+        };
+      }
+    ]
+  >;
 } & CreatePopoverProps;

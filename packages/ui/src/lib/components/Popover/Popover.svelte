@@ -30,6 +30,12 @@
   $effect(() => {
     sync.open(isOpen, (v) => (isOpen = v));
   });
+
+  const contentProps = {
+    close: () => {
+      isOpen = false;
+    }
+  };
 </script>
 
 <button type="button" class="popTrigger" use:melt={$triggerAction} aria-label="Update dimensions">
@@ -38,7 +44,7 @@
 
 {#if isOpen}
   <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class={['popContent', restProps.class ?? '']}>
-    {@render content()}
+    {@render content({ contentProps })}
     <button class="popClose" use:melt={$close}> close </button>
   </div>
 {/if}

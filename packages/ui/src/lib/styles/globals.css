@@ -63,6 +63,8 @@
   --inputFocusBg: #fff;
   --inputBorderColor: var(--contrastMedium);
   --popoverBg: var(--contrastLowest);
+  --menuItemHover: var(--primary-50);
+  --menuItemBorderHover: solid 2px var(--primary-600);
   color: var(--fg);
 }
 
@@ -88,6 +90,8 @@
   --inputFocusBg: #222;
   --inputBorderColor: var(--contrastMedium);
   --popoverBg: var(--bg);
+  --menuItemHover: var(--primary-950);
+  --menuItemBorderHover: solid 2px var(--primary-500);
   color: var(--fg);
 }
 

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { AvatarPopover, DropdownRadioMenu, Button, Title, Link, IconButton, Icon } from '@tableslayer/ui';
+  import { AvatarPopover, SelectorMenu, Button, Title, Link, IconButton, Icon, Hr, Spacer } from '@tableslayer/ui';
   import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
   const { user } = data;
-  import { IconSelector } from '@tabler/icons-svelte';
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
 
   let parties = $derived(data.parties);
 
@@ -19,6 +19,11 @@
   let selectedParty = $derived(parties && parties.find((party) => party.slug === page.params.party));
   const gameSession = $derived(page.data.gameSession);
   let headerContainerClasses = $derived(['header_container', gameSession && 'header_container--isSession']);
+
+  const handleChangeParty = (selected: string) => {
+    console.log('Selected party:', selected);
+    goto(`/${selected}`);
+  };
 </script>
 
 <header>
@@ -32,23 +37,27 @@
 
       {#if parties && parties.length > 0}
         <div class="partyDropdown">
-          {#if selectedParty !== undefined}
-            <Link href={`/${selectedParty.slug}`} color="fg">{selectedParty.name}</Link>
-          {:else}
-            Choose a party
-          {/if}
-          <DropdownRadioMenu items={menuItems} defaultItem={menuItems[0]}>
-            {#snippet trigger()}
-              <div class="partyDropdown__icon">
-                <Icon Icon={IconSelector} />
-              </div>
-            {/snippet}
-            {#snippet footer({ close })}
+          <div class="partyDropdown__text">
+            {#if selectedParty !== undefined}
+              <Link href={`/${selectedParty.slug}`} color="fg">{selectedParty.name}</Link>
+            {:else}
+              Choose a party
+            {/if}
+          </div>
+          <SelectorMenu
+            options={menuItems}
+            onSelectedChange={(selected) => handleChangeParty(selected)}
+            positioning={{ placement: 'bottom', offset: 10 }}
+            selected={selectedParty ? selectedParty.slug : undefined}
+          >
+            {#snippet footer({ footerProps })}
+              <Spacer size={2} />
+              <Hr />
               <div class="partyDownDropdown__footer">
-                <Link href="/create-party" onclick={close}>Create a new party</Link>
+                <Link href="/create-party" onclick={footerProps.close}>Create a new party</Link>
               </div>
             {/snippet}
-          </DropdownRadioMenu>
+          </SelectorMenu>
         </div>
       {/if}
       {#if gameSession && selectedParty}
@@ -105,7 +114,6 @@
     display: flex;
     gap: var(--size-2);
     align-items: center;
-    font-weight: var(--font-weight-6);
   }
   .partyDropdown__icon {
     display: flex;
@@ -118,7 +126,10 @@
     border-radius: var(--radius-2);
   }
   .partyDownDropdown__footer {
-    padding-left: 2.75rem;
+    padding: 0.5rem 1rem 0.5rem 2.75rem;
+  }
+  .partyDropdown__text {
+    white-space: nowrap;
   }
   .logo {
     background: var(--fgPrimary);

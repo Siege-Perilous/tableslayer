@@ -3,18 +3,17 @@
     ColorMode,
     Icon,
     Popover,
-    DropdownRadioMenu,
     DrawMode,
     ToolType,
     type StageProps,
-    MapLayerType
+    MapLayerType,
+    SelectorMenu
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
     IconPaint,
     IconPaintFilled,
     IconShadow,
-    IconSelector,
     IconMap,
     IconCloudSnow,
     IconCircle,
@@ -24,7 +23,6 @@
     IconScreenShare,
     IconScreenShareOff
   } from '@tabler/icons-svelte';
-  import { writable } from 'svelte/store';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
@@ -152,7 +150,7 @@
     ) || eraseOptions[0]
   );
 
-  let selectedFogToolValue = writable(eraseOptions[0].value);
+  let selectedFogToolValue = $state(eraseOptions[0].value);
 
   $effect(() => {
     selectedFogTool =
@@ -162,19 +160,15 @@
       ) || eraseOptions[0];
   });
 
-  $effect(() => {
-    selectedFogToolValue.set(selectedFogTool.value);
-  });
-
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
     selectedFogTool = selectedOption!;
+    selectedFogToolValue = selectedOption.value;
     activeControl = 'erase';
     stageProps.activeLayer = MapLayerType.FogOfWar;
     stageProps.fogOfWar.tool.type = selectedOption.toolType;
     stageProps.fogOfWar.tool.mode = selectedOption.drawMode;
     socketUpdate();
-    return selectedOption.value;
   };
 </script>
 
@@ -189,19 +183,12 @@
         <Icon Icon={selectedFogTool.icon} size="1.5rem" />
         {selectedFogTool.label}
       </button>
-      <DropdownRadioMenu
-        defaultItem={eraseOptions[0]}
-        items={eraseOptions}
-        positioning={{ placement: 'bottom', gutter: 8 }}
-        value={selectedFogToolValue}
-        onValueChange={(selected) => handleSelectedFogTool(selected.next)}
-      >
-        {#snippet trigger()}
-          <div class="sceneControls__selectorBtn">
-            <Icon Icon={IconSelector} size="0.85rem" class="sceneControls__selectorIcon" />
-          </div>
-        {/snippet}
-      </DropdownRadioMenu>
+      <SelectorMenu
+        selected={selectedFogToolValue}
+        options={eraseOptions}
+        positioning={{ placement: 'bottom', offset: 8 }}
+        onSelectedChange={(selected) => handleSelectedFogTool(selected)}
+      />
     </div>
     {#each sceneControlArray as scene}
       <div class="sceneControls__item">

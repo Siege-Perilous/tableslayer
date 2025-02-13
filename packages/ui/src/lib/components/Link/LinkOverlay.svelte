@@ -8,7 +8,7 @@
 </a>
 
 <style>
-  .linkOverlay::before {
+  .linkOverlay::after {
     content: '';
     position: absolute;
     inset: 0;
