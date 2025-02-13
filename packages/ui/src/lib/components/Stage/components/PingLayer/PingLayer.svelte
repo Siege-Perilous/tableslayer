@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T } from '@threlte/core';
+  import { T, type Props as ThrelteProps } from '@threlte/core';
   import { PingEditMode, type PingLayerProps } from './types';
   import PingMaterial from './PingMaterial.svelte';
   import { getContext } from 'svelte';
@@ -9,13 +9,13 @@
   import type { Size } from '../../types';
   import { SceneLayer } from '../Scene/types';
 
-  interface Props {
+  interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: PingLayerProps;
     isActive: boolean;
     mapSize: Size | null;
   }
 
-  const { props, isActive, mapSize }: Props = $props();
+  const { props, isActive, mapSize, ...meshProps }: Props = $props();
 
   const onPingsUpdated = getContext<Callbacks>('callbacks').onPingsUpdated;
 
@@ -112,6 +112,6 @@
 </T.Mesh>
 
 <!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} name="pingLayer" position={[-0.5, -0.5, 0]} layers={[SceneLayer.Main]}>
+<T.Mesh bind:ref={pingMesh} name="pingLayer" position={[-0.5, -0.5, 0]} {meshProps}>
   <PingMaterial {props} />
 </T.Mesh>

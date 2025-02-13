@@ -20,7 +20,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import { type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-  import { SceneLayer } from './types';
+  import { SceneLayer, SceneLayerOrder } from './types';
   interface Props {
     props: StageProps;
   }
@@ -232,5 +232,11 @@
   <MapLayer bind:this={mapLayer} {props} />
 
   <!-- Map overlays that scale with the scene -->
-  <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
+  <GridLayer
+    grid={props.grid}
+    display={props.display}
+    sceneZoom={props.scene.zoom}
+    layers={[SceneLayer.Overlay]}
+    position.z={SceneLayerOrder.Grid}
+  />
 </T.Object3D>

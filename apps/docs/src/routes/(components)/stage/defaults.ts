@@ -21,6 +21,17 @@ export const StageDefaultProps: StageProps = {
     size: { x: 17.77, y: 10.0 },
     resolution: { x: 1920, y: 1080 }
   },
+  fog: {
+    color: '#ffffff',
+    opacity: 0.5,
+    speed: 0.2,
+    persistence: 0.8,
+    lacunarity: 2.0,
+    frequency: 5,
+    amplitude: 0.7,
+    offset: 0.3,
+    levels: 10
+  },
   fogOfWar: {
     url: null,
     opacity: 1.0,

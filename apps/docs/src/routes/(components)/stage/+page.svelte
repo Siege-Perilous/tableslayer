@@ -249,6 +249,18 @@
     <Slider bind:value={stageProps.display.padding.y} label="Padding (Y)" min={0} />
   </Folder>
 
+  <Folder title="Fog" expanded={false}>
+    <Color bind:value={stageProps.fog.color} label="Color" />
+    <Slider bind:value={stageProps.fog.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fog.speed} label="Speed" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fog.persistence} label="Persistence" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fog.lacunarity} label="Lacunarity" min={0} max={4} step={0.01} />
+    <Slider bind:value={stageProps.fog.frequency} label="Frequency" min={1} max={10} />
+    <Slider bind:value={stageProps.fog.amplitude} label="Amplitude" min={0} max={1} />
+    <Slider bind:value={stageProps.fog.offset} label="Offset" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fog.levels} label="Levels" min={0} max={8} step={1} />
+  </Folder>
+
   <Folder title="Fog of War" expanded={false}>
     <List bind:value={stageProps.fogOfWar.tool.type} label="Tool" options={toolTypeOptions} />
     <List bind:value={stageProps.fogOfWar.tool.mode} label="Draw Mode" options={drawModeOptions} />

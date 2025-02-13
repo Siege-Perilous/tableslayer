@@ -13,6 +13,16 @@ export enum SceneLayer {
   Input = 2
 }
 
+export enum SceneLayerOrder {
+  Background = 0,
+  Map = 10,
+  Fog = 20,
+  Weather = 30,
+  FogOfWar = 40,
+  Grid = 50,
+  Ping = 60
+}
+
 export interface SceneLayerProps {
   /**
    * The position of the scene layer within the canvas

@@ -10,7 +10,8 @@
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import { SceneLayer } from '../Scene/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
+  import FogLayer from '../FogLayer/FogLayer.svelte';
 
   interface Props {
     props: StageProps;
@@ -104,12 +105,20 @@
   scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh name="mapImage" layers={[SceneLayer.Main]}>
-    <T.MeshBasicMaterial map={image} transparent={true} />
+  <T.Mesh name="mapImage" layers={[SceneLayer.Main]} position.z={SceneLayerOrder.Map}>
+    <T.MeshBasicMaterial map={image} />
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <WeatherLayer props={props.weather} postprocessing={props.postProcessing} {mapSize} layers={[SceneLayer.Main]} />
+  <FogLayer props={props.fog} {mapSize} layers={[SceneLayer.Main]} position.z={SceneLayerOrder.Fog} />
+
+  <WeatherLayer
+    props={props.weather}
+    postprocessing={props.postProcessing}
+    {mapSize}
+    layers={[SceneLayer.Main]}
+    position.z={SceneLayerOrder.Weather}
+  />
 
   <FogOfWarLayer
     bind:this={fogOfWarLayer}
@@ -117,7 +126,14 @@
     isActive={props.activeLayer === MapLayerType.FogOfWar}
     {mapSize}
     layers={[SceneLayer.Main]}
+    position.z={SceneLayerOrder.FogOfWar}
   />
 
-  <PingLayer props={props.ping} isActive={props.activeLayer === MapLayerType.Ping} {mapSize} />
+  <PingLayer
+    props={props.ping}
+    isActive={props.activeLayer === MapLayerType.Ping}
+    {mapSize}
+    layers={[SceneLayer.Main]}
+    position.z={SceneLayerOrder.Ping}
+  />
 </T.Object3D>

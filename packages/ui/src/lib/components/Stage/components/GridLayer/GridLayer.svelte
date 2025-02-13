@@ -15,12 +15,7 @@
   const { grid, display, sceneZoom, ...meshProps }: Props = $props();
 </script>
 
-<T.Mesh
-  name="gridLayer"
-  scale={[display.resolution.x, display.resolution.y, 1]}
-  layers={[SceneLayer.Overlay]}
-  {...meshProps}
->
+<T.Mesh name="gridLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
   <GridMaterial {grid} {display} {sceneZoom} />
   <T.PlaneGeometry />
 </T.Mesh>

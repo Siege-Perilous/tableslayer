@@ -2,7 +2,7 @@
   import { Canvas, T } from '@threlte/core';
   import type { StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
-  import type { SceneExports } from '../Scene/types';
+  import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
   import { PerfMonitor } from '@threlte/extras';
 
@@ -39,7 +39,7 @@
 
 <div style="height: 100%; width: 100%;">
   <Canvas>
-    <T.Mesh position={[0, 0, -1]} scale={[1000, 1000, 1]}>
+    <T.Mesh position={[0, 0, -1]} scale={[1000, 1000, 1]} layers={[SceneLayerOrder.Background]}>
       <T.PlaneGeometry />
       <T.MeshBasicMaterial color={props.backgroundColor} />
     </T.Mesh>
