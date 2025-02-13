@@ -95,6 +95,9 @@
           partyId: party.id
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        invalidateAll();
+      },
       toastMessages: {
         success: { title: 'Active scene set' },
         error: { title: 'Error setting active scene', body: (error) => error.message }

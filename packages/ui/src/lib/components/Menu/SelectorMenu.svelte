@@ -204,7 +204,7 @@
     border: var(--borderThin);
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-1);
-    width: 300px;
+    white-space: nowrap;
     z-index: 1000;
     padding: 0.25rem;
     list-style: none;
