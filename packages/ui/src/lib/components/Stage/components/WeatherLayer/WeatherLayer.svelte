@@ -119,7 +119,7 @@
     composer.addPass(renderPass);
 
     // Add depth of field pass
-    if (postprocessing.depthOfField.enabled) {
+    if (postprocessing.enabled && postprocessing.depthOfField.enabled) {
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
         focusDistance: postprocessing.depthOfField.focus,
         focalLength: postprocessing.depthOfField.focalLength,
