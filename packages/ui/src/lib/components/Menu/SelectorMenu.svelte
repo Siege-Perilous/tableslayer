@@ -128,6 +128,7 @@
     bind:this={button}
     onclick={toggleMenu}
     onkeydown={handleKeydown}
+    data-testid="menuButton"
     aria-haspopup="listbox"
     aria-expanded={isOpen}
     aria-disabled={disabled}
@@ -155,6 +156,7 @@
             onclick={() => handleSelection(option.value)}
             onkeydown={handleKeydown}
             role="option"
+            data-testid="menuItem"
             aria-selected={isSelected(option.value)}
           >
             <div class="selectorMenu__space">
