@@ -17,6 +17,9 @@
   import { onMount } from 'svelte';
   import { ToneMappingMode } from 'postprocessing';
 
+  import frostImageUrl from './overlays/frost.png?url';
+  import heatImageUrl from './overlays/heat.png?url';
+
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
@@ -88,6 +91,11 @@
     Rain: WeatherType.Rain,
     Snow: WeatherType.Snow,
     Custom: WeatherType.Custom
+  };
+
+  const edgeOverlayOptions: ListOptions<string> = {
+    Frost: frostImageUrl,
+    Heat: heatImageUrl
   };
 
   onMount(() => {
@@ -247,6 +255,15 @@
     <Slider bind:value={stageProps.display.resolution.y} label="Resolution (Y)" />
     <Slider bind:value={stageProps.display.padding.x} label="Padding (X)" min={0} />
     <Slider bind:value={stageProps.display.padding.y} label="Padding (Y)" min={0} />
+  </Folder>
+
+  <Folder title="Edge Overlay" expanded={false}>
+    <List bind:value={stageProps.edgeOverlay.enabled} label="Enabled" options={{ Yes: true, No: false }} />
+    <List bind:value={stageProps.edgeOverlay.url} label="URL" options={edgeOverlayOptions} />
+    <Slider bind:value={stageProps.edgeOverlay.opacity} label="Opacity" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.edgeOverlay.scale} label="Scale" min={1} max={100} step={1} />
+    <Slider bind:value={stageProps.edgeOverlay.fadeStart} label="Fade Start" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.edgeOverlay.fadeEnd} label="Fade End" min={0} max={1} step={0.01} />
   </Folder>
 
   <Folder title="Fog of War" expanded={false}>
