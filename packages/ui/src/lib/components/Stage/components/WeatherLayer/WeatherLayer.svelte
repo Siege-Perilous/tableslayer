@@ -32,6 +32,10 @@
 
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
+  $inspect(aspectRatio);
+  $inspect($size);
+  $inspect(mapSize);
+
   // Create render target
   const renderTarget = $derived(
     new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
@@ -114,9 +118,6 @@
     // Add depth of field pass
     if (postprocessing.depthOfField.enabled) {
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
-        resolutionX: mapSize?.width ?? 1,
-        resolutionY: mapSize?.height ?? 1,
-        resolutionScale: 0.5,
         focusDistance: postprocessing.depthOfField.focus,
         focalLength: postprocessing.depthOfField.focalLength,
         bokehScale: postprocessing.depthOfField.bokehScale
