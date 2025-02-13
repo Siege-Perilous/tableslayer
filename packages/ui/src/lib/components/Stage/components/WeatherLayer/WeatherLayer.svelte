@@ -11,7 +11,7 @@
   import AshPreset from './presets/AshPreset';
   import type { ParticleSystemProps } from '../ParticleSystem/types';
 
-  import { DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass } from 'postprocessing';
+  import { DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass, CopyPass } from 'postprocessing';
   import type { PostProcessingProps } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
@@ -24,8 +24,6 @@
 
   const { renderer, size, renderStage } = useThrelte();
 
-  const composer = new EffectComposer(renderer);
-
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let particleScene: THREE.Scene | undefined = $state(undefined);
   let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
@@ -33,12 +31,13 @@
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
   // Create render target
-  const renderTarget = $derived(
-    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
-      format: THREE.RGBAFormat,
-      stencilBuffer: false
-    })
-  );
+  const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
+    format: THREE.RGBAFormat,
+    stencilBuffer: false
+  });
+
+  const composer = new EffectComposer(renderer);
+  composer.outputBuffer = renderTarget;
 
   // Create quad material using render target texture
   const quadMaterial = $derived(
@@ -109,14 +108,11 @@
     console.log('size', $size.width, $size.height);
     console.log('mapSize', mapSize?.width, mapSize?.height);
 
-    composer.reset();
     composer.setMainCamera(particleCamera);
     composer.setMainScene(particleScene);
     composer.setSize($size.width, $size.height);
+    renderTarget.setSize($size.width, $size.height);
     composer.removeAllPasses();
-    composer.outputBuffer = renderTarget;
-    composer.autoRenderToScreen = false;
-    quadMaterial.map = renderTarget.texture;
 
     // Add render pass
     const renderPass = new RenderPass(particleScene, particleCamera);
@@ -131,7 +127,11 @@
       });
       dofEffect.blurPass.kernelSize = KernelSize.VERY_LARGE;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
+    } else {
+      composer.addPass(new CopyPass(renderTarget));
     }
+
+    composer.autoRenderToScreen = false;
   });
 
   // Custom render task
@@ -146,7 +146,6 @@
       renderer.setRenderTarget(null);
 
       particleScene.visible = false;
-      quadMaterial.map = composer.outputBuffer.texture;
       quadMaterial.needsUpdate = true;
     },
     { stage: renderStage }
