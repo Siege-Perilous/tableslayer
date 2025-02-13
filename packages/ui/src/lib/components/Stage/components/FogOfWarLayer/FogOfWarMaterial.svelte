@@ -5,9 +5,10 @@
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
+
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
-  import fogVertexShader from '../../shaders/Fog.vert?raw';
+  import fogVertexShader from '../../shaders/default.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
   interface Props {
