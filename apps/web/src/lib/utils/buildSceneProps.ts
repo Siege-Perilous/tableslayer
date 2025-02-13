@@ -43,6 +43,7 @@ export const buildSceneProps = (
       }
     },
     edgeOverlay: {
+      enable: true,
       url: null,
       opacity: 0.3,
       scale: 2.0,

@@ -236,5 +236,5 @@
   <!-- Map overlays that scale with the scene -->
   <GridLayer grid={props.grid} display={props.display} sceneZoom={props.scene.zoom} />
 
-  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} />
+  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} visible={props.edgeOverlay.enabled} />
 </T.Object3D>

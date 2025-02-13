@@ -23,6 +23,7 @@ export const StageDefaultProps: StageProps = {
     resolution: { x: 1920, y: 1080 }
   },
   edgeOverlay: {
+    enabled: true,
     url: null,
     opacity: 0.3,
     scale: 2.0,

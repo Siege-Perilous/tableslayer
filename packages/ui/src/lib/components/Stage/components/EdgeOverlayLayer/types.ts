@@ -1,4 +1,12 @@
+/**
+ * Props for the EdgeOverlayLayer component
+ */
 export interface EdgeOverlayProps {
+  /**
+   * Whether the edge overlay is enabled
+   */
+  enabled: boolean;
+
   /**
    * URL of the overlay texture
    */

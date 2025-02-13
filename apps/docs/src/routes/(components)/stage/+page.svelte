@@ -258,6 +258,7 @@
   </Folder>
 
   <Folder title="Edge Overlay" expanded={false}>
+    <List bind:value={stageProps.edgeOverlay.enabled} label="Enabled" options={{ Yes: true, No: false }} />
     <List bind:value={stageProps.edgeOverlay.url} label="URL" options={edgeOverlayOptions} />
     <Slider bind:value={stageProps.edgeOverlay.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.edgeOverlay.scale} label="Scale" min={1} max={100} step={1} />
