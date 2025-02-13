@@ -27,6 +27,9 @@ export const useUpdateGameSessionMutation = () => {
   >({
     mutationKey: ['createGameSession'],
     endpoint: '/api/gameSessions/updateGameSession',
+    onSuccess: async () => {
+      return;
+    },
     method: 'POST'
   });
 };
