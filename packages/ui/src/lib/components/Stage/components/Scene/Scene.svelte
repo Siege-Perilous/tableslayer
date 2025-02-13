@@ -239,8 +239,13 @@
     display={props.display}
     sceneZoom={props.scene.zoom}
     layers={[SceneLayer.Overlay]}
-    position.z={SceneLayerOrder.Grid}
+    renderOrder={SceneLayerOrder.Grid}
   />
 
-  <EdgeOverlayLayer props={props.edgeOverlay} display={props.display} visible={props.edgeOverlay.enabled} />
+  <EdgeOverlayLayer
+    props={props.edgeOverlay}
+    display={props.display}
+    visible={props.edgeOverlay.enabled}
+    renderOrder={SceneLayerOrder.EdgeOverlay}
+  />
 </T.Object3D>

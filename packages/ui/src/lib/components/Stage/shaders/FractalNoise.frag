@@ -88,7 +88,7 @@ void main() {
     }
   }
 
-  float alpha = fog(vUv, uAmplitude, uFrequency, uPersistence, uLacunarity, uOffset, uLevels, uFogSpeed) - 0.5;
+  float alpha = fog(vUv, uAmplitude, uFrequency, uPersistence, uLacunarity, uOffset, uLevels, uFogSpeed);
 
   gl_FragColor = vec4(uFogColor, alpha * uOpacity);
 }

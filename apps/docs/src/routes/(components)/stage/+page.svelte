@@ -263,9 +263,9 @@
     <Slider bind:value={stageProps.fog.speed} label="Speed" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.fog.persistence} label="Persistence" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.fog.lacunarity} label="Lacunarity" min={0} max={4} step={0.01} />
-    <Slider bind:value={stageProps.fog.frequency} label="Frequency" min={1} max={10} />
-    <Slider bind:value={stageProps.fog.amplitude} label="Amplitude" min={0} max={1} />
-    <Slider bind:value={stageProps.fog.offset} label="Offset" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.fog.frequency} label="Frequency" min={0.1} max={2} />
+    <Slider bind:value={stageProps.fog.amplitude} label="Amplitude" min={0} max={2} />
+    <Slider bind:value={stageProps.fog.offset} label="Offset" min={-1} max={1} step={0.01} />
     <Slider bind:value={stageProps.fog.levels} label="Levels" min={0} max={8} step={1} />
   </Folder>
 

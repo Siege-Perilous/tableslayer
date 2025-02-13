@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, type Props as ThrelteProps } from '@threlte/core';
+  import { T, useTask, type Props as ThrelteProps, useThrelte } from '@threlte/core';
   import type { Size } from '../../types';
   import type { FogLayerProps } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
@@ -14,6 +14,8 @@
   }
 
   const { props, mapSize, ...meshProps }: Props = $props();
+
+  const { renderStage } = useThrelte();
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -35,7 +37,11 @@
     fragmentShader,
     transparent: true,
     depthWrite: false,
-    depthTest: false
+    depthTest: false,
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.SrcAlphaFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    blendEquation: THREE.AddEquation
   });
 
   // Update uniforms when props change
@@ -49,11 +55,18 @@
     material.uniforms.uOffset.value = props.offset;
     material.uniforms.uAmplitude.value = props.amplitude;
     material.uniforms.uLevels.value = props.levels;
+
+    material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
+      (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
+    );
   });
 
-  useTask((dt) => {
-    material.uniforms.uTime.value += dt;
-  });
+  useTask(
+    (dt) => {
+      material.uniforms.uTime.value += dt;
+    },
+    { stage: renderStage }
+  );
 </script>
 
 <T.Mesh {...meshProps}>

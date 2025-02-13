@@ -105,19 +105,19 @@
   scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh name="mapImage" layers={[SceneLayer.Main]} position.z={SceneLayerOrder.Map}>
+  <T.Mesh name="mapImage" layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Map} visible={true}>
     <T.MeshBasicMaterial map={image} />
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <FogLayer props={props.fog} {mapSize} layers={[SceneLayer.Main]} position.z={SceneLayerOrder.Fog} />
+  <FogLayer props={props.fog} {mapSize} layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Fog} />
 
   <WeatherLayer
     props={props.weather}
     postprocessing={props.postProcessing}
     {mapSize}
     layers={[SceneLayer.Main]}
-    position.z={SceneLayerOrder.Weather}
+    renderOrder={SceneLayerOrder.Weather}
   />
 
   <FogOfWarLayer
@@ -126,7 +126,7 @@
     isActive={props.activeLayer === MapLayerType.FogOfWar}
     {mapSize}
     layers={[SceneLayer.Main]}
-    position.z={SceneLayerOrder.FogOfWar}
+    renderOrder={SceneLayerOrder.FogOfWar}
   />
 
   <PingLayer
@@ -134,6 +134,6 @@
     isActive={props.activeLayer === MapLayerType.Ping}
     {mapSize}
     layers={[SceneLayer.Main]}
-    position.z={SceneLayerOrder.Ping}
+    renderOrder={SceneLayerOrder.Ping}
   />
 </T.Object3D>

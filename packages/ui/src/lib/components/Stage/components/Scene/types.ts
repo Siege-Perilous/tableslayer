@@ -20,7 +20,8 @@ export enum SceneLayerOrder {
   Weather = 30,
   FogOfWar = 40,
   Grid = 50,
-  Ping = 60
+  Ping = 60,
+  EdgeOverlay = 70
 }
 
 export interface SceneLayerProps {
