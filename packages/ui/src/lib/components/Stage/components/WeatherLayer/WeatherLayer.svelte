@@ -32,11 +32,9 @@
 
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
 
-  $inspect(aspectRatio);
-
   // Create render target
   const renderTarget = $derived(
-    new THREE.WebGLRenderTarget($size.width, $size.height, {
+    new THREE.WebGLRenderTarget(mapSize?.width ?? 1, mapSize?.height ?? 1, {
       format: THREE.RGBAFormat,
       stencilBuffer: false
     })
@@ -92,10 +90,6 @@
     if (!mapSize || !particleCamera) return;
     particleCamera.aspect = aspectRatio;
     particleCamera.fov = props.fov;
-    particleCamera.position.set(0, 0, -1);
-    particleCamera.near = 0.01;
-    particleCamera.far = 1;
-    particleCamera.rotation.x = Math.PI;
     particleCamera.updateMatrixWorld();
     particleCamera.updateProjectionMatrix();
   });
@@ -120,10 +114,12 @@
     // Add depth of field pass
     if (postprocessing.depthOfField.enabled) {
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
+        resolutionX: mapSize?.width ?? 1,
+        resolutionY: mapSize?.height ?? 1,
+        resolutionScale: 0.5,
         focusDistance: postprocessing.depthOfField.focus,
         focalLength: postprocessing.depthOfField.focalLength,
-        bokehScale: postprocessing.depthOfField.bokehScale,
-        height: 480
+        bokehScale: postprocessing.depthOfField.bokehScale
       });
       dofEffect.blurPass.kernelSize = KernelSize.VERY_LARGE;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
@@ -151,7 +147,7 @@
 
 <!-- Hidden scene that renders to the render target -->
 <T.Scene bind:ref={particleScene} visible={false}>
-  <T.PerspectiveCamera bind:ref={particleCamera} />
+  <T.PerspectiveCamera bind:ref={particleCamera} near={0.01} far={1} position={[0, 0, -1]} rotation.x={Math.PI} />
   <ParticleSystem props={particleProps} />
 </T.Scene>
 
