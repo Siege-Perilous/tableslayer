@@ -322,9 +322,9 @@ export const sceneTable = sqliteTable(
     sceneOffsetY: integer('scene_offset_y').notNull().default(0),
     sceneRotation: integer('scene_rotation').notNull().default(0),
     weatherColor: text('weather_color').notNull().default('#FFFFFF'),
-    weatherFov: integer('weather_fov').notNull().default(50),
+    weatherFov: integer('weather_fov').notNull().default(60),
     weatherIntensity: real('weather_intensity').notNull().default(1),
-    weatherOpacity: real('weather_opacity').notNull().default(0.5),
+    weatherOpacity: real('weather_opacity').notNull().default(1.0),
     weatherType: integer('weather_type').notNull().default(0)
   },
   (table) => ({

@@ -1,18 +1,7 @@
 <script lang="ts">
   import { type ZodIssue } from 'zod';
-  import chroma from 'chroma-js';
-  import { IconSnowflake, IconDroplet, IconSun } from '@tabler/icons-svelte';
-  import {
-    Icon,
-    ColorPicker,
-    FormControl,
-    Spacer,
-    type StageProps,
-    type ColorUpdatePayload,
-    Input,
-    IconButton
-  } from '@tableslayer/ui';
-  import { to8CharHex } from '$lib/utils';
+  import { IconSnowflake, IconDroplet, IconSun, IconLeaf, IconFlame } from '@tabler/icons-svelte';
+  import { Icon, FormControl, Spacer, type StageProps, Input, IconButton } from '@tableslayer/ui';
 
   let {
     socketUpdate,
@@ -24,33 +13,12 @@
     errors: ZodIssue[] | undefined;
   } = $props();
 
-  /* Initial local state
-   * The form UX does not match the StageProps / DB schema exactly.
-   * This is on purpose to limit choice / make decisions easier.
-   */
-  let weatherHex = $state(to8CharHex(stageProps.weather.color, stageProps.weather.opacity));
-
   // Weather toggle
   const handleWeatherTypeChange = (weatherType: number) => {
     console.log('weather type change', weatherType);
     stageProps.weather.type = weatherType;
     socketUpdate();
   };
-
-  const handleWeatherColorUpdate = (cd: ColorUpdatePayload) => {
-    const weatherColor = chroma(cd.hex).hex('rgb');
-    stageProps.weather = {
-      ...stageProps.weather,
-      color: weatherColor,
-      opacity: cd.rgba.a
-    };
-    socketUpdate();
-  };
-
-  // Local state and conversion for weather color, tv size and padding
-  $effect(() => {
-    weatherHex = to8CharHex(stageProps.weather.color, stageProps.weather.opacity);
-  });
 </script>
 
 <div class="weatherControls">
@@ -64,6 +32,12 @@
       </IconButton>
       <IconButton {...inputProps} variant="ghost" onclick={() => handleWeatherTypeChange(2)}>
         <Icon Icon={IconSnowflake} size="20px" stroke={2} />
+      </IconButton>
+      <IconButton {...inputProps} variant="ghost" onclick={() => handleWeatherTypeChange(3)}>
+        <Icon Icon={IconLeaf} size="20px" stroke={2} />
+      </IconButton>
+      <IconButton {...inputProps} variant="ghost" onclick={() => handleWeatherTypeChange(4)}>
+        <Icon Icon={IconFlame} size="20px" stroke={2} />
       </IconButton>
     {/snippet}
   </FormControl>
@@ -84,12 +58,6 @@
     {/snippet}
   </FormControl>
 </div>
-<Spacer />
-<FormControl label="Weather color" name="weatherColor" {errors}>
-  {#snippet input({ inputProps })}
-    <ColorPicker {...inputProps} bind:hex={weatherHex} onUpdate={handleWeatherColorUpdate} />
-  {/snippet}
-</FormControl>
 <Spacer />
 
 <style>
