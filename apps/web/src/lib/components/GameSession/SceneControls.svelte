@@ -150,8 +150,6 @@
     ) || eraseOptions[0]
   );
 
-  let selectedFogToolValue = $state(eraseOptions[0].value);
-
   $effect(() => {
     selectedFogTool =
       eraseOptions.find(
@@ -163,7 +161,6 @@
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
     selectedFogTool = selectedOption!;
-    selectedFogToolValue = selectedOption.value;
     activeControl = 'erase';
     stageProps.activeLayer = MapLayerType.FogOfWar;
     stageProps.fogOfWar.tool.type = selectedOption.toolType;
@@ -184,7 +181,7 @@
         {selectedFogTool.label}
       </button>
       <SelectorMenu
-        selected={selectedFogToolValue}
+        selected={selectedFogTool.value}
         options={eraseOptions}
         positioning={{ placement: 'bottom', offset: 8 }}
         onSelectedChange={(selected) => handleSelectedFogTool(selected)}
