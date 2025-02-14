@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { Button, Icon } from '@tableslayer/ui';
-  import { IconX, IconCheck } from '@tabler/icons-svelte';
+  import { Button } from '@tableslayer/ui';
   import type { SelectParty, SelectPartyInvite, SelectUser } from '$lib/db/app/schema';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
@@ -36,18 +35,8 @@
 </script>
 
 <div class="inviteResponse">
-  <Button name="code" onclick={handleRespondToInvite(true)} isLoading={formIsLoading}>
-    {#snippet start()}
-      <Icon Icon={IconCheck} />
-    {/snippet}
-    Accept
-  </Button>
-  <Button variant="danger" onclick={handleRespondToInvite(false)}>
-    {#snippet start()}
-      <Icon Icon={IconX} />
-    {/snippet}
-    Decline
-  </Button>
+  <Button name="code" onclick={handleRespondToInvite(true)} isLoading={formIsLoading}>Accept</Button>
+  <Button variant="danger" onclick={handleRespondToInvite(false)}>Decline</Button>
 </div>
 
 <style>

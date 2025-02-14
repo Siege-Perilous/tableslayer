@@ -22,6 +22,7 @@
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     party,
@@ -61,6 +62,7 @@
       },
       onSuccess: () => {
         renameGameSessionErrors = undefined;
+        invalidateAll();
       },
       toastMessages: {
         success: { title: `Game session renamed to ${gameSessionName}` },
@@ -80,6 +82,9 @@
           gameSessionId: session.id
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        invalidateAll();
+      },
       toastMessages: {
         success: { title: 'Game session deleted' },
         error: { title: 'Error deleting game session', body: (error) => error.message }

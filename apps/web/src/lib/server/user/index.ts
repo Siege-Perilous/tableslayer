@@ -280,3 +280,20 @@ export const verifyEmail = async (userId: string, code: string) => {
     throw error;
   }
 };
+
+export const updateUser = async (userId: string, userData: Partial<SelectUser>) => {
+  try {
+    if (userData.email) {
+      const existingUser = await getUserByEmail(userData.email);
+      if (existingUser && existingUser.id !== userId) {
+        throw new Error('Email already in use');
+      }
+      await changeUserEmail(userId, userData.email);
+    }
+    const user = await db.update(usersTable).set(userData).where(eq(usersTable.id, userId)).returning().get();
+    return { user, emailWasChanged: !!userData.email };
+  } catch (error) {
+    console.error('Error updating user', error);
+    throw error;
+  }
+};

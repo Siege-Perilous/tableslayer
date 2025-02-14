@@ -1,24 +1,151 @@
 <script lang="ts">
-  import { PartyInviteResponse } from '$lib/components';
+  import { GameSessionCard, PartyInviteResponse } from '$lib/components';
+  import {
+    Text,
+    Title,
+    Spacer,
+    Icon,
+    Panel,
+    Avatar,
+    Hr,
+    LinkBox,
+    LinkOverlay,
+    FormControl,
+    Input,
+    Button
+  } from '@tableslayer/ui';
+  import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
   let { data } = $props();
-  const { invites, parties } = $derived(data);
+  const { invites, userParties, user } = $derived(data);
+  console.log('userParties', userParties);
+  console.log('user', user);
+
+  let name = $state(user.name);
+  let email = $state(user.email);
 </script>
 
-<h2>Party invites</h2>
+<div class="container">
+  <Title as="h1" size="lg">{user.name}</Title>
+  <div class="containerLayout">
+    <aside>
+      <Title as="h2" size="sm">User details</Title>
+      <Spacer size={2} />
+      <Panel class="profile__panel">
+        <Avatar src={user.thumb.resizedUrl} size="xl" class="profile__avatar" />
+        <FormControl label="Name" name="name">
+          {#snippet input({ inputProps })}
+            <Input {...inputProps} value={name} />
+          {/snippet}
+        </FormControl>
+        <Spacer />
+        <FormControl label="Email" name="email">
+          {#snippet input({ inputProps })}
+            <Input {...inputProps} value={email} />
+          {/snippet}
+        </FormControl>
+        <Spacer />
+        <Button>Save</Button>
+      </Panel>
+      {#if invites.length > 0}
+        <Spacer />
+        <Title as="h2" size="sm">Pending invites</Title>
+        <Spacer size={2} />
+        <Panel class="profile__panel">
+          {#each invites as invite}
+            <div class="profile__invite">
+              <Avatar src={invite.invitedByUser?.thumb?.resizedUrl} size="sm" />
+              <div>
+                <Text size="0.875rem" color="var(--fgMuted)">
+                  <Text size="0.875rem" as="span" color="var(--fg)"
+                    >{invite.invitedByUser?.name || invite.invitedByUser?.email}</Text
+                  > invited you to join
+                </Text>
+                <Title as="p" size="xs">{invite.party?.name}</Title>
+                <Spacer />
+                <PartyInviteResponse {invite} />
+              </div>
+            </div>
+          {:else}
+            <p>No pending invites</p>
+          {/each}
+        </Panel>
+      {/if}
+    </aside>
+    <div>
+      {#each userParties as party (party.id)}
+        <LinkBox>
+          <div class="profile__partyTitle">
+            <Avatar src={party.thumb.resizedUrl} variant="square" size="lg" />
+            <LinkOverlay href={`/${party.slug}`}>
+              <Title as="h2" size="md" class="profile__partyLink">{party.name}</Title>
+            </LinkOverlay>
+            <Icon Icon={IconArrowRightDashed} size="1.5rem" color="var(--fgPrimary)" />
+            <div class="profile__partyRole">
+              {#if party.partyRole === 'admin'}
+                <Icon Icon={IconCrown} size="1.5rem" color="var(--fgPrimary)" />
+              {/if}
+              <Text>{party.partyRole}</Text>
+            </div>
+          </div>
+        </LinkBox>
+        <div class="profile__sessionList">
+          {#each party.gameSessions as gameSession (gameSession.id)}
+            <GameSessionCard isPartyAdmin={party.partyRole === 'admin'} {party} session={gameSession} />
+          {/each}
+        </div>
+        <Spacer size={12} />
+      {:else}
+        You are not a member of any parties
+      {/each}
+    </div>
+  </div>
+</div>
 
-{#each invites as invite}
-  <p>You have been invited to join {invite.party?.name}</p>
-  <PartyInviteResponse {invite} />
-{:else}
-  <p>No pending invites</p>
-{/each}
-
-<h2>Parties</h2>
-
-<ul>
-  {#each parties as party (party.id)}
-    <li><a href={`/${party.slug}/members`}>{party.name}</a></li>
-  {:else}
-    <li>Youi are not a member of any parties</li>
-  {/each}
-</ul>
+<style>
+  .container {
+    max-width: var(--contain-desktop);
+    margin: var(--size-12) auto;
+  }
+  .containerLayout {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    margin-top: var(--size-8);
+    gap: var(--size-12);
+  }
+  :global {
+    .profile__panel {
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: var(--radius-2);
+    }
+    .profile__partyTitle:hover .profile__partyLink {
+      text-decoration: underline;
+    }
+    .profile__avatar {
+      margin: 0 auto 2rem auto;
+    }
+  }
+  .profile__invite {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+  }
+  .profile__sessionList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--size-4);
+  }
+  .profile__partyTitle {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+  .profile__partyRole {
+    display: flex;
+    gap: 0.5rem;
+    text-transform: capitalize;
+    margin-left: auto;
+  }
+</style>

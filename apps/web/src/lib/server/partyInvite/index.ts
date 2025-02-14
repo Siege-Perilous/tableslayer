@@ -1,5 +1,6 @@
 import { db } from '$lib/db/app';
 import {
+  filesTable,
   partyInviteTable,
   partyMemberTable,
   partyTable,
@@ -7,13 +8,13 @@ import {
   type PartyRole,
   type SelectPartyInvite
 } from '$lib/db/app/schema';
+import { getUser, getUserByEmail, isEmailInUserTable, transformImage } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
 import { and, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { sendPartyInviteEmail } from '../email';
 import { UserAlreadyInPartyError, UserAlreadyInvitedError } from '../errors';
 import { isUserInParty } from '../party/getParty';
-import { getUser, getUserByEmail, isEmailInUserTable } from '../user';
 
 export const createPartyInvite = async (email: string, partyId: string, invitedBy: string, role: PartyRole) => {
   try {
@@ -71,10 +72,16 @@ export const getPartyInvitesForEmail = async (email: string) => {
     const invitesWithPartyInfo = await db
       .select({
         invite: partyInviteTable,
-        party: partyTable
+        party: {
+          id: partyTable.id,
+          name: partyTable.name,
+          slug: partyTable.slug,
+          avatarLocation: filesTable.location // Fetch file location for the avatar
+        }
       })
       .from(partyInviteTable)
       .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .leftJoin(filesTable, eq(partyTable.avatarFileId, filesTable.id)) // Join for the avatar
       .where(eq(partyInviteTable.email, email))
       .all();
 
@@ -87,8 +94,17 @@ export const getPartyInvitesForEmail = async (email: string) => {
         const invitedById = inviteWithParty.invite.invitedBy;
         const invitedByUser = await getUser(invitedById);
 
+        // Generate thumbnail if avatar exists
+        const thumb = inviteWithParty.party.avatarLocation
+          ? await transformImage(inviteWithParty.party.avatarLocation, 'w=80,h=80,fit=cover,gravity=center')
+          : null;
+
         return {
           ...inviteWithParty,
+          party: {
+            ...inviteWithParty.party,
+            thumb
+          },
           invitedByUser
         };
       })
