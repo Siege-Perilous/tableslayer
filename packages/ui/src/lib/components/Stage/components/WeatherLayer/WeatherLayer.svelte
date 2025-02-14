@@ -88,11 +88,6 @@
   $effect(() => {
     if (!mapSize || !particleCamera) return;
 
-    console.log('Updating particle camera');
-    console.log('aspectRatio', aspectRatio);
-    console.log('size', $size.width, $size.height);
-    console.log('mapSize', mapSize?.width, mapSize?.height);
-
     particleCamera.aspect = aspectRatio;
     particleCamera.fov = props.fov;
     particleCamera.updateMatrixWorld();
@@ -102,11 +97,6 @@
   // Add DOF effect to the composer
   $effect(() => {
     if (!particleScene || !particleCamera) return;
-
-    console.log('Updating composer');
-    console.log('aspectRatio', aspectRatio);
-    console.log('size', $size.width, $size.height);
-    console.log('mapSize', mapSize?.width, mapSize?.height);
 
     composer.setMainCamera(particleCamera);
     composer.setMainScene(particleScene);
