@@ -235,7 +235,11 @@ export const changeUserEmail = async (userId: string, newEmail: string) => {
     if (existingUser) {
       throw new Error('Email already in use');
     }
-    await db.update(usersTable).set({ email: newEmail }).where(eq(usersTable.id, userId)).execute();
+    await db
+      .update(usersTable)
+      .set({ email: newEmail, emailVerified: false })
+      .where(eq(usersTable.id, userId))
+      .execute();
     await sendVerificationEmail(userId, newEmail);
   } catch (error) {
     console.error('Error changing user email', error);
@@ -283,15 +287,18 @@ export const verifyEmail = async (userId: string, code: string) => {
 
 export const updateUser = async (userId: string, userData: Partial<SelectUser>) => {
   try {
-    if (userData.email) {
+    let emailWasChanged = false;
+    const currentUser = await getUser(userId);
+    if (userData.email && userData.email !== currentUser.email) {
       const existingUser = await getUserByEmail(userData.email);
       if (existingUser && existingUser.id !== userId) {
         throw new Error('Email already in use');
       }
       await changeUserEmail(userId, userData.email);
+      emailWasChanged = true;
     }
     const user = await db.update(usersTable).set(userData).where(eq(usersTable.id, userId)).returning().get();
-    return { user, emailWasChanged: !!userData.email };
+    return { user, emailWasChanged: emailWasChanged };
   } catch (error) {
     console.error('Error updating user', error);
     throw error;

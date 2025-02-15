@@ -7,7 +7,6 @@
     Icon,
     Panel,
     Avatar,
-    Hr,
     LinkBox,
     LinkOverlay,
     FormControl,
@@ -15,13 +14,40 @@
     Button
   } from '@tableslayer/ui';
   import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
+  import { useUpdateUserMutation } from '$lib/queries';
+  import { type FormMutationError, handleMutation } from '$lib/factories';
   let { data } = $props();
   const { invites, userParties, user } = $derived(data);
-  console.log('userParties', userParties);
-  console.log('user', user);
-
+  console.log('userParties', data.userParties);
+  console.log('user', data.user);
+  let formIsLoading = $state(false);
   let name = $state(user.name);
   let email = $state(user.email);
+  console.log('name', name);
+  console.log('email', email);
+
+  const updateUser = useUpdateUserMutation();
+
+  const handleUpdateUser = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () =>
+        $updateUser.mutateAsync({
+          userData: { name, email }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => {
+        console.log('Could not update user', error);
+      },
+      onSuccess: (result) => {
+        console.log('User updated', result);
+      },
+      toastMessages: {
+        success: { title: 'Profile updated', body: 'Your profile has been updated' },
+        error: { title: 'Error updating profile', body: (err) => err.message }
+      }
+    });
+  };
 </script>
 
 <div class="container">
@@ -34,17 +60,17 @@
         <Avatar src={user.thumb.resizedUrl} size="xl" class="profile__avatar" />
         <FormControl label="Name" name="name">
           {#snippet input({ inputProps })}
-            <Input {...inputProps} value={name} />
+            <Input {...inputProps} bind:value={name} hideAutocomplete />
           {/snippet}
         </FormControl>
         <Spacer />
         <FormControl label="Email" name="email">
           {#snippet input({ inputProps })}
-            <Input {...inputProps} value={email} />
+            <Input {...inputProps} bind:value={email} hideAutocomplete />
           {/snippet}
         </FormControl>
         <Spacer />
-        <Button>Save</Button>
+        <Button onclick={handleUpdateUser}>Save</Button>
       </Panel>
       {#if invites.length > 0}
         <Spacer />

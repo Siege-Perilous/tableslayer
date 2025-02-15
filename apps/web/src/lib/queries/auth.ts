@@ -1,3 +1,4 @@
+import type { SelectUser } from '$lib/db/app/schema';
 import { mutationFactory } from '$lib/factories';
 
 export const useAuthLoginMutation = () => {
@@ -52,6 +53,17 @@ export const useAuthChangeEmailMutation = () => {
   return mutationFactory<{ newEmail: string }>({
     mutationKey: ['authChangeEmail'],
     endpoint: '/api/auth/changeEmail',
+    method: 'POST'
+  });
+};
+
+export const useUpdateUserMutation = () => {
+  return mutationFactory<
+    { userData: Partial<SelectUser> },
+    { success: boolean; user: SelectUser; emailWasChanged: boolean }
+  >({
+    mutationKey: ['updateUser'],
+    endpoint: '/api/auth/updateUser',
     method: 'POST'
   });
 };
