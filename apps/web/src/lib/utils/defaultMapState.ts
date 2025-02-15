@@ -31,6 +31,7 @@ export const StageDefaultProps: StageProps = {
     fadeEnd: 1.0
   },
   fog: {
+    enabled: true,
     color: '#a0a0a0',
     opacity: 0.8,
     speed: 0.05,
@@ -123,12 +124,6 @@ export const StageDefaultProps: StageProps = {
       enabled: true,
       offset: 0.001
     },
-    depthOfField: {
-      enabled: true,
-      focus: 0.98,
-      focalLength: 0.15,
-      bokehScale: 25.0
-    },
     lut: {
       enabled: true,
       url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
@@ -152,9 +147,6 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    fov: 60,
-    intensity: 1,
-    opacity: 0.0,
     type: WeatherType.Rain,
     custom: null
   }

@@ -30,8 +30,6 @@
   // svelte-ignore state_referenced_locally
   let mapUrl = $state(stageProps.map.url);
 
-  let isCustomized = $state(false);
-
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.0005;
@@ -489,7 +487,6 @@
         }
         stageProps.weather.custom = preset;
         stageProps.weather.type = WeatherType.Custom;
-        isCustomized = true;
       }}
     />
 
