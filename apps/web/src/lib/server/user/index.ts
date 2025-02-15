@@ -9,6 +9,7 @@ import {
 import {
   createGameSession,
   createRandomNamedParty,
+  EmailAlreadyInUseError,
   getFile,
   getGravatarDisplayName,
   getGravatarUrl,
@@ -27,7 +28,7 @@ export const getUser = async (userId: string) => {
   try {
     const user = (await db.select().from(usersTable).where(eq(usersTable.id, userId)).get()) as SelectUser;
     const file = await getFile(user.avatarFileId);
-    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const thumb = await transformImage(file.location, 'w=164,h=164,fit=cover,gravity=center');
     const userWithThumb = { ...user, thumb: thumb };
     return userWithThumb;
   } catch (error) {
@@ -292,7 +293,7 @@ export const updateUser = async (userId: string, userData: Partial<SelectUser>) 
     if (userData.email && userData.email !== currentUser.email) {
       const existingUser = await getUserByEmail(userData.email);
       if (existingUser && existingUser.id !== userId) {
-        throw new Error('Email already in use');
+        throw new EmailAlreadyInUseError('Email already in use');
       }
       await changeUserEmail(userId, userData.email);
       emailWasChanged = true;

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Avatar, type AvatarFileInputProps } from '../';
+  import { Avatar, Icon, type AvatarFileInputProps } from '../';
+  import { IconPhotoCirclePlus } from '@tabler/icons-svelte';
 
   let {
     files = $bindable(),
@@ -23,14 +24,17 @@
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
-    const file = input.files[0]; // Bind selected file
-    avatarPreviewUrl = URL.createObjectURL(file); // Create preview URL
-    input.value = ''; // Reset input for re-selection
+    const file = input.files[0];
+    avatarPreviewUrl = URL.createObjectURL(file);
+    input.value = '';
   }
 </script>
 
-<button type="button" onclick={openFileDialog} class="avatar-uploader__button">
+<button type="button" onclick={openFileDialog} class={['avatarFileInput', restProps.class]}>
   <Avatar src={avatarPreviewUrl || src} {alt} {initials} {isLoading} {size} {variant} {...restProps} />
+  <div class="avatarFileInput__overlay">
+    <Icon Icon={IconPhotoCirclePlus} size="4rem" stroke={1} />
+  </div>
   <input
     type="file"
     bind:files
@@ -40,3 +44,27 @@
     style={'display: none;'}
   />
 </button>
+
+<style>
+  .avatarFileInput {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .avatarFileInput__overlay {
+    position: absolute;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
+    opacity: 0;
+  }
+  .avatarFileInput:hover .avatarFileInput__overlay {
+    opacity: 1;
+  }
+</style>

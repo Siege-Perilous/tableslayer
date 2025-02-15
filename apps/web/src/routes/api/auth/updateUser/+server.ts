@@ -1,6 +1,6 @@
 import { updateUserSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { updateUser } from '$lib/server';
+import { EmailAlreadyInUseError, updateUser } from '$lib/server';
 import { z } from 'zod';
 
 const updateUserValidation = z.object({
@@ -22,7 +22,15 @@ export const POST = apiFactory(
 
       return { sucess: true, user: response.user, emailWasChanged: response.emailWasChanged };
     } catch (error) {
-      console.error('Error updating user', error);
+      if (error instanceof EmailAlreadyInUseError) {
+        throw new z.ZodError([
+          {
+            path: ['userData', 'email'],
+            message: error.message,
+            code: 'custom'
+          }
+        ]);
+      }
       throw error;
     }
   },

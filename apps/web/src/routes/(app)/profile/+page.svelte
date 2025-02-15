@@ -24,6 +24,7 @@
   let email = $state(user.email);
   let files = $state<FileList | null>(null);
   let avatarFileId: number | undefined = undefined;
+  let updateProfileError = $state<FormMutationError | undefined>(undefined);
 
   const updateUser = useUpdateUserMutation();
   const uploadFile = useUploadFileMutation();
@@ -51,9 +52,7 @@
           userData: { name, email, avatarFileId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
-      onError: (error) => {
-        console.log('Could not update user', error);
-      },
+      onError: (error) => (updateProfileError = error),
       onSuccess: (result) => {
         console.log('User updated', result);
       },
@@ -73,13 +72,14 @@
       <Spacer size={2} />
       <Panel class="profile__panel">
         <AvatarFileInput src={user.thumb.resizedUrl} size="xl" class="profile__avatar" bind:files />
-        <FormControl label="Name" name="name">
+        <Spacer />
+        <FormControl label="Name" name="name" errors={updateProfileError && updateProfileError.errors}>
           {#snippet input({ inputProps })}
             <Input {...inputProps} bind:value={name} hideAutocomplete />
           {/snippet}
         </FormControl>
         <Spacer />
-        <FormControl label="Email" name="email">
+        <FormControl label="Email" name="email" errors={updateProfileError && updateProfileError.errors}>
           {#snippet input({ inputProps })}
             <Input {...inputProps} bind:value={email} hideAutocomplete />
           {/snippet}
@@ -163,7 +163,7 @@
       text-decoration: underline;
     }
     .profile__avatar {
-      margin: 0 auto 2rem auto;
+      margin: 0 auto 0 auto;
     }
   }
   .profile__invite {
