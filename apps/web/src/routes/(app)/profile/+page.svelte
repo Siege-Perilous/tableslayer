@@ -10,30 +10,45 @@
     LinkBox,
     LinkOverlay,
     FormControl,
+    AvatarFileInput,
     Input,
     Button
   } from '@tableslayer/ui';
   import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
-  import { useUpdateUserMutation } from '$lib/queries';
+  import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   let { data } = $props();
   const { invites, userParties, user } = $derived(data);
-  console.log('userParties', data.userParties);
-  console.log('user', data.user);
   let formIsLoading = $state(false);
   let name = $state(user.name);
   let email = $state(user.email);
-  console.log('name', name);
-  console.log('email', email);
+  let files = $state<FileList | null>(null);
+  let avatarFileId: number | undefined = undefined;
 
   const updateUser = useUpdateUserMutation();
+  const uploadFile = useUploadFileMutation();
 
   const handleUpdateUser = async (e: Event) => {
     e.preventDefault();
+
+    if (files && files.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () => $uploadFile.mutateAsync({ file: files![0], folder: 'avatar' }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'Image uploaded' },
+          error: { title: 'Error uploading image', body: (error) => error.message }
+        }
+      });
+
+      if (!uploadedFile) return;
+      avatarFileId = uploadedFile.fileId;
+    }
+
     await handleMutation({
       mutation: () =>
         $updateUser.mutateAsync({
-          userData: { name, email }
+          userData: { name, email, avatarFileId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
@@ -57,7 +72,7 @@
       <Title as="h2" size="sm">User details</Title>
       <Spacer size={2} />
       <Panel class="profile__panel">
-        <Avatar src={user.thumb.resizedUrl} size="xl" class="profile__avatar" />
+        <AvatarFileInput src={user.thumb.resizedUrl} size="xl" class="profile__avatar" bind:files />
         <FormControl label="Name" name="name">
           {#snippet input({ inputProps })}
             <Input {...inputProps} bind:value={name} hideAutocomplete />
@@ -70,7 +85,7 @@
           {/snippet}
         </FormControl>
         <Spacer />
-        <Button onclick={handleUpdateUser}>Save</Button>
+        <Button onclick={handleUpdateUser} disabled={formIsLoading}>Save</Button>
       </Panel>
       {#if invites.length > 0}
         <Spacer />
