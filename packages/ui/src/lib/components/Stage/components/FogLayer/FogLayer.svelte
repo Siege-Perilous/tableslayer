@@ -40,11 +40,7 @@
     fragmentShader,
     transparent: true,
     depthWrite: false,
-    depthTest: false,
-    blending: THREE.CustomBlending,
-    blendSrc: THREE.SrcAlphaFactor,
-    blendDst: THREE.OneMinusSrcAlphaFactor,
-    blendEquation: THREE.AddEquation
+    depthTest: false
   });
 
   // Update uniforms when props change

@@ -1,6 +1,7 @@
 import {
   DrawMode,
   GridType,
+  LeavesPreset,
   MapLayerType,
   PingEditMode,
   ToolType,
@@ -32,6 +33,7 @@ export const StageDefaultProps: StageProps = {
     fadeEnd: 1.0
   },
   fog: {
+    enabled: true,
     color: '#a0a0a0',
     opacity: 0.8,
     speed: 0.05,
@@ -96,7 +98,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/maps/01.jpeg'
+    url: 'https://files.tableslayer.com/maps/09.jpeg'
   },
   ping: {
     color: '#ff0000',
@@ -122,13 +124,7 @@ export const StageDefaultProps: StageProps = {
     },
     chromaticAberration: {
       enabled: true,
-      offset: 0.003
-    },
-    depthOfField: {
-      enabled: true,
-      focus: 0.98,
-      focalLength: 0.15,
-      bokehScale: 25.0
+      offset: 0.001
     },
     lut: {
       enabled: true,
@@ -153,65 +149,7 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    fov: 60,
-    intensity: 0.5,
-    opacity: 0.75,
-    type: WeatherType.Rain,
-    custom: {
-      count: 1740,
-      type: 2,
-      color: '#42d8d3',
-      opacity: 0.35,
-      fadeInTime: 0.36999999999999994,
-      fadeOutTime: 0.36999999999999994,
-      lifetime: 1.5869565217391304,
-      spawnArea: {
-        minRadius: 0.05859375,
-        maxRadius: 0.6020720108695652
-      },
-      initialVelocity: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      force: {
-        linear: {
-          x: 0,
-          y: 0,
-          z: 1
-        },
-        exponential: {
-          x: 0,
-          y: 0,
-          z: 0
-        },
-        sinusoidal: {
-          amplitude: {
-            x: 0,
-            y: 0,
-            z: 0
-          },
-          frequency: {
-            x: 5,
-            y: 5,
-            z: 5
-          }
-        }
-      },
-      rotation: {
-        alignRadially: false,
-        offset: 0,
-        velocity: 0,
-        randomize: true
-      },
-      scale: {
-        x: 1,
-        y: 2.717391304347826
-      },
-      size: {
-        min: 0.007456521739130435,
-        max: 0.018217391304347828
-      }
-    }
+    type: WeatherType.Leaves,
+    custom: { ...LeavesPreset }
   }
 };

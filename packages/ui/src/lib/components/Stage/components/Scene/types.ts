@@ -107,31 +107,6 @@ export interface PostProcessingProps {
   };
 
   /**
-   * Bokeh effect properties
-   */
-  depthOfField: {
-    /**
-     * Whether the depth of field effect is enabled
-     */
-    enabled: boolean;
-
-    /**
-     * The focus of the bokeh effect
-     */
-    focus: number;
-
-    /**
-     * The focal length of the bokeh effect
-     */
-    focalLength: number;
-
-    /**
-     * The bokeh scale of the bokeh effect
-     */
-    bokehScale: number;
-  };
-
-  /**
    * Chromatic aberration effect properties
    */
   chromaticAberration: {
