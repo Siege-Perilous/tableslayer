@@ -5,41 +5,6 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Thumb } from '../file';
 import { transformImage } from '../file';
 
-/* import { getPartyGameSessions } from '../gameSession';
-import { getPartiesForUser, getPartyRole } from '../party';
-import { getScenes } from '../scene'; */
-
-/* export type UserPartyWithSessions = SelectParty &
-  Thumb & {
-    partyRole: PartyRole;
-    gameSessions: (SelectGameSession & { scenes: SelectScene[] })[];
-  }; */
-
-/** Returns an array of parties, each containing its game sessions and scenes */
-/* export const getUserPartiesAndSessions = async (userId: string): Promise<UserPartyWithSessions[]> => {
-  const parties = await getPartiesForUser(userId);
-
-  return Promise.all(
-    parties.map(async (party) => {
-      const gameSessions = await getPartyGameSessions(party.id);
-
-      // Fetch scenes for each game session
-      const gameSessionsWithScenes = await Promise.all(
-        gameSessions.map(async (session) => ({
-          ...session,
-          scenes: await getScenes(session.id)
-        }))
-      );
-
-      return {
-        ...party,
-        gameSessions: gameSessionsWithScenes,
-        partyRole: await getPartyRole(userId, party.id)
-      };
-    })
-  );
-}; */
-
 export type UserPartyWithSessions = SelectParty &
   Thumb & {
     partyRole: PartyRole;
@@ -123,16 +88,25 @@ export const getUserPartiesAndSessions = async (userId: string): Promise<UserPar
 
     if (sessionScenes.length < 5) {
       // ✅ Limit to 5 scenes per session
-      const thumb = scene.mapLocation
-        ? await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center')
-        : null;
+      if (!scene.mapLocation) {
+        continue;
+      }
+      const thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
 
+      if (!thumb) {
+        continue;
+      }
+
+      // @ts-expect-error Thumb is being too tricky
       sessionScenes.push({ ...scene, thumb });
     }
   }
 
   // Transform game sessions into a map (partyId → sessions array)
-  const sessionsByParty = new Map<string, (SelectGameSession & { scenes: (SelectScene & Thumb)[] })[]>();
+  const sessionsByParty = new Map<
+    string,
+    (Partial<SelectGameSession> & { scenes: (Partial<SelectScene> & Thumb)[] })[]
+  >();
 
   for (const session of gameSessions) {
     if (!sessionsByParty.has(session.partyId)) {
@@ -157,7 +131,7 @@ export const getUserPartiesAndSessions = async (userId: string): Promise<UserPar
 
   const rolesByParty = new Map(partyRoles.map((pr) => [pr.partyId, pr.role]));
 
-  // Map final structured result
+  // @ts-expect-error Thumb is being too tricky
   return await Promise.all(
     parties.map(async (party) => {
       let thumb = null;
