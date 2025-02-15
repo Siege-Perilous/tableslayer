@@ -31,7 +31,7 @@
         verifyEmailError = error;
       },
       onSuccess: () => {
-        goto('/profile');
+        goto('/login');
       },
       toastMessages: {
         success: { title: 'Email verified' },

@@ -65,13 +65,16 @@
 </script>
 
 <div class="container">
-  <Title as="h1" size="lg">{user.name}</Title>
+  <div class="profile__header">
+    <AvatarFileInput src={user.thumb.resizedUrl} size="xl" class="profile__avatar" bind:files />
+    <Title as="h1" size="xl">{user.name}</Title>
+  </div>
   <div class="containerLayout">
     <aside>
+      <Spacer size={10} />
       <Title as="h2" size="sm">User details</Title>
       <Spacer size={2} />
       <Panel class="profile__panel">
-        <AvatarFileInput src={user.thumb.resizedUrl} size="xl" class="profile__avatar" bind:files />
         <Spacer />
         <FormControl label="Name" name="name" errors={updateProfileError && updateProfileError.errors}>
           {#snippet input({ inputProps })}
@@ -89,7 +92,7 @@
       </Panel>
       {#if invites.length > 0}
         <Spacer />
-        <Title as="h2" size="sm">Pending invites</Title>
+        <Title as="h2" size="sm">Party invites</Title>
         <Spacer size={2} />
         <Panel class="profile__panel">
           {#each invites as invite}
@@ -162,9 +165,6 @@
     .profile__partyTitle:hover .profile__partyLink {
       text-decoration: underline;
     }
-    .profile__avatar {
-      margin: 0 auto 0 auto;
-    }
   }
   .profile__invite {
     display: flex;
@@ -188,5 +188,11 @@
     gap: 0.5rem;
     text-transform: capitalize;
     margin-left: auto;
+  }
+  .profile__header {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 2rem;
   }
 </style>

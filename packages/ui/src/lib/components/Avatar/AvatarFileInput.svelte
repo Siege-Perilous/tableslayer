@@ -33,7 +33,7 @@
 <button type="button" onclick={openFileDialog} class={['avatarFileInput', restProps.class]}>
   <Avatar src={avatarPreviewUrl || src} {alt} {initials} {isLoading} {size} {variant} {...restProps} />
   <div class="avatarFileInput__overlay">
-    <Icon Icon={IconPhotoCirclePlus} size="4rem" stroke={1} />
+    <Icon Icon={IconPhotoCirclePlus} size="2rem" stroke={2} />
   </div>
   <input
     type="file"

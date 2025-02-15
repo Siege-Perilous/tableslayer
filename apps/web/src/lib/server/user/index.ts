@@ -13,6 +13,8 @@ import {
   getFile,
   getGravatarDisplayName,
   getGravatarUrl,
+  getPartiesForUser,
+  getParty,
   sendSingleEmail,
   sendVerificationEmail,
   transformImage,
@@ -303,5 +305,23 @@ export const updateUser = async (userId: string, userData: Partial<SelectUser>) 
   } catch (error) {
     console.error('Error updating user', error);
     throw error;
+  }
+};
+
+// Used to decide which party to send the user to when they first log in
+export const getRecentParty = async (userId: string) => {
+  try {
+    const user = await getUser(userId);
+    if (user.favoriteParty) {
+      const party = await getParty(user.favoriteParty);
+      return party;
+    }
+    const parties = await getPartiesForUser(userId);
+    if (!parties) {
+      return null;
+    }
+    return parties[0];
+  } catch {
+    return null;
   }
 };

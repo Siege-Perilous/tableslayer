@@ -69,9 +69,9 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={user.thumb.resizedUrl || user.thumb.url}>
+      <AvatarPopover src={user.thumb.resizedUrl || user.thumb.url} positioning={{ placement: 'bottom-end' }}>
         {#snippet content()}
-          <div class="dropdown">
+          <div class="profileDropdown">
             <Link href="/profile">{user.name || user.email}</Link>
             <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
@@ -105,9 +105,10 @@
     align-items: center;
     gap: var(--size-4);
   }
-  .dropdown {
+  .profileDropdown {
     display: flex;
     flex-direction: column;
+    min-width: 12rem;
     gap: var(--size-2);
   }
   .partyDropdown {

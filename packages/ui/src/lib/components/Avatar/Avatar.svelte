@@ -65,10 +65,10 @@
     min-height: 2.5rem;
   }
   .avatar--xl {
-    width: 8rem;
-    height: 8rem;
-    min-width: 8rem;
-    min-height: 8rem;
+    width: 5rem;
+    height: 5rem;
+    min-width: 5rem;
+    min-height: 5rem;
   }
   .avatar__image {
     width: 100%;
