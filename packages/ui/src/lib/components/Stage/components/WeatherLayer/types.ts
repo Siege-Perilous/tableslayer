@@ -28,5 +28,8 @@ export interface WeatherLayerPreset {
 
 export interface WeatherLayerProps {
   type: WeatherType;
-  custom: WeatherLayerPreset | null;
+  fov?: number;
+  intensity?: number;
+  opacity?: number;
+  custom?: WeatherLayerPreset;
 }

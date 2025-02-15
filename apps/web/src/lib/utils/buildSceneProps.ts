@@ -168,8 +168,7 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      type: WeatherType.Rain,
-      custom: null
+      type: WeatherType.Rain
     }
   };
 };

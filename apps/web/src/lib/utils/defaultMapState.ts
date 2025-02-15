@@ -147,7 +147,6 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    type: WeatherType.Rain,
-    custom: null
+    type: WeatherType.Rain
   }
 };
