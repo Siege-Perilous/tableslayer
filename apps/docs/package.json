@@ -34,7 +34,7 @@
     "@tableslayer/tsconfig": "workspace:*",
     "@threlte/core": "8.0.1",
     "@threlte/extras": "9.0.1",
-    "postprocessing": "^6.36.6",
+    "postprocessing": "6.36.7",
     "dotenv": "^16.4.7",
     "svelte": "5.19.6",
     "svelte-check": "^4.1.4",

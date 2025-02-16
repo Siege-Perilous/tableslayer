@@ -1,5 +1,10 @@
 export interface FogLayerProps {
   /**
+   * Whether the fog layer is enabled
+   */
+  enabled: boolean;
+
+  /**
    * Color of the fog
    */
   color: string;

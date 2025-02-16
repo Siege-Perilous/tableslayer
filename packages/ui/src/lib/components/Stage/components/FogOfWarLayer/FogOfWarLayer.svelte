@@ -61,6 +61,7 @@
   $effect(() => {
     if (!mapSize) return;
 
+    outlineMaterial.visible = isActive;
     outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
     outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
@@ -72,11 +73,6 @@
     if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {
       outlineMaterial.visible = false;
     }
-  });
-
-  // Show/hide the outline material when the layer is active
-  $effect(() => {
-    outlineMaterial.visible = isActive;
   });
 
   function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {

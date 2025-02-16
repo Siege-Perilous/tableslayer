@@ -149,7 +149,7 @@
   const uniforms = $derived({
     uTime: { value: 0 },
     uTexture: { value: texture },
-    uOpacity: { value: props.opacity },
+    uOpacity: { value: 1.0 },
     uColor: { value: new THREE.Color(props.color) },
 
     uLifetime: { value: props.lifetime },
@@ -182,7 +182,6 @@
     transparent={true}
     depthWrite={true}
     depthTest={true}
-    alphaTest={0.5}
     blending={THREE.NormalBlending}
     side={THREE.DoubleSide}
   />

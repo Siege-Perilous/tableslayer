@@ -110,7 +110,13 @@
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <FogLayer props={props.fog} {mapSize} layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Fog} />
+  <FogLayer
+    props={props.fog}
+    {mapSize}
+    layers={[SceneLayer.Main]}
+    renderOrder={SceneLayerOrder.Fog}
+    visible={props.fog.enabled}
+  />
 
   <WeatherLayer
     props={props.weather}

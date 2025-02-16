@@ -42,7 +42,6 @@ export interface ParticleSystemProps {
   type: ParticleType;
   lifetime: number;
   color: string;
-  opacity: number;
   fadeInTime: number;
   fadeOutTime: number;
   initialVelocity: {
