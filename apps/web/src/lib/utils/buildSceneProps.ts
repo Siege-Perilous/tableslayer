@@ -9,7 +9,8 @@ import {
   PingEditMode,
   SceneRotation,
   type StageProps,
-  ToolType
+  ToolType,
+  WeatherType
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
@@ -51,6 +52,7 @@ export const buildSceneProps = (
       fadeEnd: 1.0
     },
     fog: {
+      enabled: true,
       color: '#a0a0a0',
       opacity: 0.8,
       speed: 0.05,
@@ -132,12 +134,6 @@ export const buildSceneProps = (
         enabled: true,
         offset: 0.001
       },
-      depthOfField: {
-        enabled: true,
-        focus: 0.98,
-        focalLength: 0.15,
-        bokehScale: 25.0
-      },
       lut: {
         enabled: true,
         url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
@@ -172,11 +168,7 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      fov: activeScene.weatherFov,
-      intensity: activeScene.weatherIntensity,
-      opacity: activeScene.weatherOpacity,
-      type: activeScene.weatherType,
-      custom: null
+      type: WeatherType.Rain
     }
   };
 };

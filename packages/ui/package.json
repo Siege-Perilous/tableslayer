@@ -65,9 +65,9 @@
     "@threlte/extras": "9.0.1",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
-    "postprocessing": "6.36.6",
+    "postprocessing": "6.36.7",
     "shiki": "^2.2.0",
-    "three": "0.172.0",
+    "three": "0.173.0",
     "zod": "^3.24.1"
   },
   "svelte": "./src/lib/index.ts",

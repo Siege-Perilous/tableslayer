@@ -11,11 +11,15 @@
     PingEditMode,
     SceneRotation,
     ParticleType,
-    WeatherType
+    WeatherType,
+    SnowPreset,
+    RainPreset,
+    LeavesPreset,
+    AshPreset
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
-  import { ToneMappingMode } from 'postprocessing';
+  import { KernelSize, ToneMappingMode } from 'postprocessing';
 
   import frostImageUrl from './overlays/frost.png?url';
   import heatImageUrl from './overlays/heat.png?url';
@@ -258,6 +262,7 @@
   </Folder>
 
   <Folder title="Fog" expanded={false}>
+    <List bind:value={stageProps.fog.enabled} label="Enabled" options={{ Yes: true, No: false }} />
     <Color bind:value={stageProps.fog.color} label="Color" />
     <Slider bind:value={stageProps.fog.opacity} label="Opacity" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.fog.speed} label="Speed" min={0} max={1} step={0.01} />
@@ -409,17 +414,6 @@
       <Slider bind:value={stageProps.postProcessing.chromaticAberration.offset} label="Offset" min={0} max={0.01} />
     </Folder>
 
-    <Folder title="Depth of Field" expanded={false}>
-      <List
-        bind:value={stageProps.postProcessing.depthOfField.enabled}
-        label="Enabled"
-        options={{ Yes: true, No: false }}
-      />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.focus} label="Focus" min={0} max={2} />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.focalLength} label="Focal Length" min={0} max={1} />
-      <Slider bind:value={stageProps.postProcessing.depthOfField.bokehScale} label="Bokeh Scale" min={0} max={50} />
-    </Folder>
-
     <Folder title="LUT" expanded={false}>
       <List bind:value={stageProps.postProcessing.lut.enabled} label="Enabled" options={{ Yes: true, No: false }} />
       <List bind:value={stageProps.postProcessing.lut.url} label="LUT" options={lutOptions} />
@@ -470,22 +464,85 @@
 
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
-    <Slider bind:value={stageProps.weather.fov} label="FOV" min={10} max={180} step={1} />
-    <Slider bind:value={stageProps.weather.opacity} label="Opacity" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.weather.intensity} label="Intensity" min={0} max={1} step={0.01} />
+    <Button
+      title="Customize"
+      on:click={() => {
+        // Copy current preset data to custom
+        let preset;
+        switch (stageProps.weather.type) {
+          case WeatherType.Snow:
+            preset = { ...SnowPreset };
+            break;
+          case WeatherType.Rain:
+            preset = { ...RainPreset };
+            break;
+          case WeatherType.Leaves:
+            preset = { ...LeavesPreset };
+            break;
+          case WeatherType.Ash:
+            preset = { ...AshPreset };
+            break;
+          default:
+            preset = { ...RainPreset };
+        }
+        stageProps.weather.custom = preset;
+        stageProps.weather.type = WeatherType.Custom;
+      }}
+    />
 
     {#if stageProps.weather.type === WeatherType.Custom && stageProps.weather.custom}
       <Folder title="Custom" expanded={true}>
-        <Folder title="Particles" expanded={true}>
-          <List bind:value={stageProps.weather.custom.type} label="Type" options={particleTypeOptions} />
-          <Slider bind:value={stageProps.weather.custom.count} label="Count" min={1} max={10000} step={1} />
-          <Color bind:value={stageProps.weather.custom.color} label="Color" />
-          <Slider bind:value={stageProps.weather.custom.opacity} label="Opacity" min={0} max={1} step={0.01} />
-          <Slider bind:value={stageProps.weather.custom.lifetime} label="Lifetime" min={1} max={10} />
+        <Slider bind:value={stageProps.weather.custom.fov} label="FOV" min={10} max={180} step={1} />
+        <Slider bind:value={stageProps.weather.custom.opacity} label="Opacity" min={0} max={1} step={0.01} />
+        <Slider bind:value={stageProps.weather.custom.intensity} label="Intensity" min={0} max={1} step={0.01} />
 
-          <Slider bind:value={stageProps.weather.custom.fadeInTime} label="Fade In (s)" min={0} max={10} step={0.01} />
+        <Folder title="Depth of Field" expanded={false}>
+          <List
+            bind:value={stageProps.weather.custom.depthOfField.enabled}
+            label="Enabled"
+            options={{ Yes: true, No: false }}
+          />
+          <Slider bind:value={stageProps.weather.custom.depthOfField.focus} label="Focus" min={0} max={1} />
           <Slider
-            bind:value={stageProps.weather.custom.fadeOutTime}
+            bind:value={stageProps.weather.custom.depthOfField.focalLength}
+            label="Focal Length"
+            min={0}
+            max={10}
+          />
+          <Slider
+            bind:value={stageProps.weather.custom.depthOfField.bokehScale}
+            label="Bokeh Scale"
+            min={1}
+            max={500}
+          />
+          <List
+            bind:value={stageProps.weather.custom.depthOfField.kernelSize}
+            label="Kernel Size"
+            options={{
+              VERY_LARGE: KernelSize.VERY_LARGE,
+              LARGE: KernelSize.LARGE,
+              MEDIUM: KernelSize.MEDIUM,
+              SMALL: KernelSize.SMALL,
+              VERY_SMALL: KernelSize.VERY_SMALL
+            }}
+          />
+        </Folder>
+
+        <Folder title="Particles" expanded={false}>
+          <List bind:value={stageProps.weather.custom.particles.type} label="Type" options={particleTypeOptions} />
+          <Slider bind:value={stageProps.weather.custom.particles.count} label="Count" min={1} max={10000} step={1} />
+          <Color bind:value={stageProps.weather.custom.particles.color} label="Color" />
+          <Slider bind:value={stageProps.weather.custom.particles.lifetime} label="Lifetime" min={1} max={10} />
+
+          <Slider
+            bind:value={stageProps.weather.custom.particles.fadeInTime}
+            label="Fade In (s)"
+            min={0}
+            max={10}
+            step={0.01}
+          />
+          <Slider
+            bind:value={stageProps.weather.custom.particles.fadeOutTime}
             label="Fade Out (s)"
             min={0}
             max={10}
@@ -494,26 +551,41 @@
 
           <Folder title="Force" expanded={false}>
             <Folder title="Linear" expanded={false}>
-              <Slider bind:value={stageProps.weather.custom.force.linear.x} label="Amplitude X" min={0} max={1} />
-              <Slider bind:value={stageProps.weather.custom.force.linear.y} label="Amplitude Y" min={0} max={1} />
-              <Slider bind:value={stageProps.weather.custom.force.linear.z} label="Amplitude Z" min={0} max={1} />
+              <Slider
+                bind:value={stageProps.weather.custom.particles.force.linear.x}
+                label="Amplitude X"
+                min={0}
+                max={1}
+              />
+              <Slider
+                bind:value={stageProps.weather.custom.particles.force.linear.y}
+                label="Amplitude Y"
+                min={0}
+                max={1}
+              />
+              <Slider
+                bind:value={stageProps.weather.custom.particles.force.linear.z}
+                label="Amplitude Z"
+                min={0}
+                max={1}
+              />
             </Folder>
 
             <Folder title="Exponential" expanded={false}>
               <Slider
-                bind:value={stageProps.weather.custom.force.exponential.x}
+                bind:value={stageProps.weather.custom.particles.force.exponential.x}
                 label="Amplitude X"
                 min={0}
                 max={0.1}
               />
               <Slider
-                bind:value={stageProps.weather.custom.force.exponential.y}
+                bind:value={stageProps.weather.custom.particles.force.exponential.y}
                 label="Amplitude Y"
                 min={0}
                 max={0.1}
               />
               <Slider
-                bind:value={stageProps.weather.custom.force.exponential.z}
+                bind:value={stageProps.weather.custom.particles.force.exponential.z}
                 label="Amplitude Z"
                 min={0}
                 max={0.1}
@@ -522,25 +594,25 @@
 
             <Folder title="Sinusoidal" expanded={false}>
               <Slider
-                bind:value={stageProps.weather.custom.force.sinusoidal.amplitude.x}
+                bind:value={stageProps.weather.custom.particles.force.sinusoidal.amplitude.x}
                 label="Amplitude X"
                 min={0}
                 max={0.05}
               />
               <Slider
-                bind:value={stageProps.weather.custom.force.sinusoidal.amplitude.y}
+                bind:value={stageProps.weather.custom.particles.force.sinusoidal.amplitude.y}
                 label="Amplitude Y"
                 min={0}
                 max={0.05}
               />
               <Slider
-                bind:value={stageProps.weather.custom.force.sinusoidal.frequency.x}
+                bind:value={stageProps.weather.custom.particles.force.sinusoidal.frequency.x}
                 label="Frequency X"
                 min={0}
                 max={10}
               />
               <Slider
-                bind:value={stageProps.weather.custom.force.sinusoidal.frequency.y}
+                bind:value={stageProps.weather.custom.particles.force.sinusoidal.frequency.y}
                 label="Frequency Y"
                 min={0}
                 max={10}
@@ -549,37 +621,47 @@
           </Folder>
 
           <Folder title="Initial Velocity" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.initialVelocity.x} label="X" min={-1} max={1} />
-            <Slider bind:value={stageProps.weather.custom.initialVelocity.y} label="Y" min={-1} max={1} />
-            <Slider bind:value={stageProps.weather.custom.initialVelocity.z} label="Z" min={-1} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.initialVelocity.x} label="X" min={-1} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.initialVelocity.y} label="Y" min={-1} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.initialVelocity.z} label="Z" min={-1} max={1} />
           </Folder>
 
           <Folder title="Rotation" expanded={false}>
-            <Binding bind:object={stageProps.weather.custom.rotation} key={'alignRadially'} label="Align Radially" />
-            <Slider bind:value={stageProps.weather.custom.rotation.offset} label="Offset" min={0} max={360} step={1} />
+            <Binding
+              bind:object={stageProps.weather.custom.particles.rotation}
+              key={'alignRadially'}
+              label="Align Radially"
+            />
             <Slider
-              bind:value={stageProps.weather.custom.rotation.velocity}
+              bind:value={stageProps.weather.custom.particles.rotation.offset}
+              label="Offset"
+              min={0}
+              max={360}
+              step={1}
+            />
+            <Slider
+              bind:value={stageProps.weather.custom.particles.rotation.velocity}
               label="Velocity"
               min={-10}
               max={10}
               step={0.01}
             />
-            <Binding bind:object={stageProps.weather.custom.rotation} key={'randomize'} label="Randomize" />
+            <Binding bind:object={stageProps.weather.custom.particles.rotation} key={'randomize'} label="Randomize" />
           </Folder>
 
           <Folder title="Scale" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.scale.x} label="X" min={0} max={1} />
-            <Slider bind:value={stageProps.weather.custom.scale.y} label="Y" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.scale.x} label="X" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.scale.y} label="Y" min={0} max={1} />
           </Folder>
 
           <Folder title="Size" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.size.min} label="Min" min={0} max={0.1} />
-            <Slider bind:value={stageProps.weather.custom.size.max} label="Max" min={0} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.particles.size.min} label="Min" min={0} max={0.1} />
+            <Slider bind:value={stageProps.weather.custom.particles.size.max} label="Max" min={0} max={0.1} />
           </Folder>
 
           <Folder title="Spawn Radius" expanded={false}>
-            <Slider bind:value={stageProps.weather.custom.spawnArea.minRadius} label="Min" min={0} max={1} />
-            <Slider bind:value={stageProps.weather.custom.spawnArea.maxRadius} label="Max" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.spawnArea.minRadius} label="Min" min={0} max={1} />
+            <Slider bind:value={stageProps.weather.custom.particles.spawnArea.maxRadius} label="Max" min={0} max={1} />
           </Folder>
         </Folder>
       </Folder>

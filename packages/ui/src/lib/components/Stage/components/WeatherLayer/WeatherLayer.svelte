@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
-  import { WeatherType, type WeatherLayerProps } from './types';
+  import { WeatherType, type WeatherLayerPreset, type WeatherLayerProps } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import type { Size } from '../../types';
 
@@ -9,18 +9,15 @@
   import RainPreset from './presets/RainPreset';
   import LeavesPreset from './presets/LeavesPreset';
   import AshPreset from './presets/AshPreset';
-  import type { ParticleSystemProps } from '../ParticleSystem/types';
 
-  import { DepthOfFieldEffect, EffectComposer, EffectPass, KernelSize, RenderPass, CopyPass } from 'postprocessing';
-  import type { PostProcessingProps } from '../Scene/types';
+  import { DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass, CopyPass } from 'postprocessing';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: WeatherLayerProps;
-    postprocessing: PostProcessingProps;
     mapSize: Size | null;
   }
 
-  const { props, mapSize, postprocessing, ...meshProps }: Props = $props();
+  const { props, mapSize, ...meshProps }: Props = $props();
 
   const { renderer, size, renderStage } = useThrelte();
 
@@ -37,24 +34,11 @@
   });
 
   const composer = new EffectComposer(renderer);
+  composer.autoRenderToScreen = false;
   composer.outputBuffer = renderTarget;
 
-  // Create quad material using render target texture
-  const quadMaterial = $derived(
-    new THREE.MeshBasicMaterial({
-      map: renderTarget.texture,
-      transparent: true,
-      opacity: props.opacity,
-      blending: THREE.CustomBlending,
-      blendAlpha: 1,
-      blendEquation: THREE.AddEquation,
-      blendSrc: THREE.SrcColorFactor,
-      blendDst: THREE.OneFactor
-    })
-  );
-
-  let particleProps = $derived.by(() => {
-    let preset: ParticleSystemProps;
+  let weatherPreset = $derived.by(() => {
+    let preset: WeatherLayerPreset;
 
     switch (props.type) {
       case WeatherType.Snow:
@@ -77,24 +61,30 @@
         preset = { ...RainPreset };
     }
 
-    // Override some of the preset values with the UI selections
-    preset.opacity = props.opacity;
-    preset.count = Math.floor(props.intensity * preset.count);
-
     return preset;
   });
+
+  // Create quad material using render target texture
+  const quadMaterial = $derived(
+    new THREE.MeshBasicMaterial({
+      map: renderTarget.texture,
+      transparent: true,
+      opacity: weatherPreset.opacity,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.SrcAlphaFactor,
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      depthWrite: true,
+      depthTest: true
+    })
+  );
 
   // Position the render target camera
   $effect(() => {
     if (!mapSize || !particleCamera) return;
 
-    console.log('Updating particle camera');
-    console.log('aspectRatio', aspectRatio);
-    console.log('size', $size.width, $size.height);
-    console.log('mapSize', mapSize?.width, mapSize?.height);
-
     particleCamera.aspect = aspectRatio;
-    particleCamera.fov = props.fov;
+    particleCamera.fov = weatherPreset.fov;
     particleCamera.updateMatrixWorld();
     particleCamera.updateProjectionMatrix();
   });
@@ -102,11 +92,6 @@
   // Add DOF effect to the composer
   $effect(() => {
     if (!particleScene || !particleCamera) return;
-
-    console.log('Updating composer');
-    console.log('aspectRatio', aspectRatio);
-    console.log('size', $size.width, $size.height);
-    console.log('mapSize', mapSize?.width, mapSize?.height);
 
     composer.setMainCamera(particleCamera);
     composer.setMainScene(particleScene);
@@ -119,19 +104,17 @@
     composer.addPass(renderPass);
 
     // Add depth of field pass
-    if (postprocessing.enabled && postprocessing.depthOfField.enabled) {
+    if (weatherPreset.depthOfField.enabled) {
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
-        focusDistance: postprocessing.depthOfField.focus,
-        focalLength: postprocessing.depthOfField.focalLength,
-        bokehScale: postprocessing.depthOfField.bokehScale
+        focusDistance: weatherPreset.depthOfField.focus,
+        focalLength: weatherPreset.depthOfField.focalLength,
+        bokehScale: weatherPreset.depthOfField.bokehScale
       });
-      dofEffect.blurPass.kernelSize = KernelSize.VERY_LARGE;
+      dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
     } else {
       composer.addPass(new CopyPass(renderTarget));
     }
-
-    composer.autoRenderToScreen = false;
   });
 
   // Custom render task
@@ -155,7 +138,7 @@
 <!-- Hidden scene that renders to the render target -->
 <T.Scene bind:ref={particleScene} visible={false}>
   <T.PerspectiveCamera bind:ref={particleCamera} near={0.01} far={1} position={[0, 0, -1]} rotation.x={Math.PI} />
-  <ParticleSystem props={particleProps} />
+  <ParticleSystem props={weatherPreset.particles} />
 </T.Scene>
 
 <T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
