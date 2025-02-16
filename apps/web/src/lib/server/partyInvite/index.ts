@@ -76,12 +76,12 @@ export const getPartyInvitesForEmail = async (email: string) => {
           id: partyTable.id,
           name: partyTable.name,
           slug: partyTable.slug,
-          avatarLocation: filesTable.location // Fetch file location for the avatar
+          avatarLocation: filesTable.location
         }
       })
       .from(partyInviteTable)
-      .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
-      .leftJoin(filesTable, eq(partyTable.avatarFileId, filesTable.id)) // Join for the avatar
+      .innerJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .leftJoin(filesTable, eq(partyTable.avatarFileId, filesTable.id))
       .where(eq(partyInviteTable.email, email))
       .all();
 

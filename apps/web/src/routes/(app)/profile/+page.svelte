@@ -18,7 +18,7 @@
   import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   let { data } = $props();
-  const { invites, userParties, user } = $derived(data);
+  const { invites, userParties, user } = data;
   let formIsLoading = $state(false);
   let name = $state(user.name);
   let email = $state(user.email);

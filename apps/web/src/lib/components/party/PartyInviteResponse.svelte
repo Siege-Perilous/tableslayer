@@ -9,7 +9,7 @@
   }: {
     invite: {
       invite: SelectPartyInvite;
-      party: SelectParty | null;
+      party: Partial<SelectParty>;
       invitedByUser: SelectUser | undefined;
     };
   } = $props();

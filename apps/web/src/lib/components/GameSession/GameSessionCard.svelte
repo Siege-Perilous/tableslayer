@@ -30,7 +30,7 @@
     isPartyAdmin
   }: {
     party: SelectParty & Thumb;
-    session: SelectGameSession & { scenes: (SelectScene & Thumb)[] };
+    session: SelectGameSession & { scenes: Partial<SelectScene & Thumb>[] };
     isPartyAdmin: boolean;
   } = $props();
 
@@ -41,8 +41,10 @@
   const images: string[] = [];
 
   for (const scene of session.scenes) {
-    const thumb = scene.thumb.resizedUrl;
-    images.push(thumb);
+    if (scene.thumb) {
+      const thumb = scene.thumb.resizedUrl;
+      images.push(thumb);
+    }
   }
 
   const renameGameSession = useUpdateGameSessionMutation();

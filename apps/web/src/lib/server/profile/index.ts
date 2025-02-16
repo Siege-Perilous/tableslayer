@@ -8,11 +8,9 @@ import { transformImage } from '../file';
 export type UserPartyWithSessions = SelectParty &
   Thumb & {
     partyRole: PartyRole;
-    gameSessions: Partial<
-      SelectGameSession & {
-        scenes: Partial<SelectScene & Thumb>[];
-      }
-    >[];
+    gameSessions: (SelectGameSession & {
+      scenes: Partial<SelectScene & Thumb>[];
+    })[];
   };
 
 export const getUserPartiesAndSessions = async (userId: string): Promise<UserPartyWithSessions[]> => {
@@ -86,8 +84,7 @@ export const getUserPartiesAndSessions = async (userId: string): Promise<UserPar
 
     const sessionScenes = scenesBySession.get(scene.gameSessionId)!;
 
-    if (sessionScenes.length < 5) {
-      // ✅ Limit to 5 scenes per session
+    if (sessionScenes.length < 4) {
       if (!scene.mapLocation) {
         continue;
       }
