@@ -6,9 +6,10 @@ import {
   partyTable,
   VALID_PARTY_ROLES,
   type PartyRole,
-  type SelectPartyInvite
+  type SelectPartyInvite,
+  type SelectUser
 } from '$lib/db/app/schema';
-import { getUser, getUserByEmail, isEmailInUserTable, transformImage } from '$lib/server';
+import { getUser, getUserByEmail, isEmailInUserTable, transformImage, type Thumb } from '$lib/server';
 import { createSha256Hash } from '$lib/utils/hash';
 import { and, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -67,37 +68,49 @@ export const createPartyInvite = async (email: string, partyId: string, invitedB
   }
 };
 
-export const getPartyInvitesForEmail = async (email: string) => {
+export type PartyInviteWithDetails = {
+  invite: SelectPartyInvite;
+  party: {
+    id: string;
+    name: string;
+    slug: string;
+  } & (Thumb | { thumb: null });
+  invitedByUser: SelectUser & Thumb;
+};
+
+export const getPartyInvitesForEmail = async (email: string): Promise<PartyInviteWithDetails[]> => {
   try {
     const invitesWithPartyInfo = await db
       .select({
         invite: partyInviteTable,
-        party: {
-          id: partyTable.id,
-          name: partyTable.name,
-          slug: partyTable.slug,
-          avatarLocation: filesTable.location
-        }
+        party: partyTable,
+        avatarLocation: filesTable.location
       })
       .from(partyInviteTable)
-      .innerJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .innerJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id)) // Ensures party is always present
       .leftJoin(filesTable, eq(partyTable.avatarFileId, filesTable.id))
       .where(eq(partyInviteTable.email, email))
       .all();
 
-    if (!invitesWithPartyInfo || invitesWithPartyInfo.length === 0) {
+    if (!invitesWithPartyInfo.length) {
       return [];
     }
 
-    const invitesWithDetails = await Promise.all(
+    return await Promise.all(
       invitesWithPartyInfo.map(async (inviteWithParty) => {
-        const invitedById = inviteWithParty.invite.invitedBy;
-        const invitedByUser = await getUser(invitedById);
+        const invitedByUser = await getUser(inviteWithParty.invite.invitedBy);
 
-        // Generate thumbnail if avatar exists
-        const thumb = inviteWithParty.party.avatarLocation
-          ? await transformImage(inviteWithParty.party.avatarLocation, 'w=80,h=80,fit=cover,gravity=center')
-          : null;
+        if (!inviteWithParty.avatarLocation) {
+          return {
+            ...inviteWithParty,
+            party: {
+              ...inviteWithParty.party,
+              thumb: null
+            },
+            invitedByUser
+          };
+        }
+        const thumb = await transformImage(inviteWithParty.avatarLocation, 'w=80,h=80,fit=cover,gravity=center');
 
         return {
           ...inviteWithParty,
@@ -109,40 +122,50 @@ export const getPartyInvitesForEmail = async (email: string) => {
         };
       })
     );
-
-    return invitesWithDetails;
   } catch (error) {
     console.error('Error fetching party invites for email', error);
     throw error;
   }
 };
 
-export const getPartyInvitesForCode = async (code: string) => {
+export const getPartyInvitesForCode = async (code: string): Promise<PartyInviteWithDetails[]> => {
   try {
-    const invitesWithPartyInfo = await db
+    const inviteWithParty = await db
       .select({
         invite: partyInviteTable,
-        party: partyTable
+        party: {
+          id: partyTable.id,
+          name: partyTable.name,
+          slug: partyTable.slug,
+          avatarLocation: filesTable.location
+        }
       })
       .from(partyInviteTable)
-      .leftJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id))
+      .innerJoin(partyTable, eq(partyInviteTable.partyId, partyTable.id)) // Ensures party is always present
+      .leftJoin(filesTable, eq(partyTable.avatarFileId, filesTable.id))
       .where(eq(partyInviteTable.code, code))
       .get();
 
-    if (!invitesWithPartyInfo) {
-      throw new Error('No party invites found for code');
+    if (!inviteWithParty) {
+      return [];
     }
 
-    const invitedById = invitesWithPartyInfo.invite.invitedBy;
+    const invitedByUser: SelectUser & Thumb = await getUser(inviteWithParty.invite.invitedBy);
 
-    const invitedByUser = await getUser(invitedById);
+    const thumb = inviteWithParty.party.avatarLocation
+      ? await transformImage(inviteWithParty.party.avatarLocation, 'w=80,h=80,fit=cover,gravity=center')
+      : null;
 
-    const invitesWithPartyInfoAndInvitedBy = {
-      ...invitesWithPartyInfo,
-      invitedByUser
-    };
-
-    return invitesWithPartyInfoAndInvitedBy;
+    return [
+      {
+        ...inviteWithParty,
+        party: {
+          ...inviteWithParty.party,
+          thumb
+        },
+        invitedByUser
+      }
+    ];
   } catch (error) {
     console.error('Error fetching party invites for code', error);
     throw error;

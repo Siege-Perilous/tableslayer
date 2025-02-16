@@ -1,17 +1,13 @@
 <script lang="ts">
   import { Button } from '@tableslayer/ui';
-  import type { SelectParty, SelectPartyInvite, SelectUser } from '$lib/db/app/schema';
+  import type { PartyInviteWithDetails } from '$lib/server';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
   let {
     invite
   }: {
-    invite: {
-      invite: SelectPartyInvite;
-      party: Partial<SelectParty>;
-      invitedByUser: SelectUser | undefined;
-    };
+    invite: PartyInviteWithDetails;
   } = $props();
   let formIsLoading = $state(false);
   const { code } = invite.invite;

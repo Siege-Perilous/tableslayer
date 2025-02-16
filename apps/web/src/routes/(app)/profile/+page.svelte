@@ -97,7 +97,7 @@
         <Panel class="profile__panel">
           {#each invites as invite}
             <div class="profile__invite">
-              <Avatar src={invite.invitedByUser?.thumb?.resizedUrl} size="sm" />
+              <Avatar src={invite.invitedByUser?.thumb.resizedUrl} size="sm" />
               <div>
                 <Text size="0.875rem" color="var(--fgMuted)">
                   <Text size="0.875rem" as="span" color="var(--fg)"
