@@ -128,7 +128,7 @@ export const getPartyInvitesForEmail = async (email: string): Promise<PartyInvit
   }
 };
 
-export const getPartyInvitesForCode = async (code: string): Promise<PartyInviteWithDetails[]> => {
+export const getPartyInvitesForCode = async (code: string): Promise<PartyInviteWithDetails> => {
   try {
     const inviteWithParty = await db
       .select({
@@ -147,7 +147,7 @@ export const getPartyInvitesForCode = async (code: string): Promise<PartyInviteW
       .get();
 
     if (!inviteWithParty) {
-      return [];
+      throw new Error('No party invite found for code');
     }
 
     const invitedByUser: SelectUser & Thumb = await getUser(inviteWithParty.invite.invitedBy);
@@ -156,16 +156,14 @@ export const getPartyInvitesForCode = async (code: string): Promise<PartyInviteW
       ? await transformImage(inviteWithParty.party.avatarLocation, 'w=80,h=80,fit=cover,gravity=center')
       : null;
 
-    return [
-      {
-        ...inviteWithParty,
-        party: {
-          ...inviteWithParty.party,
-          thumb
-        },
-        invitedByUser
-      }
-    ];
+    return {
+      ...inviteWithParty,
+      party: {
+        ...inviteWithParty.party,
+        thumb
+      },
+      invitedByUser
+    };
   } catch (error) {
     console.error('Error fetching party invites for code', error);
     throw error;
