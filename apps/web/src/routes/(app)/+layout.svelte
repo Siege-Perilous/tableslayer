@@ -3,7 +3,6 @@
   import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
-  const { user } = data;
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
@@ -69,10 +68,10 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={user.thumb.resizedUrl || user.thumb.url} positioning={{ placement: 'bottom-end' }}>
+      <AvatarPopover src={data.user.thumb.resizedUrl || data.user.thumb.url} positioning={{ placement: 'bottom-end' }}>
         {#snippet content()}
           <div class="profileDropdown">
-            <Link href="/profile">{user.name || user.email}</Link>
+            <Link href="/profile">{data.user.name || data.user.email}</Link>
             <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
           </div>
         {/snippet}

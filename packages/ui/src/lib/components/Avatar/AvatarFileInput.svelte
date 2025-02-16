@@ -10,6 +10,7 @@
     isLoading,
     size = 'xl',
     variant = 'round',
+    onChange,
     ...restProps
   }: AvatarFileInputProps = $props();
 
@@ -26,6 +27,10 @@
 
     const file = input.files[0];
     avatarPreviewUrl = URL.createObjectURL(file);
+    if (onChange) {
+      console.log('onchange');
+      onChange();
+    }
     input.value = '';
   }
 </script>

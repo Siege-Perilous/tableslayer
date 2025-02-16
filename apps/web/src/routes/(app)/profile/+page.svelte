@@ -17,6 +17,7 @@
   import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
   import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { invalidateAll } from '$app/navigation';
   let { data } = $props();
   const { invites, userParties, user } = data;
   let formIsLoading = $state(false);
@@ -31,7 +32,23 @@
 
   const handleUpdateUser = async (e: Event) => {
     e.preventDefault();
-
+    await handleMutation({
+      mutation: () =>
+        $updateUser.mutateAsync({
+          userData: { name, email, avatarFileId }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => (updateProfileError = error),
+      onSuccess: () => {
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Profile updated', body: 'Your profile has been updated' },
+        error: { title: 'Error updating profile', body: (err) => err.message }
+      }
+    });
+  };
+  const avatarOnChange = async () => {
     if (files && files.length) {
       const uploadedFile = await handleMutation({
         mutation: () => $uploadFile.mutateAsync({ file: files![0], folder: 'avatar' }),
@@ -49,12 +66,12 @@
     await handleMutation({
       mutation: () =>
         $updateUser.mutateAsync({
-          userData: { name, email, avatarFileId }
+          userData: { avatarFileId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => (updateProfileError = error),
-      onSuccess: (result) => {
-        console.log('User updated', result);
+      onSuccess: () => {
+        invalidateAll();
       },
       toastMessages: {
         success: { title: 'Profile updated', body: 'Your profile has been updated' },
@@ -66,12 +83,18 @@
 
 <div class="container">
   <div class="profile__header">
-    <AvatarFileInput src={user.thumb.resizedUrl} size="xl" class="profile__avatar" bind:files />
-    <Title as="h1" size="xl">{user.name}</Title>
+    <AvatarFileInput
+      onChange={avatarOnChange}
+      src={user.thumb.resizedUrl}
+      size="xl"
+      class="profile__avatar"
+      bind:files
+    />
+    <Title as="h1" size="lg">{user.name}</Title>
   </div>
   <div class="containerLayout">
     <aside>
-      <Spacer size={10} />
+      <Spacer size={2} />
       <Title as="h2" size="sm">User details</Title>
       <Spacer size={2} />
       <Panel class="profile__panel">
@@ -121,7 +144,7 @@
           <div class="profile__partyTitle">
             <Avatar src={party.thumb.resizedUrl} variant="square" size="lg" />
             <LinkOverlay href={`/${party.slug}`}>
-              <Title as="h2" size="md" class="profile__partyLink">{party.name}</Title>
+              <Title as="h2" size="sm" class="profile__partyLink">{party.name}</Title>
             </LinkOverlay>
             <Icon Icon={IconArrowRightDashed} size="1.5rem" color="var(--fgPrimary)" />
             <div class="profile__partyRole">

@@ -20,4 +20,5 @@ export type AvatarPopoverProps = {
 
 export type AvatarFileInputProps = AvatarProps & {
   files?: FileList | null;
+  onChange?: () => void;
 };
