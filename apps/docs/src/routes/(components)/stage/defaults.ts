@@ -1,9 +1,9 @@
 import {
   DrawMode,
   GridType,
-  LeavesPreset,
   MapLayerType,
   PingEditMode,
+  RainPreset,
   ToolType,
   WeatherType,
   type StageProps
@@ -98,7 +98,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/maps/09.jpeg'
+    url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
   ping: {
     color: '#ff0000',
@@ -149,7 +149,7 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0
   },
   weather: {
-    type: WeatherType.Leaves,
-    custom: { ...LeavesPreset }
+    type: WeatherType.Rain,
+    custom: { ...RainPreset }
   }
 };
