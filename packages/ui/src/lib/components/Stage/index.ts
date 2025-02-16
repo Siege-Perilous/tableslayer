@@ -6,4 +6,5 @@ export { PingEditMode } from './components/PingLayer/types';
 export { SceneRotation } from './components/Scene/types';
 export { default as Stage } from './components/Stage/Stage.svelte';
 export * from './components/Stage/types';
+export { AshPreset, LeavesPreset, RainPreset, SnowPreset } from './components/WeatherLayer/presets';
 export { WeatherType } from './components/WeatherLayer/types';

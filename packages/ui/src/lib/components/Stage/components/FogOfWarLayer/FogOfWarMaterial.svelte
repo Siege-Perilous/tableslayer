@@ -93,16 +93,11 @@
   // Setup the quad that the fog of war is drawn on
   let scene = new THREE.Scene();
   let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawMaterial);
-  scene.add(quad);
+  const quad = new THREE.Mesh();
 
   onDestroy(() => {
     tempTarget?.dispose();
     persistedTarget?.dispose();
-  });
-
-  useTask((delta) => {
-    fogMaterial.uniforms.uTime.value += delta;
   });
 
   // Map size changed
@@ -115,17 +110,21 @@
       persistedTarget.setSize(mapSize.width, mapSize.height);
       drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
 
-      // Since the target size changed, the data is invalidated and we need to reset the fog
-      render('fill', true);
+      // If an image is provided, load it, otherwise reset the fog state
+      if (props.url) {
+        loadImage(props.url);
+        untrack(() => (imageUrl = props.url));
+      } else {
+        render('fill', true);
+      }
     }
+  });
 
-    // Only reload the image if the url has changed and the map size is initialized
+  $effect(() => {
+    // If fog image is changed, load it
     if (props.url && props.url !== imageUrl) {
-      // Load the new image
-      textureLoader.load(props.url, (texture) => render('revert', true, texture));
-      untrack(() => {
-        imageUrl = props.url;
-      });
+      loadImage(props.url);
+      untrack(() => (imageUrl = props.url));
     }
   });
 
@@ -176,6 +175,14 @@
     render('draw');
   });
 
+  useTask((delta) => {
+    fogMaterial.uniforms.uTime.value += delta;
+  });
+
+  function loadImage(url: string) {
+    textureLoader.load(url, (texture) => render('revert', true, texture));
+  }
+
   /**
    * Swaps the current and previous buffers to persist the current state
    */
@@ -203,8 +210,10 @@
     drawMaterial.uniforms.uIsFillOperation.value = operation === 'fill';
     drawMaterial.uniforms.uIsClearOperation.value = operation === 'clear';
 
+    scene.visible = true;
     renderer.setRenderTarget(tempTarget);
     renderer.render(scene, camera);
+    scene.visible = false;
 
     drawMaterial.uniforms.uIsRevertOperation.value = false;
     drawMaterial.uniforms.uIsFillOperation.value = false;
@@ -260,6 +269,15 @@
     });
   }
 </script>
+
+<!-- Hidden scene that renders to the render target -->
+<T.Scene is={scene} visible={false}>
+  <T.OrthographicCamera is={camera} />
+  <T.Mesh is={quad}>
+    <T.ShaderMaterial is={drawMaterial} />
+    <T.PlaneGeometry args={[2, 2]} />
+  </T.Mesh>
+</T.Scene>
 
 {#snippet attachMaterial()}
   {fogMaterial}

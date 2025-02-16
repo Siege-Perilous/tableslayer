@@ -1,3 +1,4 @@
+import type { KernelSize } from 'postprocessing';
 import type { ParticleSystemProps } from '../ParticleSystem/types';
 
 export enum WeatherType {
@@ -9,10 +10,26 @@ export enum WeatherType {
   Custom = 99
 }
 
-export interface WeatherLayerProps {
-  custom: ParticleSystemProps | null;
+export interface DepthOfFieldConfig {
+  enabled: boolean;
+  focus: number;
+  focalLength: number;
+  bokehScale: number;
+  kernelSize: KernelSize;
+}
+
+export interface WeatherLayerPreset {
   fov: number;
   intensity: number;
   opacity: number;
+  depthOfField: DepthOfFieldConfig;
+  particles: ParticleSystemProps;
+}
+
+export interface WeatherLayerProps {
   type: WeatherType;
+  fov?: number;
+  intensity?: number;
+  opacity?: number;
+  custom?: WeatherLayerPreset;
 }
