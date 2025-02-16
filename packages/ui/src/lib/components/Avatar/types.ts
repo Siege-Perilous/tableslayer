@@ -1,4 +1,4 @@
-import type { Placement } from '@floating-ui/dom';
+import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
 import type { Snippet } from 'svelte';
 import type { HTMLBaseAttributes } from 'svelte/elements';
 
@@ -15,10 +15,7 @@ export type AvatarPopoverProps = {
   src: AvatarProps['src'];
   size?: AvatarProps['size'];
   content: Snippet;
-  positioning?: {
-    placement?: Placement;
-    offset?: number;
-  };
+  positioning?: FloatingConfig;
 };
 
 export type AvatarFileInputProps = AvatarProps & {
