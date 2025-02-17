@@ -1,18 +1,13 @@
 <script lang="ts">
-  import { Button, Icon } from '@tableslayer/ui';
-  import { IconX, IconCheck } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectPartyInvite, SelectUser } from '$lib/db/app/schema';
+  import { Button } from '@tableslayer/ui';
+  import type { PartyInviteWithDetails } from '$lib/server';
   import { useRespondToPartyInviteMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
   let {
     invite
   }: {
-    invite: {
-      invite: SelectPartyInvite;
-      party: SelectParty | null;
-      invitedByUser: SelectUser | undefined;
-    };
+    invite: PartyInviteWithDetails;
   } = $props();
   let formIsLoading = $state(false);
   const { code } = invite.invite;
@@ -36,18 +31,8 @@
 </script>
 
 <div class="inviteResponse">
-  <Button name="code" onclick={handleRespondToInvite(true)} isLoading={formIsLoading}>
-    {#snippet start()}
-      <Icon Icon={IconCheck} />
-    {/snippet}
-    Accept
-  </Button>
-  <Button variant="danger" onclick={handleRespondToInvite(false)}>
-    {#snippet start()}
-      <Icon Icon={IconX} />
-    {/snippet}
-    Decline
-  </Button>
+  <Button name="code" onclick={handleRespondToInvite(true)} isLoading={formIsLoading}>Accept</Button>
+  <Button variant="danger" onclick={handleRespondToInvite(false)}>Decline</Button>
 </div>
 
 <style>

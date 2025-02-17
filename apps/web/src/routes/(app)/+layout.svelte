@@ -1,9 +1,22 @@
 <script lang="ts">
-  import { AvatarPopover, SelectorMenu, Button, Title, Link, IconButton, Icon, Hr, Spacer } from '@tableslayer/ui';
+  import {
+    AvatarPopover,
+    SelectorMenu,
+    Button,
+    Title,
+    Link,
+    IconButton,
+    Icon,
+    Hr,
+    Spacer,
+    Text,
+    LinkBox,
+    LinkOverlay,
+    Avatar
+  } from '@tableslayer/ui';
   import { IconMoon, IconSun } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
-  const { user } = data;
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
@@ -69,11 +82,43 @@
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
-      <AvatarPopover src={user.thumb.resizedUrl || user.thumb.url}>
+      <AvatarPopover
+        src={data.user.thumb.resizedUrl || data.user.thumb.url}
+        positioning={{ placement: 'bottom-end', gutter: 10 }}
+      >
         {#snippet content()}
-          <div class="dropdown">
-            <Link href="/profile">{user.name || user.email}</Link>
-            <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
+          <div class="profileDropdown">
+            <LinkBox>
+              <div class="profileDropdown__user">
+                <Avatar
+                  src={data.user.thumb.resizedUrl || data.user.thumb.url}
+                  alt={data.user.name}
+                  size="lg"
+                  initials={data.user.name}
+                />
+                <div>
+                  <Link href="/profile">{data.user.name}</Link>
+                  <Spacer size={1} />
+                  <LinkOverlay href="/profile">{data.user.email}</LinkOverlay>
+                </div>
+              </div>
+            </LinkBox>
+            {#if !data.user.emailVerified}
+              <Spacer />
+              <Hr />
+              <Spacer />
+              <div>
+                <Text size="0.875rem" color="var(--fgMuted)">Your email is not verified.</Text>
+                <Spacer size={2} />
+                <Link href="/verify-email">Verify your email</Link>
+              </div>
+            {/if}
+            <Spacer />
+            <Hr />
+            <Spacer />
+            <div>
+              <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
+            </div>
           </div>
         {/snippet}
       </AvatarPopover>
@@ -105,10 +150,15 @@
     align-items: center;
     gap: var(--size-4);
   }
-  .dropdown {
+  .profileDropdown {
+    display: block;
+    min-width: 12rem;
+    padding: 0.25rem;
+  }
+  .profileDropdown__user {
     display: flex;
-    flex-direction: column;
-    gap: var(--size-2);
+    align-items: center;
+    gap: 0.5rem;
   }
   .partyDropdown {
     display: flex;

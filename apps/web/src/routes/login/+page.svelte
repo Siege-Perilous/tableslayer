@@ -20,7 +20,7 @@
         loginErrors = error;
       },
       onSuccess: () => {
-        goto('/profile');
+        goto('/login');
       },
       toastMessages: {
         success: { title: 'Welcome back!' },

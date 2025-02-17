@@ -1,11 +1,16 @@
 <script lang="ts">
   import { Avatar, Popover, Icon } from '../';
   import type { AvatarPopoverProps } from './types';
-  let { src, size = 'md', content: AvatarPopoverContent }: AvatarPopoverProps = $props();
+  let {
+    src,
+    size = 'md',
+    positioning = { placement: 'bottom' },
+    content: AvatarPopoverContent
+  }: AvatarPopoverProps = $props();
   import { IconChevronDown } from '@tabler/icons-svelte';
 </script>
 
-<Popover>
+<Popover {positioning}>
   {#snippet trigger()}
     <div class="avatarPopoverTrigger">
       <Avatar {src} {size} />

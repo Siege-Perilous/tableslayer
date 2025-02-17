@@ -25,7 +25,7 @@
         }
       });
 
-      if (!uploadedFile) return; // ✅ TypeScript now understands uploadedFile is possibly undefined
+      if (!uploadedFile) return;
       avatarFileId = uploadedFile.fileId;
     }
 

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SelectParty } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
-  import { IconChevronDown } from '@tabler/icons-svelte';
+  import type { SelectParty, SelectUser } from '$lib/db/app/schema';
+  import { type Thumb } from '$lib/server';
+  import { IconChevronDown, IconHeart, IconHeartFilled } from '@tabler/icons-svelte';
   import { IconCheck } from '@tabler/icons-svelte';
-  import { useUpdatePartyMutation, useDeletePartyMutation } from '$lib/queries';
+  import { useUpdatePartyMutation, useUpdateUserMutation, useDeletePartyMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { goto } from '$app/navigation';
   import { handleMutation } from '$lib/factories';
@@ -23,9 +23,11 @@
     IconButton
   } from '@tableslayer/ui';
   let {
+    user,
     party,
     isPartyAdmin
   }: {
+    user: SelectUser;
     party: SelectParty & Thumb;
     isPartyAdmin: boolean;
   } = $props();
@@ -36,6 +38,7 @@
 
   const deleteParty = useDeletePartyMutation();
   const updateParty = useUpdatePartyMutation();
+  const updateUser = useUpdateUserMutation();
 
   const handleDeleteParty = async (e: Event) => {
     e.preventDefault();
@@ -68,6 +71,22 @@
       toastMessages: {
         success: { title: 'Party renamed successfully' },
         error: { title: 'Error renaming party', body: (error) => error.message }
+      }
+    });
+  };
+
+  const handleFavoriteParty = async (e: Event) => {
+    e.preventDefault();
+    await handleMutation({
+      mutation: () =>
+        $updateUser.mutateAsync({
+          userData: { favoriteParty: user.favoriteParty === party.id ? null : party.id }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => console.error('Error favoriting party:', error),
+      toastMessages: {
+        success: { title: 'Party favorite updated' },
+        error: { title: 'Error favoriting party', body: (error) => error.message }
       }
     });
   };
@@ -108,6 +127,22 @@
         </form>
         <Spacer size={2} />
         <Text size="0.875rem" color="var(--fgMuted)">Renaming your party will change the URL and break all links.</Text>
+        <Spacer />
+        <Hr />
+        <Spacer />
+        <Button onclick={handleFavoriteParty} disabled={formIsLoading}>
+          {#if user.favoriteParty === party.id}
+            <Icon Icon={IconHeartFilled} color="var(--fgPrimary)" />
+            Remove as favorite
+          {:else}
+            <Icon Icon={IconHeart} color="var(--fgMuted)" />
+            Set as favorite
+          {/if}
+        </Button>
+        <Spacer size={2} />
+        <Text size="0.875rem" color="var(--fgMuted)"
+          >When you log in, you will be redirected to your favorite party.</Text
+        >
         <Spacer />
         <Hr />
         <Spacer />

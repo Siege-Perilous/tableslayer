@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Input, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
+  import { Input, FormError, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { IllustrationOverlook } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -58,6 +58,7 @@
     </FormControl>
     <Spacer />
     <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
+    <FormError error={signupError} />
   </form>
 </Panel>
 
