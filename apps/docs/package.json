@@ -18,7 +18,7 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
-    "@tabler/icons-svelte": "^3.29.0",
+    "@tabler/icons-svelte": "^3.30.0",
     "@tableslayer/ui": "workspace:*",
     "mode-watcher": "^0.5.1",
     "svelte-tweakpane-ui": "^1.5.2"
@@ -28,7 +28,7 @@
     "@playwright/test": "^1.50.1",
     "@sveltejs/adapter-auto": "^4.0.0",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.16.1",
+    "@sveltejs/kit": "^2.17.2",
     "@sveltejs/vite-plugin-svelte": "5.0.3",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
@@ -36,11 +36,11 @@
     "@threlte/extras": "9.0.1",
     "postprocessing": "6.36.7",
     "dotenv": "^16.4.7",
-    "svelte": "5.19.6",
+    "svelte": "5.20.1",
     "svelte-check": "^4.1.4",
     "tslib": "^2.8.1",
     "typescript": "^5.7.3",
-    "vite": "^6.0.11",
-    "vitest": "^3.0.4"
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
   }
 }
