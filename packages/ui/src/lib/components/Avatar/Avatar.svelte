@@ -1,9 +1,15 @@
 <script lang="ts">
   import type { AvatarProps } from './types';
-  let { src, alt, initials, size = 'sm', isLoading }: AvatarProps = $props();
+  let { src, alt, initials, variant = 'round', size = 'sm', isLoading, ...restProps }: AvatarProps = $props();
   import { createAvatar, melt } from '@melt-ui/svelte';
 
-  let avatarClasses = $derived(['avatar', `avatar--${size}`, isLoading && 'isLoading']);
+  let avatarClasses = $derived([
+    'avatar',
+    `avatar--${size}`,
+    isLoading && 'isLoading',
+    `avatar--${variant}`,
+    restProps.class
+  ]);
 
   const {
     elements: { fallback }
@@ -29,19 +35,40 @@
     justify-content: center;
     border: 2px solid var(--fg);
   }
+  .avatar--round {
+    border-radius: 50%;
+  }
+  .avatar--square {
+    border-radius: var(--radius-2);
+    .avatar__image {
+      border-radius: var(--radius-2);
+    }
+  }
   .avatar--sm {
-    width: var(--size-6);
-    height: var(--size-6);
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
     font-size: 0.875rem;
   }
   .avatar--md {
-    width: var(--size-8);
-    height: var(--size-8);
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+    min-height: 2rem;
     font-size: var(--font-size-4);
   }
   .avatar--lg {
-    width: var(--size-9);
-    height: var(--size-9);
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+  .avatar--xl {
+    width: 5rem;
+    height: 5rem;
+    min-width: 5rem;
+    min-height: 5rem;
   }
   .avatar__image {
     width: 100%;

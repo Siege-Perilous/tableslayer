@@ -22,6 +22,7 @@
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     party,
@@ -29,7 +30,7 @@
     isPartyAdmin
   }: {
     party: SelectParty & Thumb;
-    session: SelectGameSession & { scenes: (SelectScene & Thumb)[] };
+    session: SelectGameSession & { scenes: Partial<SelectScene & Thumb>[] };
     isPartyAdmin: boolean;
   } = $props();
 
@@ -40,8 +41,10 @@
   const images: string[] = [];
 
   for (const scene of session.scenes) {
-    const thumb = scene.thumb.resizedUrl;
-    images.push(thumb);
+    if (scene.thumb) {
+      const thumb = scene.thumb.resizedUrl;
+      images.push(thumb);
+    }
   }
 
   const renameGameSession = useUpdateGameSessionMutation();
@@ -61,6 +64,7 @@
       },
       onSuccess: () => {
         renameGameSessionErrors = undefined;
+        invalidateAll();
       },
       toastMessages: {
         success: { title: `Game session renamed to ${gameSessionName}` },
@@ -80,6 +84,9 @@
           gameSessionId: session.id
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        invalidateAll();
+      },
       toastMessages: {
         success: { title: 'Game session deleted' },
         error: { title: 'Error deleting game session', body: (error) => error.message }
