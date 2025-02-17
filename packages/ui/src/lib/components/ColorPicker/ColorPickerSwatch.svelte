@@ -11,7 +11,8 @@
     width: 1rem;
     height: 1rem;
     border-radius: var(--radius-2);
-    background-image: linear-gradient(45deg, var(--contrastMedium) 26%, transparent 26%),
+    background-image:
+      linear-gradient(45deg, var(--contrastMedium) 26%, transparent 26%),
       linear-gradient(135deg, var(--contrastMedium) 26%, transparent 26%),
       linear-gradient(45deg, transparent 75%, var(--contrastMedium) 75%),
       linear-gradient(135deg, transparent 75%, var(--contrastMedium) 75%);

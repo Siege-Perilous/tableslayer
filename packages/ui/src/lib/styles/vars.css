@@ -2,8 +2,9 @@
   font-size: 14px;
   --font-sans: 'Inter';
   --font-serif: 'Raven Hell';
-  --font-mono: Dank Mono, Operator Mono, Inconsolata, Fira Mono, ui-monospace, SF Mono, Monaco, Droid Sans Mono,
-    Source Code Pro, monospace;
+  --font-mono:
+    Dank Mono, Operator Mono, Inconsolata, Fira Mono, ui-monospace, SF Mono, Monaco, Droid Sans Mono, Source Code Pro,
+    monospace;
   --font-weight-1: 100;
   --font-weight-2: 200;
   --font-weight-3: 300;
@@ -466,26 +467,31 @@
   --shadow-strength: 1%;
   --inner-shadow-highlight: inset 0 -0.5px 0 0 #fff, inset 0 0.5px 0 0 rgba(0, 0, 0, 0.067);
   --shadow-1: 0 1px 2px -1px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%));
-  --shadow-2: 0 3px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
+  --shadow-2:
+    0 3px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 7px 14px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%));
-  --shadow-3: 0 -1px 3px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
+  --shadow-3:
+    0 -1px 3px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
     0 1px 2px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
     0 2px 5px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%)),
     0 4px 12px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%)),
     0 12px 15px -5px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 7%));
-  --shadow-4: 0 -2px 5px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
+  --shadow-4:
+    0 -2px 5px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
     0 1px 1px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 2px 2px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 5px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%)),
     0 9px 9px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%)),
     0 16px 16px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 6%));
-  --shadow-5: 0 -1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
+  --shadow-5:
+    0 -1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
     0 2px 1px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 5px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 10px 10px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%)),
     0 20px 20px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 5%)),
     0 40px 40px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 7%));
-  --shadow-6: 0 -1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
+  --shadow-6:
+    0 -1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 2%)),
     0 3px 2px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 7px 5px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 3%)),
     0 12px 10px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 4%)),
@@ -493,14 +499,14 @@
     0 41px 33px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 6%)),
     0 100px 80px -2px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 7%));
   --inner-shadow-0: inset 0 0 0 1px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%));
-  --inner-shadow-1: inset 0 1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)),
-    var(--inner-shadow-highlight);
-  --inner-shadow-2: inset 0 1px 4px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)),
-    var(--inner-shadow-highlight);
-  --inner-shadow-3: inset 0 2px 8px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)),
-    var(--inner-shadow-highlight);
-  --inner-shadow-4: inset 0 2px 14px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)),
-    var(--inner-shadow-highlight);
+  --inner-shadow-1:
+    inset 0 1px 2px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)), var(--inner-shadow-highlight);
+  --inner-shadow-2:
+    inset 0 1px 4px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)), var(--inner-shadow-highlight);
+  --inner-shadow-3:
+    inset 0 2px 8px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)), var(--inner-shadow-highlight);
+  --inner-shadow-4:
+    inset 0 2px 14px 0 hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%)), var(--inner-shadow-highlight);
   --ratio-square: 1;
   --ratio-landscape: 4/3;
   --ratio-portrait: 3/4;
@@ -733,7 +739,8 @@
     #ffb56b
   );
   --gradient-2: linear-gradient(to bottom right, #48005c, #8300e2, #a269ff);
-  --gradient-3: radial-gradient(circle at top right, #0ff, rgba(0, 255, 255, 0)),
+  --gradient-3:
+    radial-gradient(circle at top right, #0ff, rgba(0, 255, 255, 0)),
     radial-gradient(circle at bottom left, #ff1492, rgba(255, 20, 146, 0));
   --gradient-4: linear-gradient(to bottom right, #00f5a0, #00d9f5);
   --gradient-5: conic-gradient(from -270deg at 75% 110%, #f0f, #fffaf0);
@@ -767,7 +774,8 @@
   --gradient-15: linear-gradient(to bottom right, #c7d2fe, #fecaca, #fef3c7);
   --gradient-16: radial-gradient(circle at 50% -250%, #374151, #111827, #000);
   --gradient-17: conic-gradient(from -90deg at 50% -25%, blue, #8a2be2);
-  --gradient-18: linear-gradient(0deg, rgba(255, 0, 0, 0.8), rgba(255, 0, 0, 0) 75%),
+  --gradient-18:
+    linear-gradient(0deg, rgba(255, 0, 0, 0.8), rgba(255, 0, 0, 0) 75%),
     linear-gradient(60deg, rgba(255, 255, 0, 0.8), rgba(255, 255, 0, 0) 75%),
     linear-gradient(120deg, rgba(0, 255, 0, 0.8), rgba(0, 255, 0, 0) 75%),
     linear-gradient(180deg, rgba(0, 255, 255, 0.8), rgba(0, 255, 255, 0) 75%),
@@ -783,9 +791,11 @@
   --gradient-26: linear-gradient(to bottom right, #9796f0, #fbc7d4);
   --gradient-27: conic-gradient(from 0.5turn at bottom left, #ff1493, #639);
   --gradient-28: conic-gradient(from -90deg at 50% 105%, #fff, orchid);
-  --gradient-29: radial-gradient(circle at top right, #bfb3ff, rgba(191, 179, 255, 0)),
+  --gradient-29:
+    radial-gradient(circle at top right, #bfb3ff, rgba(191, 179, 255, 0)),
     radial-gradient(circle at bottom left, #86acf9, rgba(134, 172, 249, 0));
-  --gradient-30: radial-gradient(circle at top right, #00ff80, rgba(0, 255, 128, 0)),
+  --gradient-30:
+    radial-gradient(circle at top right, #00ff80, rgba(0, 255, 128, 0)),
     radial-gradient(circle at bottom left, #adffd6, rgba(173, 255, 214, 0));
   --noise-1: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.005' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3C/svg%3E");
   --noise-2: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.05' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3C/svg%3E");
