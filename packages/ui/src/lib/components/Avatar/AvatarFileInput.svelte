@@ -28,7 +28,6 @@
     const file = input.files[0];
     avatarPreviewUrl = URL.createObjectURL(file);
     if (onChange) {
-      console.log('onchange');
       onChange();
     }
     input.value = '';
