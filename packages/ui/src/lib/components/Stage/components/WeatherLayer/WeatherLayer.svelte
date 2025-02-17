@@ -70,10 +70,7 @@
       map: renderTarget.texture,
       transparent: true,
       opacity: weatherPreset.opacity,
-      blending: THREE.CustomBlending,
-      blendEquation: THREE.AddEquation,
-      blendSrc: THREE.SrcAlphaFactor,
-      blendDst: THREE.OneMinusSrcAlphaFactor,
+      blending: THREE.NormalBlending,
       depthWrite: true,
       depthTest: true
     })

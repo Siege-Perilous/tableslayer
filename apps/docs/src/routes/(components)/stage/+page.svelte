@@ -492,7 +492,7 @@
 
     {#if stageProps.weather.type === WeatherType.Custom && stageProps.weather.custom}
       <Folder title="Custom" expanded={true}>
-        <Slider bind:value={stageProps.weather.custom.fov} label="FOV" min={10} max={180} step={1} />
+        <Slider bind:value={stageProps.weather.custom.fov} label="FOV" min={10} max={120} step={1} />
         <Slider bind:value={stageProps.weather.custom.opacity} label="Opacity" min={0} max={1} step={0.01} />
         <Slider bind:value={stageProps.weather.custom.intensity} label="Intensity" min={0} max={1} step={0.01} />
 
@@ -555,19 +555,19 @@
                 bind:value={stageProps.weather.custom.particles.force.linear.x}
                 label="Amplitude X"
                 min={0}
-                max={1}
+                max={0.1}
               />
               <Slider
                 bind:value={stageProps.weather.custom.particles.force.linear.y}
                 label="Amplitude Y"
                 min={0}
-                max={1}
+                max={0.1}
               />
               <Slider
                 bind:value={stageProps.weather.custom.particles.force.linear.z}
                 label="Amplitude Z"
                 min={0}
-                max={1}
+                max={0.1}
               />
             </Folder>
 

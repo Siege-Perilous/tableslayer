@@ -35,7 +35,7 @@
       const angle = Math.random() * 2 * Math.PI;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
-      const z = -1.01;
+      const z = -0.99;
 
       // Quad vertex positions (same for all 4 corners initially)
       const baseIdx = i * 12;
