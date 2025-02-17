@@ -19,7 +19,7 @@ test.describe('Auth tests', () => {
     await page.getByTestId('email').fill(uniqueEmail);
     await page.getByTestId('password').fill('testtest');
     await page.getByTestId('loginSubmit').click();
-    await page.waitForURL('/profile');
+    await page.waitForURL((url) => !url.pathname.startsWith('/login'));
   });
   test('should display validation error for empty fields', async ({ page }) => {
     await page.goto('/login');

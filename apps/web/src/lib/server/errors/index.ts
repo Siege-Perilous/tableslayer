@@ -33,3 +33,12 @@ export class UserIsLastAdminInParty extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
+
+export class EmailAlreadyInUseError extends Error {
+  name = 'EmailAlreadyInUseError';
+
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}

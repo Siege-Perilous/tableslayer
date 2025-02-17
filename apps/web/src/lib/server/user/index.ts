@@ -9,9 +9,12 @@ import {
 import {
   createGameSession,
   createRandomNamedParty,
+  EmailAlreadyInUseError,
   getFile,
   getGravatarDisplayName,
   getGravatarUrl,
+  getPartiesForUser,
+  getParty,
   sendSingleEmail,
   sendVerificationEmail,
   transformImage,
@@ -27,7 +30,7 @@ export const getUser = async (userId: string) => {
   try {
     const user = (await db.select().from(usersTable).where(eq(usersTable.id, userId)).get()) as SelectUser;
     const file = await getFile(user.avatarFileId);
-    const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
+    const thumb = await transformImage(file.location, 'w=164,h=164,fit=cover,gravity=center');
     const userWithThumb = { ...user, thumb: thumb };
     return userWithThumb;
   } catch (error) {
@@ -235,7 +238,11 @@ export const changeUserEmail = async (userId: string, newEmail: string) => {
     if (existingUser) {
       throw new Error('Email already in use');
     }
-    await db.update(usersTable).set({ email: newEmail }).where(eq(usersTable.id, userId)).execute();
+    await db
+      .update(usersTable)
+      .set({ email: newEmail, emailVerified: false })
+      .where(eq(usersTable.id, userId))
+      .execute();
     await sendVerificationEmail(userId, newEmail);
   } catch (error) {
     console.error('Error changing user email', error);
@@ -278,5 +285,43 @@ export const verifyEmail = async (userId: string, code: string) => {
   } catch (error) {
     console.error('Error verifying email', error);
     throw error;
+  }
+};
+
+export const updateUser = async (userId: string, userData: Partial<SelectUser>) => {
+  try {
+    let emailWasChanged = false;
+    const currentUser = await getUser(userId);
+    if (userData.email && userData.email !== currentUser.email) {
+      const existingUser = await getUserByEmail(userData.email);
+      if (existingUser && existingUser.id !== userId) {
+        throw new EmailAlreadyInUseError('Email already in use');
+      }
+      await changeUserEmail(userId, userData.email);
+      emailWasChanged = true;
+    }
+    const user = await db.update(usersTable).set(userData).where(eq(usersTable.id, userId)).returning().get();
+    return { user, emailWasChanged: emailWasChanged };
+  } catch (error) {
+    console.error('Error updating user', error);
+    throw error;
+  }
+};
+
+// Used to decide which party to send the user to when they first log in
+export const getRecentParty = async (userId: string) => {
+  try {
+    const user = await getUser(userId);
+    if (user.favoriteParty) {
+      const party = await getParty(user.favoriteParty);
+      return party;
+    }
+    const parties = await getPartiesForUser(userId);
+    if (!parties) {
+      return null;
+    }
+    return parties[0];
+  } catch {
+    return null;
   }
 };

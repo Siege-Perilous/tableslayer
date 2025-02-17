@@ -7,6 +7,7 @@ import {
   type GridType,
   MapLayerType,
   PingEditMode,
+  RainPreset,
   SceneRotation,
   type StageProps,
   ToolType,
@@ -168,7 +169,8 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      type: WeatherType.Rain
+      type: WeatherType.Rain,
+      custom: { ...RainPreset }
     }
   };
 };

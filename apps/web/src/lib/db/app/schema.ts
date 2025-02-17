@@ -20,7 +20,8 @@ export const usersTable = sqliteTable('users', {
   avatarFileId: integer('avatar_file_id')
     .references(() => filesTable.id, { onDelete: 'cascade' })
     .notNull()
-    .default(1)
+    .default(1),
+  favoriteParty: text('favorite_party').references(() => partyTable.id, { onDelete: 'set null' })
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;

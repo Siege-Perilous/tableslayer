@@ -70,7 +70,8 @@ export const getPartyMembers = async (
       email: usersTable.email,
       emailVerified: usersTable.emailVerified,
       avatarFileId: usersTable.avatarFileId,
-      passwordHash: usersTable.passwordHash
+      passwordHash: usersTable.passwordHash,
+      favoriteParty: usersTable.favoriteParty
     })
     .from(partyMemberTable)
     .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))
@@ -228,6 +229,25 @@ export const updatePartyMember = async (partyMemberData: Partial<SelectPartyMemb
     return partyMember;
   } catch (error) {
     console.error('Error updating party member', error);
+    throw error;
+  }
+};
+
+export const getPartyRole = async (userId: string, partyId: string): Promise<PartyRole> => {
+  try {
+    const partyMember = await db
+      .select({ role: partyMemberTable.role })
+      .from(partyMemberTable)
+      .where(and(eq(partyMemberTable.userId, userId), eq(partyMemberTable.partyId, partyId)))
+      .get();
+
+    if (!partyMember) {
+      throw new Error('Party member not found');
+    }
+
+    return partyMember.role;
+  } catch (error) {
+    console.error('Error fetching party role', error);
     throw error;
   }
 };

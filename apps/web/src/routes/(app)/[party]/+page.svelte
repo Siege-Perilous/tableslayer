@@ -18,7 +18,7 @@
 </script>
 
 <div class="container">
-  <PartyTitle {isPartyAdmin} {party} />
+  <PartyTitle {isPartyAdmin} {party} {user} />
   <div class="containerLayout">
     <main>
       <Title as="h2" size="sm">Sessions</Title>
