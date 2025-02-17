@@ -464,6 +464,7 @@
 
   <Folder title="Weather" expanded={false}>
     <List bind:value={stageProps.weather.type} label="Type" options={weatherTypeOptions} />
+
     <Button
       title="Customize"
       on:click={() => {
@@ -493,8 +494,8 @@
     {#if stageProps.weather.type === WeatherType.Custom && stageProps.weather.custom}
       <Folder title="Custom" expanded={true}>
         <Slider bind:value={stageProps.weather.custom.fov} label="FOV" min={10} max={120} step={1} />
-        <Slider bind:value={stageProps.weather.custom.opacity} label="Opacity" min={0} max={1} step={0.01} />
         <Slider bind:value={stageProps.weather.custom.intensity} label="Intensity" min={0} max={1} step={0.01} />
+        <Slider bind:value={stageProps.weather.custom.opacity} label="Opacity" min={0} max={1} step={0.01} />
 
         <Folder title="Depth of Field" expanded={false}>
           <List
@@ -530,22 +531,28 @@
 
         <Folder title="Particles" expanded={false}>
           <List bind:value={stageProps.weather.custom.particles.type} label="Type" options={particleTypeOptions} />
-          <Slider bind:value={stageProps.weather.custom.particles.count} label="Count" min={1} max={10000} step={1} />
+          <Slider
+            bind:value={stageProps.weather.custom.particles.maxParticleCount}
+            label="Max ParticleCount"
+            min={1}
+            max={10000}
+            step={1}
+          />
           <Color bind:value={stageProps.weather.custom.particles.color} label="Color" />
-          <Slider bind:value={stageProps.weather.custom.particles.lifetime} label="Lifetime" min={1} max={10} />
+          <Slider bind:value={stageProps.weather.custom.particles.lifetime} label="Lifetime" min={1} max={30} />
 
           <Slider
             bind:value={stageProps.weather.custom.particles.fadeInTime}
             label="Fade In (s)"
             min={0}
-            max={10}
+            max={30}
             step={0.01}
           />
           <Slider
             bind:value={stageProps.weather.custom.particles.fadeOutTime}
             label="Fade Out (s)"
             min={0}
-            max={10}
+            max={30}
             step={0.01}
           />
 

@@ -2,26 +2,26 @@ import { KernelSize } from 'postprocessing';
 import type { WeatherLayerPreset } from '../types';
 
 export default {
-  fov: 88,
+  fov: 10,
   intensity: 0.5,
-  opacity: 0.5,
+  opacity: 1,
   depthOfField: {
     enabled: true,
-    focus: 0.967391304347826,
-    focalLength: 3.804347826086957,
-    bokehScale: 55.23913043478261,
+    focus: 0.7897418478260869,
+    focalLength: 5.822010869565217,
+    bokehScale: 100,
     kernelSize: KernelSize.VERY_LARGE
   },
   particles: {
-    count: 20,
+    maxParticleCount: 50,
     type: 3,
     color: '#ffffff',
-    fadeInTime: 5.33,
-    fadeOutTime: 2.28,
-    lifetime: 10,
+    fadeInTime: 30,
+    fadeOutTime: 2.1399999999999997,
+    lifetime: 19.14470108695652,
     spawnArea: {
-      minRadius: 0.11956521739130435,
-      maxRadius: 0.16304347826086957
+      minRadius: 0.20142663043478262,
+      maxRadius: 0.27751358695652173
     },
     initialVelocity: {
       x: 0,
@@ -32,7 +32,7 @@ export default {
       linear: {
         x: 0,
         y: 0,
-        z: 0.005434782608695652
+        z: 0.027751358695652175
       },
       exponential: {
         x: 0,
@@ -41,13 +41,13 @@ export default {
       },
       sinusoidal: {
         amplitude: {
-          x: 0.005978260869565218,
-          y: 0.007608695652173914,
+          x: 0.01,
+          y: 0.015,
           z: 0
         },
         frequency: {
-          x: 0.6521739130434783,
-          y: 0.9782608695652174,
+          x: 0.3,
+          y: 0.5,
           z: 0
         }
       }
@@ -63,8 +63,8 @@ export default {
       y: 1
     },
     size: {
-      min: 0.015217391304347828,
-      max: 0.02717391304347826
+      min: 0.025611413043478262,
+      max: 0.0484375
     }
   }
 } as WeatherLayerPreset;

@@ -3,6 +3,7 @@
   import { T, useTask } from '@threlte/core';
   import { ParticleData } from './types';
   import type { ParticleSystemProps } from './types';
+  import { RNG } from './rng';
 
   import fragmentShader from '../../shaders/Particles.frag?raw';
   import vertexShader from '../../shaders/Particles.vert?raw';
@@ -10,29 +11,33 @@
 
   interface Props {
     props: ParticleSystemProps;
+    opacity?: number;
+    intensity?: number;
   }
 
-  const { props }: Props = $props();
+  const { props, opacity, intensity }: Props = $props();
 
   let mesh: THREE.Mesh | undefined = $state(undefined);
 
   const geometry = $derived.by(() => {
     const geometry = new THREE.BufferGeometry();
 
+    const rng = new RNG(0);
+    const count = Math.round(props.maxParticleCount * (intensity ?? 1));
+
     // Initialize particle attributes - 4 vertices per quad
-    const positions = new Float32Array(props.count * 12); // 4 vertices * 3 coords
-    const centers = new Float32Array(props.count * 8); // 1 center * 2 coords
-    const uvs = new Float32Array(props.count * 8); // 4 vertices * 2 coords
-    const indices = new Uint32Array(props.count * 6); // 2 triangles * 3 vertices
-    const ageOffsets = new Float32Array(props.count * 4); // 4 vertices
+    const positions = new Float32Array(count * 12); // 4 vertices * 3 coords
+    const centers = new Float32Array(count * 8); // 1 center * 2 coords
+    const uvs = new Float32Array(count * 8); // 4 vertices * 2 coords
+    const indices = new Uint32Array(count * 6); // 2 triangles * 3 vertices
+    const ageOffsets = new Float32Array(count * 4); // 4 vertices
 
     const particle = ParticleData[props.type];
 
     // Initialize particles
-    for (let i = 0; i < props.count; i++) {
-      const radius =
-        Math.random() * (props.spawnArea.maxRadius - props.spawnArea.minRadius) + props.spawnArea.minRadius;
-      const angle = Math.random() * 2 * Math.PI;
+    for (let i = 0; i < count; i++) {
+      const radius = rng.random() * (props.spawnArea.maxRadius - props.spawnArea.minRadius) + props.spawnArea.minRadius;
+      const angle = rng.random() * 2 * Math.PI;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
       const z = -0.99;
@@ -41,13 +46,13 @@
       const baseIdx = i * 12;
 
       // Generate random size for this particle
-      let size = Math.random() * (props.size.max - props.size.min) + props.size.min;
+      let size = rng.random() * (props.size.max - props.size.min) + props.size.min;
       let width = size * props.scale.x;
       let height = size * props.scale.y;
 
       const rotation = new THREE.Euler(0, 0, props.rotation.offset * DEG2RAD);
       rotation.z += props.rotation.alignRadially ? angle : 0;
-      rotation.z += props.rotation.randomize ? 360 * Math.random() : 0;
+      rotation.z += props.rotation.randomize ? rng.random() * 360 : 0;
 
       const v1 = new THREE.Vector3(-width / 2, -height / 2, 0);
       const v2 = new THREE.Vector3(width / 2, -height / 2, 0);
@@ -93,7 +98,7 @@
       centers[centerIdx + 7] = y;
 
       // Calculate random frame from texture atlas
-      const frame = Math.floor(Math.random() * (particle.columns * particle.rows));
+      const frame = Math.floor(rng.random() * (particle.columns * particle.rows));
       const col = frame % particle.columns;
       const row = Math.floor(frame / particle.columns);
 
@@ -123,7 +128,7 @@
       indices[indexBaseIdx + 5] = vertexBaseIdx + 2;
 
       // Random attributes (same for all vertices of quad)
-      const ageOffset = (props.lifetime * (i + 1)) / props.count;
+      const ageOffset = rng.random() * props.lifetime;
 
       for (let v = 0; v < 4; v++) {
         ageOffsets[i * 4 + v] = ageOffset;
@@ -149,7 +154,7 @@
   const uniforms = $derived({
     uTime: { value: 0 },
     uTexture: { value: texture },
-    uOpacity: { value: 1.0 },
+    uOpacity: { value: opacity },
     uColor: { value: new THREE.Color(props.color) },
 
     uLifetime: { value: props.lifetime },
