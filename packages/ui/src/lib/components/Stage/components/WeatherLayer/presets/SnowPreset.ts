@@ -2,14 +2,14 @@ import { KernelSize } from 'postprocessing';
 import type { WeatherLayerPreset } from '../types';
 
 export default {
-  fov: 70,
+  fov: 90,
   intensity: 0.5,
   opacity: 0.5,
   depthOfField: {
     enabled: true,
-    focus: 0.6,
-    focalLength: 6.85,
-    bokehScale: 130.0,
+    focus: 0.8,
+    focalLength: 6.0,
+    bokehScale: 180.0,
     kernelSize: KernelSize.MEDIUM
   },
   particles: {
