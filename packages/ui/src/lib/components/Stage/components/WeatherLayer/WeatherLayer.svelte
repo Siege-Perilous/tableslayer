@@ -63,16 +63,12 @@
 
     // Intensity and opacity values passed in via the UI
     if (props.intensity) {
-      console.log('intensity', props.intensity);
       preset.intensity = props.intensity;
     }
 
     if (props.opacity) {
-      console.log('opacity', props.opacity);
       preset.opacity = props.opacity;
     }
-
-    console.log(preset.intensity, preset.opacity);
 
     return preset;
   });
