@@ -56,6 +56,7 @@
 
     // Configure renderer
     renderer.setClearColor(0, 0);
+    renderer.setPixelRatio(window.devicePixelRatio);
   });
 
   // Effect to update post-processing settings when props change

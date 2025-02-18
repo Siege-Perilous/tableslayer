@@ -21,12 +21,7 @@ void main() {
   float opacity = uOpacity * textureColor.a;
 
   // Fade particles in and out at beginning and end of their lifetime
-  opacity *= smoothstep(0.0, uFadeInTime, vAge);
-  opacity *= 1.0 - smoothstep(uLifetime - uFadeOutTime, uLifetime, vAge);
+  float fade = smoothstep(0.0, uFadeInTime, vAge) - (1.0 - smoothstep(uLifetime, uLifetime - uFadeOutTime, vAge));
 
-  if(opacity > 0.1) {
-    gl_FragColor = vec4(textureColor.rgb * uColor, opacity);
-  } else {
-    discard;
-  }
+  gl_FragColor = vec4(textureColor.rgb * uColor, clamp(opacity * fade, 0.0, 1.0));
 }

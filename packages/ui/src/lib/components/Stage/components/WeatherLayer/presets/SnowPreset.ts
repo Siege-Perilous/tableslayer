@@ -3,17 +3,17 @@ import type { WeatherLayerPreset } from '../types';
 
 export default {
   fov: 90,
-  intensity: 0.5,
-  opacity: 0.5,
+  intensity: 0.2,
+  opacity: 0.8,
   depthOfField: {
     enabled: true,
-    focus: 0.8,
-    focalLength: 6.0,
-    bokehScale: 180.0,
-    kernelSize: KernelSize.MEDIUM
+    focus: 0.7,
+    focalLength: 5.0,
+    bokehScale: 50.0,
+    kernelSize: KernelSize.LARGE
   },
   particles: {
-    count: 1000,
+    maxParticleCount: 1000,
     type: 1,
     color: '#ffffff',
     fadeInTime: 8,
@@ -41,8 +41,8 @@ export default {
       },
       sinusoidal: {
         amplitude: {
-          x: 0.001,
-          y: 0.002,
+          x: 0.002,
+          y: 0.003,
           z: 0
         },
         frequency: {

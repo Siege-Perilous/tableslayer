@@ -4,7 +4,7 @@ import type { WeatherLayerPreset } from '../types';
 export default {
   fov: 20,
   intensity: 0.5,
-  opacity: 0.9,
+  opacity: 0.8,
   depthOfField: {
     enabled: true,
     focus: 0.75,
@@ -13,10 +13,11 @@ export default {
     kernelSize: KernelSize.LARGE
   },
   particles: {
-    count: 100,
+    maxParticleCount: 500,
+    opacity: 0.5,
     type: 4,
     color: '#404040',
-    fadeInTime: 7,
+    fadeInTime: 5,
     fadeOutTime: 2,
     lifetime: 10,
     spawnArea: {
@@ -41,13 +42,13 @@ export default {
       },
       sinusoidal: {
         amplitude: {
-          x: 0.001,
-          y: 0.0011,
+          x: 0.015,
+          y: 0.014,
           z: 0
         },
         frequency: {
-          x: 0.001,
-          y: 0.0008,
+          x: 0.002,
+          y: 0.0025,
           z: 0
         }
       }
@@ -64,7 +65,7 @@ export default {
     },
     size: {
       min: 0.001,
-      max: 0.002
+      max: 0.0013
     }
   }
 } as WeatherLayerPreset;
