@@ -38,10 +38,11 @@ export const ParticleData = {
 } as const;
 
 export interface ParticleSystemProps {
-  count: number;
+  maxParticleCount: number;
   type: ParticleType;
   lifetime: number;
   color: string;
+  opacity: number;
   fadeInTime: number;
   fadeOutTime: number;
   initialVelocity: {

@@ -61,6 +61,19 @@
         preset = { ...RainPreset };
     }
 
+    // Overrides for fov, intensity, and opacity set in the UI
+    if (props.fov) {
+      preset.fov = props.fov;
+    }
+
+    if (props.intensity) {
+      preset.intensity = props.intensity;
+    }
+
+    if (props.opacity) {
+      preset.opacity = props.opacity;
+    }
+
     return preset;
   });
 
@@ -69,10 +82,9 @@
     new THREE.MeshBasicMaterial({
       map: renderTarget.texture,
       transparent: true,
-      opacity: weatherPreset.opacity,
       blending: THREE.CustomBlending,
       blendEquation: THREE.AddEquation,
-      blendSrc: THREE.SrcAlphaFactor,
+      blendSrc: THREE.OneFactor,
       blendDst: THREE.OneMinusSrcAlphaFactor,
       depthWrite: true,
       depthTest: true
@@ -108,7 +120,9 @@
       const dofEffect = new DepthOfFieldEffect(particleCamera, {
         focusDistance: weatherPreset.depthOfField.focus,
         focalLength: weatherPreset.depthOfField.focalLength,
-        bokehScale: weatherPreset.depthOfField.bokehScale
+        bokehScale: weatherPreset.depthOfField.bokehScale,
+        resolutionX: $size.width,
+        resolutionY: $size.height
       });
       dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
@@ -137,8 +151,8 @@
 
 <!-- Hidden scene that renders to the render target -->
 <T.Scene bind:ref={particleScene} visible={false}>
-  <T.PerspectiveCamera bind:ref={particleCamera} near={0.01} far={1} position={[0, 0, -1]} rotation.x={Math.PI} />
-  <ParticleSystem props={weatherPreset.particles} />
+  <T.PerspectiveCamera bind:ref={particleCamera} near={0.01} far={10} position={[0, 0, -1]} rotation.x={Math.PI} />
+  <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
 </T.Scene>
 
 <T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>

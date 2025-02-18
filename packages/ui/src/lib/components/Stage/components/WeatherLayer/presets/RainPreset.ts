@@ -1,26 +1,25 @@
-import { KernelSize } from 'postprocessing';
 import type { WeatherLayerPreset } from '../types';
 export default {
-  fov: 50,
-  intensity: 1,
-  opacity: 0.3,
+  fov: 70,
+  intensity: 0.3,
+  opacity: 0.5,
   depthOfField: {
-    enabled: true,
-    focus: 0.75,
-    focalLength: 3,
-    bokehScale: 80,
-    kernelSize: KernelSize.MEDIUM
+    enabled: false,
+    focus: 0,
+    focalLength: 0,
+    bokehScale: 0,
+    kernelSize: 0
   },
   particles: {
-    count: 8000,
+    maxParticleCount: 5000,
     type: 2,
     color: '#e0e0e0',
     fadeInTime: 1,
     fadeOutTime: 3,
-    lifetime: 4,
+    lifetime: 3,
     spawnArea: {
-      minRadius: 0.01,
-      maxRadius: 0.04
+      minRadius: 0.008,
+      maxRadius: 0.02
     },
     initialVelocity: {
       x: 0,
@@ -58,12 +57,12 @@ export default {
       randomize: false
     },
     scale: {
-      x: 0.1,
+      x: 0.2,
       y: 1
     },
     size: {
       min: 0.001,
-      max: 0.002
+      max: 0.001
     }
   }
 } as WeatherLayerPreset;
