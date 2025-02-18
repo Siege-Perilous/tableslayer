@@ -22,7 +22,7 @@
   const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
 
   let imageUrl: string | null = $state(null);
-  let image: THREE.Texture | undefined = $state();
+  let mapImageMaterial = new THREE.MeshBasicMaterial();
   const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
 
@@ -46,10 +46,11 @@
         }
       })
       .then((texture) => {
-        image = texture;
+        mapImageMaterial.map = texture;
+        mapImageMaterial.needsUpdate = true;
         mapSize = {
-          width: image?.source.data.width ?? 0,
-          height: image?.source.data.height ?? 0
+          width: texture.image.width,
+          height: texture.image.height
         };
       })
       .catch((reason) => {
@@ -106,7 +107,7 @@
 >
   <!-- Map image -->
   <T.Mesh name="mapImage" layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Map} visible={true}>
-    <T.MeshBasicMaterial map={image} />
+    <T.MeshBasicMaterial is={mapImageMaterial} />
     <T.PlaneGeometry />
   </T.Mesh>
 
