@@ -44,6 +44,11 @@
 </div>
 <Spacer />
 <div class="weatherControls">
+  <FormControl label="FOV" name="fov" {errors}>
+    {#snippet input({ inputProps })}
+      <Input {...inputProps} type="number" min={10} step={120} bind:value={stageProps.weather.fov} />
+    {/snippet}
+  </FormControl>
   <FormControl label="Opacity" name="opacity" {errors}>
     {#snippet input({ inputProps })}
       <Input {...inputProps} type="number" min={0} step={1} bind:value={stageProps.weather.opacity} />

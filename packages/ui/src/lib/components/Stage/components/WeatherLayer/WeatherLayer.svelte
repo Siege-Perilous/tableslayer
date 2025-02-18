@@ -61,7 +61,11 @@
         preset = { ...RainPreset };
     }
 
-    // Intensity and opacity values passed in via the UI
+    // Overrides for fov, intensity, and opacity set in the UI
+    if (props.fov) {
+      preset.fov = props.fov;
+    }
+
     if (props.intensity) {
       preset.intensity = props.intensity;
     }

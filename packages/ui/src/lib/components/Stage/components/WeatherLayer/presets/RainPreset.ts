@@ -1,6 +1,6 @@
 import type { WeatherLayerPreset } from '../types';
 export default {
-  fov: 37,
+  fov: 70,
   intensity: 0.3,
   opacity: 0.5,
   depthOfField: {
@@ -11,15 +11,15 @@ export default {
     kernelSize: 0
   },
   particles: {
-    maxParticleCount: 2500,
+    maxParticleCount: 5000,
     type: 2,
     color: '#e0e0e0',
     fadeInTime: 1,
     fadeOutTime: 3,
     lifetime: 3,
     spawnArea: {
-      minRadius: 0.005,
-      maxRadius: 0.01
+      minRadius: 0.008,
+      maxRadius: 0.02
     },
     initialVelocity: {
       x: 0,

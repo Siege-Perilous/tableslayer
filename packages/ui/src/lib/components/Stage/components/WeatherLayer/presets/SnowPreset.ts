@@ -7,9 +7,9 @@ export default {
   opacity: 0.8,
   depthOfField: {
     enabled: true,
-    focus: 0.9,
+    focus: 0.7,
     focalLength: 5.0,
-    bokehScale: 100.0,
+    bokehScale: 50.0,
     kernelSize: KernelSize.LARGE
   },
   particles: {
