@@ -235,7 +235,11 @@
           {/if}
           <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
         </a>
-        <Popover triggerClass="scene__popoverBtn" isOpen={openScenePopover === scene.id}>
+        <Popover
+          triggerClass="scene__popoverBtn"
+          isOpen={openScenePopover === scene.id}
+          positioning={{ placement: 'bottom-end' }}
+        >
           {#snippet trigger()}
             <IconButton as="div" variant="ghost">
               <Icon Icon={IconChevronDown} />
