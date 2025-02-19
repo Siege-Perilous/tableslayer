@@ -108,12 +108,6 @@
         },
         false
       );
-
-      stageElement.addEventListener('keydown', (event) => {
-        activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
-      });
-      // Add tabindex so event listener can be triggered
-      stageElement.setAttribute('tabindex', '0');
     }
 
     socketUpdate();
