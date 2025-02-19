@@ -13,8 +13,7 @@
     positioning = { placement: 'bottom' },
     portal = null,
     forceVisible,
-    closeOnOutsideClick = true,
-    ...restProps
+    closeOnOutsideClick = true
   }: PopoverProps & HTMLBaseAttributes = $props();
 
   const {
