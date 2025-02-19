@@ -170,8 +170,9 @@ export const buildSceneProps = (
     },
     weather: {
       type: WeatherType.Rain,
-      opacity: 0.5,
-      intensity: 0.5,
+      opacity: activeScene.weatherOpacity,
+      intensity: activeScene.weatherIntensity,
+      fov: activeScene.weatherFov,
       custom: { ...RainPreset }
     }
   };
