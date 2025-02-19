@@ -7,7 +7,6 @@
   import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
-  import { convertPropsToSceneDetails } from '$lib/utils';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -16,7 +15,8 @@
     setupGameSessionWebSocket,
     handleStageZoom,
     hasThumb,
-    initializeStage
+    initializeStage,
+    convertPropsToSceneDetails
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -28,7 +28,41 @@
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
+  let stageIsLoading = $state(true);
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
+  let stage: StageExports;
+  let scenesPane: PaneAPI = $state(undefined)!;
+  let isScenesCollapsed = $state(false);
+  let fogBlob: Blob | null = $state(null);
+  let fogBlobUpdateTime: Date | null = $state(null);
 
+  const updateSceneMutation = useUpdateSceneMutation();
+  const updateGameSessionMutation = useUpdateGameSessionMutation();
+  const createFogMutation = useUploadFogFromBlobMutation();
+
+  /**
+   * SOCKET UPDATES
+   * SOCKET UPDATES
+   * SOCKET UPDATES
+   *
+   * Sends the ACTIVE SCENE props across the WebSocket.
+   * If the ACTIVE SCENE is also the SELECTED SCENE, it will send the SELECTED SCENE state.
+   *
+   * This is passed down to child components and manually called
+   */
+  const socketUpdate = () => {
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
+  };
+
+  /**
+   * ON MOUNT
+   * ON MOUNT
+   * ON MOUNT
+   *
+   * - Set up the WebSocket connection
+   * - Initialize the stage
+   * - Send initial broadcast to the WebSocket
+   */
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
@@ -36,20 +70,45 @@
       () => console.log('Disconnected from game session socket')
     );
 
+    initializeStage(stage, (isLoading) => {
+      stageIsLoading = isLoading;
+    });
+
+    if (stageElement) {
+      stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('wheel', onWheel, { passive: false });
+
+      stageElement.addEventListener(
+        'contextmenu',
+        function (e) {
+          e.preventDefault();
+        },
+        false
+      );
+
+      stageElement.addEventListener('keydown', (event) => {
+        activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
+      });
+      // Add tabindex so event listener can be triggered
+      stageElement.setAttribute('tabindex', '0');
+    }
+
     socketUpdate();
+
     return () => {
       socket?.disconnect();
       if (saveTimer) clearTimeout(saveTimer);
     };
   });
 
-  const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
+  // This toggles the scene selector pane
+  const handleToggleScenes = () => {
+    if (isScenesCollapsed) {
+      scenesPane.expand();
+    } else {
+      scenesPane.collapse();
+    }
   };
-
-  const updateSceneMutation = useUpdateSceneMutation();
-  const updateGameSessionMutation = useUpdateGameSessionMutation();
-  const createFogMutation = useUploadFogFromBlobMutation();
 
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
@@ -62,6 +121,7 @@
     socketUpdate();
   };
 
+  // We use these functions often in child components, so we define them here
   const handleSceneFit = () => {
     stage.scene.fit();
   };
@@ -86,18 +146,6 @@
       }
     }, 50);
   });
-  let stage: StageExports;
-
-  let scenesPane: PaneAPI = $state(undefined)!;
-  let isScenesCollapsed = $state(false);
-
-  const handleToggleScenes = () => {
-    if (isScenesCollapsed) {
-      scenesPane.expand();
-    } else {
-      scenesPane.collapse();
-    }
-  };
 
   $effect(() => {
     if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
@@ -130,8 +178,16 @@
     socketUpdate();
   };
 
+  /**
+   * CURSOR TRACKING
+   * CURSOR TRACKING
+   * CURSOR TRACKING
+   *
+   * The cursor needs to be tracked so that the editor can call out positioning in the player view.
+   * This requires normalizing the cursor position, because the stage can be rotated and zoomed.
+   * Also the player view browser size can be different from the editor view.
+   */
   let isThrottled = false;
-
   const onMouseMove = (e: MouseEvent) => {
     const rotation = stageProps.scene.rotation; // Rotation in degrees
     const canvasBounds = stageElement?.getBoundingClientRect(); // Full canvas bounds
@@ -208,89 +264,69 @@
   };
 
   const onWheel = (e: WheelEvent) => {
+    // Thie tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
     socketUpdate();
   };
 
-  let stageIsLoading = $state(true);
-  onMount(() => {
-    initializeStage(stage, (isLoading) => {
-      stageIsLoading = isLoading;
-    });
-
-    if (stageElement) {
-      stageElement.addEventListener('mousemove', onMouseMove);
-      stageElement.addEventListener('wheel', onWheel, { passive: false });
-
-      stageElement.addEventListener(
-        'contextmenu',
-        function (e) {
-          e.preventDefault();
-        },
-        false
-      );
-
-      stageElement.addEventListener('keydown', (event) => {
-        activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
-      });
-      // Add tabindex so event listener can be triggered
-      stageElement.setAttribute('tabindex', '0');
-    }
-  });
-
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
-
+  /**
+   * FOG OF WAR UPLOAD
+   * FOG OF WAR UPLOAD
+   * FOG OF WAR UPLOAD
+   *
+   * This is called when the fog of war is updated.
+   * It uploads the fog of war to the server and updates the stage props.
+   */
   const onFogUpdate = async (blob: Promise<Blob>) => {
-    const fogBlob = await blob;
-
-    await handleMutation({
-      mutation: () =>
-        $createFogMutation.mutateAsync({
-          blob: fogBlob,
-          sceneId: selectedScene.id
-        }),
-      formLoadingState: () => console.log('fog is uploading'),
-      onSuccess: (fog) => {
-        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
-        socketUpdate();
-        console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
-      },
-      toastMessages: {
-        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
-      }
-    });
+    fogBlob = await blob;
+    fogBlobUpdateTime = new Date();
   };
 
-  let lastSavedData = '';
-  let dirtyData = '';
-  const updateDirtyData = () => {
-    dirtyData = JSON.stringify(convertPropsToSceneDetails(stageProps));
-  };
+  let isSaving = false;
 
   const saveScene = async () => {
-    if (dirtyData === lastSavedData) return;
+    if (isSaving) return;
+    isSaving = true;
 
     console.log('Saving scene...');
+
+    if (fogBlob !== null) {
+      await handleMutation({
+        mutation: () =>
+          $createFogMutation.mutateAsync({
+            blob: fogBlob as Blob,
+            sceneId: selectedScene.id
+          }),
+        formLoadingState: () => console.log('fog is uploading'),
+        onSuccess: (fog) => {
+          // Directly update fogBlob instead of triggering a full reactivity cycle
+          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          socketUpdate();
+          console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
+        },
+        toastMessages: {
+          error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+        }
+      });
+    }
 
     await handleMutation({
       mutation: () =>
         $updateSceneMutation.mutateAsync({
           sceneId: selectedScene.id,
           partyId: party.id,
-          sceneData: JSON.parse(dirtyData)
+          sceneData: convertPropsToSceneDetails(stageProps)
         }),
       formLoadingState: () => console.log('stage is loading'),
       onError: (error) => {
         console.log('Error saving scene:', error);
-      },
-      onSuccess: () => {
-        lastSavedData = dirtyData;
       },
       toastMessages: {
         success: { title: 'Scene saved!' },
         error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
       }
     });
+
     // Empty game session update will update the lastUpdated field through Drizzle
     await handleMutation({
       mutation: () =>
@@ -306,26 +342,21 @@
         error: { title: 'Error saving game session', body: (err) => err.message || 'Error saving game session' }
       }
     });
+
+    // Reset the saving flag after all updates
+    isSaving = false;
   };
 
-  // This effect will run whenever `stageProps` changes.
   $effect(() => {
-    // Recompute the “dirty” data from stageProps
-    updateDirtyData();
+    $state.snapshot(stageProps);
+    $state.snapshot(fogBlobUpdateTime);
 
-    if (dirtyData !== lastSavedData) {
-      if (saveTimer) clearTimeout(saveTimer);
+    if (isSaving) return;
 
-      saveTimer = setTimeout(() => {
-        saveScene();
-      }, 3000);
-    }
-
-    return () => {
-      if (saveTimer) {
-        clearTimeout(saveTimer);
-      }
-    };
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveScene();
+    }, 3000);
   });
 </script>
 
