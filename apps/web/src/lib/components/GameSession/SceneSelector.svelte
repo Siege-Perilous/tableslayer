@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, ContextMenu, FormControl, Input } from '@tableslayer/ui';
-  import { IconScreenShare, IconCheck, IconX } from '@tabler/icons-svelte';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover } from '@tableslayer/ui';
+  import { IconCheck, IconX, IconChevronDown } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
@@ -35,6 +35,7 @@
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
   let renamingScenes = $state<Record<string, string | null>>({});
+  let openScenePopover = $state<string | null>(null);
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
@@ -187,65 +188,112 @@
   </div>
   <div class="scene__list">
     {#each scenes as scene}
-      <ContextMenu
-        items={[
-          { label: 'New scene', onclick: () => handleCreateScene(scene.order + 1) },
-          {
-            label: 'Delete',
-            onclick: () => {
-              handleDeleteScene(scene.id);
-            }
-          },
-          { label: 'Duplicate scene', onclick: () => console.log('add') },
-          { label: 'Rename scene', onclick: () => (renamingScenes[scene.id] = scene.name) },
-          { label: 'Set active scene', onclick: () => handleSetActiveScene(scene.id) },
-          {
-            label: 'Update map image',
-            onclick: () => handleMapImageChange(scene.id)
-          }
+      <div
+        role="presentation"
+        id={`scene-${scene.order}`}
+        class={[
+          'scene',
+          scene.order === selectedSceneNumber && 'scene--isSelected',
+          sceneBeingDeleted === scene.id && 'scene--isLoading'
         ]}
+        style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        oncontextmenu={(event) => {
+          event.preventDefault();
+          // Extra logic because the popover has internal methods in conflict
+          if (openScenePopover === scene.id) {
+            openScenePopover = null;
+            setTimeout(() => {
+              openScenePopover = scene.id;
+            }, 0);
+          } else {
+            openScenePopover = scene.id;
+          }
+        }}
       >
-        {#snippet trigger()}
-          <div
-            id={`scene-${scene.order}`}
-            class={[
-              'scene',
-              scene.order === selectedSceneNumber && 'scene--isSelected',
-              sceneBeingDeleted === scene.id && 'scene--isLoading'
-            ]}
-            style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
-          >
-            {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
-              <div class="scene__rename">
-                <form onsubmit={() => handleRenameScene(scene.id)}>
-                  <div class="scene__renameInput">
-                    <FormControl label="Name" name="name">
-                      {#snippet input({ inputProps })}
-                        <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
-                      {/snippet}
-                    </FormControl>
-                    <IconButton>
-                      <Icon Icon={IconCheck} />
-                    </IconButton>
-                    <IconButton>
-                      <Icon Icon={IconX} onclick={() => (renamingScenes[scene.id] = null)} />
-                    </IconButton>
-                  </div>
-                </form>
+        {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
+          <div class="scene__rename">
+            <form onsubmit={() => handleRenameScene(scene.id)}>
+              <div class="scene__renameInput">
+                <FormControl label="Name" name="name">
+                  {#snippet input({ inputProps })}
+                    <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} hideAutocomplete />
+                  {/snippet}
+                </FormControl>
+                <IconButton>
+                  <Icon Icon={IconCheck} />
+                </IconButton>
+                <IconButton>
+                  <Icon Icon={IconX} onclick={() => (renamingScenes[scene.id] = null)} />
+                </IconButton>
               </div>
-            {/if}
-            <a href={`/${party.slug}/${gameSession.slug}/${scene.order}`} class="scene__link">
-              {#if activeScene && activeScene.id === scene.id}
-                <div class="scene__projectedIcon">
-                  Active
-                  <Icon Icon={IconScreenShare} size="1.25rem" stroke={2} />
-                </div>
-              {/if}
-              <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
-            </a>
+            </form>
           </div>
-        {/snippet}
-      </ContextMenu>
+        {/if}
+        <a href={`/${party.slug}/${gameSession.slug}/${scene.order}`} class="scene__link">
+          {#if activeScene && activeScene.id === scene.id}
+            <div class="scene__projectedIcon">Active on table</div>
+          {/if}
+          <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
+        </a>
+        <Popover
+          triggerClass="scene__popoverBtn"
+          isOpen={openScenePopover === scene.id}
+          positioning={{ placement: 'bottom-end' }}
+        >
+          {#snippet trigger()}
+            <IconButton as="div" variant="ghost">
+              <Icon Icon={IconChevronDown} />
+            </IconButton>
+          {/snippet}
+          {#snippet content({ contentProps })}
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleCreateScene(scene.order + 1);
+                contentProps.close();
+              }}
+            >
+              New scene
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                renamingScenes[scene.id] = scene.name;
+                contentProps.close();
+              }}
+            >
+              Rename scene
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleMapImageChange(scene.id);
+                contentProps.close();
+              }}
+            >
+              Change map image
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleDeleteScene(scene.id);
+                contentProps.close();
+              }}
+            >
+              Delete scene
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleSetActiveScene(scene.id);
+                contentProps.close();
+              }}
+            >
+              Set active scene
+            </button>
+          {/snippet}
+        </Popover>
+      </div>
     {/each}
   </div>
 
@@ -269,7 +317,6 @@
     border-radius: var(--radius-2);
     aspect-ratio: 16 / 9;
     width: 100%;
-    overflow: hidden;
     background-size: 100%;
     box-shadow: 1px 1px 32px 4px rgba(0, 0, 0, 0.76) inset;
     display: block;
@@ -360,17 +407,16 @@
   }
   .scene__projectedIcon {
     background: var(--fgPrimary);
-    padding: 0.25rem;
-    height: 1.5rem;
+    padding: 0.5rem;
     display: flex;
     gap: 0.25rem;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-2);
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    font-size: 0.85rem;
+    top: 50%;
+    width: 100%;
+    font-size: 0.875rem;
+    transform: translate(0%, -50%);
     z-index: 2;
   }
   .scene__input {
@@ -397,5 +443,31 @@
     .scene__inputBtn {
       width: 100%;
     }
+    .scene__popoverBtn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 2;
+    }
+  }
+
+  .scene__menuItem {
+    text-align: left;
+    white-space: nowrap;
+    width: 100%;
+    padding: 0.25rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    gap: 0.5rem;
+    border: solid 2px transparent;
+    gap: 1rem;
+  }
+
+  .scene__menuItem:hover,
+  .scene__menuItem:focus-visible {
+    background-color: var(--menuItemHover);
+    border: var(--menuItemBorderHover);
   }
 </style>

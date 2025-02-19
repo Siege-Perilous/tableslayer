@@ -8,11 +8,12 @@
     isOpen = false,
     trigger,
     content,
+    triggerClass,
+    contentClass,
     positioning = { placement: 'bottom' },
     portal = null,
     forceVisible,
-    closeOnOutsideClick = true,
-    ...restProps
+    closeOnOutsideClick = true
   }: PopoverProps & HTMLBaseAttributes = $props();
 
   const {
@@ -38,12 +39,17 @@
   };
 </script>
 
-<button type="button" class="popTrigger" use:melt={$triggerAction} aria-label="Update dimensions">
+<button
+  type="button"
+  class={['popTrigger', triggerClass ?? '']}
+  use:melt={$triggerAction}
+  aria-label="Update dimensions"
+>
   {@render trigger()}
 </button>
 
 {#if isOpen}
-  <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class={['popContent', restProps.class ?? '']}>
+  <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class={['popContent', contentClass ?? '']}>
     {@render content({ contentProps })}
     <button class="popClose" use:melt={$close}> close </button>
   </div>
