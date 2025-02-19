@@ -54,6 +54,23 @@
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
   };
 
+  const isTyping = () => {
+    const activeElement = document.activeElement;
+    return (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        (activeElement as HTMLElement).isContentEditable)
+    );
+  };
+
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (!isTyping()) {
+      activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
+    }
+  };
+
   /**
    * ON MOUNT
    * ON MOUNT
@@ -86,9 +103,6 @@
         false
       );
 
-      stageElement.addEventListener('keydown', (event) => {
-        activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
-      });
       // Add tabindex so event listener can be triggered
       stageElement.setAttribute('tabindex', '0');
     }
@@ -359,6 +373,8 @@
     }, 3000);
   });
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <div class="container">
   <PaneGroup direction="horizontal">

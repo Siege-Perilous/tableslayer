@@ -12,6 +12,7 @@ const adjustHueForNonGrayscale = (color: chroma.Color, hueShift: number) => {
 
 // Builds a 5 color gradient based on the provided start color.
 export const generateGradientColors = (colorStart: string, colorEnd?: string): string[] => {
+  console.log('color start', colorStart);
   let adjustedStart: chroma.Color;
   let adjustedEnd: chroma.Color;
 
@@ -48,6 +49,7 @@ export const generateGradientColors = (colorStart: string, colorEnd?: string): s
 
   // Generate a 5-color gradient
   const gradient = chroma.scale([darkColor, lightColor]).colors(5);
+  console.log('gradient', gradient);
   return gradient;
 };
 
