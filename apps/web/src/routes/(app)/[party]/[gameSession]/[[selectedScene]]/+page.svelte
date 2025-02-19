@@ -270,6 +270,8 @@
   const saveScene = async () => {
     if (dirtyData === lastSavedData) return;
 
+    console.log('Saving scene...');
+
     await handleMutation({
       mutation: () =>
         $updateSceneMutation.mutateAsync({
