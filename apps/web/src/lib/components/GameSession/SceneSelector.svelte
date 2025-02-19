@@ -35,7 +35,7 @@
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
   let renamingScenes = $state<Record<string, string | null>>({});
-  let popoverIsOpen = $state(false);
+  let openScenePopover = $state<string | null>(null);
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
@@ -189,16 +189,26 @@
   <div class="scene__list">
     {#each scenes as scene}
       <div
+        role="presentation"
         id={`scene-${scene.order}`}
-        onrightclick={(e) => {
-          popoverIsOpen = !popoverIsOpen;
-        }}
         class={[
           'scene',
           scene.order === selectedSceneNumber && 'scene--isSelected',
           sceneBeingDeleted === scene.id && 'scene--isLoading'
         ]}
         style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        oncontextmenu={(event) => {
+          event.preventDefault();
+          // Extra logic because the popover has internal methods in conflict
+          if (openScenePopover === scene.id) {
+            openScenePopover = null;
+            setTimeout(() => {
+              openScenePopover = scene.id;
+            }, 0);
+          } else {
+            openScenePopover = scene.id;
+          }
+        }}
       >
         {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
           <div class="scene__rename">
@@ -206,7 +216,7 @@
               <div class="scene__renameInput">
                 <FormControl label="Name" name="name">
                   {#snippet input({ inputProps })}
-                    <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} />
+                    <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} hideAutocomplete />
                   {/snippet}
                 </FormControl>
                 <IconButton>
@@ -225,7 +235,7 @@
           {/if}
           <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
         </a>
-        <Popover triggerClass="scene__popoverBtn">
+        <Popover triggerClass="scene__popoverBtn" isOpen={openScenePopover === scene.id}>
           {#snippet trigger()}
             <IconButton as="div" variant="ghost">
               <Icon Icon={IconChevronDown} />
@@ -452,7 +462,7 @@
   }
 
   .scene__menuItem:hover,
-  .scene__menuItem:focus {
+  .scene__menuItem:focus-visible {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
   }
