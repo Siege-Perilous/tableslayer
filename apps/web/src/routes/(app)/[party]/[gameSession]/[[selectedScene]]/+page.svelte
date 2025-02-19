@@ -35,6 +35,7 @@
   let isScenesCollapsed = $state(false);
   let fogBlob: Blob | null = $state(null);
   let fogBlobUpdateTime: Date | null = $state(null);
+  let activeElement: HTMLElement | null = $state(null);
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
@@ -52,6 +53,28 @@
    */
   const socketUpdate = () => {
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
+  };
+
+  /**
+   * KEYBOARD HANDLER
+   * KEYBOARD HANDLER
+   * KEYBOARD HANDLER
+   *
+   * This handles keyboard shortcuts for the stage.
+   * It checks if the user is typing in a form, and if not, it handles the key commands.
+   */
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.isContentEditable)
+    ) {
+      return; // Ignore key events while typing
+    }
+
+    activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
   };
 
   /**
@@ -270,12 +293,12 @@
   };
 
   /**
-   * FOG OF WAR UPLOAD
-   * FOG OF WAR UPLOAD
-   * FOG OF WAR UPLOAD
+   * FOG OF WAR
+   * FOG OF WAR
+   * FOG OF WAR
    *
-   * This is called when the fog of war is updated.
-   * It uploads the fog of war to the server and updates the stage props.
+   * The Stage component emits a blob when the fog of war is updated.
+   * We update state so that saveScene() has something to check so uploads don't happen immediately
    */
   const onFogUpdate = async (blob: Promise<Blob>) => {
     fogBlob = await blob;
@@ -359,6 +382,8 @@
     }, 3000);
   });
 </script>
+
+<svelte:document onkeydown={handleKeydown} bind:activeElement />
 
 <div class="container">
   <PaneGroup direction="horizontal">
