@@ -71,6 +71,11 @@
       }
     });
   };
+
+  const handleCancelChangeEmail = (e: Event) => {
+    e.preventDefault();
+    isChangingEmail = false;
+  };
 </script>
 
 <IllustrationPortal {showPortal} />
@@ -89,7 +94,7 @@
         <form onsubmit={handleVerifyEmail}>
           <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
             {#snippet input({ inputProps })}
-              <Input {...inputProps} type="text" bind:value={verifyCode} />
+              <Input {...inputProps} type="text" bind:value={verifyCode} hideAutocomplete />
             {/snippet}
           </FormControl>
           <Spacer />
@@ -112,12 +117,10 @@
             <Input {...inputProps} type="email" bind:value={newEmail} />
           {/snippet}
         </FormControl>
-        <button>Change email</button>
-        <Button
-          type="button"
-          isLoading={formIsLoading}
-          disabled={formIsLoading}
-          onclick={() => (isChangingEmail = false)}>Cancel</Button
+        <Spacer />
+        <Button>Change email</Button>
+        <Button variant="danger" isLoading={formIsLoading} disabled={formIsLoading} onclick={handleCancelChangeEmail}
+          >Cancel</Button
         >
       </form>
     {/if}
