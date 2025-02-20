@@ -11,14 +11,14 @@
     onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+    onMarkersUpdated: (updatedLocations: { x: number; y: number }[]) => void;
   }
 
-  let { props, onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let { props, onFogUpdate, onMapUpdate, onSceneUpdate, onMarkersUpdated }: Props = $props();
 
   let sceneRef: SceneExports;
 
-  setContext('callbacks', { onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated });
+  setContext('callbacks', { onFogUpdate, onMapUpdate, onSceneUpdate, onMarkersUpdated });
 
   export const map = {
     fill: () => sceneRef.map.fill(),

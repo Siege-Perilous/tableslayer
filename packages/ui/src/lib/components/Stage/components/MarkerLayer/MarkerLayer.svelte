@@ -1,28 +1,28 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { PingEditMode, type PingLayerProps } from './types';
-  import PingMaterial from './PingMaterial.svelte';
+  import { MarkerEditMode, type MarkerLayerProps } from './types';
+  import MarkerMaterial from './MarkerMaterial.svelte';
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
   import type { Size } from '../../types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
-    props: PingLayerProps;
+    props: MarkerLayerProps;
     isActive: boolean;
     mapSize: Size | null;
   }
 
   const { props, isActive, mapSize, ...meshProps }: Props = $props();
 
-  const onPingsUpdated = getContext<Callbacks>('callbacks').onPingsUpdated;
+  const onmarkersUpdated = getContext<Callbacks>('callbacks').onMarkersUpdated;
 
   // svelte-ignore non_reactive_update
-  let pingMesh: THREE.Mesh;
+  let markerMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
 
-  // Regenerate buffer geometry each time ping array is updated
+  // Regenerate buffer geometry each time marker array is updated
   $effect(() => {
     if (!mapSize) return;
 
@@ -71,32 +71,32 @@
     // Set the indices to define the triangles that form the quads
     geometry.setIndex(indices);
 
-    pingMesh.geometry = geometry;
+    markerMesh.geometry = geometry;
   });
 
   function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
     if (!coords || !mapSize) return;
 
-    if (props.editMode === PingEditMode.Add) {
+    if (props.editMode === MarkerEditMode.Add) {
       const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };
-      onPingsUpdated([...props.locations, location]);
+      onmarkersUpdated([...props.locations, location]);
     } else {
-      // Find the ping that is closest to the mouse down point. The test point
-      // must be within the outer radius of the ping for it to be considered
-      let closestPing: { x: number; y: number } | null = null;
+      // Find the marker that is closest to the mouse down point. The test point
+      // must be within the outer radius of the marker for it to be considered
+      let closestmarker: { x: number; y: number } | null = null;
       let minDistance = Infinity;
-      props.locations.forEach((ping) => {
-        const pingCoords = new THREE.Vector2(ping.x * mapSize.width, ping.y * mapSize.height);
-        const distance = coords.distanceTo(pingCoords);
+      props.locations.forEach((marker) => {
+        const markerCoords = new THREE.Vector2(marker.x * mapSize.width, marker.y * mapSize.height);
+        const distance = coords.distanceTo(markerCoords);
         if (distance < minDistance && distance <= props.markerSize / 2) {
           minDistance = distance;
-          closestPing = ping;
+          closestmarker = marker;
         }
       });
 
-      // If a ping was found, remove it and fire the callback
-      if (closestPing) {
-        onPingsUpdated(props.locations.filter((l) => l !== closestPing));
+      // If a marker was found, remove it and fire the callback
+      if (closestmarker) {
+        onmarkersUpdated(props.locations.filter((l) => l !== closestmarker));
       }
     }
   }
@@ -110,7 +110,7 @@
   <T.PlaneGeometry />
 </T.Mesh>
 
-<!-- This mesh is used to render the pings -->
-<T.Mesh bind:ref={pingMesh} name="pingLayer" position={[-0.5, -0.5, 0]} {meshProps}>
-  <PingMaterial {props} />
+<!-- This mesh is used to render the markers -->
+<T.Mesh bind:ref={markerMesh} name="markerLayer" position={[-0.5, -0.5, 0]} {meshProps}>
+  <MarkerMaterial {props} />
 </T.Mesh>

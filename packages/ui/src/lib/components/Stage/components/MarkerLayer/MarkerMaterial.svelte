@@ -4,11 +4,11 @@
   import { onDestroy } from 'svelte';
   import vertexShader from '../../shaders/PingShader.vert?raw';
   import fragmentShader from '../../shaders/PingShader.frag?raw';
-  import type { PingLayerProps } from './types';
+  import type { MarkerLayerProps } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
-    props: PingLayerProps;
+    props: MarkerLayerProps;
   }
 
   let { invalidate } = useThrelte();

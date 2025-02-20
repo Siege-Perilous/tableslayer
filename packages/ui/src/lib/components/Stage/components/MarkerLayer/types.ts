@@ -1,32 +1,32 @@
-export enum PingEditMode {
+export enum MarkerEditMode {
   Add = 0,
   Remove = 1
 }
 
-export interface PingLayerProps {
+export interface MarkerLayerProps {
   /**
-   * Color of the ping icons represented as a hex string (e.g. 0x60A3FE)
+   * Color of the marker icons represented as a hex string (e.g. 0x60A3FE)
    */
   color: string;
 
   /**
-   * The current edit mode for the ping layer (add or remove pings)
+   * The current edit mode for the marker layer (add or remove markers)
    */
-  editMode: PingEditMode;
+  editMode: MarkerEditMode;
 
   /**
-   * An array of the locations of all ping markers. Values for `x` and `y`
+   * An array of the locations of all marker markers. Values for `x` and `y`
    * should vary between 0 and 1. The origin is the bottom-left of the map.
    */
   locations: { x: number; y: number }[];
 
   /**
-   * The size of the ping marker
+   * The size of the marker marker
    */
   markerSize: number;
 
   /**
-   * The opacity of the ping layer
+   * The opacity of the marker layer
    */
   opacity: number;
 
@@ -46,7 +46,7 @@ export interface PingLayerProps {
   sharpness: number;
 
   /**
-   * The outer radius of the ping marker
+   * The outer radius of the marker marker
    */
   thickness: number;
 }

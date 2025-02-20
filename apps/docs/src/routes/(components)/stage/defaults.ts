@@ -2,7 +2,7 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  PingEditMode,
+  MarkerEditMode,
   RainPreset,
   ToolType,
   WeatherType,
@@ -100,9 +100,9 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0,
     url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
-  ping: {
+  marker: {
     color: '#ff0000',
-    editMode: PingEditMode.Add,
+    editMode: MarkerEditMode.Add,
     locations: [],
     markerSize: 70,
     opacity: 1.0,

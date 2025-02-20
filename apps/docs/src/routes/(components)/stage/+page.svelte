@@ -8,7 +8,7 @@
     DrawMode,
     ToolType,
     MapLayerType,
-    PingEditMode,
+    MarkerEditMode,
     SceneRotation,
     ParticleType,
     WeatherType,
@@ -145,12 +145,12 @@
           stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
         case 'p':
-          stageProps.activeLayer = MapLayerType.Ping;
-          stageProps.ping.editMode = PingEditMode.Remove;
+          stageProps.activeLayer = MapLayerType.Marker;
+          stageProps.marker.editMode = MarkerEditMode.Remove;
           break;
         case 'P':
-          stageProps.activeLayer = MapLayerType.Ping;
-          stageProps.ping.editMode = PingEditMode.Add;
+          stageProps.activeLayer = MapLayerType.Marker;
+          stageProps.marker.editMode = MarkerEditMode.Add;
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -173,7 +173,7 @@
     stageProps.map.url = mapUrl;
     // Reset fog of war data and ping locations
     stageProps.fogOfWar.url = null;
-    stageProps.ping.locations = [];
+    stageProps.marker.locations = [];
   }
 
   async function onFogUpdate() {
@@ -192,8 +192,8 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
-    stageProps.ping.locations = updatedLocations;
+  function onMarkersUpdated(updatedLocations: { x: number; y: number }[]) {
+    stageProps.marker.locations = updatedLocations;
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -228,7 +228,7 @@
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onMarkersUpdated} />
   <div>
     <h1>Keybindings</h1>
     <ul>
@@ -240,8 +240,8 @@
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
-      <li>p - Remove Ping</li>
-      <li>P - Add Ping</li>
+      <li>p - Remove Marker</li>
+      <li>P - Add Marker</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
       <li>SHIFT + Wheel - Zoom Map</li>
       <li>CONTROL + Mouse Down - Pan Scene</li>
@@ -380,13 +380,13 @@
     <Button on:click={() => stage?.map.fit()} title="Fit" />
   </Folder>
 
-  <Folder title="Ping" expanded={false}>
-    <Color bind:value={stageProps.ping.color} label="Color" />
-    <Slider bind:value={stageProps.ping.markerSize} label="Marker Size" min={1} max={500} step={1} />
-    <Slider bind:value={stageProps.ping.thickness} label="Thickness" min={0} max={1} />
-    <Slider bind:value={stageProps.ping.sharpness} label="Edge Sharpness" min={0} max={1} />
-    <Slider bind:value={stageProps.ping.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
-    <Slider bind:value={stageProps.ping.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
+  <Folder title="Marker" expanded={false}>
+    <Color bind:value={stageProps.marker.color} label="Color" />
+    <Slider bind:value={stageProps.marker.markerSize} label="Marker Size" min={1} max={500} step={1} />
+    <Slider bind:value={stageProps.marker.thickness} label="Thickness" min={0} max={1} />
+    <Slider bind:value={stageProps.marker.sharpness} label="Edge Sharpness" min={0} max={1} />
+    <Slider bind:value={stageProps.marker.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
+    <Slider bind:value={stageProps.marker.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
   </Folder>
 
   <Folder title="Post Processing" expanded={false}>
