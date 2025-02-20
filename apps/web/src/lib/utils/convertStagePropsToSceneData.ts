@@ -76,7 +76,6 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
 
   setNestedIfExists(stageProps, details, 'weather', {
     type: 'weatherType',
-    color: 'weatherColor',
     fov: 'weatherFov',
     intensity: 'weatherIntensity',
     opacity: 'weatherOpacity'

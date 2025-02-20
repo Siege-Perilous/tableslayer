@@ -148,7 +148,7 @@ export const StageDefaultProps: StageProps = {
   },
   weather: {
     type: WeatherType.Rain,
-    opacity: 0.5,
-    intensity: 0.5
+    opacity: 0,
+    intensity: 0
   }
 };
