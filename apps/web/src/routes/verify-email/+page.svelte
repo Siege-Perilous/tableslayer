@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, FormControl, Input } from '@tableslayer/ui';
+  import { Button, FormControl, Input, Link, Panel, Spacer, Text, Title } from '@tableslayer/ui';
+  import { IllustrationPortal } from '$lib/components/index.js';
   import {
     useAuthVerifyEmailMutation,
     useAuthResendVerificationEmailMutation,
@@ -71,38 +72,61 @@
   };
 </script>
 
-<h1>Verify email</h1>
+<IllustrationPortal />
 
-{#if !isChangingEmail}
-  <p>{data.user?.email} <button type="button" onclick={() => (isChangingEmail = true)}>Change</button></p>
-
-  {#if data.isVerified}
-    <p>Email is already verified</p>
-  {:else if data.isWithinExpiration}
-    <form onsubmit={handleVerifyEmail}>
-      <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
+<Panel class="verify">
+  {#if !isChangingEmail}
+    {#if data.isVerified}
+      <Title as="h1" size="md">Your email is verified</Title>
+    {:else if data.isWithinExpiration}
+      <Title as="h1" size="md">Check your email</Title>
+      <Text>Enter the code sent to {data.user.email}</Text>
+      <Spacer size={2} />
+      <Link onclick={() => (isChangingEmail = true)}>Change email</Link>
+      <Spacer size={8} />
+      <form onsubmit={handleVerifyEmail}>
+        <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
+          {#snippet input({ inputProps })}
+            <Input {...inputProps} type="text" bind:value={verifyCode} />
+          {/snippet}
+        </FormControl>
+        <Spacer />
+        <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
+      </form>
+    {:else}
+      <p>Your previous verification code expired. Please request a new one.</p>
+      <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
+        >Resend verification email</Button
+      >
+    {/if}
+  {:else}
+    <form onsubmit={handleChangeEmail}>
+      <FormControl label="New email" name="newEmail" errors={changeEmailError && changeEmailError.errors}>
         {#snippet input({ inputProps })}
-          <Input {...inputProps} type="text" bind:value={verifyCode} />
+          <Input {...inputProps} type="email" bind:value={newEmail} />
         {/snippet}
       </FormControl>
-      <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
+      <button>Change email</button>
+      <Button type="button" isLoading={formIsLoading} disabled={formIsLoading} onclick={() => (isChangingEmail = false)}
+        >Cancel</Button
+      >
     </form>
-  {:else}
-    <p>Your previous verification code expired. Please request a new one.</p>
-    <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
-      >Resend verification email</Button
-    >
   {/if}
-{:else}
-  <form onsubmit={handleChangeEmail}>
-    <FormControl label="New email" name="newEmail" errors={changeEmailError && changeEmailError.errors}>
-      {#snippet input({ inputProps })}
-        <Input {...inputProps} type="email" bind:value={newEmail} />
-      {/snippet}
-    </FormControl>
-    <button>Change email</button>
-    <Button type="button" isLoading={formIsLoading} disabled={formIsLoading} onclick={() => (isChangingEmail = false)}
-      >Cancel</Button
-    >
-  </form>
-{/if}
+</Panel>
+
+<style>
+  :global(.panel.verify) {
+    display: flex;
+    flex-direction: column;
+    max-width: 360px;
+    padding: var(--size-8);
+    margin: 10vh auto auto 10vh;
+    position: relative;
+    z-index: 5;
+  }
+  @media (max-width: 768px) {
+    :global(.panel.panel--login) {
+      margin: 3rem 3rem auto 3rem;
+    }
+  }
+</style>
