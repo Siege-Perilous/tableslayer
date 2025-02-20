@@ -18,6 +18,7 @@
   let verifyCode = $state('');
   let verifyEmailError = $state<FormMutationError | undefined>(undefined);
   let changeEmailError = $state<FormMutationError | undefined>(undefined);
+  let showPortal = $derived(verifyCode !== '');
 
   const verifyEmail = useAuthVerifyEmailMutation();
   const resendEmail = useAuthResendVerificationEmailMutation();
@@ -72,50 +73,55 @@
   };
 </script>
 
-<IllustrationPortal />
+<IllustrationPortal {showPortal} />
 
 <Panel class="verify">
-  {#if !isChangingEmail}
-    {#if data.isVerified}
-      <Title as="h1" size="md">Your email is verified</Title>
-    {:else if data.isWithinExpiration}
-      <Title as="h1" size="md">Check your email</Title>
-      <Text>Enter the code sent to {data.user.email}</Text>
-      <Spacer size={2} />
-      <Link onclick={() => (isChangingEmail = true)}>Change email</Link>
-      <Spacer size={8} />
-      <form onsubmit={handleVerifyEmail}>
-        <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
+  <div>
+    {#if !isChangingEmail}
+      {#if data.isVerified}
+        <Title as="h1" size="md">Your email is verified</Title>
+      {:else if data.isWithinExpiration}
+        <Title as="h1" size="md">Check your email</Title>
+        <Text>Enter the code sent to {data.user.email}</Text>
+        <Spacer size={2} />
+        <Link onclick={() => (isChangingEmail = true)}>Change email</Link>
+        <Spacer size={8} />
+        <form onsubmit={handleVerifyEmail}>
+          <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
+            {#snippet input({ inputProps })}
+              <Input {...inputProps} type="text" bind:value={verifyCode} />
+            {/snippet}
+          </FormControl>
+          <Spacer />
+          <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
+        </form>
+      {:else}
+        <div>
+          <Title as="h1" size="md">Expired code</Title>
+          <Text>Your previous verification code expired. Please request a new one.</Text>
+          <Spacer />
+          <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
+            >Resend verification email</Button
+          >
+        </div>
+      {/if}
+    {:else}
+      <form onsubmit={handleChangeEmail}>
+        <FormControl label="New email" name="newEmail" errors={changeEmailError && changeEmailError.errors}>
           {#snippet input({ inputProps })}
-            <Input {...inputProps} type="text" bind:value={verifyCode} />
+            <Input {...inputProps} type="email" bind:value={newEmail} />
           {/snippet}
         </FormControl>
-        <Spacer />
-        <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
-      </form>
-    {:else}
-      <div>
-        <Title as="h1" size="md">Expired code</Title>
-        <Text>Your previous verification code expired. Please request a new one.</Text>
-        <Spacer />
-        <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
-          >Resend verification email</Button
+        <button>Change email</button>
+        <Button
+          type="button"
+          isLoading={formIsLoading}
+          disabled={formIsLoading}
+          onclick={() => (isChangingEmail = false)}>Cancel</Button
         >
-      </div>
+      </form>
     {/if}
-  {:else}
-    <form onsubmit={handleChangeEmail}>
-      <FormControl label="New email" name="newEmail" errors={changeEmailError && changeEmailError.errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="email" bind:value={newEmail} />
-        {/snippet}
-      </FormControl>
-      <button>Change email</button>
-      <Button type="button" isLoading={formIsLoading} disabled={formIsLoading} onclick={() => (isChangingEmail = false)}
-        >Cancel</Button
-      >
-    </form>
-  {/if}
+  </div>
 </Panel>
 
 <style>
