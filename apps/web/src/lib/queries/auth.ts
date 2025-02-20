@@ -44,7 +44,7 @@ export const useAuthVerifyEmailMutation = () => {
 export const useAuthResendVerificationEmailMutation = () => {
   return mutationFactory<{ userId: string }>({
     mutationKey: ['authResendVerificationEmail'],
-    endpoint: '/api/auth/resendVerificationEmail',
+    endpoint: '/api/auth/resendVerifyEmail',
     method: 'POST'
   });
 };
