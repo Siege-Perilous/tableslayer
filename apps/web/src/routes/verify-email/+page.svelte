@@ -94,10 +94,14 @@
         <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Verify</Button>
       </form>
     {:else}
-      <p>Your previous verification code expired. Please request a new one.</p>
-      <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
-        >Resend verification email</Button
-      >
+      <div>
+        <Title as="h1" size="md">Expired code</Title>
+        <Text>Your previous verification code expired. Please request a new one.</Text>
+        <Spacer />
+        <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
+          >Resend verification email</Button
+        >
+      </div>
     {/if}
   {:else}
     <form onsubmit={handleChangeEmail}>
@@ -125,8 +129,8 @@
     z-index: 5;
   }
   @media (max-width: 768px) {
-    :global(.panel.panel--login) {
-      margin: 3rem 3rem auto 3rem;
+    :global(.panel.verify) {
+      margin: 3rem auto auto auto;
     }
   }
 </style>
