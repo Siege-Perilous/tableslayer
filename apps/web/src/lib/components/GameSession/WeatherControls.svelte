@@ -6,7 +6,6 @@
     InputSlider,
     Spacer,
     type StageProps,
-    Input,
     Select,
     type ColorUpdatePayload,
     Hr,
@@ -63,9 +62,9 @@
       />
     {/snippet}
   </FormControl>
-  <FormControl label="FOV" name="fov" {errors}>
+  <FormControl label="Field of view" name="weatherFov" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={10} max={120} bind:value={stageProps.weather.fov} />
+      <InputSlider {...inputProps} min={10} max={120} step={1} bind:value={stageProps.weather.fov} />
     {/snippet}
   </FormControl>
 </div>
@@ -119,7 +118,7 @@
 {#if stageProps.fog.enabled}
   <Spacer />
   <div class="WeatherControls">
-    <FormControl label="Fog color" name="fogColor" {errors}>
+    <FormControl label="Ground fog color" name="fogColor" {errors}>
       {#snippet input({ inputProps })}
         <ColorPicker {...inputProps} bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
       {/snippet}

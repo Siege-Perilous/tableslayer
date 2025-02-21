@@ -373,7 +373,7 @@
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       saveScene();
-    }, 1000);
+    }, 3000);
   });
 </script>
 
