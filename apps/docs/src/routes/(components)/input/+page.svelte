@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { Button, Input, Spacer, FormControl } from '@tableslayer/ui';
+  import { Button, Input, Spacer, FormControl, InputSlider } from '@tableslayer/ui';
   import { Example } from '$lib/components';
 </script>
+
+<Example title="Input" propsName="Input">
+  <InputSlider />
+  <InputSlider hex="#FC0000" />
+</Example>
 
 <Example title="Input" propsName="Input">
   <Input id="first" placeholder="Hello I am an input" type="text" />

@@ -1,6 +1,20 @@
 <script lang="ts">
   import { type ZodIssue } from 'zod';
-  import { FormControl, Spacer, type StageProps, Input, Select } from '@tableslayer/ui';
+  import {
+    FormControl,
+    ColorPicker,
+    InputSlider,
+    Spacer,
+    type StageProps,
+    Input,
+    Select,
+    type ColorUpdatePayload,
+    Hr,
+    RadioButton,
+    Label
+  } from '@tableslayer/ui';
+  import { to8CharHex } from '$lib/utils';
+  import chroma from 'chroma-js';
 
   let {
     socketUpdate,
@@ -11,6 +25,8 @@
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
   } = $props();
+
+  let fogHex = $state(to8CharHex(stageProps.fog.color, stageProps.fog.opacity));
 
   const selectedWeather = $state(stageProps.weather.type.toString());
 
@@ -28,6 +44,12 @@
     { label: 'Leaves', value: '3' },
     { label: 'Embers', value: '4' }
   ];
+
+  const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
+    stageProps.fog.color = chroma(cd.hex).hex('rgb');
+    stageProps.fog.opacity = cd.rgba.a;
+    socketUpdate();
+  };
 </script>
 
 <div class="weatherControls">
@@ -51,19 +73,59 @@
 <div class="weatherControls">
   <FormControl label="Opacity" name="opacity" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={0} max={1} bind:value={stageProps.weather.opacity} />
+      <InputSlider
+        variant="opacity"
+        {...inputProps}
+        min={0}
+        max={1}
+        step={0.05}
+        bind:value={stageProps.weather.opacity}
+      />
     {/snippet}
   </FormControl>
   <FormControl label="Intensity" name="weatherIntensity" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={0} max={1} bind:value={stageProps.weather.intensity} />
-    {/snippet}
-    {#snippet end()}
-      in.
+      <InputSlider
+        variant="opacity"
+        {...inputProps}
+        min={0}
+        max={1}
+        step={0.05}
+        bind:value={stageProps.weather.intensity}
+      />
     {/snippet}
   </FormControl>
 </div>
+<Spacer size={2} />
+<Hr />
 <Spacer />
+<div class="weatherControls__fog">
+  <Label class="weatherControls__fogLabel">Ground fog</Label>
+  <div>
+    <RadioButton
+      selected={stageProps.fog.enabled ? 'true' : 'false'}
+      options={[
+        { label: 'on', value: 'true' },
+        { label: 'off', value: 'false' }
+      ]}
+      onSelectedChange={(value) => {
+        stageProps.fog.enabled = value === 'true';
+        socketUpdate();
+      }}
+    />
+  </div>
+</div>
+
+{#if stageProps.fog.enabled}
+  <Spacer />
+  <div class="WeatherControls">
+    <FormControl label="Fog color" name="fogColor" {errors}>
+      {#snippet input({ inputProps })}
+        <ColorPicker {...inputProps} bind:hex={fogHex} onUpdate={handleFogColorUpdate} />
+      {/snippet}
+    </FormControl>
+  </div>
+{/if}
 
 <style>
   .weatherControls {
@@ -71,5 +133,16 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+  :global {
+    .weatherControls__fog {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .weatherControls__fogLabel {
+      height: 2rem;
+      line-height: 2rem;
+    }
   }
 </style>

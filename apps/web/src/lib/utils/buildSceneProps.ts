@@ -52,9 +52,9 @@ export const buildSceneProps = (
       fadeEnd: 1.0
     },
     fog: {
-      enabled: true,
-      color: '#a0a0a0',
-      opacity: 0.8,
+      enabled: activeScene.fogEnabled,
+      color: activeScene.fogColor,
+      opacity: activeScene.fogOpacity,
       speed: 0.05,
       persistence: 0.5,
       lacunarity: 2.5,

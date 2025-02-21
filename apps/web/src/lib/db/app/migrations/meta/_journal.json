@@ -29,6 +29,13 @@
       "when": 1739654447317,
       "tag": "0003_user-favorite-party",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1740100051126,
+      "tag": "0004_weather-fog",
+      "breakpoints": true
     }
   ]
 }

@@ -56,6 +56,12 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     'resolution.y': 'displayResolutionY'
   });
 
+  setNestedIfExists(stageProps, details, 'fog', {
+    enabled: 'fogEnabled',
+    color: 'fogColor',
+    opacity: 'fogOpacity'
+  });
+
   setNestedIfExists(stageProps, details, 'fogOfWar', {
     url: 'fogOfWarUrl',
     'noise.baseColor': 'fogOfWarColor',
