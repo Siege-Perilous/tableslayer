@@ -201,7 +201,7 @@
           {#snippet content()}
             {#if scene.id === 'grid'}
               <GridControls
-                {stageProps}
+                bind:stageProps
                 {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
@@ -218,7 +218,7 @@
               <FogControls {stageProps} {socketUpdate} />
             {:else if scene.id === 'map'}
               <MapControls
-                {stageProps}
+                bind:stageProps
                 {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
@@ -233,7 +233,7 @@
             {:else if scene.id === 'play'}
               <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
             {:else if scene.id === 'weather'}
-              <WeatherControls {stageProps} {socketUpdate} {errors} />
+              <WeatherControls bind:stageProps {socketUpdate} {errors} />
             {/if}
           {/snippet}
         </Popover>

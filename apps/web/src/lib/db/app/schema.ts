@@ -322,11 +322,13 @@ export const sceneTable = sqliteTable(
     sceneOffsetX: integer('scene_offset_x').notNull().default(0),
     sceneOffsetY: integer('scene_offset_y').notNull().default(0),
     sceneRotation: integer('scene_rotation').notNull().default(0),
-    weatherColor: text('weather_color').notNull().default('#FFFFFF'),
     weatherFov: integer('weather_fov').notNull().default(60),
     weatherIntensity: real('weather_intensity').notNull().default(1),
     weatherOpacity: real('weather_opacity').notNull().default(1.0),
-    weatherType: integer('weather_type').notNull().default(0)
+    weatherType: integer('weather_type').notNull().default(0),
+    fogEnabled: integer('fog_enabled', { mode: 'boolean' }).notNull().default(false),
+    fogColor: text('fog_color').notNull().default('#a0a0a0'),
+    fogOpacity: real('fog_opacity').notNull().default(0.8)
   },
   (table) => ({
     uniqueSessionSceneOrder: uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),

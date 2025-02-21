@@ -15,3 +15,8 @@ export type LabelProps = {
   children: Snippet;
   props?: Record<string, unknown>;
 } & HTMLLabelAttributes;
+
+export type InputSliderProps = {
+  variant?: 'default' | 'opacity';
+  hex?: string;
+} & HTMLInputAttributes;

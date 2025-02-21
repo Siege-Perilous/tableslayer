@@ -10,8 +10,7 @@ import {
   RainPreset,
   SceneRotation,
   type StageProps,
-  ToolType,
-  WeatherType
+  ToolType
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
@@ -53,9 +52,9 @@ export const buildSceneProps = (
       fadeEnd: 1.0
     },
     fog: {
-      enabled: true,
-      color: '#a0a0a0',
-      opacity: 0.8,
+      enabled: activeScene.fogEnabled,
+      color: activeScene.fogColor,
+      opacity: activeScene.fogOpacity,
       speed: 0.05,
       persistence: 0.5,
       lacunarity: 2.5,
@@ -169,7 +168,7 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      type: WeatherType.Rain,
+      type: activeScene.weatherType,
       opacity: activeScene.weatherOpacity,
       intensity: activeScene.weatherIntensity,
       fov: activeScene.weatherFov,
