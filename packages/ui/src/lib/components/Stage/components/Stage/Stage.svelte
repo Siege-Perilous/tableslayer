@@ -5,13 +5,14 @@
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
   import { PerfMonitor } from '@threlte/extras';
+  import type { Marker } from '../MarkerLayer/types';
 
   interface Props {
     props: StageProps;
     onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onMarkersUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+    onMarkersUpdated: (updatedMarkers: Marker[]) => void;
   }
 
   let { props, onFogUpdate, onMapUpdate, onSceneUpdate, onMarkersUpdated }: Props = $props();

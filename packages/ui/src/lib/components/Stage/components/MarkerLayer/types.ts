@@ -3,6 +3,15 @@ export enum MarkerEditMode {
   Remove = 1
 }
 
+export interface Marker {
+  id: string;
+  name: string;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
 export interface MarkerLayerProps {
   /**
    * Color of the marker icons represented as a hex string (e.g. 0x60A3FE)
@@ -13,12 +22,6 @@ export interface MarkerLayerProps {
    * The current edit mode for the marker layer (add or remove markers)
    */
   editMode: MarkerEditMode;
-
-  /**
-   * An array of the locations of all marker markers. Values for `x` and `y`
-   * should vary between 0 and 1. The origin is the bottom-left of the map.
-   */
-  locations: { x: number; y: number }[];
 
   /**
    * The size of the marker marker
@@ -49,4 +52,9 @@ export interface MarkerLayerProps {
    * The outer radius of the marker marker
    */
   thickness: number;
+
+  /**
+   * An array of Marker objects
+   */
+  markers: Marker[];
 }

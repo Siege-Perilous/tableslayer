@@ -3,7 +3,7 @@ import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
-import type { MarkerLayerProps } from '../MarkerLayer/types';
+import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
 import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
@@ -11,7 +11,7 @@ export interface Callbacks {
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-  onMarkersUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+  onMarkersUpdated: (updatedMarkers: Marker[]) => void;
 }
 
 export interface DisplayProps {

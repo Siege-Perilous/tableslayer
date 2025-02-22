@@ -1,23 +1,23 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { MarkerEditMode, type MarkerLayerProps } from './types';
+  import { MarkerEditMode, type Marker } from './types';
   import MarkerMaterial from './MarkerMaterial.svelte';
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
   import type { Size } from '../../types';
+  import type { StageProps } from '../Stage/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
-    props: MarkerLayerProps;
+    props: StageProps;
     isActive: boolean;
     mapSize: Size | null;
   }
 
   const { props, isActive, mapSize, ...meshProps }: Props = $props();
 
-  const onmarkersUpdated = getContext<Callbacks>('callbacks').onMarkersUpdated;
-
+  const { onMarkersUpdated } = getContext<Callbacks>('callbacks');
   // svelte-ignore non_reactive_update
   let markerMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
@@ -33,14 +33,14 @@
 
     let indexOffset = 0;
 
-    props.locations.forEach((location) => {
+    props.marker.markers.forEach((marker) => {
       // Each quad has 4 vertices (a square)
       const halfSize = {
-        x: props.markerSize / mapSize.width / 2,
-        y: props.markerSize / mapSize.height / 2
+        x: props.marker.markerSize / mapSize.width / 2,
+        y: props.marker.markerSize / mapSize.height / 2
       };
-      const x = location.x;
-      const y = 1.0 - location.y;
+      const x = marker.position.x;
+      const y = 1.0 - marker.position.y;
 
       // Define 4 vertices of the quad (in 3D space, z = 0)
 
@@ -77,26 +77,31 @@
   function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
     if (!coords || !mapSize) return;
 
-    if (props.editMode === MarkerEditMode.Add) {
+    if (props.marker.editMode === MarkerEditMode.Add) {
       const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };
-      onmarkersUpdated([...props.locations, location]);
+      props.marker.markers.push({
+        id: crypto.randomUUID(),
+        name: 'New Marker',
+        position: location
+      });
     } else {
       // Find the marker that is closest to the mouse down point. The test point
       // must be within the outer radius of the marker for it to be considered
-      let closestmarker: { x: number; y: number } | null = null;
+      let closestMarker: Marker | null = null;
       let minDistance = Infinity;
-      props.locations.forEach((marker) => {
-        const markerCoords = new THREE.Vector2(marker.x * mapSize.width, marker.y * mapSize.height);
+      props.marker.markers.forEach((marker) => {
+        const markerCoords = new THREE.Vector2(marker.position.x * mapSize.width, marker.position.y * mapSize.height);
         const distance = coords.distanceTo(markerCoords);
-        if (distance < minDistance && distance <= props.markerSize / 2) {
+        if (distance < minDistance && distance <= props.marker.markerSize / 2) {
           minDistance = distance;
-          closestmarker = marker;
+          closestMarker = marker;
         }
       });
 
       // If a marker was found, remove it and fire the callback
-      if (closestmarker) {
-        onmarkersUpdated(props.locations.filter((l) => l !== closestmarker));
+      if (closestMarker) {
+        props.marker.markers = props.marker.markers.filter((m) => m.id !== closestMarker?.id);
+        onMarkersUpdated(props.marker.markers);
       }
     }
   }
@@ -112,5 +117,5 @@
 
 <!-- This mesh is used to render the markers -->
 <T.Mesh bind:ref={markerMesh} name="markerLayer" position={[-0.5, -0.5, 0]} {meshProps}>
-  <MarkerMaterial {props} />
+  <MarkerMaterial props={props.marker} />
 </T.Mesh>

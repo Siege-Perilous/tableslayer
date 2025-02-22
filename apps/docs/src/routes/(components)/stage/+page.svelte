@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { Button, Binding, Color, Folder, List, type ListOptions, Pane, Slider, Separator } from 'svelte-tweakpane-ui';
+  import {
+    Button,
+    Binding,
+    Color,
+    Folder,
+    List,
+    type ListOptions,
+    Pane,
+    Slider,
+    Separator,
+    Text
+  } from 'svelte-tweakpane-ui';
   import {
     GridType,
     Stage,
@@ -15,7 +26,8 @@
     SnowPreset,
     RainPreset,
     LeavesPreset,
-    AshPreset
+    AshPreset,
+    type Marker
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
@@ -173,7 +185,7 @@
     stageProps.map.url = mapUrl;
     // Reset fog of war data and ping locations
     stageProps.fogOfWar.url = null;
-    stageProps.marker.locations = [];
+    stageProps.marker.markers = [];
   }
 
   async function onFogUpdate() {
@@ -192,8 +204,8 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onMarkersUpdated(updatedLocations: { x: number; y: number }[]) {
-    stageProps.marker.locations = updatedLocations;
+  function onMarkersUpdated(updatedMarkers: Marker[]) {
+    stageProps.marker.markers = updatedMarkers;
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -387,6 +399,16 @@
     <Slider bind:value={stageProps.marker.sharpness} label="Edge Sharpness" min={0} max={1} />
     <Slider bind:value={stageProps.marker.pulseAmplitude} label="Pulse Amplitude" min={0} max={1} step={0.01} />
     <Slider bind:value={stageProps.marker.pulseSpeed} label="Pulse Speed" min={0} max={5} step={0.01} />
+
+    <Separator />
+
+    {#each stageProps.marker.markers as marker}
+      <Folder title={marker.name}>
+        <Text bind:value={marker.id} label="Id" disabled={true} />
+        <Slider bind:value={marker.position.x} label="X" />
+        <Slider bind:value={marker.position.y} label="Y" />
+      </Folder>
+    {/each}
   </Folder>
 
   <Folder title="Post Processing" expanded={false}>

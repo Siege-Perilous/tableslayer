@@ -103,13 +103,30 @@ export const StageDefaultProps: StageProps = {
   marker: {
     color: '#ff0000',
     editMode: MarkerEditMode.Add,
-    locations: [],
     markerSize: 70,
     opacity: 1.0,
     pulseAmplitude: 0.2,
     pulseSpeed: 3.0,
     sharpness: 0.95,
-    thickness: 0.1
+    thickness: 0.1,
+    markers: [
+      {
+        id: '1234-1292-1293-1293',
+        name: 'Marker 1',
+        position: {
+          x: 0.5,
+          y: 0.5
+        }
+      },
+      {
+        id: '1234-1292-1293-1294',
+        name: 'Marker 2',
+        position: {
+          x: 0.5,
+          y: 0.5
+        }
+      }
+    ]
   },
   postProcessing: {
     enabled: true,

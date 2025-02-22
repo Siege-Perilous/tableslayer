@@ -112,7 +112,7 @@
   </T.Mesh>
 
   <MarkerLayer
-    props={props.marker}
+    {props}
     isActive={props.activeLayer === MapLayerType.Marker}
     {mapSize}
     layers={[SceneLayer.Main]}
