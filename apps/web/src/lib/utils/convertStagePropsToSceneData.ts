@@ -56,6 +56,15 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     'resolution.y': 'displayResolutionY'
   });
 
+  setNestedIfExists(stageProps, details, 'edgeOverlay', {
+    enabled: 'edgeEnabled',
+    opacity: 'edgeOpacity',
+    fadeStart: 'edgeFadeStart',
+    fadeEnd: 'edgeFadeEnd',
+    scale: 'edgeScale',
+    url: 'edgeUrl'
+  });
+
   setNestedIfExists(stageProps, details, 'fog', {
     enabled: 'fogEnabled',
     color: 'fogColor',

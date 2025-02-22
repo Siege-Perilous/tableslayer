@@ -1,3 +1,4 @@
+export { default as DualInputSlider } from './DualInputSlider.svelte';
 export { default as FileInput } from './FileInput.svelte';
 export { default as FormControl } from './FormControl.svelte';
 export { default as FormError } from './FormError.svelte';
