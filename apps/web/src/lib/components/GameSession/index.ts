@@ -1,4 +1,5 @@
 export { default as CreateGameSession } from './CreateGameSession.svelte';
+export { default as EdgeControls } from './EdgeControls.svelte';
 export { default as FogControls } from './FogControls.svelte';
 export { default as GameSessionCard } from './GameSessionCard.svelte';
 export { default as GridControls } from './GridControls.svelte';
