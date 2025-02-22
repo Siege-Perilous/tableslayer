@@ -44,12 +44,12 @@ export const buildSceneProps = (
       }
     },
     edgeOverlay: {
-      enabled: true,
-      url: null,
-      opacity: 0.3,
-      scale: 2.0,
-      fadeStart: 0.2,
-      fadeEnd: 1.0
+      enabled: activeScene.edgeEnabled,
+      url: activeScene.edgeUrl,
+      opacity: activeScene.edgeOpacity,
+      scale: activeScene.edgeScale,
+      fadeStart: activeScene.edgeFadeStart,
+      fadeEnd: activeScene.edgeFadeEnd
     },
     fog: {
       enabled: activeScene.fogEnabled,

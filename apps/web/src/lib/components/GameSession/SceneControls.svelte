@@ -21,13 +21,14 @@
     IconSquare,
     IconSquareFilled,
     IconScreenShare,
-    IconScreenShareOff
+    IconScreenShareOff,
+    IconBorderSides
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
   import { type ZodIssue } from 'zod';
-  import { GridControls, WeatherControls, MapControls, FogControls, PlayControls } from './';
+  import { GridControls, WeatherControls, EdgeControls, MapControls, FogControls, PlayControls } from './';
 
   let {
     socketUpdate,
@@ -88,6 +89,12 @@
       id: 'grid',
       icon: IconGrid4x4,
       text: 'Grid',
+      mapLayer: MapLayerType.None
+    },
+    {
+      id: 'edge',
+      icon: IconBorderSides,
+      text: 'Edge',
       mapLayer: MapLayerType.None
     },
     {
@@ -234,6 +241,8 @@
               <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {socketUpdate} {errors} />
+            {:else if scene.id === 'edge'}
+              <EdgeControls bind:stageProps {socketUpdate} {errors} />
             {/if}
           {/snippet}
         </Popover>

@@ -328,7 +328,13 @@ export const sceneTable = sqliteTable(
     weatherType: integer('weather_type').notNull().default(0),
     fogEnabled: integer('fog_enabled', { mode: 'boolean' }).notNull().default(false),
     fogColor: text('fog_color').notNull().default('#a0a0a0'),
-    fogOpacity: real('fog_opacity').notNull().default(0.8)
+    fogOpacity: real('fog_opacity').notNull().default(0.8),
+    edgeEnabled: integer('edge_enabled', { mode: 'boolean' }).notNull().default(false),
+    edgeUrl: text('edge_url'),
+    edgeOpacity: real('edge_opacity').notNull().default(0.3),
+    edgeScale: real('edge_scale').notNull().default(2.0),
+    edgeFadeStart: real('edge_fade_start').notNull().default(0.2),
+    edgeFadeEnd: real('edge_fade_end').notNull().default(1.0)
   },
   (table) => ({
     uniqueSessionSceneOrder: uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
@@ -336,7 +342,31 @@ export const sceneTable = sqliteTable(
       'protected_fog_of_war_opacity',
       sql`${table.fogOfWarOpacity} >= 0 AND ${table.fogOfWarOpacity} <= 1`
     ),
-    checkGridOpacityCheck: check('protected_grid_opacity', sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`)
+    checkGridOpacityCheck: check(
+      'protected_grid_opacity',
+      sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`
+    ),
+    checkWeatherIntensityCheck: check(
+      'protected_weather_intensity',
+      sql`${table.weatherIntensity} >= 0 AND ${table.weatherIntensity} <= 1`
+    ),
+    checkWeatherOpacityCheck: check(
+      'protected_weather_opacity',
+      sql`${table.weatherOpacity} >= 0 AND ${table.weatherOpacity} <= 1`
+    ),
+    checkFogOpacityCheck: check('protected_fog_opacity', sql`${table.fogOpacity} >= 0 AND ${table.fogOpacity} <= 1`),
+    checkEdgeOpacityCheck: check(
+      'protected_edge_opacity',
+      sql`${table.edgeOpacity} >= 0 AND ${table.edgeOpacity} <= 1`
+    ),
+    checkEdgeFadeStartCheck: check(
+      'protected_edge_fade_start',
+      sql`${table.edgeFadeStart} >= 0 AND ${table.edgeFadeStart} <= 1`
+    ),
+    checkEdgeFadeEndCheck: check(
+      'protected_edge_fade_end',
+      sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`
+    )
   })
 );
 

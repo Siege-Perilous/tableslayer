@@ -20,3 +20,12 @@ export type InputSliderProps = {
   variant?: 'default' | 'opacity';
   hex?: string;
 } & HTMLInputAttributes;
+
+export type DualInputSliderProps = {
+  valueStart: number;
+  valueEnd: number;
+  color?: string;
+  min: number;
+  max: number;
+  step: number;
+} & HTMLInputAttributes;
