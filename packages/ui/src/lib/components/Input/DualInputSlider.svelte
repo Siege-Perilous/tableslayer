@@ -7,11 +7,9 @@
     min,
     max,
     step,
-    hex = '#666666',
+    color = 'var(--fg)',
     ...restProps
   }: DualInputSliderProps = $props();
-
-  console.log({ valueStart, valueEnd, min, max, step, hex, restProps });
 
   const sliderClasses = $derived(['dualInputSlider', restProps.class ?? '']);
 
@@ -38,7 +36,7 @@
       class="dualInputSliderActiveTrack"
       style={`left: ${leftPos()}%;
             right: ${rightPos()}%;
-            background: ${hex};`}
+            background: ${color};`}
     ></div>
 
     <input type="range" {min} {max} {step} bind:value={valueStart} oninput={handleInputStart} class={sliderClasses} />

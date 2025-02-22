@@ -24,7 +24,7 @@ export type InputSliderProps = {
 export type DualInputSliderProps = {
   valueStart: number;
   valueEnd: number;
-  hex?: string;
+  color?: string;
   min: number;
   max: number;
   step: number;

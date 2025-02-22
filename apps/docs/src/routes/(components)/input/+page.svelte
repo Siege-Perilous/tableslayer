@@ -5,12 +5,12 @@
 
 <Example title="InputSlider" propsName="InputSlider">
   <InputSlider />
-  <InputSlider hex="#FC0000" />
+  <InputSlider hex="blue" />
 </Example>
 
 <Example title="DualInputSlider" propsName="DualInputSlider">
   <DualInputSlider step={0.05} min={0.1} max={1} valueStart={0.1} valueEnd={0.8} />
-  <DualInputSlider step={0.05} min={0.1} max={1} valueStart={0.1} valueEnd={0.8} hex="#FC0000" />
+  <DualInputSlider step={0.05} min={0.1} max={1} valueStart={0.1} valueEnd={0.8} color="#FC0000" />
 </Example>
 
 <Example title="Input" propsName="Input">
