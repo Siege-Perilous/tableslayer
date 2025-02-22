@@ -10,7 +10,7 @@ import {
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
-import frostImageUrl from './overlays/frost.png?url';
+import frostImageUrl from './components/overlays/frost.png?url';
 
 export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
