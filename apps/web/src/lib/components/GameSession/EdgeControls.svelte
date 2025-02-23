@@ -21,14 +21,14 @@
   } = $props();
 
   const EDGE_TEXTURES = [
-    'https://files.tableslayer.com/edgetextures/clouds-01.png',
-    'https://files.tableslayer.com/edgetextures/forrest-01.png',
-    'https://files.tableslayer.com/edgetextures/ice-01.png',
-    'https://files.tableslayer.com/edgetextures/ice-02.png',
-    'https://files.tableslayer.com/edgetextures/stars-01.png',
-    'https://files.tableslayer.com/edgetextures/stars-02.png',
-    'https://files.tableslayer.com/edgetextures/stone-01.png',
-    'https://files.tableslayer.com/edgetextures/stone-02.png'
+    'https://files.tableslayer.com/edgetextures/clouds-01.webp',
+    'https://files.tableslayer.com/edgetextures/forrest-01.webp',
+    'https://files.tableslayer.com/edgetextures/ice-01.webp',
+    'https://files.tableslayer.com/edgetextures/ice-02.webp',
+    'https://files.tableslayer.com/edgetextures/stars-01.webp',
+    'https://files.tableslayer.com/edgetextures/stars-02.webp',
+    'https://files.tableslayer.com/edgetextures/stone-01.webp',
+    'https://files.tableslayer.com/edgetextures/stone-02.webp'
   ];
 
   const handleEdgeUrlChange = (value: string) => {
