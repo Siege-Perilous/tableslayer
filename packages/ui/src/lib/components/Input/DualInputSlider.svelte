@@ -30,10 +30,10 @@
   const rightPos = $derived(() => 100 - ((valueEnd - min) / (max - min)) * 100);
 </script>
 
-<div class="dualInputSliderWrapper">
-  <div class="dualInputSliderBackgroundTrack">
+<div class="dualInputSlider__wrap">
+  <div class="dualInputSlider__bgTrack">
     <div
-      class="dualInputSliderActiveTrack"
+      class="dualInputSlider__activeTrack"
       style={`left: ${leftPos()}%;
             right: ${rightPos()}%;
             background: ${color};`}
@@ -45,13 +45,13 @@
 </div>
 
 <style>
-  .dualInputSliderWrapper {
+  .dualInputSlider__wrap {
     display: flex;
     width: 100%;
     align-items: center;
     height: 2rem;
   }
-  .dualInputSliderBackgroundTrack {
+  .dualInputSlider__bgTrack {
     position: relative;
     width: 100%;
     height: 4px;
@@ -95,7 +95,7 @@
     cursor: pointer;
   }
 
-  .dualInputSliderActiveTrack {
+  .dualInputSlider__activeTrack {
     position: absolute;
     z-index: 1;
     height: 0.25rem;

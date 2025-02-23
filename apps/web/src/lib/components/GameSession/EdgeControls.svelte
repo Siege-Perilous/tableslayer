@@ -21,14 +21,14 @@
   } = $props();
 
   const EDGE_TEXTURES = [
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/clouds-01.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/forrest-01.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-01.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-02.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-01.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-02.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-01.png?cors=1',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-02.png?cors=1'
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/clouds-01.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/forrest-01.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-01.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-02.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-01.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-02.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-01.png',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-02.png'
   ];
 
   const handleEdgeUrlChange = (value: string) => {
@@ -87,9 +87,9 @@
     <FormControl label="Fade" name="edgeFade" {errors}>
       {#snippet input({ inputProps })}
         <DualInputSlider
-          min={0}
+          min={0.1}
           max={1}
-          step={0.01}
+          step={0.05}
           {...inputProps}
           bind:valueStart={stageProps.edgeOverlay.fadeStart}
           bind:valueEnd={stageProps.edgeOverlay.fadeEnd}

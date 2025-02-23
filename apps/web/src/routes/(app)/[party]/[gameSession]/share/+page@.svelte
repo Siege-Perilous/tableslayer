@@ -56,6 +56,7 @@
         map: payload.stageProps.map,
         display: payload.stageProps.display,
         weather: payload.stageProps.weather,
+        edgeOverlay: payload.stageProps.edgeOverlay,
         ping: payload.stageProps.ping
       };
 
