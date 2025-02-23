@@ -33,7 +33,6 @@
   let stage: StageExports;
   let scenesPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
-  let fogBlob: Blob | null = $state(null);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
 
@@ -294,20 +293,13 @@
    * The Stage component emits a blob when the fog of war is updated.
    * We update state so that saveScene() has something to check so uploads don't happen immediately
    */
+  let isUpdatingFog = false;
   const onFogUpdate = async (blob: Promise<Blob>) => {
-    fogBlob = await blob;
-    fogBlobUpdateTime = new Date();
-  };
+    isUpdatingFog = true;
 
-  let isSaving = false;
+    const fogBlob = await blob;
 
-  const saveScene = async () => {
-    if (isSaving) return;
-    isSaving = true;
-
-    console.log('Saving scene...');
-
-    if (fogBlob !== null) {
+    if (blob !== null && !isSaving) {
       await handleMutation({
         mutation: () =>
           $createFogMutation.mutateAsync({
@@ -316,16 +308,29 @@
           }),
         formLoadingState: () => console.log('fog is uploading'),
         onSuccess: (fog) => {
-          // Directly update fogBlob instead of triggering a full reactivity cycle
           stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          fogBlobUpdateTime = new Date();
           socketUpdate();
           console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
+          isUpdatingFog = false;
+        },
+        onError: () => {
+          console.log('Error uploading fog');
+          isUpdatingFog = false;
         },
         toastMessages: {
           error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
         }
       });
     }
+  };
+
+  let isSaving = false;
+  const saveScene = async () => {
+    if (isSaving || isUpdatingFog) return;
+    isSaving = true;
+
+    console.log('Saving scene...');
 
     await handleMutation({
       mutation: () =>
