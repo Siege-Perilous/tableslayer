@@ -21,14 +21,14 @@
   } = $props();
 
   const EDGE_TEXTURES = [
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/clouds-01.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/forrest-01.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-01.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-02.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-01.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-02.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-01.png',
-    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-02.png'
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/clouds-01.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/forrest-01.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-01.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/ice-02.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-01.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stars-02.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-01.png?cors=1',
+    'https://files.tableslayer.com/cdn-cgi/image/w=1024,h=1024,fit=scale-down/edgetextures/stone-02.png?cors=1'
   ];
 
   const handleEdgeUrlChange = (value: string) => {
