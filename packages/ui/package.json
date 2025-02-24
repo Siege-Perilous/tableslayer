@@ -42,7 +42,7 @@
     "@magidoc/plugin-svelte-marked": "^6.2.0",
     "@melt-ui/svelte": "^0.86.3",
     "@sveltejs/adapter-auto": "^4.0.0",
-    "@sveltejs/adapter-vercel": "^5.6.2",
+    "@sveltejs/adapter-vercel": "^5.6.3",
     "@sveltejs/kit": "^2.17.2",
     "@sveltejs/package": "^2.3.10",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
@@ -52,11 +52,11 @@
     "@types/marked": "^6.0.0",
     "@types/three": "0.173.0",
     "marked": "^15.0.7",
-    "svelte": "5.20.1",
+    "svelte": "5.20.2",
     "svelte-check": "^4.1.4",
-    "typedoc": "^0.27.7",
+    "typedoc": "^0.27.8",
     "typescript": "^5.7.3",
-    "vite": "^6.1.0"
+    "vite": "^6.1.1"
   },
   "dependencies": {
     "@tabler/icons-svelte": "^3.30.0",
@@ -66,7 +66,7 @@
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
     "postprocessing": "6.36.7",
-    "shiki": "^2.4.1",
+    "shiki": "^3.0.0",
     "three": "0.173.0",
     "zod": "^3.24.2"
   },

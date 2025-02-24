@@ -14,7 +14,7 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "prettier": "^3.5.1",
+    "prettier": "^3.5.2",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-svelte": "^3.3.3",
     "turbo": "^2.4.2"

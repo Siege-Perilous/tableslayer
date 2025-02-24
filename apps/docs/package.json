@@ -36,11 +36,11 @@
     "@threlte/extras": "9.0.1",
     "postprocessing": "6.36.7",
     "dotenv": "^16.4.7",
-    "svelte": "5.20.1",
+    "svelte": "5.20.2",
     "svelte-check": "^4.1.4",
     "tslib": "^2.8.1",
     "typescript": "^5.7.3",
-    "vite": "^6.1.0",
-    "vitest": "^3.0.5"
+    "vite": "^6.1.1",
+    "vitest": "^3.0.6"
   }
 }
