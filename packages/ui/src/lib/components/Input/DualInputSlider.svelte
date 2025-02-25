@@ -67,7 +67,7 @@
     appearance: none;
     position: absolute;
     width: 100%;
-    height: 0.25rem;
+    height: 3px;
     pointer-events: none;
     top: 50%;
     transform: translateY(-50%);
@@ -98,7 +98,7 @@
   .dualInputSlider__activeTrack {
     position: absolute;
     z-index: 1;
-    height: 0.25rem;
+    height: 3px;
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
