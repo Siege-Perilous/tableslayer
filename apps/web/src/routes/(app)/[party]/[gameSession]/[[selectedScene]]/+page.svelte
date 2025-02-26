@@ -4,7 +4,7 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
+  import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import {
@@ -30,7 +30,7 @@
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
-  let stage: StageExports;
+  let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
@@ -413,6 +413,7 @@
         </div>
         <SceneControls
           bind:stageProps
+          {stage}
           {handleMapFill}
           {handleMapFit}
           {handleSceneFit}
@@ -426,6 +427,7 @@
           {errors}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
+        <Shortcuts />
       </div>
     </Pane>
   </PaneGroup>
