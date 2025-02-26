@@ -13,8 +13,6 @@
     errors: ZodIssue[] | undefined;
   } = $props();
 
-  console.log('lutsUrl', stageProps.postProcessing.lut.url);
-
   const lutOptions = [
     { label: 'None', value: 'none' },
     { label: 'Grayscale', value: 'http://files.tableslayer.com/stage/luts/Grayscale.cube' },
@@ -48,7 +46,6 @@
       socketUpdate();
       return;
     }
-    console.log('weather type change', lutUrl);
     stageProps.postProcessing.lut.url = lutUrl;
     stageProps.postProcessing.lut.enabled = true;
     socketUpdate();
