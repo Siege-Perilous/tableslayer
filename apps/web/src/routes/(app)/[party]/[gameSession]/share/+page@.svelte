@@ -23,8 +23,8 @@
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
-  let innerWidth = $state();
-  let innerHeight = $state();
+  let innerWidth = $state(null);
+  let innerHeight = $state(null);
   const fadeOutDelay = 5000;
 
   const handleResize = () => {
