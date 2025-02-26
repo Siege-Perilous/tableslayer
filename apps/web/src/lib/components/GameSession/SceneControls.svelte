@@ -7,7 +7,8 @@
     ToolType,
     type StageProps,
     MapLayerType,
-    SelectorMenu
+    SelectorMenu,
+    type StageExports
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -44,6 +45,7 @@
     handleSelectActiveControl,
     activeControl = 'none',
     stageProps = $bindable(),
+    stage,
     party,
     gameSession,
     selectedScene,
@@ -65,6 +67,7 @@
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;
+    stage: StageExports;
   } = $props();
 
   type SceneControl = {
@@ -122,46 +125,52 @@
 
   const eraseOptions = [
     {
-      label: 'Freehand erase',
+      label: 'Erase brush',
       value: 'eraseBrush',
       icon: IconPaint,
       toolType: ToolType.Brush,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'E'
     },
     {
-      label: 'Freehand add',
+      label: 'Add brush',
       value: 'addBrush',
       icon: IconPaintFilled,
       toolType: ToolType.Brush,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: `Shift+E`
     },
     {
       label: 'Erase rectangle',
       value: 'areaErase',
       icon: IconSquare,
       toolType: ToolType.Rectangle,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'R'
     },
     {
       label: 'Add rectangle',
       value: 'areaAdd',
       icon: IconSquareFilled,
       toolType: ToolType.Rectangle,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: 'Shift+R'
     },
     {
       label: 'Erase ellipse',
       value: 'ellipseErase',
       icon: IconCircle,
       toolType: ToolType.Ellipse,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'O'
     },
     {
       label: 'Add ellipse',
       value: 'ellipsAdd',
       icon: IconCircleFilled,
       toolType: ToolType.Ellipse,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: 'Shift+O'
     }
   ];
 
@@ -236,7 +245,7 @@
                 {errors}
               />
             {:else if scene.id === 'fog'}
-              <FogControls {stageProps} {socketUpdate} />
+              <FogControls {stage} {stageProps} {socketUpdate} />
             {:else if scene.id === 'map'}
               <MapControls
                 bind:stageProps
