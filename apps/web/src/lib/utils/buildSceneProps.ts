@@ -12,7 +12,6 @@ import {
   type StageProps,
   ToolType
 } from '@tableslayer/ui';
-import { ToneMappingMode } from 'postprocessing';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
@@ -123,27 +122,27 @@ export const buildSceneProps = (
       enabled: true,
       bloom: {
         enabled: true,
-        intensity: 0.5,
-        threshold: 0.5,
-        smoothing: 0.5,
-        radius: 0.5,
-        levels: 0.5,
-        mipmapBlur: true
+        intensity: activeScene.effectsBloomIntensity,
+        threshold: activeScene.effectsBloomThreshold,
+        smoothing: activeScene.effectsBloomSmoothing,
+        radius: activeScene.effectsBloomRadius,
+        levels: activeScene.effectsBloomLevels,
+        mipmapBlur: activeScene.effectsBloomMipMapBlur
       },
       chromaticAberration: {
         enabled: true,
-        offset: 0.001
+        offset: activeScene.effectsChromaticAberrationOffset
       },
       lut: {
-        enabled: true,
-        url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
+        enabled: activeScene.effectsLutUrl !== '' && activeScene.effectsLutUrl !== null,
+        url: activeScene.effectsLutUrl ?? ''
       },
       toneMapping: {
         enabled: true,
-        mode: ToneMappingMode.NEUTRAL
+        mode: activeScene.effectsToneMappingMode
       },
       vignette: {
-        enabled: true,
+        enabled: false,
         offset: 0.5,
         darkness: 0.5
       }

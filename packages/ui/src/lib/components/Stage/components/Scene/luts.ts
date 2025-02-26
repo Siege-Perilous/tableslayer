@@ -10,7 +10,8 @@ const lutLoader = new LUTCubeLoader(loadingManager);
  * @param url The URL of the LUT to get
  * @returns A promise that resolves to the LookupTexture
  */
-export const getLUT = async (url: string): Promise<LookupTexture | null> => {
+export const getLUT = async (url: string | null): Promise<LookupTexture | null> => {
+  if (!url) return null;
   const result = await lutLoader.loadAsync(url);
   try {
     const lookupTexture = LookupTexture.from(result.texture3D);

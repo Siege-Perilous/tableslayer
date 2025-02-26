@@ -334,7 +334,17 @@ export const sceneTable = sqliteTable(
     edgeOpacity: real('edge_opacity').notNull().default(0.3),
     edgeScale: real('edge_scale').notNull().default(2.0),
     edgeFadeStart: real('edge_fade_start').notNull().default(0.2),
-    edgeFadeEnd: real('edge_fade_end').notNull().default(1.0)
+    edgeFadeEnd: real('edge_fade_end').notNull().default(1.0),
+    effectsEnabled: integer('effects_enabled', { mode: 'boolean' }).notNull().default(true),
+    effectsBloomIntensity: real('effects_bloom_intensity').notNull().default(0),
+    effectsBloomThreshold: real('effects_bloom_threshold').notNull().default(0.5),
+    effectsBloomSmoothing: real('effects_bloom_smoothing').notNull().default(0.3),
+    effectsBloomRadius: real('effects_bloom_radius').notNull().default(0.5),
+    effectsBloomLevels: integer('effects_bloom_levels').notNull().default(10),
+    effectsBloomMipMapBlur: integer('effects_bloom_mip_map_blur', { mode: 'boolean' }).notNull().default(true),
+    effectsChromaticAberrationOffset: real('effects_chromatic_aberration_intensity').notNull().default(0),
+    effectsLutUrl: text('effects_lut_url'),
+    effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0)
   },
   (table) => ({
     uniqueSessionSceneOrder: uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),

@@ -23,12 +23,13 @@
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
+  let innerWidth = $state();
+  let innerHeight = $state();
   const fadeOutDelay = 5000;
 
   const handleResize = () => {
-    if (stage) {
-      stage.scene.fit();
-    }
+    if (!stage) return;
+    stage.scene.fit();
   };
 
   onMount(() => {
@@ -51,13 +52,8 @@
       editorSceneRotation = payload.stageProps.scene.rotation;
       stageProps = {
         ...stageProps,
-        fogOfWar: payload.stageProps.fogOfWar,
-        grid: payload.stageProps.grid,
-        map: payload.stageProps.map,
-        display: payload.stageProps.display,
-        weather: payload.stageProps.weather,
-        edgeOverlay: payload.stageProps.edgeOverlay,
-        ping: payload.stageProps.ping
+        // Override stage props with the updated props from the websocket
+        ...payload.stageProps
       };
 
       handleResize();
@@ -182,9 +178,19 @@
 
     return () => clearInterval(interval);
   });
+
+  // This is needed because fullscreen mode doesn't trigger the onresize event
+  $effect(() => {
+    $state.snapshot(innerWidth);
+    $state.snapshot(innerHeight);
+
+    setTimeout(() => {
+      handleResize();
+    }, 100);
+  });
 </script>
 
-<svelte:window onresize={handleResize} />
+<svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
 
 {#if gameIsPaused}
   <div class="paused">

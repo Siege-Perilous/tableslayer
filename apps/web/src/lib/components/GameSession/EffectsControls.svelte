@@ -14,7 +14,7 @@
   } = $props();
 
   const lutOptions = [
-    { label: 'None', value: '' },
+    { label: 'None', value: 'none' },
     { label: 'Grayscale', value: 'http://files.tableslayer.com/stage/luts/Grayscale.cube' },
     { label: 'Spooky', value: 'http://files.tableslayer.com/stage/luts/Spooky.cube' },
     { label: 'Virbrant', value: 'http://files.tableslayer.com/stage/luts/Vibrant.cube' },
@@ -22,19 +22,20 @@
     { label: 'Cool', value: 'http://files.tableslayer.com/stage/luts/Cool.cube' }
   ];
 
+  console.log('linear', ToneMappingMode.LINEAR);
+
   const toneMappingOptions = [
+    { label: 'Linear (none)', mode: ToneMappingMode.LINEAR, value: 'LINEAR' },
     { label: 'Neutral', mode: ToneMappingMode.NEUTRAL, value: 'NEUTRAL' },
     { label: 'Agx', mode: ToneMappingMode.AGX, value: 'AGX' },
-    { label: 'Cineon', mod: ToneMappingMode.CINEON, value: 'CINEON' },
-    { label: 'Linear', mode: ToneMappingMode.LINEAR, value: 'LINEAR' },
-    { label: 'Optimized cineon', mode: ToneMappingMode.OPTIMIZED_CINEON, value: 'OPTIMIZED_CINEON' },
+    { label: 'Cineon', mode: ToneMappingMode.CINEON, value: 'CINEON' },
     { label: 'Reinhard', mode: ToneMappingMode.REINHARD, value: 'REINHARD' },
     { label: 'Reinhard 2', mode: ToneMappingMode.REINHARD2, value: 'REINHARD2' },
     { label: 'Reinhard Adaptive', mode: ToneMappingMode.REINHARD2_ADAPTIVE, value: 'REINHARD2_ADAPTIVE' },
     { label: 'Uncharted', mode: ToneMappingMode.UNCHARTED2, value: 'UNCHARTED2' }
   ];
 
-  const selectedLut = $state('');
+  const selectedLut = $state(stageProps.postProcessing.lut.url !== null ? stageProps.postProcessing.lut.url : '');
   const selectedToneMapping = $state(
     toneMappingOptions.find((option) => option.mode === stageProps.postProcessing.toneMapping.mode)?.value ||
       toneMappingOptions[0].value
@@ -42,9 +43,8 @@
 
   // Weather toggle
   const handleLutChange = (lutUrl: string) => {
-    if (lutUrl === '') {
-      stageProps.postProcessing.lut.url = 'http://files.tableslayer.com/stage/luts/Grayscale.cube';
-      stageProps.postProcessing.lut.enabled = false;
+    if (lutUrl === 'none') {
+      stageProps.postProcessing.lut.url = null;
       socketUpdate();
       return;
     }
@@ -62,7 +62,7 @@
 </script>
 
 <div class="effectsControls">
-  <FormControl label="Color profile" name="effectsLutUrl" {errors}>
+  <FormControl label="Color grading" name="effectsLutUrl" {errors}>
     {#snippet input({ inputProps })}
       <Select
         selected={[selectedLut]}

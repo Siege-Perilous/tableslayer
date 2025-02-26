@@ -105,7 +105,7 @@
             effects.push(vignetteEffect);
           }
 
-          if (postProcessing.lut.enabled) {
+          if (postProcessing.lut.enabled && postProcessing.lut.url !== null) {
             const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
               blendFunction: BlendFunction.SET
             });
