@@ -13,6 +13,8 @@
     errors: ZodIssue[] | undefined;
   } = $props();
 
+  console.log('lutsUrl', stageProps.postProcessing.lut.url);
+
   const lutOptions = [
     { label: 'None', value: 'none' },
     { label: 'Grayscale', value: 'http://files.tableslayer.com/stage/luts/Grayscale.cube' },
@@ -22,10 +24,8 @@
     { label: 'Cool', value: 'http://files.tableslayer.com/stage/luts/Cool.cube' }
   ];
 
-  console.log('linear', ToneMappingMode.LINEAR);
-
   const toneMappingOptions = [
-    { label: 'Linear (none)', mode: ToneMappingMode.LINEAR, value: 'LINEAR' },
+    { label: 'None (linear)', mode: ToneMappingMode.LINEAR, value: 'LINEAR' },
     { label: 'Neutral', mode: ToneMappingMode.NEUTRAL, value: 'NEUTRAL' },
     { label: 'Agx', mode: ToneMappingMode.AGX, value: 'AGX' },
     { label: 'Cineon', mode: ToneMappingMode.CINEON, value: 'CINEON' },
@@ -35,8 +35,8 @@
     { label: 'Uncharted', mode: ToneMappingMode.UNCHARTED2, value: 'UNCHARTED2' }
   ];
 
-  const selectedLut = $state(stageProps.postProcessing.lut.url !== null ? stageProps.postProcessing.lut.url : '');
-  const selectedToneMapping = $state(
+  let selectedLut = $state(stageProps.postProcessing.lut.url !== null ? stageProps.postProcessing.lut.url : 'none');
+  let selectedToneMapping = $state(
     toneMappingOptions.find((option) => option.mode === stageProps.postProcessing.toneMapping.mode)?.value ||
       toneMappingOptions[0].value
   );
@@ -61,6 +61,8 @@
   };
 </script>
 
+<Text weight={800} color="var(--fgMuted)">COLOR</Text>
+<Spacer size={2} />
 <div class="effectsControls">
   <FormControl label="Color grading" name="effectsLutUrl" {errors}>
     {#snippet input({ inputProps })}
@@ -97,9 +99,9 @@
   </FormControl>
   <Spacer size={2} />
   <Hr />
-  <Spacer size={2} />
-  <Text weight={600} size="1.25rem" color="var(--fgMuted)">Bloom</Text>
   <Spacer size={4} />
+  <Text weight={800} color="var(--fgMuted)">BLOOM</Text>
+  <Spacer size={2} />
   <div class="effectsControls__grid">
     <FormControl label="Intensity" name="effectsBloomIntensity" {errors}>
       {#snippet input({ inputProps })}

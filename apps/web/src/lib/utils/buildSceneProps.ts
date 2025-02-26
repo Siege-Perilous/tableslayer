@@ -134,8 +134,8 @@ export const buildSceneProps = (
         offset: activeScene.effectsChromaticAberrationOffset
       },
       lut: {
-        enabled: activeScene.effectsLutUrl !== '' && activeScene.effectsLutUrl !== null,
-        url: activeScene.effectsLutUrl ?? ''
+        enabled: activeScene.effectsLutEnabled,
+        url: activeScene.effectsLutUrl
       },
       toneMapping: {
         enabled: true,
