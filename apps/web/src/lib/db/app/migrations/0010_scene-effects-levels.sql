@@ -1,0 +1,1 @@
+ALTER TABLE `scene` RENAME COLUMN "effects_bloom_level" TO "effects_bloom_levels";

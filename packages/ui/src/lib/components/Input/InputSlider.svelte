@@ -46,7 +46,7 @@
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 0.25rem;
+    height: 3px;
     cursor: pointer;
   }
 

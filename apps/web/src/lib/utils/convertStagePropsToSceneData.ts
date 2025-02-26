@@ -103,6 +103,18 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     zoom: 'mapZoom'
   });
 
+  setNestedIfExists(stageProps, details, 'postProcessing', {
+    'bloom.intensity': 'effectsBloomIntensity',
+    'bloom.threshold': 'effectsBloomThreshold',
+    'bloom.smoothing': 'effectsBloomSmoothing',
+    'bloom.radius': 'effectsBloomRadius',
+    'bloom.levels': 'effectsBloomLevels',
+    'bloom.mipmapBlur': 'effectsBloomMipMapBlur',
+    'chromaticAberration.offset': 'effectsChromaticAberrationOffset',
+    'lut.url': 'effectsLutUrl',
+    'toneMapping.mode': 'effectsToneMappingMode'
+  });
+
   // Extract map location from URL stored in state
   if (stageProps.map?.url) {
     const extractedLocation = extractLocationFromUrl(stageProps.map.url);

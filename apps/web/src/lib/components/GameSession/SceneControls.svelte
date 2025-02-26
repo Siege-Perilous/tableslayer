@@ -22,13 +22,22 @@
     IconSquareFilled,
     IconScreenShare,
     IconScreenShareOff,
-    IconBorderSides
+    IconBorderSides,
+    IconAdjustmentsHorizontal
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
   import { type ZodIssue } from 'zod';
-  import { GridControls, WeatherControls, EdgeControls, MapControls, FogControls, PlayControls } from './';
+  import {
+    GridControls,
+    EffectsControls,
+    WeatherControls,
+    EdgeControls,
+    MapControls,
+    FogControls,
+    PlayControls
+  } from './';
 
   let {
     socketUpdate,
@@ -95,6 +104,12 @@
       id: 'edge',
       icon: IconBorderSides,
       text: 'Edge',
+      mapLayer: MapLayerType.None
+    },
+    {
+      id: 'effects',
+      icon: IconAdjustmentsHorizontal,
+      text: 'Effects',
       mapLayer: MapLayerType.None
     },
     {
@@ -185,7 +200,6 @@
         onclick={() => handleSelectActiveControl('erase')}
       >
         <Icon Icon={selectedFogTool.icon} size="1.5rem" />
-        {selectedFogTool.label}
       </button>
       <SelectorMenu
         selected={selectedFogTool.value}
@@ -243,6 +257,8 @@
               <WeatherControls bind:stageProps {socketUpdate} {errors} />
             {:else if scene.id === 'edge'}
               <EdgeControls bind:stageProps {socketUpdate} {errors} />
+            {:else if scene.id === 'effects'}
+              <EffectsControls bind:stageProps {socketUpdate} {errors} />
             {/if}
           {/snippet}
         </Popover>

@@ -133,7 +133,7 @@ export interface PostProcessingProps {
     /**
      * The URL of the LUT to use
      */
-    url: string;
+    url: string | null;
   };
 
   /**

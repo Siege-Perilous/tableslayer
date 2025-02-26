@@ -1,14 +1,7 @@
 <script lang="ts">
   import { type ZodIssue } from 'zod';
-  import {
-    Spacer,
-    DualInputSlider,
-    type StageProps,
-    RadioButton,
-    Label,
-    FormControl,
-    InputSlider
-  } from '@tableslayer/ui';
+  import { Spacer, DualInputSlider, type StageProps, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
+  import { IconX } from '@tabler/icons-svelte';
 
   let {
     socketUpdate,
@@ -33,82 +26,77 @@
 
   const handleEdgeUrlChange = (value: string) => {
     stageProps.edgeOverlay.url = value;
+    stageProps.edgeOverlay.enabled = true;
+    socketUpdate();
+  };
+
+  const handleEdgeOff = () => {
+    stageProps.edgeOverlay.url = null;
+    stageProps.edgeOverlay.enabled = false;
     socketUpdate();
   };
 </script>
 
 <div class="edgeControls">
+  <Spacer />
   <div class="edgeControls__grid">
-    <Label class="edgeControls__fogLabel">Edge texture</Label>
-    <div>
-      <RadioButton
-        selected={stageProps.edgeOverlay.enabled ? 'true' : 'false'}
-        options={[
-          { label: 'on', value: 'true' },
-          { label: 'off', value: 'false' }
-        ]}
-        onSelectedChange={(value) => {
-          stageProps.edgeOverlay.enabled = value === 'true';
-          socketUpdate();
-        }}
-      />
-    </div>
-  </div>
-
-  {#if stageProps.edgeOverlay.enabled}
-    <Spacer />
-    <div class="edgeControls__grid">
-      <FormControl label="Opacity" name="edgeOpacity" {errors}>
-        {#snippet input({ inputProps })}
-          <InputSlider
-            variant="opacity"
-            {...inputProps}
-            min={0}
-            max={1}
-            step={0.01}
-            bind:value={stageProps.edgeOverlay.opacity}
-          />
-        {/snippet}
-      </FormControl>
-      <FormControl label="Scale" name="edgeScale" {errors}>
-        {#snippet input({ inputProps })}
-          <InputSlider
-            variant="opacity"
-            {...inputProps}
-            min={1}
-            max={50}
-            step={1}
-            bind:value={stageProps.edgeOverlay.scale}
-          />
-        {/snippet}
-      </FormControl>
-    </div>
-    <Spacer />
-    <FormControl label="Fade" name="edgeFade" {errors}>
+    <FormControl label="Opacity" name="edgeOpacity" {errors}>
       {#snippet input({ inputProps })}
-        <DualInputSlider
-          min={0.1}
-          max={1}
-          step={0.05}
+        <InputSlider
+          variant="opacity"
           {...inputProps}
-          bind:valueStart={stageProps.edgeOverlay.fadeStart}
-          bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
+          min={0}
+          max={1}
+          step={0.01}
+          bind:value={stageProps.edgeOverlay.opacity}
         />
       {/snippet}
     </FormControl>
-    <Spacer />
-    <div class="edgeTextures">
-      {#each EDGE_TEXTURES as edge}
-        <button
-          onclick={() => handleEdgeUrlChange(edge)}
-          class={['edgeTextures__btn', edge === stageProps.edgeOverlay.url && 'edgeTextures__btn--isActive']}
-          style={`background-image: url(${edge})`}
-          aria-label="Edge texture"
-        >
-        </button>
-      {/each}
-    </div>
-  {/if}
+    <FormControl label="Scale" name="edgeScale" {errors}>
+      {#snippet input({ inputProps })}
+        <InputSlider
+          variant="opacity"
+          {...inputProps}
+          min={1}
+          max={50}
+          step={1}
+          bind:value={stageProps.edgeOverlay.scale}
+        />
+      {/snippet}
+    </FormControl>
+  </div>
+  <Spacer />
+  <FormControl label="Fade" name="edgeFade" {errors}>
+    {#snippet input({ inputProps })}
+      <DualInputSlider
+        min={0.1}
+        max={1}
+        step={0.05}
+        {...inputProps}
+        bind:valueStart={stageProps.edgeOverlay.fadeStart}
+        bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
+      />
+    {/snippet}
+  </FormControl>
+  <Spacer />
+  <div class="edgeTextures">
+    <button
+      onclick={handleEdgeOff}
+      class={['edgeTextures__btn', stageProps.edgeOverlay.enabled === false && 'edgeTextures__btn--isActive']}
+    >
+      <Icon Icon={IconX} size="1.5rem" color="var(--fgMuted)" />
+      <Text size="0.875rem">No edge</Text>
+    </button>
+    {#each EDGE_TEXTURES as edge}
+      <button
+        onclick={() => handleEdgeUrlChange(edge)}
+        class={['edgeTextures__btn', edge === stageProps.edgeOverlay.url && 'edgeTextures__btn--isActive']}
+        style={`background-image: url(${edge})`}
+        aria-label="Edge texture"
+      >
+      </button>
+    {/each}
+  </div>
 </div>
 
 <style>
@@ -128,6 +116,10 @@
     box-shadow: 1px 1px 16px 2px rgba(0, 0, 0, 0.76) inset;
     border-radius: 0.25rem;
     opacity: 0.5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   .edgeTextures__btn--isActive,
   .edgeTextures__btn:hover {
