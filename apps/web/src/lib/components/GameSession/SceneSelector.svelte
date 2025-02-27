@@ -42,6 +42,9 @@
   let dragOverItem = $state<number | null>(null);
   let isDragging = $state(false);
 
+  // Custom drag preview element reference
+  let dragPreviewElement: HTMLElement | null = null;
+
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
   const deleteScene = useDeleteSceneMutation();
@@ -171,6 +174,13 @@
 
   const handleDragEnd = async () => {
     isDragging = false;
+
+    // Remove the drag preview element
+    if (dragPreviewElement) {
+      document.body.removeChild(dragPreviewElement);
+      dragPreviewElement = null;
+    }
+
     if (draggedItem === null || dragOverItem === null || draggedItem === dragOverItem) {
       draggedItem = null;
       dragOverItem = null;
@@ -325,13 +335,44 @@
         }}
         draggable={true}
         ondragstart={(e) => {
-          // Ensure the entire card is used as the ghost image
-          // by setting an offset that keeps the ghost centered
+          // Create an invisible drag image (1x1 transparent pixel)
           if (e.dataTransfer) {
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const emptyImg = new Image();
+            emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+            e.dataTransfer.setDragImage(emptyImg, 0, 0);
+
+            // Create the visible drag preview with exact opacity
+            const original = e.currentTarget as HTMLElement;
+            const preview = original.cloneNode(true) as HTMLElement;
+
+            // Style the preview
+            preview.style.position = 'fixed';
+            preview.style.pointerEvents = 'none';
+            preview.style.zIndex = '9999';
+            preview.style.width = original.offsetWidth + 'px';
+            preview.style.height = original.offsetHeight + 'px';
+            preview.style.opacity = '1'; // Custom opacity - set to exactly what you want
+            preview.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+            preview.classList.add('scene--dragging-preview');
+
+            // Calculate initial position
+            const rect = original.getBoundingClientRect();
             const offsetX = e.clientX - rect.left;
             const offsetY = e.clientY - rect.top;
-            e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, offsetX, offsetY);
+            preview.style.left = e.clientX - offsetX + 'px';
+            preview.style.top = e.clientY - offsetY + 'px';
+
+            // Add to DOM
+            document.body.appendChild(preview);
+            dragPreviewElement = preview;
+
+            // Add event listener to move the preview with the cursor
+            document.addEventListener('dragover', (moveEvent) => {
+              if (dragPreviewElement) {
+                dragPreviewElement.style.left = moveEvent.clientX - offsetX + 'px';
+                dragPreviewElement.style.top = moveEvent.clientY - offsetY + 'px';
+              }
+            });
           }
           handleDragStart(index);
         }}
@@ -474,12 +515,14 @@
     border-color: var(--primary-800);
   }
   .scene--dragging {
-    opacity: 0.4;
-    border-color: blue;
+    opacity: 0.1;
+    border-color: var(--fgPrimary);
   }
   .scene--drop-target {
-    border-color: blue;
-    box-shadow: 0 0 10px blue;
+    border-color: var(--fgPrimary);
+    box-shadow: 0 0 10px var(--fgPrimary);
+    background-image: none !important;
+    background: blue !important;
   }
   .scene__link {
     content: '';
@@ -628,5 +671,11 @@
   .scene__menuItem:focus-visible {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
+  }
+
+  .scene--dragging-preview {
+    transition: none !important;
+    border-color: var(--fgPrimary) !important;
+    background-color: var(--bg) !important;
   }
 </style>
