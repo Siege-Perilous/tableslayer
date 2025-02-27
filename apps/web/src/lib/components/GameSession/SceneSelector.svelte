@@ -11,7 +11,8 @@
     useCreateSceneMutation,
     useDeleteSceneMutation,
     useUpdateSceneMutation,
-    useUpdateGameSessionMutation
+    useUpdateGameSessionMutation,
+    useReorderScenesMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
@@ -50,6 +51,7 @@
   const deleteScene = useDeleteSceneMutation();
   const updateScene = useUpdateSceneMutation();
   const updateGameSession = useUpdateGameSessionMutation();
+  const reorderScenes = useReorderScenesMutation();
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -187,92 +189,38 @@
       return;
     }
 
-    // Get the scene that was dragged
+    // Get the scene that was dragged and the target order
     const draggedScene = scenes[draggedItem];
-    const draggedOrder = draggedScene.order;
-    const targetOrder = scenes[dragOverItem].order;
+    const oldOrder = draggedScene.order;
+    const newOrder = scenes[dragOverItem].order;
 
     // Temporarily prevent further dragging while updating
     formIsLoading = true;
 
-    try {
-      // Create a copy of scenes and sort by order for processing
-      const orderedScenes = [...scenes].sort((a, b) => a.order - b.order);
+    // Use our new reorderScenes mutation to handle all the updates in one go
+    await handleMutation({
+      mutation: () =>
+        $reorderScenes.mutateAsync({
+          partyId: party.id,
+          gameSessionId: gameSession.id,
+          sceneId: draggedScene.id,
+          oldOrder,
+          newOrder
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        // Reset drag states
+        draggedItem = null;
+        dragOverItem = null;
 
-      // We need to handle the SQLite unique constraint on (session_id, order)
-      // To do this, we'll use negative numbers as temporary orders to prevent conflicts
-
-      // Step 1: Calculate which scenes need to be updated
-      const scenesToUpdate: { scene: SelectScene | (SelectScene & Thumb); newOrder: number }[] = [];
-
-      if (draggedOrder < targetOrder) {
-        // Moving down: All scenes between source and target (inclusive) get shifted
-        for (const scene of orderedScenes) {
-          if (scene.id === draggedScene.id) {
-            scenesToUpdate.push({ scene, newOrder: targetOrder });
-          } else if (scene.order > draggedOrder && scene.order <= targetOrder) {
-            scenesToUpdate.push({ scene, newOrder: scene.order - 1 });
-          }
-        }
-      } else {
-        // Moving up: All scenes between target and source (inclusive) get shifted
-        for (const scene of orderedScenes) {
-          if (scene.id === draggedScene.id) {
-            scenesToUpdate.push({ scene, newOrder: targetOrder });
-          } else if (scene.order >= targetOrder && scene.order < draggedOrder) {
-            scenesToUpdate.push({ scene, newOrder: scene.order + 1 });
-          }
-        }
+        // Refresh UI data
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Scene order updated' },
+        error: { title: 'Error updating scene order', body: (error) => error.message || 'Error updating scene order' }
       }
-
-      // Step 2: First move all affected scenes to temporary negative orders
-      // This ensures we don't violate the unique constraint during updates
-      const tempUpdates: Array<Promise<unknown>> = [];
-      const finalUpdates: Array<Promise<unknown>> = [];
-
-      // Use a large negative offset to ensure no conflicts with regular orders
-      const offset = -10000;
-
-      // First pass: move to negative temporary orders
-      for (let i = 0; i < scenesToUpdate.length; i++) {
-        const { scene } = scenesToUpdate[i];
-        const tempOrder = offset - i; // Each gets a unique negative order
-
-        tempUpdates.push(
-          $updateScene.mutateAsync({
-            partyId: party.id,
-            sceneId: scene.id,
-            sceneData: { order: tempOrder }
-          })
-        );
-      }
-
-      // Execute all temporary updates first
-      await Promise.all(tempUpdates);
-
-      // Second pass: move to final orders
-      for (const { scene, newOrder } of scenesToUpdate) {
-        finalUpdates.push(
-          $updateScene.mutateAsync({
-            partyId: party.id,
-            sceneId: scene.id,
-            sceneData: { order: newOrder }
-          })
-        );
-      }
-
-      // Execute all final updates
-      await Promise.all(finalUpdates);
-
-      // Refresh UI data
-      invalidateAll();
-    } catch (error) {
-      console.error('Error updating scene orders:', error);
-    } finally {
-      formIsLoading = false;
-      draggedItem = null;
-      dragOverItem = null;
-    }
+    });
   };
 
   let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
@@ -346,13 +294,8 @@
             const preview = original.cloneNode(true) as HTMLElement;
 
             // Style the preview
-            preview.style.position = 'fixed';
-            preview.style.pointerEvents = 'none';
-            preview.style.zIndex = '9999';
             preview.style.width = original.offsetWidth + 'px';
             preview.style.height = original.offsetHeight + 'px';
-            preview.style.opacity = '1'; // Custom opacity - set to exactly what you want
-            preview.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
             preview.classList.add('scene--dragging-preview');
 
             // Calculate initial position
@@ -405,7 +348,7 @@
           <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
         </a>
         <div class="scene__dragHandle">
-          <Icon Icon={IconGripVertical} color="var(--fgMuted)" size="1.25rem" />
+          <Icon Icon={IconGripVertical} size="1.25rem" />
         </div>
         <Popover
           triggerClass="scene__popoverBtn"
@@ -515,14 +458,8 @@
     border-color: var(--primary-800);
   }
   .scene--dragging {
-    opacity: 0.1;
-    border-color: var(--fgPrimary);
-  }
-  .scene--drop-target {
-    border-color: var(--fgPrimary);
-    box-shadow: 0 0 10px var(--fgPrimary);
-    background-image: none !important;
-    background: blue !important;
+    opacity: 0.3;
+    border-color: var(--contrastMedium) !important;
   }
   .scene__link {
     content: '';
@@ -554,10 +491,16 @@
     border-width: 2px;
     border-color: var(--fgPrimary);
   }
-  .scene--isLoading {
+  .scene--drop-target {
+    border-color: var(--fg) !important;
+    border-style: dashed;
+  }
+  .scene--isLoading,
+  .scene--drop-target {
     opacity: 0.5;
   }
-  .scene--isLoading::after {
+  .scene--isLoading::after,
+  .scene--drop-target::after {
     position: absolute;
     content: '';
     top: 0;
@@ -628,14 +571,14 @@
   }
   .scene__dragHandle {
     position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
+    top: 0.75rem;
+    left: 0.75rem;
     z-index: 2;
-    padding: 0.25rem;
-    background: var(--bg);
-    border-radius: var(--radius-1);
-    opacity: 0.6;
+    opacity: 0;
     transition: opacity 0.2s ease;
+    > svg {
+      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+    }
   }
 
   .scene:hover .scene__dragHandle {
@@ -674,8 +617,12 @@
   }
 
   .scene--dragging-preview {
+    position: fixed;
     transition: none !important;
-    border-color: var(--fgPrimary) !important;
+    border-color: var(--fg) !important;
     background-color: var(--bg) !important;
+    cursor: grabbing;
+    z-index: 10;
+    pointer-events: none;
   }
 </style>
