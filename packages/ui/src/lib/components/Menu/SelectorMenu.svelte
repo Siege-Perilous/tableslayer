@@ -239,6 +239,7 @@
   .selectorMenu__option:focus {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
+    outline: none;
   }
   .selectorMenu__option--isActive {
     background-color: var(--menuItemHover);

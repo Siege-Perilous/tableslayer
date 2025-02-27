@@ -3,8 +3,10 @@
   import { Icon, Button, Hr, Popover } from '@tableslayer/ui';
 
   const shortcuts = [
+    { label: 'Brush size', shortcut: 'Mouse wheel' },
     { label: 'Erase brush', shortcut: 'E' },
     { label: 'Add brush', shortcut: 'Shoft + E' },
+    { divider: true },
     { label: 'Erase rectangle', shortcut: 'R' },
     { label: 'Add rectangle', shortcut: 'Shift + R' },
     { label: 'Erase ellipse', shortcut: 'O' },
@@ -14,10 +16,10 @@
     { label: 'Reset fog', shortcut: 'Shift + F' },
     { divider: true },
     { label: 'Scale map', shortcut: 'Shift + Mouse wheel' },
-    { label: 'Pan map', shortcut: 'Space + Mouse drag' },
+    { label: 'Pan map', shortcut: 'Shift + Mouse drag' },
     { divider: true },
-    { label: 'Zoom scene', shortcut: 'Ctrl+Mouse wheel' },
-    { label: 'Pan scene', shortcut: 'Ctrl+Mouse drag' }
+    { label: 'Zoom scene', shortcut: 'Ctrl + Mouse wheel' },
+    { label: 'Pan scene', shortcut: 'Ctrl + Mouse drag' }
   ];
 </script>
 
