@@ -12,13 +12,13 @@ const validationSchema = z.object({
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { partyId, gameSessionId, sceneId, newOrder, oldOrder } = body;
+    const { partyId, gameSessionId, sceneId, newOrder } = body;
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
     }
 
-    await reorderScenes(gameSessionId, sceneId, newOrder, oldOrder);
+    await reorderScenes(gameSessionId, sceneId, newOrder);
 
     return { success: true };
   },

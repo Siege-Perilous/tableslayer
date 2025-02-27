@@ -20,20 +20,35 @@ export const reorderScenes = async (gameSessionId: string, sceneId: string, newP
     .where(eq(sceneTable.gameSessionId, gameSessionId))
     .orderBy(asc(sceneTable.order));
 
-  // Step 3: Create a new desired ordering by removing the scene being moved
-  // and inserting it at the new position
+  // Find the original position (1-based index) of the scene being moved
+  const movedSceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
+  if (movedSceneIndex === -1) return; // Scene not found
+
+  const originalPosition = movedSceneIndex + 1; // Convert to 1-based
+  const movedScene = scenes[movedSceneIndex];
+
+  // Remove the scene from its original position
   const newOrdering = scenes.filter((scene) => scene.id !== sceneId);
 
-  // Find where to insert the moved scene
-  const targetIndex = Math.min(Math.max(newPosition - 1, 0), newOrdering.length);
+  // Calculate the adjusted target position based on whethe moving up or down
+  let adjustedPosition = newPosition;
+  if (originalPosition > newPosition) {
+    // Moving up (to a lower index) - keep the target position as is
+    adjustedPosition = newPosition;
+  } else if (originalPosition < newPosition) {
+    // Moving down (to a higher index) - target position needs to be decremented
+    // because it has already removed the item from its original position
+    adjustedPosition = newPosition - 1;
+  } else {
+    // No change in position
+    return;
+  }
 
-  // Get the moved scene
-  const movedScene = scenes.find((scene) => scene.id === sceneId);
+  // Find where to insert the moved scene (convert to 0-based index)
+  const targetIndex = Math.min(Math.max(adjustedPosition - 1, 0), newOrdering.length);
 
   // Insert it at the right position
-  if (movedScene) {
-    newOrdering.splice(targetIndex, 0, movedScene);
-  }
+  newOrdering.splice(targetIndex, 0, movedScene);
 
   // Step 4: Update all scenes with their perfect consecutive order numbers
   for (let i = 0; i < newOrdering.length; i++) {
