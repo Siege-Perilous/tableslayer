@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
-  import { Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
   type CursorData = {
@@ -53,7 +53,9 @@
       stageProps = {
         ...stageProps,
         // Override stage props with the updated props from the websocket
-        ...payload.stageProps
+        ...payload.stageProps,
+        // Don't allow erase mode
+        activeLayer: MapLayerType.None
       };
 
       handleResize();
