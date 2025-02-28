@@ -37,6 +37,7 @@
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
   let renamingScenes = $state<Record<string, string | null>>({});
   let openScenePopover = $state<string | null>(null);
+  let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
 
   // Drag and drop states
   let draggedItem = $state<number | null>(null);
@@ -88,6 +89,7 @@
         console.log('Error creating scene:', error);
       },
       onSuccess: () => {
+        invalidateAll();
         file = null;
       },
       toastMessages: {
@@ -194,33 +196,59 @@
     const oldOrder = draggedScene.order;
     const newOrder = scenes[dragOverItem].order;
 
+    // Create a copy of the scenes array for local manipulation
+    const updatedScenes = [...scenes];
+
+    // Remove the dragged item
+    const [removed] = updatedScenes.splice(draggedItem, 1);
+
+    // Insert at the new position
+    updatedScenes.splice(dragOverItem, 0, removed);
+
+    // Update the order properties to reflect the new sequence
+    updatedScenes.forEach((scene, index) => {
+      scene.order = index + 1;
+    });
+
+    // Update local state immediately
+    orderedScenes = updatedScenes;
+
     // Temporarily prevent further dragging while updating
     formIsLoading = true;
 
-    // Use our new reorderScenes mutation to handle all the updates in one go
-    await handleMutation({
-      mutation: () =>
-        $reorderScenes.mutateAsync({
-          partyId: party.id,
-          gameSessionId: gameSession.id,
-          sceneId: draggedScene.id,
-          oldOrder,
-          newOrder
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        // Reset drag states
-        draggedItem = null;
-        dragOverItem = null;
+    try {
+      await handleMutation({
+        mutation: () =>
+          $reorderScenes.mutateAsync({
+            partyId: party.id,
+            gameSessionId: gameSession.id,
+            sceneId: draggedScene.id,
+            oldOrder,
+            newOrder
+          }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        onSuccess: () => {
+          invalidateAll();
+        },
+        toastMessages: {
+          success: { title: 'Scenes reordered' },
+          error: { title: 'Error reordering scenes', body: (error) => error.message || 'Error reordering scenes' }
+        }
+      });
 
-        // Refresh UI data
-        invalidateAll();
-      },
-      toastMessages: {
-        success: { title: 'Scene order updated' },
-        error: { title: 'Error updating scene order', body: (error) => error.message || 'Error updating scene order' }
-      }
-    });
+      // Reset drag states after success
+      draggedItem = null;
+      dragOverItem = null;
+
+      // Still invalidate to ensure server and client are in sync
+      invalidateAll();
+    } catch (error) {
+      // On failure, revert to original order
+      console.error('Error updating scene order:', error);
+      invalidateAll(); // Refresh from server to ensure correct state
+    } finally {
+      formIsLoading = false;
+    }
   };
 
   let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
@@ -237,6 +265,10 @@
       handleCreateScene(scenes.length + 1);
     }
   };
+
+  $effect(() => {
+    orderedScenes = [...scenes];
+  });
 </script>
 
 <div class="scenes">
@@ -257,7 +289,7 @@
     </div>
   </div>
   <div class="scene__list">
-    {#each scenes as scene, index}
+    {#each orderedScenes as scene, index}
       <div
         role="presentation"
         id={`scene-${scene.order}`}
@@ -564,7 +596,7 @@
   }
   .scene__list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
     gap: 1rem;
     overflow-y: auto;
     padding: 2rem 2rem;

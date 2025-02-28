@@ -32,6 +32,10 @@
           partyId: party.id
         }),
       formLoadingState: () => {},
+      onSuccess: () => {
+        invalidateAll();
+        socketUpdate();
+      },
       toastMessages: {
         success: { title: 'Active scene set' },
         error: { title: 'Error setting active scene', body: (err) => err.message || 'Error setting active scene' }
