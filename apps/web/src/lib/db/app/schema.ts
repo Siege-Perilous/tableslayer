@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
 import { protectedSlugs } from '../../constants';
@@ -49,7 +49,11 @@ export const userFilesTable = sqliteTable(
       .notNull()
       .references(() => filesTable.id, { onDelete: 'cascade' })
   },
-  (table) => [primaryKey({ name: 'id', columns: [table.userId, table.fileId] })]
+  (table) => [
+    primaryKey({ name: 'id', columns: [table.userId, table.fileId] }),
+    index('idx_user_files_user_id').on(table.userId),
+    index('idx_user_files_file_id').on(table.fileId)
+  ]
 );
 
 export type InsertUserFile = typeof userFilesTable.$inferInsert;
@@ -62,16 +66,20 @@ export const updateUserFileSchema = createUpdateSchema(userFilesTable);
 // SESSIONS
 // SESSIONS
 
-export const sessionTable = sqliteTable('session', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
-  userId: text('user_id')
-    .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
-});
+export const sessionTable = sqliteTable(
+  'session',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
+  },
+  (table) => [index('idx_session_user_id').on(table.userId)]
+);
 
 export type InsertSession = typeof sessionTable.$inferInsert;
 export type SelectSession = typeof sessionTable.$inferSelect;
@@ -174,7 +182,8 @@ export const partyTable = sqliteTable(
     check(
       'protected_slug_check',
       sql.raw(`${table.slug.name} NOT IN (${protectedSlugs.map((slug) => `'${slug}'`).join(', ')})`)
-    )
+    ),
+    index('idx_party_slug').on(table.slug)
   ]
 );
 
@@ -203,7 +212,12 @@ export const partyMemberTable = sqliteTable(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
   },
-  (table) => [primaryKey({ name: 'id', columns: [table.partyId, table.userId] })]
+  (table) => [
+    primaryKey({ name: 'id', columns: [table.partyId, table.userId] }),
+    index('idx_party_member_party_id').on(table.partyId),
+    index('idx_party_member_user_id').on(table.userId),
+    index('idx_party_member_party_role').on(table.partyId, table.role)
+  ]
 );
 
 export type PartyRole = (typeof VALID_PARTY_ROLES)[number];
@@ -218,21 +232,29 @@ export const updatePartyMemberSchema = createUpdateSchema(partyMemberTable);
 // PARTY INVITES
 // PARTY INVITES
 
-export const partyInviteTable = sqliteTable('party_invite', {
-  id: text('id')
-    .primaryKey()
-    .notNull()
-    .$default(() => uuidv4()),
-  partyId: text('party_id')
-    .notNull()
-    .references(() => partyTable.id, { onDelete: 'cascade' }),
-  invitedBy: text('invited_by')
-    .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
-  code: text('code').notNull().unique(),
-  email: text('email').notNull(),
-  role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
-});
+export const partyInviteTable = sqliteTable(
+  'party_invite',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    partyId: text('party_id')
+      .notNull()
+      .references(() => partyTable.id, { onDelete: 'cascade' }),
+    invitedBy: text('invited_by')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    code: text('code').notNull().unique(),
+    email: text('email').notNull(),
+    role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
+  },
+  (table) => [
+    index('idx_party_invite_party_id').on(table.partyId),
+    index('idx_party_invite_email').on(table.email),
+    index('idx_party_invite_code').on(table.code)
+  ]
+);
 
 export type InsertPartyInvite = typeof partyInviteTable.$inferInsert;
 export type SelectPartyInvite = typeof partyInviteTable.$inferSelect;
@@ -262,7 +284,12 @@ export const gameSessionTable = sqliteTable(
     isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
-  (table) => [uniqueIndex('unique_party_name').on(table.partyId, table.slug)]
+  (table) => [
+    uniqueIndex('unique_party_name').on(table.partyId, table.slug),
+    index('idx_game_session_party_id').on(table.partyId),
+    index('idx_game_session_last_updated').on(table.lastUpdated),
+    index('idx_game_session_slug').on(table.slug)
+  ]
 );
 
 export type SelectGameSession = typeof gameSessionTable.$inferSelect;
@@ -347,7 +374,9 @@ export const sceneTable = sqliteTable(
     check('protected_fog_opacity', sql`${table.fogOpacity} >= 0 AND ${table.fogOpacity} <= 1`),
     check('protected_edge_opacity', sql`${table.edgeOpacity} >= 0 AND ${table.edgeOpacity} <= 1`),
     check('protected_edge_fade_start', sql`${table.edgeFadeStart} >= 0 AND ${table.edgeFadeStart} <= 1`),
-    check('protected_edge_fade_end', sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`)
+    check('protected_edge_fade_end', sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`),
+    index('idx_scene_order').on(table.order),
+    index('idx_scene_game_session_id').on(table.gameSessionId)
   ]
 );
 
