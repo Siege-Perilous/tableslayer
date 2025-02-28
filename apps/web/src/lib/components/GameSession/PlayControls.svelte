@@ -4,6 +4,7 @@
   import type { Thumb } from '$lib/server';
   import { useUpdateGameSessionMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     socketUpdate,
@@ -31,6 +32,10 @@
           partyId: party.id
         }),
       formLoadingState: () => {},
+      onSuccess: () => {
+        invalidateAll();
+        socketUpdate();
+      },
       toastMessages: {
         success: { title: 'Active scene set' },
         error: { title: 'Error setting active scene', body: (err) => err.message || 'Error setting active scene' }
@@ -50,6 +55,7 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
+        invalidateAll();
         socketUpdate();
       },
       toastMessages: {

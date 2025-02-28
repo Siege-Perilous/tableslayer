@@ -1,25 +1,49 @@
 import { db } from '$lib/db/app';
-import { gameSessionTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getGameSession, updateGameSession } from '../gameSession';
 import { getPartyFromGameSessionId } from '../party';
 
-const reorderScenes = async (gameSessionId: string) => {
+export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
+  // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
+  await db
+    .update(sceneTable)
+    .set({ order: sql`${sceneTable.order} + 10000` })
+    .where(eq(sceneTable.gameSessionId, gameSessionId));
+
+  // Step 2: Get all scenes for this session (now with high order numbers)
   const scenes = await db
-    .select()
+    .select({ id: sceneTable.id, order: sceneTable.order })
     .from(sceneTable)
     .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order))
-    .all();
+    .orderBy(asc(sceneTable.order));
 
-  for (let i = 0; i < scenes.length; i++) {
-    const scene = scenes[i];
-    const desiredOrder = i + 1;
-    if (scene.order !== desiredOrder) {
-      await db.update(sceneTable).set({ order: desiredOrder }).where(eq(sceneTable.id, scene.id)).execute();
-    }
+  // Find the original position (1-based index) of the scene being moved
+  const movedSceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
+  if (movedSceneIndex === -1) return; // Scene not found
+
+  const originalPosition = movedSceneIndex + 1; // Convert to 1-based
+
+  // No change in position
+  if (originalPosition === newPosition) return;
+
+  // Step 3: Create a new ordering by removing the scene and then inserting it at the new position
+
+  // First, create a new array without the moved scene
+  const newOrdering = scenes.filter((scene) => scene.id !== sceneId);
+
+  // Then, insert the moved scene at the correct target index (using 0-based index for array insertion)
+  const targetIndex = Math.min(Math.max(newPosition - 1, 0), newOrdering.length);
+  newOrdering.splice(targetIndex, 0, scenes[movedSceneIndex]);
+
+  // Step 4: Update all scenes with their new consecutive order numbers
+  for (let i = 0; i < newOrdering.length; i++) {
+    const scene = newOrdering[i];
+    const newOrder = i + 1; // 1-based ordering
+
+    await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scene.id));
   }
 };
 
@@ -157,37 +181,31 @@ export const getSceneFromOrder = async (
   return sceneWithThumb;
 };
 
-export const deleteScene = async (gameSessionId: string, sceneId: string) => {
-  // Check if the scene being deleted is the active scene
-  const gameSession = await db
-    .select({ activeSceneId: gameSessionTable.activeSceneId })
-    .from(gameSessionTable)
-    .where(eq(gameSessionTable.id, gameSessionId))
-    .get();
-
-  // Delete the scene
-  await db.delete(sceneTable).where(eq(sceneTable.id, sceneId)).execute();
-
-  // If the deleted scene was the active scene, update activeSceneId to NULL or another scene
-  if (gameSession?.activeSceneId === sceneId) {
-    // Try to find another scene to set as active
-    const nextScene = await db
-      .select({ id: sceneTable.id })
+export const deleteScene = async (gameSessionId: string, sceneId: string): Promise<void> => {
+  // This must be performed in a transaction to maintain data integrity
+  await db.transaction(async (tx) => {
+    // First, get the scene to find its order
+    const sceneToDelete = await tx
+      .select({ order: sceneTable.order })
       .from(sceneTable)
-      .where(eq(sceneTable.gameSessionId, gameSessionId))
-      .orderBy(asc(sceneTable.order)) // Pick the next lowest order scene
-      .limit(1)
+      .where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)))
       .get();
 
-    await db
-      .update(gameSessionTable)
-      .set({ activeSceneId: nextScene ? nextScene.id : null }) // Set to another scene if available, otherwise NULL
-      .where(eq(gameSessionTable.id, gameSessionId))
-      .execute();
-  }
+    if (!sceneToDelete) {
+      throw new Error('Scene not found');
+    }
 
-  // Reorder the remaining scenes
-  await reorderScenes(gameSessionId);
+    const deletedOrder = sceneToDelete.order;
+
+    // Delete the scene
+    await tx.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
+
+    // Decrease the order of all scenes that come after the deleted scene
+    await tx
+      .update(sceneTable)
+      .set({ order: sql`${sceneTable.order} - 1` })
+      .where(and(eq(sceneTable.gameSessionId, gameSessionId), gt(sceneTable.order, deletedOrder)));
+  });
 };
 
 export const adjustSceneOrder = async (gameSessionId: string, sceneId: string, newOrder: number) => {

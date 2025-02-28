@@ -391,7 +391,7 @@
       collapsible={true}
       collapsedSize={0}
       minSize={10}
-      maxSize={30}
+      maxSize={50}
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}

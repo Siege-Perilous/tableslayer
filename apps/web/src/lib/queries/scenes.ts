@@ -27,3 +27,17 @@ export const useDeleteSceneMutation = () => {
     method: 'POST'
   });
 };
+
+export const useReorderScenesMutation = () => {
+  return mutationFactory<{
+    partyId: string;
+    gameSessionId: string;
+    sceneId: string;
+    newOrder: number;
+    oldOrder: number;
+  }>({
+    mutationKey: ['reorderScenes'],
+    endpoint: '/api/scenes/reorderScenes',
+    method: 'POST'
+  });
+};
