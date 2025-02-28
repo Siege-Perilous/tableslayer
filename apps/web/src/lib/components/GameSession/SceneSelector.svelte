@@ -457,7 +457,7 @@
     background: var(--bg);
     overflow-y: auto;
     transition: border-color 0.2s;
-    container: true;
+    container-type: inline-size;
   }
   .scene {
     position: relative;
@@ -596,7 +596,6 @@
   }
   .scene__list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
     gap: 1rem;
     overflow-y: auto;
     padding: 2rem 2rem;
@@ -655,5 +654,11 @@
     cursor: grabbing;
     z-index: 10;
     pointer-events: none;
+  }
+
+  @container (min-width: 250px) {
+    .scene__list {
+      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    }
   }
 </style>
