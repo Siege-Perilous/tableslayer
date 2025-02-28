@@ -49,9 +49,7 @@ export const userFilesTable = sqliteTable(
       .notNull()
       .references(() => filesTable.id, { onDelete: 'cascade' })
   },
-  (table) => ({
-    id: primaryKey({ columns: [table.userId, table.fileId] })
-  })
+  (table) => [primaryKey({ name: 'id', columns: [table.userId, table.fileId] })]
 );
 
 export type InsertUserFile = typeof userFilesTable.$inferInsert;
@@ -172,12 +170,12 @@ export const partyTable = sqliteTable(
     stripeCustomerId: text('stripe_customer_id'),
     plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
   },
-  (table) => ({
-    protectedSlugCheck: check(
+  (table) => [
+    check(
       'protected_slug_check',
       sql.raw(`${table.slug.name} NOT IN (${protectedSlugs.map((slug) => `'${slug}'`).join(', ')})`)
     )
-  })
+  ]
 );
 
 export type PartyPlan = (typeof VALID_PARTY_PLANS)[number];
@@ -205,11 +203,7 @@ export const partyMemberTable = sqliteTable(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     role: text('role', { enum: VALID_PARTY_ROLES }).notNull()
   },
-  (table) => {
-    return {
-      id: primaryKey({ columns: [table.partyId, table.userId] })
-    };
-  }
+  (table) => [primaryKey({ name: 'id', columns: [table.partyId, table.userId] })]
 );
 
 export type PartyRole = (typeof VALID_PARTY_ROLES)[number];
@@ -268,9 +262,7 @@ export const gameSessionTable = sqliteTable(
     isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
-  (table) => ({
-    uniqueNameWithinParty: uniqueIndex('unique_party_name').on(table.partyId, table.slug)
-  })
+  (table) => [uniqueIndex('unique_party_name').on(table.partyId, table.slug)]
 );
 
 export type SelectGameSession = typeof gameSessionTable.$inferSelect;
@@ -346,38 +338,17 @@ export const sceneTable = sqliteTable(
     effectsLutUrl: text('effects_lut_url'),
     effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0)
   },
-  (table) => ({
-    uniqueSessionSceneOrder: uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
-    checkFogOfWarOpacityCheck: check(
-      'protected_fog_of_war_opacity',
-      sql`${table.fogOfWarOpacity} >= 0 AND ${table.fogOfWarOpacity} <= 1`
-    ),
-    checkGridOpacityCheck: check(
-      'protected_grid_opacity',
-      sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`
-    ),
-    checkWeatherIntensityCheck: check(
-      'protected_weather_intensity',
-      sql`${table.weatherIntensity} >= 0 AND ${table.weatherIntensity} <= 1`
-    ),
-    checkWeatherOpacityCheck: check(
-      'protected_weather_opacity',
-      sql`${table.weatherOpacity} >= 0 AND ${table.weatherOpacity} <= 1`
-    ),
-    checkFogOpacityCheck: check('protected_fog_opacity', sql`${table.fogOpacity} >= 0 AND ${table.fogOpacity} <= 1`),
-    checkEdgeOpacityCheck: check(
-      'protected_edge_opacity',
-      sql`${table.edgeOpacity} >= 0 AND ${table.edgeOpacity} <= 1`
-    ),
-    checkEdgeFadeStartCheck: check(
-      'protected_edge_fade_start',
-      sql`${table.edgeFadeStart} >= 0 AND ${table.edgeFadeStart} <= 1`
-    ),
-    checkEdgeFadeEndCheck: check(
-      'protected_edge_fade_end',
-      sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`
-    )
-  })
+  (table) => [
+    uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
+    check('protected_fog_of_war_opacity', sql`${table.fogOfWarOpacity} >= 0 AND ${table.fogOfWarOpacity} <= 1`),
+    check('protected_grid_opacity', sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`),
+    check('protected_weather_intensity', sql`${table.weatherIntensity} >= 0 AND ${table.weatherIntensity} <= 1`),
+    check('protected_weather_opacity', sql`${table.weatherOpacity} >= 0 AND ${table.weatherOpacity} <= 1`),
+    check('protected_fog_opacity', sql`${table.fogOpacity} >= 0 AND ${table.fogOpacity} <= 1`),
+    check('protected_edge_opacity', sql`${table.edgeOpacity} >= 0 AND ${table.edgeOpacity} <= 1`),
+    check('protected_edge_fade_start', sql`${table.edgeFadeStart} >= 0 AND ${table.edgeFadeStart} <= 1`),
+    check('protected_edge_fade_end', sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`)
+  ]
 );
 
 export type InsertScene = typeof sceneTable.$inferInsert;
