@@ -375,7 +375,6 @@ export const sceneTable = sqliteTable(
     check('protected_edge_opacity', sql`${table.edgeOpacity} >= 0 AND ${table.edgeOpacity} <= 1`),
     check('protected_edge_fade_start', sql`${table.edgeFadeStart} >= 0 AND ${table.edgeFadeStart} <= 1`),
     check('protected_edge_fade_end', sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`),
-    check('protected_edge_fade_end', sql`${table.edgeFadeEnd} >= 0 AND ${table.edgeFadeEnd} <= 1`),
     index('idx_scene_order').on(table.order),
     index('idx_scene_game_session_id').on(table.gameSessionId)
   ]
