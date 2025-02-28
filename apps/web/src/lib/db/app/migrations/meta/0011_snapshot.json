@@ -1,0 +1,1324 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "e083fcc5-3035-4c54-8b17-967f052b2338",
+  "prevId": "dc754bf9-db90-4c18-a97f-0e1c088303d9",
+  "tables": {
+    "email_verification_codes": {
+      "name": "email_verification_codes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%s', 'now') + 60 * 15)"
+        }
+      },
+      "indexes": {
+        "email_verification_codes_user_id_unique": {
+          "name": "email_verification_codes_user_id_unique",
+          "columns": ["user_id"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "email_verification_codes_user_id_users_id_fk": {
+          "name": "email_verification_codes_user_id_users_id_fk",
+          "tableFrom": "email_verification_codes",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "files": {
+      "name": "files",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "files_location_unique": {
+          "name": "files_location_unique",
+          "columns": ["location"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "game_session": {
+      "name": "game_session",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "party_id": {
+          "name": "party_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active_scene_id": {
+          "name": "active_scene_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_paused": {
+          "name": "is_paused",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "unique_party_name": {
+          "name": "unique_party_name",
+          "columns": ["party_id", "slug"],
+          "isUnique": true
+        },
+        "idx_game_session_party_id": {
+          "name": "idx_game_session_party_id",
+          "columns": ["party_id"],
+          "isUnique": false
+        },
+        "idx_game_session_last_updated": {
+          "name": "idx_game_session_last_updated",
+          "columns": ["last_updated"],
+          "isUnique": false
+        },
+        "idx_game_session_slug": {
+          "name": "idx_game_session_slug",
+          "columns": ["slug"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "game_session_party_id_party_id_fk": {
+          "name": "game_session_party_id_party_id_fk",
+          "tableFrom": "game_session",
+          "tableTo": "party",
+          "columnsFrom": ["party_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_session_active_scene_id_scene_id_fk": {
+          "name": "game_session_active_scene_id_scene_id_fk",
+          "tableFrom": "game_session",
+          "tableTo": "scene",
+          "columnsFrom": ["active_scene_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "party_invite": {
+      "name": "party_invite",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "party_id": {
+          "name": "party_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "party_invite_code_unique": {
+          "name": "party_invite_code_unique",
+          "columns": ["code"],
+          "isUnique": true
+        },
+        "idx_party_invite_party_id": {
+          "name": "idx_party_invite_party_id",
+          "columns": ["party_id"],
+          "isUnique": false
+        },
+        "idx_party_invite_email": {
+          "name": "idx_party_invite_email",
+          "columns": ["email"],
+          "isUnique": false
+        },
+        "idx_party_invite_code": {
+          "name": "idx_party_invite_code",
+          "columns": ["code"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "party_invite_party_id_party_id_fk": {
+          "name": "party_invite_party_id_party_id_fk",
+          "tableFrom": "party_invite",
+          "tableTo": "party",
+          "columnsFrom": ["party_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "party_invite_invited_by_users_id_fk": {
+          "name": "party_invite_invited_by_users_id_fk",
+          "tableFrom": "party_invite",
+          "tableTo": "users",
+          "columnsFrom": ["invited_by"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "party_member": {
+      "name": "party_member",
+      "columns": {
+        "party_id": {
+          "name": "party_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_party_member_party_id": {
+          "name": "idx_party_member_party_id",
+          "columns": ["party_id"],
+          "isUnique": false
+        },
+        "idx_party_member_user_id": {
+          "name": "idx_party_member_user_id",
+          "columns": ["user_id"],
+          "isUnique": false
+        },
+        "idx_party_member_party_role": {
+          "name": "idx_party_member_party_role",
+          "columns": ["party_id", "role"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "party_member_party_id_party_id_fk": {
+          "name": "party_member_party_id_party_id_fk",
+          "tableFrom": "party_member",
+          "tableTo": "party",
+          "columnsFrom": ["party_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "party_member_user_id_users_id_fk": {
+          "name": "party_member_user_id_users_id_fk",
+          "tableFrom": "party_member",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "id": {
+          "columns": ["party_id", "user_id"],
+          "name": "id"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "party": {
+      "name": "party",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "avatar_file_id": {
+          "name": "avatar_file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "pause_screen_file_id": {
+          "name": "pause_screen_file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "tv_size": {
+          "name": "tv_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 40
+        },
+        "default_grid_type": {
+          "name": "default_grid_type",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "default_display_size_x": {
+          "name": "default_display_size_x",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 17.77
+        },
+        "default_display_size_y": {
+          "name": "default_display_size_y",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 10
+        },
+        "default_resolution_x": {
+          "name": "default_resolution_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1920
+        },
+        "default_resolution_y": {
+          "name": "default_resolution_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1080
+        },
+        "default_display_padding_x": {
+          "name": "default_display_padding_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 16
+        },
+        "default_display_padding_y": {
+          "name": "default_display_padding_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 16
+        },
+        "default_grid_spacing": {
+          "name": "default_grid_spacing",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "default_line_thickness": {
+          "name": "default_line_thickness",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "plan_next_billing_date": {
+          "name": "plan_next_billing_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan_expiration_date": {
+          "name": "plan_expiration_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan_status": {
+          "name": "plan_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lemon_squeezy_customer_id": {
+          "name": "lemon_squeezy_customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stripe_customer_id": {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan": {
+          "name": "plan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'free'"
+        }
+      },
+      "indexes": {
+        "party_name_unique": {
+          "name": "party_name_unique",
+          "columns": ["name"],
+          "isUnique": true
+        },
+        "party_slug_unique": {
+          "name": "party_slug_unique",
+          "columns": ["slug"],
+          "isUnique": true
+        },
+        "idx_party_slug": {
+          "name": "idx_party_slug",
+          "columns": ["slug"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "party_avatar_file_id_files_id_fk": {
+          "name": "party_avatar_file_id_files_id_fk",
+          "tableFrom": "party",
+          "tableTo": "files",
+          "columnsFrom": ["avatar_file_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "party_pause_screen_file_id_files_id_fk": {
+          "name": "party_pause_screen_file_id_files_id_fk",
+          "tableFrom": "party",
+          "tableTo": "files",
+          "columnsFrom": ["pause_screen_file_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "protected_slug_check": {
+          "name": "protected_slug_check",
+          "value": "slug NOT IN ('signup', 'login', 'forgot-password', 'reset-password', 'verify-email', 'accept-invite', 'api', 'invalidate-invite', 'logout', 'create-party', 'profile', 'test', 'api')"
+        }
+      }
+    },
+    "reset_password_codes": {
+      "name": "reset_password_codes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%s', 'now') + 60 * 15)"
+        }
+      },
+      "indexes": {
+        "reset_password_codes_user_id_unique": {
+          "name": "reset_password_codes_user_id_unique",
+          "columns": ["user_id"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "reset_password_codes_user_id_users_id_fk": {
+          "name": "reset_password_codes_user_id_users_id_fk",
+          "tableFrom": "reset_password_codes",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "scene": {
+      "name": "scene",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'New Scene'"
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "background_color": {
+          "name": "background_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'#0b0b0c'"
+        },
+        "display_padding_x": {
+          "name": "display_padding_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 16
+        },
+        "display_padding_y": {
+          "name": "display_padding_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 16
+        },
+        "display_size_x": {
+          "name": "display_size_x",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 17.77
+        },
+        "display_size_y": {
+          "name": "display_size_y",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 10
+        },
+        "display_resolution_x": {
+          "name": "display_resolution_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1920
+        },
+        "display_resolution_y": {
+          "name": "display_resolution_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1080
+        },
+        "fog_of_war_url": {
+          "name": "fog_of_war_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "fog_of_war_color": {
+          "name": "fog_of_war_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'#000'"
+        },
+        "fog_of_war_opacity": {
+          "name": "fog_of_war_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.9
+        },
+        "map_location": {
+          "name": "map_location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "map_rotation": {
+          "name": "map_rotation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "map_offset_x": {
+          "name": "map_offset_x",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "map_offset_y": {
+          "name": "map_offset_y",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "map_zoom": {
+          "name": "map_zoom",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "grid_type": {
+          "name": "grid_type",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "grid_spacing": {
+          "name": "grid_spacing",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "grid_opacity": {
+          "name": "grid_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.8
+        },
+        "grid_line_color": {
+          "name": "grid_line_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'#E6E6E6'"
+        },
+        "grid_line_thickness": {
+          "name": "grid_line_thickness",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "grid_shadow_color": {
+          "name": "grid_shadow_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'#000000'"
+        },
+        "grid_shadow_spread": {
+          "name": "grid_shadow_spread",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 2
+        },
+        "grid_shadow_blur": {
+          "name": "grid_shadow_blur",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.5
+        },
+        "grid_shadow_opacity": {
+          "name": "grid_shadow_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.4
+        },
+        "scene_offset_x": {
+          "name": "scene_offset_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "scene_offset_y": {
+          "name": "scene_offset_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "scene_rotation": {
+          "name": "scene_rotation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "weather_fov": {
+          "name": "weather_fov",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 60
+        },
+        "weather_intensity": {
+          "name": "weather_intensity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "weather_opacity": {
+          "name": "weather_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "weather_type": {
+          "name": "weather_type",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "fog_enabled": {
+          "name": "fog_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "fog_color": {
+          "name": "fog_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'#a0a0a0'"
+        },
+        "fog_opacity": {
+          "name": "fog_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.8
+        },
+        "edge_enabled": {
+          "name": "edge_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "edge_url": {
+          "name": "edge_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "edge_opacity": {
+          "name": "edge_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.3
+        },
+        "edge_scale": {
+          "name": "edge_scale",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 2
+        },
+        "edge_fade_start": {
+          "name": "edge_fade_start",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.2
+        },
+        "edge_fade_end": {
+          "name": "edge_fade_end",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "effects_enabled": {
+          "name": "effects_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "effects_bloom_intensity": {
+          "name": "effects_bloom_intensity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "effects_bloom_threshold": {
+          "name": "effects_bloom_threshold",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.5
+        },
+        "effects_bloom_smoothing": {
+          "name": "effects_bloom_smoothing",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.3
+        },
+        "effects_bloom_radius": {
+          "name": "effects_bloom_radius",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.5
+        },
+        "effects_bloom_levels": {
+          "name": "effects_bloom_levels",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 10
+        },
+        "effects_bloom_mip_map_blur": {
+          "name": "effects_bloom_mip_map_blur",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "effects_chromatic_aberration_intensity": {
+          "name": "effects_chromatic_aberration_intensity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "effects_lut_url": {
+          "name": "effects_lut_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "effects_tone_mapping_mode": {
+          "name": "effects_tone_mapping_mode",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "unique_session_scene_order": {
+          "name": "unique_session_scene_order",
+          "columns": ["session_id", "order"],
+          "isUnique": true
+        },
+        "idx_scene_order": {
+          "name": "idx_scene_order",
+          "columns": ["order"],
+          "isUnique": false
+        },
+        "idx_scene_game_session_id": {
+          "name": "idx_scene_game_session_id",
+          "columns": ["session_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "scene_session_id_game_session_id_fk": {
+          "name": "scene_session_id_game_session_id_fk",
+          "tableFrom": "scene",
+          "tableTo": "game_session",
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "protected_fog_of_war_opacity": {
+          "name": "protected_fog_of_war_opacity",
+          "value": "\"scene\".\"fog_of_war_opacity\" >= 0 AND \"scene\".\"fog_of_war_opacity\" <= 1"
+        },
+        "protected_grid_opacity": {
+          "name": "protected_grid_opacity",
+          "value": "\"scene\".\"grid_opacity\" >= 0 AND \"scene\".\"grid_opacity\" <= 1"
+        },
+        "protected_weather_intensity": {
+          "name": "protected_weather_intensity",
+          "value": "\"scene\".\"weather_intensity\" >= 0 AND \"scene\".\"weather_intensity\" <= 1"
+        },
+        "protected_weather_opacity": {
+          "name": "protected_weather_opacity",
+          "value": "\"scene\".\"weather_opacity\" >= 0 AND \"scene\".\"weather_opacity\" <= 1"
+        },
+        "protected_fog_opacity": {
+          "name": "protected_fog_opacity",
+          "value": "\"scene\".\"fog_opacity\" >= 0 AND \"scene\".\"fog_opacity\" <= 1"
+        },
+        "protected_edge_opacity": {
+          "name": "protected_edge_opacity",
+          "value": "\"scene\".\"edge_opacity\" >= 0 AND \"scene\".\"edge_opacity\" <= 1"
+        },
+        "protected_edge_fade_start": {
+          "name": "protected_edge_fade_start",
+          "value": "\"scene\".\"edge_fade_start\" >= 0 AND \"scene\".\"edge_fade_start\" <= 1"
+        },
+        "protected_edge_fade_end": {
+          "name": "protected_edge_fade_end",
+          "value": "\"scene\".\"edge_fade_end\" >= 0 AND \"scene\".\"edge_fade_end\" <= 1"
+        }
+      }
+    },
+    "session": {
+      "name": "session",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_session_user_id": {
+          "name": "idx_session_user_id",
+          "columns": ["user_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "session_user_id_users_id_fk": {
+          "name": "session_user_id_users_id_fk",
+          "tableFrom": "session",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_files": {
+      "name": "user_files",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_user_files_user_id": {
+          "name": "idx_user_files_user_id",
+          "columns": ["user_id"],
+          "isUnique": false
+        },
+        "idx_user_files_file_id": {
+          "name": "idx_user_files_file_id",
+          "columns": ["file_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "user_files_user_id_users_id_fk": {
+          "name": "user_files_user_id_users_id_fk",
+          "tableFrom": "user_files",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_files_file_id_files_id_fk": {
+          "name": "user_files_file_id_files_id_fk",
+          "tableFrom": "user_files",
+          "tableTo": "files",
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "id": {
+          "columns": ["user_id", "file_id"],
+          "name": "id"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "avatar_file_id": {
+          "name": "avatar_file_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "favorite_party": {
+          "name": "favorite_party",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "columns": ["email"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "users_avatar_file_id_files_id_fk": {
+          "name": "users_avatar_file_id_files_id_fk",
+          "tableFrom": "users",
+          "tableTo": "files",
+          "columnsFrom": ["avatar_file_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "users_favorite_party_party_id_fk": {
+          "name": "users_favorite_party_party_id_fk",
+          "tableFrom": "users",
+          "tableTo": "party",
+          "columnsFrom": ["favorite_party"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
