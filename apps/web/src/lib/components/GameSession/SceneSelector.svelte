@@ -266,7 +266,7 @@
           scene.order === selectedSceneNumber && 'scene--isSelected',
           sceneBeingDeleted === scene.id && 'scene--isLoading',
           isDragging && draggedItem === index && 'scene--dragging',
-          isDragging && dragOverItem === index && 'scene--drop-target'
+          isDragging && dragOverItem === index && 'scene--dropTarget'
         ]}
         style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
         oncontextmenu={(event) => {
@@ -296,7 +296,7 @@
             // Style the preview
             preview.style.width = original.offsetWidth + 'px';
             preview.style.height = original.offsetHeight + 'px';
-            preview.classList.add('scene--dragging-preview');
+            preview.classList.add('scene__draggingPreview');
 
             // Calculate initial position
             const rect = original.getBoundingClientRect();
@@ -425,6 +425,7 @@
     background: var(--bg);
     overflow-y: auto;
     transition: border-color 0.2s;
+    container: true;
   }
   .scene {
     position: relative;
@@ -491,16 +492,16 @@
     border-width: 2px;
     border-color: var(--fgPrimary);
   }
-  .scene--drop-target {
+  .scene--dropTarget {
     border-color: var(--fg) !important;
     border-style: dashed;
   }
   .scene--isLoading,
-  .scene--drop-target {
+  .scene--dropTarget {
     opacity: 0.5;
   }
   .scene--isLoading::after,
-  .scene--drop-target::after {
+  .scene--dropTarget::after {
     position: absolute;
     content: '';
     top: 0;
@@ -562,10 +563,9 @@
     width: 100%;
   }
   .scene__list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
     gap: 1rem;
-    flex-grow: 1;
     overflow-y: auto;
     padding: 2rem 2rem;
   }
@@ -575,7 +575,6 @@
     left: 0.75rem;
     z-index: 2;
     opacity: 0;
-    transition: opacity 0.2s ease;
     > svg {
       filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
     }
@@ -616,7 +615,7 @@
     border: var(--menuItemBorderHover);
   }
 
-  .scene--dragging-preview {
+  .scene__draggingPreview {
     position: fixed;
     transition: none !important;
     border-color: var(--fg) !important;

@@ -4,6 +4,7 @@
   import type { Thumb } from '$lib/server';
   import { useUpdateGameSessionMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     socketUpdate,
@@ -50,6 +51,7 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
+        invalidateAll();
         socketUpdate();
       },
       toastMessages: {
