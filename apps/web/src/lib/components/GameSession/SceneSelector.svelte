@@ -251,8 +251,6 @@
     }
   };
 
-  let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
-
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
