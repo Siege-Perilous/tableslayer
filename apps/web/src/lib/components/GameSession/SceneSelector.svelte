@@ -266,13 +266,11 @@
     }
   };
 
-  // Create a helper function for styling the preview
   const applyDragPreviewStyles = (preview: HTMLElement, original: HTMLElement, event: DragEvent) => {
     const rect = original.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
     const offsetY = event.clientY - rect.top;
 
-    // Apply all styles as an object
     Object.assign(preview.style, {
       width: `${original.offsetWidth}px`,
       height: `${original.offsetHeight}px`,
@@ -287,7 +285,7 @@
       top: `${event.clientY - offsetY}px`
     });
 
-    return { offsetX, offsetY }; // Return offsets for drag movement
+    return { offsetX, offsetY };
   };
 
   $effect(() => {
