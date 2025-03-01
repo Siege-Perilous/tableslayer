@@ -4,11 +4,12 @@
   import { useStripeCheckout, useStripeCustomerPortal } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { type PartyPlan } from '$lib/db/app/schema';
-  import { Button, Text, Title, Spacer, Panel, Link, Popover, Hr, Icon } from '@tableslayer/ui';
-  let { party }: { party: SelectParty } = $props();
+  import { Button, Text, Spacer, Panel, Link, Popover, Hr, Icon, Loader } from '@tableslayer/ui';
+  let { party, limitText = 'Your party is limited' }: { party: SelectParty; limitText?: string } = $props();
 
   const checkout = useStripeCheckout();
   const portal = useStripeCustomerPortal();
+  let formIsLoading = $state(false);
 
   const handleUpgrade = async (plan: PartyPlan) => {
     await handleMutation({
@@ -16,7 +17,9 @@
       toastMessages: {
         error: { title: 'Error', body: (error) => error.message }
       },
-      formLoadingState: () => {},
+      formLoadingState: (loading) => {
+        formIsLoading = loading;
+      },
       onSuccess: (result) => {
         if (result.url) {
           console.log(result.url);
@@ -34,7 +37,9 @@
       toastMessages: {
         error: { title: 'Error', body: (error) => error.message }
       },
-      formLoadingState: () => {},
+      formLoadingState: (loading) => {
+        formIsLoading = loading;
+      },
       onSuccess: (result) => {
         if (result.url) {
           console.log(result.url);
@@ -55,8 +60,6 @@
   };
 </script>
 
-<Title as="h2" size="sm">Patronage</Title>
-<Spacer />
 <Panel class="partyUpgrade">
   {#if party.plan !== 'free'}
     <Text weight={800}>Your party is on a <span class="partyUpgrade__highlight">{party.plan} plan</span>.</Text>
@@ -77,21 +80,25 @@
       <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage">Manage subscription</Button>
     {/if}
   {:else}
-    <Text weight={800}>Your party is limited</Text>
+    <Text weight={800}>{limitText}</Text>
     <Spacer size={2} />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
-      Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span> with an upgraded account. Table
-      Slayer is open source and <Link href="https://github.com/siege-perlious/tableslayer"
-        >free to host on your own</Link
+      Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span> with an upgraded party. Table
+      Slayer is open source and free to <Link href="https://github.com/siege-perlious/tableslayer"
+        >host on your own</Link
       >.
     </Text>
     <Spacer />
     <Popover positioning={{ placement: 'bottom-start' }} class="partyUpgrade__popContent">
       {#snippet trigger()}
-        <Button variant="special" class="partyUpgrade__btn">
+        <Button variant="special" class="partyUpgrade__btn" disabled={formIsLoading}>
           Upgrade your party
           {#snippet end()}
-            <Icon Icon={IconSelector} />
+            {#if formIsLoading}
+              <Loader />
+            {:else}
+              <Icon Icon={IconSelector} />
+            {/if}
           {/snippet}
         </Button>
       {/snippet}

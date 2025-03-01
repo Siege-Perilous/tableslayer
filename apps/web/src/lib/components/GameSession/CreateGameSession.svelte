@@ -3,6 +3,7 @@
   import { useCreateGameSessionMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { handleMutation } from '$lib/factories';
+  import { invalidateAll } from '$app/navigation';
 
   let {
     partyId
@@ -30,6 +31,7 @@
       onSuccess: () => {
         createGameSessionError = undefined;
         formIsOpen = false;
+        invalidateAll();
       },
       toastMessages: {
         success: { title: 'Game session created' },

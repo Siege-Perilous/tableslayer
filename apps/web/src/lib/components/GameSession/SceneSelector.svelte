@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, Text } from '@tableslayer/ui';
   import { IconCheck, IconX, IconPhoto, IconChevronDown, IconGripVertical } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
@@ -16,6 +16,7 @@
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
+  import { PartyUpgrade } from '../party';
 
   let {
     scenes,
@@ -38,6 +39,7 @@
   let renamingScenes = $state<Record<string, string | null>>({});
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
+  let needsToUpgrade = $derived(party.plan === 'free' && orderedScenes.length >= 3);
 
   // Drag and drop states
   let draggedItem = $state<number | null>(null);
@@ -293,24 +295,28 @@
 
 <div class="scenes">
   <div class="scene__input">
-    <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
-      {#snippet input({ inputProps })}
-        <Button class="scene__inputBtn" isLoading={formIsLoading} disabled={formIsLoading}>
-          {#snippet start()}
-            <Icon Icon={IconPhoto} size="1.25rem" />
-          {/snippet}
-          Add new scene
-          <FileInput
-            variant="transparent"
-            {...inputProps}
-            type="file"
-            accept="image/png, image/jpeg"
-            bind:files={file}
-            onchange={handleFileChange}
-          />
-        </Button>
-      {/snippet}
-    </FormControl>
+    {#if party.plan === 'free' && orderedScenes.length >= 3}
+      <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
+    {:else}
+      <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
+        {#snippet input({ inputProps })}
+          <Button class="scene__inputBtn" isLoading={formIsLoading} disabled={formIsLoading}>
+            {#snippet start()}
+              <Icon Icon={IconPhoto} size="1.25rem" />
+            {/snippet}
+            Add new scene
+            <FileInput
+              variant="transparent"
+              {...inputProps}
+              type="file"
+              accept="image/png, image/jpeg"
+              bind:files={file}
+              onchange={handleFileChange}
+            />
+          </Button>
+        {/snippet}
+      </FormControl>
+    {/if}
   </div>
   <div class="scene__list">
     {#each orderedScenes as scene, index}
@@ -406,7 +412,8 @@
           {/snippet}
           {#snippet content({ contentProps })}
             <button
-              class="scene__menuItem"
+              class={['scene__menuItem', needsToUpgrade && 'scene__menuItem--disabled']}
+              disabled={needsToUpgrade}
               onclick={() => {
                 handleCreateScene(scene.order + 1);
                 contentProps.close();
@@ -657,6 +664,11 @@
   .scene__menuItem:focus-visible {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
+  }
+
+  .scene__menuItem--disabled {
+    pointer-events: none;
+    opacity: 0.5;
   }
 
   @container (min-width: 250px) {

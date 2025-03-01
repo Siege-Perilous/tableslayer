@@ -34,6 +34,8 @@
     </main>
     <aside>
       {#if isPartyAdmin}
+        <Title as="h2" size="sm">Patronage</Title>
+        <Spacer />
         <PartyUpgrade {party} />
         <Spacer />
       {/if}
