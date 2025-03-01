@@ -41,6 +41,9 @@
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
   let needsToUpgrade = $derived(party.plan === 'free' && orderedScenes.length >= 3);
 
+  // Flag to prevent context menu after drag
+  let justFinishedDragging = $state(false);
+
   // Drag and drop states
   let draggedItem = $state<number | null>(null);
   let dragOverItem = $state<number | null>(null);
@@ -55,6 +58,16 @@
   const updateScene = useUpdateSceneMutation();
   const updateGameSession = useUpdateGameSessionMutation();
   const reorderScenes = useReorderScenesMutation();
+
+  // Check if a scene is currently being renamed
+  const isSceneBeingRenamed = (sceneId: string) => {
+    return renamingScenes[sceneId] !== null && renamingScenes[sceneId] !== undefined;
+  };
+
+  // Determine if dragging should be disabled for a particular scene
+  const isDragDisabled = (sceneId: string) => {
+    return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
+  };
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -168,7 +181,13 @@
   };
 
   // Drag and drop handlers
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (e: DragEvent, index: number, sceneId: string) => {
+    // If dragging is disabled for this scene, prevent the drag operation
+    if (isDragDisabled(sceneId)) {
+      e.preventDefault();
+      return;
+    }
+
     draggedItem = index;
     isDragging = true;
   };
@@ -180,6 +199,14 @@
 
   const handleDragEnd = async () => {
     isDragging = false;
+
+    // Set the flag to prevent context menu from opening
+    justFinishedDragging = true;
+
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      justFinishedDragging = false;
+    }, 300); // Short delay to ensure context menu event is blocked
 
     // Remove the drag preview element
     if (dragPreviewElement) {
@@ -266,6 +293,26 @@
     }
   };
 
+  const handleContextMenu = (event: MouseEvent, sceneId: string) => {
+    // Prevent context menu from opening if we just finished dragging
+    if (justFinishedDragging) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+
+    // Extra logic because the popover has internal methods in conflict
+    if (openScenePopover === sceneId) {
+      openScenePopover = null;
+      setTimeout(() => {
+        openScenePopover = sceneId;
+      }, 0);
+    } else {
+      openScenePopover = sceneId;
+    }
+  };
+
   const applyDragPreviewStyles = (preview: HTMLElement, original: HTMLElement, event: DragEvent) => {
     const rect = original.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
@@ -328,22 +375,12 @@
           scene.order === selectedSceneNumber && 'scene--isSelected',
           sceneBeingDeleted === scene.id && 'scene--isLoading',
           isDragging && draggedItem === index && 'scene--dragging',
-          isDragging && dragOverItem === index && 'scene--dropTarget'
+          isDragging && dragOverItem === index && 'scene--dropTarget',
+          isDragDisabled(scene.id) && 'scene--no-drag'
         ]}
         style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
-        oncontextmenu={(event) => {
-          event.preventDefault();
-          // Extra logic because the popover has internal methods in conflict
-          if (openScenePopover === scene.id) {
-            openScenePopover = null;
-            setTimeout(() => {
-              openScenePopover = scene.id;
-            }, 0);
-          } else {
-            openScenePopover = scene.id;
-          }
-        }}
-        draggable={true}
+        oncontextmenu={(event) => handleContextMenu(event, scene.id)}
+        draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {
           // Create an invisible drag image (1x1 transparent pixel)
           if (e.dataTransfer) {
@@ -367,12 +404,12 @@
               }
             });
           }
-          handleDragStart(index);
+          handleDragStart(e, index, scene.id);
         }}
         ondragover={(e) => handleDragOver(e, index)}
         ondragend={handleDragEnd}
       >
-        {#if renamingScenes[scene.id] !== null && renamingScenes[scene.id] !== undefined}
+        {#if isSceneBeingRenamed(scene.id)}
           <div class="scene__rename">
             <form onsubmit={() => handleRenameScene(scene.id)}>
               <div class="scene__renameInput">
@@ -397,8 +434,8 @@
           {/if}
           <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
         </a>
-        <div class="scene__dragHandle">
-          <Icon Icon={IconGripVertical} size="1.25rem" />
+        <div class="scene__dragHandle" class:scene__dragHandle--disabled={isDragDisabled(scene.id)}>
+          <Icon Icon={IconGripVertical} size="1.25rem" class="scene__dragHandleIcon" />
         </div>
         <Popover
           triggerClass="scene__popoverBtn"
@@ -506,12 +543,15 @@
     border-radius: var(--radius-2);
     border: solid var(--bg) 0.25rem;
   }
-  .scene:hover:not(.scene--isSelected):not(.scene--dragging) {
+  .scene:hover:not(.scene--isSelected):not(.scene--dragging):not(.scene--no-drag) {
     border-color: var(--primary-800);
   }
   .scene--dragging {
     opacity: 0.3;
     border-color: var(--contrastMedium) !important;
+  }
+  .scene--no-drag {
+    cursor: default;
   }
   .scene__link {
     content: '';
@@ -625,14 +665,17 @@
     left: 0.75rem;
     z-index: 2;
     opacity: 0;
-    > svg {
-      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
-    }
   }
 
-  .scene:hover .scene__dragHandle {
+  .scene__dragHandle--disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .scene:hover .scene__dragHandle:not(.scene__dragHandle--disabled) {
     opacity: 1;
   }
+
   :global {
     .scene__inputBtn {
       width: 100%;
@@ -643,6 +686,9 @@
       top: 0.5rem;
       right: 0.5rem;
       z-index: 2;
+    }
+    .scene__dragHandleIcon {
+      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
     }
   }
 
