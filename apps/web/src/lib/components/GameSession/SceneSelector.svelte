@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover } from '@tableslayer/ui';
-  import { IconCheck, IconX, IconChevronDown, IconGripVertical } from '@tabler/icons-svelte';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
+  import { IconCheck, IconX, IconPhoto, IconChevronDown, IconGripVertical } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
@@ -251,8 +251,6 @@
     }
   };
 
-  let sceneInputClasses = $derived(['scene', formIsLoading && 'scene--isLoading']);
-
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
@@ -266,6 +264,28 @@
     }
   };
 
+  const applyDragPreviewStyles = (preview: HTMLElement, original: HTMLElement, event: DragEvent) => {
+    const rect = original.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+
+    Object.assign(preview.style, {
+      width: `${original.offsetWidth}px`,
+      height: `${original.offsetHeight}px`,
+      position: 'fixed',
+      transition: 'none',
+      borderColor: 'var(--fg)',
+      backgroundColor: 'var(--bg)',
+      cursor: 'grabbing',
+      zIndex: '10',
+      pointerEvents: 'none',
+      left: `${event.clientX - offsetX}px`,
+      top: `${event.clientY - offsetY}px`
+    });
+
+    return { offsetX, offsetY };
+  };
+
   $effect(() => {
     orderedScenes = [...scenes];
   });
@@ -273,20 +293,24 @@
 
 <div class="scenes">
   <div class="scene__input">
-    <div class={sceneInputClasses}>
-      <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
-        {#snippet input({ inputProps })}
+    <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
+      {#snippet input({ inputProps })}
+        <Button class="scene__inputBtn" isLoading={formIsLoading} disabled={formIsLoading}>
+          {#snippet start()}
+            <Icon Icon={IconPhoto} size="1.25rem" />
+          {/snippet}
+          Add new scene
           <FileInput
-            variant="dropzone"
+            variant="transparent"
             {...inputProps}
             type="file"
             accept="image/png, image/jpeg"
             bind:files={file}
             onchange={handleFileChange}
           />
-        {/snippet}
-      </FormControl>
-    </div>
+        </Button>
+      {/snippet}
+    </FormControl>
   </div>
   <div class="scene__list">
     {#each orderedScenes as scene, index}
@@ -321,21 +345,9 @@
             emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
             e.dataTransfer.setDragImage(emptyImg, 0, 0);
 
-            // Create the visible drag preview with exact opacity
             const original = e.currentTarget as HTMLElement;
             const preview = original.cloneNode(true) as HTMLElement;
-
-            // Style the preview
-            preview.style.width = original.offsetWidth + 'px';
-            preview.style.height = original.offsetHeight + 'px';
-            preview.classList.add('scene__draggingPreview');
-
-            // Calculate initial position
-            const rect = original.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const offsetY = e.clientY - rect.top;
-            preview.style.left = e.clientX - offsetX + 'px';
-            preview.style.top = e.clientY - offsetY + 'px';
+            const { offsetX, offsetY } = applyDragPreviewStyles(preview, original, e);
 
             // Add to DOM
             document.body.appendChild(preview);
@@ -617,6 +629,7 @@
   :global {
     .scene__inputBtn {
       width: 100%;
+      position: relative;
     }
     .scene__popoverBtn {
       position: absolute;
@@ -644,16 +657,6 @@
   .scene__menuItem:focus-visible {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
-  }
-
-  .scene__draggingPreview {
-    position: fixed;
-    transition: none !important;
-    border-color: var(--fg) !important;
-    background-color: var(--bg) !important;
-    cursor: grabbing;
-    z-index: 10;
-    pointer-events: none;
   }
 
   @container (min-width: 250px) {

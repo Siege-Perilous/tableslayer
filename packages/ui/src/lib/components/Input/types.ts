@@ -3,7 +3,7 @@ import type { HTMLInputAttributes, HTMLLabelAttributes } from 'svelte/elements';
 
 export type InputProps = {
   isDisabled?: boolean;
-  variant?: 'transparent' | 'default' | 'dropzone';
+  variant?: 'transparent' | 'default' | 'dropzone' | 'button';
   hideAutocomplete?: boolean;
 } & HTMLInputAttributes;
 
