@@ -103,7 +103,7 @@
         </Button>
       {/snippet}
       {#snippet content()}
-        <div class="flex flex-col gap-2">
+        <div class="partyUpgrade__popover">
           <Text weight={800}>Select a plan</Text>
           <Spacer size={2} />
           <Hr />
@@ -148,9 +148,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
+      gap: 4rem;
       border: solid 2px transparent;
-      gap: 1rem;
+      width: 100%;
       &:hover,
       &:focus-visible {
         background-color: var(--menuItemHover);

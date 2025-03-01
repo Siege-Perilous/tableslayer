@@ -46,7 +46,7 @@
 </script>
 
 {#if !formIsOpen}
-  <Panel onclick={handleOpenForm} class="createSessionPanel hover">
+  <Panel onclick={handleOpenForm} role="button" tabindex={0} class="createSessionPanel hover">
     <Title as="p" size="sm">Create a new session</Title>
     <Text size="0.875rem" color="var(--fgMuted)">Game sessions contain a collection of battle scenes</Text>
   </Panel>

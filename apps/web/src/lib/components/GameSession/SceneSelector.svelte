@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, Text } from '@tableslayer/ui';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
   import { IconCheck, IconX, IconPhoto, IconChevronDown, IconGripVertical } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
@@ -628,7 +628,11 @@
     font-size: 0.85rem;
   }
   .scene__projectedIcon {
-    background: var(--fgPrimary);
+    background: rgba(0, 0, 0, 0.75);
+    font-weight: 800;
+    text-transform: uppercase;
+    border-top: solid 1px var(--bg);
+    border-bottom: solid 1px var(--bg);
     padding: 0.5rem;
     display: flex;
     gap: 0.25rem;
