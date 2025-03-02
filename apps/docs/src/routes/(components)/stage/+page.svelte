@@ -66,12 +66,12 @@
   };
 
   const lutOptions: ListOptions<string> = {
-    Cool: 'http://files.tableslayer.com/stage/luts/Cool.cube',
-    Grayscale: 'http://files.tableslayer.com/stage/luts/Grayscale.cube',
-    Plum: 'http://files.tableslayer.com/stage/luts/Plum.cube',
-    Spooky: 'http://files.tableslayer.com/stage/luts/Spooky.cube',
-    Vibrant: 'http://files.tableslayer.com/stage/luts/Vibrant.cube',
-    Warm: 'http://files.tableslayer.com/stage/luts/Warm.cube'
+    Cool: 'https://files.tableslayer.com/stage/luts/Cool.cube',
+    Grayscale: 'https://files.tableslayer.com/stage/luts/Grayscale.cube',
+    Plum: 'https://files.tableslayer.com/stage/luts/Plum.cube',
+    Spooky: 'https://files.tableslayer.com/stage/luts/Spooky.cube',
+    Vibrant: 'https://files.tableslayer.com/stage/luts/Vibrant.cube',
+    Warm: 'https://files.tableslayer.com/stage/luts/Warm.cube'
   };
 
   const particleTypeOptions: ListOptions<number> = {

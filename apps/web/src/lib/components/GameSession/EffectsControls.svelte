@@ -20,11 +20,11 @@
 
   const lutOptions = [
     { label: 'None', value: 'none' },
-    { label: 'Grayscale', value: 'http://files.tableslayer.com/stage/luts/Grayscale.cube' },
-    { label: 'Spooky', value: 'http://files.tableslayer.com/stage/luts/Spooky.cube' },
-    { label: 'Virbrant', value: 'http://files.tableslayer.com/stage/luts/Vibrant.cube' },
-    { label: 'Warm', value: 'http://files.tableslayer.com/stage/luts/Warm.cube' },
-    { label: 'Cool', value: 'http://files.tableslayer.com/stage/luts/Cool.cube' }
+    { label: 'Grayscale', value: 'https://files.tableslayer.com/stage/luts/Grayscale.cube' },
+    { label: 'Spooky', value: 'https://files.tableslayer.com/stage/luts/Spooky.cube' },
+    { label: 'Virbrant', value: 'https://files.tableslayer.com/stage/luts/Vibrant.cube' },
+    { label: 'Warm', value: 'https://files.tableslayer.com/stage/luts/Warm.cube' },
+    { label: 'Cool', value: 'https://files.tableslayer.com/stage/luts/Cool.cube' }
   ];
 
   const toneMappingOptions = [
