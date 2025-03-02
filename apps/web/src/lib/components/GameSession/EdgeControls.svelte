@@ -2,15 +2,20 @@
   import { type ZodIssue } from 'zod';
   import { Spacer, DualInputSlider, type StageProps, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
   import { IconX } from '@tabler/icons-svelte';
+  import type { SelectParty } from '$lib/db/app/schema';
+  import type { Thumb } from '$lib/server';
+  import { PartyPlanSelector } from '../party';
 
   let {
     socketUpdate,
     stageProps = $bindable(),
-    errors
+    errors,
+    party
   }: {
     socketUpdate: () => void;
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
+    party: SelectParty & Thumb;
   } = $props();
 
   const EDGE_TEXTURES = [
@@ -37,67 +42,80 @@
   };
 </script>
 
-<div class="edgeControls">
-  <Spacer />
-  <div class="edgeControls__grid">
-    <FormControl label="Opacity" name="edgeOpacity" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider
-          variant="opacity"
-          {...inputProps}
-          min={0}
-          max={1}
-          step={0.01}
-          bind:value={stageProps.edgeOverlay.opacity}
-        />
-      {/snippet}
-    </FormControl>
-    <FormControl label="Scale" name="edgeScale" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider
-          variant="opacity"
-          {...inputProps}
-          min={1}
-          max={50}
-          step={1}
-          bind:value={stageProps.edgeOverlay.scale}
-        />
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <FormControl label="Fade" name="edgeFade" {errors}>
-    {#snippet input({ inputProps })}
-      <DualInputSlider
-        min={0.1}
-        max={1}
-        step={0.05}
-        {...inputProps}
-        bind:valueStart={stageProps.edgeOverlay.fadeStart}
-        bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
-      />
-    {/snippet}
-  </FormControl>
-  <Spacer />
-  <div class="edgeTextures">
-    <button
-      onclick={handleEdgeOff}
-      class={['edgeTextures__btn', stageProps.edgeOverlay.enabled === false && 'edgeTextures__btn--isActive']}
+{#if party.plan === 'free'}
+  <div class="edgeControls">
+    <Text weight={800}>You are on a free plan</Text>
+    <Spacer size={2} />
+    <Text size="0.875rem" color="var(--fgMuted)"
+      >Edge controls are only available on upgraded plans. They allow you to add stylistic borders and fades to your
+      tabletop.</Text
     >
-      <Icon Icon={IconX} size="1.5rem" color="var(--fgMuted)" />
-      <Text size="0.875rem">No edge</Text>
-    </button>
-    {#each EDGE_TEXTURES as edge}
-      <button
-        onclick={() => handleEdgeUrlChange(edge)}
-        class={['edgeTextures__btn', edge === stageProps.edgeOverlay.url && 'edgeTextures__btn--isActive']}
-        style={`background-image: url(${edge})`}
-        aria-label="Edge texture"
-      >
-      </button>
-    {/each}
+    <Spacer />
+    <PartyPlanSelector {party} />
   </div>
-</div>
+{:else}
+  <div class="edgeControls">
+    <Spacer />
+    <div class="edgeControls__grid">
+      <FormControl label="Opacity" name="edgeOpacity" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            variant="opacity"
+            {...inputProps}
+            min={0}
+            max={1}
+            step={0.01}
+            bind:value={stageProps.edgeOverlay.opacity}
+          />
+        {/snippet}
+      </FormControl>
+      <FormControl label="Scale" name="edgeScale" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            variant="opacity"
+            {...inputProps}
+            min={1}
+            max={50}
+            step={1}
+            bind:value={stageProps.edgeOverlay.scale}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
+    <Spacer />
+    <FormControl label="Fade" name="edgeFade" {errors}>
+      {#snippet input({ inputProps })}
+        <DualInputSlider
+          min={0.1}
+          max={1}
+          step={0.05}
+          {...inputProps}
+          bind:valueStart={stageProps.edgeOverlay.fadeStart}
+          bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
+        />
+      {/snippet}
+    </FormControl>
+    <Spacer />
+    <div class="edgeTextures">
+      <button
+        onclick={handleEdgeOff}
+        class={['edgeTextures__btn', stageProps.edgeOverlay.enabled === false && 'edgeTextures__btn--isActive']}
+      >
+        <Icon Icon={IconX} size="1.5rem" color="var(--fgMuted)" />
+        <Text size="0.875rem">No edge</Text>
+      </button>
+      {#each EDGE_TEXTURES as edge}
+        <button
+          onclick={() => handleEdgeUrlChange(edge)}
+          class={['edgeTextures__btn', edge === stageProps.edgeOverlay.url && 'edgeTextures__btn--isActive']}
+          style={`background-image: url(${edge})`}
+          aria-label="Edge texture"
+        >
+        </button>
+      {/each}
+    </div>
+  </div>
+{/if}
 
 <style>
   .edgeControls {

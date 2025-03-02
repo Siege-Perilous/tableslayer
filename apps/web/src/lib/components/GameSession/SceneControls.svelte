@@ -265,9 +265,9 @@
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {socketUpdate} {errors} />
             {:else if scene.id === 'edge'}
-              <EdgeControls bind:stageProps {socketUpdate} {errors} />
+              <EdgeControls bind:stageProps {socketUpdate} {errors} {party} />
             {:else if scene.id === 'effects'}
-              <EffectsControls bind:stageProps {socketUpdate} {errors} />
+              <EffectsControls bind:stageProps {socketUpdate} {errors} {party} />
             {/if}
           {/snippet}
         </Popover>

@@ -2,15 +2,20 @@
   import { type ZodIssue } from 'zod';
   import { FormControl, type StageProps, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
   import { ToneMappingMode } from 'postprocessing';
+  import type { SelectParty } from '$lib/db/app/schema';
+  import type { Thumb } from '$lib/server';
+  import { PartyPlanSelector } from '../party';
 
   let {
     socketUpdate,
     stageProps = $bindable(),
-    errors
+    errors,
+    party
   }: {
     socketUpdate: () => void;
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
+    party: SelectParty & Thumb;
   } = $props();
 
   const lutOptions = [
@@ -58,121 +63,134 @@
   };
 </script>
 
-<Text weight={800} color="var(--fgMuted)">COLOR</Text>
-<Spacer size={2} />
-<div class="effectsControls">
-  <FormControl label="Color grading" name="effectsLutUrl" {errors}>
-    {#snippet input({ inputProps })}
-      <Select
-        selected={[selectedLut]}
-        onSelectedChange={(selected) => handleLutChange(selected[0])}
-        options={lutOptions}
-        {...inputProps}
-      />
-    {/snippet}
-  </FormControl>
-  <Spacer />
-  <FormControl label="Tone mapping" name="effectsToneMapping" {errors}>
-    {#snippet input({ inputProps })}
-      <Select
-        selected={[selectedToneMapping]}
-        onSelectedChange={(selected) => handleToneChange(selected[0])}
-        options={toneMappingOptions}
-        {...inputProps}
-      />
-    {/snippet}
-  </FormControl>
-  <Spacer />
-  <FormControl label="Chromatic aberation" name="effectsChromaticAberration" {errors}>
-    {#snippet input({ inputProps })}
-      <InputSlider
-        {...inputProps}
-        min={0}
-        max={0.02}
-        step={0.001}
-        bind:value={stageProps.postProcessing.chromaticAberration.offset}
-      />
-    {/snippet}
-  </FormControl>
+{#if party.plan === 'free'}
+  <div class="edgeControls">
+    <Text weight={800}>You are on a free plan</Text>
+    <Spacer size={2} />
+    <Text size="0.875rem" color="var(--fgMuted)"
+      >Effects controls are only available on upgraded plans. They allow you to change the mood ("spooky", "vibrant",
+      ...etc) for the entire scene.</Text
+    >
+    <Spacer />
+    <PartyPlanSelector {party} />
+  </div>
+{:else}
+  <Text weight={800} color="var(--fgMuted)">COLOR</Text>
   <Spacer size={2} />
-  <Hr />
-  <Spacer size={4} />
-  <Text weight={800} color="var(--fgMuted)">BLOOM</Text>
-  <Spacer size={2} />
-  <div class="effectsControls__grid">
-    <FormControl label="Intensity" name="effectsBloomIntensity" {errors}>
+  <div class="effectsControls">
+    <FormControl label="Color grading" name="effectsLutUrl" {errors}>
+      {#snippet input({ inputProps })}
+        <Select
+          selected={[selectedLut]}
+          onSelectedChange={(selected) => handleLutChange(selected[0])}
+          options={lutOptions}
+          {...inputProps}
+        />
+      {/snippet}
+    </FormControl>
+    <Spacer />
+    <FormControl label="Tone mapping" name="effectsToneMapping" {errors}>
+      {#snippet input({ inputProps })}
+        <Select
+          selected={[selectedToneMapping]}
+          onSelectedChange={(selected) => handleToneChange(selected[0])}
+          options={toneMappingOptions}
+          {...inputProps}
+        />
+      {/snippet}
+    </FormControl>
+    <Spacer />
+    <FormControl label="Chromatic aberation" name="effectsChromaticAberration" {errors}>
       {#snippet input({ inputProps })}
         <InputSlider
           {...inputProps}
           min={0}
-          max={10}
-          step={0.05}
-          bind:value={stageProps.postProcessing.bloom.intensity}
+          max={0.02}
+          step={0.001}
+          bind:value={stageProps.postProcessing.chromaticAberration.offset}
         />
       {/snippet}
     </FormControl>
-    <FormControl label="Radius" name="effectsBloomRadius" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider
-          {...inputProps}
-          min={0}
-          max={0.5}
-          step={0.01}
-          bind:value={stageProps.postProcessing.bloom.radius}
-        />
-      {/snippet}
-    </FormControl>
+    <Spacer size={2} />
+    <Hr />
+    <Spacer size={4} />
+    <Text weight={800} color="var(--fgMuted)">BLOOM</Text>
+    <Spacer size={2} />
+    <div class="effectsControls__grid">
+      <FormControl label="Intensity" name="effectsBloomIntensity" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            {...inputProps}
+            min={0}
+            max={10}
+            step={0.05}
+            bind:value={stageProps.postProcessing.bloom.intensity}
+          />
+        {/snippet}
+      </FormControl>
+      <FormControl label="Radius" name="effectsBloomRadius" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            {...inputProps}
+            min={0}
+            max={0.5}
+            step={0.01}
+            bind:value={stageProps.postProcessing.bloom.radius}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
+    <Spacer />
+    <div class="effectsControls__grid">
+      <FormControl label="Threshold" name="effectsBloomThreshold" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            {...inputProps}
+            min={0}
+            max={1}
+            step={0.01}
+            bind:value={stageProps.postProcessing.bloom.threshold}
+          />
+        {/snippet}
+      </FormControl>
+      <FormControl label="Smoothing" name="effectsBloomSmoothing" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider
+            {...inputProps}
+            min={0}
+            max={1}
+            step={0.01}
+            bind:value={stageProps.postProcessing.bloom.smoothing}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
+    <Spacer />
+    <div class="effectsControls__grid">
+      <FormControl label="Levels" name="effectsBloomLevels" {errors}>
+        {#snippet input({ inputProps })}
+          <InputSlider {...inputProps} min={0} max={16} step={1} bind:value={stageProps.postProcessing.bloom.levels} />
+        {/snippet}
+      </FormControl>
+      <FormControl label="Mip-map blur" name="effectsBloomBlur" {errors}>
+        {#snippet input({ inputProps })}
+          <RadioButton
+            {...inputProps}
+            selected={stageProps.postProcessing.bloom.mipmapBlur ? 'true' : 'false'}
+            options={[
+              { label: 'on', value: 'true' },
+              { label: 'off', value: 'false' }
+            ]}
+            onSelectedChange={(value) => {
+              stageProps.postProcessing.bloom.mipmapBlur = value === 'true';
+              socketUpdate();
+            }}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
   </div>
-  <Spacer />
-  <div class="effectsControls__grid">
-    <FormControl label="Threshold" name="effectsBloomThreshold" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider
-          {...inputProps}
-          min={0}
-          max={1}
-          step={0.01}
-          bind:value={stageProps.postProcessing.bloom.threshold}
-        />
-      {/snippet}
-    </FormControl>
-    <FormControl label="Smoothing" name="effectsBloomSmoothing" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider
-          {...inputProps}
-          min={0}
-          max={1}
-          step={0.01}
-          bind:value={stageProps.postProcessing.bloom.smoothing}
-        />
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <div class="effectsControls__grid">
-    <FormControl label="Levels" name="effectsBloomLevels" {errors}>
-      {#snippet input({ inputProps })}
-        <InputSlider {...inputProps} min={0} max={16} step={1} bind:value={stageProps.postProcessing.bloom.levels} />
-      {/snippet}
-    </FormControl>
-    <FormControl label="Mip-map blur" name="effectsBloomBlur" {errors}>
-      {#snippet input({ inputProps })}
-        <RadioButton
-          {...inputProps}
-          selected={stageProps.postProcessing.bloom.mipmapBlur ? 'true' : 'false'}
-          options={[
-            { label: 'on', value: 'true' },
-            { label: 'off', value: 'false' }
-          ]}
-          onSelectedChange={(value) => {
-            stageProps.postProcessing.bloom.mipmapBlur = value === 'true';
-            socketUpdate();
-          }}
-        />
-      {/snippet}
-    </FormControl>
-  </div>
-</div>
+{/if}
 
 <style>
   .effectsControls {

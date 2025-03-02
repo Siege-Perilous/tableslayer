@@ -1,33 +1,12 @@
 <script lang="ts">
+  import { PartyPlanSelector } from './';
   import type { SelectParty } from '$lib/db/app/schema';
-  import { IconSelector } from '@tabler/icons-svelte';
-  import { useStripeCheckout, useStripeCustomerPortal } from '$lib/queries';
+  import { useStripeCustomerPortal } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
-  import { type PartyPlan } from '$lib/db/app/schema';
-  import { Button, Text, Spacer, Panel, Link, Popover, Hr, Icon, Loader } from '@tableslayer/ui';
+  import { Button, Text, Spacer, Panel, Link } from '@tableslayer/ui';
   let { party, limitText = 'Your party is limited' }: { party: SelectParty; limitText?: string } = $props();
 
-  const checkout = useStripeCheckout();
   const portal = useStripeCustomerPortal();
-  let formIsLoading = $state(false);
-
-  const handleUpgrade = async (plan: PartyPlan) => {
-    await handleMutation({
-      mutation: () => $checkout.mutateAsync({ partyId: party.id, plan }),
-      toastMessages: {
-        error: { title: 'Error', body: (error) => error.message }
-      },
-      formLoadingState: (loading) => {
-        formIsLoading = loading;
-      },
-      onSuccess: (result) => {
-        if (result.url) {
-          console.log(result.url);
-          window.location.href = result.url;
-        }
-      }
-    });
-  };
 
   const handleCustomerPortal = async () => {
     if (party.stripeCustomerId === null) return;
@@ -89,40 +68,7 @@
       >.
     </Text>
     <Spacer />
-    <Popover positioning={{ placement: 'bottom-start' }} class="partyUpgrade__popContent">
-      {#snippet trigger()}
-        <Button variant="special" class="partyUpgrade__btn" disabled={formIsLoading}>
-          Upgrade your party
-          {#snippet end()}
-            {#if formIsLoading}
-              <Loader />
-            {:else}
-              <Icon Icon={IconSelector} />
-            {/if}
-          {/snippet}
-        </Button>
-      {/snippet}
-      {#snippet content()}
-        <div class="partyUpgrade__popover">
-          <Text weight={800}>Select a plan</Text>
-          <Spacer size={2} />
-          <Hr />
-          <Spacer size={2} />
-          <button onclick={() => handleUpgrade('monthly')} class="partyUpgrade__popBtn">
-            <span>Monthly</span>
-            <span class="partyUpgrade__price">$5</span>
-          </button>
-          <button onclick={() => handleUpgrade('yearly')} class="partyUpgrade__popBtn">
-            <span>Yearly</span>
-            <span class="partyUpgrade__price">$50</span>
-          </button>
-          <button onclick={() => handleUpgrade('lifetime')} class="partyUpgrade__popBtn">
-            <span>Lifetime</span>
-            <span class="partyUpgrade__price">$85</span>
-          </button>
-        </div>
-      {/snippet}
-    </Popover>
+    <PartyPlanSelector {party} />
   {/if}
 </Panel>
 
