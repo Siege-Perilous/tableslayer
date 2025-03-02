@@ -1,6 +1,14 @@
 <script lang="ts">
   import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
-  import { IconCheck, IconX, IconPhoto, IconChevronDown, IconGripVertical } from '@tabler/icons-svelte';
+  import {
+    IconCheck,
+    IconX,
+    IconPhoto,
+    IconChevronDown,
+    IconPlayerPlayFilled,
+    IconPlayerPauseFilled,
+    IconGripVertical
+  } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb } from '$lib/utils';
@@ -430,7 +438,15 @@
         {/if}
         <a href={`/${party.slug}/${gameSession.slug}/${scene.order}`} class="scene__link">
           {#if activeScene && activeScene.id === scene.id}
-            <div class="scene__projectedIcon">Active on table</div>
+            <div class="scene__projectedIcon">
+              {#if !gameSession.isPaused}
+                <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />
+                Active on table
+              {:else}
+                <Icon Icon={IconPlayerPauseFilled} color="var(--fgPrimary)" />
+                Paused on table
+              {/if}
+            </div>
           {/if}
           <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
         </a>

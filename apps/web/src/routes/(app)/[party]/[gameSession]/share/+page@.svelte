@@ -18,7 +18,6 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let editorSceneRotation = $state(data.activeScene.sceneRotation);
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
@@ -49,11 +48,12 @@
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
-      editorSceneRotation = payload.stageProps.scene.rotation;
       stageProps = {
         ...stageProps,
         // Override stage props with the updated props from the websocket
         ...payload.stageProps,
+        // Don't allow rotate and zoom from the editor
+        scene: { ...stageProps.scene },
         // Don't allow erase mode
         activeLayer: MapLayerType.None
       };
@@ -67,7 +67,6 @@
       }
     });
 
-    $inspect(editorSceneRotation);
     $inspect(stageProps);
 
     socket.on('cursorUpdate', (payload) => {
