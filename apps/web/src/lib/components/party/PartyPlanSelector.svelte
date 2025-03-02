@@ -13,9 +13,9 @@
     await handleMutation({
       mutation: () => $checkout.mutateAsync({ partyId: party.id, plan }),
       toastMessages: {
-        error: { title: 'Error', body: (error) => error.message }
+        error: { title: 'Error', body: (error: Error) => error.message }
       },
-      formLoadingState: (loading) => {
+      formLoadingState: (loading: boolean) => {
         formIsLoading = loading;
       },
       onSuccess: (result) => {
@@ -62,3 +62,34 @@
     </div>
   {/snippet}
 </Popover>
+
+<style>
+  .partyUpgrade__price {
+    font-family: var(--font-mono);
+  }
+  :global {
+    .partyUpgrade__popContent {
+      width: 260px;
+    }
+    .btn.partyUpgrade__btn {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .partyUpgrade__popBtn {
+      padding: 0.25rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4rem;
+      border: solid 2px transparent;
+      width: 100%;
+      &:hover,
+      &:focus-visible {
+        background-color: var(--menuItemHover);
+        border: var(--menuItemBorderHover);
+        outline: none;
+      }
+    }
+  }
+</style>

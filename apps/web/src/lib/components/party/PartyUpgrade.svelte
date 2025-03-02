@@ -5,6 +5,7 @@
   import { handleMutation } from '$lib/factories';
   import { Button, Text, Spacer, Panel, Link } from '@tableslayer/ui';
   let { party, limitText = 'Your party is limited' }: { party: SelectParty; limitText?: string } = $props();
+  let formIsLoading = $state(false);
 
   const portal = useStripeCustomerPortal();
 
@@ -56,7 +57,9 @@
         <Text size="0.875rem">Your plan renews on {formatDate(party.planNextBillingDate)}.</Text>
       {/if}
       <Spacer />
-      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage">Manage subscription</Button>
+      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage" isLoading={formIsLoading}
+        >Manage subscription</Button
+      >
     {/if}
   {:else}
     <Text weight={800}>{limitText}</Text>
@@ -78,39 +81,9 @@
       padding: 1rem;
       gap: 0.5rem;
     }
-    .partyUpgrade__popContent {
-      width: 260px;
-    }
-    .btn.partyUpgrade__btn {
-      width: 100%;
-      justify-content: space-between;
-    }
     .btn.partyUpgrade__manage {
       width: 100%;
     }
-    .partyUpgrade__popBtn {
-      padding: 0.25rem 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4rem;
-      border: solid 2px transparent;
-      width: 100%;
-      &:hover,
-      &:focus-visible {
-        background-color: var(--menuItemHover);
-        border: var(--menuItemBorderHover);
-        outline: none;
-      }
-    }
-  }
-  :global(.partyUpgrade .popTrigger) {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .partyUpgrade__price {
-    font-family: var(--font-mono);
   }
   .partyUpgrade__highlight {
     font-weight: 800;
