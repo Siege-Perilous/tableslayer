@@ -661,6 +661,8 @@
     display: grid;
     gap: 1rem;
     overflow-y: auto;
+    flex-grow: 1;
+
     padding: 2rem 2rem;
   }
   .scene__dragHandle {
