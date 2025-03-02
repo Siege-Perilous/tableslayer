@@ -2,7 +2,7 @@
   import { type PartyPlan } from '$lib/db/app/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import { IconSelector } from '@tabler/icons-svelte';
-  import { handleMutation } from '$lib/factories';
+  import { handleMutation, type FormMutationError } from '$lib/factories';
   import { useStripeCheckout } from '$lib/queries';
   import { Button, Text, Spacer, Popover, Hr, Icon, Loader } from '@tableslayer/ui';
   let formIsLoading = $state(false);
@@ -13,7 +13,7 @@
     await handleMutation({
       mutation: () => $checkout.mutateAsync({ partyId: party.id, plan }),
       toastMessages: {
-        error: { title: 'Error', body: (error: Error) => error.message }
+        error: { title: 'Error', body: (error: FormMutationError) => error.message }
       },
       formLoadingState: (loading: boolean) => {
         formIsLoading = loading;

@@ -3,7 +3,7 @@
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { useUpdateGameSessionMutation } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  import { handleMutation, type FormMutationError } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
 
   let {
@@ -40,7 +40,7 @@
         success: { title: 'Active scene set' },
         error: {
           title: 'Error setting active scene',
-          body: (err: Error) => err.message || 'Error setting active scene'
+          body: (err: FormMutationError) => err.message || 'Error setting active scene'
         }
       }
     });
@@ -63,7 +63,10 @@
       },
       toastMessages: {
         success: { title: 'Playfield paused' },
-        error: { title: 'Error pausing playfield', body: (err: Error) => err.message || 'Error pausing playfield' }
+        error: {
+          title: 'Error pausing playfield',
+          body: (err: FormMutationError) => err.message || 'Error pausing playfield'
+        }
       }
     });
   };
