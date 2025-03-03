@@ -17,7 +17,6 @@ RUN npm install -g pnpm@latest
 
 # Copy all repository files
 COPY . .
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Install dependencies
 RUN pnpm install
