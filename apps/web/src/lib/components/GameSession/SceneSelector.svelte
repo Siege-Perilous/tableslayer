@@ -348,7 +348,7 @@
   });
 </script>
 
-<div class="scenes">
+<div class="scenes" id="scenes">
   <div class="scene__input">
     {#if party.plan === 'free' && orderedScenes.length >= 3}
       <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
@@ -457,7 +457,7 @@
           triggerClass="scene__popoverBtn"
           isOpen={openScenePopover === scene.id}
           positioning={{ placement: 'bottom-end' }}
-          portal={document.body}
+          portal={document.getElementById('scenes')}
         >
           {#snippet trigger()}
             <IconButton as="div" variant="ghost">
