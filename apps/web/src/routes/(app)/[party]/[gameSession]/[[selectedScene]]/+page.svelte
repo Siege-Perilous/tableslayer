@@ -7,6 +7,7 @@
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
+  import { navigating } from '$app/state';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -29,7 +30,7 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
@@ -484,8 +485,12 @@
   .stage {
     width: 100%;
     height: 100%;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease-in;
   }
-  .stage--loading {
+  .stage.stage--loading {
     visibility: hidden;
+    opacity: 0;
   }
 </style>
