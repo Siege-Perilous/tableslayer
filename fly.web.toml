@@ -39,6 +39,10 @@ regions = ["ewr", "ams"]
     protocol = "http"
     tls_skip_verify = false
 
+[[mounts]]
+  source = "turso_data"
+  destination = "/app/data"
+
 [[vm]]
   size = 'shared-cpu-2x'
   memory = '2gb'

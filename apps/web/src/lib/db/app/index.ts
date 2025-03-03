@@ -4,6 +4,8 @@ import { drizzle } from 'drizzle-orm/libsql';
 
 config({ path: '.env' });
 
+const isProduction = process.env.ENV_NAME === 'production';
+
 /* const client = createClient({
   url: 'file:src/lib/db/app/local.db',
   syncUrl: process.env.TURSO_APP_DB_URL!,
@@ -11,9 +13,16 @@ config({ path: '.env' });
   authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
 }); */
 
-const client = createClient({
-  url: process.env.TURSO_APP_DB_URL!,
-  authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
-});
+const client = isProduction
+  ? createClient({
+      url: 'file:/app/data/turso_local.db',
+      syncUrl: process.env.TURSO_APP_DB_URL!,
+      syncInterval: 30, // Sync every 30 seconds
+      authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
+    })
+  : createClient({
+      url: process.env.TURSO_APP_DB_URL!,
+      authToken: process.env.TURSO_APP_DB_AUTH_TOKEN!
+    });
 
 export const db = drizzle(client);

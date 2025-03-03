@@ -10,13 +10,14 @@ WORKDIR /app
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
-    apt-get install -y python-is-python3 pkg-config build-essential curl
+    apt-get install -y python-is-python3 pkg-config build-essential curl ca-certificates update-ca-certificates
 
 # Install pnpm
 RUN npm install -g pnpm@latest
 
 # Copy all repository files
 COPY . .
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Install dependencies
 RUN pnpm install
