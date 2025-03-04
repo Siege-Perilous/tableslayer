@@ -223,8 +223,10 @@
           {#snippet trigger()}
             <div class="sceneControls__trigger">
               <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
-                <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
-                {scene.text}
+                <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                <span class="sceneControls__layerText">
+                  {scene.text}
+                </span>
               </div>
             </div>
           {/snippet}
@@ -358,5 +360,17 @@
   .sceneControls__trigger {
     display: flex;
     align-items: center;
+  }
+
+  @container stageWrapper (max-width: 768px) {
+    .sceneControls {
+      gap: 0.25rem !important;
+    }
+    .sceneControls__item--primary {
+      padding-right: 0.25rem !important;
+    }
+    .sceneControls__layerText {
+      display: none;
+    }
   }
 </style>

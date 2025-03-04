@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
   import {
     IconCheck,
     IconX,
@@ -520,9 +520,11 @@
           portal={document.getElementById('scenes')}
         >
           {#snippet trigger()}
-            <IconButton as="div" variant="ghost">
-              <Icon Icon={IconChevronDown} />
-            </IconButton>
+            <ColorMode mode="dark">
+              <IconButton as="div" variant="ghost">
+                <Icon Icon={IconChevronDown} />
+              </IconButton>
+            </ColorMode>
           {/snippet}
           {#snippet content({ contentProps })}
             <button
@@ -590,6 +592,11 @@
 </div>
 
 <style>
+  :global(.light) {
+    .scene__projectedIcon {
+      background: rgba(255, 255, 255, 0.75);
+    }
+  }
   .scenes {
     border-right: var(--borderThin);
     display: flex;
@@ -783,7 +790,15 @@
       z-index: 2;
     }
     .scene__dragHandleIcon {
+      color: white;
       filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+    }
+
+    @media (max-width: 768px) {
+      .scene__inputBtn {
+        width: auto;
+        margin: 0 auto;
+      }
     }
   }
 
