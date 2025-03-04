@@ -26,7 +26,7 @@
   import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
   import { flip } from 'svelte/animate';
-  import { sineIn, sineOut } from 'svelte/easing';
+  import { sineOut } from 'svelte/easing';
   import { navigating } from '$app/state';
   import { onDestroy } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -411,7 +411,7 @@
     {#each orderedScenes as scene, index (scene.id)}
       <div
         animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
-        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineIn }}
+        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineOut }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
