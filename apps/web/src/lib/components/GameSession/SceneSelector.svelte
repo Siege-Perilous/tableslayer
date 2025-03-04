@@ -374,7 +374,7 @@
     {/if}
   </div>
   <div class="scene__list">
-    {#each orderedScenes as scene, index}
+    {#each orderedScenes as scene, index (scene.id)}
       <div
         role="presentation"
         id={`scene-${scene.order}`}
