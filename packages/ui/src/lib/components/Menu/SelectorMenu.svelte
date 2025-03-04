@@ -145,7 +145,7 @@
   {#if isOpen}
     <div bind:this={menu} class="selectorMenu__popover" style={floatingStyles}>
       <ul role="listbox" class="selectorMenu__optionList">
-        {#each options as option}
+        {#each options as option (option.value)}
           <li
             class={[
               'selectorMenu__option',
