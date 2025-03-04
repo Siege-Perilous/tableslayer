@@ -396,6 +396,11 @@
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
+      onResize={() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }}
     >
       <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
@@ -439,7 +444,11 @@
     .panel.scene {
       aspect-ratio: 16 / 9;
     }
+    /* Don't change container-name */
+    /* Container is globally checked in child components */
     .stageWrapper {
+      container-name: stageWrapper;
+      container-type: size;
       display: flex;
       align-items: center;
       background: var(--contrastEmpty);
