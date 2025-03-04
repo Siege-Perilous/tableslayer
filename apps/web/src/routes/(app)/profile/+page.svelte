@@ -218,4 +218,13 @@
     align-items: center;
     margin-bottom: 2rem;
   }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 2rem;
+    }
+    .containerLayout {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
