@@ -36,6 +36,8 @@
   let isScenesCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
+  let innerWidth: number = $state(0);
+  const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
@@ -384,9 +386,10 @@
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
+<svelte:window bind:innerWidth />
 
 <div class="container">
-  <PaneGroup direction="horizontal">
+  <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
     <Pane
       defaultSize={15}
       collapsible={true}
@@ -485,6 +488,21 @@
     .controls {
       border-left: var(--borderThin);
       background: var(--bg);
+    }
+
+    @media (max-width: 768px) {
+      .resizer {
+        width: 100% !important;
+        height: 0.5rem !important;
+      }
+      .resizer__handle {
+        width: 2rem !important;
+        height: 100% !important;
+        cursor: row-resize;
+        margin-left: 50%;
+        transform: translateX(-50%);
+        margin-top: 0;
+      }
     }
   }
   .container {

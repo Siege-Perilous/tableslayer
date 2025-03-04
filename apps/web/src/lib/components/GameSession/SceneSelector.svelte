@@ -793,6 +793,13 @@
       color: white;
       filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
     }
+
+    @media (max-width: 768px) {
+      .scene__inputBtn {
+        width: auto;
+        margin: 0 auto;
+      }
+    }
   }
 
   .scene__menuItem {
