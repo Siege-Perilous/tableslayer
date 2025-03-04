@@ -20,7 +20,8 @@
     useDeleteSceneMutation,
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
-    useReorderScenesMutation
+    useReorderScenesMutation,
+    useDuplicateSceneMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
@@ -72,6 +73,7 @@
   const updateScene = useUpdateSceneMutation();
   const updateGameSession = useUpdateGameSessionMutation();
   const reorderScenes = useReorderScenesMutation();
+  const duplicateScene = useDuplicateSceneMutation();
 
   // Check if a scene is currently being renamed
   const isSceneBeingRenamed = (sceneId: string) => {
@@ -218,6 +220,24 @@
       toastMessages: {
         success: { title: 'Scene renamed' },
         error: { title: 'Error renaming scene', body: (error) => error.message || 'Error renaming scene' }
+      }
+    });
+  };
+
+  const handleDuplicateScene = async (sceneId: string) => {
+    await handleMutation({
+      mutation: () =>
+        $duplicateScene.mutateAsync({
+          partyId: party.id,
+          sceneId
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Scene duplicated' },
+        error: { title: 'Error duplicating scene', body: (error) => error.message || 'Error duplicating scene' }
       }
     });
   };
@@ -523,6 +543,15 @@
               }}
             >
               Rename scene
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleDuplicateScene(scene.id);
+                contentProps.close();
+              }}
+            >
+              Duplicate scene
             </button>
             <button
               class="scene__menuItem"
