@@ -26,9 +26,10 @@
   import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
   import { flip } from 'svelte/animate';
-  import { cubicOut } from 'svelte/easing';
+  import { sineIn, sineOut } from 'svelte/easing';
   import { navigating } from '$app/state';
   import { onDestroy } from 'svelte';
+  import { fly } from 'svelte/transition';
 
   let {
     scenes,
@@ -52,6 +53,7 @@
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
   let needsToUpgrade = $derived(party.plan === 'free' && orderedScenes.length >= 3);
+  let isNewSceneAdded = $state(false);
 
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
@@ -141,7 +143,11 @@
       },
       onSuccess: () => {
         invalidateAll();
+        isNewSceneAdded = true;
         file = null;
+        setTimeout(() => {
+          isNewSceneAdded = false;
+        }, 1000);
       },
       toastMessages: {
         success: { title: 'Scene created successfully' },
@@ -404,7 +410,8 @@
   <div class="scene__list">
     {#each orderedScenes as scene, index (scene.id)}
       <div
-        animate:flip={{ delay: 100, duration: 200, easing: cubicOut }}
+        animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
+        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineIn }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
@@ -562,6 +569,7 @@
     width: 100%;
     background: var(--bg);
     overflow-y: auto;
+    flex-grow: 1;
     transition: border-color 0.2s;
     container-type: inline-size;
   }
@@ -710,6 +718,10 @@
   .scene__list {
     display: grid;
     gap: 1rem;
+    height: fit-content;
+    min-height: 0;
+    flex-grow: 1;
+    align-content: start;
     overflow-y: auto;
     padding: 2rem 2rem;
   }
