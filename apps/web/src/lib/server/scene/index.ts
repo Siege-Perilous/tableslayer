@@ -326,21 +326,16 @@ export const toggleGamePause = async (gameSessionId: string) => {
 };
 
 export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  // Get the original scene
   const originalScene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
 
   if (!originalScene) {
     throw new Error('Scene not found');
   }
 
-  // Create a copy of the original scene's properties to use for the new scene
   const { id: _, name, order, ...otherProps } = originalScene;
-
-  // Create the new scene name
   const newSceneName = `${name} (Copy)`;
   const newSceneId = uuidv4();
 
-  // Use the existing createScene function which properly handles scene ordering
   await createScene({
     ...otherProps,
     id: newSceneId,
@@ -348,7 +343,6 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
     order: order + 1 // Place it right after the original scene
   });
 
-  // Fetch the newly created scene to return it
   const newScene = await db.select().from(sceneTable).where(eq(sceneTable.id, newSceneId)).get();
 
   if (!newScene) {
