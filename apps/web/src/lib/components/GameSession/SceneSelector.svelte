@@ -147,7 +147,7 @@
         file = null;
         setTimeout(() => {
           isNewSceneAdded = false;
-        }, 1000);
+        }, 3000);
       },
       toastMessages: {
         success: { title: 'Scene created successfully' },
