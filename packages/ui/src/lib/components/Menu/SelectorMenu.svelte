@@ -145,7 +145,7 @@
   {#if isOpen}
     <div bind:this={menu} class="selectorMenu__popover" style={floatingStyles}>
       <ul role="listbox" class="selectorMenu__optionList">
-        {#each options as option}
+        {#each options as option (option.value)}
           <li
             class={[
               'selectorMenu__option',
@@ -159,18 +159,25 @@
             data-testid="menuItem"
             aria-selected={isSelected(option.value)}
           >
-            <div class="selectorMenu__space">
-              {#if isSelected(option.value)}
-                <div class="selectorMenu__dot"></div>
+            <div class="selectorMenu__start">
+              <div class="selectorMenu__space">
+                {#if isSelected(option.value)}
+                  <div class="selectorMenu__dot"></div>
+                {/if}
+              </div>
+              {#if option.icon}
+                <Icon Icon={option.icon} size="1.25rem" />
+              {/if}
+              {#if isSnippet(option.label)}
+                {@render option.label()}
+              {:else}
+                {option.label}
               {/if}
             </div>
-            {#if option.icon}
-              <Icon Icon={option.icon} size="1.25rem" />
-            {/if}
-            {#if isSnippet(option.label)}
-              {@render option.label()}
-            {:else}
-              {option.label}
+            {#if option.key}
+              <div class="selectorMenu__end">
+                <div class="selectorMenu__key">{option.key}</div>
+              </div>
             {/if}
           </li>
         {/each}
@@ -215,14 +222,15 @@
   }
 
   .selectorMenu__option {
+    width: 100%;
     padding: 0.25rem 1rem;
     cursor: pointer;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     font-size: 0.875rem;
-    gap: 0.5rem;
+    gap: 3rem;
     border: solid 2px transparent;
-    gap: 1rem;
     text-indent: -0.5rem;
     line-height: 1.2rem;
   }
@@ -231,6 +239,7 @@
   .selectorMenu__option:focus {
     background-color: var(--menuItemHover);
     border: var(--menuItemBorderHover);
+    outline: none;
   }
   .selectorMenu__option--isActive {
     background-color: var(--menuItemHover);
@@ -255,5 +264,17 @@
     align-items: center;
     gap: 0.25rem;
     flex-wrap: wrap;
+  }
+  .selectorMenu__start {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .selectorMenu__key {
+    display: flex;
+    text-indent: 0;
+    color: var(--fgMuted);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
   }
 </style>

@@ -10,10 +10,8 @@ import {
   RainPreset,
   SceneRotation,
   type StageProps,
-  ToolType,
-  WeatherType
+  ToolType
 } from '@tableslayer/ui';
-import { ToneMappingMode } from 'postprocessing';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
@@ -45,17 +43,17 @@ export const buildSceneProps = (
       }
     },
     edgeOverlay: {
-      enabled: true,
-      url: null,
-      opacity: 0.3,
-      scale: 2.0,
-      fadeStart: 0.2,
-      fadeEnd: 1.0
+      enabled: activeScene.edgeEnabled,
+      url: activeScene.edgeUrl,
+      opacity: activeScene.edgeOpacity,
+      scale: activeScene.edgeScale,
+      fadeStart: activeScene.edgeFadeStart,
+      fadeEnd: activeScene.edgeFadeEnd
     },
     fog: {
-      enabled: true,
-      color: '#a0a0a0',
-      opacity: 0.8,
+      enabled: activeScene.fogEnabled,
+      color: activeScene.fogColor,
+      opacity: activeScene.fogOpacity,
       speed: 0.05,
       persistence: 0.5,
       lacunarity: 2.5,
@@ -124,27 +122,27 @@ export const buildSceneProps = (
       enabled: true,
       bloom: {
         enabled: true,
-        intensity: 0.5,
-        threshold: 0.5,
-        smoothing: 0.5,
-        radius: 0.5,
-        levels: 0.5,
-        mipmapBlur: true
+        intensity: activeScene.effectsBloomIntensity,
+        threshold: activeScene.effectsBloomThreshold,
+        smoothing: activeScene.effectsBloomSmoothing,
+        radius: activeScene.effectsBloomRadius,
+        levels: activeScene.effectsBloomLevels,
+        mipmapBlur: activeScene.effectsBloomMipMapBlur
       },
       chromaticAberration: {
         enabled: true,
-        offset: 0.001
+        offset: activeScene.effectsChromaticAberrationOffset
       },
       lut: {
         enabled: true,
-        url: 'https://files.tableslayer.com/stage/luts/Warm.cube'
+        url: activeScene.effectsLutUrl
       },
       toneMapping: {
         enabled: true,
-        mode: ToneMappingMode.NEUTRAL
+        mode: activeScene.effectsToneMappingMode
       },
       vignette: {
-        enabled: true,
+        enabled: false,
         offset: 0.5,
         darkness: 0.5
       }
@@ -169,7 +167,7 @@ export const buildSceneProps = (
       thickness: 0.1
     },
     weather: {
-      type: WeatherType.Rain,
+      type: activeScene.weatherType,
       opacity: activeScene.weatherOpacity,
       intensity: activeScene.weatherIntensity,
       fov: activeScene.weatherFov,

@@ -175,7 +175,7 @@
   {#if isOpen}
     <ul bind:this={menu} class="select__menu" style={floatingStyles} role="listbox">
       {#if Array.isArray(options)}
-        {#each options as option}
+        {#each options as option (option.value)}
           <li
             class={[
               'select__option',
@@ -201,9 +201,9 @@
           </li>
         {/each}
       {:else}
-        {#each Object.entries(options) as [group, groupOptions]}
+        {#each Object.entries(options) as [group, groupOptions] (group)}
           <li class="select__group" aria-hidden="true">{group}</li>
-          {#each groupOptions as option}
+          {#each groupOptions as option (option.value)}
             <li
               class={[
                 'select__option',

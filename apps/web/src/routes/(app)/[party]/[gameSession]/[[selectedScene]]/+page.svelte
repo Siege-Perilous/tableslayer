@@ -4,9 +4,10 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, SceneSelector, SceneZoom } from '$lib/components';
+  import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
+  import { navigating } from '$app/state';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -29,11 +30,10 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
-  let stage: StageExports;
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
+  let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
-  let fogBlob: Blob | null = $state(null);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
 
@@ -294,20 +294,13 @@
    * The Stage component emits a blob when the fog of war is updated.
    * We update state so that saveScene() has something to check so uploads don't happen immediately
    */
+  let isUpdatingFog = false;
   const onFogUpdate = async (blob: Promise<Blob>) => {
-    fogBlob = await blob;
-    fogBlobUpdateTime = new Date();
-  };
+    isUpdatingFog = true;
 
-  let isSaving = false;
+    const fogBlob = await blob;
 
-  const saveScene = async () => {
-    if (isSaving) return;
-    isSaving = true;
-
-    console.log('Saving scene...');
-
-    if (fogBlob !== null) {
+    if (blob !== null && !isSaving) {
       await handleMutation({
         mutation: () =>
           $createFogMutation.mutateAsync({
@@ -316,16 +309,29 @@
           }),
         formLoadingState: () => console.log('fog is uploading'),
         onSuccess: (fog) => {
-          // Directly update fogBlob instead of triggering a full reactivity cycle
           stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          fogBlobUpdateTime = new Date();
           socketUpdate();
           console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
+          isUpdatingFog = false;
+        },
+        onError: () => {
+          console.log('Error uploading fog');
+          isUpdatingFog = false;
         },
         toastMessages: {
           error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
         }
       });
     }
+  };
+
+  let isSaving = false;
+  const saveScene = async () => {
+    if (isSaving || isUpdatingFog) return;
+    isSaving = true;
+
+    console.log('Saving scene...');
 
     await handleMutation({
       mutation: () =>
@@ -386,7 +392,7 @@
       collapsible={true}
       collapsedSize={0}
       minSize={10}
-      maxSize={30}
+      maxSize={50}
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
@@ -408,6 +414,7 @@
         </div>
         <SceneControls
           bind:stageProps
+          {stage}
           {handleMapFill}
           {handleMapFit}
           {handleSceneFit}
@@ -421,6 +428,7 @@
           {errors}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
+        <Shortcuts />
       </div>
     </Pane>
   </PaneGroup>
@@ -477,8 +485,12 @@
   .stage {
     width: 100%;
     height: 100%;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease-in;
   }
-  .stage--loading {
+  .stage.stage--loading {
     visibility: hidden;
+    opacity: 0;
   }
 </style>

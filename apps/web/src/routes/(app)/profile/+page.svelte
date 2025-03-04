@@ -118,7 +118,7 @@
         <Title as="h2" size="sm">Party invites</Title>
         <Spacer size={2} />
         <Panel class="profile__panel">
-          {#each invites as invite}
+          {#each invites as invite (invite.party.id)}
             <div class="profile__invite">
               <Avatar src={invite.invitedByUser?.thumb.resizedUrl} size="sm" />
               <div>

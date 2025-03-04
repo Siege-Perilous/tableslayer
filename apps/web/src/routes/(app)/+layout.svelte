@@ -14,7 +14,14 @@
     LinkOverlay,
     Avatar
   } from '@tableslayer/ui';
-  import { IconMoon, IconSun } from '@tabler/icons-svelte';
+  import {
+    IconMoon,
+    IconSun,
+    IconQuestionMark,
+    IconBrandBluesky,
+    IconBrandDiscord,
+    IconBrandGithub
+  } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
   import { page } from '$app/state';
@@ -37,6 +44,17 @@
     console.log('Selected party:', selected);
     goto(`/${selected}`);
   };
+
+  const links = [
+    { label: 'Help', href: '/help', icon: IconQuestionMark },
+    { label: 'Bluesky', href: 'https://bsky.app/profile/davesnider.com', icon: IconBrandBluesky },
+    {
+      label: 'Discord',
+      href: 'https://discord.com/channels/1346472596887179390/1346472597663121420',
+      icon: IconBrandDiscord
+    },
+    { label: 'GitHub', href: 'https://github.com/siege-perilous/tableslayer', icon: IconBrandGithub }
+  ];
 </script>
 
 <header>
@@ -115,6 +133,15 @@
             {/if}
             <Spacer />
             <Hr />
+            <Spacer size={2} />
+            {#each links as link}
+              <a href={link.href} class="profileDropdown__link">
+                <Text size="0.875rem">{link.label}</Text>
+                <Icon Icon={link.icon} size="1.25rem" />
+              </a>
+            {/each}
+            <Spacer size={2} />
+            <Hr />
             <Spacer />
             <div>
               <Button href="/logout" variant="danger" data-sveltekit-preload-data="tap">logout</Button>
@@ -189,5 +216,26 @@
     align-items: center;
     display: flex;
     justify-content: center;
+  }
+
+  .profileDropdown__link {
+    display: flex;
+    gap: 0.5rem;
+    text-align: left;
+    white-space: nowrap;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.25rem 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    gap: 0.5rem;
+    gap: 1rem;
+  }
+
+  .profileDropdown__link:hover,
+  .profileDropdown__link:focus-visible {
+    text-decoration: underline;
   }
 </style>

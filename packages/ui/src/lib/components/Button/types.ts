@@ -42,3 +42,11 @@ export type ConfirmActionButtonProps = {
   actionButtonText?: string;
   isLoading?: boolean;
 };
+
+export type RadioOption = { label: string | Snippet; value: string };
+export type RadioButtonProps = {
+  options: RadioOption[];
+  variant?: 'default';
+  selected: string;
+  onSelectedChange?: (value: string) => void;
+} & SvelteHTMLElements['div'];

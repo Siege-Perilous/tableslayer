@@ -1,31 +1,51 @@
-module.exports = {
-  root: true,
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:svelte/recommended',
-    'prettier',
-    'turbo'
-  ],
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
-  parserOptions: {
-    sourceType: 'module',
-    ecmaVersion: 2020,
-    extraFileExtensions: ['**/*.svelte', '.svelte ', '**/*.svelte.ts', '*.svelte.ts', '**/*.svelte.js', '*.svelte.js']
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import sveltePlugin from 'eslint-plugin-svelte';
+import svelteParser from 'svelte-eslint-parser';
+
+// Base JavaScript/TypeScript configuration
+const baseConfig = {
+  plugins: {
+    '@typescript-eslint': tseslint
   },
-  env: {
-    browser: true,
-    es2017: true,
-    node: true
-  },
-  overrides: [
-    {
-      files: ['*.svelte'],
-      parser: 'svelte-eslint-parser',
-      parserOptions: {
-        parser: '@typescript-eslint/parser'
-      }
+  languageOptions: {
+    parser: tsParser,
+    parserOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module'
+    },
+    globals: {
+      document: 'readonly',
+      navigator: 'readonly',
+      window: 'readonly'
     }
-  ]
+  },
+  rules: {
+    ...tseslint.configs.recommended.rules
+  }
 };
+
+// Svelte configuration
+const svelteConfig = {
+  plugins: {
+    svelte: sveltePlugin
+  },
+  processor: sveltePlugin.processors['.svelte'],
+  files: ['**/*.svelte'],
+  languageOptions: {
+    parser: svelteParser,
+    parserOptions: {
+      parser: tsParser
+    }
+  },
+  rules: {
+    ...sveltePlugin.configs.recommended.rules
+  }
+};
+
+// Default ignore patterns
+const ignores = {
+  ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.build/**', '**/.svelte-kit/**', '**/package/**']
+};
+
+export default [ignores, baseConfig, svelteConfig];

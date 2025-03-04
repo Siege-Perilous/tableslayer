@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
-  import { Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
   type CursorData = {
@@ -18,17 +18,17 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let editorSceneRotation = $state(data.activeScene.sceneRotation);
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
+  let innerWidth = $state(null);
+  let innerHeight = $state(null);
   const fadeOutDelay = 5000;
 
   const handleResize = () => {
-    if (stage) {
-      stage.scene.fit();
-    }
+    if (!stage) return;
+    stage.scene.fit();
   };
 
   onMount(() => {
@@ -48,15 +48,14 @@
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
-      editorSceneRotation = payload.stageProps.scene.rotation;
       stageProps = {
         ...stageProps,
-        fogOfWar: payload.stageProps.fogOfWar,
-        grid: payload.stageProps.grid,
-        map: payload.stageProps.map,
-        display: payload.stageProps.display,
-        weather: payload.stageProps.weather,
-        ping: payload.stageProps.ping
+        // Override stage props with the updated props from the websocket
+        ...payload.stageProps,
+        // Don't allow rotate and zoom from the editor
+        scene: { ...stageProps.scene },
+        // Don't allow erase mode
+        activeLayer: MapLayerType.None
       };
 
       handleResize();
@@ -68,7 +67,6 @@
       }
     });
 
-    $inspect(editorSceneRotation);
     $inspect(stageProps);
 
     socket.on('cursorUpdate', (payload) => {
@@ -181,9 +179,19 @@
 
     return () => clearInterval(interval);
   });
+
+  // This is needed because fullscreen mode doesn't trigger the onresize event
+  $effect(() => {
+    $state.snapshot(innerWidth);
+    $state.snapshot(innerHeight);
+
+    setTimeout(() => {
+      handleResize();
+    }, 100);
+  });
 </script>
 
-<svelte:window onresize={handleResize} />
+<svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
 
 {#if gameIsPaused}
   <div class="paused">
@@ -238,7 +246,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: red;
+    background: black;
     z-index: 1;
   }
   .stage--loading {

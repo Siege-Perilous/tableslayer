@@ -26,13 +26,7 @@ export const broadcastStageUpdate = (
       activeScene: activeScene,
       gameIsPaused,
       stageProps: {
-        fogOfWar: stageProps.fogOfWar,
-        grid: stageProps.grid,
-        map: stageProps.map,
-        scene: stageProps.scene,
-        display: stageProps.display,
-        weather: stageProps.weather,
-        ping: stageProps.ping
+        ...stageProps
       }
     };
 
@@ -47,13 +41,7 @@ export const broadcastStageUpdate = (
       activeScene,
       gameIsPaused,
       stageProps: {
-        fogOfWar: newStageProps.fogOfWar,
-        grid: newStageProps.grid,
-        map: newStageProps.map,
-        scene: newStageProps.scene,
-        display: newStageProps.display,
-        weather: newStageProps.weather,
-        ping: newStageProps.ping
+        ...newStageProps
       }
     };
 

@@ -124,4 +124,18 @@
     border-radius: var(--radius-1);
     font-size: 0.85rem;
   }
+  .fileInput--transparent {
+    .fileInput__input {
+      opacity: 0;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .fileInput__preview {
+      display: none;
+    }
+  }
 </style>

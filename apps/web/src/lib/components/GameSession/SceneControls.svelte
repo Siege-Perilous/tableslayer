@@ -7,7 +7,8 @@
     ToolType,
     type StageProps,
     MapLayerType,
-    SelectorMenu
+    SelectorMenu,
+    type StageExports
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -21,19 +22,30 @@
     IconSquare,
     IconSquareFilled,
     IconScreenShare,
-    IconScreenShareOff
+    IconScreenShareOff,
+    IconBorderSides,
+    IconAdjustmentsHorizontal
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
   import { type ZodIssue } from 'zod';
-  import { GridControls, WeatherControls, MapControls, FogControls, PlayControls } from './';
+  import {
+    GridControls,
+    EffectsControls,
+    WeatherControls,
+    EdgeControls,
+    MapControls,
+    FogControls,
+    PlayControls
+  } from './';
 
   let {
     socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
     stageProps = $bindable(),
+    stage,
     party,
     gameSession,
     selectedScene,
@@ -55,6 +67,7 @@
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;
+    stage: StageExports;
   } = $props();
 
   type SceneControl = {
@@ -91,6 +104,18 @@
       mapLayer: MapLayerType.None
     },
     {
+      id: 'edge',
+      icon: IconBorderSides,
+      text: 'Edge',
+      mapLayer: MapLayerType.None
+    },
+    {
+      id: 'effects',
+      icon: IconAdjustmentsHorizontal,
+      text: 'Effects',
+      mapLayer: MapLayerType.None
+    },
+    {
       id: 'play',
       icon: gameSession.isPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
@@ -100,46 +125,52 @@
 
   const eraseOptions = [
     {
-      label: 'Freehand erase',
+      label: 'Erase brush',
       value: 'eraseBrush',
       icon: IconPaint,
       toolType: ToolType.Brush,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'E'
     },
     {
-      label: 'Freehand add',
+      label: 'Add brush',
       value: 'addBrush',
       icon: IconPaintFilled,
       toolType: ToolType.Brush,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: `Shift+E`
     },
     {
       label: 'Erase rectangle',
       value: 'areaErase',
       icon: IconSquare,
       toolType: ToolType.Rectangle,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'R'
     },
     {
       label: 'Add rectangle',
       value: 'areaAdd',
       icon: IconSquareFilled,
       toolType: ToolType.Rectangle,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: 'Shift+R'
     },
     {
       label: 'Erase ellipse',
       value: 'ellipseErase',
       icon: IconCircle,
       toolType: ToolType.Ellipse,
-      drawMode: DrawMode.Erase
+      drawMode: DrawMode.Erase,
+      key: 'O'
     },
     {
       label: 'Add ellipse',
       value: 'ellipsAdd',
       icon: IconCircleFilled,
       toolType: ToolType.Ellipse,
-      drawMode: DrawMode.Draw
+      drawMode: DrawMode.Draw,
+      key: 'Shift+O'
     }
   ];
 
@@ -178,7 +209,6 @@
         onclick={() => handleSelectActiveControl('erase')}
       >
         <Icon Icon={selectedFogTool.icon} size="1.5rem" />
-        {selectedFogTool.label}
       </button>
       <SelectorMenu
         selected={selectedFogTool.value}
@@ -201,7 +231,7 @@
           {#snippet content()}
             {#if scene.id === 'grid'}
               <GridControls
-                {stageProps}
+                bind:stageProps
                 {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
@@ -215,10 +245,10 @@
                 {errors}
               />
             {:else if scene.id === 'fog'}
-              <FogControls {stageProps} {socketUpdate} />
+              <FogControls {stage} {stageProps} {socketUpdate} />
             {:else if scene.id === 'map'}
               <MapControls
-                {stageProps}
+                bind:stageProps
                 {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
@@ -233,7 +263,11 @@
             {:else if scene.id === 'play'}
               <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
             {:else if scene.id === 'weather'}
-              <WeatherControls {stageProps} {socketUpdate} {errors} />
+              <WeatherControls bind:stageProps {socketUpdate} {errors} />
+            {:else if scene.id === 'edge'}
+              <EdgeControls bind:stageProps {socketUpdate} {errors} {party} />
+            {:else if scene.id === 'effects'}
+              <EffectsControls bind:stageProps {socketUpdate} {errors} {party} />
             {/if}
           {/snippet}
         </Popover>

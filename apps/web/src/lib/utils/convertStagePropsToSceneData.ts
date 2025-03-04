@@ -56,6 +56,21 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     'resolution.y': 'displayResolutionY'
   });
 
+  setNestedIfExists(stageProps, details, 'edgeOverlay', {
+    enabled: 'edgeEnabled',
+    opacity: 'edgeOpacity',
+    fadeStart: 'edgeFadeStart',
+    fadeEnd: 'edgeFadeEnd',
+    scale: 'edgeScale',
+    url: 'edgeUrl'
+  });
+
+  setNestedIfExists(stageProps, details, 'fog', {
+    enabled: 'fogEnabled',
+    color: 'fogColor',
+    opacity: 'fogOpacity'
+  });
+
   setNestedIfExists(stageProps, details, 'fogOfWar', {
     url: 'fogOfWarUrl',
     'noise.baseColor': 'fogOfWarColor',
@@ -76,7 +91,6 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
 
   setNestedIfExists(stageProps, details, 'weather', {
     type: 'weatherType',
-    color: 'weatherColor',
     fov: 'weatherFov',
     intensity: 'weatherIntensity',
     opacity: 'weatherOpacity'
@@ -87,6 +101,18 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     'offset.x': 'mapOffsetX',
     'offset.y': 'mapOffsetY',
     zoom: 'mapZoom'
+  });
+
+  setNestedIfExists(stageProps, details, 'postProcessing', {
+    'bloom.intensity': 'effectsBloomIntensity',
+    'bloom.threshold': 'effectsBloomThreshold',
+    'bloom.smoothing': 'effectsBloomSmoothing',
+    'bloom.radius': 'effectsBloomRadius',
+    'bloom.levels': 'effectsBloomLevels',
+    'bloom.mipmapBlur': 'effectsBloomMipMapBlur',
+    'chromaticAberration.offset': 'effectsChromaticAberrationOffset',
+    'lut.url': 'effectsLutUrl',
+    'toneMapping.mode': 'effectsToneMappingMode'
   });
 
   // Extract map location from URL stored in state

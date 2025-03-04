@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
-  import { IconCheck, IconX, IconGhost3 } from '@tabler/icons-svelte';
+  import { Button, RadioButton, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
+  import { IconCheck, IconX, IconGhost3, IconSun, IconCloud, IconSnowflake } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
   const example = `import { Button, Icon } from '@tableslayer/ui';
 import { IconCheck } from '@tabler/icons-svelte';
@@ -65,3 +65,34 @@ import { IconCheck } from '@tabler/icons-svelte';
     {/snippet}
   </ConfirmActionButton>
 </Example>
+
+<Spacer size={8} />
+
+<Example title="RadioButton" propsName="ConfirmActionButton" layout="column">
+  <RadioButton
+    selected="opt1"
+    options={[
+      { label: 'Option 1', value: 'opt1' },
+      { label: 'Options 2', value: 'opt2' },
+      { label: 'Option 3', value: 'opt3' }
+    ]}
+  />
+  <RadioButton
+    selected="opt1"
+    options={[
+      { label: sun, value: 'opt1' },
+      { label: cloud, value: 'opt2' },
+      { label: snow, value: 'opt3' }
+    ]}
+  />
+</Example>
+
+{#snippet sun()}
+  <Icon Icon={IconSun} size="1.25rem" />
+{/snippet}
+{#snippet cloud()}
+  <Icon Icon={IconCloud} size="1.25rem" />
+{/snippet}
+{#snippet snow()}
+  <Icon Icon={IconSnowflake} size="1.25rem" />
+{/snippet}
