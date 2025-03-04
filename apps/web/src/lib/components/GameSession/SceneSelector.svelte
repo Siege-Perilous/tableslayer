@@ -25,6 +25,10 @@
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
+  import { flip } from 'svelte/animate';
+  import { cubicOut } from 'svelte/easing';
+  import { navigating } from '$app/state';
+  import { onDestroy } from 'svelte';
 
   let {
     scenes,
@@ -76,6 +80,30 @@
   const isDragDisabled = (sceneId: string) => {
     return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
   };
+
+  const cleanupDragPreview = () => {
+    if (dragPreviewElement) {
+      try {
+        document.body.removeChild(dragPreviewElement);
+      } catch {
+        // Element might already be removed
+        console.log('Element already removed from DOM');
+      }
+      dragPreviewElement = null;
+    }
+  };
+
+  $effect(() => {
+    // Cleanup drag preview on unmount
+    if (navigating || formIsLoading) {
+      console.log('Cleanup drag preview');
+      return cleanupDragPreview;
+    }
+  });
+
+  onDestroy(() => {
+    cleanupDragPreview();
+  });
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -376,6 +404,7 @@
   <div class="scene__list">
     {#each orderedScenes as scene, index (scene.id)}
       <div
+        animate:flip={{ delay: 100, duration: 200, easing: cubicOut }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
@@ -390,6 +419,10 @@
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {
+          if (formIsLoading || isDragDisabled(scene.id)) {
+            e.preventDefault();
+            return;
+          }
           // Create an invisible drag image (1x1 transparent pixel)
           if (e.dataTransfer) {
             const emptyImg = new Image();
