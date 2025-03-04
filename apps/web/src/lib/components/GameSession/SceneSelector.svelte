@@ -25,6 +25,11 @@
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
+  import { flip } from 'svelte/animate';
+  import { sineOut } from 'svelte/easing';
+  import { navigating } from '$app/state';
+  import { onDestroy } from 'svelte';
+  import { fly } from 'svelte/transition';
 
   let {
     scenes,
@@ -48,6 +53,7 @@
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
   let needsToUpgrade = $derived(party.plan === 'free' && orderedScenes.length >= 3);
+  let isNewSceneAdded = $state(false);
 
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
@@ -76,6 +82,30 @@
   const isDragDisabled = (sceneId: string) => {
     return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
   };
+
+  const cleanupDragPreview = () => {
+    if (dragPreviewElement) {
+      try {
+        document.body.removeChild(dragPreviewElement);
+      } catch {
+        // Element might already be removed
+        console.log('Element already removed from DOM');
+      }
+      dragPreviewElement = null;
+    }
+  };
+
+  $effect(() => {
+    // Cleanup drag preview on unmount
+    if (navigating || formIsLoading) {
+      console.log('Cleanup drag preview');
+      return cleanupDragPreview;
+    }
+  });
+
+  onDestroy(() => {
+    cleanupDragPreview();
+  });
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -113,7 +143,11 @@
       },
       onSuccess: () => {
         invalidateAll();
+        isNewSceneAdded = true;
         file = null;
+        setTimeout(() => {
+          isNewSceneAdded = false;
+        }, 3000);
       },
       toastMessages: {
         success: { title: 'Scene created successfully' },
@@ -376,6 +410,8 @@
   <div class="scene__list">
     {#each orderedScenes as scene, index (scene.id)}
       <div
+        animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
+        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineOut }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
@@ -390,6 +426,10 @@
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {
+          if (formIsLoading || isDragDisabled(scene.id)) {
+            e.preventDefault();
+            return;
+          }
           // Create an invisible drag image (1x1 transparent pixel)
           if (e.dataTransfer) {
             const emptyImg = new Image();
@@ -529,6 +569,7 @@
     width: 100%;
     background: var(--bg);
     overflow-y: auto;
+    flex-grow: 1;
     transition: border-color 0.2s;
     container-type: inline-size;
   }
@@ -677,6 +718,10 @@
   .scene__list {
     display: grid;
     gap: 1rem;
+    height: fit-content;
+    min-height: 0;
+    flex-grow: 1;
+    align-content: start;
     overflow-y: auto;
     padding: 2rem 2rem;
   }
