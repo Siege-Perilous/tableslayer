@@ -41,3 +41,11 @@ export const useReorderScenesMutation = () => {
     method: 'POST'
   });
 };
+
+export const useDuplicateSceneMutation = () => {
+  return mutationFactory<{ partyId: string; sceneId: string }, { success: boolean; scene: SelectScene }>({
+    mutationKey: ['duplicateScene'],
+    endpoint: '/api/scenes/duplicateScene',
+    method: 'POST'
+  });
+};

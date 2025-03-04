@@ -131,7 +131,7 @@ export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: n
   // Get the party's default settings
   const party = await getPartyFromGameSessionId(gameSessiondId);
 
-  const sceneId = uuidv4();
+  const sceneId = data.id ?? uuidv4();
 
   await db
     .insert(sceneTable)
@@ -182,30 +182,30 @@ export const getSceneFromOrder = async (
 };
 
 export const deleteScene = async (gameSessionId: string, sceneId: string): Promise<void> => {
-  // This must be performed in a transaction to maintain data integrity
-  await db.transaction(async (tx) => {
-    // First, get the scene to find its order
-    const sceneToDelete = await tx
-      .select({ order: sceneTable.order })
-      .from(sceneTable)
-      .where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)))
-      .get();
+  const sceneToDelete = await db
+    .select({ order: sceneTable.order })
+    .from(sceneTable)
+    .where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)))
+    .get();
 
-    if (!sceneToDelete) {
-      throw new Error('Scene not found');
-    }
+  if (!sceneToDelete) {
+    throw new Error('Scene not found');
+  }
 
-    const deletedOrder = sceneToDelete.order;
+  await db.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
 
-    // Delete the scene
-    await tx.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
+  const scenes = await db
+    .select()
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
 
-    // Decrease the order of all scenes that come after the deleted scene
-    await tx
-      .update(sceneTable)
-      .set({ order: sql`${sceneTable.order} - 1` })
-      .where(and(eq(sceneTable.gameSessionId, gameSessionId), gt(sceneTable.order, deletedOrder)));
-  });
+  // Update all scene orders to ensure they are sequential without gaps
+  for (let i = 0; i < scenes.length; i++) {
+    const newOrder = i + 1; // Orders start at 1
+    await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scenes[i].id)).execute();
+  }
 };
 
 export const adjustSceneOrder = async (gameSessionId: string, sceneId: string, newOrder: number) => {
@@ -323,4 +323,37 @@ export const toggleGamePause = async (gameSessionId: string) => {
   const gameSession = await getGameSession(gameSessionId);
   const newPausedState = !gameSession.isPaused;
   await updateGameSession(gameSessionId, { isPaused: newPausedState });
+};
+
+export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
+  // Get the original scene
+  const originalScene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
+
+  if (!originalScene) {
+    throw new Error('Scene not found');
+  }
+
+  // Create a copy of the original scene's properties to use for the new scene
+  const { id: _, name, order, ...otherProps } = originalScene;
+
+  // Create the new scene name
+  const newSceneName = `${name} (Copy)`;
+  const newSceneId = uuidv4();
+
+  // Use the existing createScene function which properly handles scene ordering
+  await createScene({
+    ...otherProps,
+    id: newSceneId,
+    name: newSceneName,
+    order: order + 1 // Place it right after the original scene
+  });
+
+  // Fetch the newly created scene to return it
+  const newScene = await db.select().from(sceneTable).where(eq(sceneTable.id, newSceneId)).get();
+
+  if (!newScene) {
+    throw new Error('Error duplicating scene');
+  }
+
+  return newScene;
 };
