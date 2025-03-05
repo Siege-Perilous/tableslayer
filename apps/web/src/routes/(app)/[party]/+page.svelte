@@ -35,7 +35,7 @@
             <CreateGameSession {partyId} />
           {/if}
         {/if}
-        {#each gameSessions as session}
+        {#each gameSessions as session (session.id)}
           <GameSessionCard {isPartyAdmin} {party} {session} />
         {/each}
       </div>
@@ -51,7 +51,7 @@
       <Spacer />
       <Panel class="partyMembers__aside">
         <div class="partyMembers">
-          {#each members as member}
+          {#each members as member (member.id)}
             <PartyMember {user} {member} {isPartyAdmin} />
           {:else}
             <p>No members found.</p>
@@ -113,5 +113,14 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 2rem;
+    }
+    .containerLayout {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

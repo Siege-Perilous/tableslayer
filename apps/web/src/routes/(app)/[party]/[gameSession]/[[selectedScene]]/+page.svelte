@@ -7,6 +7,7 @@
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
+  import { navigating } from '$app/state';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
@@ -29,12 +30,14 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading']);
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
+  let innerWidth: number = $state(0);
+  const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
@@ -383,9 +386,10 @@
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
+<svelte:window bind:innerWidth />
 
 <div class="container">
-  <PaneGroup direction="horizontal">
+  <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
     <Pane
       defaultSize={15}
       collapsible={true}
@@ -395,6 +399,11 @@
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
+      onResize={() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }}
     >
       <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
@@ -438,7 +447,11 @@
     .panel.scene {
       aspect-ratio: 16 / 9;
     }
+    /* Don't change container-name */
+    /* Container is globally checked in child components */
     .stageWrapper {
+      container-name: stageWrapper;
+      container-type: size;
       display: flex;
       align-items: center;
       background: var(--contrastEmpty);
@@ -476,6 +489,21 @@
       border-left: var(--borderThin);
       background: var(--bg);
     }
+
+    @media (max-width: 768px) {
+      .resizer {
+        width: 100% !important;
+        height: 0.5rem !important;
+      }
+      .resizer__handle {
+        width: 2rem !important;
+        height: 100% !important;
+        cursor: row-resize;
+        margin-left: 50%;
+        transform: translateX(-50%);
+        margin-top: 0;
+      }
+    }
   }
   .container {
     height: calc(100vh - 49px);
@@ -484,8 +512,12 @@
   .stage {
     width: 100%;
     height: 100%;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease-in;
   }
-  .stage--loading {
+  .stage.stage--loading {
     visibility: hidden;
+    opacity: 0;
   }
 </style>

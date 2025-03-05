@@ -7,7 +7,7 @@ app = 'tableslayer'
 primary_region = 'ewr'
 
 [build]
-  dockerfile = "DockerfileWeb"
+  dockerfile = "DockerfileDev"
 
 [env]
   PORT = '8080'

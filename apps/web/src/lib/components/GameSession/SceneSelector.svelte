@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button } from '@tableslayer/ui';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
   import {
     IconCheck,
     IconX,
@@ -20,11 +20,17 @@
     useDeleteSceneMutation,
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
-    useReorderScenesMutation
+    useReorderScenesMutation,
+    useDuplicateSceneMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
+  import { flip } from 'svelte/animate';
+  import { sineOut } from 'svelte/easing';
+  import { navigating } from '$app/state';
+  import { onDestroy } from 'svelte';
+  import { fly } from 'svelte/transition';
 
   let {
     scenes,
@@ -48,6 +54,7 @@
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
   let needsToUpgrade = $derived(party.plan === 'free' && orderedScenes.length >= 3);
+  let isNewSceneAdded = $state(false);
 
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
@@ -66,6 +73,7 @@
   const updateScene = useUpdateSceneMutation();
   const updateGameSession = useUpdateGameSessionMutation();
   const reorderScenes = useReorderScenesMutation();
+  const duplicateScene = useDuplicateSceneMutation();
 
   // Check if a scene is currently being renamed
   const isSceneBeingRenamed = (sceneId: string) => {
@@ -76,6 +84,30 @@
   const isDragDisabled = (sceneId: string) => {
     return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
   };
+
+  const cleanupDragPreview = () => {
+    if (dragPreviewElement) {
+      try {
+        document.body.removeChild(dragPreviewElement);
+      } catch {
+        // Element might already be removed
+        console.log('Element already removed from DOM');
+      }
+      dragPreviewElement = null;
+    }
+  };
+
+  $effect(() => {
+    // Cleanup drag preview on unmount
+    if (navigating || formIsLoading) {
+      console.log('Cleanup drag preview');
+      return cleanupDragPreview;
+    }
+  });
+
+  onDestroy(() => {
+    cleanupDragPreview();
+  });
 
   const handleCreateScene = async (order: number) => {
     formIsLoading = true;
@@ -113,7 +145,11 @@
       },
       onSuccess: () => {
         invalidateAll();
+        isNewSceneAdded = true;
         file = null;
+        setTimeout(() => {
+          isNewSceneAdded = false;
+        }, 3000);
       },
       toastMessages: {
         success: { title: 'Scene created successfully' },
@@ -184,6 +220,24 @@
       toastMessages: {
         success: { title: 'Scene renamed' },
         error: { title: 'Error renaming scene', body: (error) => error.message || 'Error renaming scene' }
+      }
+    });
+  };
+
+  const handleDuplicateScene = async (sceneId: string) => {
+    await handleMutation({
+      mutation: () =>
+        $duplicateScene.mutateAsync({
+          partyId: party.id,
+          sceneId
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Scene duplicated' },
+        error: { title: 'Error duplicating scene', body: (error) => error.message || 'Error duplicating scene' }
       }
     });
   };
@@ -348,7 +402,7 @@
   });
 </script>
 
-<div class="scenes">
+<div class="scenes" id="scenes">
   <div class="scene__input">
     {#if party.plan === 'free' && orderedScenes.length >= 3}
       <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
@@ -374,8 +428,10 @@
     {/if}
   </div>
   <div class="scene__list">
-    {#each orderedScenes as scene, index}
+    {#each orderedScenes as scene, index (scene.id)}
       <div
+        animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
+        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineOut }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
@@ -390,6 +446,10 @@
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {
+          if (formIsLoading || isDragDisabled(scene.id)) {
+            e.preventDefault();
+            return;
+          }
           // Create an invisible drag image (1x1 transparent pixel)
           if (e.dataTransfer) {
             const emptyImg = new Image();
@@ -457,12 +517,14 @@
           triggerClass="scene__popoverBtn"
           isOpen={openScenePopover === scene.id}
           positioning={{ placement: 'bottom-end' }}
-          portal={document.body}
+          portal={document.getElementById('scenes')}
         >
           {#snippet trigger()}
-            <IconButton as="div" variant="ghost">
-              <Icon Icon={IconChevronDown} />
-            </IconButton>
+            <ColorMode mode="dark">
+              <IconButton as="div" variant="ghost">
+                <Icon Icon={IconChevronDown} />
+              </IconButton>
+            </ColorMode>
           {/snippet}
           {#snippet content({ contentProps })}
             <button
@@ -483,6 +545,15 @@
               }}
             >
               Rename scene
+            </button>
+            <button
+              class="scene__menuItem"
+              onclick={() => {
+                handleDuplicateScene(scene.id);
+                contentProps.close();
+              }}
+            >
+              Duplicate scene
             </button>
             <button
               class="scene__menuItem"
@@ -521,6 +592,11 @@
 </div>
 
 <style>
+  :global(.light) {
+    .scene__projectedIcon {
+      background: rgba(255, 255, 255, 0.75);
+    }
+  }
   .scenes {
     border-right: var(--borderThin);
     display: flex;
@@ -529,6 +605,7 @@
     width: 100%;
     background: var(--bg);
     overflow-y: auto;
+    flex-grow: 1;
     transition: border-color 0.2s;
     container-type: inline-size;
   }
@@ -677,6 +754,10 @@
   .scene__list {
     display: grid;
     gap: 1rem;
+    height: fit-content;
+    min-height: 0;
+    flex-grow: 1;
+    align-content: start;
     overflow-y: auto;
     padding: 2rem 2rem;
   }
@@ -709,7 +790,15 @@
       z-index: 2;
     }
     .scene__dragHandleIcon {
+      color: white;
       filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+    }
+
+    @media (max-width: 768px) {
+      .scene__inputBtn {
+        width: auto;
+        margin: 0 auto;
+      }
     }
   }
 

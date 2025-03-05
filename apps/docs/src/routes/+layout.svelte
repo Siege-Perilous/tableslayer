@@ -60,7 +60,7 @@
   {#if isMenuOpen}
     <nav>
       <ul>
-        {#each routes as route}
+        {#each routes as route (route.name)}
           <li class:isActive={route.path === page.url.pathname}>
             <a href={route.path}>{route.name}</a>
           </li>
