@@ -36,7 +36,7 @@
   let isScenesCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
-  let innerWidth: number = $state(0);
+  let innerWidth: number = $state(1000);
   const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
