@@ -103,8 +103,7 @@ export const StageDefaultProps: StageProps = {
   },
   marker: {
     editMode: MarkerEditMode.Add,
-    size: 120,
-    opacity: 1.0,
+    size: 250,
     shape: {
       strokeColor: '#000000',
       strokeWidth: 0.5
@@ -112,10 +111,9 @@ export const StageDefaultProps: StageProps = {
     text: {
       color: '#ffffff',
       strokeColor: '#000000',
-      size: 120,
+      size: 64,
       strokeWidth: 1
     },
-
     markers: [
       {
         id: '1234-1292-1293-1293',
@@ -126,7 +124,7 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Circle,
         shapeColor: '#ff0000',
         text: 'A1B',
-        visible: true
+        imageScale: 1.0
       },
       {
         id: '1234-1292-1293-1294',
@@ -137,7 +135,7 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Triangle,
         shapeColor: '#00ff00',
         text: 'C2D',
-        visible: true
+        imageScale: 1.0
       },
       {
         id: '1234-1232-2312-2312',
@@ -148,7 +146,7 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Square,
         shapeColor: '#0000ff',
         text: 'E3F',
-        visible: true
+        imageScale: 1.0
       }
     ]
   },

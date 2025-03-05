@@ -30,7 +30,8 @@
         position: location,
         shape: MarkerShape.Circle,
         shapeColor: '#000000',
-        visible: true
+        visible: true,
+        imageScale: 1.0
       });
       onMarkersUpdated(props.marker.markers);
     } else {
@@ -70,7 +71,6 @@
     <MarkerToken
       {marker}
       size={props.marker.size}
-      opacity={props.marker.opacity}
       textColor={props.marker.text.color}
       textStroke={props.marker.text.strokeWidth}
       textStrokeColor={props.marker.text.strokeColor}

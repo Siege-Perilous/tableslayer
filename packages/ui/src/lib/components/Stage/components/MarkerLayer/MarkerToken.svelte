@@ -3,9 +3,9 @@
   import { T } from '@threlte/core';
   import { MarkerShape, type Marker } from './types';
   import { SceneLayerOrder } from '../Scene/types';
+
   interface Props {
     marker: Marker;
-    opacity: number;
     size: number;
     strokeColor: string;
     strokeWidth: number;
@@ -15,17 +15,14 @@
     textSize: number;
   }
 
-  const { marker, opacity, size, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props =
-    $props();
+  const { marker, size, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props = $props();
 
-  let group: THREE.Group;
   let markerCanvas = new OffscreenCanvas(1024, 1024);
   let ctx = markerCanvas.getContext('2d')!;
   let markerMaterial = new THREE.MeshBasicMaterial({
     transparent: false,
-    alphaTest: 0.5,
-    opacity,
-    alphaToCoverage: true
+    alphaTest: 0.9,
+    opacity: 1.0
   });
   let imageTexture: THREE.Texture | null = $state(null);
 
@@ -47,7 +44,7 @@
   });
 
   // Create complete marker canvas with shape, stroke, and text
-  function createShape(centerX: number, centerY: number, radius: number) {
+  function createShape(centerX: number, centerY: number, radius: number, clipOnly: boolean = false) {
     ctx.beginPath();
 
     switch (marker.shape) {
@@ -73,6 +70,15 @@
         ctx.closePath();
         break;
     }
+
+    if (!clipOnly) {
+      ctx.fill();
+      if (strokeWidth > 0) {
+        ctx.stroke();
+      }
+    }
+
+    return ctx;
   }
 
   function createText(centerX: number, centerY: number) {
@@ -100,7 +106,6 @@
     const height = markerCanvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.4; // 80% of half the canvas size
 
     // Clear canvas with transparency
     ctx.clearRect(0, 0, width, height);
@@ -108,15 +113,39 @@
     // Draw shape if enabled
     if (marker.shape !== undefined) {
       // Set stroke and fill styles for shape
-      ctx.strokeStyle = strokeColor ?? null;
-      ctx.lineWidth = strokeWidth * (radius / 10);
-      ctx.fillStyle = marker.shapeColor;
+      ctx.strokeStyle = strokeColor ?? '#000000';
+      ctx.lineWidth = strokeWidth * (size / 10);
+      ctx.fillStyle = marker.shapeColor ?? '#ffffff';
 
-      createShape(centerX, centerY, radius);
+      createShape(centerX, centerY, size);
 
-      ctx.fill();
-      if (strokeWidth > 0) {
-        ctx.stroke();
+      // Draw image if available
+      if (imageTexture) {
+        // Save the current canvas state
+        ctx.save();
+
+        // Create a smaller shape path for clipping that accounts for stroke width
+        const innerSize = size - strokeWidth * (size / 10); // Reduce by twice the stroke width
+        createShape(centerX, centerY, innerSize, true);
+
+        // Apply clipping to the shape
+        ctx.clip();
+
+        // Set proper compositing for image drawing
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1.0; // Ensure full opacity for the image itself
+
+        // Draw the image (will only appear inside the clipped shape)
+        ctx.drawImage(
+          imageTexture.image,
+          centerX - (size / 2) * (marker.imageScale ?? 1.0),
+          centerY - (size / 2) * (marker.imageScale ?? 1.0),
+          size * (marker.imageScale ?? 1.0),
+          size * (marker.imageScale ?? 1.0)
+        );
+
+        // Restore the canvas state (removes clipping)
+        ctx.restore();
       }
     }
 
@@ -132,19 +161,15 @@
   $effect(() => {
     markerCanvas = createMarkerCanvas();
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
+    markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
     markerMaterial.map.needsUpdate = true;
   });
 </script>
 
-<T.Group
-  bind:ref={group}
-  visible={marker.visible}
-  position={[marker.position.x, marker.position.y, 0]}
-  scale={size / 1000}
->
+<T.Group visible={marker.visible} position={[marker.position.x, marker.position.y, 0]} scale={size / 1000}>
   <!-- Combined shape, stroke and text -->
   <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker}>
-    <T.MeshBasicMaterial is={markerMaterial} {opacity} />
+    <T.MeshBasicMaterial is={markerMaterial} />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>
 </T.Group>

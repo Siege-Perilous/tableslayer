@@ -12,15 +12,16 @@ export enum MarkerShape {
 
 export interface Marker {
   id: string;
-  text?: string;
   position: {
     x: number;
     y: number;
   };
-  shape: MarkerShape;
-  shapeColor: string;
+  text?: string;
+  shape?: MarkerShape;
+  shapeColor?: string;
   imageUrl?: string;
-  visible: boolean;
+  imageScale: number;
+  visible?: boolean;
 }
 
 export interface MarkerLayerProps {
@@ -28,11 +29,6 @@ export interface MarkerLayerProps {
    * The size of the marker marker
    */
   size: number;
-
-  /**
-   * The opacity of the marker layer
-   */
-  opacity: number;
 
   /**
    * The shape of the marker icons
