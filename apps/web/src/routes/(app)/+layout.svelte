@@ -92,7 +92,9 @@
         </div>
       {/if}
       {#if gameSession && selectedParty}
-        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg">{gameSession.name}</Link>
+        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg" class="gameSessionLink"
+          >{gameSession.name}</Link
+        >
       {/if}
     </div>
 
@@ -176,6 +178,8 @@
     display: flex;
     align-items: center;
     gap: var(--size-4);
+    white-space: nowrap;
+    max-width: calc(100% - 100px);
   }
   .profileDropdown {
     display: block;
@@ -237,5 +241,16 @@
   .profileDropdown__link:hover,
   .profileDropdown__link:focus-visible {
     text-decoration: underline;
+  }
+  .gameSessionLink {
+    display: none;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  @media (max-width: 768px) {
+    .partyDropdown__text {
+      display: none;
+    }
   }
 </style>
