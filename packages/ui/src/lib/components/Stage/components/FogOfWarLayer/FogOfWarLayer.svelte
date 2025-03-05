@@ -75,14 +75,14 @@
     }
   });
 
-  function onMouseDown(e: Event, p: THREE.Vector2 | null): void {
+  function onMouseDown(e: Event, p: THREE.Vector2 | null) {
     e.preventDefault();
     lastPos = flipY(p);
     drawing = true;
     draw(e, p);
   }
 
-  function onMouseUp(_e: Event, p: THREE.Vector2 | null): void {
+  function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
     const coords = flipY(p);
 
     // If using shapes, draw the shape outline when the mouse button is released
@@ -100,7 +100,7 @@
     drawing = false;
   }
 
-  function onMouseLeave(): void {
+  function onMouseLeave() {
     lastPos = null;
     drawing = false;
     outlineMaterial.visible = false;
