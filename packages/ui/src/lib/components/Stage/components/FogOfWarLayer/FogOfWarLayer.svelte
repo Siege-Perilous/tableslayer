@@ -75,14 +75,14 @@
     }
   });
 
-  function onMouseDown(e: MouseEvent, p: THREE.Vector2 | null): void {
+  function onMouseDown(e: Event, p: THREE.Vector2 | null) {
     e.preventDefault();
     lastPos = flipY(p);
     drawing = true;
     draw(e, p);
   }
 
-  function onMouseUp(e: MouseEvent, p: THREE.Vector2 | null): void {
+  function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
     const coords = flipY(p);
 
     // If using shapes, draw the shape outline when the mouse button is released
@@ -107,7 +107,7 @@
     material?.render('revert', false);
   }
 
-  function draw(e: MouseEvent, p: THREE.Vector2 | null) {
+  function draw(e: Event, p: THREE.Vector2 | null) {
     // Flip the y-coordinate to match the canvas coordinate system
     const coords = flipY(p);
 
@@ -174,9 +174,9 @@
   {onMouseLeave}
 />
 
-<!-- 
+<!--
 Invisible mesh used for input detection.
-The plane geometry is larger than the map size to allow cursor 
+The plane geometry is larger than the map size to allow cursor
 events to be detected outside of the fog of war layer.
 -->
 <T.Mesh bind:ref={mesh} name="fogOfWarInput" layer={SceneLayer.Input}>

@@ -74,7 +74,7 @@
     pingMesh.geometry = geometry;
   });
 
-  function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
+  function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
     if (!coords || !mapSize) return;
 
     if (props.editMode === PingEditMode.Add) {

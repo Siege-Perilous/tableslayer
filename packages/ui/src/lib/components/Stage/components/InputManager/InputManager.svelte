@@ -9,10 +9,10 @@
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
-    onMouseDown?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
-    onMouseUp?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
-    onMouseMove?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
-    onMouseLeave?: (e: MouseEvent, coords: THREE.Vector2 | null) => void;
+    onMouseDown?: (e: Event, coords: THREE.Vector2 | null) => void;
+    onMouseUp?: (e: Event, coords: THREE.Vector2 | null) => void;
+    onMouseMove?: (e: Event, coords: THREE.Vector2 | null) => void;
+    onMouseLeave?: () => void;
     onWheel?: (e: WheelEvent) => void;
   }
 
@@ -25,25 +25,42 @@
   raycaster.layers.enable(SceneLayer.Main);
   raycaster.layers.enable(SceneLayer.Input);
 
+  function isTouchDevice() {
+    return window.matchMedia('(any-pointer: coarse)').matches;
+  }
+
   // Bind events to the renderer's canvas element
   onMount(() => {
+    // Mouse events
     if (onMouseDown) renderer.domElement.addEventListener('mousedown', handleMouseDown);
-    if (onMouseUp) renderer.domElement.addEventListener('mousemove', handleMouseMove);
-    if (onMouseMove) renderer.domElement.addEventListener('mouseup', handleMouseUp);
+    if (onMouseMove) renderer.domElement.addEventListener('mousemove', handleMouseMove);
+    if (onMouseUp) renderer.domElement.addEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
+
+    // Touch events
+    if (onMouseDown) renderer.domElement.addEventListener('touchstart', handleTouchStart);
+    if (onMouseMove) renderer.domElement.addEventListener('touchmove', handleTouchMove);
+    if (onMouseUp) renderer.domElement.addEventListener('touchend', handleTouchEnd);
+    if (onMouseLeave) renderer.domElement.addEventListener('touchcancel', handleTouchCancel);
   });
 
-  // Cleanup method to remove event listeners
   onDestroy(() => {
+    // Mouse events
     if (onMouseDown) renderer.domElement.removeEventListener('mousedown', handleMouseDown);
-    if (onMouseUp) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
-    if (onMouseMove) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
+    if (onMouseMove) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+    if (onMouseUp) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
+
+    // Touch events
+    if (onMouseDown) renderer.domElement.removeEventListener('touchstart', handleTouchStart);
+    if (onMouseMove) renderer.domElement.removeEventListener('touchmove', handleTouchMove);
+    if (onMouseUp) renderer.domElement.removeEventListener('touchend', handleTouchEnd);
+    if (onMouseLeave) renderer.domElement.removeEventListener('touchcancel', handleTouchCancel);
   });
 
-  // Internal event handler methods
+  // Internal event handler methods for mouse
   function handleMouseDown(event: MouseEvent) {
     if (onMouseDown && isActive) {
       onMouseDown(event, mouseToCanvasCoords(event));
@@ -68,9 +85,40 @@
     }
   }
 
-  function handleMouseLeave(event: MouseEvent) {
+  function handleMouseLeave() {
     if (onMouseLeave && isActive) {
-      onMouseLeave(event, null);
+      onMouseLeave();
+    }
+  }
+
+  function handleTouchStart(event: TouchEvent) {
+    if (onMouseDown && isActive) {
+      event.preventDefault(); // Prevent scrolling when interacting with the canvas
+      const touch = event.touches[0];
+      onMouseDown(event, touchToCanvasCoords(touch));
+    }
+  }
+
+  function handleTouchEnd(event: TouchEvent) {
+    if (onMouseUp && isActive && isTouchDevice()) {
+      event.preventDefault();
+      // We may not have a touch point in touchend, so pass null if not available
+      const touch = event.changedTouches[0];
+      onMouseUp(event, touch ? touchToCanvasCoords(touch) : null);
+    }
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    if (onMouseMove && isActive && isTouchDevice()) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      onMouseMove(event, touchToCanvasCoords(touch));
+    }
+  }
+
+  function handleTouchCancel() {
+    if (onMouseLeave && isActive) {
+      onMouseLeave();
     }
   }
 
@@ -78,6 +126,32 @@
     if (!target || !layerSize) return null;
 
     const mouse = new THREE.Vector2((e.offsetX / $size.width) * 2 - 1, -(e.offsetY / $size.height) * 2 + 1);
+
+    raycaster.setFromCamera(mouse, $camera);
+    const intersects = raycaster.intersectObject(target);
+
+    if (intersects.length > 0) {
+      const { point } = intersects[0];
+      const localPoint = target.worldToLocal(point);
+      const canvasPoint = new THREE.Vector2(
+        layerSize.width * (localPoint.x + 0.5),
+        layerSize.height * (-localPoint.y + 0.5)
+      );
+      return canvasPoint;
+    } else {
+      return null;
+    }
+  }
+
+  function touchToCanvasCoords(touch: Touch): THREE.Vector2 | null {
+    if (!target || !layerSize || !renderer.domElement) return null;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    const offsetX = touch.clientX - rect.left;
+    const offsetY = touch.clientY - rect.top;
+
+    const mouse = new THREE.Vector2((offsetX / $size.width) * 2 - 1, -(offsetY / $size.height) * 2 + 1);
 
     raycaster.setFromCamera(mouse, $camera);
     const intersects = raycaster.intersectObject(target);
