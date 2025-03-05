@@ -25,7 +25,11 @@
   raycaster.layers.enable(SceneLayer.Main);
   raycaster.layers.enable(SceneLayer.Input);
 
-  let touchActive = false;
+  function isTouchDevice() {
+    return window.matchMedia('(any-pointer: coarse)').matches;
+  }
+
+  console.log('isMobile', isTouchDevice());
 
   // Bind events to the renderer's canvas element
   onMount(() => {
@@ -91,7 +95,6 @@
 
   function handleTouchStart(event: TouchEvent) {
     if (onMouseDown && isActive) {
-      touchActive = true;
       event.preventDefault(); // Prevent scrolling when interacting with the canvas
       const touch = event.touches[0];
       onMouseDown(event, touchToCanvasCoords(touch));
@@ -99,8 +102,7 @@
   }
 
   function handleTouchEnd(event: TouchEvent) {
-    if (onMouseUp && isActive && touchActive) {
-      touchActive = false;
+    if (onMouseUp && isActive && isTouchDevice()) {
       event.preventDefault();
       // We may not have a touch point in touchend, so pass null if not available
       const touch = event.changedTouches[0];
@@ -109,7 +111,7 @@
   }
 
   function handleTouchMove(event: TouchEvent) {
-    if (onMouseMove && isActive && touchActive) {
+    if (onMouseMove && isActive && isTouchDevice()) {
       event.preventDefault();
       const touch = event.touches[0];
       onMouseMove(event, touchToCanvasCoords(touch));
@@ -118,7 +120,6 @@
 
   function handleTouchCancel() {
     if (onMouseLeave && isActive) {
-      touchActive = false;
       onMouseLeave();
     }
   }
