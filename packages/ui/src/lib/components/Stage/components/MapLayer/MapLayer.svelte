@@ -111,20 +111,20 @@
     <T.PlaneGeometry />
   </T.Mesh>
 
-  <MarkerLayer
-    {props}
-    isActive={props.activeLayer === MapLayerType.Marker}
-    {mapSize}
-    layers={[SceneLayer.Main]}
-    renderOrder={SceneLayerOrder.Marker}
-  />
-
   <FogLayer
     props={props.fog}
     {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Fog}
     visible={props.fog.enabled}
+  />
+
+  <MarkerLayer
+    {props}
+    isActive={props.activeLayer === MapLayerType.Marker}
+    {mapSize}
+    layers={[SceneLayer.Main]}
+    renderOrder={SceneLayerOrder.Marker}
   />
 
   <WeatherLayer

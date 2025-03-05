@@ -3,30 +3,31 @@ export enum MarkerEditMode {
   Remove = 1
 }
 
+export enum MarkerShape {
+  None = 0,
+  Circle = 1,
+  Square = 2,
+  Triangle = 3
+}
+
 export interface Marker {
   id: string;
-  name: string;
+  text?: string;
   position: {
     x: number;
     y: number;
   };
+  shape: MarkerShape;
+  shapeColor: string;
+  imageUrl?: string;
+  visible: boolean;
 }
 
 export interface MarkerLayerProps {
   /**
-   * Color of the marker icons represented as a hex string (e.g. 0x60A3FE)
-   */
-  color: string;
-
-  /**
-   * The current edit mode for the marker layer (add or remove markers)
-   */
-  editMode: MarkerEditMode;
-
-  /**
    * The size of the marker marker
    */
-  markerSize: number;
+  size: number;
 
   /**
    * The opacity of the marker layer
@@ -34,24 +35,49 @@ export interface MarkerLayerProps {
   opacity: number;
 
   /**
-   * The amplitude of the pulsing animation
+   * The shape of the marker icons
    */
-  pulseAmplitude: number;
+  shape: {
+    /**
+     * The stroke color of the marker icons represented as a hex string (e.g. 0x60A3FE)
+     */
+    strokeColor: string;
+
+    /**
+     * The stroke width of the marker icons
+     */
+    strokeWidth: number;
+  };
 
   /**
-   * The speed of the pulsing effect
+   * The text of the marker
    */
-  pulseSpeed: number;
+  text: {
+    /**
+     * The size of the marker text
+     */
+    size: number;
+
+    /**
+     * The color of the marker text
+     */
+    color: string;
+
+    /**
+     * The stroke width of the marker text
+     */
+    strokeWidth: number;
+
+    /**
+     * The color of the marker text stroke
+     */
+    strokeColor: string;
+  };
 
   /**
-   * The sharpness of the edge of the marker
+   * The current edit mode for the marker layer (add or remove markers)
    */
-  sharpness: number;
-
-  /**
-   * The outer radius of the marker marker
-   */
-  thickness: number;
+  editMode: MarkerEditMode;
 
   /**
    * An array of Marker objects

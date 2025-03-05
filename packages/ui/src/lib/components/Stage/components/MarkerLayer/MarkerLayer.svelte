@@ -1,13 +1,13 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { MarkerEditMode, type Marker } from './types';
-  import MarkerMaterial from './MarkerMaterial.svelte';
-  import { getContext } from 'svelte';
+  import { MarkerEditMode, MarkerShape, type Marker } from './types';
+  import { getContext, onDestroy } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
   import type { Size } from '../../types';
   import type { StageProps } from '../Stage/types';
+  import MarkerToken from './MarkerToken.svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -15,64 +15,10 @@
     mapSize: Size | null;
   }
 
-  const { props, isActive, mapSize, ...meshProps }: Props = $props();
+  const { props, isActive, mapSize }: Props = $props();
 
   const { onMarkersUpdated } = getContext<Callbacks>('callbacks');
-  // svelte-ignore non_reactive_update
-  let markerMesh: THREE.Mesh;
   let inputMesh = $state(new THREE.Mesh());
-
-  // Regenerate buffer geometry each time marker array is updated
-  $effect(() => {
-    if (!mapSize) return;
-
-    const vertices: number[] = [];
-    const centers: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-
-    let indexOffset = 0;
-
-    props.marker.markers.forEach((marker) => {
-      // Each quad has 4 vertices (a square)
-      const halfSize = {
-        x: props.marker.markerSize / mapSize.width / 2,
-        y: props.marker.markerSize / mapSize.height / 2
-      };
-      const x = marker.position.x;
-      const y = 1.0 - marker.position.y;
-
-      // Define 4 vertices of the quad (in 3D space, z = 0)
-
-      vertices.push(x - halfSize.x, y - halfSize.y, 0); // Bottom left
-      vertices.push(x + halfSize.x, y - halfSize.y, 0); // Bottom right
-      vertices.push(x + halfSize.x, y + halfSize.y, 0); // Top right
-      vertices.push(x - halfSize.x, y + halfSize.y, 0); // Top left
-      for (let i = 0; i < 4; i++) centers.push(x, y, 0);
-
-      // UVs for each corner
-      uvs.push(0, 0, 1, 0, 1, 1, 0, 1);
-
-      // Define 2 triangles to form the quad (using indices)
-      indices.push(indexOffset, indexOffset + 1, indexOffset + 2); // First triangle
-      indices.push(indexOffset, indexOffset + 2, indexOffset + 3); // Second triangle
-
-      // Update index offset for the next quad
-      indexOffset += 4;
-    });
-
-    // Create a buffer geometry instance
-    const geometry = new THREE.BufferGeometry();
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
-    geometry.setAttribute('center', new THREE.BufferAttribute(new Float32Array(centers), 3));
-    geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-
-    // Set the indices to define the triangles that form the quads
-    geometry.setIndex(indices);
-
-    markerMesh.geometry = geometry;
-  });
 
   function onMouseDown(e: MouseEvent, coords: THREE.Vector2 | null) {
     if (!coords || !mapSize) return;
@@ -81,9 +27,12 @@
       const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };
       props.marker.markers.push({
         id: crypto.randomUUID(),
-        name: 'New Marker',
-        position: location
+        position: location,
+        shape: MarkerShape.Circle,
+        shapeColor: '#000000',
+        visible: true
       });
+      onMarkersUpdated(props.marker.markers);
     } else {
       // Find the marker that is closest to the mouse down point. The test point
       // must be within the outer radius of the marker for it to be considered
@@ -92,7 +41,7 @@
       props.marker.markers.forEach((marker) => {
         const markerCoords = new THREE.Vector2(marker.position.x * mapSize.width, marker.position.y * mapSize.height);
         const distance = coords.distanceTo(markerCoords);
-        if (distance < minDistance && distance <= props.marker.markerSize / 2) {
+        if (distance < minDistance && distance <= props.marker.size / 2) {
           minDistance = distance;
           closestMarker = marker;
         }
@@ -115,7 +64,19 @@
   <T.PlaneGeometry />
 </T.Mesh>
 
-<!-- This mesh is used to render the markers -->
-<T.Mesh bind:ref={markerMesh} name="markerLayer" position={[-0.5, -0.5, 0]} {meshProps}>
-  <MarkerMaterial props={props.marker} />
-</T.Mesh>
+<!-- This group contains all the markers -->
+<T.Group name="markerLayer" position={[-0.5, -0.5, 0]}>
+  {#each props.marker.markers as marker (marker.id)}
+    <MarkerToken
+      {marker}
+      size={props.marker.size}
+      opacity={props.marker.opacity}
+      textColor={props.marker.text.color}
+      textStroke={props.marker.text.strokeWidth}
+      textStrokeColor={props.marker.text.strokeColor}
+      textSize={props.marker.text.size}
+      strokeColor={props.marker.shape.strokeColor}
+      strokeWidth={props.marker.shape.strokeWidth}
+    />
+  {/each}
+</T.Group>
