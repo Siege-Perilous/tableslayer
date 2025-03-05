@@ -29,8 +29,6 @@
     return window.matchMedia('(any-pointer: coarse)').matches;
   }
 
-  console.log('isMobile', isTouchDevice());
-
   // Bind events to the renderer's canvas element
   onMount(() => {
     // Mouse events
