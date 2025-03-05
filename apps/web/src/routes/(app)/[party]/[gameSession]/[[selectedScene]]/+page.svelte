@@ -2,11 +2,12 @@
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
   import { handleMutation } from '$lib/factories';
-  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, Icon } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
+  import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
     StageDefaultProps,
@@ -42,6 +43,14 @@
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+
+  const getCollapseIcon = () => {
+    if (isMobile) {
+      return isScenesCollapsed ? IconChevronDown : IconChevronUp;
+    } else {
+      return isScenesCollapsed ? IconChevronRight : IconChevronLeft;
+    }
+  };
 
   /**
    * SOCKET UPDATES
@@ -409,11 +418,13 @@
     </Pane>
     <PaneResizer class="resizer">
       <button
-        class="resizer__handle resizer__hander--left"
+        class="resizer__handle"
         aria-label="Collapse scenes column"
         title={isScenesCollapsed ? 'Expand scenes column' : 'Collapse scenes column'}
         onclick={handleToggleScenes}
-      ></button>
+      >
+        <Icon Icon={getCollapseIcon()} />
+      </button>
     </PaneResizer>
     <Pane defaultSize={70}>
       <div class="stageWrapper" role="presentation">
@@ -461,7 +472,7 @@
     .resizer {
       position: relative;
       display: flex;
-      width: 0.5rem;
+      width: 1rem;
       z-index: 2;
       background: var(--contrastEmpty);
     }
@@ -473,9 +484,13 @@
       margin-top: 1rem;
       cursor: pointer;
       transition: background 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .resizer:hover .resizer__handle {
       background: var(--fg);
+      color: var(--bg);
     }
     .resizer__handle--left {
       position: relative;
@@ -493,15 +508,16 @@
     @media (max-width: 768px) {
       .resizer {
         width: 100% !important;
-        height: 0.5rem !important;
+        height: 2rem !important;
+        cursor: row-resize;
       }
       .resizer__handle {
-        width: 2rem !important;
+        width: 4rem !important;
         height: 100% !important;
-        cursor: row-resize;
+        cursor: pointer;
         margin-left: 50%;
         transform: translateX(-50%);
-        margin-top: 0;
+        margin-top: 0 !important;
       }
     }
   }
