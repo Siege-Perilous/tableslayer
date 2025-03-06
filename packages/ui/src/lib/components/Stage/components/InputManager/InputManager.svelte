@@ -135,7 +135,7 @@
       const localPoint = target.worldToLocal(point);
       const canvasPoint = new THREE.Vector2(
         layerSize.width * (localPoint.x + 0.5),
-        layerSize.height * (-localPoint.y + 0.5)
+        layerSize.height * (localPoint.y + 0.5)
       );
       return canvasPoint;
     } else {

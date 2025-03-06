@@ -1,8 +1,3 @@
-export enum MarkerEditMode {
-  Add = 0,
-  Remove = 1
-}
-
 export enum MarkerShape {
   None = 0,
   Circle = 1,
@@ -12,16 +7,17 @@ export enum MarkerShape {
 
 export interface Marker {
   id: string;
+  name: string;
   position: {
     x: number;
     y: number;
   };
-  text?: string;
-  shape?: MarkerShape;
-  shapeColor?: string;
-  imageUrl?: string;
+  shape: MarkerShape;
+  shapeColor: string;
+  text: string | null;
+  imageUrl: string | null;
   imageScale: number;
-  visible?: boolean;
+  visible: boolean;
 }
 
 export interface MarkerLayerProps {
@@ -69,11 +65,6 @@ export interface MarkerLayerProps {
      */
     strokeColor: string;
   };
-
-  /**
-   * The current edit mode for the marker layer (add or remove markers)
-   */
-  editMode: MarkerEditMode;
 
   /**
    * An array of Marker objects

@@ -7,7 +7,6 @@
     DrawMode,
     ToolType,
     MapLayerType,
-    MarkerEditMode,
     type Marker
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
@@ -28,6 +27,7 @@
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
+  let selectedMarker: Marker | null = $state(null);
 
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -75,13 +75,8 @@
           stageProps.fogOfWar.tool.type = ToolType.Ellipse;
           stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
-        case 'p':
+        case 'm':
           stageProps.activeLayer = MapLayerType.Marker;
-          stageProps.marker.editMode = MarkerEditMode.Remove;
-          break;
-        case 'P':
-          stageProps.activeLayer = MapLayerType.Marker;
-          stageProps.marker.editMode = MarkerEditMode.Add;
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -116,8 +111,21 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onMarkersUpdated(updatedMarkers: Marker[]) {
-    stageProps.marker.markers = updatedMarkers;
+  function onMarkerAdded(marker: Marker) {
+    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    selectedMarker = marker;
+  }
+
+  function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
+    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
+    if (index !== -1) {
+      stageProps.marker.markers[index].position.x = position.x;
+      stageProps.marker.markers[index].position.y = position.y;
+    }
+  }
+
+  function onMarkerSelected(marker: Marker) {
+    selectedMarker = marker;
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -152,7 +160,16 @@
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onMarkersUpdated} />
+  <Stage
+    bind:this={stage}
+    props={stageProps}
+    {onFogUpdate}
+    {onMapUpdate}
+    {onSceneUpdate}
+    {onMarkerAdded}
+    {onMarkerMoved}
+    {onMarkerSelected}
+  />
   <div>
     <h1>Keybindings</h1>
     <ul>
@@ -164,8 +181,7 @@
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
-      <li>p - Remove Marker</li>
-      <li>P - Add Marker</li>
+      <li>t - Edit Markers</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
       <li>SHIFT + Wheel - Zoom Map</li>
       <li>CONTROL + Mouse Down - Pan Scene</li>
@@ -182,7 +198,7 @@
   <FogOfWarControls bind:props={stageProps} {stage} />
   <GridControls bind:props={stageProps} />
   <MapControls bind:props={stageProps} {stage} />
-  <MarkerControls bind:props={stageProps} />
+  <MarkerControls bind:props={stageProps} bind:selectedMarker />
   <PostProcessingControls bind:props={stageProps} />
   <SceneControls bind:props={stageProps} {stage} />
   <WeatherControls bind:props={stageProps} />

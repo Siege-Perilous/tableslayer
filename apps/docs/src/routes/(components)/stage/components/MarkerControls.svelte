@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Color, Slider, Folder, Text, Separator, List, type ListOptions } from 'svelte-tweakpane-ui';
-  import type { StageProps } from '@tableslayer/ui';
+  import { Color, Slider, Folder, Text, Separator, List, type ListOptions, Blade } from 'svelte-tweakpane-ui';
+  import type { Marker, StageProps } from '@tableslayer/ui';
   import { MarkerShape } from '@tableslayer/ui';
 
   import imgDruid from './tokens/druid.png';
@@ -8,7 +8,10 @@
   import imgGnome from './tokens/gnome.png';
   import imgWitch from './tokens/witch.png';
 
-  let { props = $bindable() } = $props<{ props: StageProps }>();
+  let { props = $bindable(), selectedMarker = $bindable() } = $props<{
+    props: StageProps;
+    selectedMarker: Marker | null;
+  }>();
 
   // Define available shape options
   const shapeOptions: ListOptions<MarkerShape> = [
@@ -42,15 +45,25 @@
     <Color bind:value={props.marker.text.strokeColor} label="Text Stroke Color" />
   </Folder>
 
+  <Folder title="Selected Marker" expanded={true}>
+    {#if selectedMarker}
+      <Text bind:value={selectedMarker.id} label="Id" disabled={true} />
+      <Text bind:value={selectedMarker.name} label="Name" />
+      <List bind:value={selectedMarker.shape} label="Shape" options={shapeOptions} />
+      <Color bind:value={selectedMarker.shapeColor} label="Shape Color" />
+      <Text bind:value={selectedMarker.text} label="Text" />
+      <List bind:value={selectedMarker.imageUrl} label="Image" options={imageOptions} />
+      <Slider bind:value={selectedMarker.imageScale} label="Image Scale" min={0.1} max={10} />
+    {/if}
+  </Folder>
   <Folder title="Markers" expanded={true}>
     {#each props.marker.markers as marker}
-      <Folder title={marker.text} expanded={false}>
+      <Folder title={marker.name} expanded={false}>
         <Text bind:value={marker.id} label="Id" disabled={true} />
-        <Text bind:value={marker.text} label="Text" />
+        <Text bind:value={marker.name} label="Name" />
         <List bind:value={marker.shape} label="Shape" options={shapeOptions} />
-        <Slider bind:value={marker.position.x} label="X" min={0} max={1} step={0.01} />
-        <Slider bind:value={marker.position.y} label="Y" min={0} max={1} step={0.01} />
         <Color bind:value={marker.shapeColor} label="Shape Color" />
+        <Text bind:value={marker.text} label="Text" />
         <List bind:value={marker.imageUrl} label="Image" options={imageOptions} />
         <Slider bind:value={marker.imageScale} label="Image Scale" min={0.1} max={10} />
       </Folder>

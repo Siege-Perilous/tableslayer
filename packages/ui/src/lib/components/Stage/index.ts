@@ -1,7 +1,7 @@
 export { DrawMode, ToolType } from './components/FogOfWarLayer/types';
 export { GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';
-export { MarkerEditMode, MarkerShape, type Marker } from './components/MarkerLayer/types';
+export { MarkerShape, type Marker } from './components/MarkerLayer/types';
 export { ParticleType } from './components/ParticleSystem/types';
 export { SceneRotation } from './components/Scene/types';
 export { default as Stage } from './components/Stage/Stage.svelte';

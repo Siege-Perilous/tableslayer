@@ -2,7 +2,6 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  MarkerEditMode,
   MarkerShape,
   RainPreset,
   ToolType,
@@ -102,7 +101,6 @@ export const StageDefaultProps: StageProps = {
     url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
   marker: {
-    editMode: MarkerEditMode.Add,
     size: 250,
     shape: {
       strokeColor: '#000000',
@@ -117,6 +115,7 @@ export const StageDefaultProps: StageProps = {
     markers: [
       {
         id: '1234-1292-1293-1293',
+        name: 'Marker 1',
         position: {
           x: 0.55,
           y: 0.55
@@ -124,10 +123,13 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Circle,
         shapeColor: '#ff0000',
         text: 'A1B',
-        imageScale: 1.0
+        imageScale: 1.0,
+        imageUrl: null,
+        visible: true
       },
       {
         id: '1234-1292-1293-1294',
+        name: 'Marker 2',
         position: {
           x: 0.45,
           y: 0.45
@@ -135,10 +137,13 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Triangle,
         shapeColor: '#00ff00',
         text: 'C2D',
-        imageScale: 1.0
+        imageScale: 1.0,
+        imageUrl: null,
+        visible: true
       },
       {
         id: '1234-1232-2312-2312',
+        name: 'Marker 3',
         position: {
           x: 0.5,
           y: 0.5
@@ -146,7 +151,9 @@ export const StageDefaultProps: StageProps = {
         shape: MarkerShape.Square,
         shapeColor: '#0000ff',
         text: 'E3F',
-        imageScale: 1.0
+        imageScale: 1.0,
+        imageUrl: null,
+        visible: true
       }
     ]
   },

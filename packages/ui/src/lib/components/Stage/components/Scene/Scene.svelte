@@ -61,7 +61,7 @@
 
   // Effect to update post-processing settings when props change
   $effect(() => {
-    const { postProcessing } = $state.snapshot(props);
+    const postProcessing = $state.snapshot(props.postProcessing);
 
     // Need to convert the LUT to a LookupTexture
     Promise.resolve(getLUT(postProcessing.lut.url))

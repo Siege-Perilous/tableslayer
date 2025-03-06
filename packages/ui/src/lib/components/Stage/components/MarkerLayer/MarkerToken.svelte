@@ -13,6 +13,7 @@
     textStroke: number;
     textStrokeColor: string;
     textSize: number;
+    isSelected: boolean;
   }
 
   const { marker, size, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props = $props();
@@ -34,6 +35,7 @@
         marker.imageUrl,
         (texture) => {
           imageTexture = texture;
+          imageTexture.needsUpdate = true;
         },
         undefined,
         (err) => console.error('Error loading image:', err)
@@ -81,6 +83,7 @@
     return ctx;
   }
 
+  // Create text for the marker
   function createText(centerX: number, centerY: number) {
     if (!marker.text) return;
 
@@ -101,7 +104,8 @@
     ctx.fillText(marker.text, centerX, centerY);
   }
 
-  function createMarkerCanvas() {
+  // Create the marker canvas
+  function drawMarker() {
     const width = markerCanvas.width;
     const height = markerCanvas.height;
     const centerX = width / 2;
@@ -159,7 +163,7 @@
 
   // Create and update marker texture when properties change
   $effect(() => {
-    markerCanvas = createMarkerCanvas();
+    markerCanvas = drawMarker();
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
     markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
     markerMaterial.map.needsUpdate = true;
