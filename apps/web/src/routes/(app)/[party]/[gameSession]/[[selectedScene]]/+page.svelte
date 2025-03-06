@@ -2,11 +2,12 @@
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
   import { handleMutation } from '$lib/factories';
-  import { Stage, type StageExports, type StageProps, MapLayerType } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, Icon } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
   import { type ZodIssue } from 'zod';
+  import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
     StageDefaultProps,
@@ -36,10 +37,20 @@
   let isScenesCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
+  let innerWidth: number = $state(1000);
+  const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+
+  const getCollapseIcon = () => {
+    if (isMobile) {
+      return isScenesCollapsed ? IconChevronDown : IconChevronUp;
+    } else {
+      return isScenesCollapsed ? IconChevronRight : IconChevronLeft;
+    }
+  };
 
   /**
    * SOCKET UPDATES
@@ -384,9 +395,10 @@
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
+<svelte:window bind:innerWidth />
 
 <div class="container">
-  <PaneGroup direction="horizontal">
+  <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
     <Pane
       defaultSize={15}
       collapsible={true}
@@ -396,16 +408,23 @@
       bind:pane={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
+      onResize={() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }}
     >
       <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
     </Pane>
     <PaneResizer class="resizer">
       <button
-        class="resizer__handle resizer__hander--left"
+        class="resizer__handle"
         aria-label="Collapse scenes column"
         title={isScenesCollapsed ? 'Expand scenes column' : 'Collapse scenes column'}
         onclick={handleToggleScenes}
-      ></button>
+      >
+        <Icon Icon={getCollapseIcon()} />
+      </button>
     </PaneResizer>
     <Pane defaultSize={70}>
       <div class="stageWrapper" role="presentation">
@@ -439,7 +458,11 @@
     .panel.scene {
       aspect-ratio: 16 / 9;
     }
+    /* Don't change container-name */
+    /* Container is globally checked in child components */
     .stageWrapper {
+      container-name: stageWrapper;
+      container-type: size;
       display: flex;
       align-items: center;
       background: var(--contrastEmpty);
@@ -449,7 +472,7 @@
     .resizer {
       position: relative;
       display: flex;
-      width: 0.5rem;
+      width: 1rem;
       z-index: 2;
       background: var(--contrastEmpty);
     }
@@ -461,9 +484,13 @@
       margin-top: 1rem;
       cursor: pointer;
       transition: background 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .resizer:hover .resizer__handle {
       background: var(--fg);
+      color: var(--bg);
     }
     .resizer__handle--left {
       position: relative;
@@ -476,6 +503,22 @@
     .controls {
       border-left: var(--borderThin);
       background: var(--bg);
+    }
+
+    @media (max-width: 768px) {
+      .resizer {
+        width: 100% !important;
+        height: 2rem !important;
+        cursor: row-resize;
+      }
+      .resizer__handle {
+        width: 4rem !important;
+        height: 100% !important;
+        cursor: pointer;
+        margin-left: 50%;
+        transform: translateX(-50%);
+        margin-top: 0 !important;
+      }
     }
   }
   .container {

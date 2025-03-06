@@ -8,7 +8,11 @@
     type StageProps,
     MapLayerType,
     SelectorMenu,
-    type StageExports
+    type StageExports,
+    InputSlider,
+    FormControl,
+    Hr,
+    Spacer
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -215,7 +219,19 @@
         options={eraseOptions}
         positioning={{ placement: 'bottom', offset: 8 }}
         onSelectedChange={(selected) => handleSelectedFogTool(selected)}
-      />
+      >
+        {#snippet footer()}
+          <Spacer />
+          <Hr />
+          <div class="sceneControls__eraserFooter">
+            <FormControl label="Eraser brush size" name="brushSize">
+              {#snippet input(inputProps)}
+                <InputSlider {...inputProps} bind:value={stageProps.fogOfWar.tool.size} min={50} max={300} step={1} />
+              {/snippet}
+            </FormControl>
+          </div>
+        {/snippet}
+      </SelectorMenu>
     </div>
     {#each sceneControlArray as scene}
       <div class="sceneControls__item">
@@ -223,8 +239,10 @@
           {#snippet trigger()}
             <div class="sceneControls__trigger">
               <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
-                <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
-                {scene.text}
+                <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                <span class="sceneControls__layerText">
+                  {scene.text}
+                </span>
               </div>
             </div>
           {/snippet}
@@ -325,6 +343,10 @@
     justify-content: center;
     gap: 1rem;
   }
+
+  .sceneControls__eraserFooter {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
   .sceneControls__item {
     display: flex;
     align-items: center;
@@ -358,5 +380,17 @@
   .sceneControls__trigger {
     display: flex;
     align-items: center;
+  }
+
+  @container stageWrapper (max-width: 768px) {
+    .sceneControls {
+      gap: 0.25rem !important;
+    }
+    .sceneControls__item--primary {
+      padding-right: 0.25rem !important;
+    }
+    .sceneControls__layerText {
+      display: none;
+    }
   }
 </style>

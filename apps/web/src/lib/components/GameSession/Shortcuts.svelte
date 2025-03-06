@@ -79,4 +79,10 @@
     font-family: var(--font-mono);
     font-size: 0.875rem;
   }
+
+  @container stageWrapper (max-width: 768px) {
+    .shortcut {
+      display: none;
+    }
+  }
 </style>

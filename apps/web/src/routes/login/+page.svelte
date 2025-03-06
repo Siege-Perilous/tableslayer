@@ -67,9 +67,7 @@
     margin: 20vh auto auto 10vh;
     position: relative;
     z-index: 5;
-  }
-  @media (max-width: 768px) {
-    :global(.panel.panel--login) {
+    @media (max-width: 768px) {
       margin: 3rem 3rem auto 3rem;
     }
   }
