@@ -22,6 +22,7 @@
     { name: 'Color Mode', path: '/colormode' },
     { name: 'Context Menu', path: '/contextmenu' },
     { name: 'ColorPicker', path: '/color-picker' },
+    { name: 'Editor', path: '/editor' },
     { name: 'Hr', path: '/hr' },
     { name: 'Icons', path: '/icons' },
     { name: 'IconButton', path: '/icon-button' },
