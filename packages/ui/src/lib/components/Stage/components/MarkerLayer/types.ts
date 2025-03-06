@@ -67,6 +67,11 @@ export interface MarkerLayerProps {
   };
 
   /**
+   * Whether to snap the marker to the grid
+   */
+  snapToGrid: boolean;
+
+  /**
    * An array of Marker objects
    */
   markers: Marker[];

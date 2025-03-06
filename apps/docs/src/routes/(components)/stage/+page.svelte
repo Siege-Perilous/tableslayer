@@ -181,7 +181,7 @@
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
-      <li>t - Edit Markers</li>
+      <li>m - Edit Markers</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
       <li>SHIFT + Wheel - Zoom Map</li>
       <li>CONTROL + Mouse Down - Pan Scene</li>

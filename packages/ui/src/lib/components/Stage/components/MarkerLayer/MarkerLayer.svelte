@@ -8,6 +8,7 @@
   import type { Size } from '../../types';
   import type { StageProps } from '../Stage/types';
   import MarkerToken from './MarkerToken.svelte';
+  import { snapToGrid } from '../../helpers/snapToGrid';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -70,11 +71,28 @@
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
     if (!isDragging || !selectedMarker || !coords || !mapSize) return;
 
+    // Create grid config based on your stage props
+    const gridConfig = {
+      gridType: props.grid.gridType,
+      spacing: 100, // Adjust spacing based on zoom level
+      gridSize: new THREE.Vector2(mapSize.width, mapSize.height),
+      gridOrigin: new THREE.Vector2(
+        (mapSize.width - props.grid.spacing * Math.floor(mapSize.width / props.grid.spacing)) / 2,
+        (mapSize.height - props.grid.spacing * Math.floor(mapSize.height / props.grid.spacing)) / 2
+      )
+    };
+
+    // Get normalized coordinates
+    const normalizedPosition = new THREE.Vector2(coords.x / mapSize.width, coords.y / mapSize.height);
+    const snappedPosition = snapToGrid(normalizedPosition, gridConfig);
+
+    console.log(props.marker.snapToGrid, snappedPosition, normalizedPosition);
+
+    // Snap to grid if grid snapping is enabled
+    const markerPosition = props.marker.snapToGrid ? snappedPosition : normalizedPosition;
+
     // Update the selected marker's position
-    onMarkerMoved(selectedMarker, {
-      x: coords.x / mapSize.width,
-      y: coords.y / mapSize.height
-    });
+    onMarkerMoved(selectedMarker, markerPosition);
   }
 
   function onMouseUp() {

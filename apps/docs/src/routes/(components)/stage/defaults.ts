@@ -101,6 +101,7 @@ export const StageDefaultProps: StageProps = {
     url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
   marker: {
+    snapToGrid: true,
     size: 250,
     shape: {
       strokeColor: '#000000',

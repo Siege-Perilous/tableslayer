@@ -32,6 +32,7 @@
 
 <Folder title="Marker" expanded={false}>
   <Slider bind:value={props.marker.size} label="Size" min={10} max={500} step={1} />
+  <List bind:value={props.marker.snapToGrid} label="Snap to Grid" options={{ Yes: true, No: false }} />
 
   <Folder title="Shape" expanded={true}>
     <Color bind:value={props.marker.shape.strokeColor} label="Shape Stroke Color" />
