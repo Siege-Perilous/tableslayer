@@ -37,30 +37,90 @@ function distanceToHexCenter(
   // are offset by half the grid spacing in the x direction and sqrt(3)/2 times
   // the grid spacing in the y direction.
 
-  // Calculate near center of the two grids
-  const hC = {
-    xy: {
+  // Calculate the nearest cell for first grid
+  const gridPoints = {
+    first: {
       x: Math.floor(position.x / (spacing.x * s.x)) + 0.5,
       y: Math.floor(position.y / (spacing.y * s.y)) + 0.5
     },
-    zw: {
+    // Offset in x and y directions
+    second: {
       x: Math.floor((position.x - s.x * spacing.x * 0.5) / (spacing.x * s.x)) + 0.5,
       y: Math.floor((position.y - s.y * spacing.y * 0.5) / (spacing.y * s.y)) + 0.5
+    },
+    // Additional grid offset in y direction by spacing/sqrt(3)
+    third: {
+      x: Math.floor(position.x / (spacing.x * s.x)) + 0.5,
+      y: Math.floor((position.y - spacing.y / Math.sqrt(3)) / (spacing.y * s.y)) + 0.5
+    },
+    // Additional grid offset in y direction by spacing/sqrt(3)
+    fourth: {
+      x: Math.floor(position.x / (spacing.x * s.x)) + 0.5,
+      y: Math.floor((position.y + spacing.y / Math.sqrt(3)) / (spacing.y * s.y)) + 0.5
     }
   };
 
-  // Calculate the two potential hex centers in original space
-  const center1 = new THREE.Vector2(hC.xy.x * spacing.x * s.x, hC.xy.y * spacing.y * s.y);
-  const center2 = new THREE.Vector2((hC.zw.x + 0.5) * spacing.x * s.x, (hC.zw.y + 0.5) * spacing.y * s.y);
+  // Calculate the centers
+  const center1 = new THREE.Vector2(gridPoints.first.x * spacing.x * s.x, gridPoints.first.y * spacing.y * s.y);
+  const center2 = new THREE.Vector2(
+    (gridPoints.second.x + 0.5) * spacing.x * s.x,
+    (gridPoints.second.y + 0.5) * spacing.y * s.y
+  );
+  const center3 = new THREE.Vector2(
+    gridPoints.third.x * spacing.x * s.x,
+    gridPoints.third.y * spacing.y * s.y + spacing.y / Math.sqrt(3)
+  );
+  const center4 = new THREE.Vector2(
+    gridPoints.fourth.x * spacing.x * s.x,
+    gridPoints.fourth.y * spacing.y * s.y - spacing.y / Math.sqrt(3)
+  );
 
-  const d1 = Math.pow(position.x - center1.x, 2) + Math.pow(position.y - center1.y, 2);
-  const d2 = Math.pow(position.x - center2.x, 2) + Math.pow(position.y - center2.y, 2);
+  // Calculate vertices around each center (line intersections)
+  const getHexVertices = (center: THREE.Vector2) => {
+    const vertices: THREE.Vector2[] = [];
+    const radius = spacing.x; // Distance from center to vertex
 
-  // Return the closest center
-  return {
-    d: d1 < d2 ? d1 : d2,
-    center: d1 < d2 ? center1 : center2
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      vertices.push(new THREE.Vector2(center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle)));
+    }
+    return vertices;
   };
+
+  // Get vertices for each center
+  const vertices1 = getHexVertices(center1);
+  const vertices2 = getHexVertices(center2);
+  const vertices3 = getHexVertices(center3);
+  const vertices4 = getHexVertices(center4);
+
+  // Calculate distances to all points (centers and vertices)
+  const distances = [
+    { d: Math.pow(position.x - center1.x, 2) + Math.pow(position.y - center1.y, 2), point: center1 },
+    { d: Math.pow(position.x - center2.x, 2) + Math.pow(position.y - center2.y, 2), point: center2 },
+    { d: Math.pow(position.x - center3.x, 2) + Math.pow(position.y - center3.y, 2), point: center3 },
+    { d: Math.pow(position.x - center4.x, 2) + Math.pow(position.y - center4.y, 2), point: center4 },
+    ...vertices1.map((v) => ({
+      d: Math.pow(position.x - v.x, 2) + Math.pow(position.y - v.y, 2),
+      point: v
+    })),
+    ...vertices2.map((v) => ({
+      d: Math.pow(position.x - v.x, 2) + Math.pow(position.y - v.y, 2),
+      point: v
+    })),
+    ...vertices3.map((v) => ({
+      d: Math.pow(position.x - v.x, 2) + Math.pow(position.y - v.y, 2),
+      point: v
+    })),
+    ...vertices4.map((v) => ({
+      d: Math.pow(position.x - v.x, 2) + Math.pow(position.y - v.y, 2),
+      point: v
+    }))
+  ];
+
+  // Find the closest point
+  const closest = distances.reduce((prev, curr) => (curr.d < prev.d ? curr : prev));
+
+  return { d: closest.d, center: closest.point };
 }
 
 /**
