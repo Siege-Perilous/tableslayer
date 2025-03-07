@@ -404,7 +404,7 @@
 
 <div class="scenes" id="scenes">
   <div class="scene__input">
-    {#if party.plan === 'free' && orderedScenes.length >= 3}
+    {#if needsToUpgrade}
       <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
     {:else}
       <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
@@ -547,7 +547,8 @@
               Rename scene
             </button>
             <button
-              class="scene__menuItem"
+              class={['scene__menuItem', needsToUpgrade && 'scene__menuItem--disabled']}
+              disabled={needsToUpgrade}
               onclick={() => {
                 handleDuplicateScene(scene.id);
                 contentProps.close();
