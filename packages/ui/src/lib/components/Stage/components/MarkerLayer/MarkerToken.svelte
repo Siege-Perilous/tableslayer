@@ -138,7 +138,7 @@
         ctx.save();
 
         // Create a smaller shape path for clipping that accounts for stroke width
-        const innerSize = markerSize - strokeWidth; // Reduce by twice the stroke width
+        const innerSize = canvasSize - strokeWidth; // Reduce by twice the stroke width
         createShape(centerX, centerY, innerSize, true);
 
         // Apply clipping to the shape
@@ -151,10 +151,10 @@
         // Draw the image (will only appear inside the clipped shape)
         ctx.drawImage(
           imageTexture.image,
-          centerX - (markerSize / 2) * (marker.imageScale ?? 1.0),
-          centerY - (markerSize / 2) * (marker.imageScale ?? 1.0),
-          markerSize * (marker.imageScale ?? 1.0),
-          markerSize * (marker.imageScale ?? 1.0)
+          centerX - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
+          centerY - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
+          sizeMultiplier * canvasSize * marker.imageScale,
+          sizeMultiplier * canvasSize * marker.imageScale
         );
 
         // Restore the canvas state (removes clipping)
@@ -180,11 +180,7 @@
   });
 </script>
 
-<T.Group
-  visible={marker.visible}
-  position={[marker.position.x, marker.position.y, 0]}
-  scale={[markerSize, markerSize, 1]}
->
+<T.Group position={[marker.position.x, marker.position.y, 0]} scale={[markerSize, markerSize, 1]}>
   <!-- Combined shape, stroke and text -->
   <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Overlay]}>
     <T.MeshBasicMaterial is={markerMaterial} />
