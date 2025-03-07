@@ -45,7 +45,15 @@ const svelteConfig = {
 
 // Default ignore patterns
 const ignores = {
-  ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.build/**', '**/.svelte-kit/**', '**/package/**']
+  ignores: [
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/build/**',
+    '**/.build/**',
+    '**/.vercel/**',
+    '**/.svelte-kit/**',
+    '**/package/**'
+  ]
 };
 
 export default [ignores, baseConfig, svelteConfig];

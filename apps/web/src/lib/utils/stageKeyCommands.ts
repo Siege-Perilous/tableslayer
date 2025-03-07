@@ -1,5 +1,5 @@
 import type { StageProps } from '@tableslayer/ui';
-import { DrawMode, MapLayerType, PingEditMode, ToolType } from '@tableslayer/ui';
+import { DrawMode, MapLayerType, ToolType } from '@tableslayer/ui';
 
 export function handleKeyCommands(
   event: KeyboardEvent,
@@ -7,7 +7,7 @@ export function handleKeyCommands(
   activeControl: string,
   stage: { fogOfWar: { clear: () => void; reset: () => void } }
 ): string {
-  const { activeLayer, fogOfWar, ping } = stageProps;
+  const { activeLayer, fogOfWar } = stageProps;
 
   switch (event.key) {
     case 'e':
@@ -76,21 +76,11 @@ export function handleKeyCommands(
       }
       break;
 
-    case 'p':
-      if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Remove) {
+    case 'm':
+      if (activeLayer === MapLayerType.Marker) {
         stageProps.activeLayer = MapLayerType.None;
       } else {
-        stageProps.activeLayer = MapLayerType.Ping;
-        ping.editMode = PingEditMode.Remove;
-      }
-      break;
-
-    case 'P':
-      if (activeLayer === MapLayerType.Ping && ping.editMode === PingEditMode.Add) {
-        stageProps.activeLayer = MapLayerType.None;
-      } else {
-        stageProps.activeLayer = MapLayerType.Ping;
-        ping.editMode = PingEditMode.Add;
+        stageProps.activeLayer = MapLayerType.Marker;
       }
       break;
 

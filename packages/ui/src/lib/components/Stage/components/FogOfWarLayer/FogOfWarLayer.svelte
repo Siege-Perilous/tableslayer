@@ -155,7 +155,6 @@
 </script>
 
 <InputManager
-  name="fogOfWarInput"
   {isActive}
   layerSize={mapSize}
   target={mesh}

@@ -22,7 +22,6 @@
     'Map 12': 'https://files.tableslayer.com/maps/12.jpeg'
   };
 
-  // svelte-ignore state_referenced_locally
   let mapUrl = $state(props.map.url);
 
   function updateMapUrl() {
