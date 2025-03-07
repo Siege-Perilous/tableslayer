@@ -7,7 +7,8 @@
     DrawMode,
     ToolType,
     MapLayerType,
-    type Marker
+    type Marker,
+    StageMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
@@ -27,6 +28,7 @@
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
+  let selectedMarker: Marker | undefined = $state();
 
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -112,7 +114,7 @@
 
   function onMarkerAdded(marker: Marker) {
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
-    //selectedMarker = marker;
+    selectedMarker = marker;
   }
 
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
@@ -126,7 +128,7 @@
   }
 
   function onMarkerSelected(marker: Marker) {
-    //selectedMarker = marker;
+    selectedMarker = marker;
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -193,13 +195,14 @@
 
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
+  <List bind:value={stageProps.mode} label="Mode" options={{ DM: StageMode.DM, Player: StageMode.Player }} />
   <DisplayControls bind:props={stageProps} />
   <FogControls bind:props={stageProps} />
   <EdgeOverlayControls bind:props={stageProps} />
   <FogOfWarControls bind:props={stageProps} {stage} />
   <GridControls bind:props={stageProps} />
   <MapControls bind:props={stageProps} {stage} />
-  <MarkerControls bind:props={stageProps} />
+  <MarkerControls bind:props={stageProps} bind:selectedMarker />
   <PostProcessingControls bind:props={stageProps} />
   <SceneControls bind:props={stageProps} {stage} />
   <WeatherControls bind:props={stageProps} />

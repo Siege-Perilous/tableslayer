@@ -1,16 +1,23 @@
 <script lang="ts">
-  import { Color, Slider, Folder, Text, Separator, List, type ListOptions, Blade } from 'svelte-tweakpane-ui';
+  import { Color, Slider, Folder, Text, List, type ListOptions } from 'svelte-tweakpane-ui';
   import type { Marker, StageProps } from '@tableslayer/ui';
-  import { MarkerShape } from '@tableslayer/ui';
+  import { MarkerShape, MarkerSize, MarkerVisibility } from '@tableslayer/ui';
 
   import imgDruid from './tokens/druid.png';
   import imgElf from './tokens/elf.png';
   import imgGnome from './tokens/gnome.png';
   import imgWitch from './tokens/witch.png';
 
-  let { props = $bindable() } = $props<{
+  let { props = $bindable(), selectedMarker = $bindable() } = $props<{
     props: StageProps;
+    selectedMarker: Marker | undefined;
   }>();
+
+  const markerSizeOptions: ListOptions<MarkerSize> = [
+    { text: 'Small', value: MarkerSize.Small },
+    { text: 'Medium', value: MarkerSize.Medium },
+    { text: 'Large', value: MarkerSize.Large }
+  ];
 
   // Define available shape options
   const shapeOptions: ListOptions<MarkerShape> = [
@@ -27,15 +34,21 @@
     { text: 'Gnome', value: imgGnome },
     { text: 'Witch', value: imgWitch }
   ];
+
+  const visibilityOptions: ListOptions<MarkerVisibility> = [
+    { text: 'Always', value: MarkerVisibility.Always },
+    { text: 'DM', value: MarkerVisibility.DM },
+    { text: 'Player', value: MarkerVisibility.Player }
+  ];
 </script>
 
 <Folder title="Marker" expanded={false}>
-  <Slider bind:value={props.marker.size} label="Size" min={10} max={500} step={1} />
+  <List bind:value={props.marker.visible} label="Visible" options={{ Yes: true, No: false }} />
   <List bind:value={props.marker.snapToGrid} label="Snap to Grid" options={{ Yes: true, No: false }} />
 
   <Folder title="Shape" expanded={true}>
     <Color bind:value={props.marker.shape.strokeColor} label="Shape Stroke Color" />
-    <Slider bind:value={props.marker.shape.strokeWidth} label="Shape Stroke Width" min={0} max={1} step={0.01} />
+    <Slider bind:value={props.marker.shape.strokeWidth} label="Shape Stroke Width" min={0} max={64} step={1} />
   </Folder>
 
   <Folder title="Text" expanded={true}>
@@ -46,27 +59,31 @@
   </Folder>
 
   <Folder title="Selected Marker" expanded={true}>
-    <!-- {#if selectedMarker}
+    {#if selectedMarker}
       <Text bind:value={selectedMarker.id} label="Id" disabled={true} />
+      <List bind:value={selectedMarker.visibility} label="Visibility" options={visibilityOptions} />
       <Text bind:value={selectedMarker.name} label="Name" />
+      <List bind:value={selectedMarker.size} label="Size" options={markerSizeOptions} />
       <List bind:value={selectedMarker.shape} label="Shape" options={shapeOptions} />
       <Color bind:value={selectedMarker.shapeColor} label="Shape Color" />
       <Text bind:value={selectedMarker.text} label="Text" />
       <List bind:value={selectedMarker.imageUrl} label="Image" options={imageOptions} />
       <Slider bind:value={selectedMarker.imageScale} label="Image Scale" min={0.1} max={10} />
-    {/if} -->
+    {/if}
   </Folder>
   <Folder title="Markers" expanded={true}>
-    <!-- {#each props.marker.markers as marker}
+    {#each props.marker.markers as marker}
       <Folder title={marker.name} expanded={false}>
         <Text bind:value={marker.id} label="Id" disabled={true} />
+        <List bind:value={marker.visibility} label="Visibility" options={visibilityOptions} />
         <Text bind:value={marker.name} label="Name" />
+        <List bind:value={marker.size} label="Size" options={markerSizeOptions} />
         <List bind:value={marker.shape} label="Shape" options={shapeOptions} />
         <Color bind:value={marker.shapeColor} label="Shape Color" />
         <Text bind:value={marker.text} label="Text" />
         <List bind:value={marker.imageUrl} label="Image" options={imageOptions} />
         <Slider bind:value={marker.imageScale} label="Image Scale" min={0.1} max={10} />
       </Folder>
-    {/each} -->
+    {/each}
   </Folder>
 </Folder>

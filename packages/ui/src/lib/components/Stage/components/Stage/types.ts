@@ -16,6 +16,11 @@ export interface Callbacks {
   onMarkerSelected: (marker: Marker) => void;
 }
 
+export enum StageMode {
+  DM = 0,
+  Player = 1
+}
+
 export interface DisplayProps {
   /**
    * The minimum padding around the grid relative to the edge of the scene.
@@ -41,6 +46,7 @@ export interface DisplayProps {
  * Properties for the Stage component
  */
 export type StageProps = {
+  mode: StageMode;
   activeLayer: MapLayerType;
   backgroundColor: string;
   debug: {

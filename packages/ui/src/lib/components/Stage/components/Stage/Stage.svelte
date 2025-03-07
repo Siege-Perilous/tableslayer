@@ -22,6 +22,14 @@
 
   let sceneRef: SceneExports;
 
+  // Store game mode as reactive state which can be referenced by other components
+  let stageContext = $state({ mode: props.mode });
+  setContext('stage', stageContext);
+
+  $effect(() => {
+    stageContext.mode = props.mode;
+  });
+
   setContext('callbacks', {
     onFogUpdate,
     onMapUpdate,

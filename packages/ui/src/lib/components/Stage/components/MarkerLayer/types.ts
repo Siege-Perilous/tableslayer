@@ -1,8 +1,20 @@
+export enum MarkerVisibility {
+  Always = 0,
+  DM = 1,
+  Player = 2
+}
+
 export enum MarkerShape {
   None = 0,
   Circle = 1,
   Square = 2,
   Triangle = 3
+}
+
+export enum MarkerSize {
+  Small = 1,
+  Medium = 2,
+  Large = 3
 }
 
 export interface Marker {
@@ -12,19 +24,20 @@ export interface Marker {
     x: number;
     y: number;
   };
+  size: MarkerSize;
   shape: MarkerShape;
   shapeColor: string;
   text: string | null;
   imageUrl: string | null;
   imageScale: number;
-  visible: boolean;
+  visibility: MarkerVisibility;
 }
 
 export interface MarkerLayerProps {
   /**
-   * The size of the marker marker
+   * Whether the marker layer is visible
    */
-  size: number;
+  visible: boolean;
 
   /**
    * The shape of the marker icons

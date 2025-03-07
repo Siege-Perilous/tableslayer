@@ -6,6 +6,16 @@ import type { DisplayProps } from '../components/Stage/types';
 const s = { x: 1.0, y: 1.7320508 }; // sqrt(3)
 
 /**
+ * Gets the size of a grid cell in pixels
+ * @param gridType Type of grid (square or hex)
+ * @param gridSizePixels Base grid size in pixels
+ * @returns Width of grid cell in pixels
+ */
+export function getGridCellSize(grid: GridLayerProps, display: DisplayProps): number {
+  return (grid.spacing * display.resolution.x) / display.size.x;
+}
+
+/**
  * Snaps a position to the nearest square grid intersection
  * @param position Position to snap in pixels
  * @param spacing Grid spacing in pixels
@@ -124,33 +134,14 @@ function distanceToHexCenter(position: THREE.Vector2, spacing: THREE.Vector2): T
  * @returns Snapped position (in normalized 0-1 coordinates)
  */
 export function snapToGrid(position: THREE.Vector2, grid: GridLayerProps, display: DisplayProps): THREE.Vector2 {
-  // These calculations match the shader's calculations for the grid
-  const safeZoneSize = new THREE.Vector2(
-    display.resolution.x - display.padding.x * 2,
-    display.resolution.y - display.padding.y * 2
-  );
-
   // Compute the pixel pitch in inches
   const pixelsPerInch = new THREE.Vector2(display.resolution.x / display.size.x, display.resolution.y / display.size.y);
 
   // Compute the grid spacing in pixels
   const gridSpacingPixels = new THREE.Vector2(grid.spacing * pixelsPerInch.x, grid.spacing * pixelsPerInch.y);
 
-  // Compute the number of grid squares that can fit inside the safe zone
-  const gridCount = new THREE.Vector2(
-    Math.floor(safeZoneSize.x / gridSpacingPixels.x),
-    Math.floor(safeZoneSize.y / gridSpacingPixels.y)
-  );
-
-  // Compute the total grid size in pixels, then compute the position of the fragment
-  // relative to the origin (lower left)
-  const gridSizePixels = new THREE.Vector2(gridSpacingPixels.x * gridCount.x, gridSpacingPixels.y * gridCount.y);
-
-  // Compute the origin of the grid in pixels
-  const gridOriginPixels = new THREE.Vector2(gridSizePixels.x / 2.0, gridSizePixels.y / 2.0);
-  const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
-
   if (grid.gridType === GridType.Square) {
+    const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
     return snapToSquareGrid(position, halfSpacing);
   } else {
     return distanceToHexCenter(position, gridSpacingPixels);

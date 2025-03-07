@@ -3,7 +3,10 @@ import {
   GridType,
   MapLayerType,
   MarkerShape,
+  MarkerSize,
+  MarkerVisibility,
   RainPreset,
+  StageMode,
   ToolType,
   WeatherType,
   type StageProps
@@ -13,6 +16,7 @@ import { ToneMappingMode } from 'postprocessing';
 import frostImageUrl from './components/overlays/frost.png?url';
 
 export const StageDefaultProps: StageProps = {
+  mode: StageMode.DM,
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
   debug: {
@@ -101,8 +105,8 @@ export const StageDefaultProps: StageProps = {
     url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
   marker: {
+    visible: true,
     snapToGrid: true,
-    size: 250,
     shape: {
       strokeColor: '#000000',
       strokeWidth: 0.5
@@ -117,44 +121,47 @@ export const StageDefaultProps: StageProps = {
       {
         id: '1234-1292-1293-1293',
         name: 'Marker 1',
+        size: MarkerSize.Small,
         position: {
-          x: 0.55,
-          y: 0.55
+          x: 0,
+          y: 0
         },
         shape: MarkerShape.Circle,
         shapeColor: '#ff0000',
         text: 'A1B',
         imageScale: 1.0,
         imageUrl: null,
-        visible: true
+        visibility: MarkerVisibility.Always
       },
       {
         id: '1234-1292-1293-1294',
         name: 'Marker 2',
+        size: MarkerSize.Medium,
         position: {
-          x: 0.45,
-          y: 0.45
+          x: 400,
+          y: 0
         },
         shape: MarkerShape.Triangle,
         shapeColor: '#00ff00',
         text: 'C2D',
         imageScale: 1.0,
         imageUrl: null,
-        visible: true
+        visibility: MarkerVisibility.DM
       },
       {
         id: '1234-1232-2312-2312',
         name: 'Marker 3',
         position: {
-          x: 0.5,
-          y: 0.5
+          x: 800,
+          y: 0
         },
+        size: MarkerSize.Large,
         shape: MarkerShape.Square,
         shapeColor: '#0000ff',
         text: 'E3F',
         imageScale: 1.0,
         imageUrl: null,
-        visible: true
+        visibility: MarkerVisibility.Player
       }
     ]
   },

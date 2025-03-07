@@ -3,10 +3,14 @@
   import { T } from '@threlte/core';
   import { MarkerShape, type Marker } from './types';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
+  import { getGridCellSize } from '../../helpers/grid';
+  import type { GridLayerProps } from '../GridLayer/types';
+  import type { DisplayProps } from '../Stage/types';
 
   interface Props {
     marker: Marker;
-    size: number;
+    grid: GridLayerProps;
+    display: DisplayProps;
     strokeColor: string;
     strokeWidth: number;
     textColor: string;
@@ -16,9 +20,17 @@
     isSelected: boolean;
   }
 
-  const { marker, size, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props = $props();
+  const { marker, grid, display, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props =
+    $props();
 
-  let markerCanvas = new OffscreenCanvas(1024, 1024);
+  const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
+
+  // The size of the marker is 90% of the grid cell size
+  const sizeMultiplier = 0.9;
+
+  const canvasSize = 1024;
+
+  let markerCanvas = new OffscreenCanvas(canvasSize, canvasSize);
   let ctx = markerCanvas.getContext('2d')!;
   let markerMaterial = new THREE.MeshBasicMaterial({
     transparent: false,
@@ -46,29 +58,27 @@
   });
 
   // Create complete marker canvas with shape, stroke, and text
-  function createShape(centerX: number, centerY: number, radius: number, clipOnly: boolean = false) {
+  function createShape(centerX: number, centerY: number, size: number, clipOnly: boolean = false) {
     ctx.beginPath();
 
     switch (marker.shape) {
       case MarkerShape.None:
         break;
       case MarkerShape.Circle:
-        ctx.arc(centerX, centerY, radius / 2, 0, Math.PI * 2);
+        const radius = (size * sizeMultiplier) / 2;
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         break;
 
       case MarkerShape.Square:
-        const squareSize = radius * 0.9; // Adjust size to match circle's visual weight
+        const squareSize = size * sizeMultiplier; // Adjust size to match circle's visual weight
         ctx.rect(centerX - squareSize / 2, centerY - squareSize / 2, squareSize, squareSize);
         break;
 
       case MarkerShape.Triangle:
-        const triangleWidth = radius * 1.3;
-        const triangleHeight = radius * 1.2;
-        // Calculate center of mass offset to center triangle
-        const centerOffset = -triangleHeight / 6;
-        ctx.moveTo(centerX, centerY - triangleHeight / 2 + centerOffset); // Top
-        ctx.lineTo(centerX - triangleWidth / 2, centerY + triangleHeight / 2 + centerOffset); // Bottom left
-        ctx.lineTo(centerX + triangleWidth / 2, centerY + triangleHeight / 2 + centerOffset); // Bottom right
+        const height = size * sizeMultiplier;
+        ctx.moveTo(centerX, centerY - height / 2); // Top
+        ctx.lineTo(centerX - height / 2, centerY + height / 2); // Bottom left
+        ctx.lineTo(centerX + height / 2, centerY + height / 2); // Bottom right
         ctx.closePath();
         break;
     }
@@ -114,14 +124,13 @@
     // Clear canvas with transparency
     ctx.clearRect(0, 0, width, height);
 
-    // Draw shape if enabled
     if (marker.shape !== undefined) {
       // Set stroke and fill styles for shape
       ctx.strokeStyle = strokeColor ?? '#000000';
-      ctx.lineWidth = strokeWidth * (size / 10);
+      ctx.lineWidth = strokeWidth;
       ctx.fillStyle = marker.shapeColor ?? '#ffffff';
 
-      createShape(centerX, centerY, size);
+      createShape(centerX, centerY, canvasSize);
 
       // Draw image if available
       if (imageTexture) {
@@ -129,7 +138,7 @@
         ctx.save();
 
         // Create a smaller shape path for clipping that accounts for stroke width
-        const innerSize = size - strokeWidth * (size / 10); // Reduce by twice the stroke width
+        const innerSize = markerSize - strokeWidth; // Reduce by twice the stroke width
         createShape(centerX, centerY, innerSize, true);
 
         // Apply clipping to the shape
@@ -142,10 +151,10 @@
         // Draw the image (will only appear inside the clipped shape)
         ctx.drawImage(
           imageTexture.image,
-          centerX - (size / 2) * (marker.imageScale ?? 1.0),
-          centerY - (size / 2) * (marker.imageScale ?? 1.0),
-          size * (marker.imageScale ?? 1.0),
-          size * (marker.imageScale ?? 1.0)
+          centerX - (markerSize / 2) * (marker.imageScale ?? 1.0),
+          centerY - (markerSize / 2) * (marker.imageScale ?? 1.0),
+          markerSize * (marker.imageScale ?? 1.0),
+          markerSize * (marker.imageScale ?? 1.0)
         );
 
         // Restore the canvas state (removes clipping)
@@ -163,6 +172,7 @@
 
   // Create and update marker texture when properties change
   $effect(() => {
+    console.log('drawMarker');
     markerCanvas = drawMarker();
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
     markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
@@ -170,7 +180,11 @@
   });
 </script>
 
-<T.Group visible={marker.visible} position={[marker.position.x, marker.position.y, 0]} scale={size}>
+<T.Group
+  visible={marker.visible}
+  position={[marker.position.x, marker.position.y, 0]}
+  scale={[markerSize, markerSize, 1]}
+>
   <!-- Combined shape, stroke and text -->
   <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Overlay]}>
     <T.MeshBasicMaterial is={markerMaterial} />

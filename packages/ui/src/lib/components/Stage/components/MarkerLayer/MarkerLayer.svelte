@@ -1,13 +1,13 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { MarkerShape, type Marker } from './types';
+  import { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './types';
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
-  import type { StageProps } from '../Stage/types';
+  import { type StageProps, StageMode } from '../Stage/types';
   import MarkerToken from './MarkerToken.svelte';
-  import { snapToGrid } from '../../helpers/snapToGrid';
+  import { getGridCellSize, snapToGrid } from '../../helpers/grid';
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
 
@@ -20,7 +20,10 @@
 
   const { props, isActive, display, grid }: Props = $props();
 
+  const stage = getContext<{ mode: StageMode }>('stage');
   const { onMarkerAdded, onMarkerMoved, onMarkerSelected } = getContext<Callbacks>('callbacks');
+
+  // Quad used for raycasting / mouse input detection
   let inputMesh = $state(new THREE.Mesh());
 
   // Track the currently selected marker and dragging state
@@ -37,16 +40,10 @@
     // must be within the outer radius of the marker for it to be considered
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
-    console.log('--------------------------------');
-
-    console.log('Grid Coords: ', gridCoords.x.toFixed(2), gridCoords.y.toFixed(2));
-
     props.marker.markers.forEach((marker) => {
       const distance = gridCoords.distanceTo(marker.position);
-      console.log(
-        `${marker.name} - ${marker.position.x.toFixed(2)}, ${marker.position.y.toFixed(2)} - Distance: ${distance}`
-      );
-      if (distance < minDistance && distance <= props.marker.size / 2) {
+      const markerRadius = getGridCellSize(grid, display) * marker.size;
+      if (distance < minDistance && distance <= markerRadius / 2) {
         minDistance = distance;
         closestMarker = marker;
       }
@@ -65,12 +62,13 @@
       id: crypto.randomUUID(),
       name: 'New Marker',
       position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
+      size: MarkerSize.Small,
       shape: MarkerShape.Circle,
       shapeColor: '#ffffff',
       imageScale: 1.0,
       text: 'ABC',
       imageUrl: null,
-      visible: true
+      visibility: MarkerVisibility.Always
     };
 
     selectedMarker = newMarker;
@@ -113,16 +111,19 @@
 <!-- This group contains all the markers -->
 <T.Group name="markerLayer" position={[-0.5, -0.5, 0]}>
   {#each props.marker.markers as marker (marker.id)}
-    <MarkerToken
-      {marker}
-      size={props.marker.size}
-      textColor={props.marker.text.color}
-      textStroke={props.marker.text.strokeWidth}
-      textStrokeColor={props.marker.text.strokeColor}
-      textSize={props.marker.text.size}
-      strokeColor={props.marker.shape.strokeColor}
-      strokeWidth={props.marker.shape.strokeWidth}
-      isSelected={selectedMarker?.id === marker.id}
-    />
+    {#if marker.visibility === MarkerVisibility.Always || (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) || (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)}
+      <MarkerToken
+        {marker}
+        {grid}
+        {display}
+        textColor={props.marker.text.color}
+        textStroke={props.marker.text.strokeWidth}
+        textStrokeColor={props.marker.text.strokeColor}
+        textSize={props.marker.text.size}
+        strokeColor={props.marker.shape.strokeColor}
+        strokeWidth={props.marker.shape.strokeWidth}
+        isSelected={selectedMarker?.id === marker.id}
+      />
+    {/if}
   {/each}
 </T.Group>
