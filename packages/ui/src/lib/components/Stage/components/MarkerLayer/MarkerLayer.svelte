@@ -22,7 +22,7 @@
   const { props, isActive, display, grid }: Props = $props();
 
   const stage = getContext<{ mode: StageMode }>('stage');
-  const { onMarkerAdded, onMarkerMoved, onMarkerSelected } = getContext<Callbacks>('callbacks');
+  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu } = getContext<Callbacks>('callbacks');
 
   // Quad used for raycasting / mouse input detection
   let inputMesh = $state(new THREE.Mesh());
@@ -31,13 +31,7 @@
   let selectedMarker: Marker | null = $state(null);
   let isDragging = $state(false);
 
-  function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
-    if (!coords) return;
-
-    console.log('onMouseDown', coords);
-    // Get coordinates in normalized 0-1 coordinates
-    const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
-
+  function findClosestMarker(gridCoords: THREE.Vector2) {
     // Find the marker that is closest to the mouse down point. The test point
     // must be within the outer radius of the marker for it to be considered
     let closestMarker: Marker | undefined;
@@ -51,30 +45,41 @@
       }
     });
 
+    return closestMarker;
+  }
+
+  function onMouseDown(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+    if (!coords) return;
+
+    // Verify the primary mouse/touch was used
+    if (e instanceof MouseEvent && e.button !== 0) return;
+    if (e instanceof TouchEvent && e.touches.length !== 1) return;
+
+    const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
+
+    const closestMarker = findClosestMarker(gridCoords);
+
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
-      console.log('Selected Marker: ', closestMarker.name);
+      isDragging = true;
       selectedMarker = closestMarker;
       onMarkerSelected(selectedMarker);
-      isDragging = true;
-      return;
+    } else {
+      const newMarker: Marker = {
+        id: crypto.randomUUID(),
+        name: 'New Marker',
+        position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
+        size: MarkerSize.Small,
+        shape: MarkerShape.Circle,
+        shapeColor: '#ffffff',
+        imageScale: 1.0,
+        text: 'ABC',
+        imageUrl: null,
+        visibility: MarkerVisibility.Always
+      };
+      selectedMarker = newMarker;
+      onMarkerAdded(newMarker);
     }
-
-    const newMarker: Marker = {
-      id: crypto.randomUUID(),
-      name: 'New Marker',
-      position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
-      size: MarkerSize.Small,
-      shape: MarkerShape.Circle,
-      shapeColor: '#ffffff',
-      imageScale: 1.0,
-      text: 'ABC',
-      imageUrl: null,
-      visibility: MarkerVisibility.Always
-    };
-
-    selectedMarker = newMarker;
-    onMarkerAdded(newMarker);
   }
 
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
@@ -100,6 +105,17 @@
       isDragging = false;
     }
   }
+
+  function onContextMenu(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+    if (!coords) return;
+
+    const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
+    const closestMarker = findClosestMarker(gridCoords);
+
+    if (closestMarker) {
+      onMarkerContextMenu(closestMarker, e);
+    }
+  }
 </script>
 
 <InputManager
@@ -109,6 +125,7 @@
   {onMouseDown}
   {onMouseMove}
   {onMouseUp}
+  {onContextMenu}
 />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->

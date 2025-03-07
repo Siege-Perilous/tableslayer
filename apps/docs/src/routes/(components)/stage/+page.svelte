@@ -131,6 +131,14 @@
     selectedMarker = marker;
   }
 
+  function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
+    if (event instanceof MouseEvent) {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+    } else {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  }
+
   function onMouseMove(e: MouseEvent) {
     if (!(e.buttons === 1 || e.buttons === 2)) return;
 
@@ -172,6 +180,7 @@
     {onMarkerAdded}
     {onMarkerMoved}
     {onMarkerSelected}
+    {onMarkerContextMenu}
   />
   <div>
     <h1>Keybindings</h1>

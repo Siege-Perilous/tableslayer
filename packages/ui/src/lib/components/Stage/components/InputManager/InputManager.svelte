@@ -9,14 +9,25 @@
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
-    onMouseDown?: (e: Event, coords: THREE.Vector2 | null) => void;
-    onMouseUp?: (e: Event, coords: THREE.Vector2 | null) => void;
-    onMouseMove?: (e: Event, coords: THREE.Vector2 | null) => void;
+    onMouseDown?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
+    onMouseUp?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
+    onMouseMove?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
+    onContextMenu?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseLeave?: () => void;
     onWheel?: (e: WheelEvent) => void;
   }
 
-  let { layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onMouseLeave, onWheel }: Props = $props();
+  let {
+    layerSize,
+    isActive,
+    target,
+    onMouseDown,
+    onMouseUp,
+    onMouseMove,
+    onMouseLeave,
+    onWheel,
+    onContextMenu
+  }: Props = $props();
 
   const { camera, renderer, size } = useThrelte();
 
@@ -36,6 +47,7 @@
     if (onMouseMove) renderer.domElement.addEventListener('mousemove', handleMouseMove);
     if (onMouseUp) renderer.domElement.addEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
+    if (onContextMenu) renderer.domElement.addEventListener('contextmenu', handleContextMenu);
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
 
     // Touch events
@@ -51,6 +63,7 @@
     if (onMouseMove) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
     if (onMouseUp) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
     if (onMouseLeave) renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
+    if (onContextMenu) renderer.domElement.removeEventListener('contextmenu', handleContextMenu);
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
 
     // Touch events
@@ -79,15 +92,21 @@
     }
   }
 
-  function handleWheel(event: WheelEvent) {
-    if (onWheel && isActive) {
-      onWheel(event);
-    }
-  }
-
   function handleMouseLeave() {
     if (onMouseLeave && isActive) {
       onMouseLeave();
+    }
+  }
+
+  function handleContextMenu(event: MouseEvent) {
+    if (onContextMenu && isActive) {
+      onContextMenu(event, mouseToCanvasCoords(event));
+    }
+  }
+
+  function handleWheel(event: WheelEvent) {
+    if (onWheel && isActive) {
+      onWheel(event);
     }
   }
 
@@ -161,7 +180,7 @@
       const localPoint = target.worldToLocal(point);
       const canvasPoint = new THREE.Vector2(
         layerSize.width * (localPoint.x + 0.5),
-        layerSize.height * (-localPoint.y + 0.5)
+        layerSize.height * (localPoint.y + 0.5)
       );
       return canvasPoint;
     } else {
