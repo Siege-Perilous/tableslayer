@@ -524,17 +524,6 @@
     padding: 0.5rem;
     width: 280px;
   }
-  .linkPopover__content::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 20px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--contrastLow);
-  }
   .linkPopover__inputRow {
     display: flex;
     gap: 0.5rem;
