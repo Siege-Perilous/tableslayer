@@ -6,6 +6,7 @@
   import { SceneLayer } from '../Scene/types';
 
   interface Props {
+    name: string;
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
@@ -16,7 +17,8 @@
     onWheel?: (e: WheelEvent) => void;
   }
 
-  let { layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onMouseLeave, onWheel }: Props = $props();
+  let { name, layerSize, isActive, target, onMouseDown, onMouseUp, onMouseMove, onMouseLeave, onWheel }: Props =
+    $props();
 
   const { camera, renderer, size } = useThrelte();
 

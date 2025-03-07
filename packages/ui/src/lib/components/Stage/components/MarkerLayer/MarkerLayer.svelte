@@ -5,18 +5,20 @@
   import { getContext } from 'svelte';
   import InputManager from '../InputManager/InputManager.svelte';
   import type { Callbacks } from '../Stage/types';
-  import type { Size } from '../../types';
   import type { StageProps } from '../Stage/types';
   import MarkerToken from './MarkerToken.svelte';
   import { snapToGrid } from '../../helpers/snapToGrid';
+  import type { GridLayerProps } from '../GridLayer/types';
+  import type { DisplayProps } from '../Stage/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
     isActive: boolean;
-    mapSize: Size | null;
+    grid: GridLayerProps;
+    display: DisplayProps;
   }
 
-  const { props, isActive, mapSize }: Props = $props();
+  const { props, isActive, display, grid }: Props = $props();
 
   const { onMarkerAdded, onMarkerMoved, onMarkerSelected } = getContext<Callbacks>('callbacks');
   let inputMesh = $state(new THREE.Mesh());
@@ -26,14 +28,17 @@
   let isDragging = $state(false);
 
   function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
-    if (!coords || !mapSize) return;
+    if (!coords) return;
 
     // Find the marker that is closest to the mouse down point. The test point
     // must be within the outer radius of the marker for it to be considered
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
     props.marker.markers.forEach((marker) => {
-      const markerCoords = new THREE.Vector2(marker.position.x * mapSize.width, marker.position.y * mapSize.height);
+      const markerCoords = new THREE.Vector2(
+        marker.position.x * display.resolution.x,
+        marker.position.y * display.resolution.y
+      );
       const distance = coords.distanceTo(markerCoords);
       if (distance < minDistance && distance <= props.marker.size / 2) {
         minDistance = distance;
@@ -50,7 +55,7 @@
     }
 
     // Otherwise add a new marker
-    const location = { x: coords.x / mapSize.width, y: coords.y / mapSize.height };
+    const location = { x: coords.x / display.resolution.x, y: coords.y / display.resolution.y };
 
     const newMarker: Marker = {
       id: crypto.randomUUID(),
@@ -69,30 +74,12 @@
   }
 
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
-    if (!isDragging || !selectedMarker || !coords || !mapSize) return;
+    if (!isDragging || !selectedMarker || !coords) return;
 
-    // Create grid config based on your stage props
-    const gridConfig = {
-      gridType: props.grid.gridType,
-      spacing: 100, // Adjust spacing based on zoom level
-      gridSize: new THREE.Vector2(mapSize.width, mapSize.height),
-      gridOrigin: new THREE.Vector2(
-        (mapSize.width - props.grid.spacing * Math.floor(mapSize.width / props.grid.spacing)) / 2,
-        (mapSize.height - props.grid.spacing * Math.floor(mapSize.height / props.grid.spacing)) / 2
-      )
-    };
-
-    // Get normalized coordinates
-    const normalizedPosition = new THREE.Vector2(coords.x / mapSize.width, coords.y / mapSize.height);
-    const snappedPosition = snapToGrid(normalizedPosition, gridConfig);
-
-    console.log(props.marker.snapToGrid, snappedPosition, normalizedPosition);
-
-    // Snap to grid if grid snapping is enabled
-    const markerPosition = props.marker.snapToGrid ? snappedPosition : normalizedPosition;
+    let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
     // Update the selected marker's position
-    onMarkerMoved(selectedMarker, markerPosition);
+    onMarkerMoved(selectedMarker, props.marker.snapToGrid ? snapToGrid(position, grid, display) : position);
   }
 
   function onMouseUp() {
@@ -102,11 +89,19 @@
   }
 </script>
 
-<InputManager {isActive} target={inputMesh} layerSize={mapSize} {onMouseDown} {onMouseMove} {onMouseUp} />
+<InputManager
+  name="markerInput"
+  {isActive}
+  target={inputMesh}
+  layerSize={{ width: display.resolution.x, height: display.resolution.y }}
+  {onMouseDown}
+  {onMouseMove}
+  {onMouseUp}
+/>
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh}>
-  <T.MeshBasicMaterial visible={false} />
+<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]}>
+  <T.MeshBasicMaterial visible={true} />
   <T.PlaneGeometry />
 </T.Mesh>
 

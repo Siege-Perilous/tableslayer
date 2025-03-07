@@ -6,7 +6,6 @@
   import type { Size } from '../../types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
-  import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
@@ -117,14 +116,6 @@
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Fog}
     visible={props.fog.enabled}
-  />
-
-  <MarkerLayer
-    {props}
-    isActive={props.activeLayer === MapLayerType.Marker}
-    {mapSize}
-    layers={[SceneLayer.Main]}
-    renderOrder={SceneLayerOrder.Marker}
   />
 
   <WeatherLayer

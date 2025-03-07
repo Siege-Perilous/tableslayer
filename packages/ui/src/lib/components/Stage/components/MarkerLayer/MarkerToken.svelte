@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T } from '@threlte/core';
   import { MarkerShape, type Marker } from './types';
-  import { SceneLayerOrder } from '../Scene/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
 
   interface Props {
     marker: Marker;
@@ -170,9 +170,9 @@
   });
 </script>
 
-<T.Group visible={marker.visible} position={[marker.position.x, marker.position.y, 0]} scale={size / 1000}>
+<T.Group visible={marker.visible} position={[marker.position.x, marker.position.y, 0]} scale={size}>
   <!-- Combined shape, stroke and text -->
-  <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker}>
+  <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Overlay]}>
     <T.MeshBasicMaterial is={markerMaterial} />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>

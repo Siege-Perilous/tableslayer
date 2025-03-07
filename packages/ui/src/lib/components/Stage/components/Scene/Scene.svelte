@@ -18,10 +18,11 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
-  import { type MapLayerExports } from '../MapLayer/types';
+  import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer, SceneLayerOrder } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
+  import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
 
   interface Props {
     props: StageProps;
@@ -249,4 +250,6 @@
     visible={props.edgeOverlay.enabled}
     renderOrder={SceneLayerOrder.EdgeOverlay}
   />
+
+  <MarkerLayer {props} isActive={props.activeLayer === MapLayerType.Marker} grid={props.grid} display={props.display} />
 </T.Object3D>
