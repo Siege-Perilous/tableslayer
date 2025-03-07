@@ -3,6 +3,7 @@
   import { Editor, type JSONContent } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { Link } from '@tiptap/extension-link';
+  import Typography from '@tiptap/extension-typography';
   import {
     IconBold,
     IconList,
@@ -10,13 +11,15 @@
     IconItalic,
     IconLink,
     IconSelector,
-    IconQuoteFilled
+    IconQuoteFilled,
+    IconCheck
   } from '@tabler/icons-svelte';
   import { Icon } from '../Icon';
   import { Popover } from '../Popover';
   import { Button } from '../Button';
   import { Input } from '../Input';
   import { computePosition, autoUpdate, offset, shift, flip } from '@floating-ui/dom';
+  import { IconButton } from '../Button';
 
   let {
     height = 'auto',
@@ -89,6 +92,7 @@
       element: element,
       extensions: [
         StarterKit,
+        Typography,
         Link.configure({
           openOnClick: false // Prevent default link opening behavior
         })
@@ -440,7 +444,9 @@
           class="linkPopover__input"
           onkeydown={handleLinkInputKeydown}
         />
-        <Button onclick={addOrUpdateLink}>Save</Button>
+        <IconButton onclick={addOrUpdateLink}>
+          <Icon Icon={IconCheck} stroke={2} />
+        </IconButton>
       </div>
       <div class="linkPopover__actions">
         <Button onclick={visitLink}>Go to link</Button>

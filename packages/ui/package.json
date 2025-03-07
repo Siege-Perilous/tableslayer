@@ -65,6 +65,7 @@
     "@threlte/extras": "9.0.1",
     "@tiptap/core": "^2.11.5",
     "@tiptap/extension-link": "^2.11.5",
+    "@tiptap/extension-typography": "^2.11.5",
     "@tiptap/pm": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
     "chroma-js": "^3.1.2",
