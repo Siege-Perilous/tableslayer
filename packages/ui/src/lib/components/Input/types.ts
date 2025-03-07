@@ -5,6 +5,7 @@ export type InputProps = {
   isDisabled?: boolean;
   variant?: 'transparent' | 'default' | 'dropzone' | 'button';
   hideAutocomplete?: boolean;
+  element?: HTMLInputElement;
 } & HTMLInputAttributes;
 
 export type FileInputProps = {

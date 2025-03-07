@@ -21,11 +21,13 @@
   let {
     height = 'auto',
     content = $bindable('<p>Hello, world!</p>'),
-    debug = false
+    debug = false,
+    editable = true
   }: {
     height: number | string;
     content?: string | JSONContent;
     debug?: boolean;
+    editable?: boolean;
   } = $props();
 
   let element: HTMLDivElement | undefined = $state();
@@ -83,6 +85,7 @@
 
   onMount(() => {
     editor = new Editor({
+      editable,
       element: element,
       extensions: [
         StarterKit,
@@ -345,76 +348,81 @@
 <svelte:document on:click={handleDocumentClick} />
 
 <div class="editor" style={`height: ${height}; max-height: ${height}`}>
-  <div class="editor__toolbar">
-    {#if editor}
-      <button onclick={() => editor?.chain().focus().toggleBold().run()} class={['editor__btn', isBold && 'isActive']}>
-        <Icon Icon={IconBold} size="20px" stroke={2} />
-      </button>
-      <button
-        onclick={() => editor?.chain().focus().toggleItalic().run()}
-        class={['editor__btn', isItalic && 'isActive']}
-      >
-        <Icon Icon={IconItalic} size="20px" stroke={2} />
-      </button>
-      <button onclick={setNewLink} class={['editor__btn', isLink && 'isActive']}>
-        <Icon Icon={IconLink} size="20px" stroke={2} />
-      </button>
-      <button
-        onclick={() => editor?.chain().focus().toggleBulletList().run()}
-        class={['editor__btn', isBulletList && 'isActive']}
-      >
-        <Icon Icon={IconList} size="20px" stroke={2} />
-      </button>
-      <button
-        onclick={() => editor?.chain().focus().toggleOrderedList().run()}
-        class={['editor__btn', isOrderedList && 'isActive']}
-      >
-        <Icon Icon={IconListNumbers} size="20px" stroke={2} />
-      </button>
-      <button
-        onclick={() => editor?.chain().focus().toggleBlockquote().run()}
-        class={['editor__btn', isBlockquote && 'isActive']}
-      >
-        <Icon Icon={IconQuoteFilled} size="20px" stroke={2} />
-      </button>
-      <Popover>
-        {#snippet trigger()}
-          <div class="editor__toolbarTrigger">
-            {textType}
-            <Icon Icon={IconSelector} size="1rem" color="var(--fgMuted)" />
-          </div>
-        {/snippet}
-        {#snippet content()}
-          <div class="editor__toolbarTextOptions">
-            <button
-              onclick={() => editor?.chain().focus().setParagraph().run()}
-              class:active={['editor__toolbarTextP', isParagraph && 'isActive']}
-            >
-              Normal
-            </button>
-            <button
-              onclick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-              class={['editor__toolbarTextH3', isH3 && 'isActive']}
-            >
-              Medium
-            </button>
-            <button
-              onclick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-              class={['editor__toolbarTextH2', isH2 && 'isActive']}
-            >
-              Large
-            </button>
-            <button
-              onclick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-              class={['editor__toolbarTextH1', isH1 && 'isActive']}
-            >
-              Huge
-            </button>
-          </div>
-        {/snippet}
-      </Popover>
-    {/if}
-  </div>
+  {#if editable}
+    <div class="editor__toolbar">
+      {#if editor}
+        <button
+          onclick={() => editor?.chain().focus().toggleBold().run()}
+          class={['editor__btn', isBold && 'isActive']}
+        >
+          <Icon Icon={IconBold} size="20px" stroke={2} />
+        </button>
+        <button
+          onclick={() => editor?.chain().focus().toggleItalic().run()}
+          class={['editor__btn', isItalic && 'isActive']}
+        >
+          <Icon Icon={IconItalic} size="20px" stroke={2} />
+        </button>
+        <button onclick={setNewLink} class={['editor__btn', isLink && 'isActive']}>
+          <Icon Icon={IconLink} size="20px" stroke={2} />
+        </button>
+        <button
+          onclick={() => editor?.chain().focus().toggleBulletList().run()}
+          class={['editor__btn', isBulletList && 'isActive']}
+        >
+          <Icon Icon={IconList} size="20px" stroke={2} />
+        </button>
+        <button
+          onclick={() => editor?.chain().focus().toggleOrderedList().run()}
+          class={['editor__btn', isOrderedList && 'isActive']}
+        >
+          <Icon Icon={IconListNumbers} size="20px" stroke={2} />
+        </button>
+        <button
+          onclick={() => editor?.chain().focus().toggleBlockquote().run()}
+          class={['editor__btn', isBlockquote && 'isActive']}
+        >
+          <Icon Icon={IconQuoteFilled} size="20px" stroke={2} />
+        </button>
+        <Popover>
+          {#snippet trigger()}
+            <div class="editor__toolbarTrigger">
+              {textType}
+              <Icon Icon={IconSelector} size="1rem" color="var(--fgMuted)" />
+            </div>
+          {/snippet}
+          {#snippet content()}
+            <div class="editor__toolbarTextOptions">
+              <button
+                onclick={() => editor?.chain().focus().setParagraph().run()}
+                class:active={['editor__toolbarTextP', isParagraph && 'isActive']}
+              >
+                Normal
+              </button>
+              <button
+                onclick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                class={['editor__toolbarTextH3', isH3 && 'isActive']}
+              >
+                Medium
+              </button>
+              <button
+                onclick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                class={['editor__toolbarTextH2', isH2 && 'isActive']}
+              >
+                Large
+              </button>
+              <button
+                onclick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                class={['editor__toolbarTextH1', isH1 && 'isActive']}
+              >
+                Huge
+              </button>
+            </div>
+          {/snippet}
+        </Popover>
+      {/if}
+    </div>
+  {/if}
 
   <div class="editor__content">
     <div bind:this={element}></div>
@@ -425,7 +433,7 @@
     <div class="linkPopover__content">
       <div class="linkPopover__inputRow">
         <Input
-          bind:this={linkInputElement}
+          bind:element={linkInputElement}
           type="text"
           bind:value={currentLinkUrl}
           placeholder="https://"
