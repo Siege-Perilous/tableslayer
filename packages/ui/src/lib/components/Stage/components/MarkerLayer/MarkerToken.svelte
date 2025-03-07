@@ -13,6 +13,12 @@
     display: DisplayProps;
     strokeColor: string;
     strokeWidth: number;
+    shadowColor: string;
+    shadowBlur: number;
+    shadowOffset: {
+      x: number;
+      y: number;
+    };
     textColor: string;
     textStroke: number;
     textStrokeColor: string;
@@ -20,21 +26,34 @@
     isSelected: boolean;
   }
 
-  const { marker, grid, display, textColor, textStroke, textStrokeColor, textSize, strokeColor, strokeWidth }: Props =
-    $props();
+  const {
+    marker,
+    grid,
+    display,
+    textColor,
+    textStroke,
+    textStrokeColor,
+    textSize,
+    strokeColor,
+    strokeWidth,
+    shadowColor,
+    shadowBlur,
+    shadowOffset
+  }: Props = $props();
 
   const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
 
   // The size of the marker is 90% of the grid cell size
-  const sizeMultiplier = 0.9;
+  const sizeMultiplier = 0.7;
 
   const canvasSize = 1024;
 
   let markerCanvas = new OffscreenCanvas(canvasSize, canvasSize);
   let ctx = markerCanvas.getContext('2d')!;
+  ctx.globalCompositeOperation = 'source-over';
+
   let markerMaterial = new THREE.MeshBasicMaterial({
-    transparent: false,
-    alphaTest: 0.9,
+    transparent: true,
     opacity: 1.0
   });
   let imageTexture: THREE.Texture | null = $state(null);
@@ -67,11 +86,13 @@
       case MarkerShape.Circle:
         const radius = (size * sizeMultiplier) / 2;
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.closePath();
         break;
 
       case MarkerShape.Square:
         const squareSize = size * sizeMultiplier; // Adjust size to match circle's visual weight
         ctx.rect(centerX - squareSize / 2, centerY - squareSize / 2, squareSize, squareSize);
+        ctx.closePath();
         break;
 
       case MarkerShape.Triangle:
@@ -84,6 +105,10 @@
     }
 
     if (!clipOnly) {
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowOffsetX = shadowOffset.x;
+      ctx.shadowOffsetY = shadowOffset.y;
       ctx.fill();
       if (strokeWidth > 0) {
         ctx.stroke();
@@ -96,6 +121,12 @@
   // Create text for the marker
   function createText(centerX: number, centerY: number) {
     if (!marker.text) return;
+
+    // Reset shadow settings for text
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
 
     // Set text properties
     ctx.font = `bold ${textSize}px Arial`;
@@ -162,7 +193,7 @@
       }
     }
 
-    // Draw text if enabled
+    // // Draw text if enabled
     if (marker.text) {
       createText(centerX, centerY);
     }
@@ -182,7 +213,7 @@
 
 <T.Group position={[marker.position.x, marker.position.y, 0]} scale={[markerSize, markerSize, 1]}>
   <!-- Combined shape, stroke and text -->
-  <T.Mesh position={[0, 0, 0]} renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Overlay]}>
+  <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Main]}>
     <T.MeshBasicMaterial is={markerMaterial} />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>

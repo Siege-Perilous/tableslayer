@@ -179,7 +179,7 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry />
 </T.Mesh>
 
-<T.Mesh name="fogOfWar" {...meshProps}>
+<T.Mesh name="fogOfWar" {...meshProps} layers={[SceneLayer.Main]}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

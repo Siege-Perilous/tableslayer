@@ -47,30 +47,21 @@
   <List bind:value={props.marker.snapToGrid} label="Snap to Grid" options={{ Yes: true, No: false }} />
 
   <Folder title="Shape" expanded={true}>
-    <Color bind:value={props.marker.shape.strokeColor} label="Shape Stroke Color" />
-    <Slider bind:value={props.marker.shape.strokeWidth} label="Shape Stroke Width" min={0} max={64} step={1} />
+    <Color bind:value={props.marker.shape.strokeColor} label="Stroke Color" />
+    <Slider bind:value={props.marker.shape.strokeWidth} label="Stroke Width" min={0} max={64} step={1} />
+    <Color bind:value={props.marker.shape.shadowColor} label="Shadow Color" />
+    <Slider bind:value={props.marker.shape.shadowBlur} label="Shadow Blur" min={0} max={1000} step={1} />
+    <Slider bind:value={props.marker.shape.shadowOffset.x} label="Shadow Offset X" min={0} max={1000} step={1} />
+    <Slider bind:value={props.marker.shape.shadowOffset.y} label="Shadow Offset Y" min={0} max={1000} step={1} />
   </Folder>
 
   <Folder title="Text" expanded={true}>
-    <Color bind:value={props.marker.text.color} label="Text Color" />
-    <Slider bind:value={props.marker.text.size} label="Text Size" min={1} max={1000} step={1} />
-    <Slider bind:value={props.marker.text.strokeWidth} label="Text Stroke Width" min={0} max={1} step={0.1} />
-    <Color bind:value={props.marker.text.strokeColor} label="Text Stroke Color" />
+    <Color bind:value={props.marker.text.color} label="Color" />
+    <Slider bind:value={props.marker.text.size} label="Size" min={1} max={1000} step={1} />
+    <Color bind:value={props.marker.text.strokeColor} label="Stroke Color" />
+    <Slider bind:value={props.marker.text.strokeWidth} label="Stroke Width" min={0} max={1} step={0.1} />
   </Folder>
 
-  <Folder title="Selected Marker" expanded={true}>
-    {#if selectedMarker}
-      <Text bind:value={selectedMarker.id} label="Id" disabled={true} />
-      <List bind:value={selectedMarker.visibility} label="Visibility" options={visibilityOptions} />
-      <Text bind:value={selectedMarker.name} label="Name" />
-      <List bind:value={selectedMarker.size} label="Size" options={markerSizeOptions} />
-      <List bind:value={selectedMarker.shape} label="Shape" options={shapeOptions} />
-      <Color bind:value={selectedMarker.shapeColor} label="Shape Color" />
-      <Text bind:value={selectedMarker.text} label="Text" />
-      <List bind:value={selectedMarker.imageUrl} label="Image" options={imageOptions} />
-      <Slider bind:value={selectedMarker.imageScale} label="Image Scale" min={0.1} max={10} />
-    {/if}
-  </Folder>
   <Folder title="Markers" expanded={true}>
     {#each props.marker.markers as marker}
       <Folder title={marker.name} expanded={false}>

@@ -2,9 +2,6 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  MarkerShape,
-  MarkerSize,
-  MarkerVisibility,
   RainPreset,
   StageMode,
   ToolType,
@@ -109,7 +106,13 @@ export const StageDefaultProps: StageProps = {
     snapToGrid: true,
     shape: {
       strokeColor: '#000000',
-      strokeWidth: 0.5
+      strokeWidth: 0.5,
+      shadowColor: '#000000',
+      shadowBlur: 50,
+      shadowOffset: {
+        x: 20,
+        y: 20
+      }
     },
     text: {
       color: '#ffffff',
@@ -117,53 +120,7 @@ export const StageDefaultProps: StageProps = {
       size: 64,
       strokeWidth: 1
     },
-    markers: [
-      {
-        id: '1234-1292-1293-1293',
-        name: 'Marker 1',
-        size: MarkerSize.Small,
-        position: {
-          x: 0,
-          y: 0
-        },
-        shape: MarkerShape.Circle,
-        shapeColor: '#ff0000',
-        text: 'A1B',
-        imageScale: 1.0,
-        imageUrl: null,
-        visibility: MarkerVisibility.Always
-      },
-      {
-        id: '1234-1292-1293-1294',
-        name: 'Marker 2',
-        size: MarkerSize.Medium,
-        position: {
-          x: 400,
-          y: 0
-        },
-        shape: MarkerShape.Triangle,
-        shapeColor: '#00ff00',
-        text: 'C2D',
-        imageScale: 1.0,
-        imageUrl: null,
-        visibility: MarkerVisibility.DM
-      },
-      {
-        id: '1234-1232-2312-2312',
-        name: 'Marker 3',
-        position: {
-          x: 800,
-          y: 0
-        },
-        size: MarkerSize.Large,
-        shape: MarkerShape.Square,
-        shapeColor: '#0000ff',
-        text: 'E3F',
-        imageScale: 1.0,
-        imageUrl: null,
-        visibility: MarkerVisibility.Player
-      }
-    ]
+    markers: []
   },
   postProcessing: {
     enabled: true,

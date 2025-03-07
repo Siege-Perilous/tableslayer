@@ -10,6 +10,7 @@
   import { getGridCellSize, snapToGrid } from '../../helpers/grid';
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
+  import { SceneLayerOrder, SceneLayer } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -33,6 +34,7 @@
   function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
+    console.log('onMouseDown', coords);
     // Get coordinates in normalized 0-1 coordinates
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
@@ -85,6 +87,14 @@
     onMarkerMoved(selectedMarker, snapPosition);
   }
 
+  function isTokenVisible(marker: Marker) {
+    return (
+      marker.visibility === MarkerVisibility.Always ||
+      (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) ||
+      (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)
+    );
+  }
+
   function onMouseUp() {
     if (isDragging && selectedMarker) {
       isDragging = false;
@@ -102,15 +112,15 @@
 />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]}>
-  <T.MeshBasicMaterial visible={true} />
+<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]} layers={[SceneLayer.Input]}>
+  <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry />
 </T.Mesh>
 
 <!-- This group contains all the markers -->
 <T.Group name="markerLayer" position={[-0.5, -0.5, 0]}>
   {#each props.marker.markers as marker (marker.id)}
-    {#if marker.visibility === MarkerVisibility.Always || (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) || (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)}
+    {#if isTokenVisible(marker)}
       <MarkerToken
         {marker}
         {grid}
@@ -119,6 +129,9 @@
         textStroke={props.marker.text.strokeWidth}
         textStrokeColor={props.marker.text.strokeColor}
         textSize={props.marker.text.size}
+        shadowColor={props.marker.shape.shadowColor}
+        shadowBlur={props.marker.shape.shadowBlur}
+        shadowOffset={props.marker.shape.shadowOffset}
         strokeColor={props.marker.shape.strokeColor}
         strokeWidth={props.marker.shape.strokeWidth}
         isSelected={selectedMarker?.id === marker.id}

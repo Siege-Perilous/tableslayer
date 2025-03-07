@@ -52,6 +52,24 @@ export interface MarkerLayerProps {
      * The stroke width of the marker icons
      */
     strokeWidth: number;
+
+    /**
+     * The shadow color of the marker icons represented as a hex string (e.g. 0x60A3FE)
+     */
+    shadowColor: string;
+
+    /**
+     * The shadow blur of the marker icons
+     */
+    shadowBlur: number;
+
+    /**
+     * The shadow offset of the marker icons
+     */
+    shadowOffset: {
+      x: number;
+      y: number;
+    };
   };
 
   /**
