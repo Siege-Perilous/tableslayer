@@ -276,13 +276,16 @@
     .tiptap:focus-visible {
       outline: none;
     }
+    .editor__content p {
+      line-height: 1.5;
+    }
     .editor__content ul {
       list-style-type: disc;
-      margin-left: 1rem;
+      margin-left: 1.5rem;
     }
     .editor__content ol {
       list-style-type: decimal;
-      margin-left: 1rem;
+      margin-left: 1.5rem;
     }
     .editor__content h1,
     .editor__content h2,
