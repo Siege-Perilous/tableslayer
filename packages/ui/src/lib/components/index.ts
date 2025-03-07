@@ -5,6 +5,7 @@ export * from './CodeBlock';
 export * from './ColorMode';
 export * from './ColorPicker';
 export * from './ContextMenu';
+export * from './Editor';
 export * from './Hr';
 export * from './Icon';
 export * from './Input';

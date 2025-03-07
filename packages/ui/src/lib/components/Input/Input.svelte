@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { InputProps } from './types';
-  let { value = $bindable(), variant = 'default', hideAutocomplete, ...restProps }: InputProps = $props();
+  let {
+    value = $bindable(),
+    element = $bindable(),
+    variant = 'default',
+    hideAutocomplete,
+    ...restProps
+  }: InputProps = $props();
 
   const inputClasses = $derived(['input', variant && `input--${variant}`, restProps.class ?? '']);
   let autoCompleteOffAttrs = hideAutocomplete
@@ -12,7 +18,7 @@
     : {};
 </script>
 
-<input bind:value {...restProps} {...autoCompleteOffAttrs} class={inputClasses} />
+<input bind:this={element} bind:value {...restProps} {...autoCompleteOffAttrs} class={inputClasses} />
 
 <style>
   .input {
