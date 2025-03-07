@@ -72,6 +72,9 @@ importers:
       '@threlte/extras':
         specifier: 9.0.1
         version: 9.0.1(@types/three@0.174.0)(svelte@5.20.5)(three@0.174.0)
+      '@tiptap/core':
+        specifier: ^2.11.5
+        version: 2.11.5(@tiptap/pm@2.11.5)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -289,6 +292,9 @@ importers:
       '@threlte/extras':
         specifier: 9.0.1
         version: 9.0.1(@types/three@0.174.0)(svelte@5.20.5)(three@0.174.0)
+      '@tiptap/core':
+        specifier: ^2.11.5
+        version: 2.11.5(@tiptap/pm@2.11.5)
       '@tiptap/extension-link':
         specifier: ^2.11.5
         version: 2.11.5(@tiptap/core@2.11.5(@tiptap/pm@2.11.5))(@tiptap/pm@2.11.5)
@@ -344,9 +350,6 @@ importers:
       '@tableslayer/tsconfig':
         specifier: workspace:*
         version: link:../config-typescript
-      '@tiptap/core':
-        specifier: ^2.11.5
-        version: 2.11.5(@tiptap/pm@2.11.5)
       '@types/chroma-js':
         specifier: ^3.1.1
         version: 3.1.1
