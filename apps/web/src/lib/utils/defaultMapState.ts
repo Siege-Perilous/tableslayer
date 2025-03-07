@@ -2,8 +2,8 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  PingEditMode,
   SceneRotation,
+  StageMode,
   ToolType,
   WeatherType,
   type StageProps
@@ -11,6 +11,7 @@ import {
 import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {
+  mode: StageMode.DM,
   activeLayer: MapLayerType.None,
   debug: {
     enableStats: false,
@@ -98,16 +99,23 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0,
     url: 'https://files.tableslayer.com/maps/01.jpeg'
   },
-  ping: {
-    color: '#ff0000',
-    editMode: PingEditMode.Add,
-    locations: [],
-    markerSize: 70,
-    opacity: 1.0,
-    pulseAmplitude: 0.2,
-    pulseSpeed: 3.0,
-    sharpness: 0.95,
-    thickness: 0.1
+  marker: {
+    visible: true,
+    snapToGrid: true,
+    shape: {
+      strokeColor: '#000000',
+      strokeWidth: 0.5,
+      shadowColor: '#000000',
+      shadowBlur: 10,
+      shadowOffset: { x: 0, y: 0 }
+    },
+    text: {
+      color: '#ffffff',
+      strokeColor: '#000000',
+      size: 64,
+      strokeWidth: 1
+    },
+    markers: []
   },
   postProcessing: {
     enabled: true,

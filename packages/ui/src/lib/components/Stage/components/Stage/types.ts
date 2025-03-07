@@ -3,7 +3,7 @@ import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
-import type { PingLayerProps } from '../PingLayer/types';
+import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
 import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
@@ -11,7 +11,15 @@ export interface Callbacks {
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-  onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+  onMarkerAdded: (marker: Marker) => void;
+  onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
+  onMarkerSelected: (marker: Marker) => void;
+  onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
+}
+
+export enum StageMode {
+  DM = 0,
+  Player = 1
 }
 
 export interface DisplayProps {
@@ -39,6 +47,7 @@ export interface DisplayProps {
  * Properties for the Stage component
  */
 export type StageProps = {
+  mode: StageMode;
   activeLayer: MapLayerType;
   backgroundColor: string;
   debug: {
@@ -51,7 +60,7 @@ export type StageProps = {
   fogOfWar: FogOfWarLayerProps;
   grid: GridLayerProps;
   map: MapLayerProps;
-  ping: PingLayerProps;
+  marker: MarkerLayerProps;
   postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;

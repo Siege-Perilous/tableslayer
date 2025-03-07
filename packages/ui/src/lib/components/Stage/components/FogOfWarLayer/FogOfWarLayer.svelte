@@ -77,18 +77,16 @@
 
   function onMouseDown(e: Event, p: THREE.Vector2 | null) {
     e.preventDefault();
-    lastPos = flipY(p);
+    lastPos = p;
     drawing = true;
     draw(e, p);
   }
 
   function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
-    const coords = flipY(p);
-
     // If using shapes, draw the shape outline when the mouse button is released
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
-      if (coords && drawing) {
-        material?.drawPath(coords, lastPos, true);
+      if (p && drawing) {
+        material?.drawPath(p, lastPos, true);
         outlineMaterial.visible = false;
       }
     }
@@ -108,35 +106,27 @@
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
-    // Flip the y-coordinate to match the canvas coordinate system
-    const coords = flipY(p);
-
     // If the mouse is not within the drawing area, do nothing
-    if (!coords) return;
+    if (!p) return;
 
-    outlineMaterial.uniforms.uStart.value.copy(coords);
-    outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? coords);
+    outlineMaterial.uniforms.uStart.value.copy(p);
+    outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? p);
 
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
       // When using shapes, draw the shape outline while the mouse button is held down
       if (drawing) {
         outlineMaterial.visible = true;
-        material?.drawPath(coords, lastPos);
+        material?.drawPath(p, lastPos);
       }
     } else {
       // If this is the first time the mouse has moved, set the last position to the current position
       if (!lastPos) {
-        lastPos = coords.clone();
+        lastPos = p.clone();
       }
       outlineMaterial.visible = true;
-      material?.drawPath(coords, lastPos, drawing);
-      lastPos = coords.clone();
+      material?.drawPath(p, lastPos, drawing);
+      lastPos = p.clone();
     }
-  }
-
-  function flipY(p: THREE.Vector2 | null): THREE.Vector2 | null {
-    if (!p || !mapSize) return null;
-    return new THREE.Vector2(p.x, mapSize.height - p.y);
   }
 
   /**
@@ -189,7 +179,7 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry />
 </T.Mesh>
 
-<T.Mesh name="fogOfWar" {...meshProps}>
+<T.Mesh name="fogOfWar" {...meshProps} layers={[SceneLayer.Main]}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} />
   <T.PlaneGeometry />
 </T.Mesh>

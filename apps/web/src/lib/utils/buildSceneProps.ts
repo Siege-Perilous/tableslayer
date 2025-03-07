@@ -6,9 +6,9 @@ import {
   DrawMode,
   type GridType,
   MapLayerType,
-  PingEditMode,
   RainPreset,
   SceneRotation,
+  StageMode,
   type StageProps,
   ToolType
 } from '@tableslayer/ui';
@@ -22,6 +22,7 @@ export const buildSceneProps = (
   const thumbUrl =
     hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
   return {
+    mode: StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
     debug: {
@@ -118,6 +119,24 @@ export const buildSceneProps = (
       zoom: activeScene.mapZoom,
       url: thumbUrl
     },
+    marker: {
+      visible: true,
+      snapToGrid: true,
+      shape: {
+        strokeColor: '#000000',
+        strokeWidth: 0.5,
+        shadowColor: '#000000',
+        shadowBlur: 10,
+        shadowOffset: { x: 0, y: 0 }
+      },
+      text: {
+        color: '#ffffff',
+        strokeColor: '#000000',
+        size: 64,
+        strokeWidth: 1
+      },
+      markers: []
+    },
     postProcessing: {
       enabled: true,
       bloom: {
@@ -154,17 +173,6 @@ export const buildSceneProps = (
       },
       rotation: mode === 'editor' ? activeScene.sceneRotation : SceneRotation.Deg0,
       zoom: 1
-    },
-    ping: {
-      color: '#ff0000',
-      editMode: PingEditMode.Add,
-      locations: [],
-      markerSize: 70,
-      opacity: 1.0,
-      pulseAmplitude: 0.2,
-      pulseSpeed: 3.0,
-      sharpness: 0.95,
-      thickness: 0.1
     },
     weather: {
       type: activeScene.weatherType,

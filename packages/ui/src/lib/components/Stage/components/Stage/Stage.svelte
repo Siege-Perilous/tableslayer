@@ -5,20 +5,49 @@
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
   import { PerfMonitor } from '@threlte/extras';
+  import type { Marker } from '../MarkerLayer/types';
 
   interface Props {
     props: StageProps;
     onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
-    onPingsUpdated: (updatedLocations: { x: number; y: number }[]) => void;
+    onMarkerAdded: (marker: Marker) => void;
+    onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
+    onMarkerSelected: (marker: Marker) => void;
+    onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
   }
 
-  let { props, onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated }: Props = $props();
+  let {
+    props,
+    onFogUpdate,
+    onMapUpdate,
+    onSceneUpdate,
+    onMarkerAdded,
+    onMarkerMoved,
+    onMarkerSelected,
+    onMarkerContextMenu
+  }: Props = $props();
 
   let sceneRef: SceneExports;
 
-  setContext('callbacks', { onFogUpdate, onMapUpdate, onSceneUpdate, onPingsUpdated });
+  // Store game mode as reactive state which can be referenced by other components
+  let stageContext = $state({ mode: props.mode });
+  setContext('stage', stageContext);
+
+  $effect(() => {
+    stageContext.mode = props.mode;
+  });
+
+  setContext('callbacks', {
+    onFogUpdate,
+    onMapUpdate,
+    onSceneUpdate,
+    onMarkerAdded,
+    onMarkerMoved,
+    onMarkerSelected,
+    onMarkerContextMenu
+  });
 
   export const map = {
     fill: () => sceneRef.map.fill(),

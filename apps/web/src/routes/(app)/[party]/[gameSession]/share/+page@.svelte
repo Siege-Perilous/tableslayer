@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
-  import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate } from '$lib/utils';
 
   type CursorData = {
@@ -19,6 +19,7 @@
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
+  let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
@@ -159,8 +160,31 @@
     return;
   }
 
-  function onPingsUpdated(updatedLocations: { x: number; y: number }[]) {
-    stageProps.ping.locations = updatedLocations;
+  function onMarkerAdded(marker: Marker) {
+    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    selectedMarker = marker;
+  }
+
+  function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
+    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
+    if (index !== -1) {
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
+    }
+  }
+
+  const onMarkerSelected = (marker: Marker) => {
+    selectedMarker = marker;
+  };
+
+  function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
+    if (event instanceof MouseEvent) {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+    } else {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
   }
 
   $effect(() => {
@@ -193,6 +217,12 @@
 
 <svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
 
+{#if selectedMarker}
+  <span style="display: none;">
+    {selectedMarker.name} - {selectedMarker.id}
+  </span>
+{/if}
+
 {#if gameIsPaused}
   <div class="paused">
     <div>
@@ -206,7 +236,17 @@
   </div>
 {/if}
 <div class={stageClasses} bind:this={stageElement}>
-  <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onSceneUpdate} {onMapUpdate} {onPingsUpdated} />
+  <Stage
+    bind:this={stage}
+    props={stageProps}
+    {onFogUpdate}
+    {onSceneUpdate}
+    {onMapUpdate}
+    {onMarkerAdded}
+    {onMarkerMoved}
+    {onMarkerSelected}
+    {onMarkerContextMenu}
+  />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
     <div

@@ -16,11 +16,11 @@ export enum SceneLayer {
 export enum SceneLayerOrder {
   Background = 0,
   Map = 10,
+  Marker = 15,
   Fog = 20,
   Weather = 30,
   FogOfWar = 40,
   Grid = 50,
-  Ping = 60,
   EdgeOverlay = 70
 }
 

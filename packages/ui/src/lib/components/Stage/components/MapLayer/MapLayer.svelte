@@ -6,7 +6,6 @@
   import type { Size } from '../../types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
-  import PingLayer from '../PingLayer/PingLayer.svelte';
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
@@ -134,13 +133,5 @@
     {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.FogOfWar}
-  />
-
-  <PingLayer
-    props={props.ping}
-    isActive={props.activeLayer === MapLayerType.Ping}
-    {mapSize}
-    layers={[SceneLayer.Main]}
-    renderOrder={SceneLayerOrder.Ping}
   />
 </T.Object3D>

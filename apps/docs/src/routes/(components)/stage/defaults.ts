@@ -2,17 +2,18 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
-  PingEditMode,
   RainPreset,
+  StageMode,
   ToolType,
   WeatherType,
   type StageProps
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
-import frostImageUrl from './overlays/frost.png?url';
+import frostImageUrl from './components/overlays/frost.png?url';
 
 export const StageDefaultProps: StageProps = {
+  mode: StageMode.DM,
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
   debug: {
@@ -100,16 +101,26 @@ export const StageDefaultProps: StageProps = {
     zoom: 1.0,
     url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
-  ping: {
-    color: '#ff0000',
-    editMode: PingEditMode.Add,
-    locations: [],
-    markerSize: 70,
-    opacity: 1.0,
-    pulseAmplitude: 0.2,
-    pulseSpeed: 3.0,
-    sharpness: 0.95,
-    thickness: 0.1
+  marker: {
+    visible: true,
+    snapToGrid: true,
+    shape: {
+      strokeColor: '#000000',
+      strokeWidth: 0.5,
+      shadowColor: '#000000',
+      shadowBlur: 50,
+      shadowOffset: {
+        x: 20,
+        y: 20
+      }
+    },
+    text: {
+      color: '#ffffff',
+      strokeColor: '#000000',
+      size: 64,
+      strokeWidth: 1
+    },
+    markers: []
   },
   postProcessing: {
     enabled: true,
