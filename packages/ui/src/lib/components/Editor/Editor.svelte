@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { Editor } from '@tiptap/core';
+  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { Editor, type JSONContent } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { Link } from '@tiptap/extension-link';
   import {
@@ -15,8 +15,26 @@
   import { Icon } from '../Icon';
   import { Popover } from '../Popover';
 
+  const dispatch = createEventDispatcher();
+
+  let {
+    height = 'auto',
+    content = $bindable('<p>Hello, world!</p>'),
+    debug = false
+  }: {
+    height: number | string;
+    content?: string | JSONContent;
+    debug?: boolean;
+  } = $props();
+
   let element: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
+  let editorReady = $state(false);
+
+  const isJsonContent = typeof content === 'object';
+
+  // For HTML mode, track the HTML content
+  let editorHtml = $state(isJsonContent ? '' : (content as string));
 
   // Create explicit state variables for each button's active state
   let isBold = $state(false);
@@ -58,11 +76,23 @@
     editor = new Editor({
       element: element,
       extensions: [StarterKit, Link],
-      content: '<p>Hello World! 🌍️ </p>',
+      content: content, // Pass content directly - TipTap handles both HTML and JSON
       onSelectionUpdate: () => {
         updateActiveStates();
       },
-      onUpdate: () => {
+      onUpdate: ({ editor }) => {
+        // Update content based on its original type
+        if (isJsonContent) {
+          // For JSON content, get the JSON representation
+          const newJson = editor.getJSON();
+          content = newJson;
+          dispatch('update', newJson);
+        } else {
+          // For HTML content, get the HTML representation
+          editorHtml = editor.getHTML();
+          content = editorHtml;
+          dispatch('update', editorHtml);
+        }
         updateActiveStates();
       },
       onTransaction: () => {
@@ -70,7 +100,7 @@
       }
     });
 
-    // Initialize states
+    editorReady = true;
     updateActiveStates();
   });
 
@@ -104,13 +134,11 @@
       console.error(e);
     }
   };
-
-  $inspect(textType);
 </script>
 
-<div class="editor">
-  {#if editor}
-    <div class="editor__toolbar">
+<div class="editor" style={`height: ${height}; max-height: ${height}`}>
+  <div class="editor__toolbar">
+    {#if editor}
       <button onclick={() => editor?.chain().focus().toggleBold().run()} class={['editor__btn', isBold && 'isActive']}>
         <Icon Icon={IconBold} size="20px" stroke={2} />
       </button>
@@ -177,21 +205,39 @@
           </div>
         {/snippet}
       </Popover>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   <div class="editor__content">
     <div bind:this={element}></div>
   </div>
+
+  {#if debug}
+    <div class="editor__state">
+      <h4>Editor Status: {editorReady ? 'Ready' : 'Loading...'}</h4>
+      <h4>Content Type: {isJsonContent ? 'JSON' : 'HTML'}</h4>
+      {#if isJsonContent}
+        <pre>{JSON.stringify(content, null, 2)}</pre>
+      {:else}
+        <pre>{editorHtml}</pre>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
   .editor {
+    position: relative;
     width: 100%;
     border: var(--borderThin);
     border-radius: var(--radius-2);
+    overflow-y: auto;
   }
   .editor__toolbar {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg);
+    z-index: 2;
     display: flex;
     gap: 0.25rem;
     padding: 0.5rem 0.5rem;
@@ -200,7 +246,22 @@
     padding: 1rem;
     position: relative;
   }
-
+  .editor__state {
+    padding: 1rem;
+    border-top: var(--borderThin);
+    background-color: var(--contrastLow);
+    font-size: 0.85rem;
+  }
+  .editor__state pre {
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: var(--contrastMedium);
+    padding: 0.5rem;
+    border-radius: var(--radius-2);
+  }
+  .editor__export-btn {
+    margin-left: auto;
+  }
   .editor__btn {
     border: solid 2px transparent;
     border-radius: var(--radius-2);
