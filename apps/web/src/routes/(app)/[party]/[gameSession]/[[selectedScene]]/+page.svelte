@@ -2,7 +2,7 @@
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
   import { handleMutation } from '$lib/factories';
-  import { Stage, type StageExports, type StageProps, MapLayerType, Icon } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
@@ -26,6 +26,7 @@
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
+  let selectedMarker: Marker | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -201,9 +202,23 @@
     socketUpdate();
   };
 
-  const onPingsUpdated = (updatedLocations: { x: number; y: number }[]) => {
-    stageProps.ping.locations = updatedLocations;
-    socketUpdate();
+  const onMarkerAdded = (marker: Marker) => {
+    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    selectedMarker = marker;
+  };
+
+  const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
+    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
+    if (index !== -1) {
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
+    }
+  };
+
+  const onMarkerSelected = (marker: Marker) => {
+    selectedMarker = marker;
   };
 
   /**
@@ -429,7 +444,16 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
-          <Stage bind:this={stage} props={stageProps} {onFogUpdate} {onMapUpdate} {onSceneUpdate} {onPingsUpdated} />
+          <Stage
+            bind:this={stage}
+            props={stageProps}
+            {onFogUpdate}
+            {onMapUpdate}
+            {onSceneUpdate}
+            {onMarkerAdded}
+            {onMarkerMoved}
+            {onMarkerSelected}
+          />
         </div>
         <SceneControls
           bind:stageProps
