@@ -10,13 +10,12 @@
     IconItalic,
     IconLink,
     IconSelector,
-    IconQuoteFilled,
-    IconExternalLink,
-    IconPencil,
-    IconTrash
+    IconQuoteFilled
   } from '@tabler/icons-svelte';
   import { Icon } from '../Icon';
   import { Popover } from '../Popover';
+  import { Button } from '../Button';
+  import { Input } from '../Input';
   import { computePosition, autoUpdate, offset, shift, flip } from '@floating-ui/dom';
 
   let {
@@ -425,7 +424,7 @@
   <div bind:this={linkPopoverElement} class="linkPopover" class:linkPopover--visible={linkPopoverVisible}>
     <div class="linkPopover__content">
       <div class="linkPopover__inputRow">
-        <input
+        <Input
           bind:this={linkInputElement}
           type="text"
           bind:value={currentLinkUrl}
@@ -433,21 +432,11 @@
           class="linkPopover__input"
           onkeydown={handleLinkInputKeydown}
         />
-        <button class="linkPopover__saveBtn" onclick={addOrUpdateLink}>Save</button>
+        <Button onclick={addOrUpdateLink}>Save</Button>
       </div>
       <div class="linkPopover__actions">
-        <button onclick={visitLink} class="linkPopover__actionBtn">
-          <Icon Icon={IconExternalLink} size="16px" />
-          <span>Go to link</span>
-        </button>
-        <button onclick={addOrUpdateLink} class="linkPopover__actionBtn">
-          <Icon Icon={IconPencil} size="16px" />
-          <span>Change</span>
-        </button>
-        <button onclick={removeLink} class="linkPopover__actionBtn">
-          <Icon Icon={IconTrash} size="16px" />
-          <span>Remove</span>
-        </button>
+        <Button onclick={visitLink}>Go to link</Button>
+        <Button variant="danger" onclick={removeLink}>Remove</Button>
       </div>
     </div>
   </div>
@@ -528,10 +517,11 @@
     display: block;
   }
   .linkPopover__content {
+    box-shadow: var(--shadow-1);
     background-color: var(--bg);
     border: var(--borderThin);
     border-radius: var(--radius-2);
-    padding: 0.75rem;
+    padding: 0.5rem;
     width: 280px;
   }
   .linkPopover__content::before {
@@ -550,44 +540,6 @@
     gap: 0.5rem;
     margin-bottom: 0.75rem;
   }
-  .linkPopover__input {
-    flex: 1;
-    padding: 0.5rem;
-    border: var(--borderThin);
-    border-radius: var(--radius-2);
-    font-size: 0.875rem;
-  }
-  .linkPopover__saveBtn {
-    padding: 0.5rem 0.75rem;
-    background-color: var(--contrastLow);
-    border: var(--borderThin);
-    border-radius: var(--radius-2);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-  .linkPopover__saveBtn:hover {
-    background-color: var(--contrastMedium);
-  }
-  .linkPopover__actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .linkPopover__actionBtn {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex: 1;
-    padding: 0.5rem;
-    background-color: var(--contrastLow);
-    border: var(--borderThin);
-    border-radius: var(--radius-2);
-    font-size: 0.75rem;
-    cursor: pointer;
-  }
-  .linkPopover__actionBtn:hover {
-    background-color: var(--contrastMedium);
-  }
-
   :global {
     .tiptap:focus-visible {
       outline: none;
