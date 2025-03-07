@@ -104,7 +104,10 @@ export const StageDefaultProps: StageProps = {
     snapToGrid: true,
     shape: {
       strokeColor: '#000000',
-      strokeWidth: 0.5
+      strokeWidth: 0.5,
+      shadowColor: '#000000',
+      shadowBlur: 10,
+      shadowOffset: { x: 0, y: 0 }
     },
     text: {
       color: '#ffffff',

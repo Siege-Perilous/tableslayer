@@ -10,7 +10,7 @@
   import { getGridCellSize, snapToGrid } from '../../helpers/grid';
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
-  import { SceneLayerOrder, SceneLayer } from '../Scene/types';
+  import { SceneLayer } from '../Scene/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
