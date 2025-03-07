@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Editor, CodeBlock } from '@tableslayer/ui';
+  import { Editor } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import type { JSONContent } from '@tiptap/core';
 
   // Define the content as JSONContent
-  let content: JSONContent = {
+  let content: JSONContent = $state({
     type: 'doc',
     content: [
       {
@@ -174,13 +174,9 @@
         ]
       }
     ]
-  };
-
-  function handleUpdate(event) {
-    content = event.detail;
-  }
+  });
 </script>
 
 <Example title="Editor" propsName="Editor" layout="column">
-  <Editor {content} height="300px" on:update={handleUpdate} />
+  <Editor bind:content height="300px" />
 </Example>

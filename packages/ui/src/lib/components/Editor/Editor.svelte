@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { Editor, type JSONContent } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { Link } from '@tiptap/extension-link';
@@ -14,8 +14,6 @@
   } from '@tabler/icons-svelte';
   import { Icon } from '../Icon';
   import { Popover } from '../Popover';
-
-  const dispatch = createEventDispatcher();
 
   let {
     height = 'auto',
@@ -86,12 +84,10 @@
           // For JSON content, get the JSON representation
           const newJson = editor.getJSON();
           content = newJson;
-          dispatch('update', newJson);
         } else {
           // For HTML content, get the HTML representation
           editorHtml = editor.getHTML();
           content = editorHtml;
-          dispatch('update', editorHtml);
         }
         updateActiveStates();
       },
@@ -258,9 +254,6 @@
     background-color: var(--contrastMedium);
     padding: 0.5rem;
     border-radius: var(--radius-2);
-  }
-  .editor__export-btn {
-    margin-left: auto;
   }
   .editor__btn {
     border: solid 2px transparent;
