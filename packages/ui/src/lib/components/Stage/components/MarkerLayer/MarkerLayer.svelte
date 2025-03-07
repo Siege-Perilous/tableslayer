@@ -30,16 +30,22 @@
   function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
+    // Get coordinates in normalized 0-1 coordinates
+    const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
+
     // Find the marker that is closest to the mouse down point. The test point
     // must be within the outer radius of the marker for it to be considered
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
+    console.log('--------------------------------');
+
+    console.log('Grid Coords: ', gridCoords.x.toFixed(2), gridCoords.y.toFixed(2));
+
     props.marker.markers.forEach((marker) => {
-      const markerCoords = new THREE.Vector2(
-        marker.position.x * display.resolution.x,
-        marker.position.y * display.resolution.y
+      const distance = gridCoords.distanceTo(marker.position);
+      console.log(
+        `${marker.name} - ${marker.position.x.toFixed(2)}, ${marker.position.y.toFixed(2)} - Distance: ${distance}`
       );
-      const distance = coords.distanceTo(markerCoords);
       if (distance < minDistance && distance <= props.marker.size / 2) {
         minDistance = distance;
         closestMarker = marker;
@@ -48,19 +54,17 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
+      console.log('Selected Marker: ', closestMarker.name);
       selectedMarker = closestMarker;
       onMarkerSelected(selectedMarker);
       isDragging = true;
       return;
     }
 
-    // Otherwise add a new marker
-    const location = { x: coords.x / display.resolution.x, y: coords.y / display.resolution.y };
-
     const newMarker: Marker = {
       id: crypto.randomUUID(),
       name: 'New Marker',
-      position: location,
+      position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
       shape: MarkerShape.Circle,
       shapeColor: '#ffffff',
       imageScale: 1.0,
@@ -77,9 +81,10 @@
     if (!isDragging || !selectedMarker || !coords) return;
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
+    const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
 
     // Update the selected marker's position
-    onMarkerMoved(selectedMarker, props.marker.snapToGrid ? snapToGrid(position, grid, display) : position);
+    onMarkerMoved(selectedMarker, snapPosition);
   }
 
   function onMouseUp() {

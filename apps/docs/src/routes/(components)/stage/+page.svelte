@@ -27,7 +27,6 @@
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
-  let selectedMarker: Marker | null = $state(null);
 
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -113,19 +112,21 @@
 
   function onMarkerAdded(marker: Marker) {
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
-    selectedMarker = marker;
+    //selectedMarker = marker;
   }
 
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
-      stageProps.marker.markers[index].position.x = position.x;
-      stageProps.marker.markers[index].position.y = position.y;
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
     }
   }
 
   function onMarkerSelected(marker: Marker) {
-    selectedMarker = marker;
+    //selectedMarker = marker;
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -198,7 +199,7 @@
   <FogOfWarControls bind:props={stageProps} {stage} />
   <GridControls bind:props={stageProps} />
   <MapControls bind:props={stageProps} {stage} />
-  <MarkerControls bind:props={stageProps} bind:selectedMarker />
+  <MarkerControls bind:props={stageProps} />
   <PostProcessingControls bind:props={stageProps} />
   <SceneControls bind:props={stageProps} {stage} />
   <WeatherControls bind:props={stageProps} />

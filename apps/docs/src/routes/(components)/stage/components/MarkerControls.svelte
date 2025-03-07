@@ -8,9 +8,8 @@
   import imgGnome from './tokens/gnome.png';
   import imgWitch from './tokens/witch.png';
 
-  let { props = $bindable(), selectedMarker = $bindable() } = $props<{
+  let { props = $bindable() } = $props<{
     props: StageProps;
-    selectedMarker: Marker | null;
   }>();
 
   // Define available shape options
@@ -47,7 +46,7 @@
   </Folder>
 
   <Folder title="Selected Marker" expanded={true}>
-    {#if selectedMarker}
+    <!-- {#if selectedMarker}
       <Text bind:value={selectedMarker.id} label="Id" disabled={true} />
       <Text bind:value={selectedMarker.name} label="Name" />
       <List bind:value={selectedMarker.shape} label="Shape" options={shapeOptions} />
@@ -55,10 +54,10 @@
       <Text bind:value={selectedMarker.text} label="Text" />
       <List bind:value={selectedMarker.imageUrl} label="Image" options={imageOptions} />
       <Slider bind:value={selectedMarker.imageScale} label="Image Scale" min={0.1} max={10} />
-    {/if}
+    {/if} -->
   </Folder>
   <Folder title="Markers" expanded={true}>
-    {#each props.marker.markers as marker}
+    <!-- {#each props.marker.markers as marker}
       <Folder title={marker.name} expanded={false}>
         <Text bind:value={marker.id} label="Id" disabled={true} />
         <Text bind:value={marker.name} label="Name" />
@@ -68,6 +67,6 @@
         <List bind:value={marker.imageUrl} label="Image" options={imageOptions} />
         <Slider bind:value={marker.imageScale} label="Image Scale" min={0.1} max={10} />
       </Folder>
-    {/each}
+    {/each} -->
   </Folder>
 </Folder>

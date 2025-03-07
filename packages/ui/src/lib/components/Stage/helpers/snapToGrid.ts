@@ -25,13 +25,7 @@ function snapToSquareGrid(position: THREE.Vector2, spacing: THREE.Vector2): THRE
  * @param spacing Grid spacing in pixels
  * @returns The distance to the nearest center and the center
  */
-function distanceToHexCenter(
-  position: THREE.Vector2,
-  spacing: THREE.Vector2
-): {
-  d: number;
-  center: THREE.Vector2;
-} {
+function distanceToHexCenter(position: THREE.Vector2, spacing: THREE.Vector2): THREE.Vector2 {
   // This function finds the nearest center in a hexagonal grid. The centers of a
   // hexagonal grid can be represented by two offset square grids. The two grids
   // are offset by half the grid spacing in the x direction and sqrt(3)/2 times
@@ -120,7 +114,7 @@ function distanceToHexCenter(
   // Find the closest point
   const closest = distances.reduce((prev, curr) => (curr.d < prev.d ? curr : prev));
 
-  return { d: closest.d, center: closest.point };
+  return closest.point;
 }
 
 /**
@@ -157,16 +151,8 @@ export function snapToGrid(position: THREE.Vector2, grid: GridLayerProps, displa
   const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
 
   if (grid.gridType === GridType.Square) {
-    // Compute the position of the point relative to the grid origin
-    const gridPosition = new THREE.Vector2(position.x - gridOriginPixels.x, position.y - gridOriginPixels.y);
-
-    // Snap to grid
-    // For square grids, snap to half the grid spacing
-    // For hexagonal grids, snap to the grid spacing and center of hex
-    return snapToSquareGrid(gridPosition, halfSpacing);
+    return snapToSquareGrid(position, halfSpacing);
   } else {
-    const hex = distanceToHexCenter(position, gridSpacingPixels);
-
-    return hex.center;
+    return distanceToHexCenter(position, gridSpacingPixels);
   }
 }
