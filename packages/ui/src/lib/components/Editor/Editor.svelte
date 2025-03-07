@@ -10,10 +10,14 @@
     IconItalic,
     IconLink,
     IconSelector,
-    IconQuoteFilled
+    IconQuoteFilled,
+    IconExternalLink,
+    IconPencil,
+    IconTrash
   } from '@tabler/icons-svelte';
   import { Icon } from '../Icon';
   import { Popover } from '../Popover';
+  import { computePosition, autoUpdate, offset, shift, flip } from '@floating-ui/dom';
 
   let {
     height = 'auto',
@@ -46,6 +50,14 @@
   let isOrderedList = $state(false);
   let isBlockquote = $state(false);
 
+  // Link popover state
+  let linkPopoverVisible = $state(false);
+  let linkPopoverElement: HTMLDivElement | undefined = $state();
+  let linkInputElement: HTMLInputElement | undefined = $state();
+  let currentLinkElement: HTMLAnchorElement | null = $state(null);
+  let currentLinkUrl = $state('');
+  let cleanupAutoUpdate: (() => void) | undefined;
+
   const textType = $derived.by(() => {
     if (isH1) return 'Huge';
     if (isH2) return 'Large';
@@ -73,7 +85,12 @@
   onMount(() => {
     editor = new Editor({
       element: element,
-      extensions: [StarterKit, Link],
+      extensions: [
+        StarterKit,
+        Link.configure({
+          openOnClick: false // Prevent default link opening behavior
+        })
+      ],
       content: content, // Pass content directly - TipTap handles both HTML and JSON
       onSelectionUpdate: () => {
         updateActiveStates();
@@ -96,6 +113,11 @@
       }
     });
 
+    // Add click handler to the editor content
+    if (element) {
+      element.addEventListener('click', handleEditorClick);
+    }
+
     editorReady = true;
     updateActiveStates();
   });
@@ -104,33 +126,224 @@
     if (editor) {
       editor.destroy();
     }
+
+    // Clean up event listeners
+    if (element) {
+      element.removeEventListener('click', handleEditorClick);
+    }
+
+    // Clean up floating UI positioning if active
+    if (cleanupAutoUpdate) {
+      cleanupAutoUpdate();
+    }
   });
 
-  const setLink = () => {
+  function handleEditorClick(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    const linkElement = target.closest('a');
+
+    // Close any open popovers first
+    hideLinkPopover();
+
+    // If clicked on a link, show the popover
+    if (linkElement) {
+      e.preventDefault(); // Prevent default link behavior
+      currentLinkElement = linkElement;
+      currentLinkUrl = linkElement.getAttribute('href') || '';
+      showLinkPopover(linkElement);
+    }
+  }
+
+  // This function is used by the <svelte:document> event handler
+  function handleDocumentClick(e: MouseEvent) {
+    // Only close if clicking outside the popover and link
+    if (linkPopoverVisible) {
+      const target = e.target as HTMLElement;
+      if (
+        linkPopoverElement &&
+        !linkPopoverElement.contains(target) &&
+        currentLinkElement !== target &&
+        !currentLinkElement?.contains(target) &&
+        !target.closest('.editor__btn') // Don't close when clicking toolbar buttons
+      ) {
+        hideLinkPopover();
+      }
+    }
+  }
+
+  function getSelectionCoordinates(): { left: number; bottom: number } | null {
+    if (!editor) return null;
+
+    const view = editor.view;
+    const { from, to } = view.state.selection;
+
+    if (from === to) return null; // No selection
+
+    // Get the DOM range for the current selection
+    const start = view.coordsAtPos(from);
+    const end = view.coordsAtPos(to);
+
+    return {
+      left: (start.left + end.left) / 2,
+      bottom: Math.max(start.bottom, end.bottom)
+    };
+  }
+
+  function showLinkPopover(anchorElement: HTMLElement) {
+    if (!linkPopoverElement) return;
+
+    linkPopoverVisible = true;
+
+    // Position the popover using Floating UI
+    if (cleanupAutoUpdate) {
+      cleanupAutoUpdate();
+    }
+
+    cleanupAutoUpdate = autoUpdate(anchorElement, linkPopoverElement, () => {
+      computePosition(anchorElement, linkPopoverElement!, {
+        placement: 'bottom',
+        middleware: [offset(8), shift(), flip()]
+      }).then(({ x, y }) => {
+        if (linkPopoverElement) {
+          Object.assign(linkPopoverElement.style, {
+            left: `${x}px`,
+            top: `${y}px`
+          });
+        }
+      });
+    });
+
+    // Focus the input field if we're editing
+    setTimeout(() => {
+      if (linkInputElement) {
+        linkInputElement.focus();
+        linkInputElement.select();
+      }
+    }, 10);
+  }
+
+  function hideLinkPopover() {
+    linkPopoverVisible = false;
+    currentLinkElement = null;
+    currentLinkUrl = '';
+
+    if (cleanupAutoUpdate) {
+      cleanupAutoUpdate();
+      cleanupAutoUpdate = undefined;
+    }
+  }
+
+  function addOrUpdateLink() {
     if (!editor) return;
 
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-
-    // cancelled
-    if (url === null) {
+    if (currentLinkUrl.trim() === '') {
+      removeLink();
       return;
     }
 
-    // empty
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-
-    // update link
     try {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+      // If we're updating an existing link, we need to select it first
+      if (currentLinkElement && currentLinkElement.tagName === 'A') {
+        const pos = editor.view.posAtDOM(currentLinkElement, 0);
+        const end = pos + currentLinkElement.textContent!.length;
+        editor.chain().focus().setTextSelection({ from: pos, to: end }).run();
+      }
+
+      editor.chain().focus().extendMarkRange('link').setLink({ href: currentLinkUrl }).run();
+      hideLinkPopover();
     } catch (e) {
       console.error(e);
     }
-  };
+  }
+
+  function removeLink() {
+    if (!editor) return;
+
+    if (currentLinkElement && currentLinkElement.tagName === 'A') {
+      const pos = editor.view.posAtDOM(currentLinkElement, 0);
+      const end = pos + currentLinkElement.textContent!.length;
+      editor.chain().focus().setTextSelection({ from: pos, to: end }).unsetLink().run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    }
+
+    hideLinkPopover();
+  }
+
+  function visitLink() {
+    if (currentLinkUrl) {
+      window.open(currentLinkUrl, '_blank');
+      hideLinkPopover();
+    }
+  }
+
+  function setNewLink() {
+    if (!editor) return;
+
+    // For creating a new link (toolbar button)
+    hideLinkPopover(); // Close any existing popover first
+
+    const selection = editor.view.state.selection;
+    const hasSelection = !selection.empty;
+
+    if (hasSelection) {
+      // With selection, first create the link with a temporary URL
+      currentLinkUrl = '';
+      editor.chain().focus().extendMarkRange('link').setLink({ href: 'https://' }).run();
+
+      // Now find the newly created link
+      setTimeout(() => {
+        // Get coordinates of the selection
+        const coords = getSelectionCoordinates();
+        if (!coords) return;
+
+        // Create a temp anchor element for positioning the popover
+        const tempElement = document.createElement('span');
+        tempElement.style.position = 'absolute';
+        tempElement.style.left = `${coords.left}px`;
+        tempElement.style.top = `${coords.bottom}px`;
+        document.body.appendChild(tempElement);
+
+        currentLinkElement = tempElement as unknown as HTMLAnchorElement;
+        showLinkPopover(tempElement);
+
+        // Clean up the temporary element after we're done
+        setTimeout(() => {
+          if (document.body.contains(tempElement)) {
+            document.body.removeChild(tempElement);
+          }
+        }, 100);
+      }, 10);
+    } else {
+      // For empty selection, insert a placeholder link
+      currentLinkUrl = 'https://';
+
+      // Insert link with default text
+      editor.chain().focus().insertContent('<a href="https://">link</a>').run();
+
+      // Find the newly inserted link and show popover
+      setTimeout(() => {
+        if (!element) return;
+
+        const links = element.querySelectorAll('a[href="https://"]');
+        if (links && links.length > 0) {
+          currentLinkElement = links[links.length - 1] as HTMLAnchorElement;
+          showLinkPopover(currentLinkElement);
+        }
+      }, 10);
+    }
+  }
+
+  // Handle enter key in the link input
+  function handleLinkInputKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addOrUpdateLink();
+    }
+  }
 </script>
+
+<svelte:document on:click={handleDocumentClick} />
 
 <div class="editor" style={`height: ${height}; max-height: ${height}`}>
   <div class="editor__toolbar">
@@ -144,7 +357,7 @@
       >
         <Icon Icon={IconItalic} size="20px" stroke={2} />
       </button>
-      <button onclick={setLink} class={['editor__btn', isLink && 'isActive']}>
+      <button onclick={setNewLink} class={['editor__btn', isLink && 'isActive']}>
         <Icon Icon={IconLink} size="20px" stroke={2} />
       </button>
       <button
@@ -206,6 +419,37 @@
 
   <div class="editor__content">
     <div bind:this={element}></div>
+  </div>
+
+  <!-- Link Popover -->
+  <div bind:this={linkPopoverElement} class="linkPopover" class:linkPopover--visible={linkPopoverVisible}>
+    <div class="linkPopover__content">
+      <div class="linkPopover__inputRow">
+        <input
+          bind:this={linkInputElement}
+          type="text"
+          bind:value={currentLinkUrl}
+          placeholder="https://"
+          class="linkPopover__input"
+          onkeydown={handleLinkInputKeydown}
+        />
+        <button class="linkPopover__saveBtn" onclick={addOrUpdateLink}>Save</button>
+      </div>
+      <div class="linkPopover__actions">
+        <button onclick={visitLink} class="linkPopover__actionBtn">
+          <Icon Icon={IconExternalLink} size="16px" />
+          <span>Go to link</span>
+        </button>
+        <button onclick={addOrUpdateLink} class="linkPopover__actionBtn">
+          <Icon Icon={IconPencil} size="16px" />
+          <span>Change</span>
+        </button>
+        <button onclick={removeLink} class="linkPopover__actionBtn">
+          <Icon Icon={IconTrash} size="16px" />
+          <span>Remove</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   {#if debug}
@@ -272,6 +516,78 @@
     background-color: var(--iconBtn-bgHover);
     border: var(--iconBtn-borderHover);
   }
+
+  /* Link Popover Styles */
+  .linkPopover {
+    position: absolute;
+    z-index: 100;
+    display: none;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  }
+  .linkPopover--visible {
+    display: block;
+  }
+  .linkPopover__content {
+    background-color: var(--bg);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    padding: 0.75rem;
+    width: 280px;
+  }
+  .linkPopover__content::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--contrastLow);
+  }
+  .linkPopover__inputRow {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .linkPopover__input {
+    flex: 1;
+    padding: 0.5rem;
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    font-size: 0.875rem;
+  }
+  .linkPopover__saveBtn {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--contrastLow);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .linkPopover__saveBtn:hover {
+    background-color: var(--contrastMedium);
+  }
+  .linkPopover__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .linkPopover__actionBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    padding: 0.5rem;
+    background-color: var(--contrastLow);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .linkPopover__actionBtn:hover {
+    background-color: var(--contrastMedium);
+  }
+
   :global {
     .tiptap:focus-visible {
       outline: none;
