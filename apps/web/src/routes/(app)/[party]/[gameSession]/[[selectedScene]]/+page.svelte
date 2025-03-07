@@ -221,6 +221,14 @@
     selectedMarker = marker;
   };
 
+  const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
+    if (event instanceof MouseEvent) {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+    } else {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
   /**
    * CURSOR TRACKING
    * CURSOR TRACKING
@@ -407,12 +415,16 @@
       saveScene();
     }, 3000);
   });
-
-  console.log('selectedMarker', selectedMarker);
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
 <svelte:window bind:innerWidth />
+
+{#if selectedMarker}
+  <span style="display: none;">
+    {selectedMarker.name} - {selectedMarker.id}
+  </span>
+{/if}
 
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
@@ -455,6 +467,7 @@
             {onMarkerAdded}
             {onMarkerMoved}
             {onMarkerSelected}
+            {onMarkerContextMenu}
           />
         </div>
         <SceneControls

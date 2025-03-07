@@ -179,6 +179,14 @@
     selectedMarker = marker;
   };
 
+  function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
+    if (event instanceof MouseEvent) {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+    } else {
+      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  }
+
   $effect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -205,10 +213,15 @@
       handleResize();
     }, 100);
   });
-  console.log('selectedMarker', selectedMarker);
 </script>
 
 <svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
+
+{#if selectedMarker}
+  <span style="display: none;">
+    {selectedMarker.name} - {selectedMarker.id}
+  </span>
+{/if}
 
 {#if gameIsPaused}
   <div class="paused">
@@ -232,6 +245,7 @@
     {onMarkerAdded}
     {onMarkerMoved}
     {onMarkerSelected}
+    {onMarkerContextMenu}
   />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
