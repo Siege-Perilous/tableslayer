@@ -347,7 +347,7 @@
 
 <svelte:document on:click={handleDocumentClick} />
 
-<div class="editor" style={`height: ${height}; max-height: ${height}`}>
+<div class={['editor', !editable && 'editor--notEdtiable']} style={`height: ${height}; max-height: ${height}`}>
   {#if editable}
     <div class="editor__toolbar">
       {#if editor}
@@ -469,6 +469,15 @@
     border: var(--borderThin);
     border-radius: var(--radius-2);
     overflow-y: auto;
+  }
+  .editor.editor--notEdtiable {
+    pointer-events: none;
+    border: none;
+    border-radius: 0;
+  }
+  .editor.editor--notEdtiable .editor__content {
+    pointer-events: none;
+    padding: 0;
   }
   .editor__toolbar {
     position: sticky;
