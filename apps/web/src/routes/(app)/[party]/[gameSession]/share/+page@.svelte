@@ -205,6 +205,7 @@
       handleResize();
     }, 100);
   });
+  console.log('selectedMarker', selectedMarker);
 </script>
 
 <svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />

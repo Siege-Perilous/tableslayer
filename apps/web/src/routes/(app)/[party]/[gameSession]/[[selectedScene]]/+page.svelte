@@ -407,6 +407,8 @@
       saveScene();
     }, 3000);
   });
+
+  console.log('selectedMarker', selectedMarker);
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
