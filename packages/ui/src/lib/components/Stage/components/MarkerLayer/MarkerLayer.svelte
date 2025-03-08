@@ -51,9 +51,13 @@
   function onMouseDown(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
+    // Check if TouchEvent is defined in the browser before using it
+    const isTouchEvent = typeof TouchEvent !== 'undefined' && e instanceof TouchEvent;
+    const isMouseEvent = e instanceof MouseEvent;
+
     // Verify the primary mouse/touch was used
-    if (e instanceof MouseEvent && e.button !== 0) return;
-    if (e instanceof TouchEvent && e.touches.length !== 1) return;
+    if (isMouseEvent && e.button !== 0) return;
+    if (isTouchEvent && (e as TouchEvent).touches.length !== 1) return;
 
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
