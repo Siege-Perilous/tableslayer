@@ -48,12 +48,12 @@
     return closestMarker;
   }
 
-  function onMouseDown(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+  function onMouseDown(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
     // Verify the primary mouse/touch was used
-    if (e instanceof MouseEvent && e.button !== 0) return;
-    if (e instanceof TouchEvent && e.touches.length !== 1) return;
+    if ('button' in e && e.button !== 0) return;
+    if ('touches' in e && (e.touches as Array<typeof T>).length !== 1) return;
 
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
@@ -106,14 +106,14 @@
     }
   }
 
-  function onContextMenu(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+  function onContextMenu(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
     const closestMarker = findClosestMarker(gridCoords);
 
     if (closestMarker) {
-      onMarkerContextMenu(closestMarker, e);
+      onMarkerContextMenu(closestMarker, e as MouseEvent);
     }
   }
 </script>

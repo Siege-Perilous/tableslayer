@@ -14,7 +14,7 @@ export interface Callbacks {
   onMarkerAdded: (marker: Marker) => void;
   onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
   onMarkerSelected: (marker: Marker) => void;
-  onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
+  onMarkerContextMenu: (marker: Marker, event: Event) => void;
 }
 
 export enum StageMode {
