@@ -1,3 +1,4 @@
+import { getMarkersForScene } from '$lib/server';
 import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
 import type { PageServerLoad } from './$types';
 
@@ -20,11 +21,13 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     selectedSceneNumber = 1;
   }
   const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
+  const selectedSceneMarkers = await getMarkersForScene(selectedScene.id);
 
   return {
     scenes,
     selectedSceneNumber,
     selectedScene,
+    selectedSceneMarkers,
     activeScene
   };
 };

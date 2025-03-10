@@ -363,7 +363,11 @@ export const sceneTable = sqliteTable(
     effectsBloomMipMapBlur: integer('effects_bloom_mip_map_blur', { mode: 'boolean' }).notNull().default(true),
     effectsChromaticAberrationOffset: real('effects_chromatic_aberration_intensity').notNull().default(0),
     effectsLutUrl: text('effects_lut_url'),
-    effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0)
+    effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0),
+    markerStrokeColor: text('marker_stroke_color').notNull().default('#000000'),
+    markerStrokeWidth: integer('marker_stroke_width').notNull().default(50),
+    markerTextColor: text('marker_text_color').notNull().default('#ffffff'),
+    markerTextStrokeColor: text('marker_text_stroke_color').notNull().default('#000000')
   },
   (table) => [
     uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
@@ -385,3 +389,42 @@ export type SelectScene = typeof sceneTable.$inferSelect;
 export const selectSceneSchema = createSelectSchema(sceneTable);
 export const insertSceneSchema = createInsertSchema(sceneTable);
 export const updateSceneSchema = createUpdateSchema(sceneTable);
+
+// MARKERS
+// MARKERS
+// MARKERS
+
+export const markerTable = sqliteTable(
+  'marker',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    sceneId: text('scene_id')
+      .notNull()
+      .references(() => sceneTable.id, { onDelete: 'cascade' }),
+    visibility: integer('visibility').notNull().default(0),
+    name: text('name').notNull(),
+    text: text('text'),
+    imageLocation: text('image_location'),
+    imageScale: real('image_scale').notNull().default(1.0),
+    positionX: real('position_x').notNull().default(0),
+    positionY: real('position_y').notNull().default(0),
+    shape: integer('shape').notNull().default(0),
+    shapeColor: text('shape_color').notNull().default('#ffffff'),
+    size: integer('size').notNull().default(0)
+  },
+  (table) => [
+    index('idx_marker_scene_id').on(table.sceneId),
+    check('protected_marker_visibility', sql`${table.visibility} >= 0 AND ${table.visibility} <= 2`),
+    check('protected_marker_shape', sql`${table.shape} >= 0 AND ${table.shape} <= 2`),
+    check('protected_marker_size', sql`${table.size} >= 0 AND ${table.size} <= 2`)
+  ]
+);
+
+export type InsertMarker = typeof markerTable.$inferInsert;
+export type SelectMarker = typeof markerTable.$inferSelect;
+export const insertMarkerSchema = createInsertSchema(markerTable);
+export const selectMarkerSchema = createSelectSchema(markerTable);
+export const updateMarkerSchema = createUpdateSchema(markerTable);

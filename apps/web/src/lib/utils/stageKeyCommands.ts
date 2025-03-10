@@ -112,6 +112,12 @@ export function handleKeyCommands(
       }
       break;
 
+    case 'Shift':
+      stageProps.activeLayer = MapLayerType.None;
+      break;
+    case 'Ctrl':
+      stageProps.activeLayer = MapLayerType.None;
+      break;
     case 'Escape':
       stageProps.activeLayer = MapLayerType.None;
       break;

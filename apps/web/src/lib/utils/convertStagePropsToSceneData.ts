@@ -103,6 +103,13 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
     zoom: 'mapZoom'
   });
 
+  setNestedIfExists(stageProps, details, 'marker', {
+    'shape.strokeColor': 'markerStrokeColor',
+    'shape.strokeWidth': 'markerStrokeWidth',
+    'text.color': 'markerTextColor',
+    'text.strokeColor': 'markerTextStrokeColor'
+  });
+
   setNestedIfExists(stageProps, details, 'postProcessing', {
     'bloom.intensity': 'effectsBloomIntensity',
     'bloom.threshold': 'effectsBloomThreshold',

@@ -44,7 +44,7 @@
   const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
 
   // The size of the marker is 90% of the grid cell size
-  const sizeMultiplier = 0.7;
+  const sizeMultiplier = 0.9;
 
   const canvasSize = 1024;
 
@@ -129,7 +129,7 @@
     ctx.shadowOffsetY = 0;
 
     // Set text properties
-    ctx.font = `bold ${textSize}px Arial`;
+    ctx.font = `700 ${textSize}px Inter`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
