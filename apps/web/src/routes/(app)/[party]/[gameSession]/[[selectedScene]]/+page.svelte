@@ -29,7 +29,7 @@
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, selectedSceneMarkers } =
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
     $derived(data);
 
   let socket: Socket | null = $state(null);
@@ -74,7 +74,7 @@
    * This is passed down to child components and manually called
    */
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, selectedSceneMarkers, gameSession.isPaused);
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, activeSceneMarkers, gameSession.isPaused);
   };
 
   /**

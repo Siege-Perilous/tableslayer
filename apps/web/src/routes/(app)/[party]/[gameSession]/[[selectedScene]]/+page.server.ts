@@ -33,6 +33,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
     selectedSceneNumber,
     selectedScene,
     selectedSceneMarkers,
-    activeScene
+    activeScene,
+    activeSceneMarkers
   };
 };
