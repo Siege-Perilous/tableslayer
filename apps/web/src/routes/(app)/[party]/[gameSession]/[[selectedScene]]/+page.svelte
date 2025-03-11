@@ -25,7 +25,7 @@
   let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
 
   let socket: Socket | null = $state(null);
-  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
+  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarker: Marker | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
@@ -164,7 +164,7 @@
   };
 
   $effect(() => {
-    stageProps = buildSceneProps(data.selectedScene, 'editor');
+    stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
     stageIsLoading = true;
 
     const interval = setInterval(() => {

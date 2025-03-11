@@ -38,8 +38,8 @@ export const createMarker = async (markerData: InsertMarker, sceneId: string): P
   return marker;
 };
 
-export const updateMarker = async (markerId: string, data: Partial<InsertMarker>): Promise<SelectMarker> => {
-  const marker = await db.update(markerTable).set(data).where(eq(markerTable.id, markerId)).returning().get();
+export const updateMarker = async (markerId: string, markerData: Partial<InsertMarker>): Promise<SelectMarker> => {
+  const marker = await db.update(markerTable).set(markerData).where(eq(markerTable.id, markerId)).returning().get();
 
   return marker;
 };

@@ -1,4 +1,4 @@
-import { type SelectScene } from '$lib/db/app/schema';
+import { type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { hasThumb } from '$lib/utils/hasThumb';
@@ -6,6 +6,7 @@ import {
   DrawMode,
   type GridType,
   MapLayerType,
+  type Marker,
   RainPreset,
   SceneRotation,
   StageMode,
@@ -16,11 +17,29 @@ import {
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
   activeScene: SelectScene | (SelectScene & Thumb),
+  selectedSceneMarkers: (SelectMarker & Thumb)[],
   mode: 'client' | 'editor'
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
   const thumbUrl =
     hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
+
+  let markers: Marker[] = [];
+  if (selectedSceneMarkers) {
+    markers = selectedSceneMarkers.map((marker) => ({
+      id: marker.id,
+      name: marker.name,
+      position: { x: marker.positionX, y: marker.positionY },
+      size: marker.size,
+      shape: marker.shape,
+      shapeColor: marker.shapeColor,
+      text: marker.text,
+      imageUrl: marker.imageLocation ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
+      imageScale: marker.imageScale,
+      visibility: marker.visibility
+    }));
+  }
+
   return {
     mode: StageMode.DM,
     activeLayer: MapLayerType.None,
@@ -138,7 +157,7 @@ export const buildSceneProps = (
         size: 300,
         strokeWidth: 1
       },
-      markers: []
+      markers: markers
     },
     postProcessing: {
       enabled: true,
