@@ -1,4 +1,4 @@
-import type { SelectScene } from '$lib/db/app/schema';
+import type { SelectMarker, SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import type { StageProps } from '@tableslayer/ui';
 import type { Socket } from 'socket.io-client';
@@ -16,6 +16,7 @@ export const broadcastStageUpdate = (
   activeScene: BroadcastStageUpdate['activeScene'],
   selectedScene: BroadcastStageUpdate['selectedScene'],
   stageProps: BroadcastStageUpdate['stageProps'],
+  activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   gameIsPaused: boolean
 ) => {
   if (!socket || !selectedScene) return;
@@ -32,7 +33,7 @@ export const broadcastStageUpdate = (
 
     socket.emit('updateSession', updateData);
   } else if (activeScene) {
-    const newStageProps = buildSceneProps(activeScene, 'editor');
+    const newStageProps = buildSceneProps(activeScene, activeSceneMarkers, 'editor');
 
     console.log('Broadcasting stage update', newStageProps);
 

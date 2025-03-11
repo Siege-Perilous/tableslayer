@@ -5,7 +5,13 @@
   import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
-  import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
+  import {
+    useUpdateSceneMutation,
+    useUpdateGameSessionMutation,
+    useUploadFogFromBlobMutation,
+    useCreateMarkerMutation,
+    useUpdateMarkerMutation
+  } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
@@ -18,11 +24,13 @@
     handleStageZoom,
     hasThumb,
     initializeStage,
-    convertPropsToSceneDetails
+    convertPropsToSceneDetails,
+    convertStageMarkersToDbFormat
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, selectedSceneMarkers } =
+    $derived(data);
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
@@ -44,6 +52,8 @@
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+  const createMarkerMutation = useCreateMarkerMutation();
+  const updateMarkerMutation = useUpdateMarkerMutation();
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -64,7 +74,7 @@
    * This is passed down to child components and manually called
    */
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, selectedSceneMarkers, gameSession.isPaused);
   };
 
   /**
@@ -367,6 +377,7 @@
 
     console.log('Saving scene...');
 
+    // Save scene settings
     await handleMutation({
       mutation: () =>
         $updateSceneMutation.mutateAsync({
@@ -383,6 +394,59 @@
         error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
       }
     });
+
+    // Save markers
+    if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
+      console.log('Saving markers...');
+      const existingMarkerIds =
+        data.selectedSceneMarkers && Array.isArray(data.selectedSceneMarkers)
+          ? data.selectedSceneMarkers.map((marker) => marker.id)
+          : [];
+      const stageMarkers = stageProps.marker.markers;
+
+      // Process markers one by one to handle creates and updates
+      for (const marker of stageMarkers) {
+        console.log('Saving marker shape:', marker.shape, 'type:', typeof marker.shape);
+        const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
+
+        // If marker exists in the database, update it
+        if (existingMarkerIds.includes(marker.id)) {
+          await handleMutation({
+            mutation: () =>
+              $updateMarkerMutation.mutateAsync({
+                partyId: party.id,
+                markerId: marker.id,
+                markerData
+              }),
+            formLoadingState: () => console.log('updating marker'),
+            onError: (error) => {
+              console.log('Error updating marker:', error);
+            },
+            toastMessages: {
+              error: { title: 'Error updating marker', body: (err) => err.message || 'Error updating marker' }
+            }
+          });
+        }
+        // Otherwise create a new marker
+        else {
+          await handleMutation({
+            mutation: () =>
+              $createMarkerMutation.mutateAsync({
+                partyId: party.id,
+                sceneId: selectedScene.id,
+                markerData: markerData
+              }),
+            formLoadingState: () => console.log('creating marker'),
+            onError: (error) => {
+              console.log('Error creating marker:', error);
+            },
+            toastMessages: {
+              error: { title: 'Error creating marker', body: (err) => err.message || 'Error creating marker' }
+            }
+          });
+        }
+      }
+    }
 
     // Empty game session update will update the lastUpdated field through Drizzle
     await handleMutation({
@@ -415,6 +479,8 @@
       saveScene();
     }, 3000);
   });
+
+  console.log('selectedSceneMarkers', data.selectedSceneMarkers);
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />

@@ -1,6 +1,7 @@
 export * from './broadcastStageUpdate';
 export * from './buildSceneProps';
 export * from './colors';
+export * from './convertStagePropsToMarkerData';
 export * from './convertStagePropsToSceneData';
 export * from './createRandomNames';
 export * from './defaultMapState';

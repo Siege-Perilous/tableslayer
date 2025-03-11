@@ -1,4 +1,5 @@
-import { getMarkersForScene } from '$lib/server';
+import type { SelectMarker } from '$lib/db/app/schema';
+import { getMarkersForScene, type Thumb } from '$lib/server';
 import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
 import type { PageServerLoad } from './$types';
 
@@ -22,6 +23,10 @@ export const load: PageServerLoad = async ({ parent, params }) => {
   }
   const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
   const selectedSceneMarkers = await getMarkersForScene(selectedScene.id);
+  let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
+  if (activeScene) {
+    activeSceneMarkers = await getMarkersForScene(activeScene.id);
+  }
 
   return {
     scenes,

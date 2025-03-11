@@ -13,7 +13,7 @@ export const useUpdateMarkerMutation = () => {
 };
 
 export const useCreateMarkerMutation = () => {
-  return mutationFactory<{ partyId: string; markerData: Partial<SelectMarker> }>({
+  return mutationFactory<{ partyId: string; sceneId: string; markerData: Partial<SelectMarker> }>({
     mutationKey: ['insertMarker'],
     endpoint: '/api/marker/createMarker',
     method: 'POST'

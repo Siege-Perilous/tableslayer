@@ -3,8 +3,11 @@ import { apiFactory } from '$lib/factories';
 import { isUserInParty, updateMarker } from '$lib/server';
 import { z } from 'zod';
 
+// Create a custom schema that doesn't require sceneId in markerData for updates
+const markerDataWithoutSceneIdSchema = insertMarkerSchema.partial().omit({ sceneId: true });
+
 const validationSchema = z.object({
-  markerData: insertMarkerSchema,
+  markerData: markerDataWithoutSceneIdSchema,
   partyId: z.string(),
   markerId: z.string()
 });
