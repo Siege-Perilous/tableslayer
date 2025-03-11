@@ -18,7 +18,7 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
+  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client'));
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);

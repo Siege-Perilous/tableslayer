@@ -17,7 +17,7 @@ import {
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
   activeScene: SelectScene | (SelectScene & Thumb),
-  selectedSceneMarkers: (SelectMarker & Partial<Thumb>)[],
+  activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   mode: 'client' | 'editor'
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
@@ -25,8 +25,8 @@ export const buildSceneProps = (
     hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
 
   let markers: Marker[] = [];
-  if (selectedSceneMarkers && Array.isArray(selectedSceneMarkers)) {
-    markers = selectedSceneMarkers.map((marker) => ({
+  if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
+    markers = activeSceneMarkers.map((marker) => ({
       id: marker.id,
       name: marker.name,
       position: { x: marker.positionX, y: marker.positionY },
