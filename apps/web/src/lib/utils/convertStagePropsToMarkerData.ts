@@ -1,5 +1,6 @@
 import type { InsertMarker } from '$lib/db/app/schema';
 import type { Marker } from '@tableslayer/ui';
+import { extractLocationFromUrl } from './extractLocationFromUrl';
 
 /**
  * Converts a UI marker to a database marker format
@@ -8,6 +9,12 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
   if (!marker) {
     console.error('Attempted to convert undefined marker to DB format');
     return {};
+  }
+
+  // Extract the image location from the URL if it exists
+  let imageLocation = null;
+  if (marker.imageUrl) {
+    imageLocation = extractLocationFromUrl(marker.imageUrl) || `marker/${marker.id}`;
   }
 
   return {
@@ -20,7 +27,7 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
     positionY: marker.position?.y || 0,
     shape: marker.shape,
     size: typeof marker.size === 'number' ? marker.size : 0,
-    imageLocation: marker.imageUrl || null,
+    imageLocation: imageLocation,
     imageScale: marker.size || 1.0,
     shapeColor: marker.shapeColor || '#FFFFFF'
   };
