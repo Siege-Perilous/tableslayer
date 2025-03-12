@@ -4,7 +4,7 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
+  import { MarkerManager, SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
@@ -43,7 +43,9 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
+  let markersPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
+  let isMarkersCollapsed = $state(false);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
@@ -60,6 +62,14 @@
       return isScenesCollapsed ? IconChevronDown : IconChevronUp;
     } else {
       return isScenesCollapsed ? IconChevronRight : IconChevronLeft;
+    }
+  };
+
+  const getMarkerCollapseIcon = () => {
+    if (isMobile) {
+      return isMarkersCollapsed ? IconChevronDown : IconChevronUp;
+    } else {
+      return isMarkersCollapsed ? IconChevronLeft : IconChevronRight;
     }
   };
 
@@ -146,6 +156,14 @@
       scenesPane.expand();
     } else {
       scenesPane.collapse();
+    }
+  };
+
+  const handleToggleMarkers = () => {
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+    } else {
+      markersPane.collapse();
     }
   };
 
@@ -554,6 +572,33 @@
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />
       </div>
+    </Pane>
+    <PaneResizer class="resizer">
+      <button
+        class="resizer__handle"
+        aria-label="Collapse scenes column"
+        title={isMarkersCollapsed ? 'Expand markers column' : 'Collapse markers column'}
+        onclick={handleToggleMarkers}
+      >
+        <Icon Icon={getMarkerCollapseIcon()} />
+      </button>
+    </PaneResizer>
+    <Pane
+      defaultSize={15}
+      collapsible={true}
+      collapsedSize={0}
+      minSize={10}
+      maxSize={50}
+      bind:pane={markersPane}
+      onCollapse={() => (isMarkersCollapsed = true)}
+      onExpand={() => (isMarkersCollapsed = false)}
+      onResize={() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }}
+    >
+      <MarkerManager {stageProps} {selectedMarker} />
     </Pane>
   </PaneGroup>
 </div>

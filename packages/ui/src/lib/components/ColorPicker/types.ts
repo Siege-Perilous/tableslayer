@@ -27,6 +27,7 @@ export type ColorPickerProps = {
   hsla?: HSLA;
   showAlpha?: boolean;
   showInputs?: boolean;
+  showOpacity?: boolean;
   onUpdate?: (payload: ColorUpdatePayload) => void;
 };
 

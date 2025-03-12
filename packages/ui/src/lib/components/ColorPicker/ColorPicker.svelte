@@ -11,6 +11,7 @@
     hsva = $bindable(),
     hsla = $bindable(),
     showInputs = false,
+    showOpacity = true,
     onUpdate = () => {},
     id,
     ...restProps
@@ -42,7 +43,11 @@
   const toHex = (color: ColorState): string => {
     const alpha = color.opacity / 100;
     const chromaColor = chroma.hsv(color.hue, color.saturation / 100, color.value / 100).alpha(alpha);
-    return chromaColor.hex();
+    if (showOpacity) {
+      return chromaColor.hex();
+    } else {
+      return chromaColor.hex().slice(0, 7); // Return only 6-digit hex without alpha
+    }
   };
 
   const drawSaturationValueGradient = (): void => {
@@ -207,12 +212,16 @@
       }
 
       // Compute color representations using chroma-js
-      const chromaColor = chroma
-        .hsv(displayHue(), color.saturation / 100, color.value / 100)
-        .alpha(color.opacity / 100);
+      const opacity = showOpacity ? color.opacity / 100 : 1;
+      const chromaColor = chroma.hsv(displayHue(), color.saturation / 100, color.value / 100).alpha(opacity);
 
       const [r, g, b] = chromaColor.rgb();
-      const newHex = chromaColor.hex();
+      let newHex;
+      if (showOpacity) {
+        newHex = chromaColor.hex();
+      } else {
+        newHex = chromaColor.hex().slice(0, 7); // Return only 6-digit hex without alpha
+      }
       const newRgba = { r, g, b, a: chromaColor.alpha() };
       const [hHSL, sHSL, lHSL] = chromaColor.hsl();
       const newHsla = { h: hHSL, s: sHSL * 100, l: lHSL * 100, a: chromaColor.alpha() };
@@ -280,6 +289,7 @@
       switch (selectedFormat) {
         case 'hex': {
           const hexValue = hexInput.trim();
+          // Regular expression for either 6-digit or 8-digit hex
           if (/^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(hexValue)) {
             const chromaColor = chroma(hexValue);
             const [h, s, v] = chromaColor.hsv();
@@ -291,7 +301,12 @@
             }
             color.saturation = s * 100;
             color.value = v * 100;
-            color.opacity = chromaColor.alpha() * 100;
+            // Only update opacity if we're showing the opacity slider
+            if (showOpacity) {
+              color.opacity = chromaColor.alpha() * 100;
+            } else {
+              color.opacity = 100; // Always full opacity when showOpacity is false
+            }
           } else {
             console.error('Invalid hex code');
           }
@@ -496,17 +511,18 @@
     class="colorPicker__slider colorPicker__slider--hue"
   />
 
-  <!-- Opacity Slider -->
-  <input
-    type="range"
-    min="0"
-    max="100"
-    step="1"
-    bind:value={color.opacity}
-    aria-label="Opacity Slider"
-    class="colorPicker__slider colorPicker__slider--opacity"
-    style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
-  />
+  {#if showOpacity}
+    <input
+      type="range"
+      min="0"
+      max="100"
+      step="1"
+      bind:value={color.opacity}
+      aria-label="Opacity Slider"
+      class="colorPicker__slider colorPicker__slider--opacity"
+      style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
+    />
+  {/if}
 
   {#if showInputs}
     <div class="colorPicker__inputs colorPicker__inputs--{selectedFormat}">
@@ -552,17 +568,19 @@
           onfocus={() => (colorInputFocused = true)}
           onblur={handleInputsBlur}
         />
-        <Input
-          type="number"
-          min="0"
-          max="1"
-          step="0.01"
-          bind:value={rgbInputs.a}
-          aria-label="Alpha"
-          placeholder="A"
-          onfocus={() => (colorInputFocused = true)}
-          onblur={handleInputsBlur}
-        />
+        {#if showOpacity}
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={rgbInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        {/if}
       {:else if selectedFormat === 'hsl'}
         <Input
           type="number"
@@ -594,17 +612,19 @@
           onfocus={() => (colorInputFocused = true)}
           onblur={handleInputsBlur}
         />
-        <Input
-          type="number"
-          min="0"
-          max="1"
-          step="0.01"
-          bind:value={hslInputs.a}
-          aria-label="Alpha"
-          placeholder="A"
-          onfocus={() => (colorInputFocused = true)}
-          onblur={handleInputsBlur}
-        />
+        {#if showOpacity}
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={hslInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        {/if}
       {:else if selectedFormat === 'hsv'}
         <Input
           type="number"
@@ -636,17 +656,19 @@
           onfocus={() => (colorInputFocused = true)}
           onblur={handleInputsBlur}
         />
-        <Input
-          type="number"
-          min="0"
-          max="1"
-          step="0.01"
-          bind:value={hsvInputs.a}
-          aria-label="Alpha"
-          placeholder="A"
-          onfocus={() => (colorInputFocused = true)}
-          onblur={handleInputsBlur}
-        />
+        {#if showOpacity}
+          <Input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={hsvInputs.a}
+            aria-label="Alpha"
+            placeholder="A"
+            onfocus={() => (colorInputFocused = true)}
+            onblur={handleInputsBlur}
+          />
+        {/if}
       {/if}
     </div>
   {/if}

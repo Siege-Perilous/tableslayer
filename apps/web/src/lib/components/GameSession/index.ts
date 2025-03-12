@@ -5,6 +5,7 @@ export { default as FogControls } from './FogControls.svelte';
 export { default as GameSessionCard } from './GameSessionCard.svelte';
 export { default as GridControls } from './GridControls.svelte';
 export { default as MapControls } from './MapControls.svelte';
+export { default as MarkerManager } from './MarkerManager.svelte';
 export { default as PlayControls } from './PlayControls.svelte';
 export { default as SceneControls } from './SceneControls.svelte';
 export { default as SceneSelector } from './SceneSelector.svelte';
