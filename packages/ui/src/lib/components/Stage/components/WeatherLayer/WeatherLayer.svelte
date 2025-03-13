@@ -158,12 +158,7 @@
 <!-- Hidden scene that renders to the render target -->
 <T.Scene is={particleScene} visible={false}>
   <T.PerspectiveCamera is={particleCamera} manual />
-  <ParticleSystem
-    props={weatherPreset.particles}
-    opacity={weatherPreset.opacity}
-    intensity={weatherPreset.intensity}
-    resolution={{ width: mapSize?.width ?? 1, height: mapSize?.height ?? 1 }}
-  />
+  <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
 </T.Scene>
 
 <T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>

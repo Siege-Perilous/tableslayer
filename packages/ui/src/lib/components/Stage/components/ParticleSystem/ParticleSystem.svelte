@@ -11,12 +11,11 @@
 
   interface Props {
     props: ParticleSystemProps;
-    resolution: { width: number; height: number };
     opacity?: number;
     intensity?: number;
   }
 
-  const { props, opacity, intensity, resolution }: Props = $props();
+  const { props, opacity, intensity }: Props = $props();
 
   let mesh: THREE.Mesh | undefined = $state(undefined);
 
@@ -167,8 +166,7 @@
     uSinusoidalForceFrequency: { value: props.force.sinusoidal.frequency },
     uFadeInTime: { value: props.fadeInTime },
     uFadeOutTime: { value: props.fadeOutTime },
-    uScale: { value: props.scale },
-    uResolution: { value: new THREE.Vector2(resolution.width, resolution.height) }
+    uScale: { value: props.scale }
   });
 
   // Update material uniforms whenever they change
