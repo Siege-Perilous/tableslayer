@@ -41,7 +41,6 @@
   // Set editingMarkerIndex when selectedMarker changes
   $effect(() => {
     if (selectedMarker) {
-      // @ts-expect-error - TS doesn't know that the marker is in the array
       const index = stageProps.marker.markers.findIndex((marker) => marker.id === selectedMarker.id);
       if (index !== -1) {
         editingMarkerIndex = index;
@@ -177,16 +176,16 @@
                   onchange={(e) => handleMarkerImageUpload(e, marker.id)}
                 />
               </div>
-              <FormControl label="Label" name="text">
+              <FormControl label="Label" name="label">
                 {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.text} />
+                  <Input {...inputProps} bind:value={marker.label} />
                 {/snippet}
               </FormControl>
             </div>
             <Spacer />
-            <FormControl label="Name" name="name">
+            <FormControl label="Title" name="title">
               {#snippet input(inputProps)}
-                <Input {...inputProps} bind:value={marker.name} />
+                <Input {...inputProps} bind:value={marker.title} />
               {/snippet}
             </FormControl>
             <Spacer />
@@ -220,7 +219,6 @@
                       { label: triangle, value: '3' }
                     ]}
                     onSelectedChange={(value) => {
-                      // @ts-expect-error - TS doesn't know that the marker is in the array
                       stageProps.marker.markers[editingMarkerIndex].shape = Number(value);
                     }}
                   />
@@ -237,7 +235,6 @@
                       { label: 'L', value: '3' }
                     ]}
                     onSelectedChange={(value) => {
-                      // @ts-expect-error - TS doesn't know that the marker is in the array
                       stageProps.marker.markers[editingMarkerIndex].size = Number(value);
                     }}
                   />
@@ -245,7 +242,7 @@
               </FormControl>
             </div>
             <Spacer />
-            <Editor bind:content={marker.note} height="300px" />
+            <Editor debug={false} bind:content={marker.note} height="300px" />
           {/if}
         </div>
       </div>
@@ -255,7 +252,7 @@
           class="markerManager__listItem"
           onclick={() => selectMarkerForEdit(index)}
           tabindex="0"
-          aria-label={`Edit marker ${marker.name}`}
+          aria-label={`Edit marker ${marker.title}`}
         >
           <div class="markerManager__read">
             <div
@@ -267,7 +264,7 @@
               style:background-color={marker.shapeColor}
               style:background-image={`url('${marker.imageUrl}')`}
             ></div>
-            <div class="markerManager__name">{marker.name}</div>
+            <div class="markerManager__name">{marker.title}</div>
           </div>
         </button>
       {/each}

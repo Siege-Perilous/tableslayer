@@ -120,7 +120,7 @@
 
   // Create text for the marker
   function createText(centerX: number, centerY: number) {
-    if (!marker.text) return;
+    if (!marker.label) return;
 
     // Reset shadow settings for text
     ctx.shadowColor = 'transparent';
@@ -137,12 +137,12 @@
     if (textStroke && textStrokeColor) {
       ctx.strokeStyle = textStrokeColor;
       ctx.lineWidth = textStroke * (textSize / 5);
-      ctx.strokeText(marker.text, centerX, centerY);
+      ctx.strokeText(marker.label, centerX, centerY);
     }
 
     // Fill text
     ctx.fillStyle = textColor || '#ffffff';
-    ctx.fillText(marker.text, centerX, centerY);
+    ctx.fillText(marker.label, centerX, centerY);
   }
 
   // Create the marker canvas
@@ -194,7 +194,7 @@
     }
 
     // // Draw text if enabled
-    if (marker.text) {
+    if (marker.label) {
       createText(centerX, centerY);
     }
 

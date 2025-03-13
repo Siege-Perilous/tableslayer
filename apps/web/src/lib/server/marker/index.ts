@@ -9,7 +9,7 @@ export const getMarkersForScene = async (sceneId: string) => {
     .select()
     .from(markerTable)
     .where(eq(markerTable.sceneId, sceneId))
-    .orderBy(asc(markerTable.name));
+    .orderBy(asc(markerTable.title));
 
   const markersWithThumb: (SelectMarker & Partial<Thumb>)[] = [];
   for (const marker of markers) {

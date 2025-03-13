@@ -28,15 +28,16 @@ export const buildSceneProps = (
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
     markers = activeSceneMarkers.map((marker) => ({
       id: marker.id,
-      name: marker.name,
+      title: marker.title,
       position: { x: marker.positionX, y: marker.positionY },
       size: marker.size,
       shape: marker.shape,
       shapeColor: marker.shapeColor,
-      text: marker.text,
+      label: marker.label,
       imageUrl: marker.imageLocation && marker.thumb?.resizedUrl ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
       imageScale: marker.imageScale,
-      visibility: marker.visibility
+      visibility: marker.visibility,
+      note: marker.note
     }));
   }
 

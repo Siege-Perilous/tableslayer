@@ -405,8 +405,8 @@ export const markerTable = sqliteTable(
       .notNull()
       .references(() => sceneTable.id, { onDelete: 'cascade' }),
     visibility: integer('visibility').notNull().default(1),
-    name: text('name').notNull().default('New token'),
-    text: text('text'),
+    title: text('title').notNull().default('New token'),
+    label: text('label'),
     imageLocation: text('image_location'),
     imageScale: real('image_scale').notNull().default(1.0),
     positionX: real('position_x').notNull().default(0),

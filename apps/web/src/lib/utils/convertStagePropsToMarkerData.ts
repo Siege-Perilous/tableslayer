@@ -20,8 +20,8 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
   return {
     id: marker.id,
     // Don't include sceneId in the returned object as it's passed separately
-    name: marker.name || 'Unnamed Marker',
-    text: marker.text,
+    title: marker.title || 'Unnamed Marker',
+    label: marker.label,
     visibility: typeof marker.visibility === 'number' ? marker.visibility : 0,
     positionX: marker.position?.x || 0,
     positionY: marker.position?.y || 0,
@@ -29,7 +29,8 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
     size: typeof marker.size === 'number' ? marker.size : 0,
     imageLocation: imageLocation,
     imageScale: marker.size || 1.0,
-    shapeColor: marker.shapeColor || '#FFFFFF'
+    shapeColor: marker.shapeColor || '#FFFFFF',
+    note: marker.note
   };
 };
 

@@ -71,15 +71,16 @@
     } else {
       const newMarker: Marker = {
         id: crypto.randomUUID(),
-        name: 'New Marker',
+        title: 'New Marker',
         position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
         size: MarkerSize.Small,
         shape: MarkerShape.Circle,
         shapeColor: '#ffffff',
         imageScale: 1.0,
-        text: 'ABC',
+        label: 'ABC',
         imageUrl: null,
-        visibility: MarkerVisibility.Always
+        visibility: MarkerVisibility.Always,
+        note: null
       };
       selectedMarker = newMarker;
       onMarkerAdded(newMarker);
