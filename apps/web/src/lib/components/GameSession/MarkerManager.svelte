@@ -41,7 +41,7 @@
   // Set editingMarkerIndex when selectedMarker changes
   $effect(() => {
     if (selectedMarker) {
-      const index = stageProps.marker.markers.findIndex((marker) => marker.id === selectedMarker.id);
+      const index = stageProps.marker.markers.findIndex((marker) => marker.id === selectedMarker?.id);
       if (index !== -1) {
         editingMarkerIndex = index;
       }
@@ -176,18 +176,20 @@
                   onchange={(e) => handleMarkerImageUpload(e, marker.id)}
                 />
               </div>
+            </div>
+            <Spacer />
+            <div class="markerManager__formGrid">
               <FormControl label="Label" name="label">
                 {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.label} />
+                  <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
+                {/snippet}
+              </FormControl>
+              <FormControl label="Title" name="title">
+                {#snippet input(inputProps)}
+                  <Input {...inputProps} bind:value={marker.title} />
                 {/snippet}
               </FormControl>
             </div>
-            <Spacer />
-            <FormControl label="Title" name="title">
-              {#snippet input(inputProps)}
-                <Input {...inputProps} bind:value={marker.title} />
-              {/snippet}
-            </FormControl>
             <Spacer />
             <div class="markerManager__colorPicker">
               <FormControl label="Color" name="shapeColor">

@@ -45,7 +45,7 @@
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
-  let isMarkersCollapsed = $state(false);
+  let isMarkersCollapsed = $state(true);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
@@ -125,7 +125,7 @@
       () => console.log('Disconnected from game session socket')
     );
 
-    initializeStage(stage, (isLoading) => {
+    initializeStage(stage, (isLoading: boolean) => {
       stageIsLoading = isLoading;
     });
 
@@ -251,9 +251,9 @@
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
     if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   };
 
@@ -503,12 +503,6 @@
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
 <svelte:window bind:innerWidth />
-
-{#if selectedMarker}
-  <span style="display: none;">
-    {selectedMarker.name} - {selectedMarker.id}
-  </span>
-{/if}
 
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
