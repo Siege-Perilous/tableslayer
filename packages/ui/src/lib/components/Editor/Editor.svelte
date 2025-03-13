@@ -23,12 +23,12 @@
 
   let {
     height = 'auto',
-    content = $bindable('<p>Hello, world!</p>'),
+    content = $bindable(undefined),
     debug = false,
     editable = true
   }: {
     height: number | string;
-    content?: string | JSONContent;
+    content?: string | JSONContent | null | undefined;
     debug?: boolean;
     editable?: boolean;
   } = $props();
@@ -37,10 +37,12 @@
   let editor: Editor | undefined = $state();
   let editorReady = $state(false);
 
-  const isJsonContent = typeof content === 'object';
+  const isJsonContent = content !== null && content !== undefined && typeof content === 'object';
 
   // For HTML mode, track the HTML content
-  let editorHtml = $state(isJsonContent ? '' : (content as string));
+  let editorHtml = $state(
+    content !== null && content !== undefined ? (isJsonContent ? '' : (content as string)) : '<p></p>'
+  );
 
   // Create explicit state variables for each button's active state
   let isBold = $state(false);
@@ -87,6 +89,9 @@
   }
 
   onMount(() => {
+    // Prepare default content if content is null/undefined
+    const initialContent = content !== null && content !== undefined ? content : '<p></p>';
+
     editor = new Editor({
       editable,
       element: element,
@@ -97,14 +102,14 @@
           openOnClick: false // Prevent default link opening behavior
         })
       ],
-      content: content, // Pass content directly - TipTap handles both HTML and JSON
+      content: initialContent, // Pass content with fallback for null/undefined
       onSelectionUpdate: () => {
         updateActiveStates();
       },
       onUpdate: ({ editor }) => {
         // Update content based on its original type
-        if (isJsonContent) {
-          // For JSON content, get the JSON representation
+        if (content === null || content === undefined || isJsonContent) {
+          // For JSON content or undefined/null, get the JSON representation
           const newJson = editor.getJSON();
           content = newJson;
         } else {
@@ -458,8 +463,12 @@
   {#if debug}
     <div class="editor__state">
       <h4>Editor Status: {editorReady ? 'Ready' : 'Loading...'}</h4>
-      <h4>Content Type: {isJsonContent ? 'JSON' : 'HTML'}</h4>
-      {#if isJsonContent}
+      <h4>
+        Content Type: {content === null || content === undefined ? 'Null/Undefined' : isJsonContent ? 'JSON' : 'HTML'}
+      </h4>
+      {#if content === null || content === undefined}
+        <pre>null/undefined</pre>
+      {:else if isJsonContent}
         <pre>{JSON.stringify(content, null, 2)}</pre>
       {:else}
         <pre>{editorHtml}</pre>

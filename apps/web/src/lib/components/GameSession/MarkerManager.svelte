@@ -12,10 +12,10 @@
     Spacer,
     MapLayerType,
     Button,
-    MarkerShape
+    Editor
   } from '@tableslayer/ui';
   import { IconTriangle, IconCircle, IconSquare, IconPhotoCirclePlus, IconArrowBack } from '@tabler/icons-svelte';
-  import { useUploadFileMutation, useUpdateMarkerMutation } from '$lib/queries';
+  import { useUploadFileMutation, useUpdateMarkerMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
 
@@ -29,12 +29,25 @@
     partyId: string;
   } = $props();
 
-  let uploadFile = useUploadFileMutation();
-  let updateMarker = useUpdateMarkerMutation();
+  const uploadFile = useUploadFileMutation();
+  const updateMarker = useUpdateMarkerMutation();
+  const deleteMarker = useDeleteMarkerMutation();
+
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
   let isEditing = $derived(stageProps.activeLayer === MapLayerType.Marker);
   let editingMarkerIndex = $state<number | null>(null);
+
+  // Set editingMarkerIndex when selectedMarker changes
+  $effect(() => {
+    if (selectedMarker) {
+      // @ts-expect-error - TS doesn't know that the marker is in the array
+      const index = stageProps.marker.markers.findIndex((marker) => marker.id === selectedMarker.id);
+      if (index !== -1) {
+        editingMarkerIndex = index;
+      }
+    }
+  });
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -44,10 +57,12 @@
 
   const selectMarkerForEdit = (index: number) => {
     editingMarkerIndex = index;
+    selectedMarker = stageProps.marker.markers[index];
   };
 
   const backToList = () => {
     editingMarkerIndex = null;
+    selectedMarker = undefined;
   };
 
   const handleMarkerImageUpload = async (event: Event, markerId: string) => {
@@ -100,26 +115,20 @@
     }
   };
 
-  // Helper function to get the clip-path based on marker shape
-  const getClipPath = (shape: MarkerShape) => {
-    if (shape === MarkerShape.Triangle) {
-      return 'polygon(50% 0%, 0% 100%, 100% 100%)';
-    } else if (shape === MarkerShape.Square) {
-      return 'none';
-    } else {
-      return 'none';
-    }
-  };
-
-  // Helper function to get border radius based on marker shape
-  const getBorderRadius = (shape: MarkerShape) => {
-    if (shape === MarkerShape.Circle) {
-      return '50%';
-    } else if (shape === MarkerShape.Square) {
-      return '0';
-    } else {
-      return '0';
-    }
+  const handleMarkerDelete = async (markerId: string) => {
+    await handleMutation({
+      mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        editingMarkerIndex = null;
+        selectedMarker = undefined;
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Marker deleted' },
+        error: { title: 'Error deleting marker', body: (error) => error.message }
+      }
+    });
   };
 </script>
 
@@ -133,9 +142,7 @@
   </Button>
   <Spacer />
   <div class="markerManager__content">
-    {#if selectedMarker}
-      Selected marker: {selectedMarker.name}
-    {:else if editingMarkerIndex !== null}
+    {#if editingMarkerIndex !== null}
       <div class="markerManager__editView">
         <Button onclick={backToList} class="markerManager__backButton">
           <Icon Icon={IconArrowBack} size="1rem" />
@@ -144,19 +151,19 @@
         <div class="markerManager__marker">
           {#if stageProps.marker.markers[editingMarkerIndex]}
             {@const marker = stageProps.marker.markers[editingMarkerIndex]}
+            <Button onclick={() => handleMarkerDelete(marker.id)} variant="danger">Delete marker</Button>
             <div class="markerManager__formGrid">
               <div class="markerManager__imageSection">
                 <button
                   onclick={() => openMarkerImageDialog(marker.id)}
                   class={[
                     'markerManager__imagePreview',
-                    formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading'
+                    formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
+                    `markerManager__imagePreview--${marker.shape}`
                   ]}
                   aria-label="Change marker image"
                   style:background-color={marker.shapeColor}
                   style:background-image={`url('${marker.imageUrl}')`}
-                  style:clip-path={getClipPath(marker.shape)}
-                  style:border-radius={getBorderRadius(marker.shape)}
                 >
                   <div class="markerManager__imagePreviewIcon">
                     <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
@@ -213,6 +220,7 @@
                       { label: triangle, value: '3' }
                     ]}
                     onSelectedChange={(value) => {
+                      // @ts-expect-error - TS doesn't know that the marker is in the array
                       stageProps.marker.markers[editingMarkerIndex].shape = Number(value);
                     }}
                   />
@@ -229,12 +237,15 @@
                       { label: 'L', value: '3' }
                     ]}
                     onSelectedChange={(value) => {
+                      // @ts-expect-error - TS doesn't know that the marker is in the array
                       stageProps.marker.markers[editingMarkerIndex].size = Number(value);
                     }}
                   />
                 {/snippet}
               </FormControl>
             </div>
+            <Spacer />
+            <Editor bind:content={marker.note} height="300px" />
           {/if}
         </div>
       </div>
@@ -250,12 +261,11 @@
             <div
               class={[
                 'markerManager__imagePreview',
-                formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading'
+                formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
+                `markerManager__imagePreview--${marker.shape}`
               ]}
               style:background-color={marker.shapeColor}
               style:background-image={`url('${marker.imageUrl}')`}
-              style:clip-path={getClipPath(marker.shape)}
-              style:border-radius={getBorderRadius(marker.shape)}
             ></div>
             <div class="markerManager__name">{marker.name}</div>
           </div>
@@ -287,9 +297,6 @@
   .markerManager__editView {
     grid-column: 1 / -1;
   }
-  .markerManager__backButton {
-    margin-bottom: 1rem;
-  }
   .markerManager__listItem {
     cursor: pointer;
     padding: 0.5rem;
@@ -313,11 +320,11 @@
     width: 100%;
   }
   .markerManager__imagePreview {
-    min-width: 3rem;
-    width: 3rem;
-    min-height: 3rem;
-    min-height: 3rem;
-    border: solid 4px #000;
+    min-width: 2.5rem;
+    width: 2.5rem;
+    min-height: 2.5rem;
+    min-height: 2.5rem;
+    filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.5));
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -336,7 +343,15 @@
     left: 0;
     width: 100%;
     height: 100%;
-    box-shadow: inset 0 0 5px 5px rgba(0, 0, 0, 0.25);
+  }
+  .markerManager__imagePreview--1 {
+    border-radius: 50%;
+  }
+  .markerManager__imagePreview--2 {
+    border-radius: 0;
+  }
+  .markerManager__imagePreview--3 {
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
   }
 
   .markerManager__imagePreview:hover .markerManager__imagePreviewIcon {
