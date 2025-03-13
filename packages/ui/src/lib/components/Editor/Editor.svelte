@@ -27,7 +27,7 @@
     debug = false,
     editable = true
   }: {
-    height: number | string;
+    height?: number | string;
     content?: JSONContent | null | undefined;
     debug?: boolean;
     editable?: boolean;

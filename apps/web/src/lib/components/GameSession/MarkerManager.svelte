@@ -12,9 +12,17 @@
     Spacer,
     MapLayerType,
     Button,
-    Editor
+    Editor,
+    ConfirmActionButton
   } from '@tableslayer/ui';
-  import { IconTriangle, IconCircle, IconSquare, IconPhotoCirclePlus, IconArrowBack } from '@tabler/icons-svelte';
+  import {
+    IconTriangle,
+    IconChevronRight,
+    IconCircle,
+    IconSquare,
+    IconPhotoCirclePlus,
+    IconArrowBack
+  } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useUpdateMarkerMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
@@ -37,6 +45,7 @@
   let formIsLoading = $state(false);
   let isEditing = $derived(stageProps.activeLayer === MapLayerType.Marker);
   let editingMarkerIndex = $state<number | null>(null);
+  const markersUnlocked = $derived(stageProps.activeLayer === MapLayerType.Marker);
 
   // Set editingMarkerIndex when selectedMarker changes
   $effect(() => {
@@ -132,53 +141,117 @@
 </script>
 
 <div class="markerManager">
-  <Button onclick={toggleMarkerEditing}>
-    {#if isEditing}
-      Editing is on
-    {:else}
-      Editing is off
-    {/if}
-  </Button>
+  <div class="markerManager__header">
+    <div>
+      <FormControl label="Lock" name="isEditing">
+        {#snippet input({ inputProps })}
+          <RadioButton
+            {...inputProps}
+            selected={markersUnlocked ? 'true' : 'false'}
+            options={[
+              { label: 'off', value: 'true' },
+              { label: 'on', value: 'false' }
+            ]}
+            onSelectedChange={(value) => {
+              if (value === 'true') {
+                stageProps.activeLayer = MapLayerType.Marker;
+              } else {
+                stageProps.activeLayer = MapLayerType.None;
+              }
+            }}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
+    <div>
+      <FormControl label="Snap to grid" name="snapToGrid">
+        {#snippet input({ inputProps })}
+          <RadioButton
+            {...inputProps}
+            selected={stageProps.marker.snapToGrid.toString()}
+            options={[
+              { label: 'on', value: 'true' },
+              { label: 'off', value: 'false' }
+            ]}
+            onSelectedChange={(value) => {
+              stageProps.marker.snapToGrid = value === 'true';
+            }}
+          />
+        {/snippet}
+      </FormControl>
+    </div>
+  </div>
+
   <Spacer />
   <div class="markerManager__content">
     {#if editingMarkerIndex !== null}
       <div class="markerManager__editView">
-        <Button onclick={backToList} class="markerManager__backButton">
-          <Icon Icon={IconArrowBack} size="1rem" />
-          Back to list
-        </Button>
         <div class="markerManager__marker">
           {#if stageProps.marker.markers[editingMarkerIndex]}
             {@const marker = stageProps.marker.markers[editingMarkerIndex]}
-            <Button onclick={() => handleMarkerDelete(marker.id)} variant="danger">Delete marker</Button>
+            <Button variant="ghost" onclick={backToList} class="markerManager__backButton">
+              {#snippet start()}
+                <Icon Icon={IconArrowBack} size="1rem" />
+              {/snippet}
+              View all markers
+            </Button>
+
+            <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+              {#snippet trigger({ triggerProps })}
+                <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
+              {/snippet}
+              {#snippet actionMessage()}
+                hello
+              {/snippet}
+            </ConfirmActionButton>
             <div class="markerManager__formGrid">
-              <div class="markerManager__imageSection">
-                <button
-                  onclick={() => openMarkerImageDialog(marker.id)}
-                  class={[
-                    'markerManager__imagePreview',
-                    formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
-                    `markerManager__imagePreview--${marker.shape}`
-                  ]}
-                  aria-label="Change marker image"
-                  style:background-color={marker.shapeColor}
-                  style:background-image={`url('${marker.imageUrl}')`}
-                >
-                  <div class="markerManager__imagePreviewIcon">
-                    <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
+              <FormControl label="Change image" name="imageLocation">
+                {#snippet input({ inputProps })}
+                  <div class="markerManager__imageSection">
+                    <button
+                      onclick={() => openMarkerImageDialog(marker.id)}
+                      class={[
+                        'markerManager__imagePreview',
+                        formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
+                        `markerManager__imagePreview--${marker.shape}`
+                      ]}
+                      aria-label="Change marker image"
+                      style:background-color={marker.shapeColor}
+                      style:background-image={`url('${marker.imageUrl}')`}
+                    >
+                      <span class="markerManager__imagePreviewLabel">{marker.label}</span>
+                      <div class="markerManager__imagePreviewIcon">
+                        <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
+                      </div>
+                    </button>
+                    <input
+                      type="file"
+                      {...inputProps}
+                      id={`marker-image-input-${marker.id}`}
+                      accept="image/*"
+                      style="display: none;"
+                      onchange={(e) => handleMarkerImageUpload(e, marker.id)}
+                    />
                   </div>
-                </button>
-                <input
-                  type="file"
-                  id={`marker-image-input-${marker.id}`}
-                  accept="image/*"
-                  style="display: none;"
-                  onchange={(e) => handleMarkerImageUpload(e, marker.id)}
-                />
-              </div>
-            </div>
-            <Spacer />
-            <div class="markerManager__formGrid">
+                {/snippet}
+              </FormControl>
+
+              <FormControl label="Visible to" name="visibility">
+                {#snippet input(inputProps)}
+                  <RadioButton
+                    {...inputProps}
+                    selected={marker.visibility.toString()}
+                    options={[
+                      { label: 'Always', value: '0' },
+                      { label: 'DM', value: '1' },
+                      { label: 'Player', value: '2' }
+                    ]}
+                    onSelectedChange={(value) => {
+                      stageProps.marker.markers[editingMarkerIndex].visibility = Number(value);
+                    }}
+                  />
+                {/snippet}
+              </FormControl>
               <FormControl label="Label" name="label">
                 {#snippet input(inputProps)}
                   <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
@@ -244,7 +317,7 @@
               </FormControl>
             </div>
             <Spacer />
-            <Editor debug={false} bind:content={marker.note} height="300px" />
+            <Editor debug={false} bind:content={marker.note} />
           {/if}
         </div>
       </div>
@@ -265,8 +338,13 @@
               ]}
               style:background-color={marker.shapeColor}
               style:background-image={`url('${marker.imageUrl}')`}
-            ></div>
-            <div class="markerManager__name">{marker.title}</div>
+            >
+              <span class="markerManager__imagePreviewLabel">{marker.label}</span>
+            </div>
+            <div class="markerManager__title">{marker.title}</div>
+            <div class="markerManager__editIcon">
+              <Icon Icon={IconChevronRight} size="1rem" />
+            </div>
           </div>
         </button>
       {/each}
@@ -285,9 +363,6 @@
 {/snippet}
 
 <style>
-  .markerManager {
-    padding: 1rem 2rem;
-  }
   .markerManager__content {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
@@ -298,17 +373,27 @@
   }
   .markerManager__listItem {
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0 2rem;
     border-radius: 0.25rem;
-    transition: background-color 0.2s;
   }
-  .markerManager__listItem:hover {
-    background-color: var(--contrastLow);
+
+  .markerManager__listItem:hover .markerManager__editIcon {
+    opacity: 1;
   }
   .markerManager__formGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+  .markerManager__header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-bottom: var(--borderThin);
+    position: sticky;
+    top: 0;
+    width: 100%;
   }
   .markerManager__colorPicker {
     display: flex;
@@ -352,15 +437,28 @@
   .markerManager__imagePreview--3 {
     clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
   }
-
   .markerManager__imagePreview:hover .markerManager__imagePreviewIcon {
+    display: block;
     opacity: 1;
     color: #fff;
     filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.5));
   }
+
+  .markerManager__imagePreview:hover .markerManager__imagePreviewLabel {
+    display: none;
+  }
+
   .markerManager__imagePreviewIcon {
     opacity: 0;
+    display: none;
     transition: opacity 0.2s;
+  }
+  .markerManager__imagePreviewLabel {
+    font-size: 0.875rem;
+    font-weight: 900;
+    color: #fff;
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
   }
   .markerManager__read {
     display: flex;
@@ -369,6 +467,10 @@
   }
   .markerManager__marker {
     width: 100%;
-    max-width: 32rem;
+    padding: 0 2rem;
+  }
+  .markerManager__editIcon {
+    margin-left: auto;
+    opacity: 0;
   }
 </style>
