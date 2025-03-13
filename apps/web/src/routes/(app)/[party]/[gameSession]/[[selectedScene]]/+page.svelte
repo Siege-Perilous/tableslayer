@@ -598,7 +598,7 @@
         }
       }}
     >
-      <MarkerManager {stageProps} {selectedMarker} />
+      <MarkerManager partyId={party.id} {stageProps} {selectedMarker} />
     </Pane>
   </PaneGroup>
 </div>

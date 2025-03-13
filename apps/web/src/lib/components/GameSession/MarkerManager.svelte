@@ -1,9 +1,7 @@
 <script lang="ts">
   import {
-    Title,
     RadioButton,
     Icon,
-    Text,
     type StageProps,
     type Marker,
     FormControl,
@@ -11,16 +9,18 @@
     ColorPickerSwatch,
     ColorPicker,
     Popover,
+    Spacer,
+    MapLayerType,
     Button
   } from '@tableslayer/ui';
-  import { IconTriangle, IconCircle, IconSquare, IconPhoto } from '@tabler/icons-svelte';
+  import { IconTriangle, IconCircle, IconSquare, IconPhotoCirclePlus } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useUpdateMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
 
   let {
     stageProps = $bindable(),
-    selectedMarker,
+    selectedMarker = $bindable(),
     partyId = ''
   }: {
     stageProps: StageProps;
@@ -32,6 +32,7 @@
   let updateMarker = useUpdateMarkerMutation();
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
+  let isEditing = $derived(stageProps.activeLayer === MapLayerType.Marker);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -80,110 +81,140 @@
       }
     });
   };
+
+  const toggleMarkerEditing = () => {
+    if (isEditing) {
+      stageProps.activeLayer = MapLayerType.None;
+    } else {
+      stageProps.activeLayer = MapLayerType.Marker;
+    }
+  };
 </script>
 
 <div class="markerManager">
-  <div class="markerManager__header">
-    <Title as="h2" size="sm">Markers</Title>
-  </div>
-  <div>
-    <Text>Selected Marker: {selectedMarker ? selectedMarker.name : 'None'}</Text>
-  </div>
+  <Button onclick={toggleMarkerEditing}>
+    {#if isEditing}
+      Editing is on
+    {:else}
+      Editing is off
+    {/if}
+  </Button>
+  <Spacer />
   <div class="markerManager__content">
-    {#if stageProps.marker.markers.length === 0}
-      <Text>No markers on this scene</Text>
+    {#if selectedMarker}
+      Selected marker: {selectedMarker.name}
     {:else}
       {#each stageProps.marker.markers as marker, index (marker.id)}
-        <div class="markerManager__marker">
-          <div class="markerManager__formGrid">
-            <FormControl label="Name" name="name">
-              {#snippet input(inputProps)}
-                <Input {...inputProps} bind:value={marker.name} />
-              {/snippet}
-            </FormControl>
-            <FormControl label="Abbreviation" name="text">
-              {#snippet input(inputProps)}
-                <Input {...inputProps} bind:value={marker.text} />
-              {/snippet}
-            </FormControl>
-            <FormControl label="Shape" name="shape">
-              {#snippet input(inputProps)}
-                <RadioButton
-                  {...inputProps}
-                  selected={marker.shape.toString()}
-                  options={[
-                    { label: circle, value: '1' },
-                    { label: square, value: '2' },
-                    { label: triangle, value: '3' }
+        <Popover>
+          {#snippet trigger()}
+            <div>
+              <div class="markerManager__read">
+                <div
+                  class={[
+                    'markerManager__imagePreview',
+                    formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading'
                   ]}
-                  onSelectedChange={(value) => {
-                    stageProps.marker.markers[index].shape = Number(value);
-                  }}
-                />
-              {/snippet}
-            </FormControl>
-            <FormControl label="Size" name="size">
-              {#snippet input(inputProps)}
-                <RadioButton
-                  {...inputProps}
-                  selected={marker.size.toString()}
-                  options={[
-                    { label: 'S', value: '1' },
-                    { label: 'M', value: '2' },
-                    { label: 'L', value: '3' }
-                  ]}
-                  onSelectedChange={(value) => {
-                    stageProps.marker.markers[index].size = Number(value);
-                  }}
-                />
-              {/snippet}
-            </FormControl>
-            <div class="markerManager__colorPicker">
-              <FormControl label="Color" name="shapeColor">
-                {#snippet start()}
-                  <Popover>
-                    {#snippet trigger()}
-                      <ColorPickerSwatch color={marker.shapeColor} />
-                    {/snippet}
-                    {#snippet content()}
-                      <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
-                    {/snippet}
-                  </Popover>
-                {/snippet}
+                  style:background-color={marker.shapeColor}
+                  style:background-image={`url('${marker.imageUrl}')`}
+                ></div>
+                <div class="markerManager__name">{marker.name}</div>
+              </div>
+            </div>
+          {/snippet}
+          {#snippet content()}
+            <div class="markerManager__marker">
+              <div class="markerManager__formGrid">
+                <div class="markerManager__imageSection">
+                  <button
+                    onclick={() => openMarkerImageDialog(marker.id)}
+                    class={[
+                      'markerManager__imagePreview',
+                      formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading'
+                    ]}
+                    aria-label="Change marker image"
+                    style:background-color={marker.shapeColor}
+                    style:background-image={`url('${marker.imageUrl}')`}
+                  >
+                    <div class="markerManager__imagePreviewIcon">
+                      <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
+                    </div>
+                  </button>
+                  <input
+                    type="file"
+                    id={`marker-image-input-${marker.id}`}
+                    accept="image/*"
+                    style="display: none;"
+                    onchange={(e) => handleMarkerImageUpload(e, marker.id)}
+                  />
+                </div>
+                <FormControl label="Label" name="text">
+                  {#snippet input(inputProps)}
+                    <Input {...inputProps} bind:value={marker.text} />
+                  {/snippet}
+                </FormControl>
+              </div>
+              <Spacer />
+              <FormControl label="Name" name="name">
                 {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.shapeColor} />
+                  <Input {...inputProps} bind:value={marker.name} />
                 {/snippet}
               </FormControl>
-            </div>
-          </div>
-
-          <div class="markerManager__imageSection">
-            {#if marker.imageUrl}
-              <div class="markerManager__imagePreview" style:background-image={`url('${marker.imageUrl}')`}>
-                <button class="markerManager__changeImageBtn" onclick={() => openMarkerImageDialog(marker.id)}>
-                  Change Image
-                </button>
+              <Spacer />
+              <div class="markerManager__colorPicker">
+                <FormControl label="Color" name="shapeColor">
+                  {#snippet start()}
+                    <Popover>
+                      {#snippet trigger()}
+                        <ColorPickerSwatch color={marker.shapeColor} />
+                      {/snippet}
+                      {#snippet content()}
+                        <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
+                      {/snippet}
+                    </Popover>
+                  {/snippet}
+                  {#snippet input(inputProps)}
+                    <Input {...inputProps} bind:value={marker.shapeColor} />
+                  {/snippet}
+                </FormControl>
               </div>
-            {:else}
-              <Button
-                onclick={() => openMarkerImageDialog(marker.id)}
-                isLoading={formIsLoading && activeMarkerId === marker.id}
-              >
-                {#snippet start()}
-                  <Icon Icon={IconPhoto} size="1.25rem" />
-                {/snippet}
-                Add Image
-              </Button>
-            {/if}
-            <input
-              type="file"
-              id={`marker-image-input-${marker.id}`}
-              accept="image/*"
-              style="display: none;"
-              onchange={(e) => handleMarkerImageUpload(e, marker.id)}
-            />
-          </div>
-        </div>
+              <Spacer />
+              <div class="markerManager__formGrid">
+                <FormControl label="Shape" name="shape">
+                  {#snippet input(inputProps)}
+                    <RadioButton
+                      {...inputProps}
+                      selected={marker.shape.toString()}
+                      options={[
+                        { label: circle, value: '1' },
+                        { label: square, value: '2' },
+                        { label: triangle, value: '3' }
+                      ]}
+                      onSelectedChange={(value) => {
+                        stageProps.marker.markers[index].shape = Number(value);
+                      }}
+                    />
+                  {/snippet}
+                </FormControl>
+                <FormControl label="Size" name="size">
+                  {#snippet input(inputProps)}
+                    <RadioButton
+                      {...inputProps}
+                      selected={marker.size.toString()}
+                      options={[
+                        { label: 'S', value: '1' },
+                        { label: 'M', value: '2' },
+                        { label: 'L', value: '3' }
+                      ]}
+                      onSelectedChange={(value) => {
+                        stageProps.marker.markers[index].size = Number(value);
+                      }}
+                    />
+                  {/snippet}
+                </FormControl>
+              </div>
+            </div>
+          {/snippet}
+        </Popover>
       {/each}
     {/if}
   </div>
@@ -203,6 +234,11 @@
   .markerManager {
     padding: 1rem 2rem;
   }
+  .markerManager__content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+  }
   .markerManager__formGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -214,42 +250,53 @@
     gap: 0.25rem;
   }
   .markerManager__imageSection {
-    margin-top: 1rem;
     width: 100%;
   }
   .markerManager__imagePreview {
-    width: 100%;
-    height: 120px;
+    min-width: 3rem;
+    width: 3rem;
+    min-height: 3rem;
+    min-height: 3rem;
+    border-radius: 50%;
+    border: solid 4px #000;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     background-color: var(--contrastLow);
-    border-radius: var(--radius-2);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     position: relative;
-  }
-  .markerManager__changeImageBtn {
-    background: var(--bgSecondary);
-    color: var(--fg);
-    border: none;
-    padding: 0.5rem;
-    border-radius: var(--radius-1);
     cursor: pointer;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    opacity: 0.8;
+  }
+  .markerManager__imagePreview:before {
+    position: absolute;
+    content: '';
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: inset 0 0 5px 5px rgba(0, 0, 0, 0.25);
+  }
+
+  .markerManager__imagePreview:hover .markerManager__imagePreviewIcon {
+    opacity: 1;
+    color: #fff;
+    filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.5));
+  }
+  .markerManager__imagePreviewIcon {
+    opacity: 0;
     transition: opacity 0.2s;
   }
-  .markerManager__changeImageBtn:hover {
-    opacity: 1;
+  .markerManager__read {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
   }
   .markerManager__marker {
-    padding: 1rem 0;
-    border-bottom: var(--borderThin);
-  }
-  .markerManager__marker:last-child {
-    border-bottom: none;
+    width: 100%;
+    max-width: 16rem;
   }
 </style>

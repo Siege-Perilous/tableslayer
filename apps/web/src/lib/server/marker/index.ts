@@ -14,7 +14,7 @@ export const getMarkersForScene = async (sceneId: string) => {
   const markersWithThumb: (SelectMarker & Partial<Thumb>)[] = [];
   for (const marker of markers) {
     if (marker.imageLocation) {
-      const thumb = await transformImage(marker.imageLocation, 'w=512,h=512,fit=crop,gravity=auto');
+      const thumb = await transformImage(marker.imageLocation, 'w=512,h=512,fit=cover,gravity=auto');
       markersWithThumb.push({ ...marker, thumb });
     } else {
       // For markers without images, still include them in the result
