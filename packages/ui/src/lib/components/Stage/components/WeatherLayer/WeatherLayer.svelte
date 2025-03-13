@@ -11,6 +11,7 @@
   import AshPreset from './presets/AshPreset';
 
   import { DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass, CopyPass } from 'postprocessing';
+  import { onMount } from 'svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: WeatherLayerProps;
@@ -20,22 +21,6 @@
   const { props, mapSize, ...meshProps }: Props = $props();
 
   const { renderer, size, renderStage } = useThrelte();
-
-  let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let particleScene: THREE.Scene | undefined = $state(undefined);
-  let particleCamera: THREE.PerspectiveCamera | undefined = $state(undefined);
-
-  const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
-
-  // Create render target
-  const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
-    format: THREE.RGBAFormat,
-    stencilBuffer: false
-  });
-
-  const composer = new EffectComposer(renderer);
-  composer.autoRenderToScreen = false;
-  composer.outputBuffer = renderTarget;
 
   let weatherPreset = $derived.by(() => {
     let preset: WeatherLayerPreset;
@@ -77,6 +62,22 @@
     return preset;
   });
 
+  let mesh: THREE.Mesh = $state(new THREE.Mesh());
+  let particleScene = $state(new THREE.Scene());
+  let particleCamera = $state(new THREE.PerspectiveCamera(90, 1, 0.01, 10));
+  particleCamera.position.set(0, 0, -1);
+  particleCamera.rotation.x = Math.PI;
+
+  // Create render target
+  const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
+    format: THREE.RGBAFormat,
+    stencilBuffer: false
+  });
+
+  const composer = new EffectComposer(renderer);
+  composer.autoRenderToScreen = false;
+  composer.outputBuffer = renderTarget;
+
   // Create quad material using render target texture
   const quadMaterial = $derived(
     new THREE.MeshBasicMaterial({
@@ -91,24 +92,19 @@
     })
   );
 
-  // Position the render target camera
-  $effect(() => {
-    if (!mapSize || !particleCamera) return;
-
-    particleCamera.aspect = aspectRatio;
-    particleCamera.fov = weatherPreset.fov;
-    particleCamera.updateMatrixWorld();
-    particleCamera.updateProjectionMatrix();
+  onMount(() => {
+    if (particleCamera && particleScene && mapSize) {
+      composer.setMainCamera(particleCamera);
+      composer.setMainScene(particleScene);
+      composer.setSize(mapSize.width, mapSize.height);
+      renderTarget.setSize(mapSize.width, mapSize.height);
+    }
   });
 
   // Add DOF effect to the composer
   $effect(() => {
-    if (!particleScene || !particleCamera) return;
+    if (!particleScene || !particleCamera || !mapSize) return;
 
-    composer.setMainCamera(particleCamera);
-    composer.setMainScene(particleScene);
-    composer.setSize($size.width, $size.height);
-    renderTarget.setSize($size.width, $size.height);
     composer.removeAllPasses();
 
     // Add render pass
@@ -121,8 +117,8 @@
         focusDistance: weatherPreset.depthOfField.focus,
         focalLength: weatherPreset.depthOfField.focalLength,
         bokehScale: weatherPreset.depthOfField.bokehScale,
-        resolutionX: $size.width,
-        resolutionY: $size.height
+        resolutionX: mapSize.width,
+        resolutionY: mapSize.height
       });
       dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
       composer.addPass(new EffectPass(particleCamera, dofEffect));
@@ -131,10 +127,20 @@
     }
   });
 
+  // If map sizes change, update the camera and render target
+  $effect(() => {
+    if (!mapSize) return;
+    particleCamera.aspect = mapSize.width / mapSize.height;
+    particleCamera.fov = weatherPreset.fov;
+    particleCamera.updateProjectionMatrix();
+    renderTarget.setSize(mapSize.width, mapSize.height);
+    composer.setSize(mapSize.width, mapSize.height);
+  });
+
   // Custom render task
   useTask(
     (dt) => {
-      if (!particleScene || !particleCamera) return;
+      if (!particleScene || !particleCamera || !mapSize) return;
 
       particleScene.visible = true;
 
@@ -150,9 +156,14 @@
 </script>
 
 <!-- Hidden scene that renders to the render target -->
-<T.Scene bind:ref={particleScene} visible={false}>
-  <T.PerspectiveCamera bind:ref={particleCamera} near={0.01} far={10} position={[0, 0, -1]} rotation.x={Math.PI} />
-  <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
+<T.Scene is={particleScene} visible={false}>
+  <T.PerspectiveCamera is={particleCamera} manual />
+  <ParticleSystem
+    props={weatherPreset.particles}
+    opacity={weatherPreset.opacity}
+    intensity={weatherPreset.intensity}
+    resolution={{ width: mapSize?.width ?? 1, height: mapSize?.height ?? 1 }}
+  />
 </T.Scene>
 
 <T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
