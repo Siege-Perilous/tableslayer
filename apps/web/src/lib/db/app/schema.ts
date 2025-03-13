@@ -404,7 +404,7 @@ export const markerTable = sqliteTable(
     sceneId: text('scene_id')
       .notNull()
       .references(() => sceneTable.id, { onDelete: 'cascade' }),
-    visibility: integer('visibility').notNull().default(0),
+    visibility: integer('visibility').notNull().default(1),
     name: text('name').notNull().default('New token'),
     text: text('text'),
     imageLocation: text('image_location'),
@@ -413,13 +413,13 @@ export const markerTable = sqliteTable(
     positionY: real('position_y').notNull().default(0),
     shape: integer('shape').notNull().default(1),
     shapeColor: text('shape_color').notNull().default('#ffffff'),
-    size: integer('size').notNull().default(0)
+    size: integer('size').notNull().default(1)
   },
   (table) => [
     index('idx_marker_scene_id').on(table.sceneId),
     check('protected_marker_visibility', sql`${table.visibility} >= 0 AND ${table.visibility} <= 2`),
-    check('protected_marker_shape', sql`${table.shape} >= 0 AND ${table.shape} <= 2`),
-    check('protected_marker_size', sql`${table.size} >= 0 AND ${table.size} <= 2`)
+    check('protected_marker_shape', sql`${table.shape} >= 0 AND ${table.shape} <= 3`),
+    check('protected_marker_size', sql`${table.size} >= 1 AND ${table.size} <= 3`)
   ]
 );
 

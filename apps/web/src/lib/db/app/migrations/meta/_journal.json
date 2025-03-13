@@ -99,6 +99,13 @@
       "when": 1741611673005,
       "tag": "0013_marker-image",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1741872621259,
+      "tag": "0014_marker-defaults",
+      "breakpoints": true
     }
   ]
 }
