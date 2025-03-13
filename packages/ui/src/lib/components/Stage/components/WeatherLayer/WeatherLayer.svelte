@@ -20,7 +20,7 @@
 
   const { props, mapSize, ...meshProps }: Props = $props();
 
-  const { renderer, size, renderStage } = useThrelte();
+  const { renderer, renderStage } = useThrelte();
 
   let weatherPreset = $derived.by(() => {
     let preset: WeatherLayerPreset;
