@@ -68,7 +68,7 @@
 
 <div style="height: 100%; width: 100%;">
   <Canvas>
-    <T.Mesh scale={[1000, 1000, 1]} layers={[SceneLayerOrder.Background]}>
+    <T.Mesh scale={[100000, 100000, 1]} layers={[SceneLayerOrder.Background]}>
       <T.PlaneGeometry />
       <T.MeshBasicMaterial color={props.backgroundColor} />
     </T.Mesh>
