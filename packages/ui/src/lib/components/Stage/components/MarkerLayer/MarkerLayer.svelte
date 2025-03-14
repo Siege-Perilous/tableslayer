@@ -77,9 +77,9 @@
         shape: MarkerShape.Circle,
         shapeColor: '#ffffff',
         imageScale: 1.0,
-        label: 'ABC',
+        label: 'A1',
         imageUrl: null,
-        visibility: MarkerVisibility.Always,
+        visibility: MarkerVisibility.DM,
         note: null
       };
       selectedMarker = newMarker;

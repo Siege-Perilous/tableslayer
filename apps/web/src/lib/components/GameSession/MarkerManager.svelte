@@ -16,7 +16,10 @@
     Editor,
     ConfirmActionButton,
     IconButton,
-    Loader
+    Loader,
+    MarkerVisibility,
+    MarkerShape,
+    MarkerSize
   } from '@tableslayer/ui';
   import {
     IconTriangle,
@@ -29,7 +32,7 @@
     IconEyeOff,
     IconX
   } from '@tabler/icons-svelte';
-  import { useUploadFileMutation, useUpdateMarkerMutation, useDeleteMarkerMutation } from '$lib/queries';
+  import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
 
@@ -44,7 +47,6 @@
   } = $props();
 
   const uploadFile = useUploadFileMutation();
-  const updateMarker = useUpdateMarkerMutation();
   const deleteMarker = useDeleteMarkerMutation();
 
   let activeMarkerId = $state<string | null>(null);
@@ -89,21 +91,11 @@
       return;
     }
 
-    // Update the marker with the new image location
-    await handleMutation({
-      mutation: () =>
-        $updateMarker.mutateAsync({
-          partyId: partyId,
-          markerId: markerId,
-          markerData: { imageLocation: uploadedFile.location }
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        invalidateAll();
-      },
-      toastMessages: {
-        success: { title: 'Marker image updated' },
-        error: { title: 'Error updating marker image', body: (error) => error.message }
+    const newFileUrl = `https://files.tableslayer.com/cdn-cgi/image/w=512,h=512,fit=cover,gravity=auto/${uploadedFile.location}`;
+    console.log('New file URL:', newFileUrl);
+    stageProps.marker.markers.forEach((marker) => {
+      if (marker.id === markerId) {
+        marker.imageUrl = newFileUrl;
       }
     });
   };
@@ -166,14 +158,14 @@
 <div class="markerManager">
   <div class="markerManager__header">
     <div>
-      <FormControl label="Lock" name="isEditing">
+      <FormControl label="Markers lock" name="isEditing">
         {#snippet input({ inputProps })}
           <RadioButton
             {...inputProps}
             selected={markersUnlocked ? 'true' : 'false'}
             options={[
-              { label: 'off', value: 'true' },
-              { label: 'on', value: 'false' }
+              { label: 'on', value: 'false' },
+              { label: 'off', value: 'true' }
             ]}
             onSelectedChange={(value) => {
               if (value === 'true') {
@@ -231,8 +223,8 @@
                         {...inputProps}
                         selected={marker.visibility.toString()}
                         options={[
-                          { label: 'DM', value: '1' },
-                          { label: 'Everyone', value: '0' }
+                          { label: 'DM', value: MarkerVisibility.DM.toString() },
+                          { label: 'Everyone', value: MarkerVisibility.Always.toString() }
                         ]}
                         onSelectedChange={(value) => {
                           if (selectedMarker) {
@@ -279,9 +271,9 @@
                         {...inputProps}
                         selected={marker.shape.toString()}
                         options={[
-                          { label: circle, value: '1' },
-                          { label: square, value: '2' },
-                          { label: triangle, value: '3' }
+                          { label: circle, value: MarkerShape.Circle.toString() },
+                          { label: square, value: MarkerShape.Square.toString() },
+                          { label: triangle, value: MarkerShape.Triangle.toString() }
                         ]}
                         onSelectedChange={(value) => {
                           if (selectedMarker) {
@@ -297,9 +289,9 @@
                         {...inputProps}
                         selected={marker.size.toString()}
                         options={[
-                          { label: 'S', value: '1' },
-                          { label: 'M', value: '2' },
-                          { label: 'L', value: '3' }
+                          { label: 'S', value: MarkerSize.Small.toString() },
+                          { label: 'M', value: MarkerSize.Medium.toString() },
+                          { label: 'L', value: MarkerSize.Large.toString() }
                         ]}
                         onSelectedChange={(value) => {
                           if (selectedMarker) {
@@ -340,12 +332,15 @@
             <div class="markerManager__read">
               <IconButton
                 variant="ghost"
-                onclick={() => (marker.visibility === 0 ? (marker.visibility = 1) : (marker.visibility = 0))}
+                onclick={() =>
+                  marker.visibility === MarkerVisibility.Always
+                    ? (marker.visibility = MarkerVisibility.DM)
+                    : (marker.visibility = MarkerVisibility.Always)}
               >
                 <Icon
-                  Icon={marker.visibility === 0 ? IconEye : IconEyeOff}
+                  Icon={marker.visibility === MarkerVisibility.Always ? IconEye : IconEyeOff}
                   size="1.25rem"
-                  color={marker.visibility === 0 ? 'var(--fg)' : 'var(--fgMuted)'}
+                  color={marker.visibility === MarkerVisibility.Always ? 'var(--fg)' : 'var(--fgMuted)'}
                 />
               </IconButton>
               {@render imagePreview(marker)}

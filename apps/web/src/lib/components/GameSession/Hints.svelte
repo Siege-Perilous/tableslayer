@@ -8,7 +8,7 @@
   {#if activeLayer === 1}
     Click and drag to reveal the fog. <span>F</span> to clear, <span>Shift + F</span> to reset.
   {:else if activeLayer === 2}
-    Click an empty space to add a new marker. Click a marker to edit it. <span>Shift + M</span> to lock.
+    Click an empty space to add a new marker. Click a marker to edit or move it. <span>Shift + M</span> to lock.
   {/if}
 </div>
 
