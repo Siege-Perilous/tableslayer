@@ -119,14 +119,6 @@
     });
   };
 
-  const toggleMarkerEditing = () => {
-    if (isEditing) {
-      stageProps.activeLayer = MapLayerType.None;
-    } else {
-      stageProps.activeLayer = MapLayerType.Marker;
-    }
-  };
-
   const handleMarkerDelete = async (markerId: string) => {
     await handleMutation({
       mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
@@ -144,7 +136,7 @@
   };
 </script>
 
-{#snippet imagePreview(marker, inputProps)}
+{#snippet imagePreview(marker: Marker, inputProps = {})}
   <div class="markerManager__imageSection">
     <button
       onclick={() => openMarkerImageDialog(marker.id)}
@@ -477,6 +469,9 @@
   .markerManager__editIcon {
     margin-left: auto;
     opacity: 0;
+  }
+  .markerManager__title {
+    font-size: 0.875rem;
   }
   .markerManager__title:hover {
     text-decoration: underline;
