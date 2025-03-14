@@ -58,6 +58,8 @@
     // Configure renderer
     renderer.setClearColor(0, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize($size.width, $size.height);
+    composer.setSize($size.width, $size.height);
   });
 
   // Effect to update post-processing settings when props change
@@ -67,7 +69,6 @@
     // Need to convert the LUT to a LookupTexture
     Promise.resolve(getLUT(postProcessing.lut.url))
       .then((lut) => {
-        composer.setSize($size.width, $size.height);
         composer.removeAllPasses();
 
         const effects = [];
@@ -145,6 +146,9 @@
   useTask(
     (dt) => {
       if (!scene || !renderer || !camera) return;
+
+      // Reset renderer size to match the canvas size (has no effect if already set)
+      renderer.setSize($size.width, $size.height);
 
       // Render main scene with post-processing
       camera.current.layers.set(SceneLayer.Main);
