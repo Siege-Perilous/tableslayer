@@ -173,6 +173,7 @@
       stageProps.activeLayer = MapLayerType.None;
       markersPane.collapse();
     } else if (control === 'marker') {
+      selectedMarker = undefined;
       activeControl = 'marker';
       stageProps.activeLayer = MapLayerType.Marker;
       markersPane.expand();
