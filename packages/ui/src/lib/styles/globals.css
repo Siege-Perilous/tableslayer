@@ -99,3 +99,10 @@ html {
   font-family: var(--font-sans);
   background-color: var(--bg);
 }
+
+.globalLoader {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 2;
+}

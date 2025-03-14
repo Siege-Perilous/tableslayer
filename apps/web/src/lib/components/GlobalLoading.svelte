@@ -29,16 +29,7 @@
   });
 </script>
 
-<!-- Global loader display -->
+<!-- Global loader display, css is in globals.css -->
 {#if $isFetching}
   <Loader class="globalLoader" />
 {/if}
-
-<style>
-  :global(.globalLoader) {
-    position: fixed;
-    bottom: 2.5rem;
-    right: 2.5rem;
-    z-index: 2;
-  }
-</style>

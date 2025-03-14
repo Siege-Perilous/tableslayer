@@ -171,7 +171,6 @@
     if (control === activeControl) {
       activeControl = 'none';
       stageProps.activeLayer = MapLayerType.None;
-      markersPane.collapse();
     } else if (control === 'marker') {
       selectedMarker = undefined;
       activeControl = 'marker';
@@ -222,7 +221,6 @@
       stageProps.map.url = StageDefaultProps.map.url;
     }
     if (activeScene) {
-      console.log('activeScene', activeScene, 'stageProps', $state.snapshot(stageProps));
       socketUpdate();
     }
   });
@@ -380,12 +378,11 @@
             blob: fogBlob as Blob,
             sceneId: selectedScene.id
           }),
-        formLoadingState: () => console.log('fog is uploading'),
+        formLoadingState: () => {},
         onSuccess: (fog) => {
           stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
           fogBlobUpdateTime = new Date();
           socketUpdate();
-          console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
           isUpdatingFog = false;
         },
         onError: () => {
@@ -404,8 +401,6 @@
     if (isSaving || isUpdatingFog) return;
     isSaving = true;
 
-    console.log('Saving scene...');
-
     // Save scene settings
     await handleMutation({
       mutation: () =>
@@ -414,7 +409,7 @@
           partyId: party.id,
           sceneData: convertPropsToSceneDetails(stageProps)
         }),
-      formLoadingState: () => console.log('stage is loading'),
+      formLoadingState: () => {},
       onError: (error) => {
         console.log('Error saving scene:', error);
       },
@@ -426,7 +421,6 @@
 
     // Save markers
     if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-      console.log('Saving markers...');
       const existingMarkerIds =
         data.selectedSceneMarkers && Array.isArray(data.selectedSceneMarkers)
           ? data.selectedSceneMarkers.map((marker) => marker.id)
@@ -457,7 +451,6 @@
         }
         // Otherwise create a new marker
         else {
-          console.log('Creating new marker with data:', markerData);
           await handleMutation({
             mutation: () =>
               $createMarkerMutation.mutateAsync({
@@ -465,12 +458,9 @@
                 sceneId: selectedScene.id,
                 markerData: markerData
               }),
-            formLoadingState: () => console.log('creating marker'),
+            formLoadingState: () => {},
             onError: (error) => {
               console.log('Error creating marker:', error);
-            },
-            onSuccess: (marker) => {
-              console.log('Marker created successfully:', marker);
             },
             toastMessages: {
               error: { title: 'Error creating marker', body: (err) => err.message || 'Error creating marker' }
@@ -478,6 +468,7 @@
           });
         }
       }
+      socketUpdate();
     }
 
     // Empty game session update will update the lastUpdated field through Drizzle
@@ -511,8 +502,6 @@
       saveScene();
     }, 3000);
   });
-
-  console.log('selectedSceneMarkers', data.selectedSceneMarkers);
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
