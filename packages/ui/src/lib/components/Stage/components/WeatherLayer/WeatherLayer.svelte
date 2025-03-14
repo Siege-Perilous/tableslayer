@@ -11,7 +11,7 @@
   import AshPreset from './presets/AshPreset';
 
   import { EffectComposer, RenderPass, CopyPass } from 'postprocessing';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: WeatherLayerProps;
@@ -21,47 +21,8 @@
   const { props, mapSize, ...meshProps }: Props = $props();
 
   const { renderer, renderStage } = useThrelte();
-
-  let weatherPreset = $derived.by(() => {
-    let preset: WeatherLayerPreset;
-
-    switch (props.type) {
-      case WeatherType.Snow:
-        preset = { ...SnowPreset };
-        break;
-      case WeatherType.Rain:
-        preset = { ...RainPreset };
-        break;
-      case WeatherType.Leaves:
-        preset = { ...LeavesPreset };
-        break;
-      case WeatherType.Custom:
-        preset = { ...(props.custom || RainPreset) };
-        break;
-      case WeatherType.Ash:
-        preset = { ...AshPreset };
-        break;
-      default:
-        // Fallback to rain preset
-        preset = { ...RainPreset };
-    }
-
-    // Overrides for fov, intensity, and opacity set in the UI
-    if (props.fov) {
-      preset.fov = props.fov;
-    }
-
-    if (props.intensity) {
-      preset.intensity = props.intensity;
-    }
-
-    if (props.opacity) {
-      preset.opacity = props.opacity;
-    }
-
-    return preset;
-  });
-
+  let weatherType = $state(props.type);
+  let weatherPreset: WeatherLayerPreset = $state(RainPreset);
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let particleScene = $state(new THREE.Scene());
   let particleCamera = $state(new THREE.PerspectiveCamera(90, 1, 0.01, 10));
@@ -98,6 +59,53 @@
       composer.setMainScene(particleScene);
       composer.setSize(mapSize.width, mapSize.height);
       renderTarget.setSize(mapSize.width, mapSize.height);
+    }
+  });
+
+  // If weather type changes, update the preset
+  $effect(() => {
+    if (props.type === weatherType) {
+      return;
+    }
+
+    untrack(() => {
+      weatherType = props.type;
+
+      switch (props.type) {
+        case WeatherType.Snow:
+          weatherPreset = { ...SnowPreset };
+          break;
+        case WeatherType.Rain:
+          weatherPreset = { ...RainPreset };
+          break;
+        case WeatherType.Leaves:
+          weatherPreset = { ...LeavesPreset };
+          break;
+        case WeatherType.Custom:
+          weatherPreset = { ...(props.custom || RainPreset) };
+          break;
+        case WeatherType.Ash:
+          weatherPreset = { ...AshPreset };
+          break;
+        default:
+          // Fallback to rain preset
+          weatherPreset = { ...RainPreset };
+      }
+    });
+  });
+
+  // Overrides for fov, intensity, and opacity set in the UI
+  $effect(() => {
+    if (props.fov) {
+      weatherPreset.fov = props.fov;
+    }
+
+    if (props.intensity) {
+      weatherPreset.intensity = props.intensity;
+    }
+
+    if (props.opacity) {
+      weatherPreset.opacity = props.opacity;
     }
   });
 
