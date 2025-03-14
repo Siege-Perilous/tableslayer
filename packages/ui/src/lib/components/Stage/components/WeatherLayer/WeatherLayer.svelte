@@ -10,7 +10,7 @@
   import LeavesPreset from './presets/LeavesPreset';
   import AshPreset from './presets/AshPreset';
 
-  import { DepthOfFieldEffect, EffectComposer, EffectPass, RenderPass, CopyPass } from 'postprocessing';
+  import { EffectComposer, RenderPass, CopyPass } from 'postprocessing';
   import { onMount } from 'svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
