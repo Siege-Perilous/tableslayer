@@ -138,10 +138,7 @@
   // Whenever the scene or display properties change, update the clipping planes
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
-    untrack(() => {
-      console.log('clippingPlaneStore.value', clippingPlaneStore.value);
-      renderer.clippingPlanes = clippingPlaneStore.value;
-    });
+    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
   // Custom render task
