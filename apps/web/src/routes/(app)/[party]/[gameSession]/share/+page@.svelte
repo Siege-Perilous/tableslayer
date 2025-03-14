@@ -183,9 +183,9 @@
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
     if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   }
 
@@ -221,7 +221,7 @@
 
 {#if selectedMarker}
   <span style="display: none;">
-    {selectedMarker.name} - {selectedMarker.id}
+    {selectedMarker.title} - {selectedMarker.id}
   </span>
 {/if}
 
