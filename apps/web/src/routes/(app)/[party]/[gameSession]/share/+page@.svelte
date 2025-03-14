@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
-  import type { BroadcastStageUpdate } from '$lib/utils';
+  import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -18,7 +18,7 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, 'client'));
+  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client'));
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
@@ -32,6 +32,21 @@
     stage.scene.fit();
   };
 
+  // Handler for optimized marker updates
+  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
+    // Only update if the marker belongs to the current scene
+    if (markerUpdate.sceneId === data.activeScene?.id) {
+      const index = stageProps.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
+      if (index !== -1) {
+        // Update only the position property of the marker
+        stageProps.marker.markers[index] = {
+          ...stageProps.marker.markers[index],
+          position: markerUpdate.position
+        };
+      }
+    }
+  };
+
   onMount(() => {
     initializeStage(stage, (isLoading: boolean) => {
       stageIsLoading = isLoading;
@@ -39,7 +54,9 @@
     const socket = setupGameSessionWebSocket(
       data.gameSession.id,
       () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket')
+      () => console.log('Disconnected from game session socket'),
+      handleMarkerUpdate,
+      stageProps
     );
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -56,7 +73,9 @@
         // Don't allow rotate and zoom from the editor
         scene: { ...stageProps.scene },
         // Don't allow erase mode
-        activeLayer: MapLayerType.None
+        activeLayer: MapLayerType.None,
+        // Mode 1 is for player view
+        mode: 1
       };
 
       handleResize();
@@ -181,9 +200,9 @@
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
     if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   }
 
@@ -219,7 +238,7 @@
 
 {#if selectedMarker}
   <span style="display: none;">
-    {selectedMarker.name} - {selectedMarker.id}
+    {selectedMarker.title} - {selectedMarker.id}
   </span>
 {/if}
 
