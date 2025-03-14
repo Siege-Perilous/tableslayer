@@ -618,7 +618,13 @@
       }}
     >
       {#key selectedScene.id}
-        <MarkerManager partyId={party.id} {stageProps} {selectedMarker} {socketUpdate} {handleSelectActiveControl} />
+        <MarkerManager
+          partyId={party.id}
+          bind:stageProps
+          bind:selectedMarker
+          {socketUpdate}
+          {handleSelectActiveControl}
+        />
       {/key}
     </Pane>
   </PaneGroup>
