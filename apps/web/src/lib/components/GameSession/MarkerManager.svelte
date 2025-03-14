@@ -10,7 +10,6 @@
     ColorPicker,
     Popover,
     Spacer,
-    MapLayerType,
     Button,
     Link,
     Editor,
@@ -19,7 +18,10 @@
     Loader,
     MarkerVisibility,
     MarkerShape,
-    MarkerSize
+    MarkerSize,
+    Label,
+    Text,
+    MapLayerType
   } from '@tableslayer/ui';
   import {
     IconTriangle,
@@ -30,7 +32,9 @@
     IconArrowBack,
     IconEye,
     IconEyeOff,
-    IconX
+    IconX,
+    IconPokerChip,
+    IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
@@ -39,11 +43,15 @@
   let {
     stageProps = $bindable(),
     selectedMarker = $bindable(),
-    partyId = ''
+    partyId = '',
+    handleSelectActiveControl,
+    socketUpdate
   }: {
     stageProps: StageProps;
     selectedMarker: Marker | undefined;
     partyId: string;
+    handleSelectActiveControl: (control: string) => void;
+    socketUpdate: () => void;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -52,7 +60,6 @@
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
   let editingMarkerId = $derived(selectedMarker ? selectedMarker.id : null);
-  const markersUnlocked = $derived(stageProps.activeLayer === MapLayerType.Marker);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -157,44 +164,17 @@
 
 <div class="markerManager">
   <div class="markerManager__header">
-    <div>
-      <FormControl label="Markers lock" name="isEditing">
-        {#snippet input({ inputProps })}
-          <RadioButton
-            {...inputProps}
-            selected={markersUnlocked ? 'true' : 'false'}
-            options={[
-              { label: 'on', value: 'false' },
-              { label: 'off', value: 'true' }
-            ]}
-            onSelectedChange={(value) => {
-              if (value === 'true') {
-                stageProps.activeLayer = MapLayerType.Marker;
-              } else {
-                stageProps.activeLayer = MapLayerType.None;
-              }
-            }}
-          />
-        {/snippet}
-      </FormControl>
-    </div>
-    <div>
-      <FormControl label="Snap to grid" name="snapToGrid">
-        {#snippet input({ inputProps })}
-          <RadioButton
-            {...inputProps}
-            selected={stageProps.marker.snapToGrid.toString()}
-            options={[
-              { label: 'on', value: 'true' },
-              { label: 'off', value: 'false' }
-            ]}
-            onSelectedChange={(value) => {
-              stageProps.marker.snapToGrid = value === 'true';
-            }}
-          />
-        {/snippet}
-      </FormControl>
-    </div>
+    <Label>Snap to grid</Label>
+    <RadioButton
+      selected={stageProps.marker.snapToGrid.toString()}
+      options={[
+        { label: 'on', value: 'true' },
+        { label: 'off', value: 'false' }
+      ]}
+      onSelectedChange={(value) => {
+        stageProps.marker.snapToGrid = value === 'true';
+      }}
+    />
   </div>
   <div class="markerManager__content">
     {#if editingMarkerId !== null}
@@ -230,6 +210,7 @@
                           if (selectedMarker) {
                             selectedMarker.visibility = Number(value);
                           }
+                          socketUpdate();
                         }}
                       />
                     {/snippet}
@@ -279,6 +260,7 @@
                           if (selectedMarker) {
                             selectedMarker.shape = Number(value);
                           }
+                          socketUpdate();
                         }}
                       />
                     {/snippet}
@@ -297,6 +279,7 @@
                           if (selectedMarker) {
                             selectedMarker.size = Number(value);
                           }
+                          socketUpdate();
                         }}
                       />
                     {/snippet}
@@ -332,10 +315,14 @@
             <div class="markerManager__read">
               <IconButton
                 variant="ghost"
-                onclick={() =>
-                  marker.visibility === MarkerVisibility.Always
-                    ? (marker.visibility = MarkerVisibility.DM)
-                    : (marker.visibility = MarkerVisibility.Always)}
+                onclick={() => {
+                  if (marker.visibility === MarkerVisibility.Always) {
+                    marker.visibility = MarkerVisibility.DM;
+                  } else {
+                    marker.visibility = MarkerVisibility.Always;
+                  }
+                  socketUpdate();
+                }}
               >
                 <Icon
                   Icon={marker.visibility === MarkerVisibility.Always ? IconEye : IconEyeOff}
@@ -359,6 +346,31 @@
                 </ConfirmActionButton>
               </div>
             </div>
+          </div>
+        {:else}
+          <div>
+            <Text weight={700}>No markers in this scene</Text>
+            <Spacer size={2} />
+            <Text color="var(--fgMuted)"
+              >Markers allow you to mark important locations. You can can use them as GM only notes — or in a pinch — as
+              table viewable tokens.</Text
+            >
+            <Spacer size={4} />
+            <Text color="var(--fgMuted)">Like the rest of Table Slayer, only the GM has control over markers.</Text>
+            <Spacer />
+            {#if stageProps.activeLayer === MapLayerType.Marker}
+              <div class="markerManager__markerHint">
+                <Icon Icon={IconLocationPin} size="2rem" />
+                Click on the map to add a marker
+              </div>
+            {:else}
+              <Button onclick={() => handleSelectActiveControl('marker')}>
+                {#snippet start()}
+                  <Icon Icon={IconPokerChip} size="1.25rem" />
+                {/snippet}
+                Add a marker
+              </Button>
+            {/if}
           </div>
         {/each}
       </div>
@@ -420,8 +432,8 @@
     gap: 1rem;
   }
   .markerManager__header {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    align-items: center;
     gap: 1rem;
     padding: 1rem 2rem;
     border-bottom: var(--borderThin);
@@ -523,5 +535,14 @@
     .markerManager__listItem .markerManager__imageRemove {
       display: none;
     }
+  }
+  .markerManager__markerHint {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    border-radius: 0.25rem;
+    background-color: var(--contrastLow);
+    color: var(--fgDanger);
   }
 </style>
