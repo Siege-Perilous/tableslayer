@@ -103,6 +103,7 @@
         // First, try to parse it as JSON string
         initialContent = JSON.parse(content);
       } catch (e) {
+        console.log(e);
         // If it's plain HTML, initialize with it
         initialContent = content;
         // And immediately update our bound content to be JSON

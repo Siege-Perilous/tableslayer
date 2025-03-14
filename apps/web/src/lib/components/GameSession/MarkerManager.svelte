@@ -203,8 +203,8 @@
           {#if selectedMarker}
             {@const marker = stageProps.marker.markers.find((m) => m.id === editingMarkerId)}
             {#if marker}
+              <!-- Forces rerender if ID changes -->
               {#key marker.id}
-                id: {marker.id}
                 <Spacer />
                 <div class="markerManager__formGrid">
                   <FormControl label="Change image" name="imageLocation">

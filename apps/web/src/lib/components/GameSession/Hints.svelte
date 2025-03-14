@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type StageProps, type MapLayerType } from '@tableslayer/ui';
+  import { type StageProps } from '@tableslayer/ui';
   let { stageProps }: { stageProps: StageProps } = $props();
   const activeLayer = $derived(stageProps.activeLayer);
 </script>
