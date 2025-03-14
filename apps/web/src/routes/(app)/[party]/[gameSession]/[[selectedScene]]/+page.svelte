@@ -4,28 +4,39 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
-  import { useUpdateSceneMutation, useUpdateGameSessionMutation, useUploadFogFromBlobMutation } from '$lib/queries';
+  import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
+  import {
+    useUpdateSceneMutation,
+    useUpdateGameSessionMutation,
+    useUploadFogFromBlobMutation,
+    useCreateMarkerMutation,
+    useUpdateMarkerMutation
+  } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
     StageDefaultProps,
     broadcastStageUpdate,
+    broadcastMarkerUpdate,
     buildSceneProps,
     handleKeyCommands,
     setupGameSessionWebSocket,
     handleStageZoom,
     hasThumb,
     initializeStage,
-    convertPropsToSceneDetails
+    convertPropsToSceneDetails,
+    convertStageMarkersToDbFormat,
+    throttle,
+    type MarkerPositionUpdate
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene } = $derived(data);
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
+    $derived(data);
 
   let socket: Socket | null = $state(null);
-  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, 'editor'));
+  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarker: Marker | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
@@ -35,7 +46,9 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
+  let markersPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
+  let isMarkersCollapsed = $state(true);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
@@ -44,12 +57,22 @@
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+  const createMarkerMutation = useCreateMarkerMutation();
+  const updateMarkerMutation = useUpdateMarkerMutation();
 
   const getCollapseIcon = () => {
     if (isMobile) {
       return isScenesCollapsed ? IconChevronDown : IconChevronUp;
     } else {
       return isScenesCollapsed ? IconChevronRight : IconChevronLeft;
+    }
+  };
+
+  const getMarkerCollapseIcon = () => {
+    if (isMobile) {
+      return isMarkersCollapsed ? IconChevronDown : IconChevronUp;
+    } else {
+      return isMarkersCollapsed ? IconChevronLeft : IconChevronRight;
     }
   };
 
@@ -64,7 +87,7 @@
    * This is passed down to child components and manually called
    */
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, gameSession.isPaused);
+    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, activeSceneMarkers, gameSession.isPaused);
   };
 
   /**
@@ -98,14 +121,31 @@
    * - Initialize the stage
    * - Send initial broadcast to the WebSocket
    */
+  // Handler for optimized marker updates
+  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate, props: StageProps) => {
+    // Only handle updates for the current scene
+    if (selectedScene && selectedScene.id === markerUpdate.sceneId) {
+      const index = props.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
+      if (index !== -1) {
+        // Update the marker position without rebuilding the entire state
+        props.marker.markers[index] = {
+          ...props.marker.markers[index],
+          position: markerUpdate.position
+        };
+      }
+    }
+  };
+
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
       () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket')
+      () => console.log('Disconnected from game session socket'),
+      handleMarkerUpdate, // Pass marker update handler
+      stageProps // Pass stageProps for the handler to access
     );
 
-    initializeStage(stage, (isLoading) => {
+    initializeStage(stage, (isLoading: boolean) => {
       stageIsLoading = isLoading;
     });
 
@@ -139,10 +179,28 @@
     }
   };
 
+  const handleToggleMarkers = () => {
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+    } else {
+      markersPane.collapse();
+    }
+  };
+
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
       activeControl = 'none';
       stageProps.activeLayer = MapLayerType.None;
+    } else if (control === 'marker') {
+      selectedMarker = undefined;
+      activeControl = 'marker';
+      stageProps.activeLayer = MapLayerType.Marker;
+      markersPane.expand();
+      setTimeout(() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }, 50);
     } else {
       activeControl = control;
       stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -164,7 +222,7 @@
   };
 
   $effect(() => {
-    stageProps = buildSceneProps(data.selectedScene, 'editor');
+    stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
     stageIsLoading = true;
 
     const interval = setInterval(() => {
@@ -183,7 +241,6 @@
       stageProps.map.url = StageDefaultProps.map.url;
     }
     if (activeScene) {
-      console.log('activeScene', activeScene, 'stageProps', $state.snapshot(stageProps));
       socketUpdate();
     }
   });
@@ -214,6 +271,11 @@
         ...marker,
         position: { x: position.x, y: position.y }
       };
+
+      // Use the optimized marker update for position changes
+      if (socket && selectedScene && selectedScene.id) {
+        broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
+      }
     }
   };
 
@@ -223,9 +285,9 @@
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
     if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.pageX + ',' + event.pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
-      alert('You clicked on marker: ' + marker.name + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   };
 
@@ -238,7 +300,6 @@
    * This requires normalizing the cursor position, because the stage can be rotated and zoomed.
    * Also the player view browser size can be different from the editor view.
    */
-  let isThrottled = false;
   const onMouseMove = (e: MouseEvent) => {
     const rotation = stageProps.scene.rotation; // Rotation in degrees
     const canvasBounds = stageElement?.getBoundingClientRect(); // Full canvas bounds
@@ -293,14 +354,8 @@
         stageProps.scene.offset.y -= e.movementY;
       }
 
-      // Avoid spamming WebSocket updates
-      if (!isThrottled) {
-        isThrottled = true;
-        requestAnimationFrame(() => {
-          socketUpdate(); // Send panning update
-          isThrottled = false;
-        });
-      }
+      // Use our proper throttled update (replaces manual throttling)
+      throttledSocketUpdate();
     }
 
     // Emit the normalized and rotated position over the WebSocket
@@ -314,10 +369,13 @@
     }
   };
 
+  // Use throttling for wheel/zoom events to reduce update frequency
+  const throttledSocketUpdate = throttle(socketUpdate, 200);
+
   const onWheel = (e: WheelEvent) => {
-    // Thie tracks shift + crtl + mouse wheel and calls the appropriate zoom function
+    // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
-    socketUpdate();
+    throttledSocketUpdate();
   };
 
   /**
@@ -341,12 +399,11 @@
             blob: fogBlob as Blob,
             sceneId: selectedScene.id
           }),
-        formLoadingState: () => console.log('fog is uploading'),
+        formLoadingState: () => {},
         onSuccess: (fog) => {
           stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
           fogBlobUpdateTime = new Date();
           socketUpdate();
-          console.log('Fog uploaded successfully', stageProps.fogOfWar.url);
           isUpdatingFog = false;
         },
         onError: () => {
@@ -365,8 +422,7 @@
     if (isSaving || isUpdatingFog) return;
     isSaving = true;
 
-    console.log('Saving scene...');
-
+    // Save scene settings
     await handleMutation({
       mutation: () =>
         $updateSceneMutation.mutateAsync({
@@ -374,7 +430,7 @@
           partyId: party.id,
           sceneData: convertPropsToSceneDetails(stageProps)
         }),
-      formLoadingState: () => console.log('stage is loading'),
+      formLoadingState: () => {},
       onError: (error) => {
         console.log('Error saving scene:', error);
       },
@@ -383,6 +439,58 @@
         error: { title: 'Error saving scene', body: (err) => err.message || 'Error saving scene' }
       }
     });
+
+    // Save markers
+    if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
+      const existingMarkerIds =
+        data.selectedSceneMarkers && Array.isArray(data.selectedSceneMarkers)
+          ? data.selectedSceneMarkers.map((marker) => marker.id)
+          : [];
+      const stageMarkers = stageProps.marker.markers;
+
+      // Process markers one by one to handle creates and updates
+      for (const marker of stageMarkers) {
+        const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
+
+        // If marker exists in the database, update it
+        if (existingMarkerIds.includes(marker.id)) {
+          await handleMutation({
+            mutation: () =>
+              $updateMarkerMutation.mutateAsync({
+                partyId: party.id,
+                markerId: marker.id,
+                markerData
+              }),
+            formLoadingState: () => {},
+            onError: (error) => {
+              console.log('Error updating marker:', error);
+            },
+            toastMessages: {
+              error: { title: 'Error updating marker', body: (err) => err.message || 'Error updating marker' }
+            }
+          });
+        }
+        // Otherwise create a new marker
+        else {
+          await handleMutation({
+            mutation: () =>
+              $createMarkerMutation.mutateAsync({
+                partyId: party.id,
+                sceneId: selectedScene.id,
+                markerData: markerData
+              }),
+            formLoadingState: () => {},
+            onError: (error) => {
+              console.log('Error creating marker:', error);
+            },
+            toastMessages: {
+              error: { title: 'Error creating marker', body: (err) => err.message || 'Error creating marker' }
+            }
+          });
+        }
+      }
+      socketUpdate();
+    }
 
     // Empty game session update will update the lastUpdated field through Drizzle
     await handleMutation({
@@ -419,12 +527,6 @@
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
 <svelte:window bind:innerWidth />
-
-{#if selectedMarker}
-  <span style="display: none;">
-    {selectedMarker.name} - {selectedMarker.id}
-  </span>
-{/if}
 
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
@@ -487,7 +589,35 @@
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />
+        <Hints {stageProps} />
       </div>
+    </Pane>
+    <PaneResizer class="resizer">
+      <button
+        class="resizer__handle"
+        aria-label="Collapse scenes column"
+        title={isMarkersCollapsed ? 'Expand markers column' : 'Collapse markers column'}
+        onclick={handleToggleMarkers}
+      >
+        <Icon Icon={getMarkerCollapseIcon()} />
+      </button>
+    </PaneResizer>
+    <Pane
+      defaultSize={25}
+      collapsible={true}
+      collapsedSize={0}
+      minSize={10}
+      maxSize={50}
+      bind:pane={markersPane}
+      onCollapse={() => (isMarkersCollapsed = true)}
+      onExpand={() => (isMarkersCollapsed = false)}
+      onResize={() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }}
+    >
+      <MarkerManager partyId={party.id} {stageProps} {selectedMarker} />
     </Pane>
   </PaneGroup>
 </div>

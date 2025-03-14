@@ -23,12 +23,12 @@
 
   let {
     height = 'auto',
-    content = $bindable('<p>Hello, world!</p>'),
+    content = $bindable(undefined),
     debug = false,
     editable = true
   }: {
-    height: number | string;
-    content?: string | JSONContent;
+    height?: number | string;
+    content?: JSONContent | null | undefined;
     debug?: boolean;
     editable?: boolean;
   } = $props();
@@ -37,10 +37,11 @@
   let editor: Editor | undefined = $state();
   let editorReady = $state(false);
 
-  const isJsonContent = typeof content === 'object';
+  // Since we're now only using JSON content, this is no longer needed
+  // const isJsonContent = content !== null && content !== undefined && typeof content === 'object';
 
-  // For HTML mode, track the HTML content
-  let editorHtml = $state(isJsonContent ? '' : (content as string));
+  // We'll always use JSON, but for debug purposes we'll keep track of HTML
+  let editorHtml = $state('');
 
   // Create explicit state variables for each button's active state
   let isBold = $state(false);
@@ -87,6 +88,36 @@
   }
 
   onMount(() => {
+    // Default empty content
+    const emptyContent = { type: 'doc', content: [{ type: 'paragraph' }] };
+
+    // Prepare content - always ensure we have valid JSON structure
+    let initialContent;
+
+    if (content === null || content === undefined) {
+      // Use empty content if nothing provided
+      initialContent = emptyContent;
+    } else if (typeof content === 'string') {
+      // If string was passed (shouldn't happen but just in case), convert to JSON
+      try {
+        // First, try to parse it as JSON string
+        initialContent = JSON.parse(content);
+      } catch (e) {
+        console.log(e);
+        // If it's plain HTML, initialize with it
+        initialContent = content;
+        // And immediately update our bound content to be JSON
+        setTimeout(() => {
+          if (editor) {
+            content = editor.getJSON();
+          }
+        }, 0);
+      }
+    } else {
+      // Content is already JSON object
+      initialContent = content;
+    }
+
     editor = new Editor({
       editable,
       element: element,
@@ -97,21 +128,16 @@
           openOnClick: false // Prevent default link opening behavior
         })
       ],
-      content: content, // Pass content directly - TipTap handles both HTML and JSON
+      content: initialContent, // Pass content with fallback for null/undefined
       onSelectionUpdate: () => {
         updateActiveStates();
       },
       onUpdate: ({ editor }) => {
-        // Update content based on its original type
-        if (isJsonContent) {
-          // For JSON content, get the JSON representation
-          const newJson = editor.getJSON();
-          content = newJson;
-        } else {
-          // For HTML content, get the HTML representation
-          editorHtml = editor.getHTML();
-          content = editorHtml;
-        }
+        // Always update content as JSON
+        const newJson = editor.getJSON();
+        content = newJson;
+        // Update HTML for debug purposes only
+        editorHtml = editor.getHTML();
         updateActiveStates();
       },
       onTransaction: () => {
@@ -458,12 +484,15 @@
   {#if debug}
     <div class="editor__state">
       <h4>Editor Status: {editorReady ? 'Ready' : 'Loading...'}</h4>
-      <h4>Content Type: {isJsonContent ? 'JSON' : 'HTML'}</h4>
-      {#if isJsonContent}
-        <pre>{JSON.stringify(content, null, 2)}</pre>
+      <h4>Content Type: JSON</h4>
+      {#if content === null || content === undefined}
+        <pre>null/undefined</pre>
       {:else}
-        <pre>{editorHtml}</pre>
+        <pre>{JSON.stringify(content, null, 2)}</pre>
       {/if}
+
+      <h4>HTML representation:</h4>
+      <pre>{editorHtml}</pre>
     </div>
   {/if}
 </div>

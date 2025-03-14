@@ -60,6 +60,7 @@
     align-items: center;
     justify-content: center;
     font-size: var(--font-size-1);
+    min-width: 2rem;
     height: 100%;
     cursor: pointer;
     border: none;

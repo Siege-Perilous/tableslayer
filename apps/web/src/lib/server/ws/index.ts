@@ -1,4 +1,4 @@
-import { type BroadcastStageUpdate } from '$lib/utils';
+import { type BroadcastStageUpdate, type MarkerPositionUpdate } from '$lib/utils';
 import { Server } from 'socket.io';
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
@@ -8,10 +8,15 @@ export const initializeSocketIO = (server: any) => {
   wsServer.of(/^\/gameSession\/\w+$/).on('connect', (socket) => {
     console.log(`Client connected to namespace: ${socket.nsp.name}`);
 
-    // Listen for game session updates
+    // Listen for game session updates (full state updates)
     socket.on('updateSession', (data: BroadcastStageUpdate) => {
-      console.log(`Update received for ${socket.nsp.name}:`);
       socket.nsp.emit('sessionUpdated', data); // Broadcast to namespace
+    });
+
+    // Listen for optimized marker position updates
+    socket.on('markerPositionUpdate', (data: MarkerPositionUpdate) => {
+      // Broadcast only the marker position data (much smaller payload)
+      socket.nsp.emit('markerUpdated', data);
     });
 
     // Listen for cursor movements

@@ -1,4 +1,4 @@
-import { type SelectScene } from '$lib/db/app/schema';
+import { type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { hasThumb } from '$lib/utils/hasThumb';
@@ -6,6 +6,7 @@ import {
   DrawMode,
   type GridType,
   MapLayerType,
+  type Marker,
   RainPreset,
   SceneRotation,
   StageMode,
@@ -16,11 +17,30 @@ import {
 // Map activeScene properties to StageProps
 export const buildSceneProps = (
   activeScene: SelectScene | (SelectScene & Thumb),
+  activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   mode: 'client' | 'editor'
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor);
   const thumbUrl =
     hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
+
+  let markers: Marker[] = [];
+  if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
+    markers = activeSceneMarkers.map((marker) => ({
+      id: marker.id,
+      title: marker.title,
+      position: { x: marker.positionX, y: marker.positionY },
+      size: marker.size,
+      shape: marker.shape,
+      shapeColor: marker.shapeColor,
+      label: marker.label,
+      imageUrl: marker.imageLocation && marker.thumb?.resizedUrl ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
+      imageScale: 1,
+      visibility: marker.visibility,
+      note: marker.note || null
+    }));
+  }
+
   return {
     mode: StageMode.DM,
     activeLayer: MapLayerType.None,
@@ -123,19 +143,22 @@ export const buildSceneProps = (
       visible: true,
       snapToGrid: true,
       shape: {
-        strokeColor: '#000000',
-        strokeWidth: 0.5,
+        strokeColor: activeScene.markerStrokeColor,
+        strokeWidth: activeScene.markerStrokeWidth,
         shadowColor: '#000000',
-        shadowBlur: 10,
-        shadowOffset: { x: 0, y: 0 }
+        shadowBlur: 120,
+        shadowOffset: {
+          x: 0,
+          y: 0
+        }
       },
       text: {
-        color: '#ffffff',
-        strokeColor: '#000000',
-        size: 64,
+        color: activeScene.markerTextColor,
+        strokeColor: activeScene.markerTextStrokeColor,
+        size: 300,
         strokeWidth: 1
       },
-      markers: []
+      markers: markers
     },
     postProcessing: {
       enabled: true,

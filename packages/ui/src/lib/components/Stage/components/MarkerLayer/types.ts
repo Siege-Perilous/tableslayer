@@ -1,3 +1,5 @@
+import type { JSONContent } from '@tiptap/core';
+
 export enum MarkerVisibility {
   Always = 0,
   DM = 1,
@@ -19,7 +21,7 @@ export enum MarkerSize {
 
 export interface Marker {
   id: string;
-  name: string;
+  title: string;
   position: {
     x: number;
     y: number;
@@ -27,10 +29,11 @@ export interface Marker {
   size: MarkerSize;
   shape: MarkerShape;
   shapeColor: string;
-  text: string | null;
+  label: string | null;
   imageUrl: string | null;
   imageScale: number;
   visibility: MarkerVisibility;
+  note: JSONContent | null;
 }
 
 export interface MarkerLayerProps {

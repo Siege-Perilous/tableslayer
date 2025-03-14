@@ -106,18 +106,18 @@ export const StageDefaultProps: StageProps = {
     snapToGrid: true,
     shape: {
       strokeColor: '#000000',
-      strokeWidth: 0.5,
+      strokeWidth: 50,
       shadowColor: '#000000',
-      shadowBlur: 50,
+      shadowBlur: 120,
       shadowOffset: {
-        x: 20,
-        y: 20
+        x: 0,
+        y: 0
       }
     },
     text: {
       color: '#ffffff',
       strokeColor: '#000000',
-      size: 64,
+      size: 300,
       strokeWidth: 1
     },
     markers: []

@@ -11,6 +11,7 @@
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
+  import { MapLayerType } from '../MapLayer/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -69,19 +70,22 @@
       selectedMarker = closestMarker;
       onMarkerSelected(selectedMarker);
     } else {
+      if (props.activeLayer === MapLayerType.None) return; // Ignore clicks when no layer is active)
       const newMarker: Marker = {
         id: crypto.randomUUID(),
-        name: 'New Marker',
+        title: 'New Marker',
         position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
         size: MarkerSize.Small,
         shape: MarkerShape.Circle,
         shapeColor: '#ffffff',
         imageScale: 1.0,
-        text: 'ABC',
+        label: 'A1',
         imageUrl: null,
-        visibility: MarkerVisibility.Always
+        visibility: MarkerVisibility.DM,
+        note: null
       };
       selectedMarker = newMarker;
+      console.log('Adding new marker in stage', newMarker);
       onMarkerAdded(newMarker);
     }
   }

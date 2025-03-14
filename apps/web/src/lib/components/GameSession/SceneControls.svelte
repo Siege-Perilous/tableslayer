@@ -28,7 +28,8 @@
     IconScreenShare,
     IconScreenShareOff,
     IconBorderSides,
-    IconAdjustmentsHorizontal
+    IconAdjustmentsHorizontal,
+    IconPokerChip
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
@@ -233,6 +234,16 @@
         {/snippet}
       </SelectorMenu>
     </div>
+    <div class="sceneControls__item sceneControls__item--marker">
+      <button
+        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
+          'sceneControls__layer--isActive'}"
+        onclick={() => handleSelectActiveControl('marker')}
+      >
+        <Icon Icon={IconPokerChip} size="1.5rem" />
+        <span class="sceneControls__layerText"> Marker </span>
+      </button>
+    </div>
     {#each sceneControlArray as scene}
       <div class="sceneControls__item">
         <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
@@ -382,7 +393,7 @@
     align-items: center;
   }
 
-  @container stageWrapper (max-width: 768px) {
+  @container stageWrapper (max-width: 840px) {
     .sceneControls {
       gap: 0.25rem !important;
     }

@@ -148,7 +148,7 @@
         <Spacer />
         <ConfirmActionButton actionButtonText="Confirm delete" action={handleDeleteParty}>
           {#snippet trigger({ triggerProps })}
-            <Button variant="danger" {...triggerProps}>Delete party</Button>
+            <Button as="div" variant="danger" {...triggerProps}>Delete party</Button>
           {/snippet}
           {#snippet actionMessage()}
             <Text size="0.875rem" color="var(--fgDanger)"

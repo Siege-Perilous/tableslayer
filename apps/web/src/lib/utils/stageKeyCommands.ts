@@ -77,11 +77,11 @@ export function handleKeyCommands(
       break;
 
     case 'm':
-      if (activeLayer === MapLayerType.Marker) {
-        stageProps.activeLayer = MapLayerType.None;
-      } else {
-        stageProps.activeLayer = MapLayerType.Marker;
-      }
+      stageProps.activeLayer = MapLayerType.Marker;
+      break;
+
+    case 'M':
+      stageProps.activeLayer = MapLayerType.None;
       break;
 
     case 'r':
@@ -112,6 +112,16 @@ export function handleKeyCommands(
       }
       break;
 
+    case 'Shift':
+      if (activeLayer === MapLayerType.FogOfWar) {
+        stageProps.activeLayer = MapLayerType.None;
+      }
+      break;
+    case 'Ctrl':
+      if (activeLayer === MapLayerType.FogOfWar) {
+        stageProps.activeLayer = MapLayerType.None;
+      }
+      break;
     case 'Escape':
       stageProps.activeLayer = MapLayerType.None;
       break;

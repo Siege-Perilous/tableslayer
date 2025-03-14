@@ -3,6 +3,7 @@ export * from './email';
 export * from './errors';
 export * from './file';
 export * from './gameSession';
+export * from './marker';
 export * from './party';
 export * from './partyInvite';
 export * from './profile';

@@ -255,5 +255,10 @@
     renderOrder={SceneLayerOrder.EdgeOverlay}
   />
 
-  <MarkerLayer {props} isActive={props.activeLayer === MapLayerType.Marker} grid={props.grid} display={props.display} />
+  <MarkerLayer
+    {props}
+    isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
+    grid={props.grid}
+    display={props.display}
+  />
 </T.Object3D>

@@ -1,4 +1,10 @@
-import { getActiveScene, getPartyFromSlug, getPartyGameSessionFromSlug, getUser } from '$lib/server';
+import {
+  getActiveScene,
+  getMarkersForScene,
+  getPartyFromSlug,
+  getPartyGameSessionFromSlug,
+  getUser
+} from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -21,10 +27,12 @@ export const load: PageServerLoad = async (event) => {
   if (!activeScene) {
     redirect(302, '/');
   }
+  const activeSceneMarkers = await getMarkersForScene(activeScene.id);
 
   return {
     user,
     gameSession,
-    activeScene
+    activeScene,
+    activeSceneMarkers
   };
 };

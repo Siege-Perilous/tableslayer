@@ -1,0 +1,1 @@
+ALTER TABLE `marker` RENAME COLUMN "image" TO "image_location";

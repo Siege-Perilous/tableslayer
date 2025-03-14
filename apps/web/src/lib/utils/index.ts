@@ -1,6 +1,7 @@
 export * from './broadcastStageUpdate';
 export * from './buildSceneProps';
 export * from './colors';
+export * from './convertStagePropsToMarkerData';
 export * from './convertStagePropsToSceneData';
 export * from './createRandomNames';
 export * from './defaultMapState';
@@ -15,3 +16,4 @@ export * from './isWithinExpirationDate';
 export * from './randomQuotes';
 export * from './sceneSettings';
 export * from './stageKeyCommands';
+export * from './throttle';

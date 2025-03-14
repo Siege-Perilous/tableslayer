@@ -64,14 +64,14 @@
 
   <Folder title="Markers" expanded={true}>
     {#each props.marker.markers as marker}
-      <Folder title={marker.name} expanded={false}>
+      <Folder title={marker.title} expanded={false}>
         <Text bind:value={marker.id} label="Id" disabled={true} />
         <List bind:value={marker.visibility} label="Visibility" options={visibilityOptions} />
-        <Text bind:value={marker.name} label="Name" />
+        <Text bind:value={marker.title} label="Title" />
         <List bind:value={marker.size} label="Size" options={markerSizeOptions} />
         <List bind:value={marker.shape} label="Shape" options={shapeOptions} />
         <Color bind:value={marker.shapeColor} label="Shape Color" />
-        <Text bind:value={marker.text} label="Text" />
+        <Text bind:value={marker.label} label="Label" />
         <List bind:value={marker.imageUrl} label="Image" options={imageOptions} />
         <Slider bind:value={marker.imageScale} label="Image Scale" min={0.1} max={10} />
       </Folder>
