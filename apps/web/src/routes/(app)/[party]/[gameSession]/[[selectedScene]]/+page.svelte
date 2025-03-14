@@ -171,6 +171,16 @@
     if (control === activeControl) {
       activeControl = 'none';
       stageProps.activeLayer = MapLayerType.None;
+      markersPane.collapse();
+    } else if (control === 'marker') {
+      activeControl = 'marker';
+      stageProps.activeLayer = MapLayerType.Marker;
+      markersPane.expand();
+      setTimeout(() => {
+        if (stage) {
+          stage.scene.fit();
+        }
+      }, 50);
     } else {
       activeControl = control;
       stageProps.activeLayer = MapLayerType.FogOfWar;

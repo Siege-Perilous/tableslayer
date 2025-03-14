@@ -11,6 +11,7 @@
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
+  import { MapLayerType } from '../MapLayer/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -69,6 +70,7 @@
       selectedMarker = closestMarker;
       onMarkerSelected(selectedMarker);
     } else {
+      if (props.activeLayer === MapLayerType.None) return; // Ignore clicks when no layer is active)
       const newMarker: Marker = {
         id: crypto.randomUUID(),
         title: 'New Marker',
