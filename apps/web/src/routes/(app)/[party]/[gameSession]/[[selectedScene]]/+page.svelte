@@ -27,7 +27,8 @@
     initializeStage,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
-    throttle
+    throttle,
+    type MarkerPositionUpdate
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -299,7 +300,6 @@
    * This requires normalizing the cursor position, because the stage can be rotated and zoomed.
    * Also the player view browser size can be different from the editor view.
    */
-  let isThrottled = false;
   const onMouseMove = (e: MouseEvent) => {
     const rotation = stageProps.scene.rotation; // Rotation in degrees
     const canvasBounds = stageElement?.getBoundingClientRect(); // Full canvas bounds
