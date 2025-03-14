@@ -83,6 +83,7 @@
         note: null
       };
       selectedMarker = newMarker;
+      console.log('Adding new marker in stage', newMarker);
       onMarkerAdded(newMarker);
     }
   }

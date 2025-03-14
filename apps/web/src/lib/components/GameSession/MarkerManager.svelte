@@ -47,19 +47,8 @@
 
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
-  let isEditing = $derived(stageProps.activeLayer === MapLayerType.Marker);
-  let editingMarkerIndex = $state<number | null>(null);
+  let editingMarkerId = $derived(selectedMarker ? selectedMarker.id : null);
   const markersUnlocked = $derived(stageProps.activeLayer === MapLayerType.Marker);
-
-  // Set editingMarkerIndex when selectedMarker changes
-  $effect(() => {
-    if (selectedMarker) {
-      const index = stageProps.marker.markers.findIndex((marker) => marker.id === selectedMarker?.id);
-      if (index !== -1) {
-        editingMarkerIndex = index;
-      }
-    }
-  });
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -67,13 +56,11 @@
     fileInput?.click();
   };
 
-  const selectMarkerForEdit = (index: number) => {
-    editingMarkerIndex = index;
-    selectedMarker = stageProps.marker.markers[index];
+  const selectMarkerForEdit = (markerId: string) => {
+    selectedMarker = stageProps.marker.markers.find((marker) => marker.id === markerId);
   };
 
   const backToList = () => {
-    editingMarkerIndex = null;
     selectedMarker = undefined;
   };
 
@@ -124,7 +111,6 @@
       mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        editingMarkerIndex = null;
         selectedMarker = undefined;
         invalidateAll();
       },
@@ -207,121 +193,132 @@
     </div>
   </div>
   <div class="markerManager__content">
-    {#if editingMarkerIndex !== null}
+    {#if editingMarkerId !== null}
       <Link onclick={backToList} class="markerManager__backButton">
         List all markers
         <Icon Icon={IconArrowBack} size="1rem" />
       </Link>
       <div class="markerManager__editView">
         <div class="markerManager__marker">
-          {#if stageProps.marker.markers[editingMarkerIndex]}
-            {@const marker = stageProps.marker.markers[editingMarkerIndex]}
-            <Spacer />
-            <div class="markerManager__formGrid">
-              <FormControl label="Change image" name="imageLocation">
-                {#snippet input({ inputProps })}
-                  {@render imagePreview(marker, inputProps)}
-                {/snippet}
-              </FormControl>
-
-              <FormControl label="Visible to" name="visibility">
-                {#snippet input(inputProps)}
-                  <RadioButton
-                    {...inputProps}
-                    selected={marker.visibility.toString()}
-                    options={[
-                      { label: 'Everyone', value: '0' },
-                      { label: 'DM', value: '1' }
-                    ]}
-                    onSelectedChange={(value) => {
-                      stageProps.marker.markers[editingMarkerIndex].visibility = Number(value);
-                    }}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Label" name="label">
-                {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Title" name="title">
-                {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.title} />
-                {/snippet}
-              </FormControl>
-            </div>
-            <Spacer />
-            <div class="markerManager__colorPicker">
-              <FormControl label="Color" name="shapeColor">
-                {#snippet start()}
-                  <Popover>
-                    {#snippet trigger()}
-                      <ColorPickerSwatch color={marker.shapeColor} />
+          {#if selectedMarker}
+            {@const marker = stageProps.marker.markers.find((m) => m.id === editingMarkerId)}
+            {#if marker}
+              {#key marker.id}
+                id: {marker.id}
+                <Spacer />
+                <div class="markerManager__formGrid">
+                  <FormControl label="Change image" name="imageLocation">
+                    {#snippet input({ inputProps })}
+                      {@render imagePreview(marker, inputProps)}
                     {/snippet}
-                    {#snippet content()}
-                      <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
-                    {/snippet}
-                  </Popover>
-                {/snippet}
-                {#snippet input(inputProps)}
-                  <Input {...inputProps} bind:value={marker.shapeColor} />
-                {/snippet}
-              </FormControl>
-            </div>
-            <Spacer />
-            <div class="markerManager__formGrid">
-              <FormControl label="Shape" name="shape">
-                {#snippet input(inputProps)}
-                  <RadioButton
-                    {...inputProps}
-                    selected={marker.shape.toString()}
-                    options={[
-                      { label: circle, value: '1' },
-                      { label: square, value: '2' },
-                      { label: triangle, value: '3' }
-                    ]}
-                    onSelectedChange={(value) => {
-                      stageProps.marker.markers[editingMarkerIndex].shape = Number(value);
-                    }}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Size" name="size">
-                {#snippet input(inputProps)}
-                  <RadioButton
-                    {...inputProps}
-                    selected={marker.size.toString()}
-                    options={[
-                      { label: 'S', value: '1' },
-                      { label: 'M', value: '2' },
-                      { label: 'L', value: '3' }
-                    ]}
-                    onSelectedChange={(value) => {
-                      stageProps.marker.markers[editingMarkerIndex].size = Number(value);
-                    }}
-                  />
-                {/snippet}
-              </FormControl>
-            </div>
-            <Spacer />
-            <Editor debug={false} bind:content={marker.note} />
-            <Spacer />
+                  </FormControl>
 
-            <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
-              {#snippet trigger({ triggerProps })}
-                <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
-              {/snippet}
-              {#snippet actionMessage()}
-                hello
-              {/snippet}
-            </ConfirmActionButton>
+                  <FormControl label="Visible to" name="visibility">
+                    {#snippet input(inputProps)}
+                      <RadioButton
+                        {...inputProps}
+                        selected={marker.visibility.toString()}
+                        options={[
+                          { label: 'Everyone', value: '0' },
+                          { label: 'DM', value: '1' }
+                        ]}
+                        onSelectedChange={(value) => {
+                          if (selectedMarker) {
+                            selectedMarker.visibility = Number(value);
+                          }
+                        }}
+                      />
+                    {/snippet}
+                  </FormControl>
+                  <FormControl label="Label" name="label">
+                    {#snippet input(inputProps)}
+                      <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
+                    {/snippet}
+                  </FormControl>
+                  <FormControl label="Title" name="title">
+                    {#snippet input(inputProps)}
+                      <Input {...inputProps} bind:value={marker.title} />
+                    {/snippet}
+                  </FormControl>
+                </div>
+                <Spacer />
+                <div class="markerManager__colorPicker">
+                  <FormControl label="Color" name="shapeColor">
+                    {#snippet start()}
+                      <Popover>
+                        {#snippet trigger()}
+                          <ColorPickerSwatch color={marker.shapeColor} />
+                        {/snippet}
+                        {#snippet content()}
+                          <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
+                        {/snippet}
+                      </Popover>
+                    {/snippet}
+                    {#snippet input(inputProps)}
+                      <Input {...inputProps} bind:value={marker.shapeColor} />
+                    {/snippet}
+                  </FormControl>
+                </div>
+                <Spacer />
+                <div class="markerManager__formGrid">
+                  <FormControl label="Shape" name="shape">
+                    {#snippet input(inputProps)}
+                      <RadioButton
+                        {...inputProps}
+                        selected={marker.shape.toString()}
+                        options={[
+                          { label: circle, value: '1' },
+                          { label: square, value: '2' },
+                          { label: triangle, value: '3' }
+                        ]}
+                        onSelectedChange={(value) => {
+                          if (selectedMarker) {
+                            selectedMarker.shape = Number(value);
+                          }
+                        }}
+                      />
+                    {/snippet}
+                  </FormControl>
+                  <FormControl label="Size" name="size">
+                    {#snippet input(inputProps)}
+                      <RadioButton
+                        {...inputProps}
+                        selected={marker.size.toString()}
+                        options={[
+                          { label: 'S', value: '1' },
+                          { label: 'M', value: '2' },
+                          { label: 'L', value: '3' }
+                        ]}
+                        onSelectedChange={(value) => {
+                          if (selectedMarker) {
+                            selectedMarker.size = Number(value);
+                          }
+                        }}
+                      />
+                    {/snippet}
+                  </FormControl>
+                </div>
+                <Spacer />
+                <Editor debug={false} bind:content={marker.note} />
+                <Spacer />
+
+                <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+                  {#snippet trigger({ triggerProps })}
+                    <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
+                  {/snippet}
+                  {#snippet actionMessage()}
+                    hello
+                  {/snippet}
+                </ConfirmActionButton>
+              {/key}
+            {/if}
           {/if}
         </div>
       </div>
     {:else}
       <Spacer size={2} />
-      {#each stageProps.marker.markers as marker, index (marker.id)}
-        <div class="markerManager__listItem" tabindex="0" aria-label={`Edit marker ${marker.title}`}>
+      {#each stageProps.marker.markers as marker (marker.id)}
+        <div class="markerManager__listItem">
           <div class="markerManager__read">
             <IconButton
               variant="ghost"
@@ -334,7 +331,7 @@
               />
             </IconButton>
             {@render imagePreview(marker)}
-            <div class="markerManager__title" onclick={() => selectMarkerForEdit(index)}>{marker.title}</div>
+            <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>{marker.title}</button>
             <div class="markerManager__editIcon">
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
                 {#snippet trigger({ triggerProps })}
@@ -374,7 +371,6 @@
     grid-column: 1 / -1;
   }
   .markerManager__listItem {
-    cursor: pointer;
     padding: 0 2rem;
     border-radius: 0.25rem;
   }
@@ -472,6 +468,7 @@
   }
   .markerManager__title {
     font-size: 0.875rem;
+    cursor: pointer;
   }
   .markerManager__title:hover {
     text-decoration: underline;

@@ -25,7 +25,7 @@ export const getMarkersForScene = async (sceneId: string) => {
 };
 
 export const createMarker = async (markerData: Partial<SelectMarker>, sceneId: string): Promise<SelectMarker> => {
-  const id = uuidv4();
+  const id = markerData.id || uuidv4();
 
   const marker = await db
     .insert(markerTable)

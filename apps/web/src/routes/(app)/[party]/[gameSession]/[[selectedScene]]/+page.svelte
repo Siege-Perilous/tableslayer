@@ -424,7 +424,6 @@
 
       // Process markers one by one to handle creates and updates
       for (const marker of stageMarkers) {
-        console.log('Saving marker shape:', marker.shape, 'type:', typeof marker.shape);
         const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
 
         // If marker exists in the database, update it
@@ -436,7 +435,7 @@
                 markerId: marker.id,
                 markerData
               }),
-            formLoadingState: () => console.log('updating marker'),
+            formLoadingState: () => {},
             onError: (error) => {
               console.log('Error updating marker:', error);
             },
@@ -447,6 +446,7 @@
         }
         // Otherwise create a new marker
         else {
+          console.log('Creating new marker with data:', markerData);
           await handleMutation({
             mutation: () =>
               $createMarkerMutation.mutateAsync({
@@ -457,6 +457,9 @@
             formLoadingState: () => console.log('creating marker'),
             onError: (error) => {
               console.log('Error creating marker:', error);
+            },
+            onSuccess: (marker) => {
+              console.log('Marker created successfully:', marker);
             },
             toastMessages: {
               error: { title: 'Error creating marker', body: (err) => err.message || 'Error creating marker' }
