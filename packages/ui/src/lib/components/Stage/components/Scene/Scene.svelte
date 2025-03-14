@@ -149,6 +149,7 @@
 
       // Reset renderer size to match the canvas size (has no effect if already set)
       renderer.setSize($size.width, $size.height);
+      composer.setSize($size.width, $size.height);
 
       // Render main scene with post-processing
       camera.current.layers.set(SceneLayer.Main);
