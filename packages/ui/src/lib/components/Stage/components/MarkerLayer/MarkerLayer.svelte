@@ -182,20 +182,23 @@
     {/if}
   {/each}
 
-  <MarkerToken
-    marker={ghostMarker}
-    {grid}
-    {display}
-    opacity={0.3}
-    textColor={props.marker.text.color}
-    textStroke={props.marker.text.strokeWidth}
-    textStrokeColor={props.marker.text.strokeColor}
-    textSize={props.marker.text.size}
-    shadowColor={props.marker.shape.shadowColor}
-    shadowBlur={props.marker.shape.shadowBlur}
-    shadowOffset={props.marker.shape.shadowOffset}
-    strokeColor={props.marker.shape.strokeColor}
-    strokeWidth={props.marker.shape.strokeWidth}
-    isSelected={false}
-  />
+  <!-- Only show the ghost marker when the marker layer is active -->
+  {#if isActive}
+    <MarkerToken
+      marker={ghostMarker}
+      {grid}
+      {display}
+      opacity={0.3}
+      textColor={props.marker.text.color}
+      textStroke={props.marker.text.strokeWidth}
+      textStrokeColor={props.marker.text.strokeColor}
+      textSize={props.marker.text.size}
+      shadowColor={props.marker.shape.shadowColor}
+      shadowBlur={props.marker.shape.shadowBlur}
+      shadowOffset={props.marker.shape.shadowOffset}
+      strokeColor={props.marker.shape.strokeColor}
+      strokeWidth={props.marker.shape.strokeWidth}
+      isSelected={false}
+    />
+  {/if}
 </T.Group>
