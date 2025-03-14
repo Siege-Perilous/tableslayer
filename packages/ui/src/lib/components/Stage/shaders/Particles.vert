@@ -41,11 +41,13 @@ void main() {
   pos.xy = rotated + center;
 
   pos += vAge * velocity;
+    // Scale point size based on distance from camera
+  float distanceToCamera = length(modelViewMatrix * vec4(pos, 1.0));
 
   vUv = uv;
 
   vec4 transformedPosition = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  vPos = transformedPosition.xyz;
+  vPos = transformedPosition.xyz / transformedPosition.w;
 
   gl_Position = transformedPosition;
 }
