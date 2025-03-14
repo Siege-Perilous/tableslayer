@@ -3,6 +3,7 @@ import type { Thumb } from '$lib/server';
 import type { StageProps } from '@tableslayer/ui';
 import type { Socket } from 'socket.io-client';
 import { buildSceneProps } from './buildSceneProps';
+import { throttle } from './throttle';
 
 export type BroadcastStageUpdate = {
   activeScene: SelectScene | (SelectScene & Thumb) | null;
@@ -11,6 +12,35 @@ export type BroadcastStageUpdate = {
   gameIsPaused: boolean;
 };
 
+export type MarkerPositionUpdate = {
+  markerId: string;
+  position: { x: number; y: number };
+  sceneId: string;
+};
+
+/**
+ * Broadcasts a marker position update with throttling (150ms)
+ * This is more efficient than sending the entire stage state
+ */
+export const broadcastMarkerUpdate = throttle(
+  (socket: Socket | null, markerId: string, position: { x: number; y: number }, sceneId: string) => {
+    if (!socket || !sceneId) return;
+
+    const updateData: MarkerPositionUpdate = {
+      markerId,
+      position,
+      sceneId
+    };
+
+    socket.emit('markerPositionUpdate', updateData);
+  },
+  150
+);
+
+/**
+ * Broadcasts a full stage update
+ * For efficiency, use broadcastMarkerUpdate for simple position changes
+ */
 export const broadcastStageUpdate = (
   socket: Socket | null,
   activeScene: BroadcastStageUpdate['activeScene'],
@@ -34,8 +64,6 @@ export const broadcastStageUpdate = (
     socket.emit('updateSession', updateData);
   } else if (activeScene) {
     const newStageProps = buildSceneProps(activeScene, activeSceneMarkers, 'editor');
-
-    console.log('Broadcasting stage update', newStageProps);
 
     const updateData = {
       selectedScene,

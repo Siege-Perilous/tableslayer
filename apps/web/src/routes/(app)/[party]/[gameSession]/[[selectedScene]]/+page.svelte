@@ -18,6 +18,7 @@
   import {
     StageDefaultProps,
     broadcastStageUpdate,
+    broadcastMarkerUpdate,
     buildSceneProps,
     handleKeyCommands,
     setupGameSessionWebSocket,
@@ -25,7 +26,8 @@
     hasThumb,
     initializeStage,
     convertPropsToSceneDetails,
-    convertStageMarkersToDbFormat
+    convertStageMarkersToDbFormat,
+    throttle
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -118,11 +120,28 @@
    * - Initialize the stage
    * - Send initial broadcast to the WebSocket
    */
+  // Handler for optimized marker updates
+  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate, props: StageProps) => {
+    // Only handle updates for the current scene
+    if (selectedScene && selectedScene.id === markerUpdate.sceneId) {
+      const index = props.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
+      if (index !== -1) {
+        // Update the marker position without rebuilding the entire state
+        props.marker.markers[index] = {
+          ...props.marker.markers[index],
+          position: markerUpdate.position
+        };
+      }
+    }
+  };
+
   onMount(() => {
     socket = setupGameSessionWebSocket(
       gameSession.id,
       () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket')
+      () => console.log('Disconnected from game session socket'),
+      handleMarkerUpdate, // Pass marker update handler
+      stageProps // Pass stageProps for the handler to access
     );
 
     initializeStage(stage, (isLoading: boolean) => {
@@ -251,6 +270,11 @@
         ...marker,
         position: { x: position.x, y: position.y }
       };
+
+      // Use the optimized marker update for position changes
+      if (socket && selectedScene && selectedScene.id) {
+        broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
+      }
     }
   };
 
@@ -330,14 +354,8 @@
         stageProps.scene.offset.y -= e.movementY;
       }
 
-      // Avoid spamming WebSocket updates
-      if (!isThrottled) {
-        isThrottled = true;
-        requestAnimationFrame(() => {
-          socketUpdate(); // Send panning update
-          isThrottled = false;
-        });
-      }
+      // Use our proper throttled update (replaces manual throttling)
+      throttledSocketUpdate();
     }
 
     // Emit the normalized and rotated position over the WebSocket
@@ -351,10 +369,13 @@
     }
   };
 
+  // Use throttling for wheel/zoom events to reduce update frequency
+  const throttledSocketUpdate = throttle(socketUpdate, 200);
+
   const onWheel = (e: WheelEvent) => {
-    // Thie tracks shift + crtl + mouse wheel and calls the appropriate zoom function
+    // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
-    socketUpdate();
+    throttledSocketUpdate();
   };
 
   /**

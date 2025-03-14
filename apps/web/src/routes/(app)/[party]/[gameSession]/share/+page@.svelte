@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
-  import type { BroadcastStageUpdate } from '$lib/utils';
+  import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -32,6 +32,21 @@
     stage.scene.fit();
   };
 
+  // Handler for optimized marker updates
+  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
+    // Only update if the marker belongs to the current scene
+    if (markerUpdate.sceneId === data.activeScene?.id) {
+      const index = stageProps.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
+      if (index !== -1) {
+        // Update only the position property of the marker
+        stageProps.marker.markers[index] = {
+          ...stageProps.marker.markers[index],
+          position: markerUpdate.position
+        };
+      }
+    }
+  };
+
   onMount(() => {
     initializeStage(stage, (isLoading: boolean) => {
       stageIsLoading = isLoading;
@@ -39,7 +54,9 @@
     const socket = setupGameSessionWebSocket(
       data.gameSession.id,
       () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket')
+      () => console.log('Disconnected from game session socket'),
+      handleMarkerUpdate,
+      stageProps
     );
 
     const handleMouseMove = (event: MouseEvent) => {
