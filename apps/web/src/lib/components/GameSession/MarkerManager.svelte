@@ -15,7 +15,8 @@
     Link,
     Editor,
     ConfirmActionButton,
-    IconButton
+    IconButton,
+    Loader
   } from '@tableslayer/ui';
   import {
     IconTriangle,
@@ -25,7 +26,8 @@
     IconPhotoCirclePlus,
     IconArrowBack,
     IconEye,
-    IconEyeOff
+    IconEyeOff,
+    IconX
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useUpdateMarkerMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
@@ -123,7 +125,7 @@
 </script>
 
 {#snippet imagePreview(marker: Marker, inputProps = {})}
-  <div class="markerManager__imageSection">
+  <div class="markerManager__image">
     <button
       onclick={() => openMarkerImageDialog(marker.id)}
       class={[
@@ -140,12 +142,22 @@
         <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
       </div>
     </button>
+    {#if formIsLoading}
+      <Loader />
+    {:else if marker.imageUrl !== null}
+      <div class="markerManager__imageRemove">
+        <IconButton variant="ghost" onclick={() => (marker.imageUrl = null)}>
+          <Icon Icon={IconX} size="1.25rem" />
+        </IconButton>
+      </div>
+    {/if}
     <input
       type="file"
       {...inputProps}
       id={`marker-image-input-${marker.id}`}
       accept="image/*"
       style="display: none;"
+      disabled={formIsLoading}
       onchange={(e) => handleMarkerImageUpload(e, marker.id)}
     />
   </div>
@@ -219,8 +231,8 @@
                         {...inputProps}
                         selected={marker.visibility.toString()}
                         options={[
-                          { label: 'Everyone', value: '0' },
-                          { label: 'DM', value: '1' }
+                          { label: 'DM', value: '1' },
+                          { label: 'Everyone', value: '0' }
                         ]}
                         onSelectedChange={(value) => {
                           if (selectedMarker) {
@@ -243,7 +255,7 @@
                 </div>
                 <Spacer />
                 <div class="markerManager__colorPicker">
-                  <FormControl label="Color" name="shapeColor">
+                  <FormControl label="Background color" name="shapeColor">
                     {#snippet start()}
                       <Popover>
                         {#snippet trigger()}
@@ -304,7 +316,13 @@
 
                 <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
                   {#snippet trigger({ triggerProps })}
-                    <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
+                    <Button
+                      as="div"
+                      variant="danger"
+                      disabled={formIsLoading}
+                      isLoading={formIsLoading}
+                      {...triggerProps}>Delete marker</Button
+                    >
                   {/snippet}
                   {#snippet actionMessage()}
                     hello
@@ -316,37 +334,39 @@
         </div>
       </div>
     {:else}
-      <Spacer size={2} />
-      {#each stageProps.marker.markers as marker (marker.id)}
-        <div class="markerManager__listItem">
-          <div class="markerManager__read">
-            <IconButton
-              variant="ghost"
-              onclick={() => (marker.visibility === 0 ? (marker.visibility = 1) : (marker.visibility = 0))}
-            >
-              <Icon
-                Icon={marker.visibility === 0 ? IconEye : IconEyeOff}
-                size="1.25rem"
-                color={marker.visibility === 0 ? 'var(--fg)' : 'var(--fgMuted)'}
-              />
-            </IconButton>
-            {@render imagePreview(marker)}
-            <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>{marker.title}</button>
-            <div class="markerManager__editIcon">
-              <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
-                {#snippet trigger({ triggerProps })}
-                  <IconButton as="div" variant="ghost" {...triggerProps}>
-                    <Icon Icon={IconTrash} />
-                  </IconButton>
-                {/snippet}
-                {#snippet actionMessage()}
-                  Delete marker {marker.title}?
-                {/snippet}
-              </ConfirmActionButton>
+      <div class="markerManager__list">
+        {#each stageProps.marker.markers as marker (marker.id)}
+          <div class="markerManager__listItem">
+            <div class="markerManager__read">
+              <IconButton
+                variant="ghost"
+                onclick={() => (marker.visibility === 0 ? (marker.visibility = 1) : (marker.visibility = 0))}
+              >
+                <Icon
+                  Icon={marker.visibility === 0 ? IconEye : IconEyeOff}
+                  size="1.25rem"
+                  color={marker.visibility === 0 ? 'var(--fg)' : 'var(--fgMuted)'}
+                />
+              </IconButton>
+              {@render imagePreview(marker)}
+              <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>{marker.title}</button
+              >
+              <div class="markerManager__editIcon">
+                <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+                  {#snippet trigger({ triggerProps })}
+                    <IconButton as="div" variant="ghost" {...triggerProps}>
+                      <Icon Icon={IconTrash} />
+                    </IconButton>
+                  {/snippet}
+                  {#snippet actionMessage()}
+                    Delete marker {marker.title}?
+                  {/snippet}
+                </ConfirmActionButton>
+              </div>
             </div>
           </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     {/if}
   </div>
 </div>
@@ -362,16 +382,37 @@
 {/snippet}
 
 <style>
+  .markerManager {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
   .markerManager__content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+  .markerManager__list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    display: grid;
     gap: 1rem;
+    height: fit-content;
+    min-height: 0;
+    flex-grow: 1;
+    align-content: start;
+    overflow-y: auto;
+    padding: 2rem;
   }
   .markerManager__editView {
     grid-column: 1 / -1;
   }
   .markerManager__listItem {
-    padding: 0 2rem;
     border-radius: 0.25rem;
   }
 
@@ -473,11 +514,19 @@
   .markerManager__title:hover {
     text-decoration: underline;
   }
+  .markerManager__image {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
   :global {
     .markerManager__backButton {
       display: block;
       padding: 1rem 2rem;
       border-bottom: var(--borderThin);
+    }
+    .markerManager__listItem .markerManager__imageRemove {
+      display: none;
     }
   }
 </style>

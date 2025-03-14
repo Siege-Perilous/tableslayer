@@ -582,7 +582,7 @@
       </button>
     </PaneResizer>
     <Pane
-      defaultSize={15}
+      defaultSize={25}
       collapsible={true}
       collapsedSize={0}
       minSize={10}
