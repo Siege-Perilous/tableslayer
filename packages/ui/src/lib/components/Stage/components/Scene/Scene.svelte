@@ -149,6 +149,7 @@
       renderer.getSize(renderSize);
 
       // Only update render size if it doesn't match the canvas size
+      // This check must be done here; it does not work when placed in $effect
       if (renderSize.width !== $size.width || renderSize.height !== $size.height) {
         renderer.setSize($size.width, $size.height);
         composer.setSize($size.width, $size.height);
