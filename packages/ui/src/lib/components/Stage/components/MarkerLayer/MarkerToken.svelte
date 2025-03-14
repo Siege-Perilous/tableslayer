@@ -11,6 +11,7 @@
     marker: Marker;
     grid: GridLayerProps;
     display: DisplayProps;
+    opacity: number;
     strokeColor: string;
     strokeWidth: number;
     shadowColor: string;
@@ -30,6 +31,7 @@
     marker,
     grid,
     display,
+    opacity,
     textColor,
     textStroke,
     textStrokeColor,
@@ -54,7 +56,7 @@
 
   let markerMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
-    opacity: 1.0
+    opacity
   });
   let imageTexture: THREE.Texture | null = $state(null);
 
@@ -203,7 +205,6 @@
 
   // Create and update marker texture when properties change
   $effect(() => {
-    console.log('drawMarker');
     markerCanvas = drawMarker();
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
     markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
