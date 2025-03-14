@@ -32,6 +32,20 @@
   let selectedMarker: Marker | null = $state(null);
   let isDragging = $state(false);
 
+  const ghostMarker: Marker = $state({
+    id: crypto.randomUUID(),
+    title: '',
+    position: new THREE.Vector2(0, 0),
+    size: MarkerSize.Small,
+    shape: MarkerShape.Circle,
+    shapeColor: '#ffffff',
+    imageScale: 1.0,
+    label: '',
+    imageUrl: null,
+    visibility: MarkerVisibility.Always,
+    note: null
+  });
+
   function findClosestMarker(gridCoords: THREE.Vector2) {
     // Find the marker that is closest to the mouse down point. The test point
     // must be within the outer radius of the marker for it to be considered
@@ -91,13 +105,16 @@
   }
 
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
-    if (!isDragging || !selectedMarker || !coords) return;
+    if (!coords) return;
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
     const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
 
-    // Update the selected marker's position
-    onMarkerMoved(selectedMarker, snapPosition);
+    ghostMarker.position = snapPosition;
+
+    if (isDragging && selectedMarker) {
+      onMarkerMoved(selectedMarker, snapPosition);
+    }
   }
 
   function isTokenVisible(marker: Marker) {
@@ -150,6 +167,7 @@
         {marker}
         {grid}
         {display}
+        opacity={1.0}
         textColor={props.marker.text.color}
         textStroke={props.marker.text.strokeWidth}
         textStrokeColor={props.marker.text.strokeColor}
@@ -163,4 +181,24 @@
       />
     {/if}
   {/each}
+
+  <!-- Only show the ghost marker when the marker layer is active -->
+  {#if isActive && stage.mode === StageMode.DM && props.activeLayer === MapLayerType.Marker}
+    <MarkerToken
+      marker={ghostMarker}
+      {grid}
+      {display}
+      opacity={0.3}
+      textColor={props.marker.text.color}
+      textStroke={props.marker.text.strokeWidth}
+      textStrokeColor={props.marker.text.strokeColor}
+      textSize={props.marker.text.size}
+      shadowColor={props.marker.shape.shadowColor}
+      shadowBlur={props.marker.shape.shadowBlur}
+      shadowOffset={props.marker.shape.shadowOffset}
+      strokeColor={props.marker.shape.strokeColor}
+      strokeWidth={props.marker.shape.strokeWidth}
+      isSelected={false}
+    />
+  {/if}
 </T.Group>
