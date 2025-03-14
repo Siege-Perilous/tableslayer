@@ -36,6 +36,7 @@
   let mapLayer: MapLayerExports;
 
   const composer = new EffectComposer(renderer);
+  const renderSize = new THREE.Vector2();
 
   onMount(() => {
     let before = autoRender.current;
@@ -58,8 +59,6 @@
     // Configure renderer
     renderer.setClearColor(0, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize($size.width, $size.height);
-    composer.setSize($size.width, $size.height);
   });
 
   // Effect to update post-processing settings when props change
@@ -139,7 +138,10 @@
   // Whenever the scene or display properties change, update the clipping planes
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
-    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+    untrack(() => {
+      console.log('clippingPlaneStore.value', clippingPlaneStore.value);
+      renderer.clippingPlanes = clippingPlaneStore.value;
+    });
   });
 
   // Custom render task
@@ -147,9 +149,13 @@
     (dt) => {
       if (!scene || !renderer || !camera) return;
 
-      // Reset renderer size to match the canvas size (has no effect if already set)
-      renderer.setSize($size.width, $size.height);
-      composer.setSize($size.width, $size.height);
+      renderer.getSize(renderSize);
+
+      // Only update render size if it doesn't match the canvas size
+      if (renderSize.width !== $size.width || renderSize.height !== $size.height) {
+        renderer.setSize($size.width, $size.height);
+        composer.setSize($size.width, $size.height);
+      }
 
       // Render main scene with post-processing
       camera.current.layers.set(SceneLayer.Main);
