@@ -56,7 +56,9 @@
         // Don't allow rotate and zoom from the editor
         scene: { ...stageProps.scene },
         // Don't allow erase mode
-        activeLayer: MapLayerType.None
+        activeLayer: MapLayerType.None,
+        // Mode 1 is for player view
+        mode: 1
       };
 
       handleResize();

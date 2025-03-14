@@ -35,9 +35,9 @@ export const buildSceneProps = (
       shapeColor: marker.shapeColor,
       label: marker.label,
       imageUrl: marker.imageLocation && marker.thumb?.resizedUrl ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
-      imageScale: marker.imageScale,
+      imageScale: 1,
       visibility: marker.visibility,
-      note: marker.note
+      note: marker.note || null
     }));
   }
 

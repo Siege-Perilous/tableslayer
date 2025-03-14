@@ -4,7 +4,7 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { MarkerManager, SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
+  import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
@@ -565,6 +565,7 @@
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />
+        <Hints {stageProps} />
       </div>
     </Pane>
     <PaneResizer class="resizer">

@@ -12,16 +12,20 @@
     Spacer,
     MapLayerType,
     Button,
+    Link,
     Editor,
-    ConfirmActionButton
+    ConfirmActionButton,
+    IconButton
   } from '@tableslayer/ui';
   import {
     IconTriangle,
-    IconChevronRight,
+    IconTrash,
     IconCircle,
     IconSquare,
     IconPhotoCirclePlus,
-    IconArrowBack
+    IconArrowBack,
+    IconEye,
+    IconEyeOff
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useUpdateMarkerMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
@@ -140,6 +144,35 @@
   };
 </script>
 
+{#snippet imagePreview(marker, inputProps)}
+  <div class="markerManager__imageSection">
+    <button
+      onclick={() => openMarkerImageDialog(marker.id)}
+      class={[
+        'markerManager__imagePreview',
+        formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
+        `markerManager__imagePreview--${marker.shape}`
+      ]}
+      aria-label="Change marker image"
+      style:background-color={marker.shapeColor}
+      style:background-image={`url('${marker.imageUrl}')`}
+    >
+      <span class="markerManager__imagePreviewLabel">{marker.label}</span>
+      <div class="markerManager__imagePreviewIcon">
+        <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
+      </div>
+    </button>
+    <input
+      type="file"
+      {...inputProps}
+      id={`marker-image-input-${marker.id}`}
+      accept="image/*"
+      style="display: none;"
+      onchange={(e) => handleMarkerImageUpload(e, marker.id)}
+    />
+  </div>
+{/snippet}
+
 <div class="markerManager">
   <div class="markerManager__header">
     <div>
@@ -181,58 +214,21 @@
       </FormControl>
     </div>
   </div>
-
-  <Spacer />
   <div class="markerManager__content">
     {#if editingMarkerIndex !== null}
+      <Link onclick={backToList} class="markerManager__backButton">
+        List all markers
+        <Icon Icon={IconArrowBack} size="1rem" />
+      </Link>
       <div class="markerManager__editView">
         <div class="markerManager__marker">
           {#if stageProps.marker.markers[editingMarkerIndex]}
             {@const marker = stageProps.marker.markers[editingMarkerIndex]}
-            <Button variant="ghost" onclick={backToList} class="markerManager__backButton">
-              {#snippet start()}
-                <Icon Icon={IconArrowBack} size="1rem" />
-              {/snippet}
-              View all markers
-            </Button>
-
-            <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
-              {#snippet trigger({ triggerProps })}
-                <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
-              {/snippet}
-              {#snippet actionMessage()}
-                hello
-              {/snippet}
-            </ConfirmActionButton>
+            <Spacer />
             <div class="markerManager__formGrid">
               <FormControl label="Change image" name="imageLocation">
                 {#snippet input({ inputProps })}
-                  <div class="markerManager__imageSection">
-                    <button
-                      onclick={() => openMarkerImageDialog(marker.id)}
-                      class={[
-                        'markerManager__imagePreview',
-                        formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
-                        `markerManager__imagePreview--${marker.shape}`
-                      ]}
-                      aria-label="Change marker image"
-                      style:background-color={marker.shapeColor}
-                      style:background-image={`url('${marker.imageUrl}')`}
-                    >
-                      <span class="markerManager__imagePreviewLabel">{marker.label}</span>
-                      <div class="markerManager__imagePreviewIcon">
-                        <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
-                      </div>
-                    </button>
-                    <input
-                      type="file"
-                      {...inputProps}
-                      id={`marker-image-input-${marker.id}`}
-                      accept="image/*"
-                      style="display: none;"
-                      onchange={(e) => handleMarkerImageUpload(e, marker.id)}
-                    />
-                  </div>
+                  {@render imagePreview(marker, inputProps)}
                 {/snippet}
               </FormControl>
 
@@ -242,9 +238,8 @@
                     {...inputProps}
                     selected={marker.visibility.toString()}
                     options={[
-                      { label: 'Always', value: '0' },
-                      { label: 'DM', value: '1' },
-                      { label: 'Player', value: '2' }
+                      { label: 'Everyone', value: '0' },
+                      { label: 'DM', value: '1' }
                     ]}
                     onSelectedChange={(value) => {
                       stageProps.marker.markers[editingMarkerIndex].visibility = Number(value);
@@ -318,35 +313,50 @@
             </div>
             <Spacer />
             <Editor debug={false} bind:content={marker.note} />
+            <Spacer />
+
+            <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+              {#snippet trigger({ triggerProps })}
+                <Button as="div" variant="danger" {...triggerProps}>Delete marker</Button>
+              {/snippet}
+              {#snippet actionMessage()}
+                hello
+              {/snippet}
+            </ConfirmActionButton>
           {/if}
         </div>
       </div>
     {:else}
+      <Spacer size={2} />
       {#each stageProps.marker.markers as marker, index (marker.id)}
-        <button
-          class="markerManager__listItem"
-          onclick={() => selectMarkerForEdit(index)}
-          tabindex="0"
-          aria-label={`Edit marker ${marker.title}`}
-        >
+        <div class="markerManager__listItem" tabindex="0" aria-label={`Edit marker ${marker.title}`}>
           <div class="markerManager__read">
-            <div
-              class={[
-                'markerManager__imagePreview',
-                formIsLoading && activeMarkerId === marker.id && 'markerManager__imagePreview--isLoading',
-                `markerManager__imagePreview--${marker.shape}`
-              ]}
-              style:background-color={marker.shapeColor}
-              style:background-image={`url('${marker.imageUrl}')`}
+            <IconButton
+              variant="ghost"
+              onclick={() => (marker.visibility === 0 ? (marker.visibility = 1) : (marker.visibility = 0))}
             >
-              <span class="markerManager__imagePreviewLabel">{marker.label}</span>
-            </div>
-            <div class="markerManager__title">{marker.title}</div>
+              <Icon
+                Icon={marker.visibility === 0 ? IconEye : IconEyeOff}
+                size="1.25rem"
+                color={marker.visibility === 0 ? 'var(--fg)' : 'var(--fgMuted)'}
+              />
+            </IconButton>
+            {@render imagePreview(marker)}
+            <div class="markerManager__title" onclick={() => selectMarkerForEdit(index)}>{marker.title}</div>
             <div class="markerManager__editIcon">
-              <Icon Icon={IconChevronRight} size="1rem" />
+              <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+                {#snippet trigger({ triggerProps })}
+                  <IconButton as="div" variant="ghost" {...triggerProps}>
+                    <Icon Icon={IconTrash} />
+                  </IconButton>
+                {/snippet}
+                {#snippet actionMessage()}
+                  Delete marker {marker.title}?
+                {/snippet}
+              </ConfirmActionButton>
             </div>
           </div>
-        </button>
+        </div>
       {/each}
     {/if}
   </div>
@@ -400,15 +410,11 @@
     align-items: center;
     gap: 0.25rem;
   }
-  .markerManager__imageSection {
-    width: 100%;
-  }
   .markerManager__imagePreview {
     min-width: 2.5rem;
     width: 2.5rem;
     min-height: 2.5rem;
     min-height: 2.5rem;
-    filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.5));
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -457,8 +463,7 @@
     font-size: 0.875rem;
     font-weight: 900;
     color: #fff;
-    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.2);
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
   }
   .markerManager__read {
     display: flex;
@@ -472,5 +477,15 @@
   .markerManager__editIcon {
     margin-left: auto;
     opacity: 0;
+  }
+  .markerManager__title:hover {
+    text-decoration: underline;
+  }
+  :global {
+    .markerManager__backButton {
+      display: block;
+      padding: 1rem 2rem;
+      border-bottom: var(--borderThin);
+    }
   }
 </style>
