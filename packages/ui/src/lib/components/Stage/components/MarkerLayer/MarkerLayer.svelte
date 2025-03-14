@@ -183,7 +183,7 @@
   {/each}
 
   <!-- Only show the ghost marker when the marker layer is active -->
-  {#if isActive}
+  {#if isActive && stage.mode === StageMode.DM}
     <MarkerToken
       marker={ghostMarker}
       {grid}

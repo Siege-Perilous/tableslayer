@@ -112,19 +112,20 @@
     composer.addPass(renderPass);
 
     // Add depth of field pass
-    if (weatherPreset.depthOfField.enabled) {
-      const dofEffect = new DepthOfFieldEffect(particleCamera, {
-        focusDistance: weatherPreset.depthOfField.focus,
-        focalLength: weatherPreset.depthOfField.focalLength,
-        bokehScale: weatherPreset.depthOfField.bokehScale,
-        resolutionX: mapSize.width,
-        resolutionY: mapSize.height
-      });
-      dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
-      composer.addPass(new EffectPass(particleCamera, dofEffect));
-    } else {
-      composer.addPass(new CopyPass(renderTarget));
-    }
+    // if (weatherPreset.depthOfField.enabled) {
+    // TODO: Add depth of field effect
+    // const dofEffect = new DepthOfFieldEffect(particleCamera, {
+    //   focusDistance: weatherPreset.depthOfField.focus,
+    //   focalLength: weatherPreset.depthOfField.focalLength,
+    //   bokehScale: weatherPreset.depthOfField.bokehScale,
+    //   resolutionX: mapSize.width,
+    //   resolutionY: mapSize.height
+    // });
+    // dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
+    // composer.addPass(new EffectPass(particleCamera, dofEffect));
+    // } else {
+    composer.addPass(new CopyPass(renderTarget));
+    // }
   });
 
   // If map sizes change, update the camera and render target
