@@ -510,6 +510,14 @@
 
     // Reset the saving flag after all updates
     isSaving = false;
+
+    // Make sure to update the selectedMarker reference to match the new marker objects
+    if (selectedMarker) {
+      const updatedMarker = stageProps.marker.markers.find((marker) => marker.id === selectedMarker?.id);
+      if (updatedMarker) {
+        selectedMarker = updatedMarker;
+      }
+    }
   };
 
   $effect(() => {
@@ -617,7 +625,7 @@
         }
       }}
     >
-      {#key selectedScene.id}
+      {#key selectedMarker}
         <MarkerManager
           partyId={party.id}
           bind:stageProps
