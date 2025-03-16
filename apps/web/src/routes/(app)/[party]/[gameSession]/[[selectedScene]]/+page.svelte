@@ -37,7 +37,8 @@
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
-  let selectedMarker: Marker | undefined = $state();
+  let selectedMarkerId: string | undefined = $state();
+  let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -192,7 +193,7 @@
       activeControl = 'none';
       stageProps.activeLayer = MapLayerType.None;
     } else if (control === 'marker') {
-      selectedMarker = undefined;
+      selectedMarkerId = undefined;
       activeControl = 'marker';
       stageProps.activeLayer = MapLayerType.Marker;
       markersPane.expand();
@@ -261,7 +262,7 @@
 
   const onMarkerAdded = (marker: Marker) => {
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
-    selectedMarker = marker;
+    selectedMarkerId = marker.id;
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
@@ -280,7 +281,7 @@
   };
 
   const onMarkerSelected = (marker: Marker) => {
-    selectedMarker = marker;
+    selectedMarkerId = marker.id;
   };
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
@@ -431,6 +432,10 @@
           sceneData: convertPropsToSceneDetails(stageProps)
         }),
       formLoadingState: () => {},
+      onSuccess: () => {
+        // Scene saved successfully, no need to invalidate
+        console.log('Scene saved successfully');
+      },
       onError: (error) => {
         console.log('Error saving scene:', error);
       },
@@ -442,10 +447,7 @@
 
     // Save markers
     if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-      const existingMarkerIds =
-        data.selectedSceneMarkers && Array.isArray(data.selectedSceneMarkers)
-          ? data.selectedSceneMarkers.map((marker) => marker.id)
-          : [];
+      // Use our knownMarkerIds list instead of just data.selectedSceneMarkers
       const stageMarkers = stageProps.marker.markers;
 
       // Process markers one by one to handle creates and updates
@@ -453,7 +455,7 @@
         const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
 
         // If marker exists in the database, update it
-        if (existingMarkerIds.includes(marker.id)) {
+        if (knownMarkerIds.includes(marker.id)) {
           await handleMutation({
             mutation: () =>
               $updateMarkerMutation.mutateAsync({
@@ -462,6 +464,10 @@
                 markerData
               }),
             formLoadingState: () => {},
+            onSuccess: () => {
+              // Marker updated successfully, no need to invalidate
+              console.log('Marker updated successfully');
+            },
             onError: (error) => {
               console.log('Error updating marker:', error);
             },
@@ -480,6 +486,27 @@
                 markerData: markerData
               }),
             formLoadingState: () => {},
+            onSuccess: (result) => {
+              // Update the marker with the DB-generated ID and any other fields
+              if (result?.marker) {
+                // Find and update the marker in stageProps
+                const index = stageProps.marker.markers.findIndex((m) => m.id === marker.id);
+                if (index !== -1) {
+                  const oldId = stageProps.marker.markers[index].id;
+                  const newId = result.marker.id;
+                  stageProps.marker.markers[index].id = newId;
+
+                  // Add the new ID to our known markers list
+                  knownMarkerIds = [...knownMarkerIds, newId];
+                  console.log('Added marker ID to known markers:', newId);
+
+                  // If this is the selectedMarker, update the ID
+                  if (selectedMarkerId === oldId) {
+                    selectedMarkerId = newId;
+                  }
+                }
+              }
+            },
             onError: (error) => {
               console.log('Error creating marker:', error);
             },
@@ -503,6 +530,9 @@
           }
         }),
       formLoadingState: () => {},
+      onSuccess: () => {
+        // Successfully updated game session timestamp, no need to invalidate
+      },
       toastMessages: {
         error: { title: 'Error saving game session', body: (err) => err.message || 'Error saving game session' }
       }
@@ -510,14 +540,6 @@
 
     // Reset the saving flag after all updates
     isSaving = false;
-
-    // Make sure to update the selectedMarker reference to match the new marker objects
-    if (selectedMarker) {
-      const updatedMarker = stageProps.marker.markers.find((marker) => marker.id === selectedMarker?.id);
-      if (updatedMarker) {
-        selectedMarker = updatedMarker;
-      }
-    }
   };
 
   $effect(() => {
@@ -530,6 +552,15 @@
     saveTimer = setTimeout(() => {
       saveScene();
     }, 3000);
+  });
+
+  // Make sure the selectedMarkerId is reset when the selectedScene changes
+  // Also update knownMarkerIds to reflect what might change in state
+  $effect(() => {
+    if (selectedScene.id) {
+      selectedMarkerId = undefined;
+      knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
+    }
   });
 </script>
 
@@ -625,11 +656,11 @@
         }
       }}
     >
-      {#key selectedMarker}
+      {#key selectedMarkerId}
         <MarkerManager
           partyId={party.id}
           bind:stageProps
-          bind:selectedMarker
+          bind:selectedMarkerId
           {socketUpdate}
           {handleSelectActiveControl}
         />
