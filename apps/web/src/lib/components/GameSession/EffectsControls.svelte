@@ -84,10 +84,10 @@
   <div class="edgeControls">
     <Text weight={800}>You are on a free plan</Text>
     <Spacer size={2} />
-    <Text size="0.875rem" color="var(--fgMuted)"
-      >Effects controls are only available on upgraded plans. They allow you to change the mood ("spooky", "vibrant",
-      ...etc) for the entire scene.</Text
-    >
+    <Text size="0.875rem" color="var(--fgMuted)">
+      Effects controls are only available on upgraded plans. They allow you to change the mood ("spooky", "vibrant",
+      ...etc) for the entire scene.
+    </Text>
     <Spacer />
     <PartyPlanSelector {party} />
   </div>

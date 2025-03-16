@@ -46,10 +46,10 @@
   <div class="edgeControls">
     <Text weight={800}>You are on a free plan</Text>
     <Spacer size={2} />
-    <Text size="0.875rem" color="var(--fgMuted)"
-      >Edge controls are only available on upgraded plans. They allow you to add stylistic borders and fades to your
-      tabletop.</Text
-    >
+    <Text size="0.875rem" color="var(--fgMuted)">
+      Edge controls are only available on upgraded plans. They allow you to add stylistic borders and fades to your
+      tabletop.
+    </Text>
     <Spacer />
     <PartyPlanSelector {party} />
   </div>
@@ -110,8 +110,7 @@
           class={['edgeTextures__btn', edge === stageProps.edgeOverlay.url && 'edgeTextures__btn--isActive']}
           style={`background-image: url(${edge})`}
           aria-label="Edge texture"
-        >
-        </button>
+        ></button>
       {/each}
     </div>
   </div>

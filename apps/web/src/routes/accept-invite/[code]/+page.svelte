@@ -15,7 +15,8 @@
     <Title as="h1" size="md">Hero, aceept the call!</Title>
     <Spacer size={4} />
     <p class="name">
-      <strong>{invite.invite.email}</strong>,
+      <strong>{invite.invite.email}</strong>
+      ,
     </p>
     <Spacer size={4} />
     <p>Your presense was requested by</p>

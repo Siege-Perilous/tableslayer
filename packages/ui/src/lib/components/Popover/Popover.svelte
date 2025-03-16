@@ -51,7 +51,7 @@
 {#if isOpen}
   <div use:melt={$contentAction} transition:fade={{ duration: 100 }} class={['popContent', contentClass ?? '']}>
     {@render content({ contentProps })}
-    <button class="popClose" use:melt={$close}> close </button>
+    <button class="popClose" use:melt={$close}>close</button>
   </div>
 {/if}
 

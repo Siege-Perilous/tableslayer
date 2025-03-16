@@ -287,9 +287,15 @@
 
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
                 {#snippet trigger({ triggerProps })}
-                  <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}
-                    >Delete marker</Button
+                  <Button
+                    as="div"
+                    variant="danger"
+                    disabled={formIsLoading}
+                    isLoading={formIsLoading}
+                    {...triggerProps}
                   >
+                    Delete marker
+                  </Button>
                 {/snippet}
                 {#snippet actionMessage()}
                   Delete marker?
@@ -322,8 +328,9 @@
                 />
               </IconButton>
               {@render imagePreview(marker)}
-              <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>{marker.title}</button
-              >
+              <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>
+                {marker.title}
+              </button>
               <div class="markerManager__editIcon">
                 <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
                   {#snippet trigger({ triggerProps })}
@@ -342,10 +349,10 @@
           <div>
             <Text weight={700}>No markers in this scene</Text>
             <Spacer size={2} />
-            <Text color="var(--fgMuted)"
-              >Markers allow you to mark important locations. You can can use them as GM only notes — or in a pinch — as
-              table viewable tokens.</Text
-            >
+            <Text color="var(--fgMuted)">
+              Markers allow you to mark important locations. You can can use them as GM only notes — or in a pinch — as
+              table viewable tokens.
+            </Text>
             <Spacer size={4} />
             <Text color="var(--fgMuted)">Like the rest of Table Slayer, only the GM has control over markers.</Text>
             <Spacer />

@@ -59,7 +59,10 @@
   <Spacer size={2} />
 
   {#if extendedProps}
-    <p><strong>Extends:</strong> {extendedProps}</p>
+    <p>
+      <strong>Extends:</strong>
+      {extendedProps}
+    </p>
     <Spacer />
   {/if}
 

@@ -125,9 +125,9 @@
             {/snippet}
           </FormControl>
           <Spacer size={2} />
-          <Text size="0.875rem" color="var(--fgMuted)"
-            >Admins manage billing and can invite others. Editors can edit and create new sessions.</Text
-          >
+          <Text size="0.875rem" color="var(--fgMuted)">
+            Admins manage billing and can invite others. Editors can edit and create new sessions.
+          </Text>
           <Spacer size={4} />
           <Hr />
           <Spacer size={4} />
@@ -151,9 +151,9 @@
           {/snippet}
         </ConfirmActionButton>
         <Spacer size={2} />
-        <Text size="0.875rem" color="var(--fgMuted)"
-          >A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.</Text
-        >
+        <Text size="0.875rem" color="var(--fgMuted)">
+          A removed party member will need to be reinvited. You can not remove yourself if you are the only admin.
+        </Text>
       </div>
     {/snippet}
   </Popover>
