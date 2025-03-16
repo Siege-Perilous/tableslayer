@@ -43,9 +43,9 @@
 
 <div class="sceneZoom">
   <Button onclick={toggleZoomType} variant="ghost">
-    <span class={zoomType === 'map' ? 'sceneZoom__mutedText' : ''}> Scene </span>
-    <span class="sceneZoom__mutedText"> | </span>
-    <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}> Map </span>
+    <span class={zoomType === 'map' ? 'sceneZoom__mutedText' : ''}>Scene</span>
+    <span class="sceneZoom__mutedText">|</span>
+    <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}>Map</span>
   </Button>
   <IconButton
     title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}

@@ -250,7 +250,10 @@
     </div>
     <div class="quote">
       <Text size="1.5rem">{randomFantasyQuote.quote}</Text>
-      <Text color="var(--fgMuted)">— {randomFantasyQuote.author}, <span>{randomFantasyQuote.source}</span></Text>
+      <Text color="var(--fgMuted)">
+        — {randomFantasyQuote.author},
+        <span>{randomFantasyQuote.source}</span>
+      </Text>
     </div>
   </div>
 {/if}

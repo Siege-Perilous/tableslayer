@@ -144,8 +144,10 @@
                     variant="danger"
                     type="button"
                     disabled={formIsLoading}
-                    isLoading={formIsLoading}>Delete session</Button
+                    isLoading={formIsLoading}
                   >
+                    Delete session
+                  </Button>
                 {/snippet}
                 {#snippet actionMessage()}
                   <Text size="0.875rem" color="var(--fgDanger)">
