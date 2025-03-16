@@ -40,12 +40,16 @@
     // Reset selectedMarkerId when the selectedScene changes
     if (selectedScene?.id) {
       selectedMarkerId = undefined;
+      // Reset known marker IDs from the data
+      knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
     }
   });
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
+  // Track which marker IDs exist in the database
+  let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -454,10 +458,7 @@
 
     // Save markers
     if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-      const existingMarkerIds =
-        data.selectedSceneMarkers && Array.isArray(data.selectedSceneMarkers)
-          ? data.selectedSceneMarkers.map((marker) => marker.id)
-          : [];
+      // Use our knownMarkerIds list instead of just data.selectedSceneMarkers
       const stageMarkers = stageProps.marker.markers;
 
       // Process markers one by one to handle creates and updates
@@ -465,7 +466,7 @@
         const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
 
         // If marker exists in the database, update it
-        if (existingMarkerIds.includes(marker.id)) {
+        if (knownMarkerIds.includes(marker.id)) {
           await handleMutation({
             mutation: () =>
               $updateMarkerMutation.mutateAsync({
@@ -503,11 +504,16 @@
                 const index = stageProps.marker.markers.findIndex((m) => m.id === marker.id);
                 if (index !== -1) {
                   const oldId = stageProps.marker.markers[index].id;
-                  stageProps.marker.markers[index].id = result.marker.id;
+                  const newId = result.marker.id;
+                  stageProps.marker.markers[index].id = newId;
+
+                  // Add the new ID to our known markers list
+                  knownMarkerIds = [...knownMarkerIds, newId];
+                  console.log('Added marker ID to known markers:', newId);
 
                   // If this is the selectedMarker, update the ID
                   if (selectedMarkerId === oldId) {
-                    selectedMarkerId = result.marker.id;
+                    selectedMarkerId = newId;
                   }
                 }
               }
