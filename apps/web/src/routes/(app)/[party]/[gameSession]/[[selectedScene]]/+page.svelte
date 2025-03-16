@@ -35,20 +35,9 @@
   let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
     $derived(data);
 
-  // Track scene changes to reset selectedMarkerId
-  $effect(() => {
-    // Reset selectedMarkerId when the selectedScene changes
-    if (selectedScene?.id) {
-      selectedMarkerId = undefined;
-      // Reset known marker IDs from the data
-      knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
-    }
-  });
-
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
-  // Track which marker IDs exist in the database
   let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
@@ -551,9 +540,6 @@
 
     // Reset the saving flag after all updates
     isSaving = false;
-
-    // We no longer need to update the selectedMarker reference explicitly
-    // since it's derived from selectedMarkerId and stageProps.marker.markers
   };
 
   $effect(() => {
@@ -566,6 +552,15 @@
     saveTimer = setTimeout(() => {
       saveScene();
     }, 3000);
+  });
+
+  // Make sure the selectedMarkerId is reset when the selectedScene changes
+  // Also update knownMarkerIds to reflect what might change in state
+  $effect(() => {
+    if (selectedScene.id) {
+      selectedMarkerId = undefined;
+      knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
+    }
   });
 </script>
 

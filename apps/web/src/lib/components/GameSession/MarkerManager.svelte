@@ -38,7 +38,6 @@
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
-  import { invalidateAll } from '$app/navigation';
 
   let {
     stageProps = $bindable(),
