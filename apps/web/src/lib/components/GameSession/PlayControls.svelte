@@ -73,16 +73,11 @@
 </script>
 
 <div class="playControls">
-  <Button
-    href={`/${party.slug}/${gameSession.slug}/share`}
-    target="_blank"
-    onclick={() => window.open(`/${party.slug}/${gameSession.slug}/share`, 'newwindow', 'width=300,height=250')}
-    >Open playfield</Button
-  >
+  <Button href={`/${party.slug}/${gameSession.slug}/share`} target="_blank">Open playfield</Button>
   <Spacer size={2} />
-  <Text size="0.85rem" color="var(--fgMuted)"
-    >This will open a new window with the playfield. Fullscreen it on your display.</Text
-  >
+  <Text size="0.85rem" color="var(--fgMuted)">
+    This will open a new tab with the playfield. Fullscreen it on your display.
+  </Text>
   <Spacer />
   <Hr />
   <Spacer />
