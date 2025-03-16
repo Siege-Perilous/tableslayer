@@ -10,10 +10,10 @@
         <LinkOverlay href="https://google.com">Overlay link for card</LinkOverlay>
       </Title>
       <Spacer size={2} />
-      <Text
-        >The entire card is link to the above title href, but the link below can still be selected. Both can be tabbed
-        to.</Text
-      >
+      <Text>
+        The entire card is link to the above title href, but the link below can still be selected. Both can be tabbed
+        to.
+      </Text>
       <Spacer />
       <Link href="#">Non overlay link</Link>
     </Panel>

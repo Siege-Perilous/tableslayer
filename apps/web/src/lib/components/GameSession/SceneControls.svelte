@@ -241,7 +241,7 @@
         onclick={() => handleSelectActiveControl('marker')}
       >
         <Icon Icon={IconPokerChip} size="1.5rem" />
-        <span class="sceneControls__layerText"> Marker </span>
+        <span class="sceneControls__layerText">Marker</span>
       </button>
     </div>
     {#each sceneControlArray as scene}

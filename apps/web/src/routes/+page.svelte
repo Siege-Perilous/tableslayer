@@ -61,9 +61,9 @@
         {/snippet}
       </FormControl>
       <Spacer />
-      <Button data-testid="notifySubmit" type="submit" disabled={formIsLoading} isLoading={formIsLoading}
-        >Add me to the beta</Button
-      >
+      <Button data-testid="notifySubmit" type="submit" disabled={formIsLoading} isLoading={formIsLoading}>
+        Add me to the beta
+      </Button>
     </form>
   {:else}
     <Text size="1.5rem" color="var(--fgPrimary)">Thanks. We'll be in touch soon.</Text>

@@ -140,9 +140,9 @@
           {/if}
         </Button>
         <Spacer size={2} />
-        <Text size="0.875rem" color="var(--fgMuted)"
-          >When you log in, you will be redirected to your favorite party.</Text
-        >
+        <Text size="0.875rem" color="var(--fgMuted)">
+          When you log in, you will be redirected to your favorite party.
+        </Text>
         <Spacer />
         <Hr />
         <Spacer />
@@ -151,15 +151,15 @@
             <Button as="div" variant="danger" {...triggerProps}>Delete party</Button>
           {/snippet}
           {#snippet actionMessage()}
-            <Text size="0.875rem" color="var(--fgDanger)"
-              >This will permenantly delete the party along with all related sessions.</Text
-            >
+            <Text size="0.875rem" color="var(--fgDanger)">
+              This will permenantly delete the party along with all related sessions.
+            </Text>
           {/snippet}
         </ConfirmActionButton>
         <Spacer size={2} />
-        <Text size="0.875rem" color="var(--fgMuted)"
-          >Deleting a party is permanent and you will lose any sessions and encounters created. This can not be undone.</Text
-        >
+        <Text size="0.875rem" color="var(--fgMuted)">
+          Deleting a party is permanent and you will lose any sessions and encounters created. This can not be undone.
+        </Text>
       </div>
     {/snippet}
   </Popover>

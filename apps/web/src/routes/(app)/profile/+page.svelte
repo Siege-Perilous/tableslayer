@@ -123,9 +123,9 @@
               <Avatar src={invite.invitedByUser?.thumb.resizedUrl} size="sm" />
               <div>
                 <Text size="0.875rem" color="var(--fgMuted)">
-                  <Text size="0.875rem" as="span" color="var(--fg)"
-                    >{invite.invitedByUser?.name || invite.invitedByUser?.email}</Text
-                  > invited you to join
+                  <Text size="0.875rem" as="span" color="var(--fg)">
+                    {invite.invitedByUser?.name || invite.invitedByUser?.email}
+                  </Text> invited you to join
                 </Text>
                 <Title as="p" size="xs">{invite.party?.name}</Title>
                 <Spacer />

@@ -92,9 +92,9 @@
         </div>
       {/if}
       {#if gameSession && selectedParty}
-        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg" class="gameSessionLink"
-          >{gameSession.name}</Link
-        >
+        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg" class="gameSessionLink">
+          {gameSession.name}
+        </Link>
       {/if}
     </div>
 

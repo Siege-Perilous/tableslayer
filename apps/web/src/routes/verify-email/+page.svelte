@@ -105,9 +105,9 @@
           <Title as="h1" size="md">Expired code</Title>
           <Text>Your previous verification code expired. Please request a new one.</Text>
           <Spacer />
-          <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}
-            >Resend verification email</Button
-          >
+          <Button onclick={handleResendEmail} isLoading={formIsLoading} disabled={formIsLoading}>
+            Resend verification email
+          </Button>
         </div>
       {/if}
     {:else}
@@ -119,9 +119,9 @@
         </FormControl>
         <Spacer />
         <Button>Change email</Button>
-        <Button variant="danger" isLoading={formIsLoading} disabled={formIsLoading} onclick={handleCancelChangeEmail}
-          >Cancel</Button
-        >
+        <Button variant="danger" isLoading={formIsLoading} disabled={formIsLoading} onclick={handleCancelChangeEmail}>
+          Cancel
+        </Button>
       </form>
     {/if}
   </div>

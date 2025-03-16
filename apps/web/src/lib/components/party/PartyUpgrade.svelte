@@ -42,7 +42,10 @@
 
 <Panel class="partyUpgrade">
   {#if party.plan !== 'free'}
-    <Text weight={800}>Your party is on a <span class="partyUpgrade__highlight">{party.plan} plan</span>.</Text>
+    <Text weight={800}>
+      Your party is on a <span class="partyUpgrade__highlight">{party.plan} plan</span>
+      .
+    </Text>
     <Spacer size={2} />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
       Thank you for supporting Table Slayer. If you run into problems or have ideas, please contact
@@ -51,24 +54,27 @@
     {#if party.plan !== 'lifetime'}
       <Spacer />
       {#if party.planExpirationDate}
-        <Text size="0.875rem" color="var(--fgDanger)">Your plan expires on {formatDate(party.planExpirationDate)}.</Text
-        >
+        <Text size="0.875rem" color="var(--fgDanger)">
+          Your plan expires on {formatDate(party.planExpirationDate)}.
+        </Text>
       {:else if party.planNextBillingDate}
         <Text size="0.875rem">Your plan renews on {formatDate(party.planNextBillingDate)}.</Text>
       {/if}
       <Spacer />
-      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage" isLoading={formIsLoading}
-        >Manage subscription</Button
-      >
+      <Button onclick={() => handleCustomerPortal()} class="partyUpgrade__manage" isLoading={formIsLoading}>
+        Manage subscription
+      </Button>
     {/if}
   {:else}
     <Text weight={800}>{limitText}</Text>
     <Spacer size={2} />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
-      Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span> with an upgraded party. Table
-      Slayer is open source and free to <Link href="https://github.com/siege-perlious/tableslayer"
-        >host on your own</Link
-      >.
+      Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span>
+      with an upgraded party. Table Slayer is open source and free to <Link
+        href="https://github.com/siege-perlious/tableslayer"
+      >
+        host on your own
+      </Link>.
     </Text>
     <Spacer />
     <PartyPlanSelector {party} />
