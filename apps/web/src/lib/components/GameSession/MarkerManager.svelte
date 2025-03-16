@@ -42,13 +42,13 @@
 
   let {
     stageProps = $bindable(),
-    selectedMarker = $bindable(),
+    selectedMarkerId = $bindable(),
     partyId = '',
     handleSelectActiveControl,
     socketUpdate
   }: {
     stageProps: StageProps;
-    selectedMarker: Marker | undefined;
+    selectedMarkerId: string | undefined;
     partyId: string;
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
@@ -59,7 +59,7 @@
 
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
-  let editingMarkerId = $derived(selectedMarker ? selectedMarker.id : null);
+  let editingMarkerId = $derived(selectedMarkerId || null);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -68,11 +68,11 @@
   };
 
   const selectMarkerForEdit = (markerId: string) => {
-    selectedMarker = stageProps.marker.markers.find((marker) => marker.id === markerId);
+    selectedMarkerId = markerId;
   };
 
   const backToList = () => {
-    selectedMarker = undefined;
+    selectedMarkerId = undefined;
   };
 
   const handleMarkerImageUpload = async (event: Event, markerId: string) => {
@@ -112,8 +112,13 @@
       mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        selectedMarker = undefined;
-        invalidateAll();
+        // Remove the marker from stageProps without invalidating
+        stageProps.marker.markers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+        // Reset selected marker if we just deleted it
+        if (selectedMarkerId === markerId) {
+          selectedMarkerId = undefined;
+        }
+        socketUpdate();
       },
       toastMessages: {
         success: { title: 'Marker deleted' },
@@ -184,127 +189,114 @@
       </Link>
       <div class="markerManager__editView">
         <div class="markerManager__marker">
-          {#if selectedMarker}
-            {@const marker = stageProps.marker.markers.find((m) => m.id === editingMarkerId)}
-            {#if marker}
+          {#if stageProps.marker.markers}
+            {#each stageProps.marker.markers.filter((m) => m.id === editingMarkerId) as marker (marker.id)}
               <!-- Forces rerender if ID changes -->
-              {#key marker.id}
-                <Spacer />
-                <div class="markerManager__formGrid">
-                  <FormControl label="Change image" name="imageLocation">
-                    {#snippet input({ inputProps })}
-                      {@render imagePreview(marker, inputProps)}
-                    {/snippet}
-                  </FormControl>
-
-                  <FormControl label="Visible to" name="visibility">
-                    {#snippet input(inputProps)}
-                      <RadioButton
-                        {...inputProps}
-                        selected={marker.visibility.toString()}
-                        options={[
-                          { label: 'DM', value: MarkerVisibility.DM.toString() },
-                          { label: 'Everyone', value: MarkerVisibility.Always.toString() }
-                        ]}
-                        onSelectedChange={(value) => {
-                          if (selectedMarker) {
-                            selectedMarker.visibility = Number(value);
-                          }
-                          socketUpdate();
-                        }}
-                      />
-                    {/snippet}
-                  </FormControl>
-                  <FormControl label="Label" name="label">
-                    {#snippet input(inputProps)}
-                      <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
-                    {/snippet}
-                  </FormControl>
-                  <FormControl label="Title" name="title">
-                    {#snippet input(inputProps)}
-                      <Input {...inputProps} bind:value={marker.title} />
-                    {/snippet}
-                  </FormControl>
-                </div>
-                <Spacer />
-                <div class="markerManager__colorPicker">
-                  <FormControl label="Background color" name="shapeColor">
-                    {#snippet start()}
-                      <Popover>
-                        {#snippet trigger()}
-                          <ColorPickerSwatch color={marker.shapeColor} />
-                        {/snippet}
-                        {#snippet content()}
-                          <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
-                        {/snippet}
-                      </Popover>
-                    {/snippet}
-                    {#snippet input(inputProps)}
-                      <Input {...inputProps} bind:value={marker.shapeColor} />
-                    {/snippet}
-                  </FormControl>
-                </div>
-                <Spacer />
-                <div class="markerManager__formGrid">
-                  <FormControl label="Shape" name="shape">
-                    {#snippet input(inputProps)}
-                      <RadioButton
-                        {...inputProps}
-                        selected={marker.shape.toString()}
-                        options={[
-                          { label: circle, value: MarkerShape.Circle.toString() },
-                          { label: square, value: MarkerShape.Square.toString() },
-                          { label: triangle, value: MarkerShape.Triangle.toString() }
-                        ]}
-                        onSelectedChange={(value) => {
-                          if (selectedMarker) {
-                            selectedMarker.shape = Number(value);
-                          }
-                          socketUpdate();
-                        }}
-                      />
-                    {/snippet}
-                  </FormControl>
-                  <FormControl label="Size" name="size">
-                    {#snippet input(inputProps)}
-                      <RadioButton
-                        {...inputProps}
-                        selected={marker.size.toString()}
-                        options={[
-                          { label: 'S', value: MarkerSize.Small.toString() },
-                          { label: 'M', value: MarkerSize.Medium.toString() },
-                          { label: 'L', value: MarkerSize.Large.toString() }
-                        ]}
-                        onSelectedChange={(value) => {
-                          if (selectedMarker) {
-                            selectedMarker.size = Number(value);
-                          }
-                          socketUpdate();
-                        }}
-                      />
-                    {/snippet}
-                  </FormControl>
-                </div>
-                <Spacer />
-                <Editor debug={false} bind:content={marker.note} />
-                <Spacer />
-
-                <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
-                  {#snippet trigger({ triggerProps })}
-                    <Button
-                      as="div"
-                      variant="danger"
-                      disabled={formIsLoading}
-                      isLoading={formIsLoading}
-                      {...triggerProps}>Delete marker</Button
-                    >
+              <Spacer />
+              <div class="markerManager__formGrid">
+                <FormControl label="Change image" name="imageLocation">
+                  {#snippet input({ inputProps })}
+                    {@render imagePreview(marker, inputProps)}
                   {/snippet}
-                  {#snippet actionMessage()}
-                    hello
+                </FormControl>
+
+                <FormControl label="Visible to" name="visibility">
+                  {#snippet input(inputProps)}
+                    <RadioButton
+                      {...inputProps}
+                      selected={marker.visibility.toString()}
+                      options={[
+                        { label: 'DM', value: MarkerVisibility.DM.toString() },
+                        { label: 'Everyone', value: MarkerVisibility.Always.toString() }
+                      ]}
+                      onSelectedChange={(value) => {
+                        marker.visibility = Number(value);
+                        socketUpdate();
+                      }}
+                    />
                   {/snippet}
-                </ConfirmActionButton>
-              {/key}
-            {/if}
+                </FormControl>
+                <FormControl label="Label" name="label">
+                  {#snippet input(inputProps)}
+                    <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
+                  {/snippet}
+                </FormControl>
+                <FormControl label="Title" name="title">
+                  {#snippet input(inputProps)}
+                    <Input {...inputProps} bind:value={marker.title} />
+                  {/snippet}
+                </FormControl>
+              </div>
+              <Spacer />
+              <div class="markerManager__colorPicker">
+                <FormControl label="Background color" name="shapeColor">
+                  {#snippet start()}
+                    <Popover>
+                      {#snippet trigger()}
+                        <ColorPickerSwatch color={marker.shapeColor} />
+                      {/snippet}
+                      {#snippet content()}
+                        <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
+                      {/snippet}
+                    </Popover>
+                  {/snippet}
+                  {#snippet input(inputProps)}
+                    <Input {...inputProps} bind:value={marker.shapeColor} />
+                  {/snippet}
+                </FormControl>
+              </div>
+              <Spacer />
+              <div class="markerManager__formGrid">
+                <FormControl label="Shape" name="shape">
+                  {#snippet input(inputProps)}
+                    <RadioButton
+                      {...inputProps}
+                      selected={marker.shape.toString()}
+                      options={[
+                        { label: circle, value: MarkerShape.Circle.toString() },
+                        { label: square, value: MarkerShape.Square.toString() },
+                        { label: triangle, value: MarkerShape.Triangle.toString() }
+                      ]}
+                      onSelectedChange={(value) => {
+                        marker.shape = Number(value);
+                        socketUpdate();
+                      }}
+                    />
+                  {/snippet}
+                </FormControl>
+                <FormControl label="Size" name="size">
+                  {#snippet input(inputProps)}
+                    <RadioButton
+                      {...inputProps}
+                      selected={marker.size.toString()}
+                      options={[
+                        { label: 'S', value: MarkerSize.Small.toString() },
+                        { label: 'M', value: MarkerSize.Medium.toString() },
+                        { label: 'L', value: MarkerSize.Large.toString() }
+                      ]}
+                      onSelectedChange={(value) => {
+                        marker.size = Number(value);
+                        socketUpdate();
+                      }}
+                    />
+                  {/snippet}
+                </FormControl>
+              </div>
+              <Spacer />
+              <Editor debug={false} bind:content={marker.note} />
+              <Spacer />
+
+              <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
+                {#snippet trigger({ triggerProps })}
+                  <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}
+                    >Delete marker</Button
+                  >
+                {/snippet}
+                {#snippet actionMessage()}
+                  Delete marker?
+                {/snippet}
+              </ConfirmActionButton>
+            {/each}
           {/if}
         </div>
       </div>
