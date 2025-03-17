@@ -1,9 +1,9 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Text, Spacer, Button, Panel, Hr, Head } from '@tableslayer/ui';
+  import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
-  import { IllustrationOverlook, Logo } from '$lib/components';
+  import { IllustrationOverlook, Logo, Head } from '$lib/components';
   import { Input, FormControl } from '@tableslayer/ui';
   import { useAddEmailToAudienceMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
