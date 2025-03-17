@@ -41,7 +41,6 @@
   onMount(() => {
     let before = autoRender.current;
     autoRender.set(false);
-    fit();
     return () => {
       autoRender.set(before);
     };
@@ -59,6 +58,7 @@
     // Configure renderer
     renderer.setClearColor(0, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
+    fit();
   });
 
   // Effect to update post-processing settings when props change
@@ -153,6 +153,9 @@
       if (renderSize.width !== $size.width || renderSize.height !== $size.height) {
         renderer.setSize($size.width, $size.height);
         composer.setSize($size.width, $size.height);
+
+        console.log('renderSize', renderSize);
+        console.log('composer size', composer.outputBuffer.width, composer.outputBuffer.height);
       }
 
       // Render main scene with post-processing

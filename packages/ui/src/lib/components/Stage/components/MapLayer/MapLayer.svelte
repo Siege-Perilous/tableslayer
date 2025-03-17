@@ -51,6 +51,7 @@
           width: texture.image.width,
           height: texture.image.height
         };
+        fit();
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));
@@ -133,5 +134,6 @@
     {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.FogOfWar}
+    visible={false}
   />
 </T.Object3D>
