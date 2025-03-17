@@ -3,7 +3,10 @@
   let { data } = $props();
   const { user } = data;
   const error = page.url.searchParams.get('error');
+  import { Head } from '$lib/components';
 </script>
+
+<Head />
 
 {#if error === 'invalid-code'}
   The code provided does not exist or has already been accepted.

@@ -10,11 +10,6 @@
   import { navigating } from '$app/state';
 </script>
 
-<svelte:head>
-  <title>Table Slayer</title>
-  <meta name="description" content="Tools to create animated battle maps for in person RPG games." />
-</svelte:head>
-
 <QueryClientProvider client={queryClient}>
   <ModeWatcher defaultMode="dark" darkClassNames={['dark']} lightClassNames={['light']} />
   <GlobalLoading />

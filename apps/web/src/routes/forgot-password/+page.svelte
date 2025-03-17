@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Input, Button, FormControl, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { Head } from '$lib/components';
   import { useAuthForgotPasswordMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
@@ -26,6 +27,8 @@
     });
   };
 </script>
+
+<Head title="Forgot password" description={`Retrieve your password on Table Slayer`} />
 
 <Panel class="panel--forgot">
   <Title as="h1" size="md">Forgot password?</Title>

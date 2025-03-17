@@ -3,6 +3,7 @@
   import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
+  import { Head } from '$lib/components';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -233,6 +234,8 @@
     }, 100);
   });
 </script>
+
+<Head title={data.gameSession.name} description={`${data.gameSession.name} on Table Slayer`} />
 
 <svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
 

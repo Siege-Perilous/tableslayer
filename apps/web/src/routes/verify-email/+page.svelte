@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, FormControl, Input, Link, Panel, Spacer, Text, Title } from '@tableslayer/ui';
-  import { IllustrationPortal } from '$lib/components/index.js';
+  import { IllustrationPortal, Head } from '$lib/components/index.js';
   import {
     useAuthVerifyEmailMutation,
     useAuthResendVerificationEmailMutation,
@@ -77,6 +77,8 @@
     isChangingEmail = false;
   };
 </script>
+
+<Head title="Verify your email" />
 
 <IllustrationPortal {showPortal} />
 

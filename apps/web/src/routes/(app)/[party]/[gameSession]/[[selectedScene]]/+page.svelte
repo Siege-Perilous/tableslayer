@@ -4,7 +4,7 @@
   import { handleMutation } from '$lib/factories';
   import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom } from '$lib/components';
+  import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom, Head } from '$lib/components';
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
@@ -566,6 +566,7 @@
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
 <svelte:window bind:innerWidth />
+<Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
+  import { Text, Spacer, Button, Panel, Hr, Head } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
   import { IllustrationOverlook, Logo } from '$lib/components';
@@ -32,6 +32,8 @@
     });
   };
 </script>
+
+<Head title="Table Slayer" description="Tools to create animated battle maps for in person RPG games." />
 
 <IllustrationOverlook />
 
