@@ -41,7 +41,6 @@
   // Constants for zoom/rotation limits
   const minZoom = 0.1;
   const maxZoom = 10;
-  const zoomSensitivity = 0.5; // Adjust this based on desired sensitivity
 
   const composer = new EffectComposer(renderer);
   const renderSize = new THREE.Vector2();
