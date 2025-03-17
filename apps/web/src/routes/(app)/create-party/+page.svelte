@@ -2,6 +2,7 @@
   import { Input, FileInput, Button, Title, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { useUploadFileMutation, useCreatePartyMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { Head } from '$lib/components';
   import { goto } from '$app/navigation';
 
   let file = $state<FileList | null>(null);
@@ -47,6 +48,8 @@
     }
   };
 </script>
+
+<Head title="Create Party" description="Create a new party Table Slayer" />
 
 <Panel class="createPartyPanel">
   <Title as="h1" size="md" data-testid="createParty">Create a new party</Title>

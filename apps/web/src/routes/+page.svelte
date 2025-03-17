@@ -3,7 +3,7 @@
   import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
   let { data } = $props();
   const { user } = data;
-  import { IllustrationOverlook, Logo } from '$lib/components';
+  import { IllustrationOverlook, Logo, Head } from '$lib/components';
   import { Input, FormControl } from '@tableslayer/ui';
   import { useAddEmailToAudienceMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -32,6 +32,8 @@
     });
   };
 </script>
+
+<Head title="Table Slayer" description="Tools to create animated battle maps for in person RPG games." />
 
 <IllustrationOverlook />
 

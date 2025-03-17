@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GameSessionCard, PartyInviteResponse } from '$lib/components';
+  import { GameSessionCard, PartyInviteResponse, Head } from '$lib/components';
   import {
     Text,
     Title,
@@ -80,6 +80,8 @@
     });
   };
 </script>
+
+<Head title={user.name} description={`${user.name} on Table Slayer`} />
 
 <div class="container">
   <div class="profile__header">

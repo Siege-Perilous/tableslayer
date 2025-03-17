@@ -8,7 +8,8 @@
     GameSessionCard,
     DefaultPartySettings,
     InvitePartyMember,
-    PartyUpgrade
+    PartyUpgrade,
+    Head
   } from '$lib/components';
 
   let { data } = $props();
@@ -17,6 +18,8 @@
   const partyId = data.party.id as string;
   const needsToUpgrade = $derived(party.plan === 'free' && gameSessions.length >= 2);
 </script>
+
+<Head title={party.name} description={`${party.name} on Table Slayer`} />
 
 <div class="container">
   <PartyTitle {isPartyAdmin} {party} {user} />

@@ -3,7 +3,6 @@
     AvatarPopover,
     SelectorMenu,
     Button,
-    Title,
     Link,
     IconButton,
     Icon,
@@ -12,7 +11,8 @@
     Text,
     LinkBox,
     LinkOverlay,
-    Avatar
+    Avatar,
+    Logo
   } from '@tableslayer/ui';
   import {
     IconMoon,
@@ -38,7 +38,7 @@
   );
   let selectedParty = $derived(parties && parties.find((party) => party.slug === page.params.party));
   const gameSession = $derived(page.data.gameSession);
-  let headerContainerClasses = $derived(['header_container', gameSession && 'header_container--isSession']);
+  let headerContainerClasses = $derived(['headerContainer', gameSession && 'headerContainer--isSession']);
 
   const handleChangeParty = (selected: string) => {
     console.log('Selected party:', selected);
@@ -59,11 +59,9 @@
 
 <header>
   <div class={headerContainerClasses}>
-    <div class="header_container__section">
+    <div class="headerContainer__section">
       <a href="/">
-        <div class="logo">
-          <Title as="p" size="sm">TS</Title>
-        </div>
+        <Logo size={24} />
       </a>
 
       {#if parties && parties.length > 0}
@@ -98,7 +96,7 @@
       {/if}
     </div>
 
-    <div class="header_container__section">
+    <div class="headerContainer__section">
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
         <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
@@ -163,18 +161,18 @@
     padding: var(--size-2);
     border-bottom: var(--borderThin);
   }
-  .header_container {
+  .headerContainer {
     max-width: var(--contain-desktop);
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .header_container--isSession {
+  .headerContainer--isSession {
     justify-content: space-between;
     max-width: 100%;
   }
-  .header_container__section {
+  .headerContainer__section {
     display: flex;
     align-items: center;
     gap: var(--size-4);

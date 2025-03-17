@@ -1,8 +1,10 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { Title, Text } from '@tableslayer/ui';
-  console.log(page);
+  import { Head } from '$lib/components';
 </script>
+
+<Head />
 
 <div class="error">
   <Title as="h1" size="xl">

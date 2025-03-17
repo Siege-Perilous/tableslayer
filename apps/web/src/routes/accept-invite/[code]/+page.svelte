@@ -1,10 +1,12 @@
 <script lang="ts">
   let { data } = $props();
   const { invite, user } = data;
-  import { PartyInviteResponse } from '$lib/components';
+  import { PartyInviteResponse, Head } from '$lib/components';
   import { Avatar, Button, Panel, Spacer, Title } from '@tableslayer/ui';
   import { page } from '$app/state';
 </script>
+
+<Head title="Accept Invite" description="Accept Invite to Table Slayer" />
 
 <Panel class="panelInvite">
   {#if !invite}

@@ -3,7 +3,7 @@
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
   import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
-  import { IllustrationTown } from '$lib/components';
+  import { IllustrationTown, Head } from '$lib/components';
   let email = $state('');
   let password = $state('');
   let formIsLoading = $state(false);
@@ -29,6 +29,8 @@
     });
   };
 </script>
+
+<Head title="Sign in" description="Sign in to Table Slayer" />
 
 <IllustrationTown />
 
