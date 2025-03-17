@@ -26,7 +26,6 @@
     layerSize,
     isActive,
     target,
-    activeLayer,
     gestureTarget = 'scene',
     onMouseDown,
     onMouseUp,
