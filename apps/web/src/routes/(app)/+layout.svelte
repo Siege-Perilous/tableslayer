@@ -61,7 +61,7 @@
   <div class={headerContainerClasses}>
     <div class="headerContainer__section">
       <a href="/">
-        <Logo size={24} class="headerContainer__logo" />
+        <Logo size={24} />
       </a>
 
       {#if parties && parties.length > 0}
