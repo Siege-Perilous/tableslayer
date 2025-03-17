@@ -23,6 +23,7 @@
   import { SceneLayer, SceneLayerOrder } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
+  import InputManager from '../InputManager/InputManager.svelte';
 
   interface Props {
     props: StageProps;
@@ -32,8 +33,15 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
+  const callbacks = getContext<Callbacks>('callbacks');
+  const onSceneUpdate = callbacks.onSceneUpdate;
+  const onMapUpdate = callbacks.onMapUpdate;
   let mapLayer: MapLayerExports;
+
+  // Constants for zoom/rotation limits
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.5; // Adjust this based on desired sensitivity
 
   const composer = new EffectComposer(renderer);
   const renderSize = new THREE.Vector2();
@@ -230,6 +238,40 @@
     reset: () => mapLayer.fogOfWar.reset(),
     toPng: () => mapLayer.fogOfWar.toPng()
   };
+
+  // Handler for pinch/zoom gestures
+  function handlePinch(scale: number, gestureTarget: 'map' | 'scene') {
+    // Calculate new zoom value based on scale factor
+    if (gestureTarget === 'map') {
+      const newZoom = Math.max(minZoom, Math.min(props.map.zoom * scale, maxZoom));
+      onMapUpdate({ x: props.map.offset.x, y: props.map.offset.y }, newZoom);
+    } else {
+      const newZoom = Math.max(minZoom, Math.min(props.scene.zoom * scale, maxZoom));
+      onSceneUpdate({ x: props.scene.offset.x, y: props.scene.offset.y }, newZoom);
+    }
+  }
+
+  // Handler for rotation gestures
+  function handleRotate(angleDelta: number, gestureTarget: 'map' | 'scene') {
+    // Convert radians to degrees and apply to rotation
+    const rotationDelta = (angleDelta * 180) / Math.PI;
+
+    if (gestureTarget === 'map') {
+      // Update map rotation (keep within 0-360 range)
+      let newRotation = (props.map.rotation + rotationDelta) % 360;
+      if (newRotation < 0) newRotation += 360;
+
+      // Using onMapUpdate to update position/zoom would cause issues with the rotation
+      // Instead, we'll modify the props directly since rotation is separate
+      props.map.rotation = newRotation;
+    } else {
+      // Update scene rotation (keep within 0-360 range)
+      let newRotation = (props.scene.rotation + rotationDelta) % 360;
+      if (newRotation < 0) newRotation += 360;
+
+      props.scene.rotation = newRotation;
+    }
+  }
 </script>
 
 <T.OrthographicCamera
@@ -265,5 +307,14 @@
     isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
     grid={props.grid}
     display={props.display}
+  />
+
+  <!-- Input handler for touch gestures -->
+  <InputManager
+    isActive={props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Marker}
+    activeLayer={props.activeLayer}
+    gestureTarget={props.gestureTarget || 'scene'}
+    onPinch={handlePinch}
+    onRotate={handleRotate}
   />
 </T.Object3D>

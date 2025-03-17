@@ -4,29 +4,38 @@
   import { useThrelte } from '@threlte/core';
   import type { Size } from '../../types';
   import { SceneLayer } from '../Scene/types';
+  import { MapLayerType } from '../MapLayer/types';
 
   interface Props {
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
+    activeLayer?: MapLayerType;
+    gestureTarget?: 'map' | 'scene';
     onMouseDown?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseUp?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseMove?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onContextMenu?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseLeave?: () => void;
     onWheel?: (e: WheelEvent) => void;
+    onPinch?: (scale: number, gestureTarget: 'map' | 'scene') => void;
+    onRotate?: (angle: number, gestureTarget: 'map' | 'scene') => void;
   }
 
   let {
     layerSize,
     isActive,
     target,
+    activeLayer,
+    gestureTarget = 'scene',
     onMouseDown,
     onMouseUp,
     onMouseMove,
     onMouseLeave,
     onWheel,
-    onContextMenu
+    onContextMenu,
+    onPinch,
+    onRotate
   }: Props = $props();
 
   const { camera, renderer, size } = useThrelte();
@@ -35,6 +44,12 @@
   raycaster.layers.enable(SceneLayer.Overlay);
   raycaster.layers.enable(SceneLayer.Main);
   raycaster.layers.enable(SceneLayer.Input);
+
+  // Touch gesture state
+  let initialDistance = 0;
+  let initialAngle = 0;
+  let isMultiTouch = false;
+  let currentGestureTarget: 'map' | 'scene';
 
   function isTouchDevice() {
     return window.matchMedia('(any-pointer: coarse)').matches;
@@ -111,16 +126,44 @@
   }
 
   function handleTouchStart(event: TouchEvent) {
-    if (onMouseDown && isActive) {
-      event.preventDefault(); // Prevent scrolling when interacting with the canvas
+    if (!isActive) return;
+
+    event.preventDefault(); // Prevent scrolling when interacting with the canvas
+
+    if (event.touches.length === 2 && (activeLayer === MapLayerType.None || activeLayer === MapLayerType.Marker)) {
+      // Initialize pinch-zoom and rotation
+      isMultiTouch = true;
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+
+      // Calculate initial distance between touch points
+      initialDistance = getDistance(touch1, touch2);
+
+      // Calculate initial angle between touch points
+      initialAngle = getAngle(touch1, touch2);
+
+      // Determine if we're modifying the map or scene based on gestureTarget or modifier key
+      currentGestureTarget = event.shiftKey ? 'map' : gestureTarget;
+    } else if (event.touches.length === 1 && onMouseDown) {
+      // Single touch - handle as normal
+      isMultiTouch = false;
       const touch = event.touches[0];
       onMouseDown(event, touchToCanvasCoords(touch));
     }
   }
 
   function handleTouchEnd(event: TouchEvent) {
-    if (onMouseUp && isActive && isTouchDevice()) {
-      event.preventDefault();
+    if (!isActive) return;
+
+    event.preventDefault();
+
+    // Reset multi-touch state
+    if (isMultiTouch && event.touches.length < 2) {
+      isMultiTouch = false;
+    }
+
+    // Handle regular touch end for single touch
+    if (!isMultiTouch && onMouseUp && isTouchDevice()) {
       // We may not have a touch point in touchend, so pass null if not available
       const touch = event.changedTouches[0];
       onMouseUp(event, touch ? touchToCanvasCoords(touch) : null);
@@ -128,8 +171,35 @@
   }
 
   function handleTouchMove(event: TouchEvent) {
-    if (onMouseMove && isActive && isTouchDevice()) {
-      event.preventDefault();
+    if (!isActive) return;
+
+    event.preventDefault();
+
+    if (isMultiTouch && event.touches.length === 2) {
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+
+      // Handle pinch/zoom
+      const currentDistance = getDistance(touch1, touch2);
+      const scaleFactor = currentDistance / initialDistance;
+
+      // Only trigger zoom if the change is significant
+      if (Math.abs(scaleFactor - 1) > 0.01 && onPinch) {
+        onPinch(scaleFactor, currentGestureTarget);
+        initialDistance = currentDistance; // Update for next move event
+      }
+
+      // Handle rotation
+      const currentAngle = getAngle(touch1, touch2);
+      const angleDelta = currentAngle - initialAngle;
+
+      // Only trigger rotation if the change is significant
+      if (Math.abs(angleDelta) > 0.05 && onRotate) {
+        onRotate(angleDelta, currentGestureTarget);
+        initialAngle = currentAngle; // Update for next move event
+      }
+    } else if (onMouseMove && isTouchDevice()) {
+      // Handle regular touch move for single touch
       const touch = event.touches[0];
       onMouseMove(event, touchToCanvasCoords(touch));
     }
@@ -137,8 +207,19 @@
 
   function handleTouchCancel() {
     if (onMouseLeave && isActive) {
+      isMultiTouch = false;
       onMouseLeave();
     }
+  }
+
+  function getDistance(touch1: Touch, touch2: Touch): number {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function getAngle(touch1: Touch, touch2: Touch): number {
+    return Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX);
   }
 
   function mouseToCanvasCoords(e: MouseEvent): THREE.Vector2 | null {

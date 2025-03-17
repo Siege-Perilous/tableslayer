@@ -14,21 +14,27 @@
     handleMapFill: () => void;
   } = $props();
 
-  let zoomType = $state<'map' | 'scene'>('scene');
+  // Initialize with scene as default target
+  let gestureTarget = $state<'map' | 'scene'>('scene');
+
+  // Always keep stageProps.gestureTarget in sync with our local state
+  $effect(() => {
+    stageProps.gestureTarget = gestureTarget;
+  });
 
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.001;
 
-  const handleZoom = (deltaY: number, zoomType: 'map' | 'scene') => {
-    const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
+  const handleZoom = (deltaY: number, target: 'map' | 'scene') => {
+    const zoom = stageProps[target].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
-    stageProps[zoomType].zoom = newZoom;
+    stageProps[target].zoom = newZoom;
     socketUpdate();
   };
 
-  const toggleZoomType = () => {
-    zoomType = zoomType === 'map' ? 'scene' : 'map';
+  const toggleGestureTarget = () => {
+    gestureTarget = gestureTarget === 'map' ? 'scene' : 'map';
   };
 
   const handleMapRotate = () => {
@@ -42,34 +48,34 @@
 </script>
 
 <div class="sceneZoom">
-  <Button onclick={toggleZoomType} variant="ghost">
-    <span class={zoomType === 'map' ? 'sceneZoom__mutedText' : ''}>Scene</span>
+  <Button onclick={toggleGestureTarget} variant="ghost">
+    <span class={gestureTarget === 'map' ? 'sceneZoom__mutedText' : ''}>Scene</span>
     <span class="sceneZoom__mutedText">|</span>
-    <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}>Map</span>
+    <span class={gestureTarget === 'scene' ? 'sceneZoom__mutedText' : ''}>Map</span>
   </Button>
   <IconButton
-    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
+    title={gestureTarget === 'map' ? 'SHIFT + mouse wheel or pinch' : 'CTRL + mouse wheel or pinch'}
     class="zoomControls__button"
     aria-label="Zoom in"
     variant="ghost"
     onclick={() => {
-      handleZoom(100, zoomType);
+      handleZoom(100, gestureTarget);
     }}
   >
     <Icon Icon={IconPlus} stroke={3} />
   </IconButton>
   <IconButton
-    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
+    title={gestureTarget === 'map' ? 'SHIFT + mouse wheel or pinch' : 'CTRL + mouse wheel or pinch'}
     class="zoomControls__button"
     aria-label="Zoom out"
     variant="ghost"
     onclick={() => {
-      handleZoom(-100, zoomType);
+      handleZoom(-100, gestureTarget);
     }}
   >
     <Icon Icon={IconMinus} stroke={3} />
   </IconButton>
-  {#if zoomType === 'map'}
+  {#if gestureTarget === 'map'}
     <IconButton
       title="Fill map within scene"
       class="zoomControls__button"
@@ -80,7 +86,7 @@
       <Icon Icon={IconArrowsMaximize} stroke={3} />
     </IconButton>
     <IconButton
-      title="Rotate map"
+      title="Rotate map (or use two-finger twist)"
       class="zoomControls__button"
       aria-label="Rotate map"
       variant="ghost"
@@ -101,7 +107,7 @@
       <Icon Icon={IconArrowsMaximize} stroke={3} />
     </IconButton>
     <IconButton
-      title="Rotate scene"
+      title="Rotate scene (or use two-finger twist)"
       class="zoomControls__button"
       aria-label="Rotate scene"
       variant="ghost"

@@ -64,6 +64,11 @@ export type StageProps = {
   postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
+  /**
+   * Determines which layer (map or scene) is affected by touch gestures like pinch/zoom and rotation
+   * @default 'scene'
+   */
+  gestureTarget?: 'map' | 'scene';
 };
 
 export interface StageExports {
