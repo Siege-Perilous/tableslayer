@@ -66,10 +66,10 @@
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
 
     // Touch events
-    if (onMouseDown) renderer.domElement.addEventListener('touchstart', handleTouchStart);
-    if (onMouseMove) renderer.domElement.addEventListener('touchmove', handleTouchMove);
-    if (onMouseUp) renderer.domElement.addEventListener('touchend', handleTouchEnd);
-    if (onMouseLeave) renderer.domElement.addEventListener('touchcancel', handleTouchCancel);
+    if (onMouseDown) renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    if (onMouseMove) renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    if (onMouseUp) renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+    if (onMouseLeave) renderer.domElement.addEventListener('touchcancel', handleTouchCancel, { passive: false });
   });
 
   onDestroy(() => {
@@ -82,10 +82,18 @@
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
 
     // Touch events
-    if (onMouseDown) renderer.domElement.removeEventListener('touchstart', handleTouchStart);
-    if (onMouseMove) renderer.domElement.removeEventListener('touchmove', handleTouchMove);
-    if (onMouseUp) renderer.domElement.removeEventListener('touchend', handleTouchEnd);
-    if (onMouseLeave) renderer.domElement.removeEventListener('touchcancel', handleTouchCancel);
+    if (onMouseDown)
+      renderer.domElement.removeEventListener('touchstart', handleTouchStart, {
+        passive: false
+      } as EventListenerOptions);
+    if (onMouseMove)
+      renderer.domElement.removeEventListener('touchmove', handleTouchMove, { passive: false } as EventListenerOptions);
+    if (onMouseUp)
+      renderer.domElement.removeEventListener('touchend', handleTouchEnd, { passive: false } as EventListenerOptions);
+    if (onMouseLeave)
+      renderer.domElement.removeEventListener('touchcancel', handleTouchCancel, {
+        passive: false
+      } as EventListenerOptions);
   });
 
   // Internal event handler methods for mouse
@@ -130,7 +138,8 @@
 
     event.preventDefault(); // Prevent scrolling when interacting with the canvas
 
-    if (event.touches.length === 2 && (activeLayer === MapLayerType.None || activeLayer === MapLayerType.Marker)) {
+    // Only handle pinch/zoom if we have onPinch handler
+    if (event.touches.length === 2 && onPinch) {
       // Initialize pinch-zoom and rotation
       isMultiTouch = true;
       const touch1 = event.touches[0];
@@ -175,7 +184,8 @@
 
     event.preventDefault();
 
-    if (isMultiTouch && event.touches.length === 2) {
+    // For pinch/zoom, handle regardless of active layer
+    if (isMultiTouch && event.touches.length === 2 && onPinch) {
       const touch1 = event.touches[0];
       const touch2 = event.touches[1];
 
@@ -184,19 +194,21 @@
       const scaleFactor = currentDistance / initialDistance;
 
       // Only trigger zoom if the change is significant
-      if (Math.abs(scaleFactor - 1) > 0.01 && onPinch) {
+      if (Math.abs(scaleFactor - 1) > 0.01) {
         onPinch(scaleFactor, currentGestureTarget);
         initialDistance = currentDistance; // Update for next move event
       }
 
       // Handle rotation
-      const currentAngle = getAngle(touch1, touch2);
-      const angleDelta = currentAngle - initialAngle;
+      if (onRotate) {
+        const currentAngle = getAngle(touch1, touch2);
+        const angleDelta = currentAngle - initialAngle;
 
-      // Only trigger rotation if the change is significant
-      if (Math.abs(angleDelta) > 0.05 && onRotate) {
-        onRotate(angleDelta, currentGestureTarget);
-        initialAngle = currentAngle; // Update for next move event
+        // Only trigger rotation if the change is significant
+        if (Math.abs(angleDelta) > 0.05) {
+          onRotate(angleDelta, currentGestureTarget);
+          initialAngle = currentAngle; // Update for next move event
+        }
       }
     } else if (onMouseMove && isTouchDevice()) {
       // Handle regular touch move for single touch

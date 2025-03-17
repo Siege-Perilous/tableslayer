@@ -151,6 +151,8 @@
   {onMouseMove}
   {onMouseUp}
   {onContextMenu}
+  onPinch={undefined}
+  onRotate={undefined}
 />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->

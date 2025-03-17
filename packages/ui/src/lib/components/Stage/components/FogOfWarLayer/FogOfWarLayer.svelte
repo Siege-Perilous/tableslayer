@@ -162,6 +162,8 @@
   onMouseMove={draw}
   {onMouseUp}
   {onMouseLeave}
+  onPinch={undefined}
+  onRotate={undefined}
 />
 
 <!--

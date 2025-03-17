@@ -309,9 +309,9 @@
     display={props.display}
   />
 
-  <!-- Input handler for touch gestures -->
+  <!-- Input handler for scene level gestures (especially pinch/zoom) -->
   <InputManager
-    isActive={props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Marker}
+    isActive={true}
     activeLayer={props.activeLayer}
     gestureTarget={props.gestureTarget || 'scene'}
     onPinch={handlePinch}
