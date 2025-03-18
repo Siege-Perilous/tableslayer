@@ -141,9 +141,6 @@ importers:
       '@tursodatabase/api':
         specifier: ^1.9.0
         version: 1.9.0
-      '@types/chroma-js':
-        specifier: ^3.1.1
-        version: 3.1.1
       axios:
         specifier: ^1.8.3
         version: 1.8.3
@@ -220,6 +217,9 @@ importers:
       '@tableslayer/tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-typescript
+      '@types/chroma-js':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@types/mime-types':
         specifier: ^2.1.4
         version: 2.1.4
@@ -4519,6 +4519,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.7.1:
+    resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   set-cookie-parser@2.7.1:
     resolution: {integrity: sha512-IOc8uWeOZgnb3ptbCURJWNjWUPcO3ZnTTdzsurqERrP6nPyv+paC55vJM0LpOlT2ne+Ix+9+CRG1MNLlyZ4GjQ==}
 
@@ -6354,7 +6359,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       node-fetch: 2.7.0
       nopt: 8.0.0
-      semver: 7.6.3
+      semver: 7.7.1
       tar: 7.4.3
     transitivePeerDependencies:
       - encoding
@@ -6566,7 +6571,7 @@ snapshots:
       '@opentelemetry/instrumentation': 0.57.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.28.0
       forwarded-parse: 2.1.2
-      semver: 7.6.3
+      semver: 7.7.1
     transitivePeerDependencies:
       - supports-color
 
@@ -6691,7 +6696,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.12.0
       require-in-the-middle: 7.4.0
-      semver: 7.6.3
+      semver: 7.7.1
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -6703,7 +6708,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.12.0
       require-in-the-middle: 7.4.0
-      semver: 7.6.3
+      semver: 7.7.1
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -6715,7 +6720,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.12.0
       require-in-the-middle: 7.4.0
-      semver: 7.6.3
+      semver: 7.7.1
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -8405,7 +8410,7 @@ snapshots:
       '@one-ini/wasm': 0.1.1
       commander: 10.0.1
       minimatch: 9.0.1
-      semver: 7.6.3
+      semver: 7.7.1
 
   electron-to-chromium@1.5.83: {}
 
@@ -8812,7 +8817,7 @@ snapshots:
       '@petamoriken/float16': 3.9.1
       debug: 4.4.0
       env-paths: 3.0.0
-      semver: 7.6.3
+      semver: 7.7.1
       shell-quote: 1.8.2
       which: 4.0.0
     transitivePeerDependencies:
@@ -9773,6 +9778,8 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.6.3: {}
+
+  semver@7.7.1: {}
 
   set-cookie-parser@2.7.1: {}
 

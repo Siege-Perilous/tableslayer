@@ -15,7 +15,8 @@
     IconButton,
     Icon,
     FormControl,
-    ConfirmActionButton
+    ConfirmActionButton,
+    addToast
   } from '@tableslayer/ui';
   import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -23,6 +24,7 @@
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
   import { invalidateAll } from '$app/navigation';
+  import { exportGameSession } from '$lib/utils';
 
   let {
     party,
@@ -37,6 +39,7 @@
   let gameSessionName = $state(session.name);
   let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
+  let exportIsLoading = $state(false);
 
   const images: string[] = [];
 
@@ -93,6 +96,30 @@
       }
     });
   };
+
+  const handleExportGameSession = async () => {
+    try {
+      exportIsLoading = true;
+      await exportGameSession(session.id);
+      addToast({
+        data: {
+          title: 'Game session exported',
+          body: `${session.name} has been exported successfully`,
+          type: 'success'
+        }
+      });
+    } catch (error) {
+      addToast({
+        data: {
+          title: 'Error exporting game session',
+          body: error instanceof Error ? error.message : 'An unknown error occurred',
+          type: 'danger'
+        }
+      });
+    } finally {
+      exportIsLoading = false;
+    }
+  };
 </script>
 
 <LinkBox>
@@ -134,6 +161,21 @@
                   Renaming your game session will change the URL and break all links.
                 </Text>
               </form>
+              <Spacer />
+              <Hr />
+              <Spacer />
+              <Button
+                type="button"
+                onclick={handleExportGameSession}
+                disabled={exportIsLoading}
+                isLoading={exportIsLoading}
+              >
+                Export session
+              </Button>
+              <Spacer size={2} />
+              <Text size="0.875rem" color="var(--fgMuted)">
+                Export your game session to a JSON file for backup or to import your scene into a different party
+              </Text>
               <Spacer />
               <Hr />
               <Spacer />

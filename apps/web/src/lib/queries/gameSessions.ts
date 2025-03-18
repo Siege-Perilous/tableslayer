@@ -33,3 +33,21 @@ export const useUpdateGameSessionMutation = () => {
     method: 'POST'
   });
 };
+
+export const useExportGameSessionMutation = () => {
+  return mutationFactory<{ gameSessionId: string }, Blob>({
+    mutationKey: ['exportGameSession'],
+    endpoint: '/api/gameSessions/exportGameSession',
+    method: 'POST'
+  });
+};
+
+export const useImportGameSessionMutation = () => {
+  return mutationFactory<{ partyId: string; file: File }, { success: boolean; gameSessionId: string; message: string }>(
+    {
+      mutationKey: ['importGameSession'],
+      endpoint: '/api/gameSessions/importGameSession',
+      method: 'POST'
+    }
+  );
+};
