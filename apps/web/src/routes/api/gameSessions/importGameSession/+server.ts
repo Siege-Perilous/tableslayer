@@ -60,7 +60,17 @@ export const POST = async ({ request, locals }) => {
               .array(
                 z.object({
                   id: z.string(),
-                  title: z.string()
+                  title: z.string(),
+                  imageLocation: z.string().nullable().optional(),
+                  positionX: z.number().optional(),
+                  positionY: z.number().optional(),
+                  visibility: z.number().optional(),
+                  label: z.string().nullable().optional(),
+                  imageScale: z.number().optional(),
+                  shape: z.number().optional(),
+                  shapeColor: z.string().optional(),
+                  size: z.number().optional(),
+                  note: z.any().optional()
                 })
               )
               .optional()
