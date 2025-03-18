@@ -375,7 +375,9 @@
   const onWheel = (e: WheelEvent) => {
     // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
-    throttledSocketUpdate();
+    if (activeScene && activeScene.id === selectedScene.id) {
+      throttledSocketUpdate();
+    }
   };
 
   /**
