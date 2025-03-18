@@ -58,7 +58,7 @@
 
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
-  let editingMarkerId = $derived(selectedMarkerId || null);
+  let editingMarkerId = $derived(selectedMarkerId);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -181,7 +181,7 @@
     />
   </div>
   <div class="markerManager__content">
-    {#if editingMarkerId !== null}
+    {#if editingMarkerId !== undefined}
       <Link onclick={backToList} class="markerManager__backButton">
         List all markers
         <Icon Icon={IconArrowBack} size="1rem" />
