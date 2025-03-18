@@ -1,11 +1,12 @@
 import { getGameSession } from '$lib/server/gameSession';
 import { getMarkersForScene } from '$lib/server/marker';
+import { getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
-import { error } from '@sveltejs/kit';
+import { error, type RequestEvent } from '@sveltejs/kit';
 import { z } from 'zod';
 import pkg from '../../../../../package.json';
 
-export const POST = async ({ request }) => {
+export const POST = async ({ request, locals }: RequestEvent) => {
   try {
     const data = await request.json();
 
@@ -15,13 +16,20 @@ export const POST = async ({ request }) => {
 
     const { gameSessionId } = schema.parse(data);
 
-    // Get the game session
+    if (!locals.user?.id) {
+      throw error(401, 'Authentication required');
+    }
+
     const gameSession = await getGameSession(gameSessionId);
 
-    // Get all scenes for this game session
+    const party = await getPartyFromGameSessionId(gameSessionId);
+
+    if (!(await isUserInParty(locals.user.id, party.id))) {
+      throw error(403, 'You are not authorized to export this game session');
+    }
+
     const scenes = await getScenes(gameSessionId);
 
-    // For each scene, get all markers
     const scenesWithMarkers = await Promise.all(
       scenes.map(async (scene) => {
         const markers = await getMarkersForScene(scene.id);
@@ -43,7 +51,6 @@ export const POST = async ({ request }) => {
       })
     );
 
-    // Create the export object
     const exportData = {
       version: pkg.version,
       metadata: {

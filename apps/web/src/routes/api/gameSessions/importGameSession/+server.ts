@@ -8,14 +8,14 @@ import {
   type InsertScene
 } from '$lib/db/app/schema';
 import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
+import { isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
-import { error, json } from '@sveltejs/kit';
+import { error, json, type RequestEvent } from '@sveltejs/kit';
 import semver from 'semver';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import pkg from '../../../../../package.json';
 
-// Utility function to remap IDs
 const createIdMap = () => {
   const map = new Map<string, string>();
   return {
@@ -28,20 +28,27 @@ const createIdMap = () => {
   };
 };
 
-export const POST = async ({ request, locals }) => {
+export const POST = async ({ request, locals }: RequestEvent) => {
   try {
-    // Get the multipart/form-data content
     const formData = await request.formData();
     const file = formData.get('file');
     const partyId = formData.get('partyId');
 
+    if (!partyId || typeof partyId !== 'string') {
+      throw error(400, 'Party ID is required');
+    }
+
+    if (!locals.user?.id) {
+      throw error(401, 'Authentication required');
+    }
+
+    if (!(await isUserInParty(locals.user.id, partyId))) {
+      throw error(403, 'You are not a member of this party');
+    }
+
     // Validate input
     if (!file || !(file instanceof File)) {
       throw error(400, 'File is required');
-    }
-
-    if (!partyId || typeof partyId !== 'string') {
-      throw error(400, 'Party ID is required');
     }
 
     // Parse the JSON file
@@ -88,26 +95,20 @@ export const POST = async ({ request, locals }) => {
 
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
-      // Get new ID for this scene
-      const newSceneId = sceneIdMap.getOrCreate(sceneData.id);
-
-      // Extract mapLocation explicitly
+      const newSceneId = sceneIdMap.getOrCreate(sceneData.id!);
       const { mapLocation } = sceneData;
 
       console.log(`Importing scene "${sceneData.name}" with map location: ${mapLocation || 'none'}`);
 
       // Create the scene with the new ID, passing all validated properties
-      // First create a clean scene object with the required fields
       const sceneToCreate: Partial<InsertScene> = {
         id: newSceneId,
         name: sceneData.name,
         gameSessionId: gameSession.id,
         order: sceneData.order,
-        mapLocation: mapLocation || null // Explicitly pass mapLocation, ensuring null if undefined
+        mapLocation: mapLocation || null
       };
 
-      // Add all other properties from the validated data
-      // This will include all scene settings like grid, effects, weather, etc.
       const typedSceneToCreate = sceneToCreate as Partial<InsertScene> & Record<string, unknown>;
       Object.entries(sceneData).forEach(([key, value]) => {
         // Skip properties we handle separately or don't want to include
@@ -123,8 +124,6 @@ export const POST = async ({ request, locals }) => {
         )
       );
 
-      // Instead of using createScene which might override with defaults,
-      // directly insert into the database to preserve all imported settings
       await db
         .insert(sceneTable)
         .values(sceneToCreate as InsertScene)
@@ -138,23 +137,18 @@ export const POST = async ({ request, locals }) => {
       // Create all markers for this scene
       if (sceneData.markers && sceneData.markers.length > 0) {
         for (const markerData of sceneData.markers) {
-          // Create a new ID for this marker
           const newMarkerId = uuidv4();
 
-          // Create the marker with the new ID and all properties
           const markerToCreate: Partial<InsertMarker> & Record<string, unknown> = {
             id: newMarkerId,
             ...markerData
           };
 
-          // Replace the original ID with our new one
           delete markerToCreate.id;
           markerToCreate.id = newMarkerId;
 
-          // Add the sceneId to the marker
           markerToCreate.sceneId = newSceneId;
 
-          // Directly insert the marker to preserve all properties
           await db
             .insert(markerTable)
             .values(markerToCreate as InsertMarker)
