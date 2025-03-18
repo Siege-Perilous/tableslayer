@@ -413,7 +413,7 @@
             {#snippet start()}
               <Icon Icon={IconPhoto} size="1.25rem" />
             {/snippet}
-            Add new scene
+            Add scene
             <FileInput
               variant="transparent"
               {...inputProps}
@@ -496,7 +496,32 @@
             </form>
           </div>
         {/if}
-        <a href={`/${party.slug}/${gameSession.slug}/${scene.order}`} class="scene__link">
+        <a
+          href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
+          class="scene__link"
+          onclick={(e) => {
+            // Only navigate if we're not dragging (prevent link activation during drag)
+            if (isDragging) {
+              e.preventDefault();
+            }
+          }}
+          onpointerdown={(e) => {
+            // Mark the target anchor to prevent default behavior on mobile
+            e.currentTarget.setAttribute('data-dragging', 'false');
+          }}
+          onpointermove={(e) => {
+            // If pointer moves, we're likely dragging
+            e.currentTarget.setAttribute('data-dragging', 'true');
+          }}
+          onpointerup={(e) => {
+            // On pointer up, check if we were dragging
+            const wasDragging = e.currentTarget.getAttribute('data-dragging') === 'true';
+            if (wasDragging) {
+              e.preventDefault();
+              e.currentTarget.removeAttribute('data-dragging');
+            }
+          }}
+        >
           {#if activeScene && activeScene.id === scene.id}
             <div class="scene__projectedIcon">
               {#if !gameSession.isPaused}
