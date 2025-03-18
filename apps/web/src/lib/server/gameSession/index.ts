@@ -168,3 +168,33 @@ export const renameGameSession = async (partyId: string, gameSessionId: string, 
     throw error;
   }
 };
+
+// Function for importing game sessions - does not create an initial scene
+export const createGameSessionForImport = async (partyId: string, gameSessionData?: Partial<InsertGameSession>) => {
+  try {
+    const gameSessionId = uuidv4();
+    const name = (gameSessionData && gameSessionData.name) || createRandomGameSessionName();
+    const slug = slugify(name, { lower: true });
+
+    await checkForGameSessionSlugConflict(partyId, slug);
+
+    // Store the project and hashed token in the parent database
+    const gameSession = await db
+      .insert(gameSessionTable)
+      .values({
+        ...gameSessionData,
+        id: gameSessionId,
+        name,
+        partyId,
+        slug
+      })
+      .returning()
+      .get();
+
+    // No initial scene is created for imports
+    return gameSession;
+  } catch (error) {
+    console.error('Error creating game session for import', error);
+    throw error;
+  }
+};

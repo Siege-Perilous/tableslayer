@@ -1,6 +1,6 @@
-import { createGameSession, updateGameSession } from '$lib/server/gameSession';
+import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
 import { createMarker } from '$lib/server/marker';
-import { createScene } from '$lib/server/scene';
+import { createScene, getScenes } from '$lib/server/scene';
 import { error, json } from '@sveltejs/kit';
 import semver from 'semver';
 import { v4 as uuidv4 } from 'uuid';
@@ -55,6 +55,7 @@ export const POST = async ({ request, locals }) => {
             id: z.string(),
             name: z.string(),
             order: z.number(),
+            mapLocation: z.string().optional(),
             markers: z
               .array(
                 z.object({
@@ -78,26 +79,36 @@ export const POST = async ({ request, locals }) => {
     // Create ID maps for remapping references
     const sceneIdMap = createIdMap();
 
-    // Create the game session
-    const gameSession = await createGameSession(partyId, {
+    // Create the game session without an initial scene (using our new function)
+    const gameSession = await createGameSessionForImport(partyId, {
       name: validatedData.gameSession.name,
       isPaused: validatedData.gameSession.isPaused
     });
 
+    // Sort scenes by order to ensure they're processed in the correct sequence
+    const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
+    console.log(`Processing ${sortedScenes.length} scenes in order: ${sortedScenes.map((s) => s.order).join(', ')}`);
+
     // Create scenes with new IDs but preserve order
-    for (const sceneData of validatedData.gameSession.scenes) {
+    for (const sceneData of sortedScenes) {
       // Get new ID for this scene
       const newSceneId = sceneIdMap.getOrCreate(sceneData.id);
 
-      // Create the scene with the new ID
+      // Extract mapLocation explicitly
+      const { mapLocation } = sceneData;
+
+      console.log(`Importing scene "${sceneData.name}" with map location: ${mapLocation || 'none'}`);
+
+      // Create the scene with the new ID and explicitly provide mapLocation
       await createScene({
         id: newSceneId,
         name: sceneData.name,
         gameSessionId: gameSession.id,
         order: sceneData.order,
-        // Copy all the scene data except for markers, fogOfWarUrl and id
+        mapLocation, // Explicitly pass mapLocation
+        // Copy all other scene data except for markers, fogOfWarUrl, id, and mapLocation (since we handle it separately)
         ...Object.entries(sceneData)
-          .filter(([key]) => !['markers', 'fogOfWarUrl', 'id'].includes(key))
+          .filter(([key]) => !['markers', 'fogOfWarUrl', 'id', 'mapLocation'].includes(key))
           .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
       });
 
@@ -126,10 +137,18 @@ export const POST = async ({ request, locals }) => {
       }
     }
 
+    // Get the imported scenes for verification
+    const importedScenes = await getScenes(gameSession.id);
+    console.log(`Import completed successfully. Created ${importedScenes.length} scenes.`);
+
+    // Log order of scenes to ensure they're in the correct sequence
+    console.log(`Final scene order: ${importedScenes.map((s) => `${s.name} (order: ${s.order})`).join(', ')}`);
+
     return json({
       success: true,
       gameSessionId: gameSession.id,
-      message: 'Game session imported successfully'
+      message: 'Game session imported successfully',
+      sceneCount: importedScenes.length
     });
   } catch (err) {
     console.error('Error importing game session:', err);

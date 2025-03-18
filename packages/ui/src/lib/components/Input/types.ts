@@ -10,6 +10,8 @@ export type InputProps = {
 
 export type FileInputProps = {
   files: FileList | null;
+  accept?: string;
+  showPreviews?: boolean;
 } & InputProps;
 
 export type LabelProps = {

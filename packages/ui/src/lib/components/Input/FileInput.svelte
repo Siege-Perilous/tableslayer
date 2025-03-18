@@ -1,10 +1,32 @@
 <script lang="ts">
   import type { FileInputProps } from './types';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, createEventDispatcher } from 'svelte';
 
-  let { value = $bindable(), files = $bindable(), variant = 'default', ...restProps }: FileInputProps = $props();
+  const dispatch = createEventDispatcher<{
+    fileSelect: File;
+  }>();
+
+  let {
+    value = $bindable(),
+    files = $bindable(),
+    variant = 'default',
+    accept = 'image/png, image/jpeg, image/webp',
+    showPreviews = true,
+    ...restProps
+  }: FileInputProps = $props();
 
   let inputClasses = $derived(['fileInput', variant && `fileInput--${variant}`, restProps.class ?? '']);
+
+  // Default label text based on accept prop
+  let labelText = $derived(() => {
+    if (accept.includes('image/')) {
+      return 'Select an image';
+    } else if (accept.includes('.json')) {
+      return 'Select a file';
+    } else {
+      return 'Select a file';
+    }
+  });
 
   // Array to keep track of generated object URLs for cleanup
   let generatedUrls: string[] = [];
@@ -17,15 +39,18 @@
     generatedUrls = [];
   };
 
+  // Function to check if file is an image
+  const isImageFile = (file: File): boolean => {
+    return file.type.startsWith('image/');
+  };
+
   // Create a derived value for preview URLs based on `files`
   let previewUrls = $derived.by(() => {
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && showPreviews) {
       const urls = [];
       for (const file of files) {
-        if (
-          (file && (file.type.startsWith('image/png') || file.type.startsWith('image/jpeg'))) ||
-          file.type.startsWith('image/webp')
-        ) {
+        // Only create previews for image files
+        if (file && isImageFile(file)) {
           const objectUrl = URL.createObjectURL(file);
           urls.push(objectUrl);
           generatedUrls.push(objectUrl); // Keep track of generated URLs for cleanup
@@ -36,6 +61,14 @@
     return [];
   });
 
+  // Handle file selection
+  function handleFileChange() {
+    if (files && files.length > 0) {
+      // Dispatch the first file
+      dispatch('fileSelect', files[0]);
+    }
+  }
+
   // Clean up the object URLs to prevent memory leaks when the component is destroyed
   onDestroy(() => {
     previousUrlsCleanup();
@@ -44,15 +77,17 @@
 
 <div class={inputClasses}>
   {#if variant === 'dropzone'}
-    <label class="fileInput__dropZoneLabel" for={restProps.id}><div>Select an image</div></label>
+    <label class="fileInput__dropZoneLabel" for={restProps.id}><div>{labelText}</div></label>
   {/if}
-  <!-- File input for selecting images -->
-  <input bind:files {...restProps} type="file" class="fileInput__input" accept="image/png, image/jpeg, image/webp" />
+  <!-- File input with configurable accept attribute -->
+  <input bind:files {...restProps} type="file" class="fileInput__input" {accept} onchange={handleFileChange} />
 
-  <!-- Display previews for all selected files -->
-  {#each previewUrls as previewUrl}
-    <img src={previewUrl} alt="Preview" class="fileInput__preview" />
-  {/each}
+  <!-- Display previews for image files if showPreviews is true -->
+  {#if showPreviews}
+    {#each previewUrls as previewUrl}
+      <img src={previewUrl} alt="Preview" class="fileInput__preview" />
+    {/each}
+  {/if}
 </div>
 
 <style>
