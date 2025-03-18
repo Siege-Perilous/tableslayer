@@ -55,7 +55,6 @@
     gameSession,
     selectedScene,
     activeScene,
-    handleSceneFit,
     handleMapFill,
     handleMapFit,
     errors
@@ -68,7 +67,6 @@
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
-    handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;
@@ -268,7 +266,6 @@
                 {gameSession}
                 {selectedScene}
                 {activeScene}
-                {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
@@ -284,7 +281,6 @@
                 {party}
                 {selectedScene}
                 {activeScene}
-                {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}

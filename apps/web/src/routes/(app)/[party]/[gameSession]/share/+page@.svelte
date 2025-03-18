@@ -24,14 +24,7 @@
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
-  let innerWidth = $state(null);
-  let innerHeight = $state(null);
   const fadeOutDelay = 5000;
-
-  const handleResize = () => {
-    if (!stage) return;
-    stage.scene.fit();
-  };
 
   // Handler for optimized marker updates
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
@@ -78,8 +71,6 @@
         // Mode 1 is for player view
         mode: 1
       };
-
-      handleResize();
     });
 
     $effect(() => {
@@ -160,7 +151,6 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        handleResize();
         clearInterval(interval);
       }
     }, 50);
@@ -223,21 +213,9 @@
 
     return () => clearInterval(interval);
   });
-
-  // This is needed because fullscreen mode doesn't trigger the onresize event
-  $effect(() => {
-    $state.snapshot(innerWidth);
-    $state.snapshot(innerHeight);
-
-    setTimeout(() => {
-      handleResize();
-    }, 100);
-  });
 </script>
 
 <Head title={data.gameSession.name} description={`${data.gameSession.name} on Table Slayer`} />
-
-<svelte:window onresize={handleResize} bind:innerWidth bind:innerHeight />
 
 {#if selectedMarker}
   <span style="display: none;">

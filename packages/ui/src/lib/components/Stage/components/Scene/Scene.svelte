@@ -34,14 +34,16 @@
 
   const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
   let mapLayer: MapLayerExports;
+  let needsResize = true;
 
   const composer = new EffectComposer(renderer);
-  const renderSize = new THREE.Vector2();
 
   onMount(() => {
     let before = autoRender.current;
     autoRender.set(false);
-    fit();
+    renderer.autoClear = false;
+    renderer.setClearColor(0, 0);
+    renderer.setPixelRatio(window.devicePixelRatio);
     return () => {
       autoRender.set(before);
     };
@@ -49,16 +51,18 @@
 
   // Setup camera and renderer in effect
   $effect(() => {
-    if (!camera || !renderer) return;
+    if (!camera) return;
 
     // Configure camera to see both layers
     $camera.layers.disableAll();
     $camera.layers.enable(SceneLayer.Main);
     $camera.layers.enable(SceneLayer.Overlay);
+  });
 
-    // Configure renderer
-    renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(window.devicePixelRatio);
+  // Whenever the scene or display properties change, update the clipping planes
+  $effect(() => {
+    updateClippingPlanes(props.scene, props.display);
+    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
   // Effect to update post-processing settings when props change
@@ -135,10 +139,20 @@
       .catch((error) => console.error(error));
   });
 
-  // Whenever the scene or display properties change, update the clipping planes
   $effect(() => {
-    updateClippingPlanes(props.scene, props.display);
-    untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+    const renderSize = new THREE.Vector2();
+    renderer.getSize(renderSize);
+
+    // Only update render/composer size if it doesn't match the canvas size
+    // This check must be done here; it does not work when placed in $effect
+    if (
+      renderSize.width !== $size.width ||
+      renderSize.height !== $size.height ||
+      composer.outputBuffer.width !== $size.width ||
+      composer.outputBuffer.height !== $size.height
+    ) {
+      needsResize = true;
+    }
   });
 
   // Custom render task
@@ -146,14 +160,16 @@
     (dt) => {
       if (!scene || !renderer || !camera) return;
 
-      renderer.getSize(renderSize);
-
-      // Only update render size if it doesn't match the canvas size
-      // This check must be done here; it does not work when placed in $effect
-      if (renderSize.width !== $size.width || renderSize.height !== $size.height) {
+      if (needsResize) {
+        needsResize = false;
         renderer.setSize($size.width, $size.height);
         composer.setSize($size.width, $size.height);
+        if (props.scene.autoFit) {
+          fit();
+        }
       }
+
+      renderer.clear();
 
       // Render main scene with post-processing
       camera.current.layers.set(SceneLayer.Main);
@@ -162,9 +178,7 @@
       // Render overlays (grid/ping)without post-processing
       camera.current.layers.set(SceneLayer.Overlay);
 
-      renderer.autoClear = false;
       renderer.render(scene, camera.current);
-      renderer.autoClear = true;
 
       // Reset camera back to main layer
       camera.current.layers.set(SceneLayer.Main);
@@ -196,7 +210,7 @@
   }
 
   export function fit() {
-    const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
+    const canvasAspectRatio = $size.width / $size.height;
     let sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
     let sceneWidth = props.display.resolution.x;
     let sceneHeight = props.display.resolution.y;
@@ -210,9 +224,9 @@
 
     let newZoom: number;
     if (sceneAspectRatio < canvasAspectRatio) {
-      newZoom = renderer.domElement.clientHeight / sceneHeight;
+      newZoom = $size.height / sceneHeight;
     } else {
-      newZoom = renderer.domElement.clientWidth / sceneWidth;
+      newZoom = $size.width / sceneWidth;
     }
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
@@ -242,7 +256,7 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} />
+  <MapLayer bind:this={mapLayer} {props} onMapLoaded={() => (needsResize = true)} />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer

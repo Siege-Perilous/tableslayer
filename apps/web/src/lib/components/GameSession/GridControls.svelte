@@ -29,7 +29,6 @@
     socketUpdate,
     stageProps = $bindable(),
     party,
-    handleSceneFit,
     errors
   }: {
     socketUpdate: () => void;
@@ -40,7 +39,6 @@
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
-    handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;
@@ -75,7 +73,6 @@
       x: selectedResolution.width,
       y: selectedResolution.height
     };
-    handleSceneFit();
     socketUpdate();
     return selectedResolution;
   };

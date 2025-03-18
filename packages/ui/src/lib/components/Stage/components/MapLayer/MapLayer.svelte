@@ -14,9 +14,10 @@
 
   interface Props {
     props: StageProps;
+    onMapLoaded: () => void;
   }
 
-  const { props }: Props = $props();
+  const { props, onMapLoaded }: Props = $props();
 
   const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
 
@@ -51,6 +52,7 @@
           width: texture.image.width,
           height: texture.image.height
         };
+        onMapLoaded();
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));

@@ -26,6 +26,11 @@ export enum SceneLayerOrder {
 
 export interface SceneLayerProps {
   /**
+   * Whether the scene layer should auto fit
+   */
+  autoFit: boolean;
+
+  /**
    * The position of the scene layer within the canvas
    */
   offset: { x: number; y: number };
