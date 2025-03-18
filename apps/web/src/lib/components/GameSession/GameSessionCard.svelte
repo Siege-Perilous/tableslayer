@@ -15,14 +15,16 @@
     IconButton,
     Icon,
     FormControl,
-    ConfirmActionButton
+    ConfirmActionButton,
+    addToast
   } from '@tableslayer/ui';
   import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
+  import { IconChevronDown, IconCheck, IconDownload } from '@tabler/icons-svelte';
   import { invalidateAll } from '$app/navigation';
+  import { exportGameSession } from '$lib/utils';
 
   let {
     party,
@@ -37,6 +39,7 @@
   let gameSessionName = $state(session.name);
   let renameGameSessionErrors = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
+  let exportIsLoading = $state(false);
 
   const images: string[] = [];
 
@@ -93,6 +96,30 @@
       }
     });
   };
+
+  const handleExportGameSession = async () => {
+    try {
+      exportIsLoading = true;
+      await exportGameSession(session.id);
+      addToast({
+        data: {
+          title: 'Game session exported',
+          body: `${session.name} has been exported successfully`,
+          type: 'success'
+        }
+      });
+    } catch (error) {
+      addToast({
+        data: {
+          title: 'Error exporting game session',
+          body: error instanceof Error ? error.message : 'An unknown error occurred',
+          type: 'danger'
+        }
+      });
+    } finally {
+      exportIsLoading = false;
+    }
+  };
 </script>
 
 <LinkBox>
@@ -134,6 +161,20 @@
                   Renaming your game session will change the URL and break all links.
                 </Text>
               </form>
+              <Spacer />
+              <Hr />
+              <Spacer />
+              <Button
+                type="button"
+                class="gameSessionCard__exportBtn"
+                onclick={handleExportGameSession}
+                on:click={handleExportGameSession}
+                disabled={exportIsLoading}
+                isLoading={exportIsLoading}
+              >
+                <Icon Icon={IconDownload} />
+                Export session
+              </Button>
               <Spacer />
               <Hr />
               <Spacer />
@@ -231,5 +272,13 @@
   }
   .gameSessionCard__popoverContent {
     width: 16rem;
+  }
+
+  :global(.gameSessionCard__exportBtn) {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
   }
 </style>

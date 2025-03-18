@@ -6,6 +6,7 @@ export * from './convertStagePropsToSceneData';
 export * from './createRandomNames';
 export * from './defaultMapState';
 export * from './extractLocationFromUrl';
+export * from './gameSessionExportImport';
 export * from './generateSlug';
 export * from './gsWebSocket';
 export * from './handleStageZoom';
