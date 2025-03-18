@@ -52,7 +52,6 @@
           width: texture.image.width,
           height: texture.image.height
         };
-        fit();
         onMapLoaded();
       })
       .catch((reason) => {
