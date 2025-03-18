@@ -616,7 +616,6 @@
           {stage}
           {handleMapFill}
           {handleMapFit}
-          {handleSceneFit}
           {selectedScene}
           {activeScene}
           {handleSelectActiveControl}
