@@ -23,7 +23,6 @@
     party: SelectParty & Thumb;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
-    handleSceneFit: () => void;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;

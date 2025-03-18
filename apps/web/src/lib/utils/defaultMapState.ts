@@ -147,6 +147,7 @@ export const StageDefaultProps: StageProps = {
     }
   },
   scene: {
+    autoFit: false,
     offset: {
       x: 0,
       y: 0

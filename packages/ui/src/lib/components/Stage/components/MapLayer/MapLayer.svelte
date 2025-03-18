@@ -14,9 +14,10 @@
 
   interface Props {
     props: StageProps;
+    onMapLoaded: () => void;
   }
 
-  const { props }: Props = $props();
+  const { props, onMapLoaded }: Props = $props();
 
   const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
 
@@ -36,6 +37,8 @@
       imageUrl = props.map.url;
     }
 
+    console.log('loading map', props.map.url);
+
     // Update the image whenever the URL is changed
     loader
       .load(props.map.url, {
@@ -52,6 +55,7 @@
           height: texture.image.height
         };
         fit();
+        onMapLoaded();
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));

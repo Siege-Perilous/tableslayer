@@ -229,7 +229,6 @@
     const interval = setInterval(() => {
       if (stage) {
         stageIsLoading = false;
-        handleSceneFit();
         clearInterval(interval);
       }
     }, 50);

@@ -190,6 +190,7 @@ export const buildSceneProps = (
       }
     },
     scene: {
+      autoFit: true,
       offset: {
         x: activeScene.sceneOffsetX,
         y: activeScene.sceneOffsetY

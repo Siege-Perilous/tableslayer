@@ -268,7 +268,6 @@
                 {gameSession}
                 {selectedScene}
                 {activeScene}
-                {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
@@ -284,7 +283,6 @@
                 {party}
                 {selectedScene}
                 {activeScene}
-                {handleSceneFit}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}

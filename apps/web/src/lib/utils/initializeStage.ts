@@ -4,7 +4,6 @@ export const initializeStage = (stage: StageExports, setLoading: (isLoading: boo
   const interval = setInterval(() => {
     if (stage) {
       setLoading(false);
-      stage.scene.fit();
       clearInterval(interval);
     }
   }, 50);
