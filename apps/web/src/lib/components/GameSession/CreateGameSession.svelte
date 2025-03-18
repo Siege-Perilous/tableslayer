@@ -17,7 +17,6 @@
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { importGameSession } from '$lib/utils';
-  import { or } from 'drizzle-orm';
 
   let {
     partyId
@@ -30,7 +29,6 @@
   let importSessionName = $state('Imported Game Session');
   let selectedFile = $state<File | null>(null);
   let createGameSessionError = $state<FormMutationError | undefined>(undefined);
-  let importNameError = $state<string | undefined>(undefined);
   let importIsLoading = $state(false);
 
   const createGameSession = useCreateGameSessionMutation();
@@ -69,7 +67,6 @@
     formIsOpen = false;
     selectedFile = null;
     importSessionName = 'Imported Game Session';
-    importNameError = undefined;
   };
 
   const handleFileSelect = (event: CustomEvent<File>) => {
@@ -95,7 +92,6 @@
 
     if (!importSessionName.trim()) {
       console.log('No session name provided');
-      importNameError = 'Session name is required';
       return;
     }
 
