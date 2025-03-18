@@ -1,11 +1,23 @@
 <script lang="ts">
-  import { Panel, FormControl, Title, Input, Button, Spacer, Text, FileInput, addToast } from '@tableslayer/ui';
+  import {
+    Panel,
+    FormControl,
+    Title,
+    Input,
+    Button,
+    Spacer,
+    Text,
+    FileInput,
+    addToast,
+    Link,
+    Hr
+  } from '@tableslayer/ui';
   import { useCreateGameSessionMutation } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { importGameSession } from '$lib/utils';
-  import { IconUpload, IconPlus } from '@tabler/icons-svelte';
+  import { or } from 'drizzle-orm';
 
   let {
     partyId
@@ -138,24 +150,9 @@
 </script>
 
 {#if !formIsOpen && !importIsOpen}
-  <Panel class="createSessionPanel selection-panel">
-    <div class="selection-options">
-      <div class="selection-option" onclick={handleOpenForm} role="button" tabindex={0}>
-        <div class="selection-icon create-icon">
-          <IconPlus size={32} />
-        </div>
-        <Title as="p" size="sm">Create a new session</Title>
-        <Text size="0.875rem" color="var(--fgMuted)">Create a game session from scratch</Text>
-      </div>
-
-      <div class="selection-option" onclick={handleOpenImport} role="button" tabindex={0}>
-        <div class="selection-icon import-icon">
-          <IconUpload size={32} />
-        </div>
-        <Title as="p" size="sm">Import a session</Title>
-        <Text size="0.875rem" color="var(--fgMuted)">Import from a previously exported file</Text>
-      </div>
-    </div>
+  <Panel role="button" class="createSessionPanel createSessionPanel--hover" tabindex={0} onclick={handleOpenForm}>
+    <Title as="p" size="sm">Create a new session</Title>
+    <Text size="0.875rem" color="var(--fgMuted)">Create a game session from scratch</Text>
   </Panel>
 {:else if formIsOpen}
   <Panel class="createSessionPanel">
@@ -168,48 +165,38 @@
       <Spacer />
       <Button type="submit">Create</Button>
       <Button type="button" variant="danger" onclick={() => (formIsOpen = false)}>Cancel</Button>
+      <Spacer size={6} />
+      <Hr />
+      <Spacer />
+      <Text size="0.875rem" color="var(--fgMuted)">Or, you can optionally</Text>
+      <Text><Link onclick={handleOpenImport}>Provide an import file</Link></Text>
     </form>
   </Panel>
 {:else if importIsOpen}
   <Panel class="createSessionPanel">
-    <Title as="h3" size="sm">Import Game Session</Title>
-    <Spacer />
-    <form onsubmit={handleImport}>
-      <Text>Select a previously exported game session file (.json)</Text>
-      <Spacer />
-      <FileInput
-        label="Select file"
-        name="importFile"
-        accept=".json"
-        showPreviews={false}
-        on:fileSelect={handleFileSelect}
-        disabled={importIsLoading}
-      />
-      <Spacer size={2} />
+    <div>
+      <form onsubmit={handleImport}>
+        <FormControl label="Session name" name="importName">
+          {#snippet input({ inputProps })}
+            <Input {...inputProps} bind:value={importSessionName} autocomplete="off" disabled={importIsLoading} />
+          {/snippet}
+        </FormControl>
+        <Spacer />
+        <FileInput
+          name="importFile"
+          accept=".json"
+          showPreviews={false}
+          on:fileSelect={handleFileSelect}
+          disabled={importIsLoading}
+        />
+        <Spacer />
 
-      <FormControl
-        label="Game Session Name"
-        name="importName"
-        errors={importNameError ? [{ path: ['name'], message: importNameError }] : undefined}
-      >
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} bind:value={importSessionName} autocomplete="off" disabled={importIsLoading} />
-        {/snippet}
-      </FormControl>
-      <Spacer />
-
-      <Text size="0.875rem" color="var(--fgMuted)">
-        Imported game sessions will have new IDs assigned to prevent conflicts
-      </Text>
-      <Spacer />
-
-      <div class="import-buttons">
-        <Button type="submit" disabled={importIsLoading || !selectedFile} isLoading={importIsLoading}>Import</Button>
+        <Button type="submit" disabled={importIsLoading} isLoading={importIsLoading}>Import</Button>
         <Button type="button" variant="danger" onclick={() => (importIsOpen = false)} disabled={importIsLoading}>
           Cancel
         </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   </Panel>
 {/if}
 
@@ -221,63 +208,14 @@
       flex-direction: column;
       width: 100%;
       gap: 1rem;
-      height: 100%;
       min-height: 270px;
       transition: border-color 0.2s var(--ease-in-2);
       align-items: center;
       justify-content: center;
     }
-    .panel.createSessionPanel.hover:hover {
+    .panel.createSessionPanel.createSessionPanel--hover:hover {
       border-color: var(--fgPrimary);
       cursor: pointer;
     }
-  }
-
-  .selection-options {
-    display: flex;
-    gap: 1.5rem;
-    width: 100%;
-  }
-
-  .selection-option {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--borderStandard);
-    cursor: pointer;
-    transition: border-color 0.2s var(--ease-in-2);
-  }
-
-  .selection-option:hover {
-    border-color: var(--fgPrimary);
-  }
-
-  .selection-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-    margin-bottom: 1rem;
-  }
-
-  .create-icon {
-    background-color: var(--fgSuccess);
-    color: var(--bgSuccess);
-  }
-
-  .import-icon {
-    background-color: var(--fgPrimary);
-    color: var(--bgPrimary);
-  }
-
-  .import-buttons {
-    display: flex;
-    gap: 0.5rem;
   }
 </style>
