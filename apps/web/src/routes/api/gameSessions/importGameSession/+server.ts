@@ -1,6 +1,14 @@
+import { db } from '$lib/db/app';
+import {
+  insertMarkerSchema,
+  insertSceneSchema,
+  markerTable,
+  sceneTable,
+  type InsertMarker,
+  type InsertScene
+} from '$lib/db/app/schema';
 import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
-import { createMarker } from '$lib/server/marker';
-import { createScene, getScenes } from '$lib/server/scene';
+import { getScenes } from '$lib/server/scene';
 import { error, json } from '@sveltejs/kit';
 import semver from 'semver';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,29 +59,8 @@ export const POST = async ({ request, locals }) => {
         name: z.string(),
         isPaused: z.boolean(),
         scenes: z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            order: z.number(),
-            mapLocation: z.string().optional(),
-            markers: z
-              .array(
-                z.object({
-                  id: z.string(),
-                  title: z.string(),
-                  imageLocation: z.string().nullable().optional(),
-                  positionX: z.number().optional(),
-                  positionY: z.number().optional(),
-                  visibility: z.number().optional(),
-                  label: z.string().nullable().optional(),
-                  imageScale: z.number().optional(),
-                  shape: z.number().optional(),
-                  shapeColor: z.string().optional(),
-                  size: z.number().optional(),
-                  note: z.any().optional()
-                })
-              )
-              .optional()
+          insertSceneSchema.omit({ gameSessionId: true }).extend({
+            markers: z.array(insertMarkerSchema.omit({ sceneId: true })).optional()
           })
         )
       })
@@ -109,18 +96,39 @@ export const POST = async ({ request, locals }) => {
 
       console.log(`Importing scene "${sceneData.name}" with map location: ${mapLocation || 'none'}`);
 
-      // Create the scene with the new ID and explicitly provide mapLocation
-      await createScene({
+      // Create the scene with the new ID, passing all validated properties
+      // First create a clean scene object with the required fields
+      const sceneToCreate: Partial<InsertScene> = {
         id: newSceneId,
         name: sceneData.name,
         gameSessionId: gameSession.id,
         order: sceneData.order,
-        mapLocation, // Explicitly pass mapLocation
-        // Copy all other scene data except for markers, fogOfWarUrl, id, and mapLocation (since we handle it separately)
-        ...Object.entries(sceneData)
-          .filter(([key]) => !['markers', 'fogOfWarUrl', 'id', 'mapLocation'].includes(key))
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
+        mapLocation: mapLocation || null // Explicitly pass mapLocation, ensuring null if undefined
+      };
+
+      // Add all other properties from the validated data
+      // This will include all scene settings like grid, effects, weather, etc.
+      const typedSceneToCreate = sceneToCreate as Partial<InsertScene> & Record<string, unknown>;
+      Object.entries(sceneData).forEach(([key, value]) => {
+        // Skip properties we handle separately or don't want to include
+        if (!['markers', 'fogOfWarUrl', 'id', 'mapLocation'].includes(key)) {
+          typedSceneToCreate[key] = value;
+        }
       });
+
+      console.log(
+        `Creating scene with settings:`,
+        Object.keys(sceneToCreate).filter(
+          (key) => !['id', 'name', 'gameSessionId', 'order', 'mapLocation'].includes(key)
+        )
+      );
+
+      // Instead of using createScene which might override with defaults,
+      // directly insert into the database to preserve all imported settings
+      await db
+        .insert(sceneTable)
+        .values(sceneToCreate as InsertScene)
+        .execute();
 
       // If this is the first scene, set it as active
       if (sceneData.order === 1) {
@@ -133,16 +141,24 @@ export const POST = async ({ request, locals }) => {
           // Create a new ID for this marker
           const newMarkerId = uuidv4();
 
-          // Create the marker with the new ID
-          await createMarker(
-            {
-              ...Object.entries(markerData)
-                .filter(([key]) => key !== 'id')
-                .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
-              id: newMarkerId
-            },
-            newSceneId
-          );
+          // Create the marker with the new ID and all properties
+          const markerToCreate: Partial<InsertMarker> & Record<string, unknown> = {
+            id: newMarkerId,
+            ...markerData
+          };
+
+          // Replace the original ID with our new one
+          delete markerToCreate.id;
+          markerToCreate.id = newMarkerId;
+
+          // Add the sceneId to the marker
+          markerToCreate.sceneId = newSceneId;
+
+          // Directly insert the marker to preserve all properties
+          await db
+            .insert(markerTable)
+            .values(markerToCreate as InsertMarker)
+            .execute();
         }
       }
     }
