@@ -22,7 +22,7 @@
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import { IconChevronDown, IconCheck, IconDownload } from '@tabler/icons-svelte';
+  import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
   import { invalidateAll } from '$app/navigation';
   import { exportGameSession } from '$lib/utils';
 
@@ -166,15 +166,16 @@
               <Spacer />
               <Button
                 type="button"
-                class="gameSessionCard__exportBtn"
                 onclick={handleExportGameSession}
-                on:click={handleExportGameSession}
                 disabled={exportIsLoading}
                 isLoading={exportIsLoading}
               >
-                <Icon Icon={IconDownload} />
                 Export session
               </Button>
+              <Spacer size={2} />
+              <Text size="0.875rem" color="var(--fgMuted)">
+                Export your game session to a JSON file for backup or to import your scene into a different party
+              </Text>
               <Spacer />
               <Hr />
               <Spacer />
@@ -272,13 +273,5 @@
   }
   .gameSessionCard__popoverContent {
     width: 16rem;
-  }
-
-  :global(.gameSessionCard__exportBtn) {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
   }
 </style>

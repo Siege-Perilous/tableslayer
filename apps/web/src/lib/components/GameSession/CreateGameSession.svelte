@@ -179,6 +179,7 @@
         </FormControl>
         <Spacer />
         <FileInput
+          files={null}
           name="importFile"
           accept=".json"
           showPreviews={false}

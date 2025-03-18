@@ -91,14 +91,11 @@ export const POST = async ({ request, locals }: RequestEvent) => {
 
     // Sort scenes by order to ensure they're processed in the correct sequence
     const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
-    console.log(`Processing ${sortedScenes.length} scenes in order: ${sortedScenes.map((s) => s.order).join(', ')}`);
 
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
       const newSceneId = sceneIdMap.getOrCreate(sceneData.id!);
       const { mapLocation } = sceneData;
-
-      console.log(`Importing scene "${sceneData.name}" with map location: ${mapLocation || 'none'}`);
 
       // Create the scene with the new ID, passing all validated properties
       const sceneToCreate: Partial<InsertScene> = {
@@ -116,13 +113,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
           typedSceneToCreate[key] = value;
         }
       });
-
-      console.log(
-        `Creating scene with settings:`,
-        Object.keys(sceneToCreate).filter(
-          (key) => !['id', 'name', 'gameSessionId', 'order', 'mapLocation'].includes(key)
-        )
-      );
 
       await db
         .insert(sceneTable)
@@ -160,9 +150,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Get the imported scenes for verification
     const importedScenes = await getScenes(gameSession.id);
     console.log(`Import completed successfully. Created ${importedScenes.length} scenes.`);
-
-    // Log order of scenes to ensure they're in the correct sequence
-    console.log(`Final scene order: ${importedScenes.map((s) => `${s.name} (order: ${s.order})`).join(', ')}`);
 
     return json({
       success: true,
