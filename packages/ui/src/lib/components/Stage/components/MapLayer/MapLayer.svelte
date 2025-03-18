@@ -37,8 +37,6 @@
       imageUrl = props.map.url;
     }
 
-    console.log('loading map', props.map.url);
-
     // Update the image whenever the URL is changed
     loader
       .load(props.map.url, {
@@ -138,6 +136,5 @@
     {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.FogOfWar}
-    visible={false}
   />
 </T.Object3D>
