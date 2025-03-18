@@ -3,6 +3,7 @@
   import { useAuthResetPasswordMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
+  import { Head } from '$lib/components';
 
   let { data } = $props();
   const { userDesiringReset, resetCode } = data;
@@ -37,6 +38,8 @@
     });
   };
 </script>
+
+<Head title="Reset your password" />
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Reset your password</Title>

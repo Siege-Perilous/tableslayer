@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Input, FormError, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
-  import { IllustrationOverlook } from '$lib/components';
+  import { IllustrationOverlook, Head } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
@@ -30,6 +30,8 @@
     });
   };
 </script>
+
+<Head title="Sign up" description="Sign up to Table Slayer" />
 
 <IllustrationOverlook />
 
