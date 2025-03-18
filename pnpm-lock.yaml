@@ -141,12 +141,6 @@ importers:
       '@tursodatabase/api':
         specifier: ^1.9.0
         version: 1.9.0
-      '@types/chroma-js':
-        specifier: ^3.1.1
-        version: 3.1.1
-      '@types/semver':
-        specifier: ^7.5.8
-        version: 7.5.8
       axios:
         specifier: ^1.8.3
         version: 1.8.3
@@ -177,9 +171,6 @@ importers:
       resend:
         specifier: ^4.1.2
         version: 4.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      semver:
-        specifier: ^7.7.1
-        version: 7.7.1
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
@@ -226,6 +217,9 @@ importers:
       '@tableslayer/tsconfig':
         specifier: workspace:*
         version: link:../../packages/config-typescript
+      '@types/chroma-js':
+        specifier: ^3.1.1
+        version: 3.1.1
       '@types/mime-types':
         specifier: ^2.1.4
         version: 2.1.4
@@ -2688,9 +2682,6 @@ packages:
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
-
-  '@types/semver@7.5.8':
-    resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
 
   '@types/shimmer@1.2.0':
     resolution: {integrity: sha512-UE7oxhQLLd9gub6JKIAhDq06T0F6FnztwMNRvYgjeQSBeMc1ZG/tA47EwfduvkuQS8apbkM/lpLpWsaCeYsXVg==}
@@ -7863,8 +7854,6 @@ snapshots:
       pg-types: 2.2.0
 
   '@types/resolve@1.20.2': {}
-
-  '@types/semver@7.5.8': {}
 
   '@types/shimmer@1.2.0': {}
 

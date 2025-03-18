@@ -11,10 +11,8 @@ import { createGameSessionForImport, updateGameSession } from '$lib/server/gameS
 import { isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
-import semver from 'semver';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import pkg from '../../../../../package.json';
 
 const createIdMap = () => {
   const map = new Map<string, string>();
@@ -74,11 +72,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     });
 
     const validatedData = schema.parse(importData);
-
-    // Check version compatibility
-    if (semver.gt(validatedData.version, pkg.version)) {
-      throw error(400, 'Import file is from a newer version and may not be compatible');
-    }
 
     // Create ID maps for remapping references
     const sceneIdMap = createIdMap();
