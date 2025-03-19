@@ -260,7 +260,7 @@
   const onStageInitialized = () => {
     setTimeout(() => {
       stageIsLoading = false;
-    }, 250);
+    }, 1000);
   };
 
   const onMarkerAdded = (marker: Marker) => {
