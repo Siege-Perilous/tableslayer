@@ -11,7 +11,6 @@ export * from './generateSlug';
 export * from './gsWebSocket';
 export * from './handleStageZoom';
 export * from './hasThumb';
-export * from './initializeStage';
 export * from './isValidEmail';
 export * from './isWithinExpirationDate';
 export * from './randomQuotes';

@@ -14,12 +14,14 @@
 
   interface Props {
     props: StageProps;
-    onMapLoaded: () => void;
+    onMapLoaded?: () => void;
   }
 
-  const { props, onMapLoaded }: Props = $props();
+  const { props, onMapLoaded: propOnMapLoaded }: Props = $props();
 
-  const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
+  const callbacks = getContext<Callbacks>('callbacks');
+  const onMapUpdate = callbacks.onMapUpdate;
+  const onMapLoaded = callbacks.onMapLoaded;
 
   let imageUrl: string | null = $state(null);
   let mapImageMaterial = new THREE.MeshBasicMaterial();
@@ -52,6 +54,7 @@
           width: texture.image.width,
           height: texture.image.height
         };
+        if (propOnMapLoaded) propOnMapLoaded();
         onMapLoaded();
       })
       .catch((reason) => {

@@ -32,7 +32,8 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
+  const callbacks = getContext<Callbacks>('callbacks');
+  const onSceneUpdate = callbacks.onSceneUpdate;
   let mapLayer: MapLayerExports;
   let needsResize = true;
 
@@ -63,6 +64,14 @@
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+  });
+
+  // Update needsResize when map URL changes
+  $effect(() => {
+    const mapUrl = props.map.url;
+    if (mapUrl) {
+      needsResize = true;
+    }
   });
 
   // Effect to update post-processing settings when props change
@@ -256,7 +265,13 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} onMapLoaded={() => (needsResize = true)} />
+  <MapLayer
+    bind:this={mapLayer}
+    {props}
+    onMapLoaded={() => {
+      needsResize = true;
+    }}
+  />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer

@@ -16,6 +16,7 @@
     onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
     onMarkerSelected: (marker: Marker) => void;
     onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
+    onMapLoaded: () => void;
   }
 
   let {
@@ -26,7 +27,8 @@
     onMarkerAdded,
     onMarkerMoved,
     onMarkerSelected,
-    onMarkerContextMenu
+    onMarkerContextMenu,
+    onMapLoaded
   }: Props = $props();
 
   let sceneRef: SceneExports;
@@ -46,7 +48,8 @@
     onMarkerAdded,
     onMarkerMoved,
     onMarkerSelected,
-    onMarkerContextMenu
+    onMarkerContextMenu,
+    onMapLoaded
   });
 
   export const map = {

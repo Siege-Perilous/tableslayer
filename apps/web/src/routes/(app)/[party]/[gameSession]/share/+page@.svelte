@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
+  import { buildSceneProps, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
   import { Head } from '$lib/components';
@@ -21,6 +21,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client'));
   let selectedMarker: Marker | undefined = $state();
+  let initialLoad = $state(true);
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
@@ -42,9 +43,6 @@
   };
 
   onMount(() => {
-    initializeStage(stage, (isLoading: boolean) => {
-      stageIsLoading = isLoading;
-    });
     const socket = setupGameSessionWebSocket(
       data.gameSession.id,
       () => console.log('Connected to game session socket'),
@@ -60,6 +58,17 @@
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
+
+      // Check if the actual map image URL is changing (ignoring timestamp)
+      const newMapUrl = payload.stageProps?.map?.url;
+      const newMapBaseUrl = getBaseUrl(newMapUrl);
+      const currentBaseUrl = getBaseUrl(stageProps.map.url);
+
+      // If the base URL is changing, set loading state
+      if (newMapBaseUrl && currentBaseUrl !== newMapBaseUrl && !initialLoad) {
+        stageIsLoading = true;
+      }
+
       stageProps = {
         ...stageProps,
         // Override stage props with the updated props from the websocket
@@ -145,15 +154,29 @@
 
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
 
-  $effect(() => {
-    stageIsLoading = true;
+  // Track the current map URL to detect changes (without timestamp)
+  let currentMapBaseUrl = $state('');
 
-    const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
-        clearInterval(interval);
-      }
-    }, 50);
+  // Function to extract base URL without timestamp or query parameters
+  function getBaseUrl(url: string): string {
+    if (!url) return '';
+    // Strip query parameters (everything after ?)
+    return url.split('?')[0];
+  }
+
+  $effect(() => {
+    // Extract base URL without timestamp
+    const mapBaseUrl = getBaseUrl(stageProps.map.url);
+
+    // On first load, we're already in loading state
+    // For subsequent loads, only set loading when the actual image URL changes
+    if (!initialLoad && mapBaseUrl !== currentMapBaseUrl && mapBaseUrl) {
+      currentMapBaseUrl = mapBaseUrl;
+      stageIsLoading = true;
+    } else if (initialLoad && mapBaseUrl) {
+      // Just track the URL on initial load
+      currentMapBaseUrl = mapBaseUrl;
+    }
   });
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
@@ -188,6 +211,12 @@
   const onMarkerSelected = (marker: Marker) => {
     selectedMarker = marker;
   };
+
+  function onMapLoaded() {
+    // Set loading state to false when map has loaded
+    stageIsLoading = false;
+    initialLoad = false;
+  }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
     if (event instanceof MouseEvent) {
@@ -249,6 +278,7 @@
     {onMarkerMoved}
     {onMarkerSelected}
     {onMarkerContextMenu}
+    {onMapLoaded}
   />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
@@ -291,6 +321,9 @@
     height: 100%;
     background: black;
     z-index: 1;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease-in;
   }
   .stage--loading {
     visibility: hidden;
@@ -298,6 +331,7 @@
   .stage--hidden {
     display: none;
     visibility: hidden;
+    opacity: 0;
   }
   .cursor {
     position: fixed;

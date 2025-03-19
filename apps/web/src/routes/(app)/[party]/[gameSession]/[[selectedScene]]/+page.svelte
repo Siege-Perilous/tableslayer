@@ -24,7 +24,6 @@
     setupGameSessionWebSocket,
     handleStageZoom,
     hasThumb,
-    initializeStage,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
     throttle,
@@ -44,7 +43,7 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
+  let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
@@ -53,6 +52,7 @@
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
+  let currentMapUrl = $state('');
   const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
@@ -146,10 +146,6 @@
       stageProps // Pass stageProps for the handler to access
     );
 
-    initializeStage(stage, (isLoading: boolean) => {
-      stageIsLoading = isLoading;
-    });
-
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
       stageElement.addEventListener('wheel', onWheel, { passive: false });
@@ -224,24 +220,36 @@
 
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
+
+    // Always set loading to true when scene changes
     stageIsLoading = true;
 
+    // Clear any existing interval to prevent conflicts
     const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
+      if (stage && !stageIsLoading) {
         clearInterval(interval);
       }
     }, 50);
   });
 
   $effect(() => {
+    let newMapUrl = '';
+
     if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
-      stageProps.map.url = `${selectedScene.thumb.resizedUrl}?cors=1`;
+      newMapUrl = `${selectedScene.thumb.resizedUrl}?cors=1`;
     } else {
-      stageProps.map.url = StageDefaultProps.map.url;
+      newMapUrl = StageDefaultProps.map.url;
     }
-    if (activeScene) {
-      socketUpdate();
+
+    // Only set loading and update URL if it actually changed
+    if (newMapUrl !== currentMapUrl) {
+      stageIsLoading = true;
+      stageProps.map.url = newMapUrl;
+      currentMapUrl = newMapUrl;
+
+      if (activeScene && activeScene.id === selectedScene.id) {
+        socketUpdate();
+      }
     }
   });
 
@@ -257,6 +265,11 @@
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
     socketUpdate();
+  };
+
+  const onMapLoaded = () => {
+    // Set loading state to false when map has loaded
+    stageIsLoading = false;
   };
 
   const onMarkerAdded = (marker: Marker) => {
@@ -611,6 +624,7 @@
             {onMarkerMoved}
             {onMarkerSelected}
             {onMarkerContextMenu}
+            {onMapLoaded}
           />
         </div>
         <SceneControls
