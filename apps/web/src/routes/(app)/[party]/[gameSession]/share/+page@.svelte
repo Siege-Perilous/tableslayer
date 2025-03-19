@@ -154,10 +154,8 @@
 
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
 
-  // Function to extract base URL without timestamp or query parameters
   function getUrlWithoutParams(url: string): string {
     if (!url) return '';
-    // Strip query parameters (everything after ?)
     return url.split('?')[0];
   }
 
