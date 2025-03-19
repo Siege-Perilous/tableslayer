@@ -195,14 +195,21 @@
 
       // If scene was resized, need to wait for prop update to finish
       if (loadingState === SceneLoadingState.Resizing) {
-        loadingState = SceneLoadingState.Rendering;
+        setLoadingState(SceneLoadingState.Rendering);
       } else if (loadingState === SceneLoadingState.Rendering) {
-        loadingState = SceneLoadingState.Initialized;
-        callbacks.onStageInitialized();
+        setLoadingState(SceneLoadingState.Initialized);
       }
     },
     { stage: renderStage }
   );
+
+  function setLoadingState(state: SceneLoadingState) {
+    console.log('Setting loading state: ', state);
+    loadingState = state;
+    if (state === SceneLoadingState.Initialized) {
+      callbacks.onStageInitialized();
+    }
+  }
 
   export function fill() {
     const canvasAspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
@@ -279,13 +286,14 @@
     {props}
     onMapLoading={() => {
       console.log('Map loading');
-      loadingState = SceneLoadingState.LoadingMap;
+      callbacks.onStageLoading();
+      setLoadingState(SceneLoadingState.LoadingMap);
     }}
     onMapLoaded={() => {
       console.log('Map loaded');
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
-        loadingState = SceneLoadingState.Resizing;
+        setLoadingState(SceneLoadingState.Resizing);
       }
     }}
   />
