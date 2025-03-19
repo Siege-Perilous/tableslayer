@@ -34,6 +34,7 @@
   $effect(() => {
     // Do not update if the image url has not changed
     if (imageUrl === props.map.url) {
+      if (propOnMapLoaded) propOnMapLoaded(props.map.url);
       onMapLoaded(props.map.url);
       return;
     } else {
