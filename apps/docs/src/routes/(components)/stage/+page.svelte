@@ -147,10 +147,6 @@
     }
   }
 
-  function onMapLoaded() {
-    console.log('Map loaded');
-  }
-
   function onMouseMove(e: MouseEvent) {
     if (!(e.buttons === 1 || e.buttons === 2)) return;
 
