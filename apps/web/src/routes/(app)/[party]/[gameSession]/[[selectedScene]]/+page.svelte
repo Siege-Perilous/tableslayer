@@ -248,6 +248,8 @@
       if (activeScene && activeScene.id === selectedScene.id) {
         socketUpdate();
       }
+    } else if (activeScene && activeScene.id === selectedScene.id) {
+      stageIsLoading = false;
     }
   });
 
