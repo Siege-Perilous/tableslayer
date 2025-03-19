@@ -60,19 +60,6 @@
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
 
-      // Check if the actual map image URL is changing (ignoring timestamp)
-      const newMapUrl = payload.stageProps?.map?.url;
-      const newMapUrlWithoutParams = getUrlWithoutParams(newMapUrl);
-      const currentMapUrlWithoutParams = getUrlWithoutParams(stageProps.map.url);
-
-      console.log('Does current map URL match new map URL?', currentMapUrlWithoutParams === newMapUrlWithoutParams);
-
-      // If the base URL is changing, set loading state
-      if (currentMapUrlWithoutParams !== newMapUrlWithoutParams) {
-        console.log('Map URL changed, setting loading state');
-        stageIsLoading = true;
-      }
-
       stageProps = {
         ...stageProps,
         // Override stage props with the updated props from the websocket
@@ -147,17 +134,12 @@
       socket.disconnect();
     };
   });
+
   const getRandomColor = (): string => {
     return `#${Math.floor(Math.random() * 16777215)
       .toString(16)
       .padStart(6, '0')}`;
   };
-  //  const randomColor = getRandomColor();
-
-  function getUrlWithoutParams(url: string): string {
-    if (!url) return '';
-    return url.split('?')[0];
-  }
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.zoom = zoom;
@@ -198,12 +180,8 @@
   }
 
   function onStageInitialized() {
-    // Because the websocket changes so rapidly, we need to delay the loading state
-    // otherwise the derived classes will not update properly
-    setTimeout(() => {
-      console.log('Stage initialized');
-      stageIsLoading = false;
-    }, 1000);
+    console.log('Stage initialized');
+    stageIsLoading = false;
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {

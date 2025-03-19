@@ -32,10 +32,23 @@
   let mapSize: Size | null = $state(null);
 
   $effect(() => {
+    if (!props.map.url) {
+      console.log('No map URL');
+      imageUrl = props.map.url;
+      return;
+    }
+
+    // Check if the actual map image URL is changing (ignoring timestamp)
+    const newMapUrlWithoutParams = getUrlWithoutParams(props.map.url);
+    const currentMapUrlWithoutParams = getUrlWithoutParams(imageUrl);
+
     // Do not update if the image url has not changed
-    if (imageUrl === props.map.url) {
+    if (currentMapUrlWithoutParams === newMapUrlWithoutParams) {
       return;
     } else {
+      console.log('Map URL changed');
+      console.log(newMapUrlWithoutParams);
+      console.log(currentMapUrlWithoutParams);
       imageUrl = props.map.url;
     }
 
@@ -62,6 +75,11 @@
         console.error(JSON.stringify(reason));
       });
   });
+
+  function getUrlWithoutParams(url: string | null): string {
+    if (!url) return '';
+    return url.split('?')[0];
+  }
 
   export function fill() {
     if (!mapSize) return;

@@ -192,11 +192,6 @@
       activeControl = 'marker';
       stageProps.activeLayer = MapLayerType.Marker;
       markersPane.expand();
-      setTimeout(() => {
-        if (stage) {
-          stage.scene.fit();
-        }
-      }, 50);
     } else {
       activeControl = control;
       stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -219,13 +214,6 @@
 
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
-
-    // Clear any existing interval to prevent conflicts
-    const interval = setInterval(() => {
-      if (stage && !stageIsLoading) {
-        clearInterval(interval);
-      }
-    }, 50);
   });
 
   $effect(() => {
@@ -254,10 +242,12 @@
   };
 
   const onStageLoading = () => {
+    console.log('Stage loading');
     stageIsLoading = true;
   };
 
   const onStageInitialized = () => {
+    console.log('Stage DONE LOADING');
     stageIsLoading = false;
   };
 
