@@ -220,9 +220,6 @@
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
 
-    // Always set loading to true when scene changes
-    stageIsLoading = true;
-
     // Clear any existing interval to prevent conflicts
     const interval = setInterval(() => {
       if (stage && !stageIsLoading) {

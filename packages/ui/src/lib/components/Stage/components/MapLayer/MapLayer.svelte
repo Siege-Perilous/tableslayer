@@ -32,15 +32,14 @@
   let mapSize: Size | null = $state(null);
 
   $effect(() => {
-    onMapLoading();
-
     // Do not update if the image url has not changed
     if (imageUrl === props.map.url) {
-      onMapLoaded(props.map.url);
       return;
     } else {
       imageUrl = props.map.url;
     }
+
+    onMapLoading();
 
     // Update the image whenever the URL is changed
     loader

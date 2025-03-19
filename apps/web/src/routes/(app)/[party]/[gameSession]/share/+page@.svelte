@@ -193,14 +193,15 @@
   };
 
   function onStageLoading() {
+    console.log('Stage loading');
     stageIsLoading = true;
   }
 
   function onStageInitialized() {
-    stageIsLoading = false;
     // Because the websocket changes so rapidly, we need to delay the loading state
     // otherwise the derived classes will not update properly
     setTimeout(() => {
+      console.log('Stage initialized');
       stageIsLoading = false;
     }, 1000);
   }
