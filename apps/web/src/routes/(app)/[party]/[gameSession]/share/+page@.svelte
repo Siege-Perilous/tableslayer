@@ -61,11 +61,11 @@
 
       // Check if the actual map image URL is changing (ignoring timestamp)
       const newMapUrl = payload.stageProps?.map?.url;
-      const newMapBaseUrl = getBaseUrl(newMapUrl);
-      const currentBaseUrl = getBaseUrl(stageProps.map.url);
+      const newMapUrlWithoutParams = getUrlWithoutParams(newMapUrl);
+      const currentMapUrlWithoutParams = getUrlWithoutParams(stageProps.map.url);
 
       // If the base URL is changing, set loading state
-      if (newMapBaseUrl && currentBaseUrl !== newMapBaseUrl && !initialLoad) {
+      if (newMapUrlWithoutParams && currentMapUrlWithoutParams !== newMapUrlWithoutParams && !initialLoad) {
         stageIsLoading = true;
       }
 
@@ -155,13 +155,11 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
 
   // Function to extract base URL without timestamp or query parameters
-  function getBaseUrl(url: string): string {
+  function getUrlWithoutParams(url: string): string {
     if (!url) return '';
     // Strip query parameters (everything after ?)
     return url.split('?')[0];
   }
-
-  // We no longer need this effect since currentMapBaseUrl is updated directly in onMapLoaded
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.zoom = zoom;
