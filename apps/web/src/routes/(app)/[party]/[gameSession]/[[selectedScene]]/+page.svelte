@@ -258,7 +258,9 @@
   };
 
   const onStageInitialized = () => {
-    stageIsLoading = false;
+    setTimeout(() => {
+      stageIsLoading = false;
+    }, 250);
   };
 
   const onMarkerAdded = (marker: Marker) => {
