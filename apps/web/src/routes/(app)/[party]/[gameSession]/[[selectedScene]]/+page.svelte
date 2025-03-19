@@ -24,7 +24,6 @@
     setupGameSessionWebSocket,
     handleStageZoom,
     hasThumb,
-    initializeStage,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
     throttle,
@@ -44,7 +43,7 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', navigating.to && 'stage--loading']);
+  let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
@@ -146,10 +145,6 @@
       stageProps // Pass stageProps for the handler to access
     );
 
-    initializeStage(stage, (isLoading: boolean) => {
-      stageIsLoading = isLoading;
-    });
-
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
       stageElement.addEventListener('wheel', onWheel, { passive: false });
@@ -224,11 +219,10 @@
 
   $effect(() => {
     stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
-    stageIsLoading = true;
 
+    // Clear any existing interval to prevent conflicts
     const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
+      if (stage && !stageIsLoading) {
         clearInterval(interval);
       }
     }, 50);
@@ -257,6 +251,16 @@
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
     socketUpdate();
+  };
+
+  const onStageLoading = () => {
+    stageIsLoading = true;
+  };
+
+  const onStageInitialized = () => {
+    setTimeout(() => {
+      stageIsLoading = false;
+    }, 250);
   };
 
   const onMarkerAdded = (marker: Marker) => {
@@ -607,6 +611,8 @@
             {onFogUpdate}
             {onMapUpdate}
             {onSceneUpdate}
+            {onStageInitialized}
+            {onStageLoading}
             {onMarkerAdded}
             {onMarkerMoved}
             {onMarkerSelected}

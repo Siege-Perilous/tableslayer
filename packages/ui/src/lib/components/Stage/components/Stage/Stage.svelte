@@ -11,7 +11,9 @@
     props: StageProps;
     onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onStageLoading: () => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onStageInitialized: () => void;
     onMarkerAdded: (marker: Marker) => void;
     onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
     onMarkerSelected: (marker: Marker) => void;
@@ -22,6 +24,8 @@
     props,
     onFogUpdate,
     onMapUpdate,
+    onStageLoading,
+    onStageInitialized,
     onSceneUpdate,
     onMarkerAdded,
     onMarkerMoved,
@@ -42,11 +46,13 @@
   setContext('callbacks', {
     onFogUpdate,
     onMapUpdate,
+    onStageLoading,
     onSceneUpdate,
     onMarkerAdded,
     onMarkerMoved,
     onMarkerSelected,
-    onMarkerContextMenu
+    onMarkerContextMenu,
+    onStageInitialized
   });
 
   export const map = {

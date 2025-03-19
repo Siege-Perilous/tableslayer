@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { buildSceneProps, initializeStage, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
+  import { buildSceneProps, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
   import { Head } from '$lib/components';
@@ -24,7 +24,9 @@
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
+  $inspect('stageclasses', stageClasses);
 
   // Handler for optimized marker updates
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
@@ -42,9 +44,6 @@
   };
 
   onMount(() => {
-    initializeStage(stage, (isLoading: boolean) => {
-      stageIsLoading = isLoading;
-    });
     const socket = setupGameSessionWebSocket(
       data.gameSession.id,
       () => console.log('Connected to game session socket'),
@@ -60,6 +59,20 @@
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
       gameIsPaused = payload.gameIsPaused;
+
+      // Check if the actual map image URL is changing (ignoring timestamp)
+      const newMapUrl = payload.stageProps?.map?.url;
+      const newMapUrlWithoutParams = getUrlWithoutParams(newMapUrl);
+      const currentMapUrlWithoutParams = getUrlWithoutParams(stageProps.map.url);
+
+      console.log('Does current map URL match new map URL?', currentMapUrlWithoutParams === newMapUrlWithoutParams);
+
+      // If the base URL is changing, set loading state
+      if (currentMapUrlWithoutParams !== newMapUrlWithoutParams) {
+        console.log('Map URL changed, setting loading state');
+        stageIsLoading = true;
+      }
+
       stageProps = {
         ...stageProps,
         // Override stage props with the updated props from the websocket
@@ -78,8 +91,6 @@
         randomFantasyQuote = getRandomFantasyQuote();
       }
     });
-
-    $inspect(stageProps);
 
     socket.on('cursorUpdate', (payload) => {
       const { normalizedPosition, user, zoom: editorZoom } = payload;
@@ -143,18 +154,10 @@
   };
   //  const randomColor = getRandomColor();
 
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
-
-  $effect(() => {
-    stageIsLoading = true;
-
-    const interval = setInterval(() => {
-      if (stage) {
-        stageIsLoading = false;
-        clearInterval(interval);
-      }
-    }, 50);
-  });
+  function getUrlWithoutParams(url: string): string {
+    if (!url) return '';
+    return url.split('?')[0];
+  }
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.scene.zoom = zoom;
@@ -189,6 +192,20 @@
     selectedMarker = marker;
   };
 
+  function onStageLoading() {
+    console.log('Stage loading');
+    stageIsLoading = true;
+  }
+
+  function onStageInitialized() {
+    // Because the websocket changes so rapidly, we need to delay the loading state
+    // otherwise the derived classes will not update properly
+    setTimeout(() => {
+      console.log('Stage initialized');
+      stageIsLoading = false;
+    }, 1000);
+  }
+
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
     if (event instanceof MouseEvent) {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
@@ -209,7 +226,7 @@
           };
         }
       }
-    }, 1000);
+    }, 250);
 
     return () => clearInterval(interval);
   });
@@ -244,6 +261,8 @@
     props={stageProps}
     {onFogUpdate}
     {onSceneUpdate}
+    {onStageLoading}
+    {onStageInitialized}
     {onMapUpdate}
     {onMarkerAdded}
     {onMarkerMoved}
@@ -291,13 +310,18 @@
     height: 100%;
     background: black;
     z-index: 1;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease-in;
   }
-  .stage--loading {
-    visibility: hidden;
+  .stage.stage--loading {
+    opacity: 0 !important;
+    visibility: hidden !important;
   }
-  .stage--hidden {
+  .stage.stage--hidden {
     display: none;
     visibility: hidden;
+    opacity: 0;
   }
   .cursor {
     position: fixed;

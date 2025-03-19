@@ -14,12 +14,14 @@
 
   interface Props {
     props: StageProps;
-    onMapLoaded: () => void;
+    onMapLoading: () => void;
+    onMapLoaded: (mapUrl: string) => void;
   }
 
-  const { props, onMapLoaded }: Props = $props();
+  const { props, onMapLoading, onMapLoaded }: Props = $props();
 
-  const onMapUpdate = getContext<Callbacks>('callbacks').onMapUpdate;
+  const callbacks = getContext<Callbacks>('callbacks');
+  const onMapUpdate = callbacks.onMapUpdate;
 
   let imageUrl: string | null = $state(null);
   let mapImageMaterial = new THREE.MeshBasicMaterial();
@@ -37,6 +39,8 @@
       imageUrl = props.map.url;
     }
 
+    onMapLoading();
+
     // Update the image whenever the URL is changed
     loader
       .load(props.map.url, {
@@ -52,7 +56,7 @@
           width: texture.image.width,
           height: texture.image.height
         };
-        onMapLoaded();
+        onMapLoaded(props.map.url);
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));

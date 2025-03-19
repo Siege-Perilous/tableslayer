@@ -20,7 +20,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-  import { SceneLayer, SceneLayerOrder } from './types';
+  import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
 
@@ -32,9 +32,11 @@
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
-  const onSceneUpdate = getContext<Callbacks>('callbacks').onSceneUpdate;
+  const callbacks = getContext<Callbacks>('callbacks');
+  const onSceneUpdate = callbacks.onSceneUpdate;
   let mapLayer: MapLayerExports;
   let needsResize = true;
+  let loadingState = SceneLoadingState.LoadingMap;
 
   const composer = new EffectComposer(renderer);
 
@@ -63,6 +65,14 @@
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+  });
+
+  // Update needsResize when map URL changes
+  $effect(() => {
+    const mapUrl = props.map.url;
+    if (mapUrl) {
+      needsResize = true;
+    }
   });
 
   // Effect to update post-processing settings when props change
@@ -182,6 +192,14 @@
 
       // Reset camera back to main layer
       camera.current.layers.set(SceneLayer.Main);
+
+      // If scene was resized, need to wait for prop update to finish
+      if (loadingState === SceneLoadingState.Resizing) {
+        loadingState = SceneLoadingState.Rendering;
+      } else if (loadingState === SceneLoadingState.Rendering) {
+        loadingState = SceneLoadingState.Initialized;
+        callbacks.onStageInitialized();
+      }
     },
     { stage: renderStage }
   );
@@ -256,7 +274,21 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer bind:this={mapLayer} {props} onMapLoaded={() => (needsResize = true)} />
+  <MapLayer
+    bind:this={mapLayer}
+    {props}
+    onMapLoading={() => {
+      console.log('Map loading');
+      loadingState = SceneLoadingState.LoadingMap;
+    }}
+    onMapLoaded={() => {
+      console.log('Map loaded');
+      needsResize = true;
+      if (loadingState === SceneLoadingState.LoadingMap) {
+        loadingState = SceneLoadingState.Resizing;
+      }
+    }}
+  />
 
   <!-- Map overlays that scale with the scene -->
   <GridLayer

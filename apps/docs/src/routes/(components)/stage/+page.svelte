@@ -100,6 +100,14 @@
     // No-op
   }
 
+  function onStageLoading() {
+    console.log('Stage loading');
+  }
+
+  function onStageInitialized() {
+    console.log('Stage initialized');
+  }
+
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     stageProps.map.offset.x = offset.x;
     stageProps.map.offset.y = offset.y;
@@ -176,6 +184,8 @@
     props={stageProps}
     {onFogUpdate}
     {onMapUpdate}
+    {onStageLoading}
+    {onStageInitialized}
     {onSceneUpdate}
     {onMarkerAdded}
     {onMarkerMoved}

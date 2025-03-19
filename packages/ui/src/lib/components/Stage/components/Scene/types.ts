@@ -1,5 +1,12 @@
 import type { ToneMappingMode } from 'postprocessing';
 
+export enum SceneLoadingState {
+  LoadingMap = 1,
+  Resizing = 2,
+  Rendering = 3,
+  Initialized = 4
+}
+
 export enum SceneRotation {
   Deg0 = 0,
   Deg90 = 90,

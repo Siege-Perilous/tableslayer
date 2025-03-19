@@ -11,6 +11,8 @@ export interface Callbacks {
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+  onStageLoading: () => void;
+  onStageInitialized: () => void;
   onMarkerAdded: (marker: Marker) => void;
   onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
   onMarkerSelected: (marker: Marker) => void;
