@@ -242,10 +242,9 @@
     }
 
     // Only set loading and update URL if it actually changed
-    if (newMapUrl !== currentMapUrl) {
+    if (newMapUrl !== stageProps.map.url) {
       stageIsLoading = true;
       stageProps.map.url = newMapUrl;
-      currentMapUrl = newMapUrl;
 
       if (activeScene && activeScene.id === selectedScene.id) {
         socketUpdate();
@@ -267,9 +266,9 @@
     socketUpdate();
   };
 
-  const onMapLoaded = () => {
-    // Set loading state to false when map has loaded
+  const onMapLoaded = (mapUrl: string) => {
     stageIsLoading = false;
+    currentMapUrl = mapUrl;
   };
 
   const onMarkerAdded = (marker: Marker) => {

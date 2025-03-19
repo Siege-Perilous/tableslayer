@@ -16,7 +16,7 @@
     onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
     onMarkerSelected: (marker: Marker) => void;
     onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
-    onMapLoaded: () => void;
+    onMapLoaded: (mapUrl: string) => void;
   }
 
   let {

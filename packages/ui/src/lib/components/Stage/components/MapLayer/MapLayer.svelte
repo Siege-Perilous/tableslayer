@@ -14,7 +14,7 @@
 
   interface Props {
     props: StageProps;
-    onMapLoaded?: () => void;
+    onMapLoaded?: (mapUrl: string) => void;
   }
 
   const { props, onMapLoaded: propOnMapLoaded }: Props = $props();
@@ -54,8 +54,8 @@
           width: texture.image.width,
           height: texture.image.height
         };
-        if (propOnMapLoaded) propOnMapLoaded();
-        onMapLoaded();
+        if (propOnMapLoaded) propOnMapLoaded(props.map.url);
+        onMapLoaded(props.map.url);
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));
