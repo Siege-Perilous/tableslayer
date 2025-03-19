@@ -21,11 +21,12 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state(buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client'));
   let selectedMarker: Marker | undefined = $state();
-  let initialLoad = $state(true);
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
+  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
+  $inspect('stageclasses', stageClasses);
 
   // Handler for optimized marker updates
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
@@ -64,8 +65,11 @@
       const newMapUrlWithoutParams = getUrlWithoutParams(newMapUrl);
       const currentMapUrlWithoutParams = getUrlWithoutParams(stageProps.map.url);
 
+      console.log('Does current map URL match new map URL?', currentMapUrlWithoutParams === newMapUrlWithoutParams);
+
       // If the base URL is changing, set loading state
-      if (newMapUrlWithoutParams && currentMapUrlWithoutParams !== newMapUrlWithoutParams && !initialLoad) {
+      if (currentMapUrlWithoutParams !== newMapUrlWithoutParams) {
+        console.log('Map URL changed, setting loading state');
         stageIsLoading = true;
       }
 
@@ -87,8 +91,6 @@
         randomFantasyQuote = getRandomFantasyQuote();
       }
     });
-
-    $inspect(stageProps);
 
     socket.on('cursorUpdate', (payload) => {
       const { normalizedPosition, user, zoom: editorZoom } = payload;
@@ -152,8 +154,6 @@
   };
   //  const randomColor = getRandomColor();
 
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
-
   function getUrlWithoutParams(url: string): string {
     if (!url) return '';
     return url.split('?')[0];
@@ -194,8 +194,11 @@
 
   function onMapLoaded(mapUrl: string) {
     console.log('Map loaded', mapUrl);
-    stageIsLoading = false;
-    initialLoad = false;
+    // Because the websocket changes so rapidly, we need to delay the loading state
+    // otherwise the derived classes will not update properly
+    setTimeout(() => {
+      stageIsLoading = false;
+    }, 1000);
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
@@ -305,10 +308,11 @@
     visibility: visible;
     transition: opacity 0.25s ease-in;
   }
-  .stage--loading {
-    visibility: hidden;
+  .stage.stage--loading {
+    opacity: 0 !important;
+    visibility: hidden !important;
   }
-  .stage--hidden {
+  .stage.stage--hidden {
     display: none;
     visibility: hidden;
     opacity: 0;
