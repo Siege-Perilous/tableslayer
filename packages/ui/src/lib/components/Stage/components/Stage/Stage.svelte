@@ -11,24 +11,26 @@
     props: StageProps;
     onFogUpdate: (blob: Promise<Blob>) => void;
     onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onStageLoading: () => void;
     onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
+    onStageInitialized: () => void;
     onMarkerAdded: (marker: Marker) => void;
     onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
     onMarkerSelected: (marker: Marker) => void;
     onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
-    onMapLoaded: (mapUrl: string) => void;
   }
 
   let {
     props,
     onFogUpdate,
     onMapUpdate,
+    onStageLoading,
+    onStageInitialized,
     onSceneUpdate,
     onMarkerAdded,
     onMarkerMoved,
     onMarkerSelected,
-    onMarkerContextMenu,
-    onMapLoaded
+    onMarkerContextMenu
   }: Props = $props();
 
   let sceneRef: SceneExports;
@@ -44,12 +46,13 @@
   setContext('callbacks', {
     onFogUpdate,
     onMapUpdate,
+    onStageLoading,
     onSceneUpdate,
     onMarkerAdded,
     onMarkerMoved,
     onMarkerSelected,
     onMarkerContextMenu,
-    onMapLoaded
+    onStageInitialized
   });
 
   export const map = {

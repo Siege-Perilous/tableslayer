@@ -20,7 +20,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
-  import { SceneLayer, SceneLayerOrder } from './types';
+  import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
 
@@ -36,6 +36,7 @@
   const onSceneUpdate = callbacks.onSceneUpdate;
   let mapLayer: MapLayerExports;
   let needsResize = true;
+  let loadingState = SceneLoadingState.LoadingMap;
 
   const composer = new EffectComposer(renderer);
 
@@ -191,6 +192,14 @@
 
       // Reset camera back to main layer
       camera.current.layers.set(SceneLayer.Main);
+
+      // If scene was resized, need to wait for prop update to finish
+      if (loadingState === SceneLoadingState.Resizing) {
+        loadingState = SceneLoadingState.Rendering;
+      } else if (loadingState === SceneLoadingState.Rendering) {
+        loadingState = SceneLoadingState.Initialized;
+        callbacks.onStageInitialized();
+      }
     },
     { stage: renderStage }
   );
@@ -268,8 +277,16 @@
   <MapLayer
     bind:this={mapLayer}
     {props}
+    onMapLoading={() => {
+      console.log('Map loading');
+      loadingState = SceneLoadingState.LoadingMap;
+    }}
     onMapLoaded={() => {
+      console.log('Map loaded');
       needsResize = true;
+      if (loadingState === SceneLoadingState.LoadingMap) {
+        loadingState = SceneLoadingState.Resizing;
+      }
     }}
   />
 

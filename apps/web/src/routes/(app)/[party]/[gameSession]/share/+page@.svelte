@@ -192,8 +192,12 @@
     selectedMarker = marker;
   };
 
-  function onMapLoaded(mapUrl: string) {
-    console.log('Map loaded', mapUrl);
+  function onStageLoading() {
+    stageIsLoading = true;
+  }
+
+  function onStageInitialized() {
+    stageIsLoading = false;
     // Because the websocket changes so rapidly, we need to delay the loading state
     // otherwise the derived classes will not update properly
     setTimeout(() => {
@@ -256,12 +260,13 @@
     props={stageProps}
     {onFogUpdate}
     {onSceneUpdate}
+    {onStageLoading}
+    {onStageInitialized}
     {onMapUpdate}
     {onMarkerAdded}
     {onMarkerMoved}
     {onMarkerSelected}
     {onMarkerContextMenu}
-    {onMapLoaded}
   />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}

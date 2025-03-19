@@ -51,7 +51,6 @@
   let isMarkersCollapsed = $state(true);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
-  let loadedMapUrl: string = $state('');
   let innerWidth: number = $state(1000);
   const isMobile = $derived(innerWidth < 768);
 
@@ -233,25 +232,13 @@
   });
 
   $effect(() => {
-    let newMapUrl = '';
-
     if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
-      newMapUrl = `${selectedScene.thumb.resizedUrl}?cors=1`;
+      stageProps.map.url = `${selectedScene.thumb.resizedUrl}?cors=1`;
     } else {
-      newMapUrl = StageDefaultProps.map.url;
+      stageProps.map.url = StageDefaultProps.map.url;
     }
-
-    // Only set loading and update URL if it actually changed
-    if (newMapUrl !== loadedMapUrl) {
-      stageIsLoading = true;
-      stageProps.map.url = newMapUrl;
-
-      if (activeScene && activeScene.id === selectedScene.id) {
-        loadedMapUrl = newMapUrl;
-        socketUpdate();
-      }
-    } else if (activeScene && activeScene.id === selectedScene.id) {
-      stageIsLoading = false;
+    if (activeScene) {
+      socketUpdate();
     }
   });
 
@@ -269,8 +256,11 @@
     socketUpdate();
   };
 
-  const onMapLoaded = (mapUrl: string) => {
-    loadedMapUrl = mapUrl;
+  const onStageLoading = () => {
+    stageIsLoading = true;
+  };
+
+  const onStageInitialized = () => {
     stageIsLoading = false;
   };
 
@@ -622,11 +612,12 @@
             {onFogUpdate}
             {onMapUpdate}
             {onSceneUpdate}
+            {onStageInitialized}
+            {onStageLoading}
             {onMarkerAdded}
             {onMarkerMoved}
             {onMarkerSelected}
             {onMarkerContextMenu}
-            {onMapLoaded}
           />
         </div>
         <SceneControls
