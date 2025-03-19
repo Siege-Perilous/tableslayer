@@ -51,6 +51,7 @@
   let isMarkersCollapsed = $state(true);
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
+  let loadedMapUrl: string = $state('');
   let innerWidth: number = $state(1000);
   const isMobile = $derived(innerWidth < 768);
 
@@ -241,11 +242,12 @@
     }
 
     // Only set loading and update URL if it actually changed
-    if (newMapUrl !== stageProps.map.url) {
+    if (newMapUrl !== loadedMapUrl) {
       stageIsLoading = true;
       stageProps.map.url = newMapUrl;
 
       if (activeScene && activeScene.id === selectedScene.id) {
+        loadedMapUrl = newMapUrl;
         socketUpdate();
       }
     } else if (activeScene && activeScene.id === selectedScene.id) {
@@ -267,7 +269,8 @@
     socketUpdate();
   };
 
-  const onMapLoaded = () => {
+  const onMapLoaded = (mapUrl: string) => {
+    loadedMapUrl = mapUrl;
     stageIsLoading = false;
   };
 
