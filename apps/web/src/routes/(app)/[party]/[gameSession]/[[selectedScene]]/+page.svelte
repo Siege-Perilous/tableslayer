@@ -52,7 +52,6 @@
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
-  let currentMapUrl = $state('');
   const isMobile = $derived(innerWidth < 768);
 
   const updateSceneMutation = useUpdateSceneMutation();
@@ -266,9 +265,8 @@
     socketUpdate();
   };
 
-  const onMapLoaded = (mapUrl: string) => {
+  const onMapLoaded = () => {
     stageIsLoading = false;
-    currentMapUrl = mapUrl;
   };
 
   const onMarkerAdded = (marker: Marker) => {
