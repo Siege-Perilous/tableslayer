@@ -80,7 +80,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
 
     // Only allow a maximum of 3 scenes for free plan users
-    if (sortedScenes.length > 2 && party.plan === 'free') {
+    if (sortedScenes.length > 3 && party.plan === 'free') {
       console.warn(`User ${locals.user.id} attempted to import ${sortedScenes.length} scenes on a free plan`);
       // Instead of using SvelteKit's error function, return a JSON response directly
       return json(
