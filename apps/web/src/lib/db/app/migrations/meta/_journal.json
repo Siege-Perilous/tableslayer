@@ -120,6 +120,13 @@
       "when": 1741877607131,
       "tag": "0016_marker-rename-columns",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1742503504965,
+      "tag": "0017_scene-thumbnail",
+      "breakpoints": true
     }
   ]
 }

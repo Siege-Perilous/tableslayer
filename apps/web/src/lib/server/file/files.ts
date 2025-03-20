@@ -2,7 +2,6 @@ import { db } from '$lib/db/app';
 import { filesTable, userFilesTable } from '$lib/db/app/schema';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import type { Readable } from 'stream';
@@ -68,15 +67,15 @@ const uploadToR2 = async (
 export const uploadFileFromUrl = async (imageUrl: string, userId: string, destinationFolder?: string) => {
   try {
     // Get the image as a buffer
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const response = await fetch(imageUrl);
 
-    if (response.status !== 200) {
-      throw new Error(`Failed to download image from ${imageUrl}`);
+    if (!response.ok) {
+      throw new Error(`Failed to download image from ${imageUrl}: ${response.status} ${response.statusText}`);
     }
 
     const originalFileName = imageUrl.split('/').pop() || 'unknown_file';
-    const contentType = response.headers['content-type'] || 'application/octet-stream';
-    const fileBuffer = Buffer.from(response.data);
+    const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    const fileBuffer = Buffer.from(await response.arrayBuffer());
     const contentLength = fileBuffer.byteLength;
 
     // Generate a random file name with the original extension
