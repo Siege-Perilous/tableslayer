@@ -9,7 +9,7 @@ import {
 import { SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 import type { Thumb } from '../file';
@@ -58,8 +58,13 @@ export const getGameSession = async (gameSessionId: string): Promise<SelectGameS
   return gameSession;
 };
 
-export const getPartyGameSessionFromSlug = async (slug: string) => {
-  const gameSession = await db.select().from(gameSessionTable).where(eq(gameSessionTable.slug, slug)).get();
+export const getPartyGameSessionFromSlug = async (slug: string, partyId?: string) => {
+  // If partyId is provided, use it to filter by both slug and partyId
+  const query = partyId
+    ? and(eq(gameSessionTable.slug, slug), eq(gameSessionTable.partyId, partyId))
+    : eq(gameSessionTable.slug, slug);
+
+  const gameSession = await db.select().from(gameSessionTable).where(query).get();
   if (!gameSession) {
     error(404, 'Game session not found');
   }

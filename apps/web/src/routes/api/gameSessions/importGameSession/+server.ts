@@ -8,8 +8,7 @@ import {
   type InsertScene
 } from '$lib/db/app/schema';
 import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
-import { isUserInParty } from '$lib/server/party/getParty';
-import { getScenes } from '$lib/server/scene';
+import { getParty, isUserInParty } from '$lib/server/party/getParty';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -52,6 +51,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Parse the JSON file
     const fileContent = await file.text();
     const importData = JSON.parse(fileContent);
+    const party = await getParty(partyId);
 
     // Basic schema validation
     const schema = z.object({
@@ -84,6 +84,13 @@ export const POST = async ({ request, locals }: RequestEvent) => {
 
     // Sort scenes by order to ensure they're processed in the correct sequence
     const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
+    console.log(`Importing ${sortedScenes.length} scenes for game session ${gameSession.id}`);
+
+    // Only allow a maximum of 3 scenes for free plan users
+    if (sortedScenes.length > 3 && party.plan === 'free') {
+      console.warn(`User ${locals.user.id} attempted to import ${sortedScenes.length} scenes on a free plan`);
+      throw error(403, 'Pro plan required for more than 3 scenes');
+    }
 
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
@@ -140,15 +147,16 @@ export const POST = async ({ request, locals }: RequestEvent) => {
       }
     }
 
-    // Get the imported scenes for verification
-    const importedScenes = await getScenes(gameSession.id);
-    console.log(`Import completed successfully. Created ${importedScenes.length} scenes.`);
+    // Return the count of scenes created directly from the JSON file
+    // This ensures we're only counting what was in the file, not what might be in the database
+    const importedScenesCount = sortedScenes.length;
+    console.log(`Import completed successfully. Created ${importedScenesCount} scenes.`);
 
     return json({
       success: true,
       gameSessionId: gameSession.id,
       message: 'Game session imported successfully',
-      sceneCount: importedScenes.length
+      sceneCount: importedScenesCount
     });
   } catch (err) {
     console.error('Error importing game session:', err);
