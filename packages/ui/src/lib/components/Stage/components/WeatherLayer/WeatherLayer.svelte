@@ -1,10 +1,11 @@
 <script lang="ts">
   import * as THREE from 'three';
+  import { onMount, untrack } from 'svelte';
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
   import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
+  import type { StageProps } from '../Stage/types';
   import type { Size } from '../../types';
-  import { Vector3 } from 'three';
 
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
@@ -12,8 +13,6 @@
   import AshPreset from './presets/AshPreset';
 
   import { EffectComposer, RenderPass, CopyPass } from 'postprocessing';
-  import { onMount, untrack } from 'svelte';
-  import type { StageProps } from '../Stage/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -25,7 +24,7 @@
   const { props, size, mapSize, ...meshProps }: Props = $props();
 
   const { renderer, renderStage } = useThrelte();
-  let weatherType = $state(props.weather.type);
+  let weatherType: WeatherType | null = $state(null);
   let weatherPreset: WeatherLayerPreset = $state(RainPreset);
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let particleScene = $state(new THREE.Scene());
@@ -54,10 +53,10 @@
 
   // Add clipping planes
   const clippingPlanes = $state([
-    new THREE.Plane(new Vector3(1, 0, 0), 0), // right
-    new THREE.Plane(new Vector3(-1, 0, 0), 0), // left
-    new THREE.Plane(new Vector3(0, 1, 0), 0), // top
-    new THREE.Plane(new Vector3(0, -1, 0), 0) // bottom
+    new THREE.Plane(new THREE.Vector3(1, 0, 0), 0), // right
+    new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0), // left
+    new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), // top
+    new THREE.Plane(new THREE.Vector3(0, -1, 0), 0) // bottom
   ]);
 
   // Add matrix for transforming clipping planes
@@ -83,10 +82,10 @@
 
     // Create base planes
     const basePlanes = [
-      new THREE.Plane(new Vector3(1, 0, 0), halfWidth), // right
-      new THREE.Plane(new Vector3(-1, 0, 0), halfWidth), // left
-      new THREE.Plane(new Vector3(0, 1, 0), halfHeight), // top
-      new THREE.Plane(new Vector3(0, -1, 0), halfHeight) // bottom
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), halfWidth), // right
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), halfWidth), // left
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), halfHeight), // top
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), halfHeight) // bottom
     ];
 
     // Transform each plane using the transformation matrix
@@ -121,8 +120,7 @@
 
     untrack(() => {
       weatherType = props.weather.type;
-
-      switch (props.weather.type) {
+      switch (weatherType) {
         case WeatherType.Snow:
           weatherPreset = { ...SnowPreset };
           break;
