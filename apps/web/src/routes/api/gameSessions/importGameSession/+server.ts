@@ -8,8 +8,7 @@ import {
   type InsertScene
 } from '$lib/db/app/schema';
 import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
-import { isUserInParty } from '$lib/server/party/getParty';
-import { getScenes } from '$lib/server/scene';
+import { getParty, isUserInParty } from '$lib/server/party/getParty';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -52,6 +51,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Parse the JSON file
     const fileContent = await file.text();
     const importData = JSON.parse(fileContent);
+    const party = await getParty(partyId);
 
     // Basic schema validation
     const schema = z.object({
@@ -76,14 +76,28 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Create ID maps for remapping references
     const sceneIdMap = createIdMap();
 
+    // Sort scenes by order to ensure they're processed in the correct sequence
+    const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
+
+    // Only allow a maximum of 3 scenes for free plan users
+    if (sortedScenes.length > 3 && party.plan === 'free') {
+      console.warn(`User ${locals.user.id} attempted to import ${sortedScenes.length} scenes on a free plan`);
+      // Instead of using SvelteKit's error function, return a JSON response directly
+      return json(
+        {
+          success: false,
+          status: 403,
+          message: 'Pro plan required for more than 3 scenes'
+        },
+        { status: 403 }
+      );
+    }
+
     // Create the game session without an initial scene (using our new function)
     const gameSession = await createGameSessionForImport(partyId, {
       name: validatedData.gameSession.name,
       isPaused: validatedData.gameSession.isPaused
     });
-
-    // Sort scenes by order to ensure they're processed in the correct sequence
-    const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
 
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
@@ -140,21 +154,69 @@ export const POST = async ({ request, locals }: RequestEvent) => {
       }
     }
 
-    // Get the imported scenes for verification
-    const importedScenes = await getScenes(gameSession.id);
-    console.log(`Import completed successfully. Created ${importedScenes.length} scenes.`);
+    // Return the count of scenes created directly from the JSON file
+    // This ensures we're only counting what was in the file, not what might be in the database
+    const importedScenesCount = sortedScenes.length;
+    console.log(`Import completed successfully. Created ${importedScenesCount} scenes.`);
 
     return json({
       success: true,
       gameSessionId: gameSession.id,
       message: 'Game session imported successfully',
-      sceneCount: importedScenes.length
+      sceneCount: importedScenesCount
     });
   } catch (err) {
     console.error('Error importing game session:', err);
+
     if (err instanceof z.ZodError) {
-      throw error(400, 'Invalid import file format');
+      return json(
+        {
+          success: false,
+          status: 400,
+          message: 'Invalid import file format',
+          errors: err.errors
+        },
+        { status: 400 }
+      );
     }
-    throw error(500, err instanceof Error ? err.message : 'Failed to import game session');
+
+    // Handle the specific pro plan requirement error
+    if (
+      err instanceof Error &&
+      'status' in err &&
+      err.status === 403 &&
+      err.message === 'Pro plan required for more than 3 scenes'
+    ) {
+      return json(
+        {
+          success: false,
+          status: 403,
+          message: 'Pro plan required for more than 3 scenes'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Handle other HTTP errors
+    if (err instanceof Error && 'status' in err && typeof err.status === 'number') {
+      return json(
+        {
+          success: false,
+          status: err.status,
+          message: err.message
+        },
+        { status: err.status }
+      );
+    }
+
+    // Handle unexpected errors
+    return json(
+      {
+        success: false,
+        status: 500,
+        message: err instanceof Error ? err.message : 'Failed to import game session'
+      },
+      { status: 500 }
+    );
   }
 };

@@ -12,14 +12,19 @@ export const load: PageServerLoad = async (event) => {
   const { params } = event;
 
   const party = await getPartyFromSlug(params.party);
-  const gameSession = await getPartyGameSessionFromSlug(params.gameSession);
+  if (!party) {
+    return redirect(302, '/login');
+  }
+
+  // Use party.id to ensure we get the correct game session for this party
+  const gameSession = await getPartyGameSessionFromSlug(params.gameSession, party.id);
 
   const userId = event.locals.user.id;
   const user = await getUser(userId);
-  if (!party || !user) {
+  if (!user) {
     return redirect(302, '/login');
   }
-  if (!party || !gameSession || !user) {
+  if (!gameSession) {
     return redirect(302, '/login');
   }
 

@@ -79,7 +79,11 @@ export const importGameSession = async (partyId: string, file: File): Promise<st
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to import game session');
+      console.log('Error response from importGameSession:', errorData);
+
+      // Create a specific error with the error message from the API
+      const errorMessage = errorData.message || 'Failed to import game session';
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
