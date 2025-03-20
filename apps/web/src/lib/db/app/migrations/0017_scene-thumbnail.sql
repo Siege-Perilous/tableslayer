@@ -1,0 +1,1 @@
+ALTER TABLE `scene` ADD `map_thumb_location` text;

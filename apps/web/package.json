@@ -38,7 +38,6 @@
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^5.68.0",
     "@tursodatabase/api": "^1.9.0",
-    "axios": "^1.8.3",
     "chroma-js": "^3.1.2",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",

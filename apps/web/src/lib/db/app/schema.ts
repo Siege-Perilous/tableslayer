@@ -325,6 +325,7 @@ export const sceneTable = sqliteTable(
     fogOfWarColor: text('fog_of_war_color').notNull().default('#000'),
     fogOfWarOpacity: real('fog_of_war_opacity').notNull().default(0.9),
     mapLocation: text('map_location'),
+    mapThumbLocation: text('map_thumb_location'),
     mapRotation: integer('map_rotation').notNull().default(0),
     mapOffsetX: real('map_offset_x').notNull().default(0),
     mapOffsetY: real('map_offset_y').notNull().default(0),
