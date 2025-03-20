@@ -18,8 +18,8 @@
     Deg270: SceneRotation.Deg270
   };
 
-  async function toJpeg() {
-    const blob = await stage.scene.toJpeg();
+  async function generateThumbnail() {
+    const blob = await stage.scene.generateThumbnail();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -37,5 +37,5 @@
   <List bind:value={props.scene.rotation} label="Rotation" options={sceneRotationOptions} />
   <Button on:click={() => stage?.scene.fill()} title="Fill" />
   <Button on:click={() => stage?.scene.fit()} title="Fit" />
-  <Button on:click={toJpeg} title="Download JPG" />
+  <Button on:click={generateThumbnail} title="Download JPG" />
 </Folder>

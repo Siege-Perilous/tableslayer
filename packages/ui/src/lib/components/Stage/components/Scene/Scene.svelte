@@ -258,7 +258,7 @@
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
 
-  export async function toJpeg(quality: number = 0.5): Promise<Blob> {
+  export async function generateThumbnail(quality: number = 0.5): Promise<Blob> {
     const texture = mapLayer.getCompositeMapTexture();
 
     if (!texture) return new Blob();
@@ -270,35 +270,28 @@
 
     const displayWidth = props.display.resolution.x;
     const displayHeight = props.display.resolution.y;
-    const displayAspectRatio = displayWidth / displayHeight;
     const imageWidth = texture.image.width;
     const imageHeight = texture.image.height;
-    const imageAspectRatio = imageWidth / imageHeight;
-
-    let newZoom: number;
-    if (imageAspectRatio > displayAspectRatio) {
-      newZoom = displayHeight / imageHeight;
-    } else {
-      newZoom = displayWidth / imageWidth;
-    }
 
     // Create a temporary scene and camera for rendering
     const tempScene = new THREE.Scene();
     const tempCamera = new THREE.OrthographicCamera(
-      -displayWidth,
-      displayWidth,
-      displayHeight,
-      -displayHeight,
+      -displayWidth / 2,
+      displayWidth / 2,
+      displayHeight / 2,
+      -displayHeight / 2,
       0.1,
       1000
     );
     tempCamera.position.z = 100;
-    tempCamera.zoom = newZoom;
 
     // Create a quad to render the texture
-    const geometry = new THREE.PlaneGeometry(imageWidth, imageHeight);
+    const geometry = new THREE.PlaneGeometry(1, 1);
     const material = new THREE.MeshBasicMaterial({ map: texture.clone() });
     const quad = new THREE.Mesh(geometry, material);
+    quad.position.set(props.map.offset.x, props.map.offset.y, 0);
+    quad.rotation.z = (props.map.rotation / 180.0) * Math.PI;
+    quad.scale.set(imageWidth * props.map.zoom, imageHeight * props.map.zoom, 1);
     tempScene.add(quad);
 
     // Temporarily replace scene and camera

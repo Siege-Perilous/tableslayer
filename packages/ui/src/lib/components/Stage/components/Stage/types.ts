@@ -81,6 +81,6 @@ export interface StageExports {
   scene: {
     fit: () => void;
     fill: () => void;
-    toJpeg: () => Promise<Blob>;
+    generateThumbnail: () => Promise<Blob>;
   };
 }

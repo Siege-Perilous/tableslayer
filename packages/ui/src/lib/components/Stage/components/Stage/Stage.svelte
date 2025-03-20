@@ -69,7 +69,7 @@
   export const scene = {
     fill: () => sceneRef?.fill(),
     fit: () => sceneRef?.fit(),
-    toJpeg: () => sceneRef?.toJpeg()
+    generateThumbnail: () => sceneRef?.generateThumbnail()
   };
 </script>
 
