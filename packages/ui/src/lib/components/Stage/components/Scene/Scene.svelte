@@ -258,7 +258,7 @@
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
 
-  export async function toJpeg(): Promise<Blob> {
+  export async function toJpeg(quality: number = 0.5): Promise<Blob> {
     const texture = mapLayer.getCompositeMapTexture();
 
     if (!texture) return new Blob();
@@ -270,18 +270,13 @@
 
     const displayWidth = props.display.resolution.x;
     const displayHeight = props.display.resolution.y;
+    const displayAspectRatio = displayWidth / displayHeight;
     const imageWidth = texture.image.width;
     const imageHeight = texture.image.height;
-
-    console.log('imageWidth', imageWidth);
-    console.log('imageHeight', imageHeight);
-    console.log('displayWidth', displayWidth);
-    console.log('displayHeight', displayHeight);
     const imageAspectRatio = imageWidth / imageHeight;
-    const sceneAspectRatio = displayWidth / displayHeight;
 
     let newZoom: number;
-    if (imageAspectRatio > sceneAspectRatio) {
+    if (imageAspectRatio > displayAspectRatio) {
       newZoom = displayHeight / imageHeight;
     } else {
       newZoom = displayWidth / imageWidth;
@@ -312,6 +307,7 @@
     renderer.setSize(displayWidth, displayHeight);
     composer.setSize(displayWidth, displayHeight);
 
+    // Temporarily disable clipping planes
     renderer.clippingPlanes = [];
 
     // Render to the offscreen canvas
@@ -332,7 +328,7 @@
     geometry.dispose();
     material.dispose();
 
-    return offscreenCanvas.convertToBlob({ type: 'image/jpeg', quality: 0.5 });
+    return offscreenCanvas.convertToBlob({ type: 'image/jpeg', quality });
   }
 
   export const map = {
