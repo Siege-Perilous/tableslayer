@@ -91,6 +91,16 @@
           // Fallback to rain preset
           weatherPreset = { ...RainPreset };
       }
+
+      // Trigger resize in parent scene after weather type change
+      if (mapSize && renderTarget) {
+        renderTarget.setSize(mapSize.width, mapSize.height);
+        composer.setSize(mapSize.width, mapSize.height);
+        particleCamera.aspect = mapSize.width / mapSize.height;
+        particleCamera.fov = weatherPreset.fov;
+        particleCamera.updateProjectionMatrix();
+        quadMaterial.needsUpdate = true;
+      }
     });
   });
 

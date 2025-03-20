@@ -75,6 +75,12 @@
     }
   });
 
+  // Update needsResize when weather type changes
+  $effect(() => {
+    const weatherType = props.weather.type;
+    needsResize = true;
+  });
+
   // Effect to update post-processing settings when props change
   $effect(() => {
     const postProcessing = $state.snapshot(props.postProcessing);
