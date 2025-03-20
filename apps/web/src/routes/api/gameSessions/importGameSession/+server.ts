@@ -76,21 +76,28 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Create ID maps for remapping references
     const sceneIdMap = createIdMap();
 
+    // Sort scenes by order to ensure they're processed in the correct sequence
+    const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
+
+    // Only allow a maximum of 3 scenes for free plan users
+    if (sortedScenes.length > 2 && party.plan === 'free') {
+      console.warn(`User ${locals.user.id} attempted to import ${sortedScenes.length} scenes on a free plan`);
+      // Instead of using SvelteKit's error function, return a JSON response directly
+      return json(
+        {
+          success: false,
+          status: 403,
+          message: 'Pro plan required for more than 3 scenes'
+        },
+        { status: 403 }
+      );
+    }
+
     // Create the game session without an initial scene (using our new function)
     const gameSession = await createGameSessionForImport(partyId, {
       name: validatedData.gameSession.name,
       isPaused: validatedData.gameSession.isPaused
     });
-
-    // Sort scenes by order to ensure they're processed in the correct sequence
-    const sortedScenes = [...validatedData.gameSession.scenes].sort((a, b) => a.order - b.order);
-    console.log(`Importing ${sortedScenes.length} scenes for game session ${gameSession.id}`);
-
-    // Only allow a maximum of 3 scenes for free plan users
-    if (sortedScenes.length > 3 && party.plan === 'free') {
-      console.warn(`User ${locals.user.id} attempted to import ${sortedScenes.length} scenes on a free plan`);
-      throw error(403, 'Pro plan required for more than 3 scenes');
-    }
 
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
@@ -160,9 +167,56 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     });
   } catch (err) {
     console.error('Error importing game session:', err);
+
     if (err instanceof z.ZodError) {
-      throw error(400, 'Invalid import file format');
+      return json(
+        {
+          success: false,
+          status: 400,
+          message: 'Invalid import file format',
+          errors: err.errors
+        },
+        { status: 400 }
+      );
     }
-    throw error(500, err instanceof Error ? err.message : 'Failed to import game session');
+
+    // Handle the specific pro plan requirement error
+    if (
+      err instanceof Error &&
+      'status' in err &&
+      err.status === 403 &&
+      err.message === 'Pro plan required for more than 3 scenes'
+    ) {
+      return json(
+        {
+          success: false,
+          status: 403,
+          message: 'Pro plan required for more than 3 scenes'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Handle other HTTP errors
+    if (err instanceof Error && 'status' in err && typeof err.status === 'number') {
+      return json(
+        {
+          success: false,
+          status: err.status,
+          message: err.message
+        },
+        { status: err.status }
+      );
+    }
+
+    // Handle unexpected errors
+    return json(
+      {
+        success: false,
+        status: 500,
+        message: err instanceof Error ? err.message : 'Failed to import game session'
+      },
+      { status: 500 }
+    );
   }
 };

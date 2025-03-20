@@ -132,10 +132,23 @@
       });
     } catch (error) {
       console.error('Import error:', error);
+      // Determine the error message - get specific error from our errorData if available
+      let errorMessage = 'An unknown error occurred';
+      if (error instanceof Error) {
+        // @ts-expect-error - Custom property added to Error
+        const errorData = error.errorData;
+        errorMessage = error.message;
+
+        // If we have errorData from our API response, use it directly since it's properly structured
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        }
+      }
+
       addToast({
         data: {
           title: 'Error importing game session',
-          body: error instanceof Error ? error.message : 'An unknown error occurred',
+          body: errorMessage,
           type: 'danger'
         }
       });
