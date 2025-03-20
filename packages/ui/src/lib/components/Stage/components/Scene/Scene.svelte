@@ -23,6 +23,8 @@
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
+  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
+  import type { Size } from '../../types';
 
   interface Props {
     props: StageProps;
@@ -36,6 +38,7 @@
   const onSceneUpdate = callbacks.onSceneUpdate;
 
   let mapLayer: MapLayerExports;
+  let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
@@ -47,6 +50,7 @@
     renderer.autoClear = false;
     renderer.setClearColor(0, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.localClippingEnabled = true;
     return () => {
       autoRender.set(before);
     };
@@ -356,13 +360,22 @@
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
-    onMapLoaded={() => {
+    onMapLoaded={(mapUrl, s) => {
       console.log('Map loaded');
+      mapSize = s;
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
         setLoadingState(SceneLoadingState.Resizing);
       }
     }}
+  />
+
+  <WeatherLayer
+    {props}
+    size={props.display.resolution}
+    {mapSize}
+    layers={[SceneLayer.Main]}
+    renderOrder={SceneLayerOrder.Weather}
   />
 
   <!-- Map overlays that scale with the scene -->
