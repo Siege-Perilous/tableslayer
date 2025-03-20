@@ -78,7 +78,9 @@
   // Update needsResize when weather type changes
   $effect(() => {
     const weatherType = props.weather.type;
-    needsResize = true;
+    if (weatherType) {
+      needsResize = true;
+    }
   });
 
   // Effect to update post-processing settings when props change
