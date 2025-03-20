@@ -81,5 +81,6 @@ export interface StageExports {
   scene: {
     fit: () => void;
     fill: () => void;
+    generateThumbnail: () => Promise<Blob>;
   };
 }

@@ -56,6 +56,7 @@ export interface SceneLayerProps {
 export interface SceneExports {
   fill: () => void;
   fit: () => void;
+  generateThumbnail: () => Promise<Blob>;
 
   fogOfWar: {
     clear: () => void;

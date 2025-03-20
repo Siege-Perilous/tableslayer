@@ -68,7 +68,8 @@
 
   export const scene = {
     fill: () => sceneRef?.fill(),
-    fit: () => sceneRef?.fit()
+    fit: () => sceneRef?.fit(),
+    generateThumbnail: () => sceneRef?.generateThumbnail()
   };
 </script>
 
