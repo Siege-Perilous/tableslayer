@@ -185,8 +185,8 @@
     {vertexShader}
     {fragmentShader}
     transparent={true}
-    depthWrite={true}
-    depthTest={true}
+    depthWrite={false}
+    depthTest={false}
     blending={THREE.NormalBlending}
     side={THREE.DoubleSide}
   />

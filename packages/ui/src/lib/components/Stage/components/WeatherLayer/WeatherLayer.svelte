@@ -47,8 +47,7 @@
   const quadMaterial = new THREE.MeshBasicMaterial({
     map: renderTarget.texture,
     transparent: true,
-    blending: THREE.NormalBlending,
-    opacity: 1.0
+    blending: THREE.NormalBlending
   });
 
   // Add clipping planes
