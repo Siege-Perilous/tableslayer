@@ -20,12 +20,13 @@
 
   const { props, onMapLoading, onMapLoaded }: Props = $props();
 
+  const loader = useLoader(TextureLoader);
+
   const callbacks = getContext<Callbacks>('callbacks');
   const onMapUpdate = callbacks.onMapUpdate;
 
   let imageUrl: string | null = $state(null);
   let mapImageMaterial = new THREE.MeshBasicMaterial();
-  const loader = useLoader(TextureLoader);
   let fogOfWarLayer: FogOfWarExports;
 
   // The size of the map image
@@ -79,6 +80,10 @@
   function getUrlWithoutParams(url: string | null): string {
     if (!url) return '';
     return url.split('?')[0];
+  }
+
+  export function getCompositeMapTexture(): THREE.Texture | null {
+    return mapImageMaterial.map;
   }
 
   export function fill() {

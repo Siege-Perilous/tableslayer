@@ -34,6 +34,7 @@
 
   const callbacks = getContext<Callbacks>('callbacks');
   const onSceneUpdate = callbacks.onSceneUpdate;
+
   let mapLayer: MapLayerExports;
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
@@ -255,6 +256,83 @@
     }
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
+  }
+
+  export async function toJpeg(): Promise<Blob> {
+    const texture = mapLayer.getCompositeMapTexture();
+
+    if (!texture) return new Blob();
+
+    // Store original scene state
+    const originalScene = scene;
+    const originalCamera = camera.current;
+    const originalSize = $size;
+
+    const displayWidth = props.display.resolution.x;
+    const displayHeight = props.display.resolution.y;
+    const imageWidth = texture.image.width;
+    const imageHeight = texture.image.height;
+
+    console.log('imageWidth', imageWidth);
+    console.log('imageHeight', imageHeight);
+    console.log('displayWidth', displayWidth);
+    console.log('displayHeight', displayHeight);
+    const imageAspectRatio = imageWidth / imageHeight;
+    const sceneAspectRatio = displayWidth / displayHeight;
+
+    let newZoom: number;
+    if (imageAspectRatio > sceneAspectRatio) {
+      newZoom = displayHeight / imageHeight;
+    } else {
+      newZoom = displayWidth / imageWidth;
+    }
+
+    // Create a temporary scene and camera for rendering
+    const tempScene = new THREE.Scene();
+    const tempCamera = new THREE.OrthographicCamera(
+      -displayWidth,
+      displayWidth,
+      displayHeight,
+      -displayHeight,
+      0.1,
+      1000
+    );
+    tempCamera.position.z = 100;
+    tempCamera.zoom = newZoom;
+
+    // Create a quad to render the texture
+    const geometry = new THREE.PlaneGeometry(imageWidth, imageHeight);
+    const material = new THREE.MeshBasicMaterial({ map: texture.clone() });
+    const quad = new THREE.Mesh(geometry, material);
+    tempScene.add(quad);
+
+    // Temporarily replace scene and camera
+    composer.setMainScene(tempScene);
+    composer.setMainCamera(tempCamera);
+    renderer.setSize(displayWidth, displayHeight);
+    composer.setSize(displayWidth, displayHeight);
+
+    renderer.clippingPlanes = [];
+
+    // Render to the offscreen canvas
+    composer.render();
+
+    const offscreenCanvas = new OffscreenCanvas(displayWidth, displayHeight);
+    const context = offscreenCanvas.getContext('2d');
+    context?.drawImage(renderer.domElement, 0, 0, displayWidth, displayHeight);
+
+    // Restore original state
+    composer.setMainScene(originalScene);
+    composer.setMainCamera(originalCamera);
+    renderer.setSize(originalSize.width, originalSize.height);
+    composer.setSize(originalSize.width, originalSize.height);
+    renderer.clippingPlanes = clippingPlaneStore.value;
+
+    // Clean up
+    geometry.dispose();
+    material.dispose();
+
+    return offscreenCanvas.convertToBlob({ type: 'image/jpeg', quality: 0.5 });
   }
 
   export const map = {

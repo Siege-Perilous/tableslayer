@@ -3,10 +3,13 @@
   import type { StageProps, StageExports } from '@tableslayer/ui';
   import { SceneRotation } from '@tableslayer/ui';
 
-  let { props = $bindable(), stage } = $props<{
+  let {
+    props = $bindable(),
+    stage
+  }: {
     props: StageProps;
     stage: StageExports;
-  }>();
+  } = $props();
 
   const sceneRotationOptions: ListOptions<number> = {
     Deg0: SceneRotation.Deg0,
@@ -14,6 +17,18 @@
     Deg180: SceneRotation.Deg180,
     Deg270: SceneRotation.Deg270
   };
+
+  async function toJpeg() {
+    const blob = await stage.scene.toJpeg();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scene.jpeg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 </script>
 
 <Folder title="Scene" expanded={false}>
@@ -22,4 +37,5 @@
   <List bind:value={props.scene.rotation} label="Rotation" options={sceneRotationOptions} />
   <Button on:click={() => stage?.scene.fill()} title="Fill" />
   <Button on:click={() => stage?.scene.fit()} title="Fit" />
+  <Button on:click={toJpeg} title="Download JPG" />
 </Folder>

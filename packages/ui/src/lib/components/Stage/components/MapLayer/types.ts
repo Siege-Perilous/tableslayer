@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export enum MapLayerType {
   None = 0,
   FogOfWar = 1,
@@ -33,6 +35,7 @@ export interface MapLayerProps {
 }
 
 export interface MapLayerExports {
+  getCompositeMapTexture: () => THREE.Texture | null;
   fit: () => void;
   fill: () => void;
   fogOfWar: {
