@@ -8,14 +8,13 @@
   import type { FogOfWarExports } from '../FogOfWarLayer/types';
   import type { Callbacks, StageProps } from '../Stage/types';
   import { getContext } from 'svelte';
-  import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import FogLayer from '../FogLayer/FogLayer.svelte';
 
   interface Props {
     props: StageProps;
     onMapLoading: () => void;
-    onMapLoaded: (mapUrl: string) => void;
+    onMapLoaded: (mapUrl: string, mapSize: Size) => void;
   }
 
   const { props, onMapLoading, onMapLoaded }: Props = $props();
@@ -70,7 +69,7 @@
           width: texture.image.width,
           height: texture.image.height
         };
-        onMapLoaded(props.map.url);
+        onMapLoaded(props.map.url, mapSize);
       })
       .catch((reason) => {
         console.error(JSON.stringify(reason));
@@ -145,14 +144,6 @@
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Fog}
     visible={props.fog.enabled}
-  />
-
-  <WeatherLayer
-    props={props.weather}
-    postprocessing={props.postProcessing}
-    {mapSize}
-    layers={[SceneLayer.Main]}
-    renderOrder={SceneLayerOrder.Weather}
   />
 
   <FogOfWarLayer
