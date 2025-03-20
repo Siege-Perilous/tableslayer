@@ -1,9 +1,10 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
-  import { WeatherType, type WeatherLayerPreset, type WeatherLayerProps } from './types';
+  import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import type { Size } from '../../types';
+  import { Vector3 } from 'three';
 
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
@@ -12,16 +13,19 @@
 
   import { EffectComposer, RenderPass, CopyPass } from 'postprocessing';
   import { onMount, untrack } from 'svelte';
+  import type { StageProps } from '../Stage/types';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
-    props: WeatherLayerProps;
+    props: StageProps;
+    size: { x: number; y: number };
+    // Need map size and props so we can clip the weather layer to the map
     mapSize: Size | null;
   }
 
-  const { props, mapSize, ...meshProps }: Props = $props();
+  const { props, size, mapSize, ...meshProps }: Props = $props();
 
   const { renderer, renderStage } = useThrelte();
-  let weatherType = $state(props.type);
+  let weatherType = $state(props.weather.type);
   let weatherPreset: WeatherLayerPreset = $state(RainPreset);
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let particleScene = $state(new THREE.Scene());
@@ -29,49 +33,96 @@
   particleCamera.position.set(0, 0, -1);
   particleCamera.rotation.x = Math.PI;
 
-  // Create render target
+  // Remove stencil-related settings from render target
   const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
     format: THREE.RGBAFormat,
-    stencilBuffer: false
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter
   });
 
   const composer = new EffectComposer(renderer);
   composer.autoRenderToScreen = false;
   composer.outputBuffer = renderTarget;
 
-  // Create quad material using render target texture
-  const quadMaterial = $derived(
-    new THREE.MeshBasicMaterial({
-      map: renderTarget.texture,
-      transparent: true,
-      blending: THREE.CustomBlending,
-      blendEquation: THREE.AddEquation,
-      blendSrc: THREE.OneFactor,
-      blendDst: THREE.OneMinusSrcAlphaFactor,
-      depthWrite: true,
-      depthTest: true
-    })
-  );
+  // Remove stencil settings from quad material
+  const quadMaterial = new THREE.MeshBasicMaterial({
+    map: renderTarget.texture,
+    transparent: true,
+    blending: THREE.NormalBlending,
+    opacity: 1.0
+  });
 
+  // Add clipping planes
+  const clippingPlanes = $state([
+    new THREE.Plane(new Vector3(1, 0, 0), 0), // right
+    new THREE.Plane(new Vector3(-1, 0, 0), 0), // left
+    new THREE.Plane(new Vector3(0, 1, 0), 0), // top
+    new THREE.Plane(new Vector3(0, -1, 0), 0) // bottom
+  ]);
+
+  // Add matrix for transforming clipping planes
+  const transformationMatrix = $state(new THREE.Matrix4());
+
+  $effect(() => {
+    if (!mapSize) return;
+
+    // Create transformation matrix based on map properties
+    transformationMatrix.identity();
+
+    const zoom = props.map.zoom * props.scene.zoom;
+
+    // Apply transformations in order: scale (zoom) -> rotate -> translate
+    transformationMatrix.makeScale(zoom, zoom, 1);
+    transformationMatrix.multiply(
+      new THREE.Matrix4().makeTranslation(props.map.offset.x / props.map.zoom, props.map.offset.y / props.map.zoom, 0)
+    );
+    transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.map.rotation / 180.0) * Math.PI));
+
+    const halfWidth = mapSize.width / 2;
+    const halfHeight = mapSize.height / 2;
+
+    // Create base planes
+    const basePlanes = [
+      new THREE.Plane(new Vector3(1, 0, 0), halfWidth), // right
+      new THREE.Plane(new Vector3(-1, 0, 0), halfWidth), // left
+      new THREE.Plane(new Vector3(0, 1, 0), halfHeight), // top
+      new THREE.Plane(new Vector3(0, -1, 0), halfHeight) // bottom
+    ];
+
+    // Transform each plane using the transformation matrix
+    for (let i = 0; i < 4; i++) {
+      basePlanes[i].applyMatrix4(transformationMatrix);
+      clippingPlanes[i].copy(basePlanes[i]);
+    }
+
+    // Enable clipping planes on the particle system material
+    if (quadMaterial) {
+      quadMaterial.clippingPlanes = clippingPlanes;
+      quadMaterial.clipIntersection = false;
+      quadMaterial.needsUpdate = true;
+    }
+  });
+
+  // Enable stencil test in renderer
   onMount(() => {
-    if (particleCamera && particleScene && mapSize) {
+    if (particleCamera && particleScene) {
       composer.setMainCamera(particleCamera);
       composer.setMainScene(particleScene);
-      composer.setSize(mapSize.width, mapSize.height);
-      renderTarget.setSize(mapSize.width, mapSize.height);
+      composer.setSize(size.x, size.y, false);
+      renderTarget.setSize(size.x, size.y);
     }
   });
 
   // If weather type changes, update the preset
   $effect(() => {
-    if (props.type === weatherType) {
+    if (props.weather.type === weatherType) {
       return;
     }
 
     untrack(() => {
-      weatherType = props.type;
+      weatherType = props.weather.type;
 
-      switch (props.type) {
+      switch (props.weather.type) {
         case WeatherType.Snow:
           weatherPreset = { ...SnowPreset };
           break;
@@ -82,7 +133,7 @@
           weatherPreset = { ...LeavesPreset };
           break;
         case WeatherType.Custom:
-          weatherPreset = { ...(props.custom || RainPreset) };
+          weatherPreset = { ...(props.weather.custom || RainPreset) };
           break;
         case WeatherType.Ash:
           weatherPreset = { ...AshPreset };
@@ -96,22 +147,22 @@
 
   // Overrides for fov, intensity, and opacity set in the UI
   $effect(() => {
-    if (props.fov) {
-      weatherPreset.fov = props.fov;
+    if (props.weather.fov) {
+      weatherPreset.fov = props.weather.fov;
     }
 
-    if (props.intensity) {
-      weatherPreset.intensity = props.intensity;
+    if (props.weather.intensity) {
+      weatherPreset.intensity = props.weather.intensity;
     }
 
-    if (props.opacity) {
-      weatherPreset.opacity = props.opacity;
+    if (props.weather.opacity) {
+      weatherPreset.opacity = props.weather.opacity;
     }
   });
 
   // Add DOF effect to the composer
   $effect(() => {
-    if (!particleScene || !particleCamera || !mapSize) return;
+    if (!particleScene || !particleCamera) return;
 
     composer.removeAllPasses();
 
@@ -136,27 +187,24 @@
     // }
   });
 
-  // If map sizes change, update the camera and render target
+  // Update the map size effect to use scaled resolution
   $effect(() => {
-    if (!mapSize) return;
-    particleCamera.aspect = mapSize.width / mapSize.height;
+    particleCamera.aspect = size.x / size.y;
     particleCamera.fov = weatherPreset.fov;
     particleCamera.updateProjectionMatrix();
-    renderTarget.setSize(mapSize.width, mapSize.height);
-    composer.setSize(mapSize.width, mapSize.height);
+    renderTarget.setSize(size.x, size.y);
+    composer.setSize(size.x, size.y, false);
   });
 
-  // Custom render task
+  // Update render task (remove stencil-related code)
   useTask(
     (dt) => {
-      if (!particleScene || !particleCamera || !mapSize) return;
+      if (!particleScene || !particleCamera || !size) return;
 
       particleScene.visible = true;
-
       renderer.setRenderTarget(renderTarget);
       composer.render(dt);
       renderer.setRenderTarget(null);
-
       particleScene.visible = false;
       quadMaterial.needsUpdate = true;
     },
@@ -164,13 +212,13 @@
   );
 </script>
 
-<!-- Hidden scene that renders to the render target -->
+<!-- Remove the stencil mesh and keep only the particle scenes -->
 <T.Scene is={particleScene} visible={false}>
   <T.PerspectiveCamera is={particleCamera} manual />
   <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
 </T.Scene>
 
-<T.Mesh bind:ref={mesh} {...meshProps} visible={props.type !== WeatherType.None}>
+<T.Mesh bind:ref={mesh} {...meshProps} visible={props.weather.type !== WeatherType.None}>
   <T.MeshBasicMaterial is={quadMaterial} />
-  <T.PlaneGeometry args={[1, 1]} />
+  <T.PlaneGeometry args={[size.x, size.y]} />
 </T.Mesh>

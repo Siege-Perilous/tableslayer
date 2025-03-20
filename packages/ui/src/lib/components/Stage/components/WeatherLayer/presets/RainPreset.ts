@@ -1,8 +1,8 @@
 import type { WeatherLayerPreset } from '../types';
 export default {
   fov: 70,
-  intensity: 0.3,
-  opacity: 0.5,
+  intensity: 0.7,
+  opacity: 1.0,
   depthOfField: {
     enabled: false,
     focus: 0,
