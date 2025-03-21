@@ -586,6 +586,7 @@
         aria-label="Collapse scenes column"
         title={isScenesCollapsed ? 'Expand scenes column' : 'Collapse scenes column'}
         onclick={handleToggleScenes}
+        ontouchstart={handleToggleScenes}
       >
         <Icon Icon={getCollapseIcon()} />
       </button>
@@ -698,6 +699,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      position: relative;
+      z-index: 1;
     }
     .resizer:hover .resizer__handle {
       background: var(--fg);
