@@ -633,6 +633,7 @@
         aria-label="Collapse scenes column"
         title={isMarkersCollapsed ? 'Expand markers column' : 'Collapse markers column'}
         onclick={handleToggleMarkers}
+        ontouchstart={handleToggleMarkers}
       >
         <Icon Icon={getMarkerCollapseIcon()} />
       </button>
