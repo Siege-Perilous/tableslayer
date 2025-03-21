@@ -70,7 +70,7 @@
 
   const getMarkerCollapseIcon = () => {
     if (isMobile) {
-      return isMarkersCollapsed ? IconChevronDown : IconChevronUp;
+      return isMarkersCollapsed ? IconChevronUp : IconChevronDown;
     } else {
       return isMarkersCollapsed ? IconChevronLeft : IconChevronRight;
     }
@@ -679,8 +679,7 @@
       display: flex;
       align-items: center;
       background: var(--contrastEmpty);
-      height: calc(100dvh - 43px);
-      max-height: calc(100dvh - 43px);
+      height: 100%;
       position: relative;
     }
     .resizer {

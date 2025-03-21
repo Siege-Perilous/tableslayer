@@ -148,7 +148,7 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
     // Send email
     await sendSingleEmail({
       to: email,
-      subject: 'Verify your email',
+      subject: 'Verify your email at Table Slayer',
       html: `Your verification code is: ${randomShortCode}`
     });
   } catch (e) {
