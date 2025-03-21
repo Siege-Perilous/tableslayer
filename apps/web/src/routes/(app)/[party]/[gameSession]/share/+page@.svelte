@@ -263,8 +263,8 @@
   .paused {
     display: flex;
     gap: 4rem;
-    width: 100vw;
-    height: 100vh;
+    width: 100dvw;
+    height: 100dvh;
     align-items: center;
     justify-content: center;
   }
