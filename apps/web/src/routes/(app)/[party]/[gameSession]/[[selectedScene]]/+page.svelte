@@ -678,7 +678,8 @@
       display: flex;
       align-items: center;
       background: var(--contrastEmpty);
-      height: 100%;
+      height: calc(100vh - 43px);
+      max-height: calc(100vh - 43px);
       position: relative;
     }
     .resizer {
@@ -736,7 +737,7 @@
     }
   }
   .container {
-    height: calc(100vh - 49px);
+    height: calc(100vh - 43px);
     user-select: none;
   }
   .stage {
