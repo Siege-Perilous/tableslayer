@@ -2,6 +2,14 @@
 
 Table Slayer provides tools for game masters to project animated battle maps on their digital tabletop.
 
+## Credits
+
+[Dave Snider](https://davesnider.com) designed and built Table Slayer. The Three JS Stage component was built by [Dan Greenheck](https://dangreenheck.com/). Illustrations by [Cinnamon Devil](https://cinnamondevilsart.com/)
+
+## License & open source contributions
+
+Table Slayer is available under a functional source [license](blob/main/LICENSE.md) that becomes Apache 2 after two years. You are free to host and modify Table Slayer on your own as long as you don't try to build a competing business. The primary intention of the source being open is so hobbyists can get familiar with a large Svelte codebase. We welcome PRs and bug reports. If you are planning a large feature, please make an issue first. Any PRs you contribute will fall under the same usage license.
+
 ## Development
 
 This repo requires certain Node and `pnpm` versions. These can be checked in `package.json`. If working in multiple Node based projects, you might want to use [nvm](https://github.com/nvm-sh/nvm) to manage your Node version and [corepack](https://nodejs.org/api/corepack.html#enabling-the-feature) (which comes with Node and needs to be enabled) to switch your package manager. If both are installed, it should auto-switch your versions as you enter the folder.
@@ -12,8 +20,10 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 
 ### Apps and packages
 
-- `web`: a [svelte-kit](https://kit.svelte.dev/) app.
-- `docs`: a [svelte-kit](https://kit.svelte.dev/) app.
+Table Slayer is a Turbo mono repo split into several projects.
+
+- `web`: a [svelte-kit](https://kit.svelte.dev/) app for [tableslayer.com](https://tableslayer.com).
+- `docs`: a [svelte-kit](https://kit.svelte.dev/) app that is a playground of UI components.
 - `ui`: Svelte components used within the web app.
 - `config-eslint`: Shared linting config across the repo.
 - `config-typescript` Shared typescript config across the repo.
@@ -22,15 +32,13 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 
 Because TypeScript, linting and prettier are provided globally within the repo, you'll need to make sure your IDE's project starts from the root of the monorepo to receive auto-fixes. During CI, Husky should check as you make commits.
 
-General CI operations look like this:
+The CI scripts will make a pass on any incoming PRs and do the following:
 
-- Format
-- Lint
-- TSC
-- Create Turso DB prefixed with the PR number
-- Deploy Fly previews (setting env vars to the Turso DB and PR number)
-  - Any child DBs made in the preview (like game sessions) will also get prefixed names
-- On PR merge, clean up the DBs (with the prefix) made for / during the preview website
+- Check for Prettier, TypeScript and Svelte errors.
+- Create a Turso DB prefixed with the PR number, then run any migrations in your PR
+- Deploy a Fly preview app (setting env vars to the Turso DB and PR number)
+- Run Playwright tests against the preview
+- On PR merge, destroy the temporary DBs and Fly apps.
 
 ## Tests
 
@@ -43,11 +51,11 @@ Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any
 
 ## Billing
 
-Billing is handled through [Lemon Squeezy](https://lemonsqueezy.com). To test the billing system locally you will need to set up webhook forwarding through a service like [smee.io](https://smee.io) and then add that forwarding address to Lemon Squeezy.
+Billing is handled through [Stripe](https://stripe.com). To test the billing system locally you will need to set up webhook forwarding through Stripe's tooling.
 
 ### Tech
 
-This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://vitejs.dev/).
+This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://vitejs.dev/). In general Table Slayer aims to use a minimal amount of dependencies. We prefer low-level dependencies, rather than component libraries. Think carefully when submitting a PR that includes a new dependency.
 
 - [Fly](https://fly.io) provides hosting
 - [Turbo](https://turbo.build) provides the monorepo build / packaging.
