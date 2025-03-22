@@ -13,6 +13,7 @@ CREATE TABLE `files` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `files_location_unique` ON `files` (`location`);--> statement-breakpoint
+INSERT INTO `files` (`id`, `location`) VALUES (1, '/default-placeholder.png');--> statement-breakpoint
 CREATE TABLE `game_session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,

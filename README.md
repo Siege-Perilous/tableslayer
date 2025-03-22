@@ -10,6 +10,22 @@ Table Slayer provides tools for game masters to project animated battle maps on 
 
 Table Slayer is available under a functional source [license](blob/main/LICENSE.md) that becomes Apache 2 after two years. You are free to host and modify Table Slayer on your own as long as you don't try to build a competing business. The primary intention of the source being open is so hobbyists can get familiar with a large Svelte codebase. We welcome PRs and bug reports. If you are planning a large feature, please make an issue first. Any PRs you contribute will fall under the same usage license.
 
+## Design philosophies
+
+This project is managed under some core philosophies. These are hard opinions that will never change.
+
+#### Built for speed
+
+User interactions in Table Slayer should be near instant. The use of loading spinner states should be minimal. Do not load the application piecemeal. You should be able to interact with the application immediately after load. First loads should be server side. Any technology decision should ask "will this make Table Slayer slower?".
+
+#### Don't passively track, actively listen
+
+Table Slayer is built completely in the dark, ignoring modern design trends of analytic-driven decision making. We don't track you. New features are considered by talking to users and listening to the community.
+
+#### The less dependencies, the better
+
+Avoid large dependencies beyond the core framework choices. All design components should be hand crafted and use vanilla CSS.
+
 ## Development
 
 This repo requires certain Node and `pnpm` versions. These can be checked in `package.json`. If working in multiple Node based projects, you might want to use [nvm](https://github.com/nvm-sh/nvm) to manage your Node version and [corepack](https://nodejs.org/api/corepack.html#enabling-the-feature) (which comes with Node and needs to be enabled) to switch your package manager. If both are installed, it should auto-switch your versions as you enter the folder.
@@ -28,7 +44,7 @@ Table Slayer is a Turbo mono repo split into several projects.
 - `config-eslint`: Shared linting config across the repo.
 - `config-typescript` Shared typescript config across the repo.
 
-## Linting, prettier and CI
+### Linting, prettier and CI
 
 Because TypeScript, linting and prettier are provided globally within the repo, you'll need to make sure your IDE's project starts from the root of the monorepo to receive auto-fixes. During CI, Husky should check as you make commits.
 
@@ -40,16 +56,16 @@ The CI scripts will make a pass on any incoming PRs and do the following:
 - Run Playwright tests against the preview
 - On PR merge, destroy the temporary DBs and Fly apps.
 
-## Tests
+### Tests
 
 Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any of the app-folders and they will be run against the Fly preview URLs that are generated with your PR.
 
-## Styling
+### Styling
 
 - Vanilla CSS
 - Global variables are stored in [a global CSS file](https://github.com/Siege-Perilous/tableslayer/blob/main/packages/ui/styles/globals.css) that can be imported into a top level [layout file](https://github.com/Siege-Perilous/tableslayer/blob/main/apps/web/src/routes/%252Blayout.svelte).
 
-## Billing
+### Billing
 
 Billing is handled through [Stripe](https://stripe.com). To test the billing system locally you will need to set up webhook forwarding through Stripe's tooling.
 
