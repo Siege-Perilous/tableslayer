@@ -72,7 +72,7 @@
 </Panel>
 
 {#snippet label()}
-  I agree to this (very readible) <Link href="/tos" target="__blank">Terms of Service</Link>
+  I agree to this (very readible) <Link href="/tos" target="_blank">terms of service</Link>
 {/snippet}
 
 <style>
