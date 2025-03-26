@@ -71,7 +71,7 @@
     <Text color="var(--fgMuted)" size={'0.875rem'}>
       Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span>
       with an upgraded party. Table Slayer is open source and free to <Link
-        href="https://github.com/siege-perlious/tableslayer"
+        href="https://github.com/siege-perilous/tableslayer"
       >
         host on your own
       </Link>.

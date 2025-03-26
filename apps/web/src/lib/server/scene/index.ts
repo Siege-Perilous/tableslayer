@@ -96,7 +96,7 @@ export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: n
   const name = data.name;
 
   // Default to a placeholder map
-  let fileLocation = 'maps/01.jpeg';
+  let fileLocation = 'map/example1080.png';
   // Handle file upload
 
   if (data.mapLocation) {

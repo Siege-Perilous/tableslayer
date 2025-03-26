@@ -26,7 +26,6 @@
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
-  $inspect('stageclasses', stageClasses);
 
   // Handler for optimized marker updates
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
