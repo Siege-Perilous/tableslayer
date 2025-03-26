@@ -349,7 +349,6 @@
   };
 
   const handleFileChange = (event: Event) => {
-    console.log('File change event', event);
     event.preventDefault();
     if (file && file.length) {
       handleCreateScene(scenes.length + 1);
