@@ -3,8 +3,10 @@ import { apiFactory } from '$lib/factories';
 import { EmailAlreadyInUseError, updateUser } from '$lib/server';
 import { z } from 'zod';
 
+// Use the extended schema with email validation
 const updateUserValidation = z.object({
-  userData: updateUserSchema
+  userData: updateUserSchema,
+  newPassword: z.string().min(8).optional()
 });
 
 export const POST = apiFactory(
@@ -16,11 +18,11 @@ export const POST = apiFactory(
 
       const userId = locals.user.id;
 
-      const { userData } = body;
+      const { userData, newPassword } = body;
 
-      const response = await updateUser(userId, userData);
+      const response = await updateUser(userId, userData, newPassword);
 
-      return { sucess: true, user: response.user, emailWasChanged: response.emailWasChanged };
+      return { success: true, user: response.user, emailWasChanged: response.emailWasChanged };
     } catch (error) {
       if (error instanceof EmailAlreadyInUseError) {
         throw new z.ZodError([

@@ -288,8 +288,12 @@ export const verifyEmail = async (userId: string, code: string) => {
   }
 };
 
-export const updateUser = async (userId: string, userData: Partial<SelectUser>) => {
+export const updateUser = async (userId: string, userData: Partial<SelectUser>, newPassword?: string) => {
   try {
+    if (newPassword) {
+      const passwordHash = await createArgonHash(newPassword);
+      await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, userId)).execute();
+    }
     let emailWasChanged = false;
     const currentUser = await getUser(userId);
     if (userData.email && userData.email !== currentUser.email) {

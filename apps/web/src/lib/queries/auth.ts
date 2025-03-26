@@ -59,7 +59,7 @@ export const useAuthChangeEmailMutation = () => {
 
 export const useUpdateUserMutation = () => {
   return mutationFactory<
-    { userData: Partial<SelectUser> },
+    { userData: Partial<SelectUser>; newPassword?: string },
     { success: boolean; user: SelectUser; emailWasChanged: boolean }
   >({
     mutationKey: ['updateUser'],
