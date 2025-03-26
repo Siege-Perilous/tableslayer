@@ -4,7 +4,7 @@ Table Slayer provides tools for game masters to project animated battle maps on 
 
 ## Credits
 
-[Dave Snider](https://davesnider.com) designed and built Table Slayer. The Three JS Stage component was built by [Dan Greenheck](https://dangreenheck.com/). Illustrations by [Cinnamon Devil](https://cinnamondevilsart.com/)
+[Dave Snider](https://davesnider.com) designs and builds Table Slayer. The Three JS Stage component was built by [Dan Greenheck](https://dangreenheck.com/). Illustrations and logo provided by [Cinnamon Devil](https://cinnamondevilsart.com/).
 
 ## License & open source contributions
 

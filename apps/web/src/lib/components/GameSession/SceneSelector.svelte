@@ -620,7 +620,7 @@
 <style>
   :global(.light) {
     .scene__projectedIcon {
-      background: rgba(255, 255, 255, 0.75);
+      background: var(--fgPrimary);
     }
   }
   .scenes {
@@ -749,11 +749,9 @@
     font-size: 0.85rem;
   }
   .scene__projectedIcon {
-    background: rgba(0, 0, 0, 0.75);
+    background: var(--fgPrimary);
     font-weight: 800;
     text-transform: uppercase;
-    border-top: solid 1px var(--bg);
-    border-bottom: solid 1px var(--bg);
     padding: 0.5rem;
     display: flex;
     gap: 0.25rem;
