@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Link, Text, Spacer, Title, Icon } from '@tableslayer/ui';
+  import { Link, Text, Spacer, Title } from '@tableslayer/ui';
 
   import { Logo, Head } from '$lib/components';
 </script>
