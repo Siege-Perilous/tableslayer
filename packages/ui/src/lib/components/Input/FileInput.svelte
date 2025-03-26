@@ -80,7 +80,7 @@
     <label class="fileInput__dropZoneLabel" for={restProps.id}><div>{labelText}</div></label>
   {/if}
   <!-- File input with configurable accept attribute -->
-  <input bind:files {...restProps} type="file" class="fileInput__input" {accept} onchange={handleFileChange} />
+  <input bind:files type="file" class="fileInput__input" {accept} onchange={handleFileChange} {...restProps} />
 
   <!-- Display previews for image files if showPreviews is true -->
   {#if showPreviews}

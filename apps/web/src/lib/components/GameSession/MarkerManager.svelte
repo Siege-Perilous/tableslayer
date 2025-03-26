@@ -350,7 +350,7 @@
             <Text weight={700}>No markers in this scene</Text>
             <Spacer size={2} />
             <Text color="var(--fgMuted)">
-              Markers allow you to mark important locations. You can can use them as GM only notes — or in a pinch — as
+              Markers allow you to mark important locations. You can can use them for GM only notes — or in a pinch — as
               table viewable tokens.
             </Text>
             <Spacer size={4} />
