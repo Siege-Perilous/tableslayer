@@ -1,3 +1,4 @@
+import type { SelectMarker } from '$lib/db/app/schema';
 import {
   getActiveScene,
   getMarkersForScene,
@@ -29,10 +30,11 @@ export const load: PageServerLoad = async (event) => {
   }
 
   const activeScene = await getActiveScene(gameSession.id);
-  if (!activeScene) {
-    redirect(302, '/');
+  let activeSceneMarkers: SelectMarker[] = [];
+
+  if (activeScene) {
+    activeSceneMarkers = await getMarkersForScene(activeScene.id);
   }
-  const activeSceneMarkers = await getMarkersForScene(activeScene.id);
 
   return {
     user,
