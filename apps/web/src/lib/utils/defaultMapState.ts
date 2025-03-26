@@ -97,7 +97,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/maps/01.jpeg'
+    url: 'https://files.tableslayer.com/map/example1080.png'
   },
   marker: {
     visible: true,

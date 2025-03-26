@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { buildSceneProps, setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
+  import { setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
   import { Head } from '$lib/components';
+  import { StageDefaultProps } from '$lib/utils/defaultMapState';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -17,15 +18,22 @@
   let { data } = $props();
   const { user } = $derived(data);
 
+  let hasActiveScene = $state(!!data.activeScene);
+
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let stageProps: StageProps = $state(buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client'));
+  let stageProps: StageProps = $state({ ...StageDefaultProps, mode: 1, activeLayer: MapLayerType.None });
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
   let gameIsPaused = $state(data.gameSession.isPaused);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
+
+  // Update gameIsPaused when hasActiveScene changes
+  $effect(() => {
+    gameIsPaused = data.gameSession.isPaused || !hasActiveScene;
+  });
 
   // Handler for optimized marker updates
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
@@ -57,7 +65,19 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
-      gameIsPaused = payload.gameIsPaused;
+      // Update the game pause state from the payload
+      if (payload.gameIsPaused !== undefined) {
+        gameIsPaused = payload.gameIsPaused;
+      }
+
+      // Only update hasActiveScene if we've received a real active scene
+      // We check if we have real stageProps that differ from our defaults
+      if (
+        payload.activeScene ||
+        (payload.stageProps && payload.stageProps.map && payload.stageProps.map.url !== StageDefaultProps.map.url)
+      ) {
+        hasActiveScene = true;
+      }
 
       stageProps = {
         ...stageProps,
@@ -217,11 +237,15 @@
   </span>
 {/if}
 
-{#if gameIsPaused}
+{#if gameIsPaused || !hasActiveScene}
   <div class="paused">
     <div>
       <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
-      <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
+      {#if !hasActiveScene}
+        <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
+      {:else}
+        <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
+      {/if}
     </div>
     <div class="quote">
       <Text size="1.5rem">{randomFantasyQuote.quote}</Text>
