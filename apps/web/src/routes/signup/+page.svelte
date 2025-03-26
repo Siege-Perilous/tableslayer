@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Input, FormError, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
+  import { Input, InputCheckbox, FormError, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
   import { IllustrationOverlook, Head } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -10,10 +10,15 @@
   let confirmPassword = $state('');
   let signupError = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
+  let isChecked = $state(true);
   const signup = useAuthSignupMutation();
 
   const handleSignup = async (e: Event) => {
     e.preventDefault();
+    if (!isChecked) {
+      signupError = { success: false, status: 400, message: 'You must agree to the terms of service' };
+      return;
+    }
     await handleMutation({
       mutation: () => $signup.mutateAsync({ email, password, confirmPassword }),
       formLoadingState: (loading) => (formIsLoading = loading),
@@ -59,10 +64,16 @@
       {/snippet}
     </FormControl>
     <Spacer />
+    <InputCheckbox bind:checked={isChecked} {label} />
+    <Spacer />
     <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
     <FormError error={signupError} />
   </form>
 </Panel>
+
+{#snippet label()}
+  I agree to this (very readible) <Link href="/tos" target="__blank">Terms of Service</Link>
+{/snippet}
 
 <style>
   :global(.panel.panel--signup) {

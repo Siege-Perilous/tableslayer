@@ -8,6 +8,11 @@ export type InputProps = {
   element?: HTMLInputElement;
 } & HTMLInputAttributes;
 
+export type InputCheckboxProps = {
+  checked: boolean;
+  label: Snippet | string;
+} & InputProps;
+
 export type FileInputProps = {
   files: FileList | null;
   accept?: string;
