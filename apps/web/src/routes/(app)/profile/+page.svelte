@@ -12,7 +12,9 @@
     FormControl,
     AvatarFileInput,
     Input,
-    Button
+    Button,
+    FormError,
+    Link
   } from '@tableslayer/ui';
   import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
   import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
@@ -23,23 +25,48 @@
   let formIsLoading = $state(false);
   let name = $state(user.name);
   let email = $state(user.email);
+  let newPassword = $state('');
+  let newPasswordConfirm = $state('');
   let files = $state<FileList | null>(null);
   let avatarFileId: number | undefined = undefined;
   let updateProfileError = $state<FormMutationError | undefined>(undefined);
 
   const updateUser = useUpdateUserMutation();
   const uploadFile = useUploadFileMutation();
+  $inspect(updateProfileError);
 
   const handleUpdateUser = async (e: Event) => {
     e.preventDefault();
+    if (newPassword !== '' && newPassword !== newPasswordConfirm) {
+      updateProfileError = {
+        status: 400,
+        success: false,
+        message: 'Check your form for errors',
+        errors: [
+          {
+            path: ['newPasswordConfirm'],
+            message: 'Passwords do not match',
+            code: 'custom'
+          }
+        ]
+      };
+      return;
+    }
     await handleMutation({
       mutation: () =>
         $updateUser.mutateAsync({
-          userData: { name, email, avatarFileId }
+          userData: {
+            name,
+            email,
+            avatarFileId
+          },
+          newPassword: newPassword !== '' ? newPassword : undefined
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => (updateProfileError = error),
       onSuccess: () => {
+        updateProfileError = undefined;
+        newPassword = '';
         invalidateAll();
       },
       toastMessages: {
@@ -100,20 +127,39 @@
       <Title as="h2" size="sm">User details</Title>
       <Spacer size={2} />
       <Panel class="profile__panel">
-        <Spacer />
-        <FormControl label="Name" name="name" errors={updateProfileError && updateProfileError.errors}>
-          {#snippet input({ inputProps })}
-            <Input {...inputProps} bind:value={name} hideAutocomplete />
-          {/snippet}
-        </FormControl>
-        <Spacer />
-        <FormControl label="Email" name="email" errors={updateProfileError && updateProfileError.errors}>
-          {#snippet input({ inputProps })}
-            <Input {...inputProps} bind:value={email} hideAutocomplete />
-          {/snippet}
-        </FormControl>
-        <Spacer />
-        <Button onclick={handleUpdateUser} disabled={formIsLoading}>Save</Button>
+        <form action="" onsubmit={handleUpdateUser}>
+          <Spacer />
+          <FormControl label="Name" name="name" errors={updateProfileError && updateProfileError.errors}>
+            {#snippet input({ inputProps })}
+              <Input {...inputProps} bind:value={name} hideAutocomplete />
+            {/snippet}
+          </FormControl>
+          <Spacer />
+          <FormControl label="Email" name="email" errors={updateProfileError && updateProfileError.errors}>
+            {#snippet input({ inputProps })}
+              <Input {...inputProps} bind:value={email} hideAutocomplete />
+            {/snippet}
+          </FormControl>
+          <Spacer />
+          <FormControl label="New password" name="newPassword" errors={updateProfileError && updateProfileError.errors}>
+            {#snippet input({ inputProps })}
+              <Input type="password" {...inputProps} bind:value={newPassword} hideAutocomplete />
+            {/snippet}
+          </FormControl>
+          <Spacer />
+          <FormControl
+            label="Confirm new password"
+            name="newPasswordConfirm"
+            errors={updateProfileError && updateProfileError.errors}
+          >
+            {#snippet input({ inputProps })}
+              <Input type="password" {...inputProps} bind:value={newPasswordConfirm} hideAutocomplete />
+            {/snippet}
+          </FormControl>
+          <Spacer />
+          <Button onclick={handleUpdateUser} disabled={formIsLoading}>Save</Button>
+          <FormError error={updateProfileError} />
+        </form>
       </Panel>
       {#if invites.length > 0}
         <Spacer />
@@ -164,7 +210,7 @@
         </div>
         <Spacer size={12} />
       {:else}
-        You are not a member of any parties
+        You are not a member of any parties. <Link href="/create-party">Create one</Link>.
       {/each}
     </div>
   </div>

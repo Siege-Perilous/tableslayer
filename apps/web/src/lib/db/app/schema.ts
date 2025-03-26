@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { protectedSlugs } from '../../constants';
 
 // USERS
@@ -26,9 +27,24 @@ export const usersTable = sqliteTable('users', {
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
-export const insertUserSchema = createInsertSchema(usersTable);
+
+// Create base insert schema from drizzle
+const baseInsertUserSchema = createInsertSchema(usersTable);
+
+// Extend the insert schema with custom email validation
+export const insertUserSchema = baseInsertUserSchema.extend({
+  email: z.string().email()
+});
+
 export const selectUserSchema = createSelectSchema(usersTable);
-export const updateUserSchema = createUpdateSchema(usersTable);
+
+// Create base update schema from drizzle
+const baseUpdateUserSchema = createUpdateSchema(usersTable);
+
+// Extend the update schema with custom email validation
+export const updateUserSchema = baseUpdateUserSchema.extend({
+  email: z.string().email().optional()
+});
 
 export const filesTable = sqliteTable('files', {
   id: integer('id').primaryKey({ autoIncrement: true }),
