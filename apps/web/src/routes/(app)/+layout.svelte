@@ -20,7 +20,8 @@
     IconQuestionMark,
     IconBrandBluesky,
     IconBrandDiscord,
-    IconBrandGithub
+    IconBrandGithub,
+    IconFileDescription
   } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   let { data, children } = $props();
@@ -53,7 +54,8 @@
       href: 'https://discord.com/channels/1346472596887179390/1346472597663121420',
       icon: IconBrandDiscord
     },
-    { label: 'GitHub', href: 'https://github.com/siege-perilous/tableslayer', icon: IconBrandGithub }
+    { label: 'GitHub', href: 'https://github.com/siege-perilous/tableslayer', icon: IconBrandGithub },
+    { label: 'Terms of service', href: '/tos', icon: IconFileDescription }
   ];
 </script>
 
@@ -135,7 +137,7 @@
             <Hr />
             <Spacer size={2} />
             {#each links as link}
-              <a href={link.href} class="profileDropdown__link">
+              <a href={link.href} class="profileDropdown__link" target="_blank">
                 <Text size="0.875rem">{link.label}</Text>
                 <Icon Icon={link.icon} size="1.25rem" />
               </a>
