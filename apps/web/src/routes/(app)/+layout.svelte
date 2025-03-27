@@ -117,9 +117,9 @@
                   initials={data.user.name}
                 />
                 <div>
-                  <Link href="/profile">{data.user.name}</Link>
+                  <Link href="/profile">Manage profile</Link>
                   <Spacer size={1} />
-                  <LinkOverlay href="/profile">{data.user.email}</LinkOverlay>
+                  <LinkOverlay href="/profile"><Text size="0.875rem">{data.user.email}</Text></LinkOverlay>
                 </div>
               </div>
             </LinkBox>

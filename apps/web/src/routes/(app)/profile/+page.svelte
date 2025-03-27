@@ -67,6 +67,7 @@
       onSuccess: () => {
         updateProfileError = undefined;
         newPassword = '';
+        newPasswordConfirm = '';
         invalidateAll();
       },
       toastMessages: {
@@ -143,7 +144,13 @@
           <Spacer />
           <FormControl label="New password" name="newPassword" errors={updateProfileError && updateProfileError.errors}>
             {#snippet input({ inputProps })}
-              <Input type="password" {...inputProps} bind:value={newPassword} hideAutocomplete />
+              <Input
+                type="password"
+                placeholder="Set new password"
+                {...inputProps}
+                bind:value={newPassword}
+                hideAutocomplete
+              />
             {/snippet}
           </FormControl>
           <Spacer />
@@ -153,7 +160,13 @@
             errors={updateProfileError && updateProfileError.errors}
           >
             {#snippet input({ inputProps })}
-              <Input type="password" {...inputProps} bind:value={newPasswordConfirm} hideAutocomplete />
+              <Input
+                type="password"
+                placeholder="Confirm new password"
+                {...inputProps}
+                bind:value={newPasswordConfirm}
+                hideAutocomplete
+              />
             {/snippet}
           </FormControl>
           <Spacer />
