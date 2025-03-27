@@ -2,6 +2,8 @@
 
 Table Slayer provides tools for game masters to project animated battle maps on their digital tabletop.
 
+![Table Slayer](https://snid.es/2025MAR/u3TtzdPZ8LzoxyA5.png)
+
 ## Credits
 
 [Dave Snider](https://davesnider.com) designs and builds Table Slayer. The Three JS Stage component was built by [Dan Greenheck](https://dangreenheck.com/). Illustrations and logo provided by [Cinnamon Devil](https://cinnamondevilsart.com/).
@@ -34,6 +36,20 @@ This repo requires certain Node and `pnpm` versions. These can be checked in `pa
 
 To get started, edit the `.env` file in each `app` and run `pnpm run dev` to load local development.
 
+A full guide for self-hosting is coming soon. Here's a quick list for anyone who wants to get up and running.
+
+1. Copy `.env-example` in the `apps/web` folder to `.env`
+2. Create a new database on Turso. Add the required keys to `.env`.
+3. Create a Cloudflare R2 bucket. Add the required keys to `.env`.
+4. Create a Resend account for email. Add the required keys to `.env`
+5. `pnpm install` in the root of this repo.
+6. Jump into the `apps/web` folder and run `pnpm run migrate` to initialize your db.
+7. Run `pnpm run dev` from the repo root. Two runservers will open.
+   - http://localhost:5174 for the web
+   - http://localhost:5173 for the ui docs
+
+There are Fly configs in the root should you want to deploy.
+
 ### Apps and packages
 
 Table Slayer is a Turbo mono repo split into several projects.
@@ -65,10 +81,6 @@ Tests are run with [Playwright](https://playwright.dev/). Drop your tests in any
 - Vanilla CSS
 - Global variables are stored in [a global CSS file](https://github.com/Siege-Perilous/tableslayer/blob/main/packages/ui/styles/globals.css) that can be imported into a top level [layout file](https://github.com/Siege-Perilous/tableslayer/blob/main/apps/web/src/routes/%252Blayout.svelte).
 
-### Billing
-
-Billing is handled through [Stripe](https://stripe.com). To test the billing system locally you will need to set up webhook forwarding through Stripe's tooling.
-
 ### Tech
 
 This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://vitejs.dev/). In general Table Slayer aims to use a minimal amount of dependencies. We prefer low-level dependencies, rather than component libraries. Think carefully when submitting a PR that includes a new dependency.
@@ -83,3 +95,8 @@ This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://v
 - [Resend](https://resend.com) is used for email management.
 - [Turso](https://turso.com) is used for SQLite db hosting.
   - [Drizzle](https://orm.drizzle.team) provides the ORM
+- [Stripe](https://stripe.com) provides billing and subscription management
+
+### Security
+
+If you notice a security issue, please report it to `dave@tableslayer.com`
