@@ -48,6 +48,11 @@ export const useUploadFileMutation = () => {
   return mutationFactory<{ file: File; folder: string }, { userId: string; fileId: number; location: string }, Error>({
     mutationKey: ['uploadFile'],
     mutationFn: async ({ file, folder }) => {
+      const MAX_FILE_SIZE = 15 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error('File size exceeds the 15MB limit');
+      }
+
       const fileId = uuidv4();
       const fileExtension = mime.getExtension(file.type);
       const fileName = `${folder}/${fileId}.${fileExtension}`;

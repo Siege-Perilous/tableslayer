@@ -41,7 +41,7 @@
 </script>
 
 <div class="mapControls">
-  <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 5MB in size.</Text>
+  <Text size="0.85rem" color="var(--fgMuted)">Maps must be under 15MB in size.</Text>
   <Spacer size={2} />
   <Button onclick={() => handleMapImageChange(selectedScene.id)}>Replace map</Button>
   <Spacer />
