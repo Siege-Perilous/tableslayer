@@ -1,36 +1,6 @@
 <script lang="ts">
-  import { dev } from '$app/environment';
-  import { Text, Spacer, Button, Panel, Hr } from '@tableslayer/ui';
-  let { data } = $props();
-  const { user } = data;
+  import { Text, Spacer, Button, Panel, Hr, Link } from '@tableslayer/ui';
   import { IllustrationOverlook, Logo, Head } from '$lib/components';
-  import { Input, FormControl } from '@tableslayer/ui';
-  import { useAddEmailToAudienceMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
-  let email = $state('');
-  let formIsLoading = $state(false);
-  let formError = $state<FormMutationError | undefined>(undefined);
-  let formCompleted = $state(false);
-
-  const addEmailToAudience = useAddEmailToAudienceMutation();
-
-  const handleAddEmailToAudience = async (e: Event) => {
-    e.preventDefault();
-    await handleMutation({
-      mutation: () => $addEmailToAudience.mutateAsync({ email }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onError: (error) => {
-        formError = error;
-      },
-      onSuccess: () => {
-        formCompleted = true;
-      },
-      toastMessages: {
-        success: { title: 'Thanks!', body: "We'll be in touch soon." },
-        error: { title: 'Error', body: (error) => error.message }
-      }
-    });
-  };
 </script>
 
 <Head title="Table Slayer" description="Tools to create animated battle maps for in person RPG games." />
@@ -44,32 +14,23 @@
   <Spacer />
   <Hr />
   <Spacer size={8} />
-  {#if user}
-    <div>
-      <Button href="/profile" class="btn">Dashboard</Button>
-    </div>
-  {:else if dev}
-    <div class="flex">
-      <Button href="/login" class="btn">Log in</Button>
-      <Button href="/signup" class="btn">Sign up</Button>
-    </div>
-  {:else if !formCompleted}
-    <Text color="var(--fgMuted)">Interested in joining the beta? Sign up for updates.</Text>
-    <Spacer size={4} />
-    <form onsubmit={handleAddEmailToAudience}>
-      <FormControl label="Email" name="email" errors={formError && formError.errors}>
-        {#snippet input({ inputProps })}
-          <Input {...inputProps} type="email" bind:value={email} data-testid="email" />
-        {/snippet}
-      </FormControl>
-      <Spacer />
-      <Button data-testid="notifySubmit" type="submit" disabled={formIsLoading} isLoading={formIsLoading}>
-        Add me to the beta
-      </Button>
-    </form>
-  {:else}
-    <Text size="1.5rem" color="var(--fgPrimary)">Thanks. We'll be in touch soon.</Text>
-  {/if}
+  <div>
+    <Text>
+      Table Slayer is currently in open beta. <Link
+        href="https://bsky.app/profile/davesnider.com/post/3lkvum6xtjs2e"
+        target="_blank"
+      >
+        This short video
+      </Link> will give you an idea of what it can do. The source is available on <Link
+        href="https://github.com/siege-perilous/tableslayer"
+        target="_blank"
+      >
+        GitHub
+      </Link>.
+    </Text>
+    <Spacer size={8} />
+    <Button href="/signup" class="btn">Create an account</Button>
+  </div>
 </Panel>
 
 <style>
