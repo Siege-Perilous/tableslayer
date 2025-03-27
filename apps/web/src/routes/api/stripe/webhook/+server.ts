@@ -45,12 +45,34 @@ export const POST: RequestHandler = async (event) => {
 
     switch (eventType) {
       case 'checkout.session.completed': {
-        await updateParty(partyId, {
-          stripeCustomerId,
-          planStatus: 'active',
-          planNextBillingDate: null, // Sessions don't contain billing dates
-          planExpirationDate: null
-        });
+        const session = dataObject as Stripe.Checkout.Session;
+
+        const isLifetimePlan = session.mode === 'payment';
+
+        if (isLifetimePlan) {
+          // For lifetime plans, we need to update the plan specifically
+          // Get the price ID from the session
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+          const priceId = lineItems.data[0]?.price?.id;
+          const plan = priceId ? PRICE_PLAN_MAP[priceId] : 'free';
+
+          await updateParty(partyId, {
+            stripeCustomerId,
+            plan,
+            planStatus: 'active',
+            planNextBillingDate: null,
+            planExpirationDate: null
+          });
+        } else {
+          // For regular subscriptions, we'll just update the customer ID
+          // The subscription.created event will handle the rest
+          await updateParty(partyId, {
+            stripeCustomerId,
+            planStatus: 'active',
+            planNextBillingDate: null,
+            planExpirationDate: null
+          });
+        }
         break;
       }
 
