@@ -183,7 +183,7 @@ export const initiateResetPassword = async (email: string) => {
 
     await sendSingleEmail({
       to: email,
-      subject: 'Reset your password',
+      subject: 'Reset your password on Table Slayer',
       html: `Visit ${baseURL}/reset-password/${randomString} to reset your password. If you did not make this request, ignore this email. No futher steps are required.`
     });
   } catch (error) {
