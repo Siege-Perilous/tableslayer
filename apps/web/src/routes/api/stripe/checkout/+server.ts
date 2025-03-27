@@ -51,8 +51,6 @@ export const POST = apiFactory(
         throw new Error('Invalid party plan');
       }
 
-      const mode = plan === 'lifetime' ? 'payment' : 'subscription';
-
       // Ensure the party has a Stripe customer ID
       let stripeCustomerId = party.stripeCustomerId;
       if (!stripeCustomerId) {
@@ -70,9 +68,12 @@ export const POST = apiFactory(
         await updateParty(partyId, { stripeCustomerId });
       }
 
-      // Create Stripe Checkout Session
-      const session = await stripe.checkout.sessions.create({
+      const mode: Stripe.Checkout.SessionCreateParams.Mode = plan === 'lifetime' ? 'payment' : 'subscription';
+
+      // Create the session config with proper typing
+      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
         payment_method_types: ['card'],
+        allow_promotion_codes: true,
         mode,
         customer: stripeCustomerId,
         line_items: [
@@ -87,17 +88,23 @@ export const POST = apiFactory(
           partyName: party.name,
           partyId
         },
-        subscription_data: {
+        success_url: `${process.env.BASE_URL}/${party.slug}/?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.BASE_URL}/${party.slug}`
+      };
+
+      // Only add subscription_data for subscription mode
+      if (mode === 'subscription') {
+        sessionConfig.subscription_data = {
           metadata: {
             userEmail: user.email,
             userId: user.id,
             partyName: party.name,
             partyId
           }
-        },
-        success_url: `${process.env.BASE_URL}/${party.slug}/?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.BASE_URL}/${party.slug}`
-      });
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionConfig);
 
       if (!session.url) {
         throw new Error('Failed to create Stripe Checkout session');
