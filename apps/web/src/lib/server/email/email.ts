@@ -11,6 +11,14 @@ interface EmailOptions {
 }
 
 export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, subject, html }: EmailOptions) => {
+  if (!process.env.RESEND_TOKEN) {
+    console.error('RESEND_TOKEN is not set');
+    return;
+  }
+  if (process.env.ENV_NAME === 'preview') {
+    console.log('PR preview, not sending email');
+    return;
+  }
   const recipient = dev ? process.env.DEV_EMAIL! : to;
   console.log('Sending email to', recipient, 'from', from);
   try {
