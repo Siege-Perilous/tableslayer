@@ -177,20 +177,9 @@
     return;
   }
 
-  function onMarkerAdded(marker: Marker) {
-    stageProps.marker.markers = [...stageProps.marker.markers, marker];
-    selectedMarker = marker;
-  }
-
-  function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
-    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
-    if (index !== -1) {
-      stageProps.marker.markers[index] = {
-        ...marker,
-        position: { x: position.x, y: position.y }
-      };
-    }
-  }
+  // Don't allow marker movement in player view
+  function onMarkerMoved() {}
+  function onMarkerAdded() {}
 
   const onMarkerSelected = (marker: Marker) => {
     selectedMarker = marker;
