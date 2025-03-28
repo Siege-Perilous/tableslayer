@@ -87,7 +87,7 @@
         // Override stage props with the updated props from the websocket
         ...payload.stageProps,
         // Don't allow rotate and zoom from the editor
-        scene: { ...stageProps.scene, autoFit: true },
+        scene: { ...stageProps.scene, autoFit: true, offset: { x: 0, y: 0 } },
         // Don't allow erase mode
         activeLayer: MapLayerType.None,
         // Mode 1 is for player view
