@@ -9,7 +9,6 @@ const validationSchema = z.object({
 export const POST = apiFactory(
   async ({ body, locals }) => {
     const { location } = body;
-    console.log('body', body);
 
     if (!locals.user?.id) {
       throw new Error('Unauthorized');

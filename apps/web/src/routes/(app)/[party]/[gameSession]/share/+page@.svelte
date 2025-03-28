@@ -164,13 +164,11 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onFogUpdate(blob: Promise<Blob>) {
-    console.log('Updating fog', blob);
+  function onFogUpdate() {
     return;
   }
 
-  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
-    console.log('Updating map', offset, zoom);
+  function onMapUpdate() {
     return;
   }
 
@@ -194,12 +192,10 @@
   };
 
   function onStageLoading() {
-    console.log('Stage loading');
     stageIsLoading = true;
   }
 
   function onStageInitialized() {
-    console.log('Stage initialized');
     stageIsLoading = false;
   }
 
