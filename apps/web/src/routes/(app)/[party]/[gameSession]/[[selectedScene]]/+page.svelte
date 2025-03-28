@@ -334,14 +334,25 @@
     const finalNormalizedX = rotated.x + 0.5;
     const finalNormalizedY = rotated.y + 0.5;
 
-    // Handle panning (existing logic)
+    // Handle panning with rotation adjustment
     if (e.buttons === 1 || e.buttons === 2) {
+      // Get rotation for both map and scene transformations
+      const rotation = stageProps.scene.rotation;
+      const radians = (Math.PI / 180) * rotation;
+
+      // Calculate rotated movement vectors
+      const rotatedMovementX = e.movementX * Math.cos(radians) + e.movementY * Math.sin(radians);
+      const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
+
       if (e.shiftKey) {
-        stageProps.map.offset.x += e.movementX / stageProps.scene.zoom;
-        stageProps.map.offset.y -= e.movementY / stageProps.scene.zoom;
+        // Apply rotation to movement for map offset
+        const movementFactor = 1 / stageProps.scene.zoom;
+        stageProps.map.offset.x += rotatedMovementX * movementFactor;
+        stageProps.map.offset.y -= rotatedMovementY * movementFactor;
       } else if (e.ctrlKey) {
-        stageProps.scene.offset.x += e.movementX;
-        stageProps.scene.offset.y -= e.movementY;
+        // Scene offset also needs rotation adjustment
+        stageProps.scene.offset.x += rotatedMovementX;
+        stageProps.scene.offset.y -= rotatedMovementY;
       }
 
       // Use our proper throttled update (replaces manual throttling)
