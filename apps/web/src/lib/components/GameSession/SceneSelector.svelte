@@ -417,7 +417,6 @@
               variant="transparent"
               {...inputProps}
               type="file"
-              accept="image/png, image/jpeg"
               bind:files={file}
               onchange={handleFileChange}
             />

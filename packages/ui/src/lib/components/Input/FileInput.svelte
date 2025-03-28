@@ -10,7 +10,7 @@
     value = $bindable(),
     files = $bindable(),
     variant = 'default',
-    accept = 'image/png, image/jpeg, image/webp',
+    accept = 'image/png, image/jpeg, image/webp, image/gif',
     showPreviews = true,
     ...restProps
   }: FileInputProps = $props();
