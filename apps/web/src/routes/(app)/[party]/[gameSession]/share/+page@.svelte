@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { setupGameSessionWebSocket, getRandomFantasyQuote } from '$lib/utils';
+  import { setupGameSessionWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
   import { Head } from '$lib/components';
@@ -51,6 +51,9 @@
   };
 
   onMount(() => {
+    if (data.activeScene) {
+      stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+    }
     const socket = setupGameSessionWebSocket(
       data.gameSession.id,
       () => console.log('Connected to game session socket'),
@@ -84,7 +87,7 @@
         // Override stage props with the updated props from the websocket
         ...payload.stageProps,
         // Don't allow rotate and zoom from the editor
-        scene: { ...stageProps.scene },
+        scene: { ...stageProps.scene, autoFit: true },
         // Don't allow erase mode
         activeLayer: MapLayerType.None,
         // Mode 1 is for player view
@@ -226,6 +229,8 @@
 
     return () => clearInterval(interval);
   });
+
+  $inspect(stageProps);
 </script>
 
 <Head title={data.gameSession.name} description={`${data.gameSession.name} on Table Slayer`} />
