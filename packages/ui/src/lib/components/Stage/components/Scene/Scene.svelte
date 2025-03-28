@@ -209,7 +209,6 @@
   );
 
   function setLoadingState(state: SceneLoadingState) {
-    console.log('Setting loading state: ', state);
     loadingState = state;
     if (state === SceneLoadingState.Initialized) {
       callbacks.onStageInitialized();
@@ -356,12 +355,10 @@
     bind:this={mapLayer}
     {props}
     onMapLoading={() => {
-      console.log('Map loading');
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
     onMapLoaded={(mapUrl, s) => {
-      console.log('Map loaded');
       mapSize = s;
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {

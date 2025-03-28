@@ -100,7 +100,6 @@
   $effect(() => {
     // Cleanup drag preview on unmount
     if (navigating || formIsLoading) {
-      console.log('Cleanup drag preview');
       return cleanupDragPreview;
     }
   });

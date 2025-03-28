@@ -196,8 +196,6 @@ export const updateParty = async (partyId: string, updates: PartialInsertParty):
 
   try {
     const party = await db.update(partyTable).set(updates).where(eq(partyTable.id, partyId)).returning().get();
-
-    console.log(`Party ${partyId} updated successfully.`);
     return party;
   } catch (error: unknown) {
     // Check if Drizzle/SQLite complained about a unique constraint

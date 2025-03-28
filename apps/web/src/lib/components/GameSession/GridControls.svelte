@@ -57,7 +57,6 @@
 
   // Turn the local concept of TV size into the stageProps format
   const handleTvSizeChange = (diagonalSize: number) => {
-    console.log('update tv size');
     const { width, height } = getTvDimensions(diagonalSize);
     stageProps.display.size = {
       x: width,
@@ -79,7 +78,6 @@
 
   // Hex or Square grid toggle
   const handleGridTypeChange = (gridType: number) => {
-    console.log('grid type change', gridType);
     stageProps.grid.gridType = gridType;
     socketUpdate();
   };

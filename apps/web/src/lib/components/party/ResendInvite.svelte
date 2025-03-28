@@ -18,7 +18,6 @@
 
   const deletePartyInvite = useDeletePartyInviteMutation();
   const handleDeletePartyInvite = async (e: Event) => {
-    console.log('delete');
     e.preventDefault();
 
     await handleMutation({

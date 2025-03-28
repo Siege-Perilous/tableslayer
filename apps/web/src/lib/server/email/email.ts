@@ -20,7 +20,6 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
     return;
   }
   const recipient = dev ? process.env.DEV_EMAIL! : to;
-  console.log('Sending email to', recipient, 'from', from);
   try {
     await resend.emails.send({
       from,
@@ -34,14 +33,12 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
 };
 
 export const addEmailtoAudience = async (email: string) => {
-  console.log('Adding email to audience:', email);
   try {
     const response = await resend.contacts.create({
       email,
       audienceId: process.env.RESEND_AUDIENCE_ID!,
       unsubscribed: false
     });
-    console.log('Email added to audience:', response);
   } catch (e) {
     console.error('Error adding email to audience:', e);
   }

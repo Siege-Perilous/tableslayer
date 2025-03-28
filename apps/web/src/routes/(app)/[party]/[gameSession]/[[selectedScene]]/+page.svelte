@@ -242,12 +242,10 @@
   };
 
   const onStageLoading = () => {
-    console.log('Stage loading');
     stageIsLoading = true;
   };
 
   const onStageInitialized = () => {
-    console.log('Stage DONE LOADING');
     stageIsLoading = false;
   };
 
@@ -425,10 +423,7 @@
           sceneData: convertPropsToSceneDetails(stageProps)
         }),
       formLoadingState: () => {},
-      onSuccess: () => {
-        // Scene saved successfully, no need to invalidate
-        console.log('Scene saved successfully');
-      },
+      onSuccess: () => {},
       onError: (error) => {
         console.log('Error saving scene:', error);
       },
@@ -457,10 +452,7 @@
                 markerData
               }),
             formLoadingState: () => {},
-            onSuccess: () => {
-              // Marker updated successfully, no need to invalidate
-              console.log('Marker updated successfully');
-            },
+            onSuccess: () => {},
             onError: (error) => {
               console.log('Error updating marker:', error);
             },
@@ -491,7 +483,6 @@
 
                   // Add the new ID to our known markers list
                   knownMarkerIds = [...knownMarkerIds, newId];
-                  console.log('Added marker ID to known markers:', newId);
 
                   // If this is the selectedMarker, update the ID
                   if (selectedMarkerId === oldId) {

@@ -20,7 +20,6 @@
       },
       onSuccess: (result) => {
         if (result.url) {
-          console.log(result.url);
           window.location.href = result.url;
         }
       }

@@ -21,7 +21,6 @@
   });
 
   $effect(() => {
-    console.log('Cloud element bindings: ', cloudElements);
     setTimeout(() => (showBg = true), 100); // Background
     setTimeout(() => (showFg = true), 400); // Foreground
     showClouds.forEach((_, i) => {

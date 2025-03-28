@@ -65,7 +65,6 @@
       onError: (error) => (renamePartyErrors = error),
       onSuccess: (result) => {
         const updatedParty = result.party;
-        console.log('Party renamed:', updatedParty);
         goto('/' + updatedParty.slug);
       },
       toastMessages: {

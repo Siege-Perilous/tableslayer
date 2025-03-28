@@ -70,16 +70,13 @@
   };
 
   const handleFileSelect = (event: CustomEvent<File>) => {
-    console.log('File selected:', event.detail);
     selectedFile = event.detail;
   };
 
   const handleImport = async (e: Event) => {
     e.preventDefault();
-    console.log('Import form submitted', { selectedFile, importSessionName });
 
     if (!selectedFile) {
-      console.log('No file selected');
       addToast({
         data: {
           title: 'Please select a file',
@@ -91,32 +88,25 @@
     }
 
     if (!importSessionName.trim()) {
-      console.log('No session name provided');
       return;
     }
 
     try {
       importIsLoading = true;
-      console.log('Starting import process');
 
       // Read the file to modify its contents with the new name
       const fileContent = await selectedFile.text();
-      console.log('File content read');
 
       const importData = JSON.parse(fileContent);
-      console.log('JSON parsed', { gameSessionName: importData.gameSession?.name });
 
       // Update the name in the JSON
       importData.gameSession.name = importSessionName.trim();
 
       // Create a new file with the modified content
       const modifiedFile = new File([JSON.stringify(importData)], selectedFile.name, { type: 'application/json' });
-      console.log('Modified file created');
 
       // Import the game session
-      console.log('Calling importGameSession');
       await importGameSession(partyId, modifiedFile);
-      console.log('Import completed successfully');
 
       // Close the import form and refresh data
       importIsOpen = false;

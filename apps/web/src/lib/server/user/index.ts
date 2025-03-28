@@ -41,15 +41,12 @@ export const getUser = async (userId: string) => {
 
 export const getUserByEmail = async (email: string) => {
   try {
-    console.log('Getting user by email:', email);
     const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
 
     if (!user) {
       console.warn('No user found for email:', email);
       return null; // Return null instead of throwing
     }
-
-    console.log('User found:', user);
 
     // Fetch avatar file and thumbnail if the user exists
     let thumb = null;
@@ -78,7 +75,6 @@ export const isEmailInUserTable = async (email: string) => {
 };
 
 export const getUserByResetPasswordCode = async (code: string) => {
-  console.log('code', code);
   try {
     const resetPasswordCodeRow = await db
       .select()
