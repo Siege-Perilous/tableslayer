@@ -21,7 +21,6 @@ export const getGravatarDisplayName = async (email: string): Promise<string> => 
 
   if (response.ok) {
     const profile = await response.json();
-    console.log(profile);
     if (profile.entry[0]) {
       return profile.entry[0].displayName || extractNameFromEmail(email);
     }

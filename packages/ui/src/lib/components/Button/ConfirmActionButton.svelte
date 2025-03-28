@@ -12,12 +12,10 @@
   let isShowingConfirm = $state(false);
 
   const toggleShowConfirm = () => {
-    console.log('toggleShowConfirm');
     isShowingConfirm = true;
   };
   const triggerProps = {
     onclick: () => {
-      console.log('trigger');
       toggleShowConfirm();
     }
   };

@@ -157,7 +157,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Return the count of scenes created directly from the JSON file
     // This ensures we're only counting what was in the file, not what might be in the database
     const importedScenesCount = sortedScenes.length;
-    console.log(`Import completed successfully. Created ${importedScenesCount} scenes.`);
 
     return json({
       success: true,

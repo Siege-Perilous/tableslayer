@@ -42,7 +42,6 @@
   let headerContainerClasses = $derived(['headerContainer', gameSession && 'headerContainer--isSession']);
 
   const handleChangeParty = (selected: string) => {
-    console.log('Selected party:', selected);
     goto(`/${selected}`);
   };
 

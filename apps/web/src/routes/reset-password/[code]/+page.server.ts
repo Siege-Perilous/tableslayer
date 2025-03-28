@@ -18,7 +18,6 @@ export const load: PageServerLoad = async (event) => {
       .from(resetPasswordCodesTable)
       .where(eq(resetPasswordCodesTable.code, hashedResetCode))
       .get();
-    console.log('resetPasswordCodeRow', resetPasswordCodeRow);
     const isWithinExpiration =
       resetPasswordCodeRow !== undefined && isWithinExpirationDate(resetPasswordCodeRow.expiresAt);
     const { user } = await event.parent();

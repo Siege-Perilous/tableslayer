@@ -31,7 +31,6 @@
 
   // Weather toggle
   const handleWeatherTypeChange = (weatherType: string) => {
-    console.log('weather type change', weatherType);
     stageProps.weather.type = Number(weatherType);
     socketUpdate();
   };

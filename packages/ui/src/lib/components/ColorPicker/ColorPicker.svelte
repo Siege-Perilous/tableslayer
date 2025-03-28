@@ -456,7 +456,6 @@
   // @ts-expect-error Can't figure out how to type this to FormatOption
   const handleFormatChange = (selected) => {
     selectedFormat = selected[0];
-    console.log('selected', selected);
     updateColorInputs();
   };
 

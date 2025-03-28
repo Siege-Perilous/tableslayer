@@ -67,7 +67,6 @@ export function mutationFactory<
       if (config.onSuccess) {
         config.onSuccess();
       } else {
-        console.log('Invalidating all queries');
         await invalidateAll();
       }
     }

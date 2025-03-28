@@ -23,7 +23,7 @@
 
     const uploadedFile = await handleMutation({
       mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'map' }),
-      formLoadingState: () => console.log('Uploading file...'),
+      formLoadingState: () => {},
       toastMessages: {
         success: { title: 'File uploaded' },
         error: { title: 'Error uploading file', body: (err) => err.message || 'Unknown error' }
@@ -45,7 +45,7 @@
         input.value = '';
         invalidateAll();
       },
-      formLoadingState: () => console.log('Updating map...'),
+      formLoadingState: () => {},
       toastMessages: {
         success: { title: 'Map updated' },
         error: { title: 'Error updating map', body: (err) => err.message || 'Unknown error' }

@@ -53,8 +53,7 @@ const uploadToR2 = async (
 
   try {
     await r2.send(new PutObjectCommand(putObjectParams));
-    console.log('Upload successful for:', key);
-    return key; // Return the full path for database storage
+    return key;
   } catch (error) {
     console.error('Error uploading to R2:', error);
     throw error;
@@ -169,8 +168,6 @@ export const getR2FileInfo = async (fileName: string) => {
     };
 
     const result = await r2.send(new GetObjectCommand(getObjectParams));
-    console.log('Asset info:', result);
-    // Note: You might want to extract metadata or other details from the response here.
 
     return {
       ContentType: result.ContentType,
@@ -194,7 +191,6 @@ export const generatePresignedReadUrl = async (fileName: string): Promise<string
 };
 
 export const generatePresignedWriteUrl = async (fileName: string, contentType: string): Promise<string> => {
-  console.log('Generating signed URL for:', { fileName, contentType });
   const command = new PutObjectCommand({
     Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
     Key: fileName,

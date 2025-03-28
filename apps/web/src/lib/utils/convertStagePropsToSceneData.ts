@@ -41,7 +41,6 @@ function setNestedIfExists(
 export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Record<string, unknown>> => {
   const details: Partial<Record<string, unknown>> = {};
   // Direct mapping
-  console.log('stageProps.fogOfWar.noise.baseColor', stageProps?.fogOfWar?.noise.baseColor);
   setIfExists(stageProps, details, {
     backgroundColor: 'backgroundColor'
   });

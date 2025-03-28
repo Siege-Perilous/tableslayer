@@ -62,7 +62,6 @@
   };
   const handleSelectedRole = async (selected: PartyRole) => {
     selectedRole = selected;
-    console.log('selected', selected);
 
     await handleMutation({
       mutation: () =>
@@ -77,7 +76,6 @@
       }
     });
 
-    console.log('selected', selected);
     return selected;
   };
   $effect(() => {

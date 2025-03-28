@@ -33,7 +33,6 @@
 
   $effect(() => {
     if (!props.map.url) {
-      console.log('No map URL');
       imageUrl = props.map.url;
       return;
     }
@@ -46,9 +45,6 @@
     if (currentMapUrlWithoutParams === newMapUrlWithoutParams) {
       return;
     } else {
-      console.log('Map URL changed');
-      console.log(newMapUrlWithoutParams);
-      console.log(currentMapUrlWithoutParams);
       imageUrl = props.map.url;
     }
 

@@ -194,13 +194,12 @@
   };
 
   function onStageLoading() {
-    console.log('Stage loading');
     stageIsLoading = true;
   }
 
   function onStageInitialized() {
-    console.log('Stage initialized');
     stageIsLoading = false;
+    stage.scene.fit();
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {

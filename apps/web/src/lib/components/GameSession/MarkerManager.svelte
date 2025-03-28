@@ -98,7 +98,6 @@
     }
 
     const newFileUrl = `https://files.tableslayer.com/cdn-cgi/image/w=512,h=512,fit=cover,gravity=auto/${uploadedFile.location}`;
-    console.log('New file URL:', newFileUrl);
     stageProps.marker.markers.forEach((marker) => {
       if (marker.id === markerId) {
         marker.imageUrl = newFileUrl;

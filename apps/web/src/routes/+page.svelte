@@ -29,7 +29,7 @@
       </Link>.
     </Text>
     <Spacer size={8} />
-    <Button href="/signup" class="btn">Create an account</Button>
+    <Button href="/signup" class="btn">Join beta</Button>
   </div>
 </Panel>
 
