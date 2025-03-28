@@ -191,7 +191,6 @@
 
   function onStageInitialized() {
     stageIsLoading = false;
-    stage.scene.fit();
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
