@@ -164,11 +164,13 @@
     stageProps.scene.zoom = zoom;
   }
 
-  function onFogUpdate() {
+  function onFogUpdate(blob: Promise<Blob>) {
+    console.log('Updating fog', blob);
     return;
   }
 
-  function onMapUpdate() {
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    console.log('Updating map', offset, zoom);
     return;
   }
 
@@ -197,6 +199,7 @@
 
   function onStageInitialized() {
     stageIsLoading = false;
+    stage.scene.fit();
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
