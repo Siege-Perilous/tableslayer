@@ -13,6 +13,7 @@ export * from './handleStageZoom';
 export * from './hasThumb';
 export * from './isValidEmail';
 export * from './isWithinExpirationDate';
+export * from './propertyUpdateBroadcaster';
 export * from './randomQuotes';
 export * from './sceneSettings';
 export * from './stageKeyCommands';
