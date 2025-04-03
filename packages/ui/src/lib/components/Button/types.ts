@@ -1,3 +1,4 @@
+import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
 import type { Snippet } from 'svelte';
 import type { HTMLAnchorAttributes, HTMLButtonAttributes, SvelteHTMLElements } from 'svelte/elements';
 
@@ -41,6 +42,7 @@ export type ConfirmActionButtonProps = {
   action: (e: Event) => void;
   actionButtonText?: string;
   isLoading?: boolean;
+  positioning?: FloatingConfig;
 };
 
 export type RadioOption = { label: string | Snippet; value: string };
