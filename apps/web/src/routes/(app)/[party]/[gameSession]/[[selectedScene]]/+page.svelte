@@ -28,8 +28,7 @@
     convertStageMarkersToDbFormat,
     throttle,
     type MarkerPositionUpdate,
-    registerSocketUpdate,
-    queuePropertyUpdate
+    registerSocketUpdate
   } from '$lib/utils';
   import { onMount } from 'svelte';
 

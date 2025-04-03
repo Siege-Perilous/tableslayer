@@ -6,9 +6,9 @@ const pendingUpdates: Record<string, any> = {};
 let updateScheduled = false;
 
 // Different throttle times for different property types
-const MARKER_UPDATE_DELAY = 150; // Fast for marker positions
-const UI_CONTROL_DELAY = 250; // Medium for UI controls like opacity
-const SCENE_UPDATE_DELAY = 500; // Slow for major scene changes
+const MARKER_UPDATE_DELAY = 150;
+const UI_CONTROL_DELAY = 250;
+const SCENE_UPDATE_DELAY = 500;
 
 export type PropertyPath = string[];
 
@@ -64,7 +64,6 @@ function applyUpdate(obj: any, path: PropertyPath, value: any) {
     current = current[path[i]];
   }
 
-  // Update the property
   current[lastKey] = value;
 }
 
@@ -73,7 +72,6 @@ let pendingSocketUpdate: (() => void) | null = null;
 let socket: Socket | null = null;
 let sceneId: string | null = null;
 
-// Register socketUpdate function
 export function registerSocketUpdate(
   socketUpdateFn: () => void,
   socketInstance: Socket | null,

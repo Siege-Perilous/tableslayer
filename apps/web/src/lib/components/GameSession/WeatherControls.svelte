@@ -16,11 +16,9 @@
   import chroma from 'chroma-js';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     errors
   }: {
-    socketUpdate: () => void;
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
   } = $props();

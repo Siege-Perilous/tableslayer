@@ -27,12 +27,10 @@
   } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     party,
     errors
   }: {
-    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;

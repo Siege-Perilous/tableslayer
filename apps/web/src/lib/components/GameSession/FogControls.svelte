@@ -49,7 +49,6 @@
     <Button
       onclick={() => {
         stage.fogOfWar.clear();
-        // Still need socketUpdate here since this is a more complex operation handled by the stage
         socketUpdate();
       }}
     >
