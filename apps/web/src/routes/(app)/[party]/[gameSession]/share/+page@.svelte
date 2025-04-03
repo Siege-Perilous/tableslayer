@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { setupGameSessionWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
-  import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
+  import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
 
@@ -115,12 +115,13 @@
     });
 
     // Handle optimized property updates
-    socket.on('propertiesUpdated', (updates) => {
+    socket.on('propertiesUpdated', (updates: PropertyUpdates) => {
       if (!updates || !updates.properties || updates.sceneId !== data.activeScene?.id) return;
 
       // Apply all property updates without rebuilding the entire state
       updates.properties.forEach((update) => {
-        let current = stageProps;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let current: any = stageProps;
         // Navigate to the parent object
         for (let i = 0; i < update.path.length - 1; i++) {
           if (!current[update.path[i]]) {
