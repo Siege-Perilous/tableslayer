@@ -1,7 +1,7 @@
 <script lang="ts">
   import { computePosition, offset, flip, shift, platform } from '@floating-ui/dom';
   import { Button, type ConfirmActionButtonProps } from './';
-  import { onDestroy, tick } from 'svelte';
+  import { tick } from 'svelte';
 
   let {
     trigger,
@@ -56,10 +56,6 @@
       }
     }
   };
-
-  onDestroy(() => {
-    // Cleanup if needed
-  });
 </script>
 
 <svelte:window onclick={handleGlobalClick} />
