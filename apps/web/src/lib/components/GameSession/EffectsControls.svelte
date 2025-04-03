@@ -1,18 +1,17 @@
 <script lang="ts">
   import { type ZodIssue } from 'zod';
   import { FormControl, type StageProps, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
+  import { queuePropertyUpdate } from '$lib/utils';
   import { ToneMappingMode } from 'postprocessing';
   import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { PartyPlanSelector } from '../party';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     errors,
     party
   }: {
-    socketUpdate: () => void;
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
     party: SelectParty & Thumb;
@@ -64,19 +63,21 @@
   // Weather toggle
   const handleLutChange = (lutUrl: string) => {
     if (lutUrl === 'none') {
-      stageProps.postProcessing.lut.url = null;
-      socketUpdate();
+      queuePropertyUpdate(stageProps, ['postProcessing', 'lut', 'url'], null, 'control');
       return;
     }
-    stageProps.postProcessing.lut.url = lutUrl;
-    stageProps.postProcessing.lut.enabled = true;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['postProcessing', 'lut', 'url'], lutUrl, 'control');
+    queuePropertyUpdate(stageProps, ['postProcessing', 'lut', 'enabled'], true, 'control');
   };
 
   const handleToneChange = (value: string) => {
     const toneMapping = toneMappingOptions.find((option) => option.value === value) || toneMappingOptions[0];
-    stageProps.postProcessing.toneMapping.mode = toneMapping.mode as ToneMappingMode;
-    socketUpdate();
+    queuePropertyUpdate(
+      stageProps,
+      ['postProcessing', 'toneMapping', 'mode'],
+      toneMapping.mode as ToneMappingMode,
+      'control'
+    );
   };
 </script>
 
@@ -125,6 +126,13 @@
           max={0.02}
           step={0.001}
           bind:value={stageProps.postProcessing.chromaticAberration.offset}
+          oninput={() =>
+            queuePropertyUpdate(
+              stageProps,
+              ['postProcessing', 'chromaticAberration', 'offset'],
+              stageProps.postProcessing.chromaticAberration.offset,
+              'control'
+            )}
         />
       {/snippet}
     </FormControl>
@@ -142,6 +150,13 @@
             max={10}
             step={0.05}
             bind:value={stageProps.postProcessing.bloom.intensity}
+            oninput={() =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'intensity'],
+                stageProps.postProcessing.bloom.intensity,
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -153,6 +168,13 @@
             max={0.5}
             step={0.01}
             bind:value={stageProps.postProcessing.bloom.radius}
+            oninput={() =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'radius'],
+                stageProps.postProcessing.bloom.radius,
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -167,6 +189,13 @@
             max={1}
             step={0.01}
             bind:value={stageProps.postProcessing.bloom.threshold}
+            oninput={() =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'threshold'],
+                stageProps.postProcessing.bloom.threshold,
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -178,6 +207,13 @@
             max={1}
             step={0.01}
             bind:value={stageProps.postProcessing.bloom.smoothing}
+            oninput={() =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'smoothing'],
+                stageProps.postProcessing.bloom.smoothing,
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -186,7 +222,20 @@
     <div class="effectsControls__grid">
       <FormControl label="Levels" name="effectsBloomLevels" {errors}>
         {#snippet input({ inputProps })}
-          <InputSlider {...inputProps} min={0} max={16} step={1} bind:value={stageProps.postProcessing.bloom.levels} />
+          <InputSlider
+            {...inputProps}
+            min={0}
+            max={16}
+            step={1}
+            bind:value={stageProps.postProcessing.bloom.levels}
+            oninput={() =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'levels'],
+                stageProps.postProcessing.bloom.levels,
+                'control'
+              )}
+          />
         {/snippet}
       </FormControl>
       <FormControl label="Mip-map blur" name="effectsBloomBlur" {errors}>
@@ -199,8 +248,7 @@
               { label: 'off', value: 'false' }
             ]}
             onSelectedChange={(value) => {
-              stageProps.postProcessing.bloom.mipmapBlur = value === 'true';
-              socketUpdate();
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'mipmapBlur'], value === 'true', 'control');
             }}
           />
         {/snippet}
