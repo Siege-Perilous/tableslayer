@@ -12,6 +12,7 @@ primary_region = 'ewr'
 [env]
   PORT = '8080'
   BODY_SIZE_LIMIT = "20M"
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
 [http_service]
   internal_port = 8080
@@ -22,6 +23,6 @@ primary_region = 'ewr'
   processes = ['app']
 
 [[vm]]
-  memory = '1gb'
+  memory = '2gb'
   cpu_kind = 'shared'
   cpus = 1
