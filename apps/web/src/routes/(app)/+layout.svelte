@@ -50,7 +50,7 @@
     { label: 'Bluesky', href: 'https://bsky.app/profile/davesnider.com', icon: IconBrandBluesky },
     {
       label: 'Discord',
-      href: 'https://discord.gg/3ggUQeCD',
+      href: 'https://discord.gg/BaNqz5yncd',
       icon: IconBrandDiscord
     },
     { label: 'GitHub', href: 'https://github.com/siege-perilous/tableslayer', icon: IconBrandGithub },
