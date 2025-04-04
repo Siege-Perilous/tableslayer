@@ -12,6 +12,7 @@ regions = ["ewr", "ams"]
 [env]
   PORT = '8080'
   BODY_SIZE_LIMIT = "20M"
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
 [http_service]
   internal_port = 8080

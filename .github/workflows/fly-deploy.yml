@@ -45,5 +45,5 @@ jobs:
           EOF
       - name: Deploy fly productions
         run: |
-          flyctl deploy --remote-only --config fly.web.toml
-          flyctl deploy --remote-only --config fly.docs.toml
+          flyctl deploy --remote-only --config fly.web.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"
+          flyctl deploy --remote-only --config fly.docs.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"
