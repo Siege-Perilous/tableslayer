@@ -12,6 +12,7 @@ jobs:
     concurrency: deploy-group # optional: ensure only one action runs at a time
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      NODE_OPTIONS: '--max-old-space-size=4096'
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
