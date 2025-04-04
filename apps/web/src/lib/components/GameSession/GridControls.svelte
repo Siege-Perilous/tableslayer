@@ -22,16 +22,15 @@
     getResolutionOption,
     getTvDimensions,
     to8CharHex,
-    getTvSizeFromPhysicalDimensions
+    getTvSizeFromPhysicalDimensions,
+    queuePropertyUpdate
   } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     party,
     errors
   }: {
-    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;
@@ -58,39 +57,28 @@
   // Turn the local concept of TV size into the stageProps format
   const handleTvSizeChange = (diagonalSize: number) => {
     const { width, height } = getTvDimensions(diagonalSize);
-    stageProps.display.size = {
-      x: width,
-      y: height
-    };
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['display', 'size', 'x'], width, 'control');
+    queuePropertyUpdate(stageProps, ['display', 'size', 'y'], height, 'control');
   };
 
   // We provide typical TV sizes as options, but save them as x and y values
   const handleSelectedResolution = (newSelected: string) => {
     const selectedResolution = tvResolutionOptions.find((option) => option.value === newSelected)!;
-    stageProps.display.resolution = {
-      x: selectedResolution.width,
-      y: selectedResolution.height
-    };
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['display', 'resolution', 'x'], selectedResolution.width, 'control');
+    queuePropertyUpdate(stageProps, ['display', 'resolution', 'y'], selectedResolution.height, 'control');
     return selectedResolution;
   };
 
   // Hex or Square grid toggle
   const handleGridTypeChange = (gridType: number) => {
-    stageProps.grid.gridType = gridType;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['grid', 'gridType'], gridType, 'control');
   };
 
   // Ensure the handleGridColorUpdate function is also typed with ColorUpdatePayload
   const handleGridColorUpdate = (cd: ColorUpdatePayload) => {
     const gridColor = chroma(cd.hex).hex('rgb');
-    stageProps.grid = {
-      ...stageProps.grid,
-      lineColor: gridColor,
-      opacity: cd.rgba.a
-    };
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['grid', 'lineColor'], gridColor, 'control');
+    queuePropertyUpdate(stageProps, ['grid', 'opacity'], cd.rgba.a, 'control');
   };
 
   /** Padding
@@ -100,9 +88,8 @@
   let localPadding = $state(stageProps.display.padding.x);
 
   const handlePaddingChange = () => {
-    stageProps.display.padding.x = localPadding;
-    stageProps.display.padding.y = localPadding;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['display', 'padding', 'x'], localPadding, 'control');
+    queuePropertyUpdate(stageProps, ['display', 'padding', 'y'], localPadding, 'control');
   };
 
   // Local state and conversion for grid color, tv size and padding

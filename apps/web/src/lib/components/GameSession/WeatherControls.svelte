@@ -12,15 +12,13 @@
     RadioButton,
     Label
   } from '@tableslayer/ui';
-  import { to8CharHex } from '$lib/utils';
+  import { to8CharHex, queuePropertyUpdate } from '$lib/utils';
   import chroma from 'chroma-js';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     errors
   }: {
-    socketUpdate: () => void;
     stageProps: StageProps;
     errors: ZodIssue[] | undefined;
   } = $props();
@@ -31,8 +29,7 @@
 
   // Weather toggle
   const handleWeatherTypeChange = (weatherType: string) => {
-    stageProps.weather.type = Number(weatherType);
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['weather', 'type'], Number(weatherType), 'control');
   };
 
   const weatherTypes = [
@@ -44,9 +41,8 @@
   ];
 
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
-    stageProps.fog.color = chroma(cd.hex).hex('rgb');
-    stageProps.fog.opacity = cd.rgba.a;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['fog', 'color'], chroma(cd.hex).hex('rgb'), 'control');
+    queuePropertyUpdate(stageProps, ['fog', 'opacity'], cd.rgba.a, 'control');
   };
 </script>
 
@@ -63,7 +59,14 @@
   </FormControl>
   <FormControl label="Field of view" name="weatherFov" {errors}>
     {#snippet input({ inputProps })}
-      <InputSlider {...inputProps} min={10} max={120} step={1} bind:value={stageProps.weather.fov} />
+      <InputSlider
+        {...inputProps}
+        min={10}
+        max={120}
+        step={1}
+        bind:value={stageProps.weather.fov}
+        oninput={() => queuePropertyUpdate(stageProps, ['weather', 'fov'], stageProps.weather.fov, 'control')}
+      />
     {/snippet}
   </FormControl>
 </div>
@@ -78,6 +81,7 @@
         max={1}
         step={0.05}
         bind:value={stageProps.weather.opacity}
+        oninput={() => queuePropertyUpdate(stageProps, ['weather', 'opacity'], stageProps.weather.opacity, 'control')}
       />
     {/snippet}
   </FormControl>
@@ -90,6 +94,8 @@
         max={1}
         step={0.05}
         bind:value={stageProps.weather.intensity}
+        oninput={() =>
+          queuePropertyUpdate(stageProps, ['weather', 'intensity'], stageProps.weather.intensity, 'control')}
       />
     {/snippet}
   </FormControl>
@@ -107,8 +113,7 @@
         { label: 'off', value: 'false' }
       ]}
       onSelectedChange={(value) => {
-        stageProps.fog.enabled = value === 'true';
-        socketUpdate();
+        queuePropertyUpdate(stageProps, ['fog', 'enabled'], value === 'true', 'control');
       }}
     />
   </div>

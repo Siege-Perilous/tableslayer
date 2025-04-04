@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { setupGameSessionWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
-  import type { BroadcastStageUpdate, MarkerPositionUpdate } from '$lib/utils';
+  import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
 
@@ -30,22 +30,41 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
 
+  // For batched marker updates
+  let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
+  let updateScheduled = false;
+
   // Update gameIsPaused when hasActiveScene changes
   $effect(() => {
     gameIsPaused = data.gameSession.isPaused || !hasActiveScene;
   });
 
-  // Handler for optimized marker updates
+  // Handler for optimized marker updates - now with batching
   const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
     // Only update if the marker belongs to the current scene
     if (markerUpdate.sceneId === data.activeScene?.id) {
-      const index = stageProps.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
-      if (index !== -1) {
-        // Update only the position property of the marker
-        stageProps.marker.markers[index] = {
-          ...stageProps.marker.markers[index],
-          position: markerUpdate.position
-        };
+      // Add to pending updates
+      pendingMarkerUpdates[markerUpdate.markerId] = markerUpdate;
+
+      // Schedule batch update if not already scheduled
+      if (!updateScheduled) {
+        updateScheduled = true;
+        requestAnimationFrame(() => {
+          // Apply all pending updates at once
+          Object.values(pendingMarkerUpdates).forEach((update) => {
+            const index = stageProps.marker.markers.findIndex((m) => m.id === update.markerId);
+            if (index !== -1) {
+              // Update only the position property of the marker
+              stageProps.marker.markers[index] = {
+                ...stageProps.marker.markers[index],
+                position: update.position
+              };
+            }
+          });
+          // Clear pending updates and reset flag
+          pendingMarkerUpdates = {};
+          updateScheduled = false;
+        });
       }
     }
   };
@@ -93,6 +112,27 @@
         // Mode 1 is for player view
         mode: 1
       };
+    });
+
+    // Handle optimized property updates
+    socket.on('propertiesUpdated', (updates: PropertyUpdates) => {
+      if (!updates || !updates.properties || updates.sceneId !== data.activeScene?.id) return;
+
+      // Apply all property updates without rebuilding the entire state
+      updates.properties.forEach((update) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let current: any = stageProps;
+        // Navigate to the parent object
+        for (let i = 0; i < update.path.length - 1; i++) {
+          if (!current[update.path[i]]) {
+            current[update.path[i]] = {};
+          }
+          current = current[update.path[i]];
+        }
+        // Update the property
+        const lastKey = update.path[update.path.length - 1];
+        current[lastKey] = update.value;
+      });
     });
 
     $effect(() => {

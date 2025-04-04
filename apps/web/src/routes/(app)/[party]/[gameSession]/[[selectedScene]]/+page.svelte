@@ -27,7 +27,8 @@
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
     throttle,
-    type MarkerPositionUpdate
+    type MarkerPositionUpdate,
+    registerSocketUpdate
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -89,6 +90,13 @@
   const socketUpdate = () => {
     broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, activeSceneMarkers, gameSession.isPaused);
   };
+
+  // Register the socketUpdate function with the property broadcaster
+  $effect(() => {
+    if (socket && selectedScene && selectedScene.id) {
+      registerSocketUpdate(socketUpdate, socket, selectedScene.id);
+    }
+  });
 
   /**
    * KEYBOARD HANDLER

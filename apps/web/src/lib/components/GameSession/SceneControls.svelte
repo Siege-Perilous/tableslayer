@@ -259,7 +259,6 @@
             {#if scene.id === 'grid'}
               <GridControls
                 bind:stageProps
-                {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
                 {party}
@@ -288,11 +287,11 @@
             {:else if scene.id === 'play'}
               <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
             {:else if scene.id === 'weather'}
-              <WeatherControls bind:stageProps {socketUpdate} {errors} />
+              <WeatherControls bind:stageProps {errors} />
             {:else if scene.id === 'edge'}
               <EdgeControls bind:stageProps {socketUpdate} {errors} {party} />
             {:else if scene.id === 'effects'}
-              <EffectsControls bind:stageProps {socketUpdate} {errors} {party} />
+              <EffectsControls bind:stageProps {errors} {party} />
             {/if}
           {/snippet}
         </Popover>
