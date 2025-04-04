@@ -34,18 +34,6 @@
 </Panel>
 
 <style>
-  :global(.title.heroTitle) {
-    font-size: 4rem;
-    line-height: 1.2;
-    font-weight: 900;
-    width: fit-content;
-    /*  color: transparent;  */
-    /*  background-clip: text;  */
-    /*  background-image: linear-gradient(0deg, rgba(122, 5, 5, 1) 0%, rgba(223, 5, 5, 1) 35%, rgba(255, 0, 50, 1) 100%);  */
-    /*  text-shadow:  */
-    /*  2px 2px 0 rgba(255, 255, 255, 0.2),  */
-    /*  -1px 0 0 rgba(255, 255, 255, 1);  */
-  }
   :global {
     .panel.panel--home {
       display: flex;
@@ -64,14 +52,6 @@
       color: var(--fg);
     }
   }
-  .flex {
-    display: flex;
-    gap: var(--size-4);
-  }
-  :global(.heroTitle) {
-    letter-spacing: 0.2rem;
-  }
-
   @media (max-width: 768px) {
     :global(.panel.panel--home) {
       margin: 3rem 3rem auto 3rem;
