@@ -8,7 +8,7 @@
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 
-  import { tvResolutionOptions, getTvDimensions, selectTvResolutionOptions, getResolutionOption } from '$lib/utils';
+  import { tvResolutionOptions, getTvDimensions, getResolutionOption } from '$lib/utils';
   let {
     party
   }: {
@@ -36,10 +36,24 @@
   let errors = $state<ZodIssue[] | undefined>(undefined);
 
   const handleSelectedResolution = (selected: string) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === selected)!;
-    partyData.defaultDisplayResolutionX = selectedResolution.width;
-    partyData.defaultDisplayResolutionY = selectedResolution.height;
-    return selectedResolution;
+    let selectedResolution;
+
+    for (const ratioKey in tvResolutionOptions) {
+      const typedRatioKey = ratioKey as keyof typeof tvResolutionOptions;
+      const foundOption = tvResolutionOptions[typedRatioKey].find((option) => option.value === selected);
+
+      if (foundOption) {
+        selectedResolution = foundOption;
+        break;
+      }
+    }
+
+    if (selectedResolution) {
+      partyData.defaultDisplayResolutionX = selectedResolution.width;
+      partyData.defaultDisplayResolutionY = selectedResolution.height;
+      return selectedResolution;
+    }
+    return null;
   };
 
   const handleTvSizeChange = (diagonalSize: number) => {
@@ -124,7 +138,7 @@
         <Select
           {selected}
           onSelectedChange={(selected) => handleSelectedResolution(selected[0])}
-          options={selectTvResolutionOptions}
+          options={tvResolutionOptions}
           {...inputProps}
         />
       {/snippet}

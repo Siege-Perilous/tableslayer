@@ -17,7 +17,6 @@
     IconButton
   } from '@tableslayer/ui';
   import {
-    selectTvResolutionOptions,
     tvResolutionOptions,
     getResolutionOption,
     getTvDimensions,
@@ -63,10 +62,26 @@
 
   // We provide typical TV sizes as options, but save them as x and y values
   const handleSelectedResolution = (newSelected: string) => {
-    const selectedResolution = tvResolutionOptions.find((option) => option.value === newSelected)!;
-    queuePropertyUpdate(stageProps, ['display', 'resolution', 'x'], selectedResolution.width, 'control');
-    queuePropertyUpdate(stageProps, ['display', 'resolution', 'y'], selectedResolution.height, 'control');
-    return selectedResolution;
+    // Find the resolution across all aspect ratio groups
+    let selectedResolution;
+
+    // Properly type the keys when iterating
+    for (const ratioKey in tvResolutionOptions) {
+      const typedRatioKey = ratioKey as keyof typeof tvResolutionOptions;
+      const foundOption = tvResolutionOptions[typedRatioKey].find((option) => option.value === newSelected);
+
+      if (foundOption) {
+        selectedResolution = foundOption;
+        break;
+      }
+    }
+
+    if (selectedResolution) {
+      queuePropertyUpdate(stageProps, ['display', 'resolution', 'x'], selectedResolution.width, 'control');
+      queuePropertyUpdate(stageProps, ['display', 'resolution', 'y'], selectedResolution.height, 'control');
+      return selectedResolution;
+    }
+    return null;
   };
 
   // Hex or Square grid toggle
@@ -96,7 +111,10 @@
   $effect(() => {
     gridHex = to8CharHex(stageProps.grid.lineColor, stageProps.grid.opacity);
     tvDiagnalSize = getTvSizeFromPhysicalDimensions(stageProps.display.size.x, stageProps.display.size.y);
-    selected = [getResolutionOption(stageProps.display.resolution.x, stageProps.display.resolution.y)?.value || ''];
+
+    // Find resolution option across all aspect ratio groups
+    const resolutionOption = getResolutionOption(stageProps.display.resolution.x, stageProps.display.resolution.y);
+    selected = [resolutionOption?.value || ''];
 
     if (stageProps.display.padding.x !== localPadding) {
       localPadding = stageProps.display.padding.x;
@@ -125,7 +143,7 @@
       <Select
         {selected}
         onSelectedChange={(selected) => handleSelectedResolution(selected[0])}
-        options={selectTvResolutionOptions}
+        options={tvResolutionOptions}
         {...inputProps}
       />
     {/snippet}
