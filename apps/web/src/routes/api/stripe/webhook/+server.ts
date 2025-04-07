@@ -82,17 +82,25 @@ export const POST: RequestHandler = async (event) => {
         const priceId = subscription.items?.data[0]?.price.id;
         const plan = PRICE_PLAN_MAP[priceId] || 'free';
 
+        let planNextBillingDate: Date | null = null;
+
+        if (subscription.items?.data[0]?.current_period_end) {
+          const itemPeriodEnd = subscription.items.data[0].current_period_end;
+          planNextBillingDate = new Date(itemPeriodEnd * 1000);
+        }
+
+        const cancelAt = subscription.cancel_at;
+
         await updateParty(partyId, {
           plan,
           stripeCustomerId,
           planStatus: subscription.status,
-          planNextBillingDate: subscription.current_period_end
-            ? new Date(subscription.current_period_end * 1000)
-            : null,
-          planExpirationDate: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null
+          planNextBillingDate: planNextBillingDate,
+          planExpirationDate: cancelAt ? new Date(cancelAt * 1000) : null
         });
         break;
       }
+
       case 'customer.subscription.deleted': {
         await updateParty(partyId, {
           plan: 'free',
