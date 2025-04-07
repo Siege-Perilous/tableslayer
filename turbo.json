@@ -8,7 +8,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT", ".env*"],
-      "outputs": [".svelte-kit/**", ".vercel/**"]
+      "outputs": [".svelte-kit/**"]
     },
     "web#build": {
       "dependsOn": ["^web#migrate"],
@@ -41,7 +41,7 @@
         "STRIPE_WEBHOOK_KEY",
         "STRIPE_API_KEY"
       ],
-      "outputs": [".svelte-kit/**", ".vercel/**"]
+      "outputs": [".svelte-kit/**"]
     },
     "web#start": {
       "env": [
@@ -83,7 +83,7 @@
     },
     "docs#build": {
       "env": ["BASE_URL"],
-      "outputs": [".svelte-kit/**", ".vercel/**"]
+      "outputs": [".svelte-kit/**"]
     },
     "tsc": {
       "dependsOn": ["^tsc"],

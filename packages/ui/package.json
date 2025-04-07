@@ -42,7 +42,6 @@
     "@magidoc/plugin-svelte-marked": "^6.2.0",
     "@melt-ui/svelte": "^0.86.6",
     "@sveltejs/adapter-auto": "^6.0.0",
-    "@sveltejs/adapter-vercel": "^5.7.0",
     "@sveltejs/kit": "^2.20.4",
     "@sveltejs/package": "^2.3.10",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",

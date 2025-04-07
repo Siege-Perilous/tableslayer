@@ -58,7 +58,6 @@
     "@playwright/test": "^1.51.1",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-node": "^5.2.12",
-    "@sveltejs/adapter-vercel": "^5.7.0",
     "@sveltejs/kit": "^2.20.4",
     "@sveltejs/vite-plugin-svelte": "5.0.3",
     "@tableslayer/eslint-config": "workspace:*",
