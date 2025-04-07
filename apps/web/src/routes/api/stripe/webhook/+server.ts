@@ -79,20 +79,16 @@ export const POST: RequestHandler = async (event) => {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = dataObject as Stripe.Subscription;
-        // For debugging
-        console.log('Subscription created/updated:', JSON.stringify(subscription, null, 2));
-
         const priceId = subscription.items?.data[0]?.price.id;
         const plan = PRICE_PLAN_MAP[priceId] || 'free';
 
-        // Get next billing date directly from the subscription item's current_period_end
         let planNextBillingDate: Date | null = null;
+
         if (subscription.items?.data[0]?.current_period_end) {
-          const currentPeriodEnd = subscription.items.data[0].current_period_end;
-          planNextBillingDate = new Date(currentPeriodEnd * 1000);
+          const itemPeriodEnd = subscription.items.data[0].current_period_end;
+          planNextBillingDate = new Date(itemPeriodEnd * 1000);
         }
 
-        // For cancel_at, we can still use it directly as it appears in the response
         const cancelAt = subscription.cancel_at;
 
         await updateParty(partyId, {
