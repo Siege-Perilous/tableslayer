@@ -4,6 +4,7 @@
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { Head } from '$lib/components';
   import { goto } from '$app/navigation';
+  import { IllustrationParty } from '$lib/components';
 
   let file = $state<FileList | null>(null);
   let partyName = $state('');
@@ -51,6 +52,8 @@
 
 <Head title="Create Party" description="Create a new party Table Slayer" />
 
+<IllustrationParty />
+
 <Panel class="createPartyPanel">
   <Title as="h1" size="md" data-testid="createParty">Create a new party</Title>
   <Spacer size={8} />
@@ -76,8 +79,13 @@
   :global(.panel.createPartyPanel) {
     display: flex;
     flex-direction: column;
-    max-width: var(--contain-smallForm);
+    max-width: 480px;
     padding: var(--size-8);
-    margin: 20vh auto auto auto;
+    margin: 20vh auto auto 10vh;
+    position: relative;
+    z-index: 5;
+    @media (max-width: 1000px) {
+      margin: 3rem 3rem auto 3rem;
+    }
   }
 </style>
