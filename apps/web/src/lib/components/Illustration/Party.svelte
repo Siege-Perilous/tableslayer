@@ -1,7 +1,6 @@
 <script lang="ts">
-  let { showPortal }: { showPortal: boolean } = $props();
   let m = $state({ x: 0, y: 0 });
-  import { fly, scale } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
 
   const handleMousemove = (event: MouseEvent) => {
     m.x = event.clientX;
