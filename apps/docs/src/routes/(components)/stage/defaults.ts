@@ -17,7 +17,7 @@ export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
   debug: {
-    enableStats: true,
+    enableStats: false,
     loggingRate: 30
   },
   display: {

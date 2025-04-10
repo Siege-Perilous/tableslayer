@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useThrelte } from '@threlte/core';
+  import { T, useTask, useThrelte, useLoader } from '@threlte/core';
   import { DrawMode, type FogOfWarLayerProps } from './types';
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
@@ -84,8 +84,8 @@
   };
 
   let imageUrl: string | null = $state(null);
-  const textureLoader = new THREE.TextureLoader();
 
+  const loader = useLoader(THREE.TextureLoader);
   // Double-buffered render targets
   let tempTarget = new THREE.WebGLRenderTarget(1, 1, options);
   let persistedTarget = new THREE.WebGLRenderTarget(1, 1, options);
@@ -180,7 +180,7 @@
   });
 
   function loadImage(url: string) {
-    textureLoader.load(url, (texture) => render('revert', true, texture));
+    loader.load(url).then((texture) => render('revert', true, texture));
   }
 
   /**
@@ -226,6 +226,7 @@
 
     if (persist) {
       swapBuffers();
+      lastTexture?.dispose();
     }
   }
 

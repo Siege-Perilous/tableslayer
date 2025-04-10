@@ -19,8 +19,6 @@
 
   const { props, onMapLoading, onMapLoaded }: Props = $props();
 
-  const loader = useLoader(TextureLoader);
-
   const callbacks = getContext<Callbacks>('callbacks');
   const onMapUpdate = callbacks.onMapUpdate;
 
@@ -51,7 +49,7 @@
     onMapLoading();
 
     // Update the image whenever the URL is changed
-    loader
+    useLoader(TextureLoader)
       .load(props.map.url, {
         transform: (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
@@ -59,6 +57,7 @@
         }
       })
       .then((texture) => {
+        mapImageMaterial.map?.dispose();
         mapImageMaterial.map = texture;
         mapImageMaterial.needsUpdate = true;
         mapSize = {
@@ -78,6 +77,7 @@
   }
 
   export function getCompositeMapTexture(): THREE.Texture | null {
+    console.log('getCompositeMapTexture', mapImageMaterial.map);
     return mapImageMaterial.map;
   }
 
