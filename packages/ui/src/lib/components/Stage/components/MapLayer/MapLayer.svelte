@@ -77,7 +77,6 @@
   }
 
   export function getCompositeMapTexture(): THREE.Texture | null {
-    console.log('getCompositeMapTexture', mapImageMaterial.map);
     return mapImageMaterial.map;
   }
 
