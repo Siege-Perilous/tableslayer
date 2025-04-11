@@ -42,7 +42,7 @@
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
-  const composer = new EffectComposer(renderer);
+  let composer = new EffectComposer(renderer);
 
   onMount(() => {
     let before = autoRender.current;
@@ -87,7 +87,8 @@
     // Need to convert the LUT to a LookupTexture
     Promise.resolve(getLUT(postProcessing.lut.url))
       .then((lut) => {
-        composer.removeAllPasses();
+        composer.dispose();
+        composer = new EffectComposer(renderer);
 
         const effects = [];
 

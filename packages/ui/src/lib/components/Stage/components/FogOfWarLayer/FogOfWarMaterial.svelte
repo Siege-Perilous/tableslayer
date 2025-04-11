@@ -226,7 +226,6 @@
 
     if (persist) {
       swapBuffers();
-      lastTexture?.dispose();
     }
   }
 
