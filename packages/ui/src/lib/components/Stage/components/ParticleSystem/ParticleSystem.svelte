@@ -21,132 +21,132 @@
   let mesh: THREE.Mesh | undefined = $state(undefined);
   let geometry: THREE.BufferGeometry | undefined = $state(undefined);
 
-  $effect(() => {
-    untrack(() => {
-      geometry?.dispose();
+  $effect.pre(() => {
+    const rng = new RNG(0);
+    const count = Math.round(props.maxParticleCount * (intensity ?? 1));
 
-      geometry = new THREE.BufferGeometry();
+    // Initialize particle attributes - 4 vertices per quad
+    const positions = new Float32Array(count * 12); // 4 vertices * 3 coords
+    const centers = new Float32Array(count * 8); // 1 center * 2 coords
+    const uvs = new Float32Array(count * 8); // 4 vertices * 2 coords
+    const indices = new Uint32Array(count * 6); // 2 triangles * 3 vertices
+    const ageOffsets = new Float32Array(count * 4); // 4 vertices
 
-      const rng = new RNG(0);
-      const count = Math.round(props.maxParticleCount * (intensity ?? 1));
+    const particle = ParticleData[props.type];
 
-      // Initialize particle attributes - 4 vertices per quad
-      const positions = new Float32Array(count * 12); // 4 vertices * 3 coords
-      const centers = new Float32Array(count * 8); // 1 center * 2 coords
-      const uvs = new Float32Array(count * 8); // 4 vertices * 2 coords
-      const indices = new Uint32Array(count * 6); // 2 triangles * 3 vertices
-      const ageOffsets = new Float32Array(count * 4); // 4 vertices
+    // Initialize particles
+    for (let i = 0; i < count; i++) {
+      const radius = rng.random() * (props.spawnArea.maxRadius - props.spawnArea.minRadius) + props.spawnArea.minRadius;
+      const angle = rng.random() * 2 * Math.PI;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      const z = -1.001;
 
-      const particle = ParticleData[props.type];
+      // Quad vertex positions (same for all 4 corners initially)
+      const baseIdx = i * 12;
 
-      // Initialize particles
-      for (let i = 0; i < count; i++) {
-        const radius =
-          rng.random() * (props.spawnArea.maxRadius - props.spawnArea.minRadius) + props.spawnArea.minRadius;
-        const angle = rng.random() * 2 * Math.PI;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        const z = -1.001;
+      // Generate random size for this particle
+      let size = rng.random() * (props.size.max - props.size.min) + props.size.min;
+      let width = size * props.scale.x;
+      let height = size * props.scale.y;
 
-        // Quad vertex positions (same for all 4 corners initially)
-        const baseIdx = i * 12;
+      const rotation = new THREE.Euler(0, 0, props.rotation.offset * DEG2RAD);
+      rotation.z += props.rotation.alignRadially ? angle : 0;
+      rotation.z += props.rotation.randomize ? rng.random() * 360 : 0;
 
-        // Generate random size for this particle
-        let size = rng.random() * (props.size.max - props.size.min) + props.size.min;
-        let width = size * props.scale.x;
-        let height = size * props.scale.y;
+      const v1 = new THREE.Vector3(-width / 2, -height / 2, 0);
+      const v2 = new THREE.Vector3(width / 2, -height / 2, 0);
+      const v3 = new THREE.Vector3(-width / 2, height / 2, 0);
+      const v4 = new THREE.Vector3(width / 2, height / 2, 0);
 
-        const rotation = new THREE.Euler(0, 0, props.rotation.offset * DEG2RAD);
-        rotation.z += props.rotation.alignRadially ? angle : 0;
-        rotation.z += props.rotation.randomize ? rng.random() * 360 : 0;
+      v1.applyEuler(rotation);
+      v2.applyEuler(rotation);
+      v3.applyEuler(rotation);
+      v4.applyEuler(rotation);
 
-        const v1 = new THREE.Vector3(-width / 2, -height / 2, 0);
-        const v2 = new THREE.Vector3(width / 2, -height / 2, 0);
-        const v3 = new THREE.Vector3(-width / 2, height / 2, 0);
-        const v4 = new THREE.Vector3(width / 2, height / 2, 0);
+      v1.add(new THREE.Vector3(x, y, z));
+      v2.add(new THREE.Vector3(x, y, z));
+      v3.add(new THREE.Vector3(x, y, z));
+      v4.add(new THREE.Vector3(x, y, z));
 
-        v1.applyEuler(rotation);
-        v2.applyEuler(rotation);
-        v3.applyEuler(rotation);
-        v4.applyEuler(rotation);
+      // Set quad corners with size offset
+      positions[baseIdx] = v1.x; // Bottom left x
+      positions[baseIdx + 1] = v1.y; // Bottom left y
+      positions[baseIdx + 2] = v1.z; // Bottom left z
 
-        v1.add(new THREE.Vector3(x, y, z));
-        v2.add(new THREE.Vector3(x, y, z));
-        v3.add(new THREE.Vector3(x, y, z));
-        v4.add(new THREE.Vector3(x, y, z));
+      positions[baseIdx + 3] = v2.x; // Bottom right x
+      positions[baseIdx + 4] = v2.y; // Bottom right y
+      positions[baseIdx + 5] = v2.z; // Bottom right z
 
-        // Set quad corners with size offset
-        positions[baseIdx] = v1.x; // Bottom left x
-        positions[baseIdx + 1] = v1.y; // Bottom left y
-        positions[baseIdx + 2] = v1.z; // Bottom left z
+      positions[baseIdx + 6] = v3.x; // Top left x
+      positions[baseIdx + 7] = v3.y; // Top left y
+      positions[baseIdx + 8] = v3.z; // Top left z
 
-        positions[baseIdx + 3] = v2.x; // Bottom right x
-        positions[baseIdx + 4] = v2.y; // Bottom right y
-        positions[baseIdx + 5] = v2.z; // Bottom right z
+      positions[baseIdx + 9] = v4.x; // Top right x
+      positions[baseIdx + 10] = v4.y; // Top right y
+      positions[baseIdx + 11] = v4.z; // Top right z
 
-        positions[baseIdx + 6] = v3.x; // Top left x
-        positions[baseIdx + 7] = v3.y; // Top left y
-        positions[baseIdx + 8] = v3.z; // Top left z
+      // Set center position
+      const centerIdx = i * 8;
+      centers[centerIdx] = x;
+      centers[centerIdx + 1] = y;
+      centers[centerIdx + 2] = x;
+      centers[centerIdx + 3] = y;
+      centers[centerIdx + 4] = x;
+      centers[centerIdx + 5] = y;
+      centers[centerIdx + 6] = x;
+      centers[centerIdx + 7] = y;
 
-        positions[baseIdx + 9] = v4.x; // Top right x
-        positions[baseIdx + 10] = v4.y; // Top right y
-        positions[baseIdx + 11] = v4.z; // Top right z
+      // Calculate random frame from texture atlas
+      const frame = Math.floor(rng.random() * (particle.columns * particle.rows));
+      const col = frame % particle.columns;
+      const row = Math.floor(frame / particle.columns);
 
-        // Set center position
-        const centerIdx = i * 8;
-        centers[centerIdx] = x;
-        centers[centerIdx + 1] = y;
-        centers[centerIdx + 2] = x;
-        centers[centerIdx + 3] = y;
-        centers[centerIdx + 4] = x;
-        centers[centerIdx + 5] = y;
-        centers[centerIdx + 6] = x;
-        centers[centerIdx + 7] = y;
+      // Calculate UV coordinates for this frame
+      const uv0 = new THREE.Vector2(col / particle.columns, row / particle.rows);
+      const uv1 = new THREE.Vector2((col + 1) / particle.columns, (row + 1) / particle.rows);
 
-        // Calculate random frame from texture atlas
-        const frame = Math.floor(rng.random() * (particle.columns * particle.rows));
-        const col = frame % particle.columns;
-        const row = Math.floor(frame / particle.columns);
+      // UV coordinates for quad
+      const uvBaseIdx = i * 8;
+      uvs[uvBaseIdx] = uv0.x; // bottom left
+      uvs[uvBaseIdx + 1] = uv0.y;
+      uvs[uvBaseIdx + 2] = uv1.x; // bottom right
+      uvs[uvBaseIdx + 3] = uv0.y;
+      uvs[uvBaseIdx + 4] = uv0.x; // top left
+      uvs[uvBaseIdx + 5] = uv1.y;
+      uvs[uvBaseIdx + 6] = uv1.x; // top right
+      uvs[uvBaseIdx + 7] = uv1.y;
 
-        // Calculate UV coordinates for this frame
-        const uv0 = new THREE.Vector2(col / particle.columns, row / particle.rows);
-        const uv1 = new THREE.Vector2((col + 1) / particle.columns, (row + 1) / particle.rows);
+      // Indices for two triangles
+      const indexBaseIdx = i * 6;
+      const vertexBaseIdx = i * 4;
+      indices[indexBaseIdx] = vertexBaseIdx;
+      indices[indexBaseIdx + 1] = vertexBaseIdx + 1;
+      indices[indexBaseIdx + 2] = vertexBaseIdx + 2;
+      indices[indexBaseIdx + 3] = vertexBaseIdx + 1;
+      indices[indexBaseIdx + 4] = vertexBaseIdx + 3;
+      indices[indexBaseIdx + 5] = vertexBaseIdx + 2;
 
-        // UV coordinates for quad
-        const uvBaseIdx = i * 8;
-        uvs[uvBaseIdx] = uv0.x; // bottom left
-        uvs[uvBaseIdx + 1] = uv0.y;
-        uvs[uvBaseIdx + 2] = uv1.x; // bottom right
-        uvs[uvBaseIdx + 3] = uv0.y;
-        uvs[uvBaseIdx + 4] = uv0.x; // top left
-        uvs[uvBaseIdx + 5] = uv1.y;
-        uvs[uvBaseIdx + 6] = uv1.x; // top right
-        uvs[uvBaseIdx + 7] = uv1.y;
+      // Random attributes (same for all vertices of quad)
+      const ageOffset = rng.random() * props.lifetime;
 
-        // Indices for two triangles
-        const indexBaseIdx = i * 6;
-        const vertexBaseIdx = i * 4;
-        indices[indexBaseIdx] = vertexBaseIdx;
-        indices[indexBaseIdx + 1] = vertexBaseIdx + 1;
-        indices[indexBaseIdx + 2] = vertexBaseIdx + 2;
-        indices[indexBaseIdx + 3] = vertexBaseIdx + 1;
-        indices[indexBaseIdx + 4] = vertexBaseIdx + 3;
-        indices[indexBaseIdx + 5] = vertexBaseIdx + 2;
-
-        // Random attributes (same for all vertices of quad)
-        const ageOffset = rng.random() * props.lifetime;
-
-        for (let v = 0; v < 4; v++) {
-          ageOffsets[i * 4 + v] = ageOffset;
-        }
+      for (let v = 0; v < 4; v++) {
+        ageOffsets[i * 4 + v] = ageOffset;
       }
+    }
 
+    untrack(() => {
+      geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('center', new THREE.BufferAttribute(centers, 2));
       geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
       geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
       geometry.setIndex(new THREE.BufferAttribute(indices, 1));
     });
+
+    return () => {
+      geometry?.dispose();
+    };
   });
 
   const material = new THREE.ShaderMaterial();

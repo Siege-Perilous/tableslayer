@@ -22,6 +22,7 @@
   const callbacks = getContext<Callbacks>('callbacks');
   const onMapUpdate = callbacks.onMapUpdate;
 
+  const loader = useLoader(TextureLoader);
   let imageUrl: string | null = $state(null);
   let mapImageMaterial = new THREE.MeshBasicMaterial();
   let fogOfWarLayer: FogOfWarExports;
@@ -49,7 +50,7 @@
     onMapLoading();
 
     // Update the image whenever the URL is changed
-    useLoader(TextureLoader)
+    loader
       .load(props.map.url, {
         transform: (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
