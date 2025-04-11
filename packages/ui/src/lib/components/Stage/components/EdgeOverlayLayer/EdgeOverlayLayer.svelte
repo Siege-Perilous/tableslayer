@@ -30,6 +30,7 @@
         }
       })
       .then((tex) => {
+        texture?.dispose();
         texture = tex;
       });
   });

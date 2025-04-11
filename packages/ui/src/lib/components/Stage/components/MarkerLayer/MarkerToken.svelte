@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T } from '@threlte/core';
+  import { T, useLoader } from '@threlte/core';
   import { MarkerShape, type Marker } from './types';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import { getGridCellSize } from '../../helpers/grid';
@@ -43,6 +43,7 @@
     shadowOffset
   }: Props = $props();
 
+  const loader = useLoader(THREE.TextureLoader);
   const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
 
   // The size of the marker is 90% of the grid cell size
@@ -63,16 +64,13 @@
   // Load image if URL is provided
   $effect(() => {
     if (marker.imageUrl) {
-      const loader = new THREE.TextureLoader();
-      loader.load(
-        marker.imageUrl,
-        (texture) => {
+      loader
+        .load(marker.imageUrl)
+        .then((texture) => {
           imageTexture = texture;
           imageTexture.needsUpdate = true;
-        },
-        undefined,
-        (err) => console.error('Error loading image:', err)
-      );
+        })
+        .catch((err) => console.error('Error loading image:', err));
     } else {
       imageTexture = null;
     }

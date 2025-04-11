@@ -19,11 +19,10 @@
 
   const { props, onMapLoading, onMapLoaded }: Props = $props();
 
-  const loader = useLoader(TextureLoader);
-
   const callbacks = getContext<Callbacks>('callbacks');
   const onMapUpdate = callbacks.onMapUpdate;
 
+  const loader = useLoader(TextureLoader);
   let imageUrl: string | null = $state(null);
   let mapImageMaterial = new THREE.MeshBasicMaterial();
   let fogOfWarLayer: FogOfWarExports;
@@ -59,6 +58,7 @@
         }
       })
       .then((texture) => {
+        mapImageMaterial.map?.dispose();
         mapImageMaterial.map = texture;
         mapImageMaterial.needsUpdate = true;
         mapSize = {

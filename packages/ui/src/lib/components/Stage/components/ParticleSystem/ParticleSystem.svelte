@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask } from '@threlte/core';
+  import { T, useTask, useLoader } from '@threlte/core';
   import { ParticleData } from './types';
   import type { ParticleSystemProps } from './types';
   import { RNG } from './rng';
@@ -8,6 +8,7 @@
   import fragmentShader from '../../shaders/Particles.frag?raw';
   import vertexShader from '../../shaders/Particles.vert?raw';
   import { DEG2RAD } from 'three/src/math/MathUtils';
+  import { onDestroy, untrack } from 'svelte';
 
   interface Props {
     props: ParticleSystemProps;
@@ -18,10 +19,9 @@
   const { props, opacity, intensity }: Props = $props();
 
   let mesh: THREE.Mesh | undefined = $state(undefined);
+  let geometry: THREE.BufferGeometry | undefined = $state(undefined);
 
-  const geometry = $derived.by(() => {
-    const geometry = new THREE.BufferGeometry();
-
+  $effect.pre(() => {
     const rng = new RNG(0);
     const count = Math.round(props.maxParticleCount * (intensity ?? 1));
 
@@ -135,25 +135,39 @@
       }
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('center', new THREE.BufferAttribute(centers, 2));
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
-    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+    untrack(() => {
+      geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('center', new THREE.BufferAttribute(centers, 2));
+      geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      geometry.setAttribute('ageOffset', new THREE.BufferAttribute(ageOffsets, 1));
+      geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+    });
 
-    return geometry;
+    return () => {
+      geometry?.dispose();
+    };
   });
 
   const material = new THREE.ShaderMaterial();
-  const loader = new THREE.TextureLoader();
+  const loader = useLoader(THREE.TextureLoader);
 
-  // Particle texture
-  const texture = $derived(loader.load(ParticleData[props.type].url));
+  // Track current texture for disposal
+  let currentTexture: THREE.Texture | null = $state(null);
+
+  // Add cleanup on component destruction
+  onDestroy(() => {
+    geometry?.dispose();
+    if (currentTexture) {
+      currentTexture.dispose();
+      currentTexture = null;
+    }
+  });
 
   // Create a derived value for uniforms that updates when props change
   const uniforms = $derived({
     uTime: { value: 0 },
-    uTexture: { value: texture },
+    uTexture: { value: currentTexture },
     uOpacity: { value: opacity },
     uColor: { value: new THREE.Color(props.color) },
 
@@ -167,6 +181,19 @@
     uFadeInTime: { value: props.fadeInTime },
     uFadeOutTime: { value: props.fadeOutTime },
     uScale: { value: props.scale }
+  });
+
+  $effect(() => {
+    loader.load(ParticleData[props.type].url).then((newTexture) => {
+      untrack(() => {
+        currentTexture?.dispose();
+        currentTexture = newTexture;
+
+        if (material.uniforms.uTexture) {
+          material.uniforms.uTexture.value = newTexture;
+        }
+      });
+    });
   });
 
   // Update material uniforms whenever they change
