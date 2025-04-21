@@ -99,7 +99,7 @@
 
     <div class="headerContainer__section">
       <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
-        <Icon Icon={$mode === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
+        <Icon Icon={mode.current === 'dark' ? IconSun : IconMoon} size={16} stroke={2} />
       </IconButton>
       <AvatarPopover
         src={data.user.thumb.resizedUrl || data.user.thumb.url}
