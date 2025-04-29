@@ -36,7 +36,7 @@
     "@sentry/sveltekit": "^9",
     "@tabler/icons-svelte": "^3.31.0",
     "@tableslayer/ui": "workspace:*",
-    "@tanstack/svelte-query": "^5.74.7",
+    "@tanstack/svelte-query": "^5.74.9",
     "@tursodatabase/api": "^1.9.0",
     "chroma-js": "^3.1.2",
     "dotenv": "^16.5.0",
