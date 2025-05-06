@@ -20,7 +20,7 @@
   "dependencies": {
     "@tabler/icons-svelte": "^3.31.0",
     "@tableslayer/ui": "workspace:*",
-    "mode-watcher": "^1.0.2",
+    "mode-watcher": "^1.0.6",
     "svelte-tweakpane-ui": "^1.5.6"
   },
   "devDependencies": {
@@ -28,20 +28,20 @@
     "@playwright/test": "^1.52.0",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.20.7",
+    "@sveltejs/kit": "^2.20.8",
     "@sveltejs/vite-plugin-svelte": "5.0.3",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@threlte/core": "8.0.2",
     "@threlte/extras": "9.1.4",
-    "@tiptap/core": "^2.11.7",
+    "@tiptap/core": "^2.11.9",
     "dotenv": "^16.5.0",
     "postprocessing": "6.37.3",
     "svelte": "5.28.2",
-    "svelte-check": "^4.1.6",
+    "svelte-check": "^4.1.7",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3",
-    "vite": "^6.3.3",
+    "vite": "^6.3.4",
     "vitest": "^3.1.2"
   }
 }
