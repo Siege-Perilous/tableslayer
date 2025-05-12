@@ -12,7 +12,7 @@ Table Slayer provides tools for game masters to project animated battle maps on 
 
 Table Slayer is available under a functional source [license](LICENSE.md) that becomes Apache 2 after two years. You are free to host and modify Table Slayer on your own as long as you don't try to build a competing business. The primary intention of the source being open is so hobbyists can get familiar with a large Svelte codebase. We welcome PRs and bug reports. If you are planning a large feature, please make an issue first. Any PRs you contribute will fall under the same usage license.
 
-## Design philosophies
+## Design philosophy
 
 This project is managed under some core philosophies. These are hard opinions that will never change.
 
