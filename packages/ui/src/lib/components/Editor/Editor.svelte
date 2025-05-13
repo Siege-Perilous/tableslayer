@@ -62,6 +62,23 @@
   let currentLinkElement: HTMLAnchorElement | null = $state(null);
   let currentLinkUrl = $state('');
   let cleanupAutoUpdate: (() => void) | undefined;
+  let portalContainer: HTMLDivElement | undefined = $state();
+
+  // Create portal container in body when component is mounted
+  function createPortalContainer() {
+    // Check if portal container already exists
+    const existingContainer = document.getElementById('editorLinkPortal');
+    if (existingContainer) {
+      portalContainer = existingContainer as HTMLDivElement;
+      return;
+    }
+
+    // Create a new portal container
+    const container = document.createElement('div');
+    container.id = 'editorLinkPortal';
+    document.body.appendChild(container);
+    portalContainer = container;
+  }
 
   const textType = $derived.by(() => {
     if (isH1) return 'Huge';
@@ -88,6 +105,9 @@
   }
 
   onMount(() => {
+    // Create portal container
+    createPortalContainer();
+
     // Default empty content
     const emptyContent = { type: 'doc', content: [{ type: 'paragraph' }] };
 
@@ -168,6 +188,18 @@
     if (cleanupAutoUpdate) {
       cleanupAutoUpdate();
     }
+
+    // Clean up the popover element from the portal container
+    if (linkPopoverElement && portalContainer && portalContainer.contains(linkPopoverElement)) {
+      portalContainer.removeChild(linkPopoverElement);
+    }
+
+    // Remove portal container if it exists and we are the last editor instance
+    if (portalContainer && portalContainer.childNodes.length === 0) {
+      if (document.body.contains(portalContainer)) {
+        document.body.removeChild(portalContainer);
+      }
+    }
   });
 
   function handleEditorClick(e: MouseEvent) {
@@ -196,7 +228,9 @@
         !linkPopoverElement.contains(target) &&
         currentLinkElement !== target &&
         !currentLinkElement?.contains(target) &&
-        !target.closest('.editor__btn') // Don't close when clicking toolbar buttons
+        !target.closest('.editor__btn') && // Don't close when clicking toolbar buttons
+        // Also check if we're clicking inside the editor but not on a link
+        !(element?.contains(target) && !target.closest('a'))
       ) {
         hideLinkPopover();
       }
@@ -222,7 +256,28 @@
   }
 
   function showLinkPopover(anchorElement: HTMLElement) {
-    if (!linkPopoverElement) return;
+    if (!linkPopoverElement || !portalContainer) return;
+
+    // Move the popover element to the portal container if it's not already there
+    if (!portalContainer.contains(linkPopoverElement)) {
+      // Create a new popover element in the portal container
+      const popoverClone = linkPopoverElement.cloneNode(true) as HTMLDivElement;
+      portalContainer.appendChild(popoverClone);
+
+      // Update our reference to the new popover element
+      linkPopoverElement = popoverClone;
+
+      // Find the input element within the cloned popover
+      linkInputElement = popoverClone.querySelector('.linkPopover__input') as HTMLInputElement;
+
+      // Setup event handlers for the portal popover
+      setupPortalPopoverEvents();
+    }
+
+    // Always update the input field value with the current link URL
+    if (linkInputElement) {
+      linkInputElement.value = currentLinkUrl;
+    }
 
     linkPopoverVisible = true;
 
@@ -239,7 +294,9 @@
         if (linkPopoverElement) {
           Object.assign(linkPopoverElement.style, {
             left: `${x}px`,
-            top: `${y}px`
+            top: `${y}px`,
+            position: 'absolute',
+            display: 'block'
           });
         }
       });
@@ -262,6 +319,11 @@
     if (cleanupAutoUpdate) {
       cleanupAutoUpdate();
       cleanupAutoUpdate = undefined;
+    }
+
+    // Hide the popover in the portal if it exists
+    if (linkPopoverElement && portalContainer && portalContainer.contains(linkPopoverElement)) {
+      linkPopoverElement.style.display = 'none';
     }
   }
 
@@ -306,6 +368,35 @@
     if (currentLinkUrl) {
       window.open(currentLinkUrl, '_blank');
       hideLinkPopover();
+    }
+  }
+
+  // Setup portal popover event handlers when the component is mounted
+  function setupPortalPopoverEvents() {
+    if (!linkPopoverElement || !portalContainer) return;
+
+    // Add event handlers for the buttons in the portal popover
+    const confirmButton = linkPopoverElement.querySelector('.linkPopover__inputRow button') as HTMLElement;
+    if (confirmButton) {
+      // Use the correct typing approach for TypeScript with Svelte 5
+      (confirmButton as unknown as { onclick: typeof addOrUpdateLink }).onclick = addOrUpdateLink;
+    }
+
+    // Add event handlers for the visit and remove buttons
+    const buttons = linkPopoverElement.querySelectorAll('.linkPopover__actions button');
+    if (buttons.length >= 2) {
+      (buttons[0] as unknown as { onclick: typeof visitLink }).onclick = visitLink;
+      (buttons[1] as unknown as { onclick: typeof removeLink }).onclick = removeLink;
+    }
+
+    if (linkInputElement) {
+      // Set up keydown handler for Enter key
+      (linkInputElement as unknown as { onkeydown: typeof handleLinkInputKeydown }).onkeydown = handleLinkInputKeydown;
+
+      // Set up input handler to keep our state variable in sync
+      linkInputElement.addEventListener('input', (e: Event) => {
+        currentLinkUrl = (e.target as HTMLInputElement).value;
+      });
     }
   }
 
@@ -458,8 +549,8 @@
     <div bind:this={element}></div>
   </div>
 
-  <!-- Link Popover -->
-  <div bind:this={linkPopoverElement} class="linkPopover" class:linkPopover--visible={linkPopoverVisible}>
+  <!-- Link Popover Template (hidden) - Will be cloned to portal container -->
+  <div bind:this={linkPopoverElement} class="linkPopover" style="display: none;">
     <div class="linkPopover__content">
       <div class="linkPopover__inputRow">
         <Input
@@ -561,12 +652,8 @@
   /* Link Popover Styles */
   .linkPopover {
     position: absolute;
-    z-index: 100;
-    display: none;
+    z-index: 9999;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
-  }
-  .linkPopover--visible {
-    display: block;
   }
   .linkPopover__content {
     box-shadow: var(--shadow-1);
@@ -580,6 +667,17 @@
     display: flex;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
+  }
+
+  :global(#editorLinkPortal) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  :global(#editorLinkPortal .linkPopover) {
+    pointer-events: auto;
   }
   :global {
     .tiptap:focus-visible {
