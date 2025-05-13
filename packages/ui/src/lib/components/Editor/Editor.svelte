@@ -67,7 +67,7 @@
   // Create portal container in body when component is mounted
   function createPortalContainer() {
     // Check if portal container already exists
-    const existingContainer = document.getElementById('editor-link-portal');
+    const existingContainer = document.getElementById('editorLinkPortal');
     if (existingContainer) {
       portalContainer = existingContainer as HTMLDivElement;
       return;
@@ -75,11 +75,7 @@
 
     // Create a new portal container
     const container = document.createElement('div');
-    container.id = 'editor-link-portal';
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.zIndex = '9999';
+    container.id = 'editorLinkPortal';
     document.body.appendChild(container);
     portalContainer = container;
   }
@@ -673,14 +669,14 @@
     margin-bottom: 0.75rem;
   }
 
-  :global(#editor-link-portal) {
+  :global(#editorLinkPortal) {
     position: absolute;
     top: 0;
     left: 0;
     z-index: 9999;
     pointer-events: none;
   }
-  :global(#editor-link-portal .linkPopover) {
+  :global(#editorLinkPortal .linkPopover) {
     pointer-events: auto;
   }
   :global {
