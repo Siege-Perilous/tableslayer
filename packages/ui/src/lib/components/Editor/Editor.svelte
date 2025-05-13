@@ -278,6 +278,11 @@
       setupPortalPopoverEvents();
     }
 
+    // Always update the input field value with the current link URL
+    if (linkInputElement) {
+      linkInputElement.value = currentLinkUrl;
+    }
+
     linkPopoverVisible = true;
 
     // Position the popover using Floating UI
@@ -388,9 +393,14 @@
       (buttons[1] as unknown as { onclick: typeof removeLink }).onclick = removeLink;
     }
 
-    // Add event handler for the input element
     if (linkInputElement) {
+      // Set up keydown handler for Enter key
       (linkInputElement as unknown as { onkeydown: typeof handleLinkInputKeydown }).onkeydown = handleLinkInputKeydown;
+
+      // Set up input handler to keep our state variable in sync
+      linkInputElement.addEventListener('input', (e: Event) => {
+        currentLinkUrl = (e.target as HTMLInputElement).value;
+      });
     }
   }
 
