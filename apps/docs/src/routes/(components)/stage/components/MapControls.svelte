@@ -30,6 +30,10 @@
     props.fogOfWar.url = null;
     props.marker.markers = [];
   }
+
+  $effect(() => {
+    console.log(props.map);
+  });
 </script>
 
 <Folder title="Map" expanded={false}>

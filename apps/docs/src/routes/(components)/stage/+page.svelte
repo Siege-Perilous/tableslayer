@@ -24,6 +24,7 @@
     SceneControls,
     WeatherControls
   } from './components/index';
+  import StageInputHandler from './components/StageInputHandler.svelte';
 
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
@@ -34,69 +35,7 @@
   const maxZoom = 10;
   const zoomSensitivity = 0.0005;
 
-  onMount(() => {
-    if (stageElement) {
-      stageElement.addEventListener('mousemove', onMouseMove);
-      stageElement.addEventListener('wheel', onWheel, { passive: false });
-
-      stageElement.addEventListener(
-        'contextmenu',
-        function (e) {
-          e.preventDefault();
-        },
-        false
-      );
-    }
-
-    document.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 'e':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
-          stageProps.fogOfWar.tool.type = ToolType.Brush;
-          break;
-        case 'E':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
-          stageProps.fogOfWar.tool.type = ToolType.Brush;
-          break;
-        case 'f':
-          stage?.fogOfWar.clear();
-          break;
-        case 'F':
-          stage?.fogOfWar.reset();
-          break;
-        case 'o':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.type = ToolType.Ellipse;
-          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
-          break;
-        case 'O':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.type = ToolType.Ellipse;
-          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
-          break;
-        case 'm':
-          stageProps.activeLayer = MapLayerType.Marker;
-          break;
-        case 'r':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.type = ToolType.Rectangle;
-          stageProps.fogOfWar.tool.mode = DrawMode.Erase;
-          break;
-        case 'R':
-          stageProps.activeLayer = MapLayerType.FogOfWar;
-          stageProps.fogOfWar.tool.type = ToolType.Rectangle;
-          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
-          break;
-        case 'Escape':
-          stageProps.activeLayer = MapLayerType.None;
-          break;
-      }
-    });
-  });
-
-  async function onFogUpdate() {
+  function onFogUpdate() {
     // No-op
   }
 
@@ -146,63 +85,24 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   }
-
-  function onMouseMove(e: MouseEvent) {
-    if (!(e.buttons === 1 || e.buttons === 2)) return;
-
-    // Get rotation for both map and scene transformations
-    const rotation = stageProps.scene.rotation;
-    const radians = (Math.PI / 180) * rotation;
-
-    // Calculate rotated movement vectors
-    const rotatedMovementX = e.movementX * Math.cos(radians) + e.movementY * Math.sin(radians);
-    const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
-
-    if (e.shiftKey) {
-      // Apply rotation to movement for map offset
-      const movementFactor = 1 / stageProps.scene.zoom;
-      stageProps.map.offset.x += rotatedMovementX * movementFactor;
-      stageProps.map.offset.y -= rotatedMovementY * movementFactor;
-    } else if (e.ctrlKey) {
-      // Scene offset also needs rotation adjustment
-      stageProps.scene.offset.x += rotatedMovementX;
-      stageProps.scene.offset.y -= rotatedMovementY;
-    }
-  }
-
-  function onWheel(e: WheelEvent) {
-    let scrollDelta;
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-      scrollDelta = e.deltaX * zoomSensitivity;
-    } else {
-      scrollDelta = e.deltaY * zoomSensitivity;
-    }
-
-    if (e.shiftKey) {
-      stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
-    } else if (e.ctrlKey) {
-      e.preventDefault();
-      stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
-    } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-      stageProps.fogOfWar.tool.size = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
-    }
-  }
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
-  <Stage
-    bind:this={stage}
-    props={stageProps}
-    {onFogUpdate}
-    {onMapUpdate}
-    {onStageLoading}
-    {onStageInitialized}
-    {onSceneUpdate}
-    {onMarkerAdded}
-    {onMarkerMoved}
-    {onMarkerSelected}
-    {onMarkerContextMenu}
-  />
+  <StageInputHandler bind:props={stageProps} element={stageElement}>
+    <Stage
+      bind:this={stage}
+      props={stageProps}
+      {onFogUpdate}
+      {onMapUpdate}
+      {onStageLoading}
+      {onStageInitialized}
+      {onSceneUpdate}
+      {onMarkerAdded}
+      {onMarkerMoved}
+      {onMarkerSelected}
+      {onMarkerContextMenu}
+    />
+  </StageInputHandler>
   <div>
     <h1>Keybindings</h1>
     <ul>
