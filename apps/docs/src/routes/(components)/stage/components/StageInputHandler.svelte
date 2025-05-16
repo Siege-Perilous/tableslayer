@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, setContext } from 'svelte';
+  import { onMount } from 'svelte';
   import type { StageProps } from '@tableslayer/ui';
   import { DrawMode, ToolType, MapLayerType } from '@tableslayer/ui';
 

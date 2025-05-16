@@ -1,17 +1,7 @@
 <script lang="ts">
   import { Button, Folder, List, Pane, Slider } from 'svelte-tweakpane-ui';
-  import {
-    Stage,
-    type StageExports,
-    type StageProps,
-    DrawMode,
-    ToolType,
-    MapLayerType,
-    type Marker,
-    StageMode
-  } from '@tableslayer/ui';
+  import { Stage, type StageExports, type StageProps, type Marker, StageMode } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
-  import { onMount } from 'svelte';
   import {
     DisplayControls,
     EdgeOverlayControls,
@@ -30,10 +20,6 @@
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   let selectedMarker: Marker | undefined = $state();
-
-  const minZoom = 0.1;
-  const maxZoom = 10;
-  const zoomSensitivity = 0.0005;
 
   function onFogUpdate() {
     // No-op
