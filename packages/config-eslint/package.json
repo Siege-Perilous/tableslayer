@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.0.0",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.32.0",
-    "@typescript-eslint/parser": "^8.32.0",
-    "eslint": "^9.26.0",
-    "eslint-plugin-svelte": "3.5.1"
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "eslint-plugin-svelte": "3.8.1"
   },
   "publishConfig": {
     "access": "public"
