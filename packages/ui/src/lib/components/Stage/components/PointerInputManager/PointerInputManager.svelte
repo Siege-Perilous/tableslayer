@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import type { StageProps } from '../Stage/types';
 
   interface Props {
@@ -95,27 +95,55 @@
       } else if (e.pointerType === 'touch') {
         onScenePan(rotatedMovementX, -rotatedMovementY);
       }
+
+      // Scene controls use two finger gestures
     } else if (pointerCache.length === 2) {
       // Two pointers - handle pinch and rotation
       const curDiff = Math.hypot(
         pointerCache[0].clientX - pointerCache[1].clientX,
         pointerCache[0].clientY - pointerCache[1].clientY
       );
+      const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
 
       // Calculate angle between pointers
       const curAngle = Math.atan2(
         pointerCache[1].clientY - pointerCache[0].clientY,
         pointerCache[1].clientX - pointerCache[0].clientX
       );
+      const angleDelta = curAngle - prevAngle;
 
       if (prevDiff > 0) {
-        // Handle zoom
-        const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
-
-        // Handle rotation
-        const angleDelta = curAngle - prevAngle;
         onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
+      }
+
+      prevDiff = curDiff;
+      prevAngle = curAngle;
+
+      // Map controls use three finger gestures
+    } else if (pointerCache.length === 3) {
+      // Two pointers - handle pinch and rotation
+      const curDiff = Math.hypot(
+        pointerCache[0].clientX - pointerCache[2].clientX,
+        pointerCache[0].clientY - pointerCache[2].clientY
+      );
+      const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
+
+      // Calculate angle between pointers
+      const curAngle = Math.atan2(
+        pointerCache[0].clientY - pointerCache[2].clientY,
+        pointerCache[0].clientX - pointerCache[2].clientX
+      );
+      const angleDelta = curAngle - prevAngle;
+
+      if (prevDiff > 0) {
+        if (pointerCache.length === 2) {
+          onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
+          onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
+        } else if (pointerCache.length === 3) {
+          onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
+          onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
+        }
       }
 
       prevDiff = curDiff;
