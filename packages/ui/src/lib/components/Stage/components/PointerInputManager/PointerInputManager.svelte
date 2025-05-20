@@ -67,82 +67,77 @@
     isDragging = true;
   }
 
+  // Helper functions for pointer calculations
+  function calculateRotatedMovement(e: PointerEvent, rotation: number) {
+    const radians = (Math.PI / 180) * rotation;
+    return {
+      dx: e.movementX * Math.cos(radians) + e.movementY * Math.sin(radians),
+      dy: -1 * (-e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians))
+    };
+  }
+
+  function calculatePinchAndRotation(pointers: PointerEvent[]) {
+    const [p1, p2] = pointers;
+    const curDiff = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+    const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
+
+    const curAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX);
+    const angleDelta = curAngle - prevAngle;
+
+    return { curDiff, zoomDelta, curAngle, angleDelta };
+  }
+
+  function handleSinglePointer(e: PointerEvent) {
+    const { dx, dy } = calculateRotatedMovement(e, stageProps.scene.rotation);
+
+    if (e.shiftKey) {
+      const movementFactor = 1 / stageProps.scene.zoom;
+      onMapPan(dx * movementFactor, dy * movementFactor);
+    } else if (e.ctrlKey) {
+      onScenePan(dx, dy);
+    }
+  }
+
+  function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
+    const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
+    const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
+
+    if (prevDiff > 0) {
+      if (isMapControl) {
+        onMapPan(dx, dy);
+        onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
+        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
+      } else {
+        onScenePan(dx, dy);
+        onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
+        onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
+      }
+    }
+
+    prevDiff = curDiff;
+    prevAngle = curAngle;
+  }
+
   function onPointerMove(e: PointerEvent) {
-    console.log('pointer move', e);
     if (!isDragging) return;
 
-    // Find this event in the cache and update its record
+    // Update pointer cache
     const index = pointerCache.findIndex((cachedEv) => cachedEv.pointerId === e.pointerId);
     if (index !== -1) {
       pointerCache[index] = e;
     }
 
     // Handle different pointer counts
-    if (pointerCache.length === 1) {
-      // Get rotation for both map and scene transformations
-      const rotation = stageProps.scene.rotation;
-      const radians = (Math.PI / 180) * rotation;
-
-      // Calculate rotated movement vectors
-      const rotatedMovementX = e.movementX * Math.cos(radians) + e.movementY * Math.sin(radians);
-      const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
-
-      if (e.shiftKey) {
-        const movementFactor = 1 / stageProps.scene.zoom;
-        onMapPan(rotatedMovementX * movementFactor, -rotatedMovementY * movementFactor);
-      } else if (e.ctrlKey) {
-        onScenePan(rotatedMovementX, -rotatedMovementY);
-      } else if (e.pointerType === 'touch') {
-        onScenePan(rotatedMovementX, -rotatedMovementY);
-      }
-
-      // Scene controls use two finger gestures
-    } else if (pointerCache.length === 2) {
-      // Two pointers - handle pinch and rotation
-      const curDiff = Math.hypot(
-        pointerCache[0].clientX - pointerCache[1].clientX,
-        pointerCache[0].clientY - pointerCache[1].clientY
-      );
-      const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
-
-      // Calculate angle between pointers
-      const curAngle = Math.atan2(
-        pointerCache[1].clientY - pointerCache[0].clientY,
-        pointerCache[1].clientX - pointerCache[0].clientX
-      );
-      const angleDelta = curAngle - prevAngle;
-
-      if (prevDiff > 0) {
-        onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
-        onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
-      }
-
-      prevDiff = curDiff;
-      prevAngle = curAngle;
-
-      // Map controls use three finger gestures
-    } else if (pointerCache.length === 3) {
-      // Two pointers - handle pinch and rotation
-      const curDiff = Math.hypot(
-        pointerCache[0].clientX - pointerCache[2].clientX,
-        pointerCache[0].clientY - pointerCache[2].clientY
-      );
-      const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
-
-      // Calculate angle between pointers
-      const curAngle = Math.atan2(
-        pointerCache[0].clientY - pointerCache[2].clientY,
-        pointerCache[0].clientX - pointerCache[2].clientX
-      );
-      const angleDelta = curAngle - prevAngle;
-
-      if (prevDiff > 0) {
-        onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
-      }
-
-      prevDiff = curDiff;
-      prevAngle = curAngle;
+    switch (pointerCache.length) {
+      case 1:
+        handleSinglePointer(e);
+        break;
+      case 2:
+        handleMultiPointer(pointerCache, false); // Scene controls
+        break;
+      case 3:
+        handleMultiPointer([pointerCache[0], pointerCache[2]], true); // Map controls
+        break;
     }
   }
 
