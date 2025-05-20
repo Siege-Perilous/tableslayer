@@ -3,7 +3,7 @@
   import { T, type Props as ThrelteProps } from '@threlte/core';
   import { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './types';
   import { getContext } from 'svelte';
-  import InputManager from '../InputManager/InputManager.svelte';
+  import LayerInput from '../LayerInput/LayerInput.svelte';
   import type { Callbacks } from '../Stage/types';
   import { type StageProps, StageMode } from '../Stage/types';
   import MarkerToken from './MarkerToken.svelte';
@@ -143,7 +143,7 @@
   }
 </script>
 
-<InputManager
+<LayerInput
   {isActive}
   target={inputMesh}
   layerSize={{ width: display.resolution.x, height: display.resolution.y }}
