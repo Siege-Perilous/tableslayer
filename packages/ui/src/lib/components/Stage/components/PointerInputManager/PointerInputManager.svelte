@@ -137,13 +137,8 @@
       const angleDelta = curAngle - prevAngle;
 
       if (prevDiff > 0) {
-        if (pointerCache.length === 2) {
-          onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
-          onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
-        } else if (pointerCache.length === 3) {
-          onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-          onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
-        }
+        onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
+        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
       }
 
       prevDiff = curDiff;
