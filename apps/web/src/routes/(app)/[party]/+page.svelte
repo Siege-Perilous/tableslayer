@@ -62,9 +62,9 @@
         </div>
         <InvitePartyMember {isPartyAdmin} {party} />
         {#if invitedEmails.length > 0}
-          <Spacer size={4} />
+          <Spacer size="1rem" />
           <Text weight={600}>Pending invites</Text>
-          <Spacer size={2} />
+          <Spacer size="0.5rem" />
           <div class="partyMembers">
             {#each invitedEmails as email (email)}
               <ResendInvite {email} {partyId} {isPartyAdmin} />

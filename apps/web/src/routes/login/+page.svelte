@@ -36,11 +36,11 @@
 
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     <Link href="/signup">Create a new account</Link> or <Link href="/forgot-password">recover your password</Link>.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <form onsubmit={handleLogin}>
     <FormControl label="Email" name="email" errors={loginErrors && loginErrors.errors}>
       {#snippet input({ inputProps })}

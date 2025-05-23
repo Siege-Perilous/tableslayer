@@ -9,11 +9,11 @@
 
 <Panel class="panel--home">
   <Logo class="logo" />
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Text size="1.5rem">Tools to create animated battle maps for in person RPG games.</Text>
   <Spacer />
   <Hr />
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <div>
     <Text>
       Table Slayer is currently in open beta. <Link
@@ -28,7 +28,7 @@
         GitHub
       </Link>.
     </Text>
-    <Spacer size={8} />
+    <Spacer size="2rem" />
     <Button href="/signup" class="btn">Join beta</Button>
   </div>
 </Panel>

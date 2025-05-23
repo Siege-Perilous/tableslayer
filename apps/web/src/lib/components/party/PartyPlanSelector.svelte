@@ -43,9 +43,9 @@
   {#snippet content()}
     <div class="partyUpgrade__popover">
       <Text weight={800}>Select a plan</Text>
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <Hr />
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <button onclick={() => handleUpgrade('monthly')} class="partyUpgrade__popBtn">
         <span>Monthly</span>
         <span class="partyUpgrade__price">$5</span>

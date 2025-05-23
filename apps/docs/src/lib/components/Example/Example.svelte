@@ -7,7 +7,7 @@
 </script>
 
 <Title as="h2" size="md">{title}</Title>
-<Spacer size={5} />
+<Spacer size="1.25rem" />
 
 <div class="ex" {...restProps}>
   <ColorMode mode="light">
@@ -30,12 +30,12 @@
 </div>
 
 {#if codeBlock}
-  <Spacer size={5} />
+  <Spacer size="1.25rem" />
   {@render codeBlock()}
 {/if}
 
 {#if propsName}
-  <Spacer size={5} />
+  <Spacer size="1.25rem" />
   <PropsTable componentName={propsName} />
 {/if}
 

@@ -32,7 +32,7 @@
 
 <Panel class="panel--forgot">
   <Title as="h1" size="md">Forgot password?</Title>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <form onsubmit={handleForgotPassword}>
     <FormControl label="Email" name="email" errors={forgotPasswordError && forgotPasswordError.errors}>
       {#snippet input({ inputProps })}

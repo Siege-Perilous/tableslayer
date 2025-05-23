@@ -111,7 +111,7 @@
   });
 </script>
 
-<Spacer size={8} />
+<Spacer size="2rem" />
 <Title as="h3" size="sm">Default settings</Title>
 <Text color="var(--fgMuted)">These settings will be used as the default for new scenes.</Text>
 <Spacer />

@@ -66,11 +66,11 @@
     {#snippet content()}
       <div class="resendInvite__popover">
         <Button onclick={handleResendPartyInvite} disabled={formIsLoading}>Resend invite</Button>
-        <Spacer size={4} />
+        <Spacer size="1rem" />
         <Hr />
-        <Spacer size={4} />
+        <Spacer size="1rem" />
         <Button onclick={handleDeletePartyInvite} variant="danger" disabled={formIsLoading}>Cancel invite</Button>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Text size="0.875rem" color="var(--fgMuted)">Any previous email invites sent will no longer work</Text>
       </div>
     {/snippet}
