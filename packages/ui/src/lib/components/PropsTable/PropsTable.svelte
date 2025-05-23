@@ -56,7 +56,7 @@
 
 {#if componentType}
   <Title as="h3" size="sm">{componentName} Properties</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
 
   {#if extendedProps}
     <p>

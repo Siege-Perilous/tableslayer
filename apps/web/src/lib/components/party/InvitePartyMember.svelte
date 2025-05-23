@@ -37,9 +37,9 @@
 </script>
 
 {#if isPartyAdmin}
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <Hr />
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <form onsubmit={handleCreatePartyInvite}>
     <div class="partyMember__inviteForm">
       <div>

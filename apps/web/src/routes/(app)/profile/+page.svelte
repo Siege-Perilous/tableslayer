@@ -124,9 +124,9 @@
   </div>
   <div class="containerLayout">
     <aside>
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <Title as="h2" size="sm">User details</Title>
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <Panel class="profile__panel">
         <form action="" onsubmit={handleUpdateUser}>
           <Spacer />
@@ -177,7 +177,7 @@
       {#if invites.length > 0}
         <Spacer />
         <Title as="h2" size="sm">Party invites</Title>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Panel class="profile__panel">
           {#each invites as invite (invite.party.id)}
             <div class="profile__invite">
@@ -221,7 +221,7 @@
             <GameSessionCard isPartyAdmin={party.partyRole === 'admin'} {party} session={gameSession} />
           {/each}
         </div>
-        <Spacer size={12} />
+        <Spacer size="3rem" />
       {:else}
         You are not a member of any parties. <Link href="/create-party">Create one</Link>.
       {/each}

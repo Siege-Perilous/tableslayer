@@ -45,7 +45,7 @@
       Your party is on a <span class="partyUpgrade__highlight">{party.plan} plan</span>
       .
     </Text>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
       Thank you for supporting Table Slayer. If you run into problems or have ideas, please contact
       <Link href="mailto:dave@tableslayer.com">dave@tableslayer.com</Link>.
@@ -66,7 +66,7 @@
     {/if}
   {:else}
     <Text weight={800}>{limitText}</Text>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <Text color="var(--fgMuted)" size={'0.875rem'}>
       Unlock <span class="partyUpgrade__highlight">unlimited sessions and scenes</span>
       with an upgraded party. Table Slayer is open source and free to <Link

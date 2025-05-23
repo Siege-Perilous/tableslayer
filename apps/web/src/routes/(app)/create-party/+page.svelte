@@ -56,7 +56,7 @@
 
 <Panel class="createPartyPanel">
   <Title as="h1" size="md" data-testid="createParty">Create a new party</Title>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <form onsubmit={handleCreateParty}>
     <FormControl label="Party name" name="name" errors={createPartyError && createPartyError.errors}>
       {#snippet input({ inputProps })}

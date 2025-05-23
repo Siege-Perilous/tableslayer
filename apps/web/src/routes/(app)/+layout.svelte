@@ -81,7 +81,7 @@
             selected={selectedParty ? selectedParty.slug : undefined}
           >
             {#snippet footer({ footerProps })}
-              <Spacer size={2} />
+              <Spacer size="0.5rem" />
               <Hr />
               <div class="partyDownDropdown__footer">
                 <Link href="/create-party" onclick={footerProps.close}>Create a new party</Link>
@@ -117,7 +117,7 @@
                 />
                 <div>
                   <Link href="/profile">Manage profile</Link>
-                  <Spacer size={1} />
+                  <Spacer size="0.25rem" />
                   <LinkOverlay href="/profile"><Text size="0.875rem">{data.user.email}</Text></LinkOverlay>
                 </div>
               </div>
@@ -128,20 +128,20 @@
               <Spacer />
               <div>
                 <Text size="0.875rem" color="var(--fgMuted)">Your email is not verified.</Text>
-                <Spacer size={2} />
+                <Spacer size="0.5rem" />
                 <Link href="/verify-email">Verify your email</Link>
               </div>
             {/if}
             <Spacer />
             <Hr />
-            <Spacer size={2} />
+            <Spacer size="0.5rem" />
             {#each links as link}
               <a href={link.href} class="profileDropdown__link" target="_blank">
                 <Text size="0.875rem">{link.label}</Text>
                 <Icon Icon={link.icon} size="1.25rem" />
               </a>
             {/each}
-            <Spacer size={2} />
+            <Spacer size="0.5rem" />
             <Hr />
             <Spacer />
             <div>

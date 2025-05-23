@@ -43,9 +43,9 @@
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Reset your password</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <p>You will be logged in after successfully resetting your password</p>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <form onsubmit={handleResetPassword}>
     <FormControl label="Password" name="password" errors={resetPasswordError && resetPasswordError.errors}>
       {#snippet input({ inputProps })}

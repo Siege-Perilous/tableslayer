@@ -54,7 +54,7 @@
     >
       Clear fog
     </Button>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <div class="fogButtons__key">F</div>
   </div>
   <div>
@@ -66,7 +66,7 @@
     >
       Reset fog
     </Button>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <div class="fogButtons__key">Shift+F</div>
   </div>
 </div>

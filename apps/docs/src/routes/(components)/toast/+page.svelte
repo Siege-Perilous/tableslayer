@@ -48,4 +48,4 @@ const invokeToast = () => {
   <Button onclick={invokeToast} data-testid="toastButton">Invoke toast</Button>
 </Example>
 
-<Spacer size={8} />
+<Spacer size="2rem" />

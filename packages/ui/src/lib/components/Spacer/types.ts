@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'svelte/elements';
 
 export type SpacerProps = {
-  size?: number;
+  size?: string;
 } & HTMLAttributes<HTMLDivElement>;

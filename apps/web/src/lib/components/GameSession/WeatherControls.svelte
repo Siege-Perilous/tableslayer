@@ -100,7 +100,7 @@
     {/snippet}
   </FormControl>
 </div>
-<Spacer size={2} />
+<Spacer size="0.5rem" />
 <Hr />
 <Spacer />
 <div class="weatherControls__fog">

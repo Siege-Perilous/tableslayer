@@ -164,7 +164,7 @@
       <Spacer />
       <Button type="submit">Create</Button>
       <Button type="button" variant="danger" onclick={() => (formIsOpen = false)}>Cancel</Button>
-      <Spacer size={6} />
+      <Spacer size="1.5rem" />
       <Hr />
       <Spacer />
       <Text size="0.875rem" color="var(--fgMuted)">Or, you can optionally</Text>

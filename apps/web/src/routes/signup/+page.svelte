@@ -42,9 +42,9 @@
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <p>Already have an account? <Link href="/login">Sign in</Link>.</p>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <form onsubmit={handleSignup}>
     <FormControl label="Email" name="email" errors={signupError && signupError.errors}>
       {#snippet input({ inputProps })}

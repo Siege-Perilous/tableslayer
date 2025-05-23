@@ -124,7 +124,7 @@
             </IconButton>
           </div>
         </form>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Text size="0.875rem" color="var(--fgMuted)">Renaming your party will change the URL and break all links.</Text>
         <Spacer />
         <Hr />
@@ -138,7 +138,7 @@
             Set as favorite
           {/if}
         </Button>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Text size="0.875rem" color="var(--fgMuted)">
           When you log in, you will be redirected to your favorite party.
         </Text>
@@ -155,7 +155,7 @@
             </Text>
           {/snippet}
         </ConfirmActionButton>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Text size="0.875rem" color="var(--fgMuted)">
           Deleting a party is permanent and you will lose any sessions and encounters created. This can not be undone.
         </Text>

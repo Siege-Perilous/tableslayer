@@ -156,7 +156,7 @@
                     <Icon Icon={IconCheck} />
                   </IconButton>
                 </div>
-                <Spacer size={2} />
+                <Spacer size="0.5rem" />
                 <Text size="0.875rem" color="var(--fgMuted)">
                   Renaming your game session will change the URL and break all links.
                 </Text>
@@ -172,7 +172,7 @@
               >
                 Export session
               </Button>
-              <Spacer size={2} />
+              <Spacer size="0.5rem" />
               <Text size="0.875rem" color="var(--fgMuted)">
                 Export your game session to a JSON file for backup or to import your scene into a different party
               </Text>

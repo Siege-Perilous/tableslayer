@@ -32,7 +32,7 @@
   </div>
 </Example>
 
-<Spacer size={12} />
+<Spacer size="3rem" />
 
 <Example title="ColorPicker with inputs" propsName="ColorPicker" layout="column">
   <div>
@@ -40,7 +40,7 @@
   </div>
 </Example>
 
-<Spacer size={12} />
+<Spacer size="3rem" />
 
 <Example title="ColorPicker controlled from outside" propsName="ColorPicker" layout="column">
   <div>

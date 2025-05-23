@@ -49,7 +49,7 @@ import { IconCheck } from '@tabler/icons-svelte';
   <Button variant="link" class="something">Link</Button>
 </Example>
 
-<Spacer size={8} />
+<Spacer size="2rem" />
 
 <Example title="ConfirmActionButton" propsName="ConfirmActionButton" layout="column">
   {#snippet codeBlock()}
@@ -66,7 +66,7 @@ import { IconCheck } from '@tabler/icons-svelte';
   </ConfirmActionButton>
 </Example>
 
-<Spacer size={8} />
+<Spacer size="2rem" />
 
 <Example title="RadioButton" propsName="ConfirmActionButton" layout="column">
   <RadioButton
