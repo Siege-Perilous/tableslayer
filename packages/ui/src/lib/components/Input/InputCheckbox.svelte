@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { InputCheckboxProps } from './types';
+  import { v4 as uuidv4 } from 'uuid';
   let {
     checked = $bindable(),
     element = $bindable(),
@@ -18,7 +19,7 @@
       }
     : {};
 
-  const id = `checkbox-${crypto.randomUUID()}`;
+  const id = `checkbox-${uuidv4()}`;
 </script>
 
 <label for={id}>

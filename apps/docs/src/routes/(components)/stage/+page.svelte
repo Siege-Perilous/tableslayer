@@ -8,6 +8,7 @@
     ToolType,
     MapLayerType,
     type Marker,
+    PointerInputManager,
     StageMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
@@ -36,7 +37,6 @@
 
   onMount(() => {
     if (stageElement) {
-      stageElement.addEventListener('mousemove', onMouseMove);
       stageElement.addEventListener('wheel', onWheel, { passive: false });
 
       stageElement.addEventListener(
@@ -147,27 +147,30 @@
     }
   }
 
-  function onMouseMove(e: MouseEvent) {
-    if (!(e.buttons === 1 || e.buttons === 2)) return;
+  function onMapPan(dx: number, dy: number) {
+    stageProps.map.offset.x += dx;
+    stageProps.map.offset.y += dy;
+  }
 
-    // Get rotation for both map and scene transformations
-    const rotation = stageProps.scene.rotation;
-    const radians = (Math.PI / 180) * rotation;
+  function onMapRotate(angle: number) {
+    stageProps.map.rotation = angle;
+  }
 
-    // Calculate rotated movement vectors
-    const rotatedMovementX = e.movementX * Math.cos(radians) + e.movementY * Math.sin(radians);
-    const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
+  function onMapZoom(zoom: number) {
+    stageProps.map.zoom = zoom;
+  }
 
-    if (e.shiftKey) {
-      // Apply rotation to movement for map offset
-      const movementFactor = 1 / stageProps.scene.zoom;
-      stageProps.map.offset.x += rotatedMovementX * movementFactor;
-      stageProps.map.offset.y -= rotatedMovementY * movementFactor;
-    } else if (e.ctrlKey) {
-      // Scene offset also needs rotation adjustment
-      stageProps.scene.offset.x += rotatedMovementX;
-      stageProps.scene.offset.y -= rotatedMovementY;
-    }
+  function onScenePan(dx: number, dy: number) {
+    stageProps.scene.offset.x += dx;
+    stageProps.scene.offset.y += dy;
+  }
+
+  function onSceneRotate(angle: number) {
+    stageProps.scene.rotation = angle;
+  }
+
+  function onSceneZoom(zoom: number) {
+    stageProps.scene.zoom = zoom;
   }
 
   function onWheel(e: WheelEvent) {
@@ -190,6 +193,20 @@
 </script>
 
 <div bind:this={stageElement} class="stage-wrapper">
+  <PointerInputManager
+    {minZoom}
+    {maxZoom}
+    {zoomSensitivity}
+    {stageElement}
+    {stageProps}
+    {onMapPan}
+    {onMapRotate}
+    {onMapZoom}
+    {onScenePan}
+    {onSceneRotate}
+    {onSceneZoom}
+  />
+
   <Stage
     bind:this={stage}
     props={stageProps}

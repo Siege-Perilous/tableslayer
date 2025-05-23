@@ -3,7 +3,7 @@
   import { T, type Props as ThrelteProps } from '@threlte/core';
   import { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './types';
   import { getContext } from 'svelte';
-  import InputManager from '../InputManager/InputManager.svelte';
+  import LayerInput from '../LayerInput/LayerInput.svelte';
   import type { Callbacks } from '../Stage/types';
   import { type StageProps, StageMode } from '../Stage/types';
   import MarkerToken from './MarkerToken.svelte';
@@ -12,6 +12,7 @@
   import type { DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
   import { MapLayerType } from '../MapLayer/types';
+  import { v4 as uuidv4 } from 'uuid';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -33,7 +34,7 @@
   let isDragging = $state(false);
 
   const ghostMarker: Marker = $state({
-    id: crypto.randomUUID(),
+    id: uuidv4(),
     title: '',
     position: new THREE.Vector2(0, 0),
     size: MarkerSize.Small,
@@ -86,7 +87,7 @@
     } else {
       if (props.activeLayer === MapLayerType.None) return; // Ignore clicks when no layer is active)
       const newMarker: Marker = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         title: 'New Marker',
         position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
         size: MarkerSize.Small,
@@ -142,7 +143,7 @@
   }
 </script>
 
-<InputManager
+<LayerInput
   {isActive}
   target={inputMesh}
   layerSize={{ width: display.resolution.x, height: display.resolution.y }}

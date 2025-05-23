@@ -5,7 +5,7 @@
   import { ToolType, type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
-  import InputManager from '../InputManager/InputManager.svelte';
+  import LayerInput from '../LayerInput/LayerInput.svelte';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
@@ -154,15 +154,7 @@
   }
 </script>
 
-<InputManager
-  {isActive}
-  layerSize={mapSize}
-  target={mesh}
-  {onMouseDown}
-  onMouseMove={draw}
-  {onMouseUp}
-  {onMouseLeave}
-/>
+<LayerInput {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onMouseLeave} />
 
 <!--
 Invisible mesh used for input detection.

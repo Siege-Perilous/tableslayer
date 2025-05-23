@@ -3,6 +3,7 @@ export { GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';
 export { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './components/MarkerLayer/types';
 export { ParticleType } from './components/ParticleSystem/types';
+export { default as PointerInputManager } from './components/PointerInputManager/PointerInputManager.svelte';
 export { SceneRotation } from './components/Scene/types';
 export { default as Stage } from './components/Stage/Stage.svelte';
 export * from './components/Stage/types';

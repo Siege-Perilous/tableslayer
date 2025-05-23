@@ -72,6 +72,7 @@
     "postprocessing": "6.37.3",
     "shiki": "^3.4.2",
     "three": "0.176.0",
+    "uuid": "^11.1.0",
     "zod": "^3.24.4"
   },
   "svelte": "./src/lib/index.ts",

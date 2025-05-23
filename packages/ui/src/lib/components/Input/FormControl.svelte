@@ -5,7 +5,7 @@
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
   import { type ZodIssue } from 'zod';
-
+  import { v4 as uuidv4 } from 'uuid';
   type Props = {
     /**
      * The input component that will be rendered
@@ -47,7 +47,7 @@
   let { input, label, start, name, errors, end, ...restProps }: Props = $props();
   let error = $derived(errors?.find((error) => error.path.includes(name)));
 
-  const id = `control-${crypto.randomUUID()}`;
+  const id = `control-${uuidv4()}`;
 
   let inputProps = $derived.by(() => {
     return {
