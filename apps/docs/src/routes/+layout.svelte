@@ -48,7 +48,7 @@
   <div class="headerContainer">
     <div class="headerContainer__left">
       <IconButton variant="ghost" title="Toggle menu" onclick={toggleMenu}>
-        <Icon Icon={IconMenu2} size="4rem" stroke={2} />
+        <Icon Icon={IconMenu2} size={16} stroke={2} />
       </IconButton>
       <Title as="h2" size="xs">Components</Title>
     </div>
