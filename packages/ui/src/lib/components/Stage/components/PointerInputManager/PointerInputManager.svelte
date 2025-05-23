@@ -61,8 +61,6 @@
 
   // Event handlers
   function onPointerDown(e: PointerEvent) {
-    console.log('pointer down', e);
-    e.preventDefault();
     pointerCache.push(e);
     isDragging = true;
   }

@@ -33,7 +33,7 @@
 
   const minZoom = 0.1;
   const maxZoom = 10;
-  const zoomSensitivity = 0.001;
+  const zoomSensitivity = 0.0005;
 
   onMount(() => {
     if (stageElement) {
