@@ -7,7 +7,6 @@
 
   onMount(() => {
     hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in document.documentElement;
-    console.log('Touch support:', hasTouchSupport);
   });
 
   const shortcuts = $derived([
