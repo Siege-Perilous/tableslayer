@@ -74,7 +74,7 @@
 
 <div class="playControls">
   <Button href={`/${party.slug}/${gameSession.slug}/share`} target="_blank">Open playfield</Button>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">
     This will open a new tab with the playfield. Fullscreen it on your display.
   </Text>
@@ -83,7 +83,7 @@
   <Spacer />
   {#if !activeScene || selectedScene.id !== activeScene.id}
     <Button onclick={handleSetActiveScene}>Set active scene</Button>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>
     <Spacer />
     <Hr />
@@ -92,7 +92,7 @@
   <Button variant="danger" onclick={handleToggleGamePause}>
     {#if gameSession.isPaused}Unpause playfield{:else}Pause playfield{/if}
   </Button>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>
 </div>
 

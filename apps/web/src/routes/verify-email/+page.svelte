@@ -90,9 +90,9 @@
       {:else if data.isWithinExpiration}
         <Title as="h1" size="md">Check your email</Title>
         <Text>Enter the code sent to {data.user.email}</Text>
-        <Spacer size={2} />
+        <Spacer size="0.5rem" />
         <Link onclick={() => (isChangingEmail = true)}>Change email</Link>
-        <Spacer size={8} />
+        <Spacer size="2rem" />
         <form onsubmit={handleVerifyEmail}>
           <FormControl label="Verify code" name="code" errors={verifyEmailError && verifyEmailError.errors}>
             {#snippet input({ inputProps })}

@@ -5,7 +5,7 @@
 
 <Panel class="panel--forgot">
   <Title as="h1" size="md">Check your email</Title>
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <Text>We've sent you an email with a link to reset your password. If you don't see it, check your spam folder.</Text>
 </Panel>
 

@@ -347,12 +347,12 @@
         {:else}
           <div>
             <Text weight={700}>No markers in this scene</Text>
-            <Spacer size={2} />
+            <Spacer size="0.5rem" />
             <Text color="var(--fgMuted)">
               Markers allow you to mark important locations. You can can use them for GM only notes — or in a pinch — as
               table viewable tokens.
             </Text>
-            <Spacer size={4} />
+            <Spacer size="1rem" />
             <Text color="var(--fgMuted)">Like the rest of Table Slayer, only the GM has control over markers.</Text>
             <Spacer />
             {#if stageProps.activeLayer === MapLayerType.Marker}

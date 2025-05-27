@@ -11,7 +11,7 @@
     <Logo />
   </a>
   <Title as="h2" size="md">Terms of Service</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>Table Slayer believes in a simple, easy to read Terms of Service.</Text>
   <ul class="terms">
     <li>

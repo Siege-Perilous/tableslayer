@@ -12,7 +12,7 @@ a:has(> img) {
     <CodeBlock code={exampleCode} lang="css" />
   </div>
 </Example>
-<Spacer size={8} />
+<Spacer size="2rem" />
 
 <Example title="Code" propsName="Code">
   <div class="flex">

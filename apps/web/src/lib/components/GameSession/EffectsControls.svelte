@@ -84,7 +84,7 @@
 {#if party.plan === 'free'}
   <div class="edgeControls">
     <Text weight={800}>You are on a free plan</Text>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <Text size="0.875rem" color="var(--fgMuted)">
       Effects controls are only available on upgraded plans. They allow you to change the mood ("spooky", "vibrant",
       ...etc) for the entire scene.
@@ -94,7 +94,7 @@
   </div>
 {:else}
   <Text weight={800} color="var(--fgMuted)">COLOR</Text>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <div class="effectsControls">
     <FormControl label="Color grading" name="effectsLutUrl" {errors}>
       {#snippet input({ inputProps })}
@@ -136,11 +136,11 @@
         />
       {/snippet}
     </FormControl>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <Hr />
-    <Spacer size={4} />
+    <Spacer size="1rem" />
     <Text weight={800} color="var(--fgMuted)">BLOOM</Text>
-    <Spacer size={2} />
+    <Spacer size="0.5rem" />
     <div class="effectsControls__grid">
       <FormControl label="Intensity" name="effectsBloomIntensity" {errors}>
         {#snippet input({ inputProps })}

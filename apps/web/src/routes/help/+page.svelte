@@ -23,7 +23,7 @@
     <Logo />
   </a>
   <Title as="h2" size="sm">Have a question?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>You can reach out via any of the following methods:</Text>
   <ul>
     {#each links as link}
@@ -35,70 +35,70 @@
       </li>
     {/each}
   </ul>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">Is Table Slayer really Open Source?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     Yes! Table Slayer is open source and available on <Link href="https://github.com/siege-perilous/tableslayer">
       GitHub
     </Link>. You are free to host it for your own personal use.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">Is Table Slayer multiplayer?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     No, Table Slayer is primarily a tool for the Game Master (GM) alone. It is meant to be used for in person games. We
     have no intention of competing with Virtual Table Tops, which require a lot more features to allow online play.
     Consider Table Slayer a Live Table Top (LTT).
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">Why does Table Slayer require a subscription?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     No one is getting rich off Table Slayer. The price is set to cover the costs of continued development from a single
     developer. This is a niche product, with surprisngly complex technical challenges. If you are averse to subscription
     pricing, the lifetime fee is a reasonable way to avoid it.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">Why are subscriptions at the Party level?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     It is very common for RPG games to switch their lineup of players over time. We wanted to make it easy to take over
     an existing game by switching out the admin.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">What do I need to run Table Slayer?</Title>
 
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     At a minimum, you need a device with a browser (desktop, laptop, tablet or phone) and a TV or monitor to display the
     playfield. Some televisions have built-in browsers, but we recommend using a dedicated device for the best
     experience.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">How should I use Table Slayer with my TV?</Title>
-  <Spacer size={2} />
+  <Spacer size="0.5rem" />
   <Text>
     There are two ways people tend to run Table Salyer. The most common is to use a laptop with an HDMI cable that you
     attach to your TV, which you treat as a second monitor. Then you drag the playfield browser to the TV screen and
     make it full screen.
   </Text>
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <Text>
     The second, less cluttered way, is to run Table Slayer's editor on a tablet or phone, and run the playfield on a
     seperate dedicated device like a mini-pc / mac mini or Rasberry Pi. The playfield will update as you make changes.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">What are Table Slayer's limitations?</Title>
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <Text>
     Table Slayer is meant to have one editor (the editor) and one playfield (the TV or monitor) running at any one. The
     updates are not currently bidirectional, and if you have multiple editors running, you might need to occassionally
     run a browser refresh occassionally. time.
   </Text>
-  <Spacer size={8} />
+  <Spacer size="2rem" />
   <Title as="h2" size="sm">Why would I invite others into my party?</Title>
-  <Spacer size={4} />
+  <Spacer size="1rem" />
   <Text>
     In the future, Table Slayer will have a messaging system that allows you to schedule your in person games. The
     hardest part of playing RPG games is getting people to show up regularly. These tools are currently being built.

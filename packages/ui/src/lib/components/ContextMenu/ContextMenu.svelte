@@ -26,9 +26,9 @@
 <div use:melt={$menu} class="cMenu" transition:fly={{ duration: 50 }}>
   {#each items as item}
     {#if item.type === 'divider'}
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <Hr />
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
     {:else}
       <button use:melt={$meltItem} onclick={() => handleItemClick(item)} class="cMenuItem">
         {item.label}

@@ -9,7 +9,7 @@
       <Title size="xs" as="h2">
         <LinkOverlay href="https://google.com">Overlay link for card</LinkOverlay>
       </Title>
-      <Spacer size={2} />
+      <Spacer size="0.5rem" />
       <Text>
         The entire card is link to the above title href, but the link below can still be selected. Both can be tabbed
         to.

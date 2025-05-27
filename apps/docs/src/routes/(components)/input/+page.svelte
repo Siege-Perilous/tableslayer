@@ -18,7 +18,7 @@
   <Button>Submit</Button>
 </Example>
 
-<Spacer size={8} />
+<Spacer size="2rem" />
 
 <Example title="Input with label" propsName="Label">
   <FormControl label="First Name" name="firstName">
