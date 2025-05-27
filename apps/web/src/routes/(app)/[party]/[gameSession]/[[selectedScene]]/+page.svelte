@@ -2,7 +2,15 @@
   let { data } = $props();
   import { type Socket } from 'socket.io-client';
   import { handleMutation } from '$lib/factories';
-  import { Stage, type StageExports, type StageProps, MapLayerType, Icon, type Marker } from '@tableslayer/ui';
+  import {
+    Stage,
+    type StageExports,
+    type StageProps,
+    MapLayerType,
+    Icon,
+    type Marker,
+    PointerInputManager
+  } from '@tableslayer/ui';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom, Head } from '$lib/components';
   import {
@@ -54,6 +62,9 @@
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   const isMobile = $derived(innerWidth < 768);
+  const minZoom = 0.1;
+  const maxZoom = 10;
+  const zoomSensitivity = 0.0005;
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
@@ -378,6 +389,32 @@
     }
   };
 
+  function onMapPan(dx: number, dy: number) {
+    stageProps.map.offset.x += dx;
+    stageProps.map.offset.y += dy;
+  }
+
+  function onMapRotate(angle: number) {
+    stageProps.map.rotation = angle;
+  }
+
+  function onMapZoom(zoom: number) {
+    stageProps.map.zoom = zoom;
+  }
+
+  function onScenePan(dx: number, dy: number) {
+    stageProps.scene.offset.x += dx;
+    stageProps.scene.offset.y += dy;
+  }
+
+  function onSceneRotate(angle: number) {
+    stageProps.scene.rotation = angle;
+  }
+
+  function onSceneZoom(zoom: number) {
+    stageProps.scene.zoom = zoom;
+  }
+
   // Use throttling for wheel/zoom events to reduce update frequency
   const throttledSocketUpdate = throttle(socketUpdate, 200);
 
@@ -604,6 +641,19 @@
     <Pane defaultSize={70}>
       <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
+          <PointerInputManager
+            {minZoom}
+            {maxZoom}
+            {zoomSensitivity}
+            {stageElement}
+            {stageProps}
+            {onMapPan}
+            {onMapRotate}
+            {onMapZoom}
+            {onScenePan}
+            {onSceneRotate}
+            {onSceneZoom}
+          />
           <Stage
             bind:this={stage}
             props={stageProps}
