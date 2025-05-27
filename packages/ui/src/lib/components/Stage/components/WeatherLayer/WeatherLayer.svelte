@@ -67,14 +67,15 @@
     // Create transformation matrix based on map properties
     transformationMatrix.identity();
 
-    const zoom = props.map.zoom * props.scene.zoom;
-
     // Apply transformations in order: scale (zoom) -> rotate -> translate
-    transformationMatrix.makeScale(zoom, zoom, 1);
-    transformationMatrix.multiply(
-      new THREE.Matrix4().makeTranslation(props.map.offset.x / props.map.zoom, props.map.offset.y / props.map.zoom, 0)
-    );
-    transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.map.rotation / 180.0) * Math.PI));
+    transformationMatrix.multiply(new THREE.Matrix4().makeTranslation(props.scene.offset.x, props.scene.offset.y, 0));
+    transformationMatrix.multiply(new THREE.Matrix4().makeScale(props.scene.zoom, props.scene.zoom, 1));
+    transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.scene.rotation / 180.0) * Math.PI));
+
+    // // Apply transformations in order: scale (zoom) -> rotate -> translate
+    // transformationMatrix.multiply(new THREE.Matrix4().makeTranslation(props.map.offset.x, props.map.offset.y, 0));
+    // transformationMatrix.multiply(new THREE.Matrix4().makeScale(props.map.zoom, props.map.zoom, 1));
+    // transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.map.rotation / 180.0) * Math.PI));
 
     const halfWidth = mapSize.width / 2;
     const halfHeight = mapSize.height / 2;

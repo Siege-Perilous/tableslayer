@@ -1,8 +1,15 @@
 <script>
   import { IconKeyboard } from '@tabler/icons-svelte';
   import { Icon, Button, Hr, Popover } from '@tableslayer/ui';
+  import { onMount } from 'svelte';
 
-  const shortcuts = [
+  let hasTouchSupport = false;
+
+  onMount(() => {
+    hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in document.documentElement;
+  });
+
+  const shortcuts = $derived([
     { label: 'Brush size', shortcut: 'Mouse wheel' },
     { label: 'Erase brush', shortcut: 'E' },
     { label: 'Add brush', shortcut: 'Shoft + E' },
@@ -18,12 +25,12 @@
     { label: 'Unlock markers', shortcut: 'M' },
     { label: 'Lock markers', shortcut: 'Shift + M' },
     { divider: true },
-    { label: 'Scale map', shortcut: 'Shift + Mouse wheel' },
-    { label: 'Pan map', shortcut: 'Shift + Mouse drag' },
+    { label: 'Scale map', shortcut: hasTouchSupport ? 'Three finger pinch' : 'Shift + Mouse wheel' },
+    { label: 'Pan map', shortcut: hasTouchSupport ? 'Three finger drag' : 'Shift + Mouse drag' },
     { divider: true },
-    { label: 'Zoom scene', shortcut: 'Ctrl + Mouse wheel' },
-    { label: 'Pan scene', shortcut: 'Ctrl + Mouse drag' }
-  ];
+    { label: 'Zoom scene', shortcut: hasTouchSupport ? 'Two finger pinch' : 'Ctrl + Mouse wheel' },
+    { label: 'Pan scene', shortcut: hasTouchSupport ? 'Two finger drag' : 'Ctrl + Mouse drag' }
+  ]);
 </script>
 
 <div class="shortcut">
