@@ -7,9 +7,10 @@
 
   onMount(() => {
     hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in document.documentElement;
+    console.log('Touch support:', hasTouchSupport);
   });
 
-  const shortcuts = [
+  const shortcuts = $derived([
     { label: 'Brush size', shortcut: 'Mouse wheel' },
     { label: 'Erase brush', shortcut: 'E' },
     { label: 'Add brush', shortcut: 'Shoft + E' },
@@ -30,7 +31,7 @@
     { divider: true },
     { label: 'Zoom scene', shortcut: hasTouchSupport ? 'Two finger pinch' : 'Ctrl + Mouse wheel' },
     { label: 'Pan scene', shortcut: hasTouchSupport ? 'Two finger drag' : 'Ctrl + Mouse drag' }
-  ];
+  ]);
 </script>
 
 <div class="shortcut">
