@@ -127,6 +127,13 @@
       "when": 1742503504965,
       "tag": "0017_scene-thumbnail",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1748361969576,
+      "tag": "0018_scene-rotation-int-to-real",
+      "breakpoints": true
     }
   ]
 }
