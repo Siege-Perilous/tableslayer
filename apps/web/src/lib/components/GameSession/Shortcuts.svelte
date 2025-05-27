@@ -6,7 +6,7 @@
   let hasTouchSupport = false;
 
   onMount(() => {
-    hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in document.documentElement;
   });
 
   const shortcuts = [
