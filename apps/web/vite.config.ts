@@ -8,7 +8,8 @@ export default defineConfig({
     sentrySvelteKit({
       sourceMapsUploadOptions: {
         org: 'siege-perilous',
-        project: 'tableslayer'
+        project: 'tableslayer',
+        authToken: process.env.SENTRY_AUTH_TOKEN
       }
     }),
     sveltekit(),
