@@ -80,7 +80,14 @@
     const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
 
     const curAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX);
-    const angleDelta = curAngle - prevAngle;
+    let angleDelta = curAngle - prevAngle;
+
+    // Normalize angle delta to handle wrapping around ±π boundary
+    if (angleDelta > Math.PI) {
+      angleDelta -= 2 * Math.PI;
+    } else if (angleDelta < -Math.PI) {
+      angleDelta += 2 * Math.PI;
+    }
 
     return { curDiff, zoomDelta, curAngle, angleDelta };
   }
