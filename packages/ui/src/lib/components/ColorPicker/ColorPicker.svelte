@@ -739,6 +739,7 @@
   .colorPicker__canvas {
     width: 100%;
     height: 100%;
+    touch-action: none;
   }
 
   .colorPicker__boxIndicator {
