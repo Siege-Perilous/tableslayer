@@ -492,35 +492,42 @@
   </div>
 
   <!-- Hue Slider -->
-  <input
-    type="range"
-    min="0"
-    max="360"
-    step="1"
-    bind:value={color.hue}
-    onmousedown={() => (color.isAdjustingHue = true)}
-    onmouseup={() => (color.isAdjustingHue = false)}
-    oninput={() => {
-      color.isAdjustingHue = true;
-      lastValidHue = color.hue;
-    }}
-    onchange={() => (color.isAdjustingHue = false)}
-    aria-label="Hue Selector"
-    style="--thumbBG: hsl({displayHue()}, 100%, 50%)"
-    class="colorPicker__slider colorPicker__slider--hue"
-  />
-
-  {#if showOpacity}
+  <div class="colorPicker__sliderWrapper colorPicker__sliderWrapper--hue">
     <input
       type="range"
       min="0"
-      max="100"
+      max="360"
       step="1"
-      bind:value={color.opacity}
-      aria-label="Opacity Slider"
-      class="colorPicker__slider colorPicker__slider--opacity"
-      style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
+      bind:value={color.hue}
+      onmousedown={() => (color.isAdjustingHue = true)}
+      onmouseup={() => (color.isAdjustingHue = false)}
+      oninput={() => {
+        color.isAdjustingHue = true;
+        lastValidHue = color.hue;
+      }}
+      onchange={() => (color.isAdjustingHue = false)}
+      aria-label="Hue Selector"
+      style="--thumbBG: hsl({displayHue()}, 100%, 50%)"
+      class="colorPicker__slider"
     />
+  </div>
+
+  {#if showOpacity}
+    <div
+      class="colorPicker__sliderWrapper colorPicker__sliderWrapper--opacity"
+      style="--opacityGradient: {getOpacityGradient()};"
+    >
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        bind:value={color.opacity}
+        aria-label="Opacity Slider"
+        class="colorPicker__slider"
+        style="--thumbBG: {toHex(color)};"
+      />
+    </div>
   {/if}
 
   {#if showInputs}
@@ -704,22 +711,43 @@
     pointer-events: none;
   }
 
+  .colorPicker__sliderWrapper {
+    position: relative;
+    width: 100%;
+    height: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .colorPicker__sliderWrapper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 0.25rem;
+    transform: translateY(-50%);
+    border-radius: 0.125rem;
+    pointer-events: none;
+  }
+
+  .colorPicker__sliderWrapper--hue::before {
+    background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+  }
+
+  .colorPicker__sliderWrapper--opacity::before {
+    background: var(--opacityGradient);
+    background-size: cover;
+  }
+
   .colorPicker__slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 0.25rem;
-    margin-top: 0.5rem;
+    height: 100%;
     cursor: pointer;
     background: transparent;
-  }
-
-  .colorPicker__slider--hue {
-    background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
-  }
-
-  .colorPicker__slider--opacity {
-    background-size: cover;
+    position: relative;
+    z-index: 1;
   }
 
   .colorPicker__slider::-webkit-slider-thumb {
