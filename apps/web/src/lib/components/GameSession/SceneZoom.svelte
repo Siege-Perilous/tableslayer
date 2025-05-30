@@ -32,11 +32,17 @@
   };
 
   const handleMapRotate = () => {
-    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
+    const current = stageProps.map.rotation;
+    const cardinals = [0, 90, 180, 270];
+    const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
+    stageProps.map.rotation = next;
     socketUpdate();
   };
   const handleSceneRotate = () => {
-    stageProps.scene.rotation = (stageProps.scene.rotation + 90) % 360;
+    const current = stageProps.scene.rotation;
+    const cardinals = [0, 90, 180, 270];
+    const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
+    stageProps.scene.rotation = next;
     socketUpdate();
   };
 </script>
