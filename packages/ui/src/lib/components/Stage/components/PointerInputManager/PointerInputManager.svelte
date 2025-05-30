@@ -37,6 +37,7 @@
   let prevAngle = $state(0);
   let isDragging = $state(false);
   let lastPointerCount = $state(0);
+  let prevCentroid = $state<{ x: number; y: number } | null>(null);
 
   $effect(() => {
     if (stageElement) {
@@ -93,6 +94,28 @@
     return { curDiff, zoomDelta, curAngle, angleDelta };
   }
 
+  function calculateCentroidMovement(pointers: PointerEvent[], rotation: number) {
+    const [p1, p2] = pointers;
+    const curCentroid = {
+      x: (p1.clientX + p2.clientX) / 2,
+      y: (p1.clientY + p2.clientY) / 2
+    };
+
+    if (!prevCentroid) {
+      return { dx: 0, dy: 0, curCentroid };
+    }
+
+    const rawDx = curCentroid.x - prevCentroid.x;
+    const rawDy = curCentroid.y - prevCentroid.y;
+
+    // Apply rotation transformation
+    const radians = (Math.PI / 180) * rotation;
+    const dx = rawDx * Math.cos(radians) + rawDy * Math.sin(radians);
+    const dy = -1 * (-rawDx * Math.sin(radians) + rawDy * Math.cos(radians));
+
+    return { dx, dy, curCentroid };
+  }
+
   function handleSinglePointer(e: PointerEvent) {
     const { dx, dy } = calculateRotatedMovement(e, stageProps.scene.rotation);
 
@@ -105,25 +128,33 @@
   }
 
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
-    const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
     const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
 
-    // Check if this is Firefox to apply special handling for pan calculations
+    // Check if this is Firefox to use centroid-based pan calculation
     const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+
+    let dx = 0,
+      dy = 0;
+    if (isFirefox) {
+      // Use centroid-based movement calculation for Firefox
+      const centroidResult = calculateCentroidMovement(pointers, stageProps.scene.rotation);
+      dx = centroidResult.dx;
+      dy = centroidResult.dy;
+      prevCentroid = centroidResult.curCentroid;
+    } else {
+      // Use original movement-based calculation for other browsers
+      const movement = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
+      dx = movement.dx;
+      dy = movement.dy;
+    }
 
     if (prevDiff > 0) {
       if (isMapControl) {
-        // In Firefox, disable panning during multi-touch as movement values are unreliable
-        if (!isFirefox) {
-          onMapPan(dx, dy);
-        }
+        onMapPan(dx, dy);
         onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
         onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
       } else {
-        // In Firefox, disable panning during multi-touch as movement values are unreliable
-        if (!isFirefox) {
-          onScenePan(dx, dy);
-        }
+        onScenePan(dx, dy);
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
         onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
       }
@@ -148,6 +179,7 @@
       if (pointerCache.length >= 2 && lastPointerCount < 2) {
         prevDiff = -1;
         prevAngle = 0;
+        prevCentroid = null; // Reset centroid for Firefox
       }
       lastPointerCount = pointerCache.length;
     }
@@ -179,6 +211,7 @@
       prevDiff = -1;
       prevAngle = 0;
       lastPointerCount = 0;
+      prevCentroid = null;
     }
   }
 </script>
