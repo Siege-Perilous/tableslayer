@@ -501,6 +501,8 @@
       bind:value={color.hue}
       onmousedown={() => (color.isAdjustingHue = true)}
       onmouseup={() => (color.isAdjustingHue = false)}
+      ontouchstart={() => (color.isAdjustingHue = true)}
+      ontouchend={() => (color.isAdjustingHue = false)}
       oninput={() => {
         color.isAdjustingHue = true;
         lastValidHue = color.hue;
