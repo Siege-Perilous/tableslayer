@@ -109,6 +109,38 @@
     }
   };
 
+  // Touch event handlers
+  const updateSaturationValueFromTouch = (e: TouchEvent): void => {
+    if (!saturationBoxRect) return;
+    const rect = saturationBoxRect;
+    const touch = e.touches[0] || e.changedTouches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    color.saturation = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    color.value = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+  };
+
+  const startTouchSelection = (e: TouchEvent): void => {
+    e.preventDefault();
+    saturationBoxRect = canvasElement.getBoundingClientRect();
+    color.isSelecting = true;
+    color.isAdjustingSV = true;
+    updateSaturationValueFromTouch(e);
+  };
+
+  const handleTouchMove = (e: TouchEvent): void => {
+    if (color.isSelecting) {
+      e.preventDefault();
+      updateSaturationValueFromTouch(e);
+    }
+  };
+
+  const handleTouchEnd = (): void => {
+    if (color.isSelecting) {
+      endSelection();
+    }
+  };
+
   const getOpacityGradient = (): string => {
     const chromaColor = chroma.hsv(displayHue(), color.saturation / 100, color.value / 100);
     const [r, g, b] = chromaColor.rgb();
@@ -467,7 +499,12 @@
   ];
 </script>
 
-<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
+<svelte:window
+  onmousemove={handleMouseMove}
+  onmouseup={handleMouseUp}
+  ontouchmove={handleTouchMove}
+  ontouchend={handleTouchEnd}
+/>
 
 <div class="colorPicker" {...restProps}>
   <!-- Saturation/Value Selector -->
@@ -479,6 +516,7 @@
       height="200"
       tabindex="0"
       onmousedown={startSelection}
+      ontouchstart={startTouchSelection}
       onfocus={startSaturationAdjustment}
       onblur={endSaturationAdjustment}
       onkeydown={handleKeyDown}
