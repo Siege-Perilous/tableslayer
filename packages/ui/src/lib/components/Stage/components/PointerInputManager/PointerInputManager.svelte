@@ -36,6 +36,7 @@
   let prevDiff = $state(-1);
   let prevAngle = $state(0);
   let isDragging = $state(false);
+  let lastPointerCount = $state(0);
 
   $effect(() => {
     if (stageElement) {
@@ -132,6 +133,16 @@
       pointerCache[index] = e;
     }
 
+    // Reset multi-touch state when transitioning from single to multi-touch
+    // This prevents using stale movement data from single-touch phase
+    if (lastPointerCount !== pointerCache.length) {
+      if (pointerCache.length >= 2 && lastPointerCount < 2) {
+        prevDiff = -1;
+        prevAngle = 0;
+      }
+      lastPointerCount = pointerCache.length;
+    }
+
     // Handle different pointer counts
     switch (pointerCache.length) {
       case 1:
@@ -158,6 +169,7 @@
       isDragging = false;
       prevDiff = -1;
       prevAngle = 0;
+      lastPointerCount = 0;
     }
   }
 </script>
