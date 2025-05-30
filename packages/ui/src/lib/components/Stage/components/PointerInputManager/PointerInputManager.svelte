@@ -113,6 +113,37 @@
     }
   }
 
+  function rotateAroundCenter(
+    currentOffset: { x: number; y: number },
+    currentRotation: number,
+    angleDelta: number,
+    stageCenter: { x: number; y: number }
+  ) {
+    // Convert angle delta to radians
+    const radians = (angleDelta * Math.PI) / 180;
+
+    // Get current position relative to stage center
+    const relativeX = currentOffset.x - stageCenter.x;
+    const relativeY = currentOffset.y - stageCenter.y;
+
+    // Apply rotation around center
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+
+    const newRelativeX = relativeX * cos - relativeY * sin;
+    const newRelativeY = relativeX * sin + relativeY * cos;
+
+    // Convert back to absolute coordinates
+    const newOffset = {
+      x: newRelativeX + stageCenter.x,
+      y: newRelativeY + stageCenter.y
+    };
+
+    const newRotation = currentRotation + (angleDelta * 180) / Math.PI;
+
+    return { offset: newOffset, rotation: newRotation };
+  }
+
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
     const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
     const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
@@ -122,14 +153,39 @@
       const rotationSensitivity = 0.5; // Reduce rotation speed by half for more control
       const adjustedAngleDelta = angleDelta * rotationSensitivity;
 
+      // Calculate stage center for rotation
+      const stageRect = stageElement.getBoundingClientRect();
+      const stageCenter = {
+        x: stageRect.width / 2,
+        y: stageRect.height / 2
+      };
+
       if (isMapControl) {
         onMapPan(dx, dy);
         onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-        onMapRotate(stageProps.map.rotation - (adjustedAngleDelta * 180) / Math.PI);
+
+        // Rotate around stage center
+        const { offset, rotation } = rotateAroundCenter(
+          stageProps.map.offset,
+          stageProps.map.rotation,
+          -adjustedAngleDelta,
+          stageCenter
+        );
+        onMapPan(offset.x - stageProps.map.offset.x, offset.y - stageProps.map.offset.y);
+        onMapRotate(rotation);
       } else {
         onScenePan(dx, dy);
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
-        onSceneRotate(stageProps.scene.rotation + (adjustedAngleDelta * 180) / Math.PI);
+
+        // Rotate around stage center
+        const { offset, rotation } = rotateAroundCenter(
+          stageProps.scene.offset,
+          stageProps.scene.rotation,
+          adjustedAngleDelta,
+          stageCenter
+        );
+        onScenePan(offset.x - stageProps.scene.offset.x, offset.y - stageProps.scene.offset.y);
+        onSceneRotate(rotation);
       }
     }
 
