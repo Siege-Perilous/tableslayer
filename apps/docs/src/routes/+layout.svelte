@@ -53,7 +53,7 @@
       <Title as="h2" size="xs">Components</Title>
     </div>
     <IconButton onclick={toggleMode} variant="ghost" title="Toggle theme">
-      <Icon Icon={mode.current === 'dark' ? IconSun : IconMoon} size="4rem" stroke={2} />
+      <Icon Icon={mode.current === 'dark' ? IconSun : IconMoon} size="1.25rem" stroke={2} />
     </IconButton>
   </div>
 </header>
