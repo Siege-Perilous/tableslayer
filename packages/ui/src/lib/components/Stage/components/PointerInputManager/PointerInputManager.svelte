@@ -108,13 +108,22 @@
     const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
     const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
 
+    // Check if this is Firefox to apply special handling for pan calculations
+    const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+
     if (prevDiff > 0) {
       if (isMapControl) {
-        onMapPan(dx, dy);
+        // In Firefox, disable panning during multi-touch as movement values are unreliable
+        if (!isFirefox) {
+          onMapPan(dx, dy);
+        }
         onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
         onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
       } else {
-        onScenePan(dx, dy);
+        // In Firefox, disable panning during multi-touch as movement values are unreliable
+        if (!isFirefox) {
+          onScenePan(dx, dy);
+        }
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
         onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
       }
