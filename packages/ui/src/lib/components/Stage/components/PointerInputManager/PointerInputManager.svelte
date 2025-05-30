@@ -115,7 +115,7 @@
 
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
     const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
-    const { curDiff, zoomDelta, curAngle, angleDelta, centerX, centerY } = calculatePinchAndRotation(pointers);
+    const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
 
     if (prevDiff > 0) {
       // Apply rotation sensitivity factor to make rotation feel more natural
