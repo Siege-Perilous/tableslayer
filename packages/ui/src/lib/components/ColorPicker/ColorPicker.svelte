@@ -717,7 +717,6 @@
     position: relative;
     width: 100%;
     height: 1rem;
-    margin-top: 0.5rem;
   }
 
   .colorPicker__sliderWrapper::before {
