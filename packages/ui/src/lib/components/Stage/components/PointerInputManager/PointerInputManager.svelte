@@ -36,6 +36,8 @@
   let prevDiff = $state(-1);
   let prevAngle = $state(0);
   let isDragging = $state(false);
+  let lastPointerCount = $state(0);
+  let prevCentroid = $state<{ x: number; y: number } | null>(null);
 
   $effect(() => {
     if (stageElement) {
@@ -80,9 +82,38 @@
     const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
 
     const curAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX);
-    const angleDelta = curAngle - prevAngle;
+    let angleDelta = curAngle - prevAngle;
+
+    // Normalize angle delta to handle wrapping around ±π boundary
+    if (angleDelta > Math.PI) {
+      angleDelta -= 2 * Math.PI;
+    } else if (angleDelta < -Math.PI) {
+      angleDelta += 2 * Math.PI;
+    }
 
     return { curDiff, zoomDelta, curAngle, angleDelta };
+  }
+
+  function calculateCentroidMovement(pointers: PointerEvent[], rotation: number) {
+    const [p1, p2] = pointers;
+    const curCentroid = {
+      x: (p1.clientX + p2.clientX) / 2,
+      y: (p1.clientY + p2.clientY) / 2
+    };
+
+    if (!prevCentroid) {
+      return { dx: 0, dy: 0, curCentroid };
+    }
+
+    const rawDx = curCentroid.x - prevCentroid.x;
+    const rawDy = curCentroid.y - prevCentroid.y;
+
+    // Apply rotation transformation
+    const radians = (Math.PI / 180) * rotation;
+    const dx = rawDx * Math.cos(radians) + rawDy * Math.sin(radians);
+    const dy = -1 * (-rawDx * Math.sin(radians) + rawDy * Math.cos(radians));
+
+    return { dx, dy, curCentroid };
   }
 
   function handleSinglePointer(e: PointerEvent) {
@@ -97,8 +128,11 @@
   }
 
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
-    const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
     const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
+
+    // Use centroid-based movement (center of the two pointers)
+    const { dx, dy, curCentroid } = calculateCentroidMovement(pointers, stageProps.scene.rotation);
+    prevCentroid = curCentroid;
 
     if (prevDiff > 0) {
       if (isMapControl) {
@@ -123,6 +157,17 @@
     const index = pointerCache.findIndex((cachedEv) => cachedEv.pointerId === e.pointerId);
     if (index !== -1) {
       pointerCache[index] = e;
+    }
+
+    // Reset multi-touch state when transitioning from single to multi-touch
+    // This prevents using stale movement data from single-touch phase
+    if (lastPointerCount !== pointerCache.length) {
+      if (pointerCache.length >= 2 && lastPointerCount < 2) {
+        prevDiff = -1;
+        prevAngle = 0;
+        prevCentroid = null;
+      }
+      lastPointerCount = pointerCache.length;
     }
 
     // Handle different pointer counts
@@ -151,6 +196,8 @@
       isDragging = false;
       prevDiff = -1;
       prevAngle = 0;
+      lastPointerCount = 0;
+      prevCentroid = null;
     }
   }
 </script>
