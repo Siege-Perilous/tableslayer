@@ -109,6 +109,38 @@
     }
   };
 
+  // Touch event handlers
+  const updateSaturationValueFromTouch = (e: TouchEvent): void => {
+    if (!saturationBoxRect) return;
+    const rect = saturationBoxRect;
+    const touch = e.touches[0] || e.changedTouches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    color.saturation = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    color.value = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+  };
+
+  const startTouchSelection = (e: TouchEvent): void => {
+    e.preventDefault();
+    saturationBoxRect = canvasElement.getBoundingClientRect();
+    color.isSelecting = true;
+    color.isAdjustingSV = true;
+    updateSaturationValueFromTouch(e);
+  };
+
+  const handleTouchMove = (e: TouchEvent): void => {
+    if (color.isSelecting) {
+      e.preventDefault();
+      updateSaturationValueFromTouch(e);
+    }
+  };
+
+  const handleTouchEnd = (): void => {
+    if (color.isSelecting) {
+      endSelection();
+    }
+  };
+
   const getOpacityGradient = (): string => {
     const chromaColor = chroma.hsv(displayHue(), color.saturation / 100, color.value / 100);
     const [r, g, b] = chromaColor.rgb();
@@ -467,7 +499,12 @@
   ];
 </script>
 
-<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
+<svelte:window
+  onmousemove={handleMouseMove}
+  onmouseup={handleMouseUp}
+  ontouchmove={handleTouchMove}
+  ontouchend={handleTouchEnd}
+/>
 
 <div class="colorPicker" {...restProps}>
   <!-- Saturation/Value Selector -->
@@ -479,6 +516,7 @@
       height="200"
       tabindex="0"
       onmousedown={startSelection}
+      ontouchstart={startTouchSelection}
       onfocus={startSaturationAdjustment}
       onblur={endSaturationAdjustment}
       onkeydown={handleKeyDown}
@@ -492,35 +530,44 @@
   </div>
 
   <!-- Hue Slider -->
-  <input
-    type="range"
-    min="0"
-    max="360"
-    step="1"
-    bind:value={color.hue}
-    onmousedown={() => (color.isAdjustingHue = true)}
-    onmouseup={() => (color.isAdjustingHue = false)}
-    oninput={() => {
-      color.isAdjustingHue = true;
-      lastValidHue = color.hue;
-    }}
-    onchange={() => (color.isAdjustingHue = false)}
-    aria-label="Hue Selector"
-    style="--thumbBG: hsl({displayHue()}, 100%, 50%)"
-    class="colorPicker__slider colorPicker__slider--hue"
-  />
-
-  {#if showOpacity}
+  <div class="colorPicker__sliderWrapper colorPicker__sliderWrapper--hue">
     <input
       type="range"
       min="0"
-      max="100"
+      max="360"
       step="1"
-      bind:value={color.opacity}
-      aria-label="Opacity Slider"
-      class="colorPicker__slider colorPicker__slider--opacity"
-      style="--thumbBG: {toHex(color)}; background: {getOpacityGradient()};"
+      bind:value={color.hue}
+      onmousedown={() => (color.isAdjustingHue = true)}
+      onmouseup={() => (color.isAdjustingHue = false)}
+      ontouchstart={() => (color.isAdjustingHue = true)}
+      ontouchend={() => (color.isAdjustingHue = false)}
+      oninput={() => {
+        color.isAdjustingHue = true;
+        lastValidHue = color.hue;
+      }}
+      onchange={() => (color.isAdjustingHue = false)}
+      aria-label="Hue Selector"
+      style="--thumbBG: hsl({displayHue()}, 100%, 50%)"
+      class="colorPicker__slider"
     />
+  </div>
+
+  {#if showOpacity}
+    <div
+      class="colorPicker__sliderWrapper colorPicker__sliderWrapper--opacity"
+      style="--opacityGradient: {getOpacityGradient()};"
+    >
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        bind:value={color.opacity}
+        aria-label="Opacity Slider"
+        class="colorPicker__slider"
+        style="--thumbBG: {toHex(color)};"
+      />
+    </div>
   {/if}
 
   {#if showInputs}
@@ -692,6 +739,7 @@
   .colorPicker__canvas {
     width: 100%;
     height: 100%;
+    touch-action: none;
   }
 
   .colorPicker__boxIndicator {
@@ -704,22 +752,42 @@
     pointer-events: none;
   }
 
+  .colorPicker__sliderWrapper {
+    position: relative;
+    width: 100%;
+    height: 1rem;
+  }
+
+  .colorPicker__sliderWrapper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 0.25rem;
+    transform: translateY(-50%);
+    border-radius: 0.125rem;
+    pointer-events: none;
+  }
+
+  .colorPicker__sliderWrapper--hue::before {
+    background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+  }
+
+  .colorPicker__sliderWrapper--opacity::before {
+    background: var(--opacityGradient);
+    background-size: cover;
+  }
+
   .colorPicker__slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 0.25rem;
-    margin-top: 0.5rem;
+    height: 100%;
     cursor: pointer;
     background: transparent;
-  }
-
-  .colorPicker__slider--hue {
-    background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
-  }
-
-  .colorPicker__slider--opacity {
-    background-size: cover;
+    position: relative;
+    z-index: 1;
   }
 
   .colorPicker__slider::-webkit-slider-thumb {
