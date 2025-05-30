@@ -79,10 +79,27 @@
     const curDiff = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
     const zoomDelta = -(curDiff - prevDiff) * zoomSensitivity;
 
-    const curAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX);
-    const angleDelta = curAngle - prevAngle;
+    // Calculate center point between the two touches
+    const centerX = (p1.clientX + p2.clientX) / 2;
+    const centerY = (p1.clientY + p2.clientY) / 2;
 
-    return { curDiff, zoomDelta, curAngle, angleDelta };
+    const curAngle = Math.atan2(p2.clientY - p1.clientY, p2.clientX - p1.clientX);
+    let angleDelta = curAngle - prevAngle;
+
+    // Handle angle wraparound (crossing -π/π boundary)
+    if (angleDelta > Math.PI) {
+      angleDelta -= 2 * Math.PI;
+    } else if (angleDelta < -Math.PI) {
+      angleDelta += 2 * Math.PI;
+    }
+
+    // Filter out very small angle changes to reduce jitter
+    const minAngleThreshold = 0.01; // ~0.57 degrees
+    if (Math.abs(angleDelta) < minAngleThreshold) {
+      angleDelta = 0;
+    }
+
+    return { curDiff, zoomDelta, curAngle, angleDelta, centerX, centerY };
   }
 
   function handleSinglePointer(e: PointerEvent) {
@@ -98,17 +115,21 @@
 
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
     const { dx, dy } = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
-    const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
+    const { curDiff, zoomDelta, curAngle, angleDelta, centerX, centerY } = calculatePinchAndRotation(pointers);
 
     if (prevDiff > 0) {
+      // Apply rotation sensitivity factor to make rotation feel more natural
+      const rotationSensitivity = 0.5; // Reduce rotation speed by half for more control
+      const adjustedAngleDelta = angleDelta * rotationSensitivity;
+
       if (isMapControl) {
         onMapPan(dx, dy);
         onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
+        onMapRotate(stageProps.map.rotation - (adjustedAngleDelta * 180) / Math.PI);
       } else {
         onScenePan(dx, dy);
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
-        onSceneRotate(stageProps.scene.rotation + (angleDelta * 180) / Math.PI);
+        onSceneRotate(stageProps.scene.rotation + (adjustedAngleDelta * 180) / Math.PI);
       }
     }
 
