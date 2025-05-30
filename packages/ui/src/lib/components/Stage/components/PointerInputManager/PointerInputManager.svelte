@@ -130,23 +130,9 @@
   function handleMultiPointer(pointers: PointerEvent[], isMapControl: boolean) {
     const { curDiff, zoomDelta, curAngle, angleDelta } = calculatePinchAndRotation(pointers);
 
-    // Check if this is Firefox to use centroid-based pan calculation
-    const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
-
-    let dx = 0,
-      dy = 0;
-    if (isFirefox) {
-      // Use centroid-based movement calculation for Firefox
-      const centroidResult = calculateCentroidMovement(pointers, stageProps.scene.rotation);
-      dx = centroidResult.dx;
-      dy = centroidResult.dy;
-      prevCentroid = centroidResult.curCentroid;
-    } else {
-      // Use original movement-based calculation for other browsers
-      const movement = calculateRotatedMovement(pointers[0], stageProps.scene.rotation);
-      dx = movement.dx;
-      dy = movement.dy;
-    }
+    // Use centroid-based movement (center of the two pointers)
+    const { dx, dy, curCentroid } = calculateCentroidMovement(pointers, stageProps.scene.rotation);
+    prevCentroid = curCentroid;
 
     if (prevDiff > 0) {
       if (isMapControl) {
@@ -179,7 +165,7 @@
       if (pointerCache.length >= 2 && lastPointerCount < 2) {
         prevDiff = -1;
         prevAngle = 0;
-        prevCentroid = null; // Reset centroid for Firefox
+        prevCentroid = null;
       }
       lastPointerCount = pointerCache.length;
     }
