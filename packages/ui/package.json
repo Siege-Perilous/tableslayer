@@ -50,10 +50,10 @@
     "@types/chroma-js": "^3.1.1",
     "@types/marked": "^6.0.0",
     "@types/three": "0.176.0",
-    "marked": "^15.0.11",
-    "svelte": "5.30.2",
+    "marked": "^15.0.12",
+    "svelte": "5.33.13",
     "svelte-check": "^4.2.1",
-    "typedoc": "^0.28.4",
+    "typedoc": "^0.28.5",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },
@@ -71,9 +71,9 @@
     "class-variance-authority": "^0.7.1",
     "postprocessing": "6.37.3",
     "shiki": "^3.4.2",
-    "three": "0.176.0",
+    "three": "0.177.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.47"
   },
   "svelte": "./src/lib/index.ts",
   "types": "./src/lib/index.d.ts",
