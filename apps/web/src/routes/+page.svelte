@@ -131,6 +131,13 @@
   </div>
 </div>
 
+<div class="home__tos">
+  <Text size="0.875rem" color="var(--fgMuted)">
+    Table Slayer does not collect any personal information or analytics. You can read the
+    <Link href="/tos">Terms of Service</Link> for more details.
+  </Text>
+</div>
+
 <style>
   .home__wizard {
     height: 420px;
@@ -216,7 +223,7 @@
   .home__questions {
     width: 80%;
     max-width: 1200px;
-    margin: 0 auto 8rem auto;
+    margin: 0 auto 4rem auto;
     padding: 2rem;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -227,5 +234,13 @@
   }
   :global(.home__contentText) {
     text-wrap: pretty;
+  }
+  .home__tos {
+    width: 80%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 4rem;
   }
 </style>
