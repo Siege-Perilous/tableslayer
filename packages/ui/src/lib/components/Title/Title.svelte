@@ -18,23 +18,37 @@
   }
 
   .title-xs {
-    font-size: var(--font-size-3);
+    font-size: 1.25rem;
   }
 
   .title-sm {
-    font-size: var(--font-size-4);
+    font-size: 1.5rem;
   }
 
   .title-md {
-    font-size: var(--font-size-6);
+    font-size: 2.5rem;
   }
 
   .title-lg {
-    font-size: var(--font-size-7);
+    font-size: 3rem;
   }
 
   .title-xl {
-    font-size: var(--font-size-10);
+    font-size: 4.5rem;
     font-feature-settings: 'ss03' 1;
+  }
+  @media (max-width: 768px) {
+    .title-lg {
+      font-size: 1.25rem;
+    }
+    .title-md {
+      font-size: 1.25rem;
+    }
+    .title-sm {
+      font-size: 1.25rem;
+    }
+    .title-xl {
+      font-size: 1.25rem;
+    }
   }
 </style>
