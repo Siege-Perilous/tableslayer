@@ -3,7 +3,10 @@
   import { Head } from '$lib/components';
 </script>
 
-<Head title="Table Slayer" description="Tools to create animated battle maps for in person RPG games." />
+<Head
+  title="Table Slayer"
+  description="Table Slayer helps game masters build and manage animated battle maps for in person RPG games on a TV."
+/>
 
 <div class="home__demo">
   <div class="grid"></div>
