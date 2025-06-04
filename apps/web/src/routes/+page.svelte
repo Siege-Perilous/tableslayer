@@ -153,7 +153,6 @@
     max-width: 1200px;
     position: relative;
     background: var(--bg);
-    width: auto;
     margin: 0 auto;
     border: solid 5px var(--fg);
     padding: 2rem;
@@ -242,5 +241,16 @@
     padding: 2rem;
     text-align: center;
     margin-bottom: 4rem;
+  }
+  @media (max-width: 768px) {
+    .home__content {
+      grid-template-columns: 1fr;
+    }
+    .home__features {
+      grid-template-columns: 1fr;
+    }
+    .home__questions {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
