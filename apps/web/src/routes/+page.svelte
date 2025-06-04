@@ -35,7 +35,7 @@
     </div>
   </div>
   <div>
-    <Text size="1.5rem" class="home__contentText">
+    <Text size="1.25rem" class="home__contentText">
       Table Slayer helps game masters build and manage animated battle maps for <span class="home__highlight">
         in person
       </span>
