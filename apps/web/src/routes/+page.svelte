@@ -8,9 +8,11 @@
 <div class="home__demo">
   <div class="grid"></div>
   <img
-    src="https://files.tableslayer.com/illustrations/home/home-wizard.png"
+    srcset="https://files.tableslayer.com/illustrations/home/title.png 1x, https://files.tableslayer.com/illustrations/home/title-2x.png 2x"
     alt="Overlook illustration"
     class="home__wizard"
+    height="440"
+    width="700"
   />
 </div>
 <div class="home__content">
@@ -51,15 +53,17 @@
 </div>
 
 <div class="home__title">
-  <Title size="md" as="h2">Turn any cheap TV into an animated battlemap.</Title>
+  <Title size="md" as="h2">Turn any cheap television into an animated battlemap.</Title>
 </div>
 
 <div class="home__features">
   <div>
     <img
-      src="https://files.tableslayer.com/illustrations/home/desktop.png"
-      alt="Overlook illustration"
+      srcset="https://files.tableslayer.com/illustrations/home/laptop.png 1x, https://files.tableslayer.com/illustrations/home/laptop-2x.png 2x"
+      alt="Laptop illustration"
       class="home__featureImage"
+      height="339"
+      width="562"
     />
     <Text size="1.25rem" class="home__featureText">
       Table Slayer runs in a web browser. The most common setup is a laptop connected via HDMI, using the TV for the map
@@ -68,9 +72,11 @@
   </div>
   <div>
     <img
-      src="https://files.tableslayer.com/illustrations/home/mobile.png"
-      alt="Overlook illustration"
+      srcset="https://files.tableslayer.com/illustrations/home/hand.png 1x, https://files.tableslayer.com/illustrations/home/hand-2x.png 2x"
+      alt="Cloud illustration"
       class="home__featureImage"
+      height="339"
+      width="562"
     />
     <Text size="1.25rem" class="home__featureText">
       A more optimal setup with less clutter is to drive the game master tools with a touch capable tablet or phone, and
@@ -141,6 +147,7 @@
 <style>
   .home__wizard {
     max-width: 700px;
+    height: auto;
     display: block;
     margin: 2rem auto 0 auto;
   }
@@ -180,6 +187,7 @@
   }
   .home__videoPlayer {
     width: 100%;
+    aspect-ratio: 16 / 9;
     height: auto;
   }
   .home__features {
