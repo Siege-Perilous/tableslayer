@@ -140,8 +140,7 @@
 
 <style>
   .home__wizard {
-    height: 420px;
-    width: auto;
+    max-width: 700px;
     display: block;
     margin: 2rem auto 0 auto;
   }
@@ -243,6 +242,9 @@
     margin-bottom: 4rem;
   }
   @media (max-width: 768px) {
+    .home__wizard {
+      max-width: 100%;
+    }
     .home__content {
       grid-template-columns: 1fr;
     }
