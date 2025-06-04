@@ -22,7 +22,7 @@
   <div>
     <div class="home__video">
       <video
-        src="https://snid.es/2025JUN/3AO7b4kB2r4uXukF.mp4"
+        src="https://files.tableslayer.com/illustrations/home/tsdemo.mp4"
         autoplay
         loop
         muted
