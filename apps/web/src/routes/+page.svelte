@@ -200,7 +200,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4rem;
-    align-items: center;
+    grid-auto-rows: 1fr;
   }
   .home__features > div {
     border: solid 5px var(--fg);
