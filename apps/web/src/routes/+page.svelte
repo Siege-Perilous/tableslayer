@@ -161,9 +161,11 @@
     width: 80%;
     max-width: 1200px;
     position: relative;
-    background: var(--bg);
+    background: var(--contrastLowest);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-1);
     margin: 0 auto;
-    border: solid 5px var(--fg);
     padding: 2rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -203,7 +205,10 @@
     grid-auto-rows: 1fr;
   }
   .home__features > div {
-    border: solid 5px var(--fg);
+    background: var(--contrastLowest);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-1);
   }
   .home__featureImage {
     width: 100%;
@@ -253,6 +258,15 @@
     margin-bottom: 4rem;
   }
   @media (max-width: 768px) {
+    .home__questions {
+      width: 90%;
+    }
+    .home__content {
+      width: 90%;
+    }
+    .home__features {
+      width: 90%;
+    }
     .home__wizard {
       max-width: 100%;
     }
