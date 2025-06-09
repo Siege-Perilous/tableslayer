@@ -507,7 +507,7 @@
         $updateSceneMutation.mutateAsync({
           sceneId: selectedScene.id,
           partyId: party.id,
-          sceneData: convertPropsToSceneDetails(stageProps)
+          sceneData: convertPropsToSceneDetails(stageProps, mapThumbLocation)
         }),
       formLoadingState: () => {},
       onSuccess: () => {},
