@@ -62,6 +62,7 @@
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
+  let mapThumbLocation: null | string = $state(null);
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -475,7 +476,7 @@
     // Generate and upload thumbnail
     try {
       if (stage?.scene?.generateThumbnail) {
-        const thumbnailBlob = await stage.scene.generateThumbnail(0.7);
+        const thumbnailBlob = await stage.scene.generateThumbnail();
 
         await handleMutation({
           mutation: () =>
@@ -486,7 +487,7 @@
           formLoadingState: () => {},
           onSuccess: (result) => {
             // Store just the location path in stageProps for database saving
-            stageProps.mapThumbLocation = result.location;
+            mapThumbLocation = result.location;
           },
           onError: (error) => {
             console.log('Error uploading thumbnail:', error);

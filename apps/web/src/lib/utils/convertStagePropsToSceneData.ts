@@ -38,13 +38,20 @@ function setNestedIfExists(
   }
 }
 
-export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Partial<Record<string, unknown>> => {
+export const convertPropsToSceneDetails = (
+  stageProps: Partial<StageProps>,
+  mapThumbLocation: string | null
+): Partial<Record<string, unknown>> => {
   const details: Partial<Record<string, unknown>> = {};
   // Direct mapping
   setIfExists(stageProps, details, {
-    backgroundColor: 'backgroundColor',
-    mapThumbLocation: 'mapThumbLocation'
+    backgroundColor: 'backgroundColor'
   });
+
+  // Set map thumb location if available
+  if (mapThumbLocation) {
+    details.mapThumbLocation = mapThumbLocation;
+  }
 
   // Nested mappings
   setNestedIfExists(stageProps, details, 'display', {

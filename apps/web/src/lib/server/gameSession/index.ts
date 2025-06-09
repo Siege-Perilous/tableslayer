@@ -40,7 +40,12 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
             scene.mapThumbLocation || scene.mapLocation,
             'w=400,h=225,fit=cover,gravity=center'
           );
-          const sceneWithThumb = { ...scene, thumb };
+
+          const thumbWithCacheBusting = {
+            ...thumb,
+            resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
+          };
+          const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting } as SelectScene & Thumb;
           scenesWithThumbs.push(sceneWithThumb);
         }
       }
