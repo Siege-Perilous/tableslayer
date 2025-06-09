@@ -59,7 +59,12 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-  const sceneWithThumb = { ...scene, thumb };
+  // Add cache busting to prevent stale thumbnails
+  const thumbWithCacheBusting = {
+    ...thumb,
+    resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
+  };
+  const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
   return sceneWithThumb;
 };
 
@@ -78,12 +83,20 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
   const scenesWithThumbs: (SelectScene | (SelectScene & Thumb))[] = [];
 
   for (const scene of scenes) {
-    if (!scene.mapLocation) {
+    // Use mapThumbLocation if available, otherwise fall back to mapLocation
+    const imageLocation = scene.mapThumbLocation || scene.mapLocation;
+
+    if (!imageLocation) {
       scenesWithThumbs.push(scene);
       continue;
     }
-    const thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
-    const sceneWithThumb = { ...scene, thumb };
+    const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
+    // Add cache busting to prevent stale thumbnails
+    const thumbWithCacheBusting = {
+      ...thumb,
+      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
+    };
+    const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
     scenesWithThumbs.push(sceneWithThumb);
   }
 
@@ -173,9 +186,15 @@ export const getSceneFromOrder = async (
     throw new Error('Scene not found');
   }
 
-  const thumb = scene.mapLocation
-    ? await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center')
-    : null;
+  let thumb = null;
+  if (scene.mapLocation) {
+    thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+    // Add cache busting to prevent stale thumbnails
+    thumb = {
+      ...thumb,
+      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
+    };
+  }
   const sceneWithThumb = { ...scene, thumb };
 
   return sceneWithThumb;

@@ -17,6 +17,7 @@
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
     useUploadFogFromBlobMutation,
+    useUploadSceneThumbnailMutation,
     useCreateMarkerMutation,
     useUpdateMarkerMutation
   } from '$lib/queries';
@@ -61,6 +62,7 @@
   let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
+  let mapThumbLocation: null | string = $state(null);
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -69,6 +71,7 @@
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+  const createThumbnailMutation = useUploadSceneThumbnailMutation();
   const createMarkerMutation = useCreateMarkerMutation();
   const updateMarkerMutation = useUpdateMarkerMutation();
 
@@ -470,13 +473,41 @@
     if (isSaving || isUpdatingFog) return;
     isSaving = true;
 
+    // Generate and upload thumbnail
+    try {
+      if (stage?.scene?.generateThumbnail) {
+        const thumbnailBlob = await stage.scene.generateThumbnail();
+
+        await handleMutation({
+          mutation: () =>
+            $createThumbnailMutation.mutateAsync({
+              blob: thumbnailBlob,
+              sceneId: selectedScene.id
+            }),
+          formLoadingState: () => {},
+          onSuccess: (result) => {
+            // Store just the location path in stageProps for database saving
+            mapThumbLocation = result.location;
+          },
+          onError: (error) => {
+            console.log('Error uploading thumbnail:', error);
+          },
+          toastMessages: {
+            error: { title: 'Error uploading thumbnail', body: (err) => err.message || 'Error uploading thumbnail' }
+          }
+        });
+      }
+    } catch (error) {
+      console.log('Error generating thumbnail:', error);
+    }
+
     // Save scene settings
     await handleMutation({
       mutation: () =>
         $updateSceneMutation.mutateAsync({
           sceneId: selectedScene.id,
           partyId: party.id,
-          sceneData: convertPropsToSceneDetails(stageProps)
+          sceneData: convertPropsToSceneDetails(stageProps, mapThumbLocation)
         }),
       formLoadingState: () => {},
       onSuccess: () => {},
