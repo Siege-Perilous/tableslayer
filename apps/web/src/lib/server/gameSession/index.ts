@@ -36,7 +36,10 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
 
       for (const scene of scenes) {
         if (scene.mapLocation) {
-          const thumb = await transformImage(scene.mapLocation, 'w=400,h=225,fit=cover,gravity=center');
+          const thumb = await transformImage(
+            scene.mapThumbLocation || scene.mapLocation,
+            'w=400,h=225,fit=cover,gravity=center'
+          );
           const sceneWithThumb = { ...scene, thumb };
           scenesWithThumbs.push(sceneWithThumb);
         }
