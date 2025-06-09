@@ -2,6 +2,37 @@ import { mutationFactory } from '$lib/factories';
 import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 
+// Generic function to upload blob to R2, does not create a user file entry
+const uploadBlobToR2 = async (blob: Blob, fileName: string, contentType: string) => {
+  const file = new File([blob], fileName, { type: contentType });
+
+  // Step 1: Fetch Presigned URL
+  const presignedUrlResponse = await fetch('/api/file/generatePresignedWriteUrl', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, contentType }),
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  if (!presignedUrlResponse.ok) {
+    throw new Error('Failed to generate presigned URL');
+  }
+
+  const { signedUrl } = await presignedUrlResponse.json();
+
+  // Step 2: Upload to Cloudflare R2
+  const uploadResponse = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: file
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('File upload to Cloudflare R2 failed');
+  }
+
+  return { location: fileName };
+};
+
 // Uploads fog to R2, does not create a user file entry because they are throwaway
 export const useUploadFogFromBlobMutation = () => {
   return mutationFactory<{ blob: Blob; sceneId: string }, { location: string }, Error>({
@@ -9,34 +40,23 @@ export const useUploadFogFromBlobMutation = () => {
     mutationFn: async ({ blob, sceneId }) => {
       const fileName = `fog/${sceneId}.png`;
       const contentType = 'image/png';
-      const file = new File([blob], fileName, { type: contentType });
-      // Step 1: Fetch Presigned URL
-      const presignedUrlResponse = await fetch('/api/file/generatePresignedWriteUrl', {
-        method: 'POST',
-        body: JSON.stringify({ fileName, contentType }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (!presignedUrlResponse.ok) {
-        throw new Error('Failed to generate presigned URL');
-      }
-
-      const { signedUrl } = await presignedUrlResponse.json();
-
-      // Step 2: Upload to Cloudflare R2
-      const uploadResponse = await fetch(signedUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': contentType },
-        body: file
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('File upload to Cloudflare R2 failed');
-      }
-
-      return { location: fileName };
+      return uploadBlobToR2(blob, fileName, contentType);
     },
-    // Don't invalidate.
+    onSuccess: () => {
+      return;
+    }
+  });
+};
+
+// Uploads scene thumbnail to R2, does not create a user file entry because they are throwaway
+export const useUploadSceneThumbnailMutation = () => {
+  return mutationFactory<{ blob: Blob; sceneId: string }, { location: string }, Error>({
+    mutationKey: ['uploadSceneThumbnail'],
+    mutationFn: async ({ blob, sceneId }) => {
+      const fileName = `thumbnail/${sceneId}.jpg`;
+      const contentType = 'image/jpeg';
+      return uploadBlobToR2(blob, fileName, contentType);
+    },
     onSuccess: () => {
       return;
     }

@@ -17,6 +17,7 @@
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
     useUploadFogFromBlobMutation,
+    useUploadSceneThumbnailMutation,
     useCreateMarkerMutation,
     useUpdateMarkerMutation
   } from '$lib/queries';
@@ -69,6 +70,7 @@
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
+  const createThumbnailMutation = useUploadSceneThumbnailMutation();
   const createMarkerMutation = useCreateMarkerMutation();
   const updateMarkerMutation = useUpdateMarkerMutation();
 
@@ -469,6 +471,34 @@
   const saveScene = async () => {
     if (isSaving || isUpdatingFog) return;
     isSaving = true;
+
+    // Generate and upload thumbnail
+    try {
+      if (stage?.scene?.generateThumbnail) {
+        const thumbnailBlob = await stage.scene.generateThumbnail(0.7);
+
+        await handleMutation({
+          mutation: () =>
+            $createThumbnailMutation.mutateAsync({
+              blob: thumbnailBlob,
+              sceneId: selectedScene.id
+            }),
+          formLoadingState: () => {},
+          onSuccess: (result) => {
+            // Store just the location path in stageProps for database saving
+            stageProps.mapThumbLocation = result.location;
+          },
+          onError: (error) => {
+            console.log('Error uploading thumbnail:', error);
+          },
+          toastMessages: {
+            error: { title: 'Error uploading thumbnail', body: (err) => err.message || 'Error uploading thumbnail' }
+          }
+        });
+      }
+    } catch (error) {
+      console.log('Error generating thumbnail:', error);
+    }
 
     // Save scene settings
     await handleMutation({

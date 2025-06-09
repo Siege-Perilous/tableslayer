@@ -42,7 +42,8 @@ export const convertPropsToSceneDetails = (stageProps: Partial<StageProps>): Par
   const details: Partial<Record<string, unknown>> = {};
   // Direct mapping
   setIfExists(stageProps, details, {
-    backgroundColor: 'backgroundColor'
+    backgroundColor: 'backgroundColor',
+    mapThumbLocation: 'mapThumbLocation'
   });
 
   // Nested mappings
