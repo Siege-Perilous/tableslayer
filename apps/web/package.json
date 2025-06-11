@@ -29,7 +29,6 @@
     "@aws-sdk/client-s3": "=3.712.0",
     "@aws-sdk/s3-request-presigner": "=3.712.0",
     "@libsql/client": "^0.15.8",
-    "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@melt-ui/pp": "^0.3.2",
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",
