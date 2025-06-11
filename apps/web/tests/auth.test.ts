@@ -27,7 +27,7 @@ test.describe('Auth tests', () => {
     await page.getByTestId('email').fill('dave');
     await page.getByTestId('password').first().fill('test');
     await expect(page.locator('text=Invalid email')).toBeVisible();
-    await expect(page.locator('text=String must contain')).toBeVisible();
+    await expect(page.locator('text=Too small')).toBeVisible();
   });
   test('should display an error message for invalid credentials', async ({ page }) => {
     await page.goto('/login');
