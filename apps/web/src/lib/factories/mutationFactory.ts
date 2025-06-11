@@ -1,13 +1,13 @@
 import { invalidateAll } from '$app/navigation';
 import { addToast } from '@tableslayer/ui';
 import { createMutation } from '@tanstack/svelte-query';
-import { type ZodIssue } from 'zod';
+import { type $ZodIssue } from 'zod/v4/core';
 
 export type FormMutationError = {
   success: boolean;
   status: number;
   message: string;
-  errors?: ZodIssue[];
+  errors?: $ZodIssue[];
 };
 
 export type FormMutationSuccess = {

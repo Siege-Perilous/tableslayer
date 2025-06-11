@@ -3,7 +3,7 @@ import { getMarkersForScene } from '$lib/server/marker';
 import { getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import pkg from '../../../../../package.json';
 
 export const POST = async ({ request, locals }: RequestEvent) => {
@@ -11,7 +11,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     const data = await request.json();
 
     const schema = z.object({
-      gameSessionId: z.string().uuid()
+      gameSessionId: z.uuid()
     });
 
     const { gameSessionId } = schema.parse(data);

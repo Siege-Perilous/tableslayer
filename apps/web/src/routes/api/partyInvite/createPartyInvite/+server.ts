@@ -1,10 +1,10 @@
 import { VALID_PARTY_ROLES } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { createPartyInvite, isUserInParty, UserAlreadyInPartyError, UserAlreadyInvitedError } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   partyId: z.string(),
   role: z.enum(VALID_PARTY_ROLES)
 });
@@ -28,7 +28,8 @@ export const POST = apiFactory(
           {
             path: ['email'],
             message: error.message,
-            code: 'custom'
+            code: 'custom',
+            input: body.email
           }
         ]);
       }

@@ -1,9 +1,9 @@
 import { apiFactory } from '$lib/factories';
 import { addEmailtoAudience } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
-  email: z.string().email()
+  email: z.email()
 });
 
 export const POST = apiFactory(

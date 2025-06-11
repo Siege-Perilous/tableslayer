@@ -22,8 +22,8 @@ COPY . .
 # Install dependencies
 RUN pnpm install
 
-# Build the web app using Turbo
-RUN pnpm turbo run web#build
+# Build the web app using Turbo with increased heap size
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm turbo run web#build
 
 # Final stage
 FROM base

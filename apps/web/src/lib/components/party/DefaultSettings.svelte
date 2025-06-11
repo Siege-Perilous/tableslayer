@@ -4,7 +4,7 @@
   import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import { type ZodIssue } from 'zod';
+  import { type $ZodIssue } from 'zod/v4/core';
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 
@@ -33,7 +33,7 @@
     defaultDisplayPaddingX: party.defaultDisplayPaddingX,
     defaultDisplayPaddingY: party.defaultDisplayPaddingY
   });
-  let errors = $state<ZodIssue[] | undefined>(undefined);
+  let errors = $state<$ZodIssue[] | undefined>(undefined);
 
   const handleSelectedResolution = (selected: string) => {
     let selectedResolution;
@@ -85,7 +85,7 @@
   };
 
   const handleValidation = () => {
-    errors = updatePartySchema.safeParse(partyData).error?.errors;
+    errors = updatePartySchema.safeParse(partyData).error?.issues;
   };
 
   $effect(() => {

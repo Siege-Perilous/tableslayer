@@ -2,7 +2,7 @@ import { VALID_PARTY_PLANS } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { getParty, getUser, updateParty } from '$lib/server';
 import Stripe from 'stripe';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY!);
 

@@ -1,11 +1,11 @@
 import { apiFactory } from '$lib/factories';
 import { createSession, createUserByEmailAndPassword, generateSessionToken, setSessionTokenCookie } from '$lib/server';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z
   .object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(8),
     confirmPassword: z.string().min(8)
   })

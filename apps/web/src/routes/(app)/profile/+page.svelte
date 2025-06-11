@@ -46,7 +46,8 @@
           {
             path: ['newPasswordConfirm'],
             message: 'Passwords do not match',
-            code: 'custom'
+            code: 'custom',
+            input: newPasswordConfirm
           }
         ]
       };

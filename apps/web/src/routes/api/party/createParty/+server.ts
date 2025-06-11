@@ -1,7 +1,7 @@
 import { insertPartySchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
 import { createParty, SlugConflictError } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   // Allow slug to be optional, since it's generated on the server
@@ -27,7 +27,8 @@ export const POST = apiFactory(
           {
             path: ['partyData', 'name'],
             message: error.message,
-            code: 'custom'
+            code: 'custom',
+            input: body.partyData?.name
           }
         ]);
       }

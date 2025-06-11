@@ -292,17 +292,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Check Playwright Browser Installation
-        id: check-browsers
-        run: |
-          if [ -d "/home/runner/.cache/ms-playwright" ] && [ -d "/home/runner/.cache/ms-playwright/chromium-1155" ]; then
-            echo "browsers_installed=true" >> $GITHUB_ENV
-          else
-            echo "browsers_installed=false" >> $GITHUB_ENV
-          fi
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: apps/${{ matrix.app }}
+        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // "unknown"')" >> $GITHUB_OUTPUT
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - name: Install Playwright Browsers
-        if: ${{ github.ref != 'refs/heads/main' }} && env.browsers_installed == 'false'
-        run: pnpx playwright install --with-deps
+        working-directory: apps/${{ matrix.app }}
+        run: pnpm exec playwright install --with-deps
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
         working-directory: apps/${{ matrix.app }}

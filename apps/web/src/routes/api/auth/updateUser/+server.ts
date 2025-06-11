@@ -1,7 +1,7 @@
 import { updateUserSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { EmailAlreadyInUseError, updateUser } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // Use the extended schema with email validation
 const updateUserValidation = z.object({
@@ -29,7 +29,8 @@ export const POST = apiFactory(
           {
             path: ['userData', 'email'],
             message: error.message,
-            code: 'custom'
+            code: 'custom',
+            input: body.userData?.email
           }
         ]);
       }

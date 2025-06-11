@@ -1,6 +1,6 @@
 import { apiFactory } from '$lib/factories';
 import { getMarkersForScene, isUserInParty } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   partyId: z.string(),
