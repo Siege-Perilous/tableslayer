@@ -4,7 +4,7 @@
   import type { HTMLBaseAttributes } from 'svelte/elements';
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
-  import { type ZodIssue } from 'zod/v4';
+  import { type $ZodIssue } from 'zod/v4/core';
   import { v4 as uuidv4 } from 'uuid';
   type Props = {
     /**
@@ -41,7 +41,7 @@
     /**
      * This shape matches what returns from zod / mutation factories
      */
-    errors?: ZodIssue[];
+    errors?: $ZodIssue[];
   } & HTMLBaseAttributes;
 
   let { input, label, start, name, errors, end, ...restProps }: Props = $props();

@@ -5,7 +5,7 @@
   import type { Thumb } from '$lib/server';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
-  import { type ZodIssue } from 'zod/v4';
+  import { type $ZodIssue } from 'zod/v4/core';
 
   let {
     socketUpdate,
@@ -25,7 +25,7 @@
     activeScene: SelectScene | (SelectScene & Thumb) | null;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    errors: ZodIssue[] | undefined;
+    errors: $ZodIssue[] | undefined;
   } = $props();
 
   let contextSceneId = $state('');

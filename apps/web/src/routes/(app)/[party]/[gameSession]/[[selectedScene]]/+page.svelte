@@ -20,7 +20,7 @@
     useCreateMarkerMutation,
     useUpdateMarkerMutation
   } from '$lib/queries';
-  import { type ZodIssue } from 'zod/v4';
+  import { type $ZodIssue } from 'zod/v4/core';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
@@ -50,7 +50,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
-  let errors = $state<ZodIssue[] | undefined>(undefined);
+  let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
   let stage: StageExports = $state(null)!;

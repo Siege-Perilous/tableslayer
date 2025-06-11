@@ -1,13 +1,13 @@
 <script lang="ts">
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
-  import { type ZodIssue } from 'zod/v4';
+  import { type $ZodIssue } from 'zod/v4/core';
 
   type FormMutationResponse = {
     success: boolean;
     status: number;
     message: string;
-    errors?: ZodIssue[];
+    errors?: $ZodIssue[];
   };
   let { error }: { error?: FormMutationResponse } = $props();
 </script>

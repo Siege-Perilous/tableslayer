@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ZodIssue } from 'zod/v4';
+  import { type $ZodIssue } from 'zod/v4/core';
   import { Spacer, DualInputSlider, type StageProps, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
   import { IconX } from '@tabler/icons-svelte';
   import type { SelectParty } from '$lib/db/app/schema';
@@ -14,7 +14,7 @@
   }: {
     socketUpdate: () => void;
     stageProps: StageProps;
-    errors: ZodIssue[] | undefined;
+    errors: $ZodIssue[] | undefined;
     party: SelectParty & Thumb;
   } = $props();
 
