@@ -1,6 +1,6 @@
 import { apiFactory } from '$lib/factories';
 import { verifyEmail } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   code: z.string()

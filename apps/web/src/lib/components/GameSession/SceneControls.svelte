@@ -34,7 +34,7 @@
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import {
     GridControls,
     EffectsControls,

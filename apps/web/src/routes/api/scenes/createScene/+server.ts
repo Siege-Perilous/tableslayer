@@ -1,7 +1,7 @@
 import { insertSceneSchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
 import { createScene, isUserInParty } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   partyId: z.string(),

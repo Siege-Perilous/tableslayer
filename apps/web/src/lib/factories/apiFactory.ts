@@ -1,5 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 type HandlerFn<BodyType> = (event: Parameters<RequestHandler>[0] & { body: BodyType }) => Promise<unknown>;
 
@@ -33,7 +33,7 @@ export function apiFactory<BodyType>(
             success: false,
             status: 400,
             message: validationErrorMessage,
-            errors: err.errors
+            errors: err.issues
           },
           { status: 400 }
         );

@@ -5,7 +5,7 @@
   import type { Thumb } from '$lib/server';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
 
   let {
     socketUpdate,

@@ -1,7 +1,7 @@
 import { updateGameSessionSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { isUserAdminInParty, SlugConflictError, updateGameSession } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   partyId: z.string(),
@@ -29,7 +29,8 @@ export const POST = apiFactory(
           {
             path: ['gameSessionData', 'name'],
             message: error.message,
-            code: 'custom'
+            code: 'custom',
+            input: body.gameSessionData.name
           }
         ]);
       }

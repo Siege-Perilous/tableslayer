@@ -4,7 +4,7 @@
   import type { HTMLBaseAttributes } from 'svelte/elements';
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import { v4 as uuidv4 } from 'uuid';
   type Props = {
     /**

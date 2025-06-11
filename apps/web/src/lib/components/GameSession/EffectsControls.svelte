@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import { FormControl, type StageProps, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
   import { queuePropertyUpdate } from '$lib/utils';
   import { ToneMappingMode } from 'postprocessing';

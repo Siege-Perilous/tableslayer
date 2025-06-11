@@ -4,7 +4,7 @@
   import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title } from '@tableslayer/ui';
   import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
 
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
 

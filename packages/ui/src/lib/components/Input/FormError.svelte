@@ -1,7 +1,7 @@
 <script lang="ts">
   import { IconX } from '@tabler/icons-svelte';
   import { Icon } from '../';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
 
   type FormMutationResponse = {
     success: boolean;

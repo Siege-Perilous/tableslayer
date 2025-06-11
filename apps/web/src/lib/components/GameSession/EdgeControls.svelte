@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import { Spacer, DualInputSlider, type StageProps, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
   import { IconX } from '@tabler/icons-svelte';
   import type { SelectParty } from '$lib/db/app/schema';

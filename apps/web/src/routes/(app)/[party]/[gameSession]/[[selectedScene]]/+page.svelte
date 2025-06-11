@@ -20,7 +20,7 @@
     useCreateMarkerMutation,
     useUpdateMarkerMutation
   } from '$lib/queries';
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {

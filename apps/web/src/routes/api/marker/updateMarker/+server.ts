@@ -1,7 +1,7 @@
 import { insertMarkerSchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
 import { isUserInParty, updateMarker } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // Create a custom schema that doesn't require sceneId in markerData for updates
 const markerDataWithoutSceneIdSchema = insertMarkerSchema.partial().omit({ sceneId: true });

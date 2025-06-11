@@ -1,6 +1,6 @@
 import { apiFactory } from '$lib/factories';
 import { createUserFileFromLocation } from '$lib/server';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const validationSchema = z.object({
   location: z.string().min(1, 'File location cannot be empty')

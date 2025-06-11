@@ -11,7 +11,7 @@ import { createGameSessionForImport, updateGameSession } from '$lib/server/gameS
 import { getParty, isUserInParty } from '$lib/server/party/getParty';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const createIdMap = () => {
   const map = new Map<string, string>();
@@ -173,7 +173,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
           success: false,
           status: 400,
           message: 'Invalid import file format',
-          errors: err.errors
+          errors: err.issues
         },
         { status: 400 }
       );

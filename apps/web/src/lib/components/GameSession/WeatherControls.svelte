@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ZodIssue } from 'zod';
+  import { type ZodIssue } from 'zod/v4';
   import {
     FormControl,
     ColorPicker,
