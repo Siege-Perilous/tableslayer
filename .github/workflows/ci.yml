@@ -295,7 +295,18 @@ jobs:
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/${{ matrix.app }}
-        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r 'if type == "array" then (.[0].dependencies["@playwright/test"].version // .[0].devDependencies["@playwright/test"].version) else (.dependencies["@playwright/test"].version // .devDependencies["@playwright/test"].version) end')" >> $GITHUB_OUTPUT
+        run: |
+          echo "=== Debug: Checking pnpm list output ==="
+          pnpm list @playwright/test --depth=0 --json
+          echo "=== Debug: Testing jq parsing ==="
+          JSON_OUTPUT=$(pnpm list @playwright/test --depth=0 --json)
+          echo "JSON type: $(echo "$JSON_OUTPUT" | jq -r 'type')"
+          echo "Array length (if array): $(echo "$JSON_OUTPUT" | jq -r 'if type == "array" then length else "not array" end')"
+          echo "First element devDeps: $(echo "$JSON_OUTPUT" | jq -r '.[0].devDependencies // "no devDeps in [0]"')"
+          echo "Root devDeps: $(echo "$JSON_OUTPUT" | jq -r '.devDependencies // "no devDeps in root"')"
+          VERSION=$(echo "$JSON_OUTPUT" | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // .devDependencies["@playwright/test"].version // .dependencies["@playwright/test"].version // "unknown"')
+          echo "Final version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
