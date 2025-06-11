@@ -85,7 +85,7 @@
   };
 
   const handleValidation = () => {
-    errors = updatePartySchema.safeParse(partyData).error?.errors;
+    errors = updatePartySchema.safeParse(partyData).error?.issues;
   };
 
   $effect(() => {
