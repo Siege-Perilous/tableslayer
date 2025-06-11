@@ -295,7 +295,7 @@ jobs:
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/${{ matrix.app }}
-        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r 'if type == "array" then .[0].dependencies["@playwright/test"].version else .dependencies["@playwright/test"].version end')" >> $GITHUB_OUTPUT
+        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r 'if type == "array" then (.[0].dependencies["@playwright/test"].version // .[0].devDependencies["@playwright/test"].version) else (.dependencies["@playwright/test"].version // .devDependencies["@playwright/test"].version) end')" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
