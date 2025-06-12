@@ -134,6 +134,13 @@
       "when": 1748361969576,
       "tag": "0018_scene-rotation-int-to-real",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1749733346797,
+      "tag": "0019_active-game-session",
+      "breakpoints": true
     }
   ]
 }

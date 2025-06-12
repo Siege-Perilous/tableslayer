@@ -1,9 +1,9 @@
 import type { SelectMarker } from '$lib/db/app/schema';
 import {
+  getActiveGameSessionForParty,
   getActiveScene,
   getMarkersForScene,
   getPartyFromSlug,
-  getPartyGameSessionFromSlug,
   getUser
 } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
@@ -17,28 +17,30 @@ export const load: PageServerLoad = async (event) => {
     return redirect(302, '/login');
   }
 
-  // Use party.id to ensure we get the correct game session for this party
-  const gameSession = await getPartyGameSessionFromSlug(params.gameSession, party.id);
-
   const userId = event.locals.user.id;
   const user = await getUser(userId);
   if (!user) {
     return redirect(302, '/login');
   }
-  if (!gameSession) {
-    return redirect(302, '/login');
-  }
 
-  const activeScene = await getActiveScene(gameSession.id);
+  // Get the active game session for this party
+  const activeGameSession = await getActiveGameSessionForParty(party.id);
+
+  let activeScene = null;
   let activeSceneMarkers: SelectMarker[] = [];
 
-  if (activeScene) {
-    activeSceneMarkers = await getMarkersForScene(activeScene.id);
+  if (activeGameSession) {
+    activeScene = await getActiveScene(activeGameSession.id);
+
+    if (activeScene) {
+      activeSceneMarkers = await getMarkersForScene(activeScene.id);
+    }
   }
 
   return {
     user,
-    gameSession,
+    party,
+    activeGameSession,
     activeScene,
     activeSceneMarkers
   };

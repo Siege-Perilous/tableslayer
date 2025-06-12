@@ -30,7 +30,7 @@
     broadcastMarkerUpdate,
     buildSceneProps,
     handleKeyCommands,
-    setupGameSessionWebSocket,
+    setupPartyWebSocket,
     handleStageZoom,
     hasThumb,
     convertPropsToSceneDetails,
@@ -102,7 +102,18 @@
    * This is passed down to child components and manually called
    */
   const socketUpdate = () => {
-    broadcastStageUpdate(socket, activeScene, selectedScene, stageProps, activeSceneMarkers, gameSession.isPaused);
+    // Only broadcast if this is the active game session for the party
+    if (gameSession.id === party.activeGameSessionId) {
+      broadcastStageUpdate(
+        socket,
+        activeScene,
+        selectedScene,
+        stageProps,
+        activeSceneMarkers,
+        gameSession.isPaused,
+        party.activeGameSessionId
+      );
+    }
   };
 
   // Register the socketUpdate function with the property broadcaster
@@ -159,10 +170,10 @@
   };
 
   onMount(() => {
-    socket = setupGameSessionWebSocket(
-      gameSession.id,
-      () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket'),
+    socket = setupPartyWebSocket(
+      party.id,
+      () => console.log('Connected to party socket'),
+      () => console.log('Disconnected from party socket'),
       handleMarkerUpdate, // Pass marker update handler
       stageProps // Pass stageProps for the handler to access
     );
@@ -285,7 +296,7 @@
       };
 
       // Use the optimized marker update for position changes
-      if (socket && selectedScene && selectedScene.id) {
+      if (socket && selectedScene && selectedScene.id && gameSession.id === party.activeGameSessionId) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
     }
@@ -382,7 +393,7 @@
     }
 
     // Emit the normalized and rotated position over the WebSocket
-    if (activeScene && activeScene.id === selectedScene.id) {
+    if (activeScene && activeScene.id === selectedScene.id && gameSession.id === party.activeGameSessionId) {
       socket?.emit('cursorMove', {
         user: data.user,
         normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },

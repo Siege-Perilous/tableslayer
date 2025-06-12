@@ -177,6 +177,7 @@ export const partyTable = sqliteTable(
       .references(() => filesTable.id, { onDelete: 'cascade' })
       .notNull()
       .default(1),
+    activeGameSessionId: text('active_game_session_id'),
     defaultTvSize: integer('tv_size').notNull().default(40),
     defaultGridType: integer('default_grid_type').notNull().default(0),
     defaultDisplaySizeX: real('default_display_size_x').notNull().default(17.77),
