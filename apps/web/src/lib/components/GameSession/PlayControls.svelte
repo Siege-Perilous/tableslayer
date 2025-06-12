@@ -49,14 +49,11 @@
   };
 
   const handleToggleGamePause = async () => {
-    if (!selectedScene) return;
-
     await handleMutation({
       mutation: () =>
-        $updateGameSession.mutateAsync({
-          gameSessionId: gameSession.id,
-          gameSessionData: { isPaused: !gameSession.isPaused },
-          partyId: party.id
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { gameSessionIsPaused: !party.gameSessionIsPaused }
         }),
       formLoadingState: () => {},
       onSuccess: () => {
@@ -124,7 +121,7 @@
     <Spacer />
   {/if}
   <Button variant="danger" onclick={handleToggleGamePause}>
-    {#if gameSession.isPaused}Unpause playfield{:else}Pause playfield{/if}
+    {#if party.gameSessionIsPaused}Unpause playfield{:else}Pause playfield{/if}
   </Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>

@@ -141,6 +141,13 @@
       "when": 1749733346797,
       "tag": "0019_active-game-session",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1749735146606,
+      "tag": "0020_paused-game-session",
+      "breakpoints": true
     }
   ]
 }

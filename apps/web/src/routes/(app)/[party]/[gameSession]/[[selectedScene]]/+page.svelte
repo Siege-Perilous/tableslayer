@@ -110,7 +110,7 @@
         selectedScene,
         stageProps,
         activeSceneMarkers,
-        gameSession.isPaused,
+        party.gameSessionIsPaused,
         party.activeGameSessionId
       );
     }

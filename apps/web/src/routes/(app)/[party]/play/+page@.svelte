@@ -27,7 +27,7 @@
   let stageProps: StageProps = $state({ ...StageDefaultProps, mode: 1, activeLayer: MapLayerType.None });
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
-  let gameIsPaused = $state(data.activeGameSession?.isPaused ?? false);
+  let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
@@ -35,11 +35,6 @@
   // For batched marker updates
   let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
   let updateScheduled = false;
-
-  // Update gameIsPaused when hasActiveScene changes
-  $effect(() => {
-    gameIsPaused = (data.activeGameSession?.isPaused ?? false) || !hasActiveScene;
-  });
 
   // Update stage props when active scene changes
   $effect(() => {
