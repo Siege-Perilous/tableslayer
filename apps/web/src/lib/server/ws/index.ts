@@ -6,34 +6,37 @@ import { Server } from 'socket.io';
 export const initializeSocketIO = (server: any) => {
   const wsServer = new Server(server);
 
-  wsServer.of(/^\/gameSession\/\w+$/).on('connect', (socket) => {
-    console.log(`Client connected to namespace: ${socket.nsp.name}`);
+  // Party namespace (for both editors and play route)
+  wsServer.of(/^\/party\/\w+$/).on('connect', (socket) => {
+    console.log(`Client connected to party namespace: ${socket.nsp.name}`);
 
-    // Listen for game session updates (full state updates)
+    // Listen for game session updates (full state updates) from editors
     socket.on('updateSession', (data: BroadcastStageUpdate) => {
-      socket.nsp.emit('sessionUpdated', data); // Broadcast to namespace
+      socket.nsp.emit('sessionUpdated', data); // Broadcast to all clients in party
     });
 
-    // Listen for optimized marker position updates
+    // Listen for optimized marker position updates from editors
     socket.on('markerPositionUpdate', (data: MarkerPositionUpdate) => {
       // Broadcast only the marker position data (much smaller payload)
       socket.nsp.emit('markerUpdated', data);
     });
 
-    // Listen for optimized property updates
+    // Listen for optimized property updates from editors
     socket.on('propertyUpdates', (data: PropertyUpdates) => {
       // Broadcast only the specific property updates (smaller payload)
       socket.nsp.emit('propertiesUpdated', data);
     });
 
-    // Listen for cursor movements
+    // Listen for cursor movements from both editors and play route
     socket.on('cursorMove', (data) => {
       // Broadcast cursor updates to other clients in the same namespace
       socket.broadcast.emit('cursorUpdate', data);
     });
 
     socket.on('disconnect', () => {
-      console.log(`Client disconnected from namespace: ${socket.nsp.name}`);
+      console.log(`Client disconnected from party namespace: ${socket.nsp.name}`);
+      // Notify other clients about user disconnect
+      socket.broadcast.emit('userDisconnect', socket.data?.userId);
     });
   });
 

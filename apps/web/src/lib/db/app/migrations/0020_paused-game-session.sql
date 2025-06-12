@@ -1,0 +1,1 @@
+ALTER TABLE `party` ADD `is_paused` integer DEFAULT false NOT NULL;

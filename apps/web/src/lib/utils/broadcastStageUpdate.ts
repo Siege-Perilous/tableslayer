@@ -10,6 +10,7 @@ export type BroadcastStageUpdate = {
   selectedScene: SelectScene | (SelectScene & Thumb) | null;
   stageProps: StageProps;
   gameIsPaused: boolean;
+  activeGameSessionId?: string;
 };
 
 export type MarkerPositionUpdate = {
@@ -47,7 +48,8 @@ export const broadcastStageUpdate = (
   selectedScene: BroadcastStageUpdate['selectedScene'],
   stageProps: BroadcastStageUpdate['stageProps'],
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
-  gameIsPaused: boolean
+  gameIsPaused: boolean,
+  activeGameSessionId?: string
 ) => {
   if (!socket || !selectedScene) return;
 
@@ -56,6 +58,7 @@ export const broadcastStageUpdate = (
       selectedScene: selectedScene,
       activeScene: activeScene,
       gameIsPaused,
+      activeGameSessionId,
       stageProps: {
         ...stageProps
       }
@@ -69,6 +72,7 @@ export const broadcastStageUpdate = (
       selectedScene,
       activeScene,
       gameIsPaused,
+      activeGameSessionId,
       stageProps: {
         ...newStageProps
       }

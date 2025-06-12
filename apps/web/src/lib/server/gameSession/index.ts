@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import {
   gameSessionTable,
+  partyTable,
   sceneTable,
   type InsertGameSession,
   type SelectGameSession,
@@ -210,4 +211,19 @@ export const createGameSessionForImport = async (partyId: string, gameSessionDat
     console.error('Error creating game session for import', error);
     throw error;
   }
+};
+
+export const getActiveGameSessionForParty = async (partyId: string): Promise<SelectGameSession | null> => {
+  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+  if (!party) {
+    return null;
+  }
+
+  const activeGameSessionId = party.activeGameSessionId;
+  if (!activeGameSessionId) {
+    return null;
+  }
+
+  const activeGameSession = await getGameSession(activeGameSessionId);
+  return activeGameSession;
 };

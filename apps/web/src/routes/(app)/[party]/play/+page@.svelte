@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { setupGameSessionWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
+  import { setupPartyWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
@@ -16,16 +16,18 @@
   let cursors: Record<string, CursorData> = $state({});
 
   let { data } = $props();
-  const { user } = $derived(data);
+  const { user, party } = $derived(data);
 
+  let hasActiveGameSession = $state(!!data.activeGameSession);
   let hasActiveScene = $state(!!data.activeScene);
+  let currentGameSessionId = $state(data.activeGameSession?.id);
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state({ ...StageDefaultProps, mode: 1, activeLayer: MapLayerType.None });
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
-  let gameIsPaused = $state(data.gameSession.isPaused);
+  let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
@@ -34,9 +36,11 @@
   let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
   let updateScheduled = false;
 
-  // Update gameIsPaused when hasActiveScene changes
+  // Update stage props when active scene changes
   $effect(() => {
-    gameIsPaused = data.gameSession.isPaused || !hasActiveScene;
+    if (data.activeScene && data.activeSceneMarkers) {
+      stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+    }
   });
 
   // Handler for optimized marker updates - now with batching
@@ -73,10 +77,11 @@
     if (data.activeScene) {
       stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
     }
-    const socket = setupGameSessionWebSocket(
-      data.gameSession.id,
-      () => console.log('Connected to game session socket'),
-      () => console.log('Disconnected from game session socket'),
+
+    const socket = setupPartyWebSocket(
+      party.id,
+      () => console.log('Connected to party socket'),
+      () => console.log('Disconnected from party socket'),
       handleMarkerUpdate,
       stageProps
     );
@@ -87,6 +92,14 @@
     };
 
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
+      // Check if the active game session has changed
+      if (payload.activeGameSessionId && payload.activeGameSessionId !== currentGameSessionId) {
+        currentGameSessionId = payload.activeGameSessionId;
+        // Reload the page to get the new active game session data
+        window.location.reload();
+        return;
+      }
+
       // Update the game pause state from the payload
       if (payload.gameIsPaused !== undefined) {
         gameIsPaused = payload.gameIsPaused;
@@ -261,7 +274,7 @@
   $inspect(stageProps);
 </script>
 
-<Head title={data.gameSession.name} description={`${data.gameSession.name} on Table Slayer`} />
+<Head title={party.name} description={`${party.name} on Table Slayer`} />
 
 {#if selectedMarker}
   <span style="display: none;">
@@ -269,11 +282,13 @@
   </span>
 {/if}
 
-{#if gameIsPaused || !hasActiveScene}
+{#if gameIsPaused || !hasActiveScene || !hasActiveGameSession}
   <div class="paused">
     <div>
       <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
-      {#if !hasActiveScene}
+      {#if !hasActiveGameSession}
+        <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to start a session</Text>
+      {:else if !hasActiveScene}
         <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
       {:else}
         <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>

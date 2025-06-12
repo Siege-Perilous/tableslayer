@@ -3,6 +3,7 @@
   import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { useUpdateGameSessionMutation } from '$lib/queries';
+  import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { handleMutation, type FormMutationError } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
 
@@ -21,6 +22,7 @@
   } = $props();
 
   const updateGameSession = useUpdateGameSessionMutation();
+  const updateParty = useUpdatePartyMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
 
@@ -47,14 +49,11 @@
   };
 
   const handleToggleGamePause = async () => {
-    if (!selectedScene) return;
-
     await handleMutation({
       mutation: () =>
-        $updateGameSession.mutateAsync({
-          gameSessionId: gameSession.id,
-          gameSessionData: { isPaused: !gameSession.isPaused },
-          partyId: party.id
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { gameSessionIsPaused: !party.gameSessionIsPaused }
         }),
       formLoadingState: () => {},
       onSuccess: () => {
@@ -70,10 +69,34 @@
       }
     });
   };
+
+  const handleSetActiveGameSession = async () => {
+    if (gameSession.id === party.activeGameSessionId) return;
+
+    await handleMutation({
+      mutation: () =>
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { activeGameSessionId: gameSession.id }
+        }),
+      formLoadingState: () => {},
+      onSuccess: () => {
+        invalidateAll();
+        socketUpdate();
+      },
+      toastMessages: {
+        success: { title: 'Active session set' },
+        error: {
+          title: 'Error setting active session',
+          body: (err: FormMutationError) => err.message || 'Error setting active session'
+        }
+      }
+    });
+  };
 </script>
 
 <div class="playControls">
-  <Button href={`/${party.slug}/${gameSession.slug}/share`} target="_blank">Open playfield</Button>
+  <Button href={`/${party.slug}/play`} target="_blank">Open playfield</Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">
     This will open a new tab with the playfield. Fullscreen it on your display.
@@ -81,6 +104,14 @@
   <Spacer />
   <Hr />
   <Spacer />
+  {#if gameSession.id !== party.activeGameSessionId}
+    <Button onclick={handleSetActiveGameSession}>Set as active session</Button>
+    <Spacer size="0.5rem" />
+    <Text size="0.85rem" color="var(--fgMuted)">Makes this session active on the playfield.</Text>
+    <Spacer />
+    <Hr />
+    <Spacer />
+  {/if}
   {#if !activeScene || selectedScene.id !== activeScene.id}
     <Button onclick={handleSetActiveScene}>Set active scene</Button>
     <Spacer size="0.5rem" />
@@ -90,7 +121,7 @@
     <Spacer />
   {/if}
   <Button variant="danger" onclick={handleToggleGamePause}>
-    {#if gameSession.isPaused}Unpause playfield{:else}Pause playfield{/if}
+    {#if party.gameSessionIsPaused}Unpause playfield{:else}Pause playfield{/if}
   </Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>

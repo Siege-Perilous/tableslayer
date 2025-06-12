@@ -3,18 +3,18 @@ import { io, type Socket } from 'socket.io-client';
 import type { MarkerPositionUpdate } from './broadcastStageUpdate';
 
 /**
- * Sets up the WebSocket connection for a game session
+ * Sets up the WebSocket connection for a party (used by play route)
  * Includes handlers for both full updates and optimized marker updates
  */
-export const setupGameSessionWebSocket = (
-  gameSessionId: string,
+export const setupPartyWebSocket = (
+  partyId: string,
   onConnect: () => void,
   onDisconnect: () => void,
   onMarkerUpdate?: (markerUpdate: MarkerPositionUpdate, stageProps: StageProps) => void,
   stageProps?: StageProps
 ): Socket => {
-  const sanitizedId = gameSessionId.replace(/[^a-z0-9]/gi, '').toLowerCase();
-  const socket = io(`ws${location.origin.slice(4)}/gameSession/${sanitizedId}`, {
+  const sanitizedId = partyId.replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const socket = io(`ws${location.origin.slice(4)}/party/${sanitizedId}`, {
     reconnectionDelayMax: 10000
   });
 

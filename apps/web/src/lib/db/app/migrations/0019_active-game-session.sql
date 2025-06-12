@@ -1,0 +1,1 @@
+ALTER TABLE `party` ADD `active_game_session_id` text;
