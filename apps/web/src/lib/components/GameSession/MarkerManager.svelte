@@ -60,6 +60,7 @@
   let editingMarkerId = $derived(selectedMarkerId);
 
   // Helper function to update marker properties through collaborative system
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMarkerProperty = (markerId: string, property: string, value: any) => {
     const markerIndex = stageProps.marker.markers.findIndex((m) => m.id === markerId);
     if (markerIndex !== -1) {
@@ -68,6 +69,7 @@
   };
 
   // Track marker note changes for collaborative updates
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let previousMarkerNotes: Record<string, any> = {};
   let editorRerenderKey = $state(0);
   let editorElement: HTMLElement | undefined = $state();

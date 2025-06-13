@@ -10,7 +10,6 @@
   import { throttle } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     selectedScene,
     handleMapFill,
