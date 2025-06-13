@@ -47,6 +47,18 @@
   let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
     $derived(data);
 
+  // Create local reactive state for session state that can be updated by collaborative changes
+  let localParty = $state({ ...party });
+  let localGameSession = $state({ ...gameSession });
+  let localActiveScene = $state(activeScene);
+
+  // Update local state when server data changes
+  $effect(() => {
+    localParty = { ...party };
+    localGameSession = { ...gameSession };
+    localActiveScene = activeScene;
+  });
+
   let socket: Socket | null = $state(null);
   let collabProvider: CollabPlayfieldProvider | null = $state(null);
   let isUpdatingFromCollab = $state(false);
@@ -100,15 +112,15 @@
 
   // Fallback socket update for player views
   const socketUpdate = () => {
-    if (gameSession.id === party.activeGameSessionId) {
+    if (gameSession.id === localParty.activeGameSessionId) {
       broadcastStageUpdate(
         socket,
-        activeScene,
+        localActiveScene,
         selectedScene,
         stageProps,
         activeSceneMarkers,
-        party.gameSessionIsPaused,
-        party.activeGameSessionId
+        localParty.gameSessionIsPaused,
+        localParty.activeGameSessionId
       );
     }
   };
@@ -183,31 +195,31 @@
       collabProvider.initializeWithScene(
         selectedScene,
         data.selectedSceneMarkers || [],
-        activeScene,
+        localActiveScene,
         activeSceneMarkers || [],
-        party.gameSessionIsPaused,
-        party.activeGameSessionId ?? undefined
+        localParty.gameSessionIsPaused,
+        localParty.activeGameSessionId ?? undefined
       );
 
       // Subscribe to collaborative state changes
       collabProvider.onStateChange((state) => {
-        // Only update stageProps if we have valid collaborative data
-        if (state.stageProps && Object.keys(state.stageProps).length > 0) {
-          // console.log(
-          //   'Y.js state change received - grid type:',
-          //   state.stageProps.grid?.gridType,
-          //   'opacity:',
-          //   state.stageProps.grid?.opacity
-          // );
+        // Throttle rapid updates to prevent slider lag
+        if (collabUpdateTimer) {
+          clearTimeout(collabUpdateTimer);
+        }
 
-          // Throttle rapid updates to prevent slider lag
-          if (collabUpdateTimer) {
-            clearTimeout(collabUpdateTimer);
-          }
+        collabUpdateTimer = setTimeout(() => {
+          // Set flag to prevent $effects from triggering during collaborative updates
+          isUpdatingFromCollab = true;
 
-          collabUpdateTimer = setTimeout(() => {
-            // Set flag to prevent $effects from triggering during collaborative updates
-            isUpdatingFromCollab = true;
+          // Update stageProps if we have valid collaborative data
+          if (state.stageProps && Object.keys(state.stageProps).length > 0) {
+            // console.log(
+            //   'Y.js state change received - grid type:',
+            //   state.stageProps.grid?.gridType,
+            //   'opacity:',
+            //   state.stageProps.grid?.opacity
+            // );
 
             // Preserve editor-specific properties (scene offset/zoom are viewport-specific)
             const preservedScene = {
@@ -230,12 +242,24 @@
             //   'opacity:',
             //   stageProps.grid.opacity
             // );
-            // Reset flag after the update
-            setTimeout(() => {
-              isUpdatingFromCollab = false;
-            }, 0);
-          }, 50); // 50ms throttle to smooth out rapid updates
-        }
+          }
+
+          // Update session state from collaborative changes (these can happen independently of stageProps)
+          if (state.gameIsPaused !== undefined) {
+            localParty = { ...localParty, gameSessionIsPaused: state.gameIsPaused };
+          }
+          if (state.activeGameSessionId !== undefined) {
+            localParty = { ...localParty, activeGameSessionId: state.activeGameSessionId };
+          }
+          if (state.activeScene !== undefined) {
+            localActiveScene = state.activeScene;
+          }
+
+          // Reset flag after the update
+          setTimeout(() => {
+            isUpdatingFromCollab = false;
+          }, 0);
+        }, 50); // 50ms throttle to smooth out rapid updates
       });
 
       // Register the collaborative provider with the property update broadcaster
@@ -379,7 +403,7 @@
       }
 
       // Use the optimized marker update for position changes (for player views)
-      if (socket && selectedScene && selectedScene.id && gameSession.id === party.activeGameSessionId) {
+      if (socket && selectedScene && selectedScene.id && gameSession.id === localParty.activeGameSessionId) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
     }
@@ -476,7 +500,11 @@
     }
 
     // Emit the normalized and rotated position over the WebSocket
-    if (activeScene && activeScene.id === selectedScene.id && gameSession.id === party.activeGameSessionId) {
+    if (
+      localActiveScene &&
+      localActiveScene.id === selectedScene.id &&
+      gameSession.id === localParty.activeGameSessionId
+    ) {
       socket?.emit('cursorMove', {
         user: data.user,
         normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
@@ -751,7 +779,13 @@
         }
       }}
     >
-      <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
+      <SceneSelector
+        {selectedSceneNumber}
+        gameSession={localGameSession}
+        {scenes}
+        party={localParty}
+        activeScene={localActiveScene}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button
@@ -800,13 +834,14 @@
           {handleMapFill}
           {handleMapFit}
           {selectedScene}
-          {activeScene}
+          activeScene={localActiveScene}
           {handleSelectActiveControl}
           {activeControl}
           {socketUpdate}
-          {party}
-          {gameSession}
+          party={localParty}
+          gameSession={localGameSession}
           {errors}
+          {collabProvider}
         />
         <SceneZoom {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />

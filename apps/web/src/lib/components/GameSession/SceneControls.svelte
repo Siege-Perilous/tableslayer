@@ -35,6 +35,7 @@
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
   import { type $ZodIssue } from 'zod/v4/core';
+  import type { CollabPlayfieldProvider } from '$lib/utils';
   import {
     GridControls,
     EffectsControls,
@@ -57,7 +58,8 @@
     activeScene,
     handleMapFill,
     handleMapFit,
-    errors
+    errors,
+    collabProvider
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -71,6 +73,7 @@
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;
     stage: StageExports;
+    collabProvider: CollabPlayfieldProvider | null;
   } = $props();
 
   type SceneControl = {
@@ -285,7 +288,7 @@
                 {errors}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
+              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {collabProvider} />
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {errors} />
             {:else if scene.id === 'edge'}

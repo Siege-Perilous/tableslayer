@@ -6,19 +6,22 @@
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { handleMutation, type FormMutationError } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
+  import type { CollabPlayfieldProvider } from '$lib/utils';
 
   let {
     socketUpdate,
     party,
     gameSession,
     selectedScene,
-    activeScene
+    activeScene,
+    collabProvider
   }: {
     socketUpdate: () => void;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
+    collabProvider: CollabPlayfieldProvider | null;
   } = $props();
 
   const updateGameSession = useUpdateGameSessionMutation();
@@ -37,6 +40,12 @@
       onSuccess: () => {
         invalidateAll();
         socketUpdate();
+        // Update collaborative state
+        if (collabProvider) {
+          collabProvider.updateGameState({
+            activeScene: selectedScene
+          });
+        }
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -49,16 +58,24 @@
   };
 
   const handleToggleGamePause = async () => {
+    const newPausedState = !party.gameSessionIsPaused;
+
     await handleMutation({
       mutation: () =>
         $updateParty.mutateAsync({
           partyId: party.id,
-          partyData: { gameSessionIsPaused: !party.gameSessionIsPaused }
+          partyData: { gameSessionIsPaused: newPausedState }
         }),
       formLoadingState: () => {},
       onSuccess: () => {
         invalidateAll();
         socketUpdate();
+        // Update collaborative state
+        if (collabProvider) {
+          collabProvider.updateGameState({
+            gameIsPaused: newPausedState
+          });
+        }
       },
       toastMessages: {
         success: { title: 'Playfield paused' },
@@ -83,6 +100,12 @@
       onSuccess: () => {
         invalidateAll();
         socketUpdate();
+        // Update collaborative state
+        if (collabProvider) {
+          collabProvider.updateGameState({
+            activeGameSessionId: gameSession.id
+          });
+        }
       },
       toastMessages: {
         success: { title: 'Active session set' },

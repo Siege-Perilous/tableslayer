@@ -6,6 +6,7 @@
   import type { Thumb } from '$lib/server';
   import { PartyPlanSelector } from '../party';
   import { queuePropertyUpdate } from '$lib/utils';
+  import { throttle } from '$lib/utils';
 
   let {
     stageProps = $bindable(),
@@ -27,6 +28,29 @@
     'https://files.tableslayer.com/edgetextures/stone-01.webp',
     'https://files.tableslayer.com/edgetextures/stone-02.webp'
   ];
+
+  // Track previous values to detect changes and queue collaborative updates
+  let prevFadeStart = stageProps.edgeOverlay.fadeStart;
+  let prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+
+  // Throttled function to update collaborative state
+  const throttledFadeUpdate = throttle((path: string[], value: number) => {
+    queuePropertyUpdate(stageProps, path, value, 'control');
+  }, 100);
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.fadeStart !== prevFadeStart) {
+      throttledFadeUpdate(['edgeOverlay', 'fadeStart'], stageProps.edgeOverlay.fadeStart);
+      prevFadeStart = stageProps.edgeOverlay.fadeStart;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.fadeEnd !== prevFadeEnd) {
+      throttledFadeUpdate(['edgeOverlay', 'fadeEnd'], stageProps.edgeOverlay.fadeEnd);
+      prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+    }
+  });
 
   const handleEdgeUrlChange = (value: string) => {
     queuePropertyUpdate(stageProps, ['edgeOverlay', 'url'], value, 'control');
@@ -89,10 +113,8 @@
           max={1}
           step={0.05}
           {...inputProps}
-          valueStart={stageProps.edgeOverlay.fadeStart}
-          valueEnd={stageProps.edgeOverlay.fadeEnd}
-          onStartChange={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'fadeStart'], value, 'control')}
-          onEndChange={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'fadeEnd'], value, 'control')}
+          bind:valueStart={stageProps.edgeOverlay.fadeStart}
+          bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
         />
       {/snippet}
     </FormControl>
