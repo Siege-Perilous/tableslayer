@@ -29,6 +29,19 @@ export class CollabPlayfieldProvider {
       autoConnect: true
     });
 
+    // Add connection logging
+    this.provider.on('status', (event: any) => {
+      console.log('Y.js provider status:', event);
+    });
+
+    this.provider.on('connection-close', () => {
+      console.log('Y.js provider connection closed');
+    });
+
+    this.provider.on('connection-error', (error: any) => {
+      console.error('Y.js provider connection error:', error);
+    });
+
     // Register this editor
     this.doc.registerEditor(userId, userEmail);
 
@@ -63,6 +76,7 @@ export class CollabPlayfieldProvider {
    * Update stage property (replaces direct socketUpdate calls)
    */
   updateStageProperty(path: string[], value: any) {
+    console.log('CollabProvider: Updating stage property', path, 'to', value);
     this.doc.updateStageProperty(path, value);
   }
 

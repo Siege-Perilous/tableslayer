@@ -38,6 +38,7 @@
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
+  import { queuePropertyUpdate } from '$lib/utils';
 
   let {
     stageProps = $bindable(),
@@ -175,7 +176,7 @@
         { label: 'off', value: 'false' }
       ]}
       onSelectedChange={(value) => {
-        stageProps.marker.snapToGrid = value === 'true';
+        queuePropertyUpdate(stageProps, ['marker', 'snapToGrid'], value === 'true', 'control');
       }}
     />
   </div>

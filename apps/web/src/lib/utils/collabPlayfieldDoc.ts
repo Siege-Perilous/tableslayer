@@ -144,11 +144,21 @@ export class CollabPlayfieldDoc {
         markerMap.set('markers', new Y.Array());
       }
 
-      const markersArray = markerMap.get('markers') as Y.Array<any>;
+      let markersArray = markerMap.get('markers');
+
+      // If markers is not a Y.Array (might be a regular array), convert it
+      if (!(markersArray instanceof Y.Array)) {
+        console.log('Converting regular array to Y.Array');
+        const regularArray = Array.isArray(markersArray) ? markersArray : [];
+        markersArray = new Y.Array();
+        markersArray.insert(0, regularArray);
+        markerMap.set('markers', markersArray);
+      }
 
       // Find and update the marker
-      for (let i = 0; i < markersArray.length; i++) {
-        const marker = markersArray.get(i);
+      const markers = markersArray.toArray();
+      for (let i = 0; i < markers.length; i++) {
+        const marker = markers[i];
         if (marker && marker.id === markerId) {
           // Update position without replacing the entire marker
           const updatedMarker = { ...marker, position };
@@ -230,7 +240,6 @@ export class CollabPlayfieldDoc {
       }
     });
 
-    console.log('Converting Y.js stageProps to object:', result);
     return result as StageProps;
   }
 
@@ -271,7 +280,12 @@ export class CollabPlayfieldDoc {
    */
   private setNestedObject(map: Y.Map<any>, obj: any) {
     Object.entries(obj).forEach(([key, value]) => {
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (Array.isArray(value)) {
+        // Convert regular arrays to Y.Array
+        const yArray = new Y.Array();
+        yArray.insert(0, value);
+        map.set(key, yArray);
+      } else if (typeof value === 'object' && value !== null) {
         if (!map.has(key)) {
           map.set(key, new Y.Map());
         }

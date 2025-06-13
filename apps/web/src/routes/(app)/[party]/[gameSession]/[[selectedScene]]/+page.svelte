@@ -36,10 +36,12 @@
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
     throttle,
+    queuePropertyUpdate,
     type MarkerPositionUpdate,
     registerSocketUpdate,
     CollabPlayfieldProvider,
-    type CollaborativePlayfieldState
+    type CollaborativePlayfieldState,
+    setCollaborativeProvider
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -49,6 +51,8 @@
   let socket: Socket | null = $state(null);
   let collabProvider: CollabPlayfieldProvider | null = $state(null);
   let isUpdatingFromCollab = $state(false);
+  let collabUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  let isWindowFocused = $state(typeof document !== 'undefined' ? document.hasFocus() : true);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
   let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
@@ -204,15 +208,57 @@
       collabProvider.onStateChange((state) => {
         // Only update stageProps if we have valid collaborative data
         if (state.stageProps && Object.keys(state.stageProps).length > 0) {
-          // Set flag to prevent $effects from triggering during collaborative updates
-          isUpdatingFromCollab = true;
-          stageProps = state.stageProps;
-          // Reset flag after the update
-          setTimeout(() => {
-            isUpdatingFromCollab = false;
-          }, 0);
+          console.log(
+            'Y.js state change received - grid type:',
+            state.stageProps.grid?.gridType,
+            'opacity:',
+            state.stageProps.grid?.opacity
+          );
+
+          // Throttle rapid updates to prevent slider lag
+          if (collabUpdateTimer) {
+            clearTimeout(collabUpdateTimer);
+          }
+
+          collabUpdateTimer = setTimeout(() => {
+            // Set flag to prevent $effects from triggering during collaborative updates
+            isUpdatingFromCollab = true;
+
+            // Preserve editor-specific properties (scene offset/zoom are viewport-specific)
+            const preservedScene = {
+              offset: stageProps.scene.offset,
+              zoom: stageProps.scene.zoom
+            };
+
+            // Selectively merge collaborative state, preserving editor-specific properties
+            stageProps = {
+              ...state.stageProps,
+              scene: {
+                ...state.stageProps.scene,
+                ...preservedScene
+              }
+            };
+
+            console.log(
+              'Updated stageProps from Y.js - new grid type:',
+              stageProps.grid.gridType,
+              'opacity:',
+              stageProps.grid.opacity
+            );
+            // Reset flag after the update
+            setTimeout(() => {
+              isUpdatingFromCollab = false;
+            }, 0);
+          }, 50); // 50ms throttle to smooth out rapid updates
         }
       });
+
+      // Register the collaborative provider with the property update broadcaster
+      setCollaborativeProvider(
+        collabProvider,
+        () => isUpdatingFromCollab,
+        () => isWindowFocused
+      );
     }
 
     if (stageElement) {
@@ -234,6 +280,7 @@
       socket?.disconnect();
       collabProvider?.destroy();
       if (saveTimer) clearTimeout(saveTimer);
+      if (collabUpdateTimer) clearTimeout(collabUpdateTimer);
     };
   });
 
@@ -299,7 +346,8 @@
   });
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    if (collabProvider && !isUpdatingFromCollab) {
+    if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+      console.log('Sending Y.js map update:', offset, zoom);
       collabProvider.updateStageProperty(['map', 'offset', 'x'], offset.x);
       collabProvider.updateStageProperty(['map', 'offset', 'y'], offset.y);
       collabProvider.updateStageProperty(['map', 'zoom'], zoom);
@@ -312,15 +360,10 @@
   };
 
   const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    if (collabProvider && !isUpdatingFromCollab) {
-      collabProvider.updateStageProperty(['scene', 'offset', 'x'], offset.x);
-      collabProvider.updateStageProperty(['scene', 'offset', 'y'], offset.y);
-      collabProvider.updateStageProperty(['scene', 'zoom'], zoom);
-    } else {
-      stageProps.scene.offset.x = offset.x;
-      stageProps.scene.offset.y = offset.y;
-      stageProps.scene.zoom = zoom;
-    }
+    // Scene offset and zoom are editor-specific (viewport-dependent), don't sync via Y.js
+    stageProps.scene.offset.x = offset.x;
+    stageProps.scene.offset.y = offset.y;
+    stageProps.scene.zoom = zoom;
     socketUpdate();
   };
 
@@ -340,12 +383,17 @@
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
-      stageProps.marker.markers[index] = {
-        ...marker,
-        position: { x: position.x, y: position.y }
-      };
+      if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+        console.log('Sending Y.js marker update:', marker.id, position);
+        collabProvider.updateMarkerPosition(marker.id, position);
+      } else {
+        stageProps.marker.markers[index] = {
+          ...marker,
+          position: { x: position.x, y: position.y }
+        };
+      }
 
-      // Use the optimized marker update for position changes
+      // Use the optimized marker update for position changes (for player views)
       if (socket && selectedScene && selectedScene.id && gameSession.id === party.activeGameSessionId) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
@@ -513,9 +561,9 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          const fogUrl = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
           fogBlobUpdateTime = new Date();
-          socketUpdate();
           isUpdatingFog = false;
         },
         onError: () => {
@@ -531,7 +579,7 @@
 
   let isSaving = false;
   const saveScene = async () => {
-    if (isSaving || isUpdatingFog) return;
+    if (isSaving || isUpdatingFog || !isWindowFocused) return;
     isSaving = true;
 
     // Generate and upload thumbnail
@@ -678,8 +726,8 @@
     $state.snapshot(stageProps);
     $state.snapshot(fogBlobUpdateTime);
 
-    // Don't trigger auto-save during collaborative updates
-    if (isSaving || isUpdatingFromCollab) return;
+    // Don't trigger auto-save during collaborative updates or from unfocused windows
+    if (isSaving || isUpdatingFromCollab || !isWindowFocused) return;
 
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
@@ -698,7 +746,7 @@
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
-<svelte:window bind:innerWidth />
+<svelte:window bind:innerWidth onfocus={() => (isWindowFocused = true)} onblur={() => (isWindowFocused = false)} />
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
 <div class="container">
@@ -775,7 +823,7 @@
           {gameSession}
           {errors}
         />
-        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
+        <SceneZoom {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />
         <Hints {stageProps} />
       </div>

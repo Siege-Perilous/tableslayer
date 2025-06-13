@@ -12,6 +12,21 @@ const SCENE_UPDATE_DELAY = 500;
 
 export type PropertyPath = string[];
 
+// Store collaborative provider reference
+let collaborativeProvider: any = null;
+let isUpdatingFromCollabGetter: (() => boolean) | null = null;
+let isWindowFocusedGetter: (() => boolean) | null = null;
+
+export function setCollaborativeProvider(
+  provider: any,
+  isUpdatingFromCollabGetterFn: () => boolean,
+  isWindowFocusedGetterFn: () => boolean
+) {
+  collaborativeProvider = provider;
+  isUpdatingFromCollabGetter = isUpdatingFromCollabGetterFn;
+  isWindowFocusedGetter = isWindowFocusedGetterFn;
+}
+
 // Update specific property and schedule broadcast
 export function queuePropertyUpdate(
   stageProps: StageProps,
@@ -19,6 +34,21 @@ export function queuePropertyUpdate(
   value: any,
   updateType: 'marker' | 'control' | 'scene' = 'control'
 ) {
+  // If we have a collaborative provider, window is focused, and we're not updating from collaborative state, use Y.js
+  if (
+    collaborativeProvider &&
+    isUpdatingFromCollabGetter &&
+    isWindowFocusedGetter &&
+    !isUpdatingFromCollabGetter() &&
+    isWindowFocusedGetter()
+  ) {
+    console.log('queuePropertyUpdate: Using collaborative provider for', propertyPath, value);
+    collaborativeProvider.updateStageProperty(propertyPath, value);
+    return;
+  }
+
+  // Fallback to original behavior
+  console.log('queuePropertyUpdate: Using fallback update for', propertyPath, value);
   // Update the property immediately in the local state
   applyUpdate(stageProps, propertyPath, value);
 
