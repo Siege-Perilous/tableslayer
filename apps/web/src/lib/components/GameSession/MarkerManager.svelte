@@ -38,7 +38,7 @@
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, getCollaborativeUpdateState } from '$lib/utils';
 
   let {
     stageProps = $bindable(),
@@ -69,6 +69,8 @@
 
   // Track marker note changes for collaborative updates
   let previousMarkerNotes: Record<string, any> = {};
+  let editorRerenderKey = $state(0);
+  let editorElement: HTMLElement | undefined = $state();
 
   $effect(() => {
     if (editingMarkerId) {
@@ -76,9 +78,22 @@
       if (marker) {
         const noteStr = JSON.stringify(marker.note);
         if (previousMarkerNotes[marker.id] !== noteStr) {
+          const isCollabUpdate = getCollaborativeUpdateState();
+
           if (previousMarkerNotes[marker.id] !== undefined) {
-            // This is a change, not the initial load
-            updateMarkerProperty(marker.id, 'note', marker.note);
+            if (!isCollabUpdate) {
+              // User edit - sync to collaborative system
+              updateMarkerProperty(marker.id, 'note', marker.note);
+            } else {
+              // Collaborative update - force editor re-render only if editor doesn't have focus
+              const activeElement = document.activeElement;
+              const editorHasFocus =
+                editorElement && (editorElement.contains(activeElement) || editorElement === activeElement);
+
+              if (!editorHasFocus) {
+                editorRerenderKey = editorRerenderKey + 1;
+              }
+            }
           }
           previousMarkerNotes[marker.id] = noteStr;
         }
@@ -318,7 +333,11 @@
                 </FormControl>
               </div>
               <Spacer />
-              <Editor debug={false} bind:content={marker.note} />
+              {#key editorRerenderKey}
+                <div bind:this={editorElement}>
+                  <Editor debug={false} bind:content={marker.note} />
+                </div>
+              {/key}
               <Spacer />
 
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">

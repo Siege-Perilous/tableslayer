@@ -27,6 +27,10 @@ export function setCollaborativeProvider(
   isWindowFocusedGetter = isWindowFocusedGetterFn;
 }
 
+export function getCollaborativeUpdateState(): boolean {
+  return isUpdatingFromCollabGetter?.() ?? false;
+}
+
 // Update specific property and schedule broadcast
 export function queuePropertyUpdate(
   stageProps: StageProps,
