@@ -289,7 +289,7 @@
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {errors} />
             {:else if scene.id === 'edge'}
-              <EdgeControls bind:stageProps {socketUpdate} {errors} {party} />
+              <EdgeControls bind:stageProps {errors} {party} />
             {:else if scene.id === 'effects'}
               <EffectsControls bind:stageProps {errors} {party} />
             {/if}

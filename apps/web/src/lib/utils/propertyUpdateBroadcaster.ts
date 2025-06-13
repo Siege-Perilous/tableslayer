@@ -46,7 +46,7 @@ export function queuePropertyUpdate(
     !isUpdatingFromCollabGetter() &&
     isWindowFocusedGetter()
   ) {
-    console.log('queuePropertyUpdate: Using collaborative provider for', propertyPath, value);
+    // console.log('queuePropertyUpdate: Using collaborative provider for', propertyPath, value);
 
     // Check if this is a marker property update (path like ['marker', 'markers', index, property])
     if (propertyPath.length === 4 && propertyPath[0] === 'marker' && propertyPath[1] === 'markers') {
@@ -65,7 +65,7 @@ export function queuePropertyUpdate(
   }
 
   // Fallback to original behavior
-  console.log('queuePropertyUpdate: Using fallback update for', propertyPath, value);
+  // console.log('queuePropertyUpdate: Using fallback update for', propertyPath, value);
   // Update the property immediately in the local state
   applyUpdate(stageProps, propertyPath, value);
 

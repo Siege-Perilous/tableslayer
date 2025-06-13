@@ -31,11 +31,11 @@ export class CollabPlayfieldProvider {
 
     // Add connection logging
     this.provider.on('status', (event: any) => {
-      console.log('Y.js provider status:', event);
+      // console.log('Y.js provider status:', event);
     });
 
     this.provider.on('connection-close', () => {
-      console.log('Y.js provider connection closed');
+      // console.log('Y.js provider connection closed');
     });
 
     this.provider.on('connection-error', (error: any) => {
@@ -61,7 +61,7 @@ export class CollabPlayfieldProvider {
     activeGameSessionId?: string
   ) {
     const stageProps = buildSceneProps(selectedScene, selectedSceneMarkers, 'editor');
-    console.log('Initializing collaborative document with stageProps:', stageProps);
+    // console.log('Initializing collaborative document with stageProps:', stageProps);
 
     this.doc.initializeState({
       stageProps,
@@ -76,7 +76,7 @@ export class CollabPlayfieldProvider {
    * Update stage property (replaces direct socketUpdate calls)
    */
   updateStageProperty(path: string[], value: any) {
-    console.log('CollabProvider: Updating stage property', path, 'to', value);
+    // console.log('CollabProvider: Updating stage property', path, 'to', value);
     this.doc.updateStageProperty(path, value);
   }
 

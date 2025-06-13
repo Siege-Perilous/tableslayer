@@ -86,7 +86,6 @@ export class CollabPlayfieldDoc {
    * Set stage properties with deep merge support
    */
   setStageProps(props: StageProps) {
-    console.log('Setting stageProps in Y.js document:', props);
     this.ydoc.transact(() => {
       // Convert nested objects to Y.Map structures for proper CRDT behavior
       Object.entries(props).forEach(([key, value]) => {
@@ -148,7 +147,6 @@ export class CollabPlayfieldDoc {
 
       // If markers is not a Y.Array (might be a regular array), convert it
       if (!(markersArray instanceof Y.Array)) {
-        console.log('Converting regular array to Y.Array');
         const regularArray = Array.isArray(markersArray) ? markersArray : [];
         markersArray = new Y.Array();
         markersArray.insert(0, regularArray);
@@ -191,7 +189,6 @@ export class CollabPlayfieldDoc {
 
       // If markers is not a Y.Array (might be a regular array), convert it
       if (!(markersArray instanceof Y.Array)) {
-        console.log('Converting regular array to Y.Array');
         const regularArray = Array.isArray(markersArray) ? markersArray : [];
         markersArray = new Y.Array();
         markersArray.insert(0, regularArray);

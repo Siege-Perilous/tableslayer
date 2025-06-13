@@ -40,7 +40,6 @@
     type MarkerPositionUpdate,
     registerSocketUpdate,
     CollabPlayfieldProvider,
-    type CollaborativePlayfieldState,
     setCollaborativeProvider
   } from '$lib/utils';
   import { onMount } from 'svelte';
@@ -97,20 +96,6 @@
     } else {
       return isMarkersCollapsed ? IconChevronLeft : IconChevronRight;
     }
-  };
-
-  /**
-   * COLLABORATIVE UPDATES
-   */
-  const updateCollaborativeState = () => {
-    if (!collabProvider || gameSession.id !== party.activeGameSessionId) return;
-
-    collabProvider.updateGameState({
-      gameIsPaused: party.gameSessionIsPaused,
-      activeGameSessionId: party.activeGameSessionId,
-      activeScene,
-      selectedScene
-    });
   };
 
   // Fallback socket update for player views
@@ -191,7 +176,7 @@
 
     // Set up collaborative editing
     if (socket && data.user) {
-      console.log('Creating collaborative provider for:', party.id, gameSession.id);
+      // console.log('Creating collaborative provider for:', party.id, gameSession.id);
       collabProvider = new CollabPlayfieldProvider(socket, party.id, gameSession.id, data.user.id, data.user.email);
 
       // Initialize with current scene data
@@ -208,12 +193,12 @@
       collabProvider.onStateChange((state) => {
         // Only update stageProps if we have valid collaborative data
         if (state.stageProps && Object.keys(state.stageProps).length > 0) {
-          console.log(
-            'Y.js state change received - grid type:',
-            state.stageProps.grid?.gridType,
-            'opacity:',
-            state.stageProps.grid?.opacity
-          );
+          // console.log(
+          //   'Y.js state change received - grid type:',
+          //   state.stageProps.grid?.gridType,
+          //   'opacity:',
+          //   state.stageProps.grid?.opacity
+          // );
 
           // Throttle rapid updates to prevent slider lag
           if (collabUpdateTimer) {
@@ -239,12 +224,12 @@
               }
             };
 
-            console.log(
-              'Updated stageProps from Y.js - new grid type:',
-              stageProps.grid.gridType,
-              'opacity:',
-              stageProps.grid.opacity
-            );
+            // console.log(
+            //   'Updated stageProps from Y.js - new grid type:',
+            //   stageProps.grid.gridType,
+            //   'opacity:',
+            //   stageProps.grid.opacity
+            // );
             // Reset flag after the update
             setTimeout(() => {
               isUpdatingFromCollab = false;
@@ -347,7 +332,7 @@
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
     if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
-      console.log('Sending Y.js map update:', offset, zoom);
+      // console.log('Sending Y.js map update:', offset, zoom);
       collabProvider.updateStageProperty(['map', 'offset', 'x'], offset.x);
       collabProvider.updateStageProperty(['map', 'offset', 'y'], offset.y);
       collabProvider.updateStageProperty(['map', 'zoom'], zoom);
@@ -384,7 +369,7 @@
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
       if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
-        console.log('Sending Y.js marker update:', marker.id, position);
+        // console.log('Sending Y.js marker update:', marker.id, position);
         collabProvider.updateMarkerPosition(marker.id, position);
       } else {
         stageProps.marker.markers[index] = {
@@ -502,29 +487,29 @@
   };
 
   function onMapPan(dx: number, dy: number) {
-    stageProps.map.offset.x += dx;
-    stageProps.map.offset.y += dy;
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], stageProps.map.offset.x + dx, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], stageProps.map.offset.y + dy, 'control');
   }
 
   function onMapRotate(angle: number) {
-    stageProps.map.rotation = angle;
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
   }
 
   function onMapZoom(zoom: number) {
-    stageProps.map.zoom = zoom;
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
   function onScenePan(dx: number, dy: number) {
-    stageProps.scene.offset.x += dx;
-    stageProps.scene.offset.y += dy;
+    queuePropertyUpdate(stageProps, ['scene', 'offset', 'x'], stageProps.scene.offset.x + dx, 'control');
+    queuePropertyUpdate(stageProps, ['scene', 'offset', 'y'], stageProps.scene.offset.y + dy, 'control');
   }
 
   function onSceneRotate(angle: number) {
-    stageProps.scene.rotation = angle;
+    queuePropertyUpdate(stageProps, ['scene', 'rotation'], angle, 'control');
   }
 
   function onSceneZoom(zoom: number) {
-    stageProps.scene.zoom = zoom;
+    queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
   // Use throttling for wheel/zoom events to reduce update frequency
