@@ -201,7 +201,7 @@
         activeScene,
         activeSceneMarkers || [],
         party.gameSessionIsPaused,
-        party.activeGameSessionId
+        party.activeGameSessionId ?? undefined
       );
 
       // Subscribe to collaborative state changes
@@ -855,13 +855,7 @@
       }}
     >
       {#key selectedMarkerId}
-        <MarkerManager
-          partyId={party.id}
-          bind:stageProps
-          bind:selectedMarkerId
-          {socketUpdate}
-          {handleSelectActiveControl}
-        />
+        <MarkerManager partyId={party.id} bind:stageProps bind:selectedMarkerId {handleSelectActiveControl} />
       {/key}
     </Pane>
   </PaneGroup>

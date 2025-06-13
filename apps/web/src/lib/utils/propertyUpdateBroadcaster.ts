@@ -43,6 +43,19 @@ export function queuePropertyUpdate(
     isWindowFocusedGetter()
   ) {
     console.log('queuePropertyUpdate: Using collaborative provider for', propertyPath, value);
+
+    // Check if this is a marker property update (path like ['marker', 'markers', index, property])
+    if (propertyPath.length === 4 && propertyPath[0] === 'marker' && propertyPath[1] === 'markers') {
+      // Find the marker ID from the current state and use the specific marker update method
+      const markerIndex = parseInt(propertyPath[2]);
+      const property = propertyPath[3];
+      const marker = stageProps.marker.markers[markerIndex];
+      if (marker && marker.id) {
+        collaborativeProvider.updateMarkerProperty(marker.id, property, value);
+        return;
+      }
+    }
+
     collaborativeProvider.updateStageProperty(propertyPath, value);
     return;
   }

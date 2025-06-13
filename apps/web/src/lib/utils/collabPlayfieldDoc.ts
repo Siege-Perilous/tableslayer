@@ -130,6 +130,49 @@ export class CollabPlayfieldDoc {
   }
 
   /**
+   * Update a specific marker property
+   */
+  updateMarkerProperty(markerId: string, property: string, value: any) {
+    this.ydoc.transact(() => {
+      // Navigate to markers array
+      if (!this.stageProps.has('marker')) {
+        this.stageProps.set('marker', new Y.Map());
+      }
+
+      const markerMap = this.stageProps.get('marker') as Y.Map<any>;
+      if (!markerMap.has('markers')) {
+        markerMap.set('markers', new Y.Array());
+      }
+
+      let markersArray = markerMap.get('markers');
+
+      // If markers is not a Y.Array (might be a regular array), convert it
+      if (!(markersArray instanceof Y.Array)) {
+        console.log('Converting regular array to Y.Array');
+        const regularArray = Array.isArray(markersArray) ? markersArray : [];
+        markersArray = new Y.Array();
+        markersArray.insert(0, regularArray);
+        markerMap.set('markers', markersArray);
+      }
+
+      // Find and update the marker
+      const markers = markersArray.toArray();
+      for (let i = 0; i < markers.length; i++) {
+        const marker = markers[i];
+        if (marker && marker.id === markerId) {
+          // Update property without replacing the entire marker
+          const updatedMarker = { ...marker, [property]: value };
+          markersArray.delete(i, 1);
+          markersArray.insert(i, [updatedMarker]);
+          break;
+        }
+      }
+
+      this.state.set('lastUpdated', Date.now());
+    });
+  }
+
+  /**
    * Update marker position optimized for frequent updates
    */
   updateMarkerPosition(markerId: string, position: { x: number; y: number }) {

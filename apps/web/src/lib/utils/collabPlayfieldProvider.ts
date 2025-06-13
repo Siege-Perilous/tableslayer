@@ -81,6 +81,13 @@ export class CollabPlayfieldProvider {
   }
 
   /**
+   * Update marker property (replaces direct marker property updates)
+   */
+  updateMarkerProperty(markerId: string, property: string, value: any) {
+    this.doc.updateMarkerProperty(markerId, property, value);
+  }
+
+  /**
    * Update marker position (replaces broadcastMarkerUpdate)
    */
   updateMarkerPosition(markerId: string, position: { x: number; y: number }) {
