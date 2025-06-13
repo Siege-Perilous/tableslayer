@@ -1,5 +1,7 @@
 export * from './broadcastStageUpdate';
 export * from './buildSceneProps';
+export * from './collabPlayfieldDoc';
+export * from './collabPlayfieldProvider';
 export * from './colors';
 export * from './convertStagePropsToMarkerData';
 export * from './convertStagePropsToSceneData';

@@ -37,7 +37,9 @@
     convertStageMarkersToDbFormat,
     throttle,
     type MarkerPositionUpdate,
-    registerSocketUpdate
+    registerSocketUpdate,
+    CollabPlayfieldProvider,
+    type CollaborativePlayfieldState
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
@@ -45,6 +47,8 @@
     $derived(data);
 
   let socket: Socket | null = $state(null);
+  let collabProvider: CollabPlayfieldProvider | null = $state(null);
+  let isUpdatingFromCollab = $state(false);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
   let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
@@ -92,17 +96,21 @@
   };
 
   /**
-   * SOCKET UPDATES
-   * SOCKET UPDATES
-   * SOCKET UPDATES
-   *
-   * Sends the ACTIVE SCENE props across the WebSocket.
-   * If the ACTIVE SCENE is also the SELECTED SCENE, it will send the SELECTED SCENE state.
-   *
-   * This is passed down to child components and manually called
+   * COLLABORATIVE UPDATES
    */
+  const updateCollaborativeState = () => {
+    if (!collabProvider || gameSession.id !== party.activeGameSessionId) return;
+
+    collabProvider.updateGameState({
+      gameIsPaused: party.gameSessionIsPaused,
+      activeGameSessionId: party.activeGameSessionId,
+      activeScene,
+      selectedScene
+    });
+  };
+
+  // Fallback socket update for player views
   const socketUpdate = () => {
-    // Only broadcast if this is the active game session for the party
     if (gameSession.id === party.activeGameSessionId) {
       broadcastStageUpdate(
         socket,
@@ -116,7 +124,6 @@
     }
   };
 
-  // Register the socketUpdate function with the property broadcaster
   $effect(() => {
     if (socket && selectedScene && selectedScene.id) {
       registerSocketUpdate(socketUpdate, socket, selectedScene.id);
@@ -174,9 +181,39 @@
       party.id,
       () => console.log('Connected to party socket'),
       () => console.log('Disconnected from party socket'),
-      handleMarkerUpdate, // Pass marker update handler
-      stageProps // Pass stageProps for the handler to access
+      handleMarkerUpdate,
+      stageProps
     );
+
+    // Set up collaborative editing
+    if (socket && data.user) {
+      console.log('Creating collaborative provider for:', party.id, gameSession.id);
+      collabProvider = new CollabPlayfieldProvider(socket, party.id, gameSession.id, data.user.id, data.user.email);
+
+      // Initialize with current scene data
+      collabProvider.initializeWithScene(
+        selectedScene,
+        data.selectedSceneMarkers || [],
+        activeScene,
+        activeSceneMarkers || [],
+        party.gameSessionIsPaused,
+        party.activeGameSessionId
+      );
+
+      // Subscribe to collaborative state changes
+      collabProvider.onStateChange((state) => {
+        // Only update stageProps if we have valid collaborative data
+        if (state.stageProps && Object.keys(state.stageProps).length > 0) {
+          // Set flag to prevent $effects from triggering during collaborative updates
+          isUpdatingFromCollab = true;
+          stageProps = state.stageProps;
+          // Reset flag after the update
+          setTimeout(() => {
+            isUpdatingFromCollab = false;
+          }, 0);
+        }
+      });
+    }
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -195,6 +232,7 @@
 
     return () => {
       socket?.disconnect();
+      collabProvider?.destroy();
       if (saveTimer) clearTimeout(saveTimer);
     };
   });
@@ -261,16 +299,28 @@
   });
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
+    if (collabProvider && !isUpdatingFromCollab) {
+      collabProvider.updateStageProperty(['map', 'offset', 'x'], offset.x);
+      collabProvider.updateStageProperty(['map', 'offset', 'y'], offset.y);
+      collabProvider.updateStageProperty(['map', 'zoom'], zoom);
+    } else {
+      stageProps.map.offset.x = offset.x;
+      stageProps.map.offset.y = offset.y;
+      stageProps.map.zoom = zoom;
+    }
     socketUpdate();
   };
 
   const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    stageProps.scene.offset.x = offset.x;
-    stageProps.scene.offset.y = offset.y;
-    stageProps.scene.zoom = zoom;
+    if (collabProvider && !isUpdatingFromCollab) {
+      collabProvider.updateStageProperty(['scene', 'offset', 'x'], offset.x);
+      collabProvider.updateStageProperty(['scene', 'offset', 'y'], offset.y);
+      collabProvider.updateStageProperty(['scene', 'zoom'], zoom);
+    } else {
+      stageProps.scene.offset.x = offset.x;
+      stageProps.scene.offset.y = offset.y;
+      stageProps.scene.zoom = zoom;
+    }
     socketUpdate();
   };
 
@@ -628,7 +678,8 @@
     $state.snapshot(stageProps);
     $state.snapshot(fogBlobUpdateTime);
 
-    if (isSaving) return;
+    // Don't trigger auto-save during collaborative updates
+    if (isSaving || isUpdatingFromCollab) return;
 
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
