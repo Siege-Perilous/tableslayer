@@ -35,6 +35,7 @@
     hasThumb,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
+    convertMarkerToDbFormat,
     throttle,
     queuePropertyUpdate,
     type MarkerPositionUpdate,
@@ -384,9 +385,63 @@
     stageIsLoading = false;
   };
 
-  const onMarkerAdded = (marker: Marker) => {
-    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+  const onMarkerAdded = async (marker: Marker) => {
+    console.log('onMarkerAdded called:', {
+      markerId: marker.id,
+      isUpdatingFromCollab,
+      isWindowFocused,
+      hasCollabProvider: !!collabProvider
+    });
+
+    // Update collaborative state if connected
+    if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+      console.log('Adding marker to collaborative state');
+      collabProvider.addMarker(marker);
+    } else {
+      console.log('Using fallback marker addition');
+      // Fallback for non-collaborative mode
+      stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    }
+
     selectedMarkerId = marker.id;
+
+    // Add marker to known IDs to prevent duplicate saves from the auto-save effect
+    if (!knownMarkerIds.includes(marker.id)) {
+      knownMarkerIds = [...knownMarkerIds, marker.id];
+    }
+
+    // Only persist to database if this is the focused window that initiated the creation
+    // (not a collaborative update from another window)
+    if (!isUpdatingFromCollab && isWindowFocused) {
+      try {
+        const dbMarkerData = convertMarkerToDbFormat(marker, selectedScene.id);
+        console.log('onMarkerAdded: Starting database save for marker:', marker.id);
+        await handleMutation({
+          mutation: () =>
+            $createMarkerMutation.mutateAsync({
+              partyId: party.id,
+              sceneId: selectedScene.id,
+              markerData: dbMarkerData
+            }),
+          formLoadingState: () => {},
+          onSuccess: (result) => {
+            // Update the marker with the DB-generated data if needed
+            console.log('Marker saved to database:', result);
+          },
+          onError: (error) => {
+            console.error('Failed to save marker to database:', error);
+          },
+          toastMessages: {
+            success: { title: 'Marker created', body: 'New marker added to scene' },
+            error: { title: 'Failed to create marker', body: 'Could not save marker to database' }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to save new marker:', error);
+      }
+    } else {
+      console.log('onMarkerAdded: Skipping database save (collaborative update or unfocused window)');
+    }
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {

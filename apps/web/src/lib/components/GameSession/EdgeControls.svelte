@@ -32,23 +32,39 @@
   // Track previous values to detect changes and queue collaborative updates
   let prevFadeStart = stageProps.edgeOverlay.fadeStart;
   let prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+  let prevOpacity = stageProps.edgeOverlay.opacity;
+  let prevScale = stageProps.edgeOverlay.scale;
 
   // Throttled function to update collaborative state
-  const throttledFadeUpdate = throttle((path: string[], value: number) => {
+  const throttledEdgeUpdate = throttle((path: string[], value: number) => {
     queuePropertyUpdate(stageProps, path, value, 'control');
   }, 100);
 
   $effect(() => {
     if (stageProps.edgeOverlay.fadeStart !== prevFadeStart) {
-      throttledFadeUpdate(['edgeOverlay', 'fadeStart'], stageProps.edgeOverlay.fadeStart);
+      throttledEdgeUpdate(['edgeOverlay', 'fadeStart'], stageProps.edgeOverlay.fadeStart);
       prevFadeStart = stageProps.edgeOverlay.fadeStart;
     }
   });
 
   $effect(() => {
     if (stageProps.edgeOverlay.fadeEnd !== prevFadeEnd) {
-      throttledFadeUpdate(['edgeOverlay', 'fadeEnd'], stageProps.edgeOverlay.fadeEnd);
+      throttledEdgeUpdate(['edgeOverlay', 'fadeEnd'], stageProps.edgeOverlay.fadeEnd);
       prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.opacity !== prevOpacity) {
+      throttledEdgeUpdate(['edgeOverlay', 'opacity'], stageProps.edgeOverlay.opacity);
+      prevOpacity = stageProps.edgeOverlay.opacity;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.scale !== prevScale) {
+      throttledEdgeUpdate(['edgeOverlay', 'scale'], stageProps.edgeOverlay.scale);
+      prevScale = stageProps.edgeOverlay.scale;
     }
   });
 
@@ -86,8 +102,7 @@
             min={0}
             max={1}
             step={0.01}
-            value={stageProps.edgeOverlay.opacity}
-            onchange={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'opacity'], value, 'control')}
+            bind:value={stageProps.edgeOverlay.opacity}
           />
         {/snippet}
       </FormControl>
@@ -99,8 +114,7 @@
             min={1}
             max={50}
             step={1}
-            value={stageProps.edgeOverlay.scale}
-            onchange={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'scale'], value, 'control')}
+            bind:value={stageProps.edgeOverlay.scale}
           />
         {/snippet}
       </FormControl>

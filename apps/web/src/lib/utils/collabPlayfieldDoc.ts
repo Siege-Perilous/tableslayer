@@ -171,6 +171,38 @@ export class CollabPlayfieldDoc {
   }
 
   /**
+   * Add a new marker to the collaborative state
+   */
+  addMarker(marker: any) {
+    this.ydoc.transact(() => {
+      // Navigate to markers array
+      if (!this.stageProps.has('marker')) {
+        this.stageProps.set('marker', new Y.Map());
+      }
+
+      const markerMap = this.stageProps.get('marker') as Y.Map<any>;
+      if (!markerMap.has('markers')) {
+        markerMap.set('markers', new Y.Array());
+      }
+
+      let markersArray = markerMap.get('markers');
+
+      // If markers is not a Y.Array (might be a regular array), convert it
+      if (!(markersArray instanceof Y.Array)) {
+        const regularArray = Array.isArray(markersArray) ? markersArray : [];
+        markersArray = new Y.Array();
+        markersArray.insert(0, regularArray);
+        markerMap.set('markers', markersArray);
+      }
+
+      // Add the new marker to the end of the array
+      markersArray.push([marker]);
+
+      this.state.set('lastUpdated', Date.now());
+    });
+  }
+
+  /**
    * Update marker position optimized for frequent updates
    */
   updateMarkerPosition(markerId: string, position: { x: number; y: number }) {

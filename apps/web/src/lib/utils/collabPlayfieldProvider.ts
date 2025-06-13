@@ -88,6 +88,13 @@ export class CollabPlayfieldProvider {
   }
 
   /**
+   * Add a new marker (replaces direct array push operations)
+   */
+  addMarker(marker: any) {
+    this.doc.addMarker(marker);
+  }
+
+  /**
    * Update marker position (replaces broadcastMarkerUpdate)
    */
   updateMarkerPosition(markerId: string, position: { x: number; y: number }) {

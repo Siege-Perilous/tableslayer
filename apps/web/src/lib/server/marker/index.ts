@@ -27,15 +27,17 @@ export const getMarkersForScene = async (sceneId: string) => {
 export const createMarker = async (markerData: Partial<SelectMarker>, sceneId: string): Promise<SelectMarker> => {
   const id = markerData.id || uuidv4();
 
-  const marker = await db
-    .insert(markerTable)
-    .values({
-      ...markerData,
-      sceneId,
-      id
-    })
-    .returning()
-    .get();
+  // Ensure note field is properly handled for JSON column
+  const values = {
+    ...markerData,
+    sceneId,
+    id,
+    note: markerData.note === null ? null : markerData.note
+  };
+
+  console.log('Database insert values:', values);
+
+  const marker = await db.insert(markerTable).values(values).returning().get();
 
   return marker;
 };

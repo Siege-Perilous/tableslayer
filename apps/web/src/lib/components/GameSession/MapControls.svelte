@@ -6,6 +6,8 @@
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
   import { type $ZodIssue } from 'zod/v4/core';
+  import { queuePropertyUpdate } from '$lib/utils';
+  import { throttle } from '$lib/utils';
 
   let {
     socketUpdate,
@@ -29,6 +31,46 @@
   } = $props();
 
   let contextSceneId = $state('');
+
+  // Track previous values to detect changes and queue collaborative updates
+  let prevZoom = stageProps.map.zoom;
+  let prevRotation = stageProps.map.rotation;
+  let prevOffsetX = stageProps.map.offset.x;
+  let prevOffsetY = stageProps.map.offset.y;
+
+  // Throttled function to update collaborative state
+  const throttledMapUpdate = throttle((path: string[], value: number) => {
+    queuePropertyUpdate(stageProps, path, value, 'control');
+  }, 100);
+
+  $effect(() => {
+    if (stageProps.map.zoom !== prevZoom) {
+      throttledMapUpdate(['map', 'zoom'], stageProps.map.zoom);
+      prevZoom = stageProps.map.zoom;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.map.rotation !== prevRotation) {
+      throttledMapUpdate(['map', 'rotation'], stageProps.map.rotation);
+      prevRotation = stageProps.map.rotation;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.map.offset.x !== prevOffsetX) {
+      throttledMapUpdate(['map', 'offset', 'x'], stageProps.map.offset.x);
+      prevOffsetX = stageProps.map.offset.x;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.map.offset.y !== prevOffsetY) {
+      throttledMapUpdate(['map', 'offset', 'y'], stageProps.map.offset.y);
+      prevOffsetY = stageProps.map.offset.y;
+    }
+  });
+
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
     openFileDialog();
@@ -36,7 +78,6 @@
 
   const handleMapRotation = () => {
     stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
-    socketUpdate();
   };
 </script>
 
