@@ -50,9 +50,9 @@
     $derived(data);
 
   // Create local reactive state for session state that can be updated by collaborative changes
-  let localParty = $state({ ...party });
-  let localGameSession = $state({ ...gameSession });
-  let localActiveScene = $state(activeScene);
+  let localParty = $derived({ ...party });
+  let localGameSession = $derived({ ...gameSession });
+  let localActiveScene = $derived(activeScene);
 
   // Update local state when server data changes
   $effect(() => {
@@ -232,6 +232,7 @@
             // Selectively merge collaborative state, preserving editor-specific properties
             stageProps = {
               ...state.stageProps,
+              activeLayer: stageProps.activeLayer, // Preserve active layer from local state
               scene: {
                 ...state.stageProps.scene,
                 ...preservedScene
