@@ -38,6 +38,7 @@
     convertMarkerToDbFormat,
     throttle,
     queuePropertyUpdate,
+    updateLocalProperty,
     type MarkerPositionUpdate,
     registerSocketUpdate,
     CollabPlayfieldProvider,
@@ -260,7 +261,7 @@
           setTimeout(() => {
             isUpdatingFromCollab = false;
           }, 0);
-        }, 50); // 50ms throttle to smooth out rapid updates
+        }, 16); // ~60fps throttle for responsive marker updates
       });
 
       // Register the collaborative provider with the property update broadcaster
@@ -447,14 +448,17 @@
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
+      // Always update local state immediately for smooth UI feedback
+      // This ensures marker dragging feels responsive regardless of collaborative system throttling
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
+
+      // Send collaborative update if available (for other editors)
       if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
         // console.log('Sending Y.js marker update:', marker.id, position);
         collabProvider.updateMarkerPosition(marker.id, position);
-      } else {
-        stageProps.marker.markers[index] = {
-          ...marker,
-          position: { x: position.x, y: position.y }
-        };
       }
 
       // Use the optimized marker update for position changes (for player views)
@@ -540,18 +544,22 @@
       const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
 
       if (e.shiftKey) {
-        // Apply rotation to movement for map offset
+        // Apply rotation to movement for map offset - this should be collaborative
         const movementFactor = 1 / stageProps.scene.zoom;
-        stageProps.map.offset.x += rotatedMovementX * movementFactor;
-        stageProps.map.offset.y -= rotatedMovementY * movementFactor;
+        const newMapX = stageProps.map.offset.x + rotatedMovementX * movementFactor;
+        const newMapY = stageProps.map.offset.y - rotatedMovementY * movementFactor;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newMapX, 'control');
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newMapY, 'control');
+        // Map updates should still trigger socket updates for collaborative editing
+        throttledSocketUpdate();
       } else if (e.ctrlKey) {
-        // Scene offset also needs rotation adjustment
-        stageProps.scene.offset.x += rotatedMovementX;
-        stageProps.scene.offset.y -= rotatedMovementY;
+        // Scene offset should be local only - no collaborative broadcasting
+        const newSceneX = stageProps.scene.offset.x + rotatedMovementX;
+        const newSceneY = stageProps.scene.offset.y - rotatedMovementY;
+        updateLocalProperty(stageProps, ['scene', 'offset', 'x'], newSceneX);
+        updateLocalProperty(stageProps, ['scene', 'offset', 'y'], newSceneY);
+        // No socket update for scene panning - it's local only
       }
-
-      // Use our proper throttled update (replaces manual throttling)
-      throttledSocketUpdate();
     }
 
     // Emit the normalized and rotated position over the WebSocket
@@ -583,16 +591,16 @@
   }
 
   function onScenePan(dx: number, dy: number) {
-    queuePropertyUpdate(stageProps, ['scene', 'offset', 'x'], stageProps.scene.offset.x + dx, 'control');
-    queuePropertyUpdate(stageProps, ['scene', 'offset', 'y'], stageProps.scene.offset.y + dy, 'control');
+    updateLocalProperty(stageProps, ['scene', 'offset', 'x'], stageProps.scene.offset.x + dx);
+    updateLocalProperty(stageProps, ['scene', 'offset', 'y'], stageProps.scene.offset.y + dy);
   }
 
   function onSceneRotate(angle: number) {
-    queuePropertyUpdate(stageProps, ['scene', 'rotation'], angle, 'control');
+    updateLocalProperty(stageProps, ['scene', 'rotation'], angle);
   }
 
   function onSceneZoom(zoom: number) {
-    queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
+    updateLocalProperty(stageProps, ['scene', 'zoom'], zoom);
   }
 
   // Use throttling for wheel/zoom events to reduce update frequency

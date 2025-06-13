@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, updateLocalProperty } from '$lib/utils';
 
   let {
     stageProps = $bindable(),
@@ -22,7 +22,14 @@
   const handleZoom = (deltaY: number, zoomType: 'map' | 'scene') => {
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
-    queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
+
+    if (zoomType === 'scene') {
+      // Scene zoom should be local only
+      updateLocalProperty(stageProps, [zoomType, 'zoom'], newZoom);
+    } else {
+      // Map zoom should be collaborative
+      queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
+    }
   };
 
   const toggleZoomType = () => {
@@ -39,7 +46,7 @@
     const current = stageProps.scene.rotation;
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
-    queuePropertyUpdate(stageProps, ['scene', 'rotation'], next, 'control');
+    updateLocalProperty(stageProps, ['scene', 'rotation'], next);
   };
 </script>
 

@@ -151,3 +151,8 @@ export type PropertyUpdates = {
   properties: Array<{ path: PropertyPath; value: any }>;
   sceneId: string;
 };
+
+// Update property locally without any collaborative broadcasting
+export function updateLocalProperty(stageProps: StageProps, propertyPath: PropertyPath, value: any) {
+  applyUpdate(stageProps, propertyPath, value);
+}
