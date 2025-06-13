@@ -5,14 +5,14 @@
   import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { PartyPlanSelector } from '../party';
+  import { queuePropertyUpdate } from '$lib/utils';
+  import { throttle } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps = $bindable(),
     errors,
     party
   }: {
-    socketUpdate: () => void;
     stageProps: StageProps;
     errors: $ZodIssue[] | undefined;
     party: SelectParty & Thumb;
@@ -29,16 +29,53 @@
     'https://files.tableslayer.com/edgetextures/stone-02.webp'
   ];
 
+  // Track previous values to detect changes and queue collaborative updates
+  let prevFadeStart = stageProps.edgeOverlay.fadeStart;
+  let prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+  let prevOpacity = stageProps.edgeOverlay.opacity;
+  let prevScale = stageProps.edgeOverlay.scale;
+
+  // Throttled function to update collaborative state
+  const throttledEdgeUpdate = throttle((path: string[], value: number) => {
+    queuePropertyUpdate(stageProps, path, value, 'control');
+  }, 100);
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.fadeStart !== prevFadeStart) {
+      throttledEdgeUpdate(['edgeOverlay', 'fadeStart'], stageProps.edgeOverlay.fadeStart);
+      prevFadeStart = stageProps.edgeOverlay.fadeStart;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.fadeEnd !== prevFadeEnd) {
+      throttledEdgeUpdate(['edgeOverlay', 'fadeEnd'], stageProps.edgeOverlay.fadeEnd);
+      prevFadeEnd = stageProps.edgeOverlay.fadeEnd;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.opacity !== prevOpacity) {
+      throttledEdgeUpdate(['edgeOverlay', 'opacity'], stageProps.edgeOverlay.opacity);
+      prevOpacity = stageProps.edgeOverlay.opacity;
+    }
+  });
+
+  $effect(() => {
+    if (stageProps.edgeOverlay.scale !== prevScale) {
+      throttledEdgeUpdate(['edgeOverlay', 'scale'], stageProps.edgeOverlay.scale);
+      prevScale = stageProps.edgeOverlay.scale;
+    }
+  });
+
   const handleEdgeUrlChange = (value: string) => {
-    stageProps.edgeOverlay.url = value;
-    stageProps.edgeOverlay.enabled = true;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'url'], value, 'control');
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'enabled'], true, 'control');
   };
 
   const handleEdgeOff = () => {
-    stageProps.edgeOverlay.url = null;
-    stageProps.edgeOverlay.enabled = false;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'url'], null, 'control');
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'enabled'], false, 'control');
   };
 </script>
 

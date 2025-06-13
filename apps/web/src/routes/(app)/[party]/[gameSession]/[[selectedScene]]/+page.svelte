@@ -35,16 +35,37 @@
     hasThumb,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
+    convertMarkerToDbFormat,
     throttle,
+    queuePropertyUpdate,
+    updateLocalProperty,
     type MarkerPositionUpdate,
-    registerSocketUpdate
+    registerSocketUpdate,
+    CollabPlayfieldProvider,
+    setCollaborativeProvider
   } from '$lib/utils';
   import { onMount } from 'svelte';
 
   let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
     $derived(data);
 
+  // Create local reactive state for session state that can be updated by collaborative changes
+  let localParty = $state({ ...party });
+  let localGameSession = $state({ ...gameSession });
+  let localActiveScene = $state(activeScene);
+
+  // Update local state when server data changes
+  $effect(() => {
+    localParty = { ...party };
+    localGameSession = { ...gameSession };
+    localActiveScene = activeScene;
+  });
+
   let socket: Socket | null = $state(null);
+  let collabProvider: CollabPlayfieldProvider | null = $state(null);
+  let isUpdatingFromCollab = $state(false);
+  let collabUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  let isWindowFocused = $state(typeof document !== 'undefined' ? document.hasFocus() : true);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
   let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
@@ -91,32 +112,21 @@
     }
   };
 
-  /**
-   * SOCKET UPDATES
-   * SOCKET UPDATES
-   * SOCKET UPDATES
-   *
-   * Sends the ACTIVE SCENE props across the WebSocket.
-   * If the ACTIVE SCENE is also the SELECTED SCENE, it will send the SELECTED SCENE state.
-   *
-   * This is passed down to child components and manually called
-   */
+  // Fallback socket update for player views
   const socketUpdate = () => {
-    // Only broadcast if this is the active game session for the party
-    if (gameSession.id === party.activeGameSessionId) {
+    if (gameSession.id === localParty.activeGameSessionId) {
       broadcastStageUpdate(
         socket,
-        activeScene,
+        localActiveScene,
         selectedScene,
         stageProps,
         activeSceneMarkers,
-        party.gameSessionIsPaused,
-        party.activeGameSessionId
+        localParty.gameSessionIsPaused,
+        localParty.activeGameSessionId
       );
     }
   };
 
-  // Register the socketUpdate function with the property broadcaster
   $effect(() => {
     if (socket && selectedScene && selectedScene.id) {
       registerSocketUpdate(socketUpdate, socket, selectedScene.id);
@@ -174,9 +184,93 @@
       party.id,
       () => console.log('Connected to party socket'),
       () => console.log('Disconnected from party socket'),
-      handleMarkerUpdate, // Pass marker update handler
-      stageProps // Pass stageProps for the handler to access
+      handleMarkerUpdate,
+      stageProps
     );
+
+    // Set up collaborative editing
+    if (socket && data.user) {
+      // console.log('Creating collaborative provider for:', party.id, gameSession.id);
+      collabProvider = new CollabPlayfieldProvider(socket, party.id, gameSession.id, data.user.id, data.user.email);
+
+      // Initialize with current scene data
+      collabProvider.initializeWithScene(
+        selectedScene,
+        data.selectedSceneMarkers || [],
+        localActiveScene,
+        activeSceneMarkers || [],
+        localParty.gameSessionIsPaused,
+        localParty.activeGameSessionId ?? undefined
+      );
+
+      // Subscribe to collaborative state changes
+      collabProvider.onStateChange((state) => {
+        // Throttle rapid updates to prevent slider lag
+        if (collabUpdateTimer) {
+          clearTimeout(collabUpdateTimer);
+        }
+
+        collabUpdateTimer = setTimeout(() => {
+          // Set flag to prevent $effects from triggering during collaborative updates
+          isUpdatingFromCollab = true;
+
+          // Update stageProps if we have valid collaborative data
+          if (state.stageProps && Object.keys(state.stageProps).length > 0) {
+            // console.log(
+            //   'Y.js state change received - grid type:',
+            //   state.stageProps.grid?.gridType,
+            //   'opacity:',
+            //   state.stageProps.grid?.opacity
+            // );
+
+            // Preserve editor-specific properties (scene offset/zoom are viewport-specific)
+            const preservedScene = {
+              offset: stageProps.scene.offset,
+              zoom: stageProps.scene.zoom
+            };
+
+            // Selectively merge collaborative state, preserving editor-specific properties
+            stageProps = {
+              ...state.stageProps,
+              scene: {
+                ...state.stageProps.scene,
+                ...preservedScene
+              }
+            };
+
+            // console.log(
+            //   'Updated stageProps from Y.js - new grid type:',
+            //   stageProps.grid.gridType,
+            //   'opacity:',
+            //   stageProps.grid.opacity
+            // );
+          }
+
+          // Update session state from collaborative changes (these can happen independently of stageProps)
+          if (state.gameIsPaused !== undefined) {
+            localParty = { ...localParty, gameSessionIsPaused: state.gameIsPaused };
+          }
+          if (state.activeGameSessionId !== undefined) {
+            localParty = { ...localParty, activeGameSessionId: state.activeGameSessionId };
+          }
+          if (state.activeScene !== undefined) {
+            localActiveScene = state.activeScene;
+          }
+
+          // Reset flag after the update
+          setTimeout(() => {
+            isUpdatingFromCollab = false;
+          }, 0);
+        }, 16); // ~60fps throttle for responsive marker updates
+      });
+
+      // Register the collaborative provider with the property update broadcaster
+      setCollaborativeProvider(
+        collabProvider,
+        () => isUpdatingFromCollab,
+        () => isWindowFocused
+      );
+    }
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -195,7 +289,9 @@
 
     return () => {
       socket?.disconnect();
+      collabProvider?.destroy();
       if (saveTimer) clearTimeout(saveTimer);
+      if (collabUpdateTimer) clearTimeout(collabUpdateTimer);
     };
   });
 
@@ -261,13 +357,21 @@
   });
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
+    if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+      // console.log('Sending Y.js map update:', offset, zoom);
+      collabProvider.updateStageProperty(['map', 'offset', 'x'], offset.x);
+      collabProvider.updateStageProperty(['map', 'offset', 'y'], offset.y);
+      collabProvider.updateStageProperty(['map', 'zoom'], zoom);
+    } else {
+      stageProps.map.offset.x = offset.x;
+      stageProps.map.offset.y = offset.y;
+      stageProps.map.zoom = zoom;
+    }
     socketUpdate();
   };
 
   const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
+    // Scene offset and zoom are editor-specific (viewport-dependent), don't sync via Y.js
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
@@ -282,21 +386,83 @@
     stageIsLoading = false;
   };
 
-  const onMarkerAdded = (marker: Marker) => {
-    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+  const onMarkerAdded = async (marker: Marker) => {
+    console.log('onMarkerAdded called:', {
+      markerId: marker.id,
+      isUpdatingFromCollab,
+      isWindowFocused,
+      hasCollabProvider: !!collabProvider
+    });
+
+    // Update collaborative state if connected
+    if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+      console.log('Adding marker to collaborative state');
+      collabProvider.addMarker(marker);
+    } else {
+      console.log('Using fallback marker addition');
+      // Fallback for non-collaborative mode
+      stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    }
+
     selectedMarkerId = marker.id;
+
+    // Add marker to known IDs to prevent duplicate saves from the auto-save effect
+    if (!knownMarkerIds.includes(marker.id)) {
+      knownMarkerIds = [...knownMarkerIds, marker.id];
+    }
+
+    // Only persist to database if this is the focused window that initiated the creation
+    // (not a collaborative update from another window)
+    if (!isUpdatingFromCollab && isWindowFocused) {
+      try {
+        const dbMarkerData = convertMarkerToDbFormat(marker, selectedScene.id);
+        console.log('onMarkerAdded: Starting database save for marker:', marker.id);
+        await handleMutation({
+          mutation: () =>
+            $createMarkerMutation.mutateAsync({
+              partyId: party.id,
+              sceneId: selectedScene.id,
+              markerData: dbMarkerData
+            }),
+          formLoadingState: () => {},
+          onSuccess: (result) => {
+            // Update the marker with the DB-generated data if needed
+            console.log('Marker saved to database:', result);
+          },
+          onError: (error) => {
+            console.error('Failed to save marker to database:', error);
+          },
+          toastMessages: {
+            success: { title: 'Marker created', body: 'New marker added to scene' },
+            error: { title: 'Failed to create marker', body: 'Could not save marker to database' }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to save new marker:', error);
+      }
+    } else {
+      console.log('onMarkerAdded: Skipping database save (collaborative update or unfocused window)');
+    }
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
+      // Always update local state immediately for smooth UI feedback
+      // This ensures marker dragging feels responsive regardless of collaborative system throttling
       stageProps.marker.markers[index] = {
         ...marker,
         position: { x: position.x, y: position.y }
       };
 
-      // Use the optimized marker update for position changes
-      if (socket && selectedScene && selectedScene.id && gameSession.id === party.activeGameSessionId) {
+      // Send collaborative update if available (for other editors)
+      if (collabProvider && !isUpdatingFromCollab && isWindowFocused) {
+        // console.log('Sending Y.js marker update:', marker.id, position);
+        collabProvider.updateMarkerPosition(marker.id, position);
+      }
+
+      // Use the optimized marker update for position changes (for player views)
+      if (socket && selectedScene && selectedScene.id && gameSession.id === localParty.activeGameSessionId) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
     }
@@ -378,22 +544,30 @@
       const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
 
       if (e.shiftKey) {
-        // Apply rotation to movement for map offset
+        // Apply rotation to movement for map offset - this should be collaborative
         const movementFactor = 1 / stageProps.scene.zoom;
-        stageProps.map.offset.x += rotatedMovementX * movementFactor;
-        stageProps.map.offset.y -= rotatedMovementY * movementFactor;
+        const newMapX = stageProps.map.offset.x + rotatedMovementX * movementFactor;
+        const newMapY = stageProps.map.offset.y - rotatedMovementY * movementFactor;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newMapX, 'control');
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newMapY, 'control');
+        // Map updates should still trigger socket updates for collaborative editing
+        throttledSocketUpdate();
       } else if (e.ctrlKey) {
-        // Scene offset also needs rotation adjustment
-        stageProps.scene.offset.x += rotatedMovementX;
-        stageProps.scene.offset.y -= rotatedMovementY;
+        // Scene offset should be local only - no collaborative broadcasting
+        const newSceneX = stageProps.scene.offset.x + rotatedMovementX;
+        const newSceneY = stageProps.scene.offset.y - rotatedMovementY;
+        updateLocalProperty(stageProps, ['scene', 'offset', 'x'], newSceneX);
+        updateLocalProperty(stageProps, ['scene', 'offset', 'y'], newSceneY);
+        // No socket update for scene panning - it's local only
       }
-
-      // Use our proper throttled update (replaces manual throttling)
-      throttledSocketUpdate();
     }
 
     // Emit the normalized and rotated position over the WebSocket
-    if (activeScene && activeScene.id === selectedScene.id && gameSession.id === party.activeGameSessionId) {
+    if (
+      localActiveScene &&
+      localActiveScene.id === selectedScene.id &&
+      gameSession.id === localParty.activeGameSessionId
+    ) {
       socket?.emit('cursorMove', {
         user: data.user,
         normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
@@ -404,29 +578,29 @@
   };
 
   function onMapPan(dx: number, dy: number) {
-    stageProps.map.offset.x += dx;
-    stageProps.map.offset.y += dy;
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], stageProps.map.offset.x + dx, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], stageProps.map.offset.y + dy, 'control');
   }
 
   function onMapRotate(angle: number) {
-    stageProps.map.rotation = angle;
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
   }
 
   function onMapZoom(zoom: number) {
-    stageProps.map.zoom = zoom;
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
   function onScenePan(dx: number, dy: number) {
-    stageProps.scene.offset.x += dx;
-    stageProps.scene.offset.y += dy;
+    updateLocalProperty(stageProps, ['scene', 'offset', 'x'], stageProps.scene.offset.x + dx);
+    updateLocalProperty(stageProps, ['scene', 'offset', 'y'], stageProps.scene.offset.y + dy);
   }
 
   function onSceneRotate(angle: number) {
-    stageProps.scene.rotation = angle;
+    updateLocalProperty(stageProps, ['scene', 'rotation'], angle);
   }
 
   function onSceneZoom(zoom: number) {
-    stageProps.scene.zoom = zoom;
+    updateLocalProperty(stageProps, ['scene', 'zoom'], zoom);
   }
 
   // Use throttling for wheel/zoom events to reduce update frequency
@@ -463,9 +637,9 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          const fogUrl = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
           fogBlobUpdateTime = new Date();
-          socketUpdate();
           isUpdatingFog = false;
         },
         onError: () => {
@@ -481,7 +655,7 @@
 
   let isSaving = false;
   const saveScene = async () => {
-    if (isSaving || isUpdatingFog) return;
+    if (isSaving || isUpdatingFog || !isWindowFocused) return;
     isSaving = true;
 
     // Generate and upload thumbnail
@@ -628,7 +802,8 @@
     $state.snapshot(stageProps);
     $state.snapshot(fogBlobUpdateTime);
 
-    if (isSaving) return;
+    // Don't trigger auto-save during collaborative updates or from unfocused windows
+    if (isSaving || isUpdatingFromCollab || !isWindowFocused) return;
 
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
@@ -647,7 +822,7 @@
 </script>
 
 <svelte:document onkeydown={handleKeydown} bind:activeElement />
-<svelte:window bind:innerWidth />
+<svelte:window bind:innerWidth onfocus={() => (isWindowFocused = true)} onblur={() => (isWindowFocused = false)} />
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
 <div class="container">
@@ -667,7 +842,13 @@
         }
       }}
     >
-      <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
+      <SceneSelector
+        {selectedSceneNumber}
+        gameSession={localGameSession}
+        {scenes}
+        party={localParty}
+        activeScene={localActiveScene}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button
@@ -716,15 +897,16 @@
           {handleMapFill}
           {handleMapFit}
           {selectedScene}
-          {activeScene}
+          activeScene={localActiveScene}
           {handleSelectActiveControl}
           {activeControl}
           {socketUpdate}
-          {party}
-          {gameSession}
+          party={localParty}
+          gameSession={localGameSession}
           {errors}
+          {collabProvider}
         />
-        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
+        <SceneZoom {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />
         <Hints {stageProps} />
       </div>
@@ -756,13 +938,7 @@
       }}
     >
       {#key selectedMarkerId}
-        <MarkerManager
-          partyId={party.id}
-          bind:stageProps
-          bind:selectedMarkerId
-          {socketUpdate}
-          {handleSelectActiveControl}
-        />
+        <MarkerManager partyId={party.id} bind:stageProps bind:selectedMarkerId {handleSelectActiveControl} />
       {/key}
     </Pane>
   </PaneGroup>

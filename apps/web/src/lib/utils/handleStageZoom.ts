@@ -1,4 +1,5 @@
 import { type StageProps, MapLayerType } from '@tableslayer/ui';
+import { queuePropertyUpdate, updateLocalProperty } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   const minZoom = 0.1;
@@ -13,11 +14,17 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   }
 
   if (e.shiftKey) {
-    stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    // Map zoom should be collaborative
+    const newZoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], newZoom, 'control');
   } else if (e.ctrlKey) {
+    // Scene zoom should be local only
     e.preventDefault();
-    stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    const newZoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    updateLocalProperty(stageProps, ['scene', 'zoom'], newZoom);
   } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-    stageProps.fogOfWar.tool.size = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
+    // Fog tool size should remain collaborative
+    const newSize = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], newSize, 'control');
   }
 };

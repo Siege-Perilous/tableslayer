@@ -28,9 +28,9 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
     shape: marker.shape,
     size: typeof marker.size === 'number' ? marker.size : 0,
     imageLocation: imageLocation,
-    imageScale: marker.size || 1.0,
-    shapeColor: marker.shapeColor || '#FFFFFF',
-    note: marker.note
+    imageScale: marker.imageScale || 1.0,
+    shapeColor: marker.shapeColor || '#ffffff',
+    note: marker.note && typeof marker.note === 'object' && marker.note !== null ? marker.note : null
   };
 };
 
