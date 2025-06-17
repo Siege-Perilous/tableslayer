@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { setupPartyWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
-  import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
@@ -32,10 +31,6 @@
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
-
-  // Y.js test integration
-  let isYjsConnected = $state(false);
-  let partyData: ReturnType<typeof usePartyData> | null = null;
 
   // For batched marker updates
   let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
@@ -83,162 +78,136 @@
       stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
     }
 
-    // Initialize Y.js through Socket.IO (much more stable!)
-    try {
-      console.log('Initializing Y.js through Socket.IO...');
-      const manager = initializePartyDataManager(party.id, user.id);
-      partyData = usePartyData();
+    const socket = setupPartyWebSocket(
+      party.id,
+      () => console.log('Connected to party socket'),
+      () => console.log('Disconnected from party socket'),
+      handleMarkerUpdate,
+      stageProps
+    );
 
-      // Subscribe to Y.js connection status
-      const unsubscribeYjs = partyData.subscribe(() => {
-        isYjsConnected = partyData!.getConnectionStatus();
-        console.log('Y.js connection status:', isYjsConnected);
-      });
+    const handleMouseMove = (event: MouseEvent) => {
+      const position = { x: event.clientX, y: event.clientY };
+      socket.emit('cursorMove', { user, position });
+    };
 
-      // Keep existing socket.io for now
-      const socket = setupPartyWebSocket(
-        party.id,
-        () => console.log('Connected to party socket'),
-        () => console.log('Disconnected from party socket'),
-        handleMarkerUpdate,
-        stageProps
-      );
+    socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
+      // Check if the active game session has changed
+      if (payload.activeGameSessionId && payload.activeGameSessionId !== currentGameSessionId) {
+        currentGameSessionId = payload.activeGameSessionId;
+        // Reload the page to get the new active game session data
+        window.location.reload();
+        return;
+      }
 
-      const handleMouseMove = (event: MouseEvent) => {
-        const position = { x: event.clientX, y: event.clientY };
-        socket.emit('cursorMove', { user, position });
+      // Update the game pause state from the payload
+      if (payload.gameIsPaused !== undefined) {
+        gameIsPaused = payload.gameIsPaused;
+      }
 
-        // Also test Y.js cursor update - disabled
-        // if (partyData && isYjsConnected) {
-        //   const normalizedPosition = {
-        //     x: event.clientX / window.innerWidth,
-        //     y: event.clientY / window.innerHeight
-        //   };
-        //   partyData.updateCursor(position, normalizedPosition);
-        // }
+      // Only update hasActiveScene if we've received a real active scene
+      // We check if we have real stageProps that differ from our defaults
+      if (
+        payload.activeScene ||
+        (payload.stageProps && payload.stageProps.map && payload.stageProps.map.url !== StageDefaultProps.map.url)
+      ) {
+        hasActiveScene = true;
+      }
+
+      stageProps = {
+        ...stageProps,
+        // Override stage props with the updated props from the websocket
+        ...payload.stageProps,
+        // Don't allow rotate and zoom from the editor
+        scene: { ...stageProps.scene, autoFit: true, offset: { x: 0, y: 0 } },
+        // Don't allow erase mode
+        activeLayer: MapLayerType.None,
+        // Mode 1 is for player view
+        mode: 1
       };
+    });
 
-      socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
-        // Check if the active game session has changed
-        if (payload.activeGameSessionId && payload.activeGameSessionId !== currentGameSessionId) {
-          currentGameSessionId = payload.activeGameSessionId;
-          // Reload the page to get the new active game session data
-          window.location.reload();
-          return;
-        }
+    // Handle optimized property updates
+    socket.on('propertiesUpdated', (updates: PropertyUpdates) => {
+      if (!updates || !updates.properties || updates.sceneId !== data.activeScene?.id) return;
 
-        // Update the game pause state from the payload
-        if (payload.gameIsPaused !== undefined) {
-          gameIsPaused = payload.gameIsPaused;
-        }
-
-        // Only update hasActiveScene if we've received a real active scene
-        // We check if we have real stageProps that differ from our defaults
-        if (
-          payload.activeScene ||
-          (payload.stageProps && payload.stageProps.map && payload.stageProps.map.url !== StageDefaultProps.map.url)
-        ) {
-          hasActiveScene = true;
-        }
-
-        stageProps = {
-          ...stageProps,
-          // Override stage props with the updated props from the websocket
-          ...payload.stageProps,
-          // Don't allow rotate and zoom from the editor
-          scene: { ...stageProps.scene, autoFit: true, offset: { x: 0, y: 0 } },
-          // Don't allow erase mode
-          activeLayer: MapLayerType.None,
-          // Mode 1 is for player view
-          mode: 1
-        };
-      });
-
-      // Handle optimized property updates
-      socket.on('propertiesUpdated', (updates: PropertyUpdates) => {
-        if (!updates || !updates.properties || updates.sceneId !== data.activeScene?.id) return;
-
-        // Apply all property updates without rebuilding the entire state
-        updates.properties.forEach((update) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let current: any = stageProps;
-          // Navigate to the parent object
-          for (let i = 0; i < update.path.length - 1; i++) {
-            if (!current[update.path[i]]) {
-              current[update.path[i]] = {};
-            }
-            current = current[update.path[i]];
+      // Apply all property updates without rebuilding the entire state
+      updates.properties.forEach((update) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let current: any = stageProps;
+        // Navigate to the parent object
+        for (let i = 0; i < update.path.length - 1; i++) {
+          if (!current[update.path[i]]) {
+            current[update.path[i]] = {};
           }
-          // Update the property
-          const lastKey = update.path[update.path.length - 1];
-          current[lastKey] = update.value;
-        });
-      });
-
-      $effect(() => {
-        if (gameIsPaused) {
-          randomFantasyQuote = getRandomFantasyQuote();
+          current = current[update.path[i]];
         }
+        // Update the property
+        const lastKey = update.path[update.path.length - 1];
+        current[lastKey] = update.value;
       });
+    });
 
-      socket.on('cursorUpdate', (payload) => {
-        const { normalizedPosition, user, zoom: editorZoom } = payload;
+    $effect(() => {
+      if (gameIsPaused) {
+        randomFantasyQuote = getRandomFantasyQuote();
+      }
+    });
 
-        const stageBounds = stageElement?.getBoundingClientRect();
-        if (!stageBounds) return;
+    socket.on('cursorUpdate', (payload) => {
+      const { normalizedPosition, user, zoom: editorZoom } = payload;
 
-        const stageWidth = stageBounds.width;
-        const stageHeight = stageBounds.height;
+      const stageBounds = stageElement?.getBoundingClientRect();
+      if (!stageBounds) return;
 
-        const clientZoom = stageProps.scene.zoom;
+      const stageWidth = stageBounds.width;
+      const stageHeight = stageBounds.height;
 
-        const displayWidthClient = stageProps.display.resolution.x * clientZoom;
-        const displayHeightClient = stageProps.display.resolution.y * clientZoom;
+      const clientZoom = stageProps.scene.zoom;
 
-        const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
-        const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
+      const displayWidthClient = stageProps.display.resolution.x * clientZoom;
+      const displayHeightClient = stageProps.display.resolution.y * clientZoom;
 
-        const horizontalMargin = (stageWidth - displayWidthClient) / 2;
-        const verticalMargin = (stageHeight - displayHeightClient) / 2;
+      const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
+      const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
 
-        const rectX = normalizedPosition.x * displayWidthEditor;
-        const rectY = normalizedPosition.y * displayHeightEditor;
+      const horizontalMargin = (stageWidth - displayWidthClient) / 2;
+      const verticalMargin = (stageHeight - displayHeightClient) / 2;
 
-        const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
-        const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
+      const rectX = normalizedPosition.x * displayWidthEditor;
+      const rectY = normalizedPosition.y * displayHeightEditor;
 
-        const absoluteXClient = horizontalMargin + adjustedX;
-        const absoluteYClient = verticalMargin + adjustedY;
+      const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
+      const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
 
-        cursors = {
-          ...cursors,
-          [user.id]: {
-            user,
-            position: { x: absoluteXClient, y: absoluteYClient },
-            lastMoveTime: Date.now(),
-            fadedOut: false
-          }
-        };
-      });
+      const absoluteXClient = horizontalMargin + adjustedX;
+      const absoluteYClient = verticalMargin + adjustedY;
 
-      // Remove the cursor when a user disconnects
-      socket.on('userDisconnect', (userId) => {
-        const updatedCursors = { ...cursors };
-        delete updatedCursors[userId];
-        cursors = updatedCursors;
-      });
-
-      // Add mousemove event listener
-      window.addEventListener('mousemove', handleMouseMove);
-
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        socket.disconnect();
-        unsubscribeYjs();
+      cursors = {
+        ...cursors,
+        [user.id]: {
+          user,
+          position: { x: absoluteXClient, y: absoluteYClient },
+          lastMoveTime: Date.now(),
+          fadedOut: false
+        }
       };
-    } catch (error) {
-      console.error('Error initializing Y.js:', error);
-    }
+    });
+
+    // Remove the cursor when a user disconnects
+    socket.on('userDisconnect', (userId) => {
+      const updatedCursors = { ...cursors };
+      delete updatedCursors[userId];
+      cursors = updatedCursors;
+    });
+
+    // Add mousemove event listener
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      socket.disconnect();
+    };
   });
 
   const getRandomColor = (): string => {
@@ -306,15 +275,6 @@
 </script>
 
 <Head title={party.name} description={`${party.name} on Table Slayer`} />
-
-<!-- Y.js Connection Status Indicator -->
-<div
-  style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: {isYjsConnected
-    ? 'green'
-    : 'red'}; color: white; padding: 8px; border-radius: 4px; font-size: 12px;"
->
-  Y.js: {isYjsConnected ? 'Connected' : 'Disconnected'}
-</div>
 
 {#if selectedMarker}
   <span style="display: none;">

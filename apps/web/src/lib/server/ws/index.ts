@@ -1,10 +1,15 @@
 import { type BroadcastStageUpdate, type MarkerPositionUpdate } from '$lib/utils';
 import type { PropertyUpdates } from '$lib/utils/propertyUpdateBroadcaster';
 import { Server } from 'socket.io';
+import { YSocketIO } from 'y-socket.io/dist/server';
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export const initializeSocketIO = (server: any) => {
   const wsServer = new Server(server);
+
+  // Initialize Y.js integration with Socket.IO
+  const ysocketio = new YSocketIO(wsServer);
+  ysocketio.initialize();
 
   // Party namespace (for both editors and play route)
   wsServer.of(/^\/party\/\w+$/).on('connect', (socket) => {

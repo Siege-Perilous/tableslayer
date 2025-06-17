@@ -18,3 +18,4 @@ export * from './randomQuotes';
 export * from './sceneSettings';
 export * from './stageKeyCommands';
 export * from './throttle';
+export * from './yjs/stores';
