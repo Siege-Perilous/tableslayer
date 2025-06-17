@@ -55,7 +55,7 @@
     party,
     gameSession,
     selectedScene,
-    activeScene,
+    activeSceneId,
     handleMapFill,
     handleMapFit,
     errors,
@@ -68,7 +68,7 @@
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;
@@ -267,7 +267,7 @@
                 {party}
                 {gameSession}
                 {selectedScene}
-                {activeScene}
+                {activeSceneId}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
@@ -282,14 +282,14 @@
                 {activeControl}
                 {party}
                 {selectedScene}
-                {activeScene}
+                {activeSceneId}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
                 {partyData}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {partyData} />
+              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeSceneId} {partyData} />
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {errors} />
             {:else if scene.id === 'edge'}

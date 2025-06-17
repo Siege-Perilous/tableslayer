@@ -38,7 +38,6 @@ export interface SceneData {
 
 export interface PartyState {
   isPaused: boolean;
-  activeGameSessionId: string;
   activeSceneId?: string;
   cursors: Record<string, CursorData>;
 }
@@ -296,7 +295,6 @@ export class PartyDataManager {
 
     return {
       isPaused: this.yPartyState.get('isPaused') || false,
-      activeGameSessionId: this.yPartyState.get('activeGameSessionId') || '',
       activeSceneId: this.yPartyState.get('activeSceneId'),
       cursors
     };
@@ -356,9 +354,19 @@ export class PartyDataManager {
 
     if (sceneIndex !== -1) {
       console.log('Removing scene from Y.js:', sceneId);
+
+      // Check if this was the active scene and clear it
+      const currentActiveSceneId = this.yPartyState.get('activeSceneId');
+
       this.doc.transact(() => {
         this.yScenesList.delete(sceneIndex, 1);
         this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
+
+        // If this was the active scene, clear the activeSceneId
+        if (currentActiveSceneId === sceneId) {
+          console.log('Clearing active scene ID from Y.js as deleted scene was active:', sceneId);
+          this.yPartyState.set('activeSceneId', null);
+        }
       });
     }
   }
@@ -368,11 +376,23 @@ export class PartyDataManager {
    */
   reorderScenes(newScenesOrder: SceneMetadata[]) {
     console.log('Reordering scenes in Y.js:', newScenesOrder.length);
+
+    // Check if the current active scene still exists in the new scenes list
+    const currentActiveSceneId = this.yPartyState.get('activeSceneId');
+    const activeSceneStillExists =
+      currentActiveSceneId && newScenesOrder.some((scene) => scene.id === currentActiveSceneId);
+
     this.doc.transact(() => {
       // Clear current list and replace with new order
       this.yScenesList.delete(0, this.yScenesList.length);
       newScenesOrder.forEach((scene) => this.yScenesList.push([scene]));
       this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
+
+      // If the active scene no longer exists, clear it
+      if (currentActiveSceneId && !activeSceneStillExists) {
+        console.log('Clearing active scene ID from Y.js as it no longer exists:', currentActiveSceneId);
+        this.yPartyState.set('activeSceneId', null);
+      }
     });
   }
 

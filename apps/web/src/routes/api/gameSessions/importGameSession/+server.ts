@@ -7,8 +7,9 @@ import {
   type InsertMarker,
   type InsertScene
 } from '$lib/db/app/schema';
-import { createGameSessionForImport, updateGameSession } from '$lib/server/gameSession';
-import { getParty, isUserInParty } from '$lib/server/party/getParty';
+import { createGameSessionForImport } from '$lib/server/gameSession';
+import { getParty, getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
+import { setActiveSceneForParty } from '$lib/server/scene';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
@@ -126,9 +127,12 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         .values(sceneToCreate as InsertScene)
         .execute();
 
-      // If this is the first scene, set it as active
+      // If this is the first scene and party doesn't have an active scene, set it as party's active scene
       if (sceneData.order === 1) {
-        await updateGameSession(gameSession.id, { activeSceneId: newSceneId });
+        const party = await getPartyFromGameSessionId(gameSession.id);
+        if (!party.activeSceneId) {
+          await setActiveSceneForParty(party.id, newSceneId);
+        }
       }
 
       // Create all markers for this scene

@@ -24,14 +24,11 @@
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsPartyState = $state({
     isPaused: party.gameSessionIsPaused,
-    activeGameSessionId: data.activeGameSession?.id,
     activeSceneId: data.activeScene?.id
   });
   let isHydrated = $state(false);
 
-  let hasActiveGameSession = $state(!!data.activeGameSession);
   let hasActiveScene = $state(!!data.activeScene);
-  let currentGameSessionId = $state(data.activeGameSession?.id);
   let isInvalidating = $state(false);
 
   let stage: StageExports;
@@ -110,7 +107,6 @@
         // Update reactive state
         yjsPartyState = {
           isPaused: updatedPartyState.isPaused,
-          activeGameSessionId: updatedPartyState.activeGameSessionId,
           activeSceneId: updatedPartyState.activeSceneId
         };
       });
@@ -319,30 +315,12 @@
   $effect(() => {
     if (isHydrated && !isInvalidating) {
       const currentActiveSceneId = data.activeScene?.id;
-      const currentActiveGameSessionId = data.activeGameSession?.id;
 
       console.log('Playfield checking for changes:', {
         yjsActiveSceneId: yjsPartyState.activeSceneId,
         currentActiveSceneId,
-        yjsActiveGameSessionId: yjsPartyState.activeGameSessionId,
-        currentActiveGameSessionId,
         isInvalidating
       });
-
-      // Check if active game session changed
-      if (yjsPartyState.activeGameSessionId && yjsPartyState.activeGameSessionId !== currentActiveGameSessionId) {
-        console.log(
-          `Playfield: Active game session changed from ${currentActiveGameSessionId} to ${yjsPartyState.activeGameSessionId}, invalidating...`
-        );
-        isInvalidating = true;
-        invalidateAll().then(() => {
-          // Reset flag after invalidation completes
-          setTimeout(() => {
-            isInvalidating = false;
-          }, 1000);
-        });
-        return;
-      }
 
       // Check if active scene changed
       if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
@@ -374,13 +352,11 @@
   </span>
 {/if}
 
-{#if gameIsPaused || !hasActiveScene || !hasActiveGameSession}
+{#if gameIsPaused || !hasActiveScene}
   <div class="paused">
     <div>
       <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
-      {#if !hasActiveGameSession}
-        <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to start a session</Text>
-      {:else if !hasActiveScene}
+      {#if !hasActiveScene}
         <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
       {:else}
         <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>

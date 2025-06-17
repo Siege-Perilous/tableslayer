@@ -12,28 +12,27 @@
     party,
     gameSession,
     selectedScene,
-    activeScene,
+    activeSceneId,
     partyData
   }: {
     socketUpdate: () => void;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
   const updateGameSession = useUpdateGameSessionMutation();
   const updateParty = useUpdatePartyMutation();
   const handleSetActiveScene = async () => {
-    if (!selectedScene || (activeScene && selectedScene.id === activeScene.id)) return;
+    if (!selectedScene || (activeSceneId && selectedScene.id === activeSceneId)) return;
 
     await handleMutation({
       mutation: () =>
-        $updateGameSession.mutateAsync({
-          gameSessionId: gameSession.id,
-          gameSessionData: { activeSceneId: selectedScene.id },
-          partyId: party.id
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { activeSceneId: selectedScene.id }
         }),
       formLoadingState: () => {},
       onSuccess: () => {
@@ -78,36 +77,7 @@
     });
   };
 
-  // Create a reactive derived for button visibility to ensure proper reactivity
-  const isActiveSession = $derived(gameSession.id === party.activeGameSessionId);
-  const canSetActiveScene = $derived(!activeScene || selectedScene.id !== activeScene.id);
-
-  const handleSetActiveGameSession = async () => {
-    if (isActiveSession) return;
-
-    await handleMutation({
-      mutation: () =>
-        $updateParty.mutateAsync({
-          partyId: party.id,
-          partyData: { activeGameSessionId: gameSession.id }
-        }),
-      formLoadingState: () => {},
-      onSuccess: () => {
-        // Update active game session in Y.js instead of invalidateAll()
-        if (partyData) {
-          partyData.updatePartyState('activeGameSessionId', gameSession.id);
-        }
-        socketUpdate();
-      },
-      toastMessages: {
-        success: { title: 'Active session set' },
-        error: {
-          title: 'Error setting active session',
-          body: (err: FormMutationError) => err.message || 'Error setting active session'
-        }
-      }
-    });
-  };
+  const canSetActiveScene = $derived(!activeSceneId || selectedScene.id !== activeSceneId);
 </script>
 
 <div class="playControls">
@@ -119,19 +89,6 @@
   <Spacer />
   <Hr />
   <Spacer />
-  {#if !isActiveSession}
-    <Button onclick={handleSetActiveGameSession}>Set as active session</Button>
-    <Spacer size="0.5rem" />
-    <Text size="0.85rem" color="var(--fgMuted)">Makes this session active on the playfield.</Text>
-    <Spacer />
-    <Hr />
-    <Spacer />
-  {:else}
-    <Text size="0.85rem" color="var(--fgMuted)">This session is currently active on the playfield.</Text>
-    <Spacer />
-    <Hr />
-    <Spacer />
-  {/if}
   {#if canSetActiveScene}
     <Button onclick={handleSetActiveScene}>Set active scene</Button>
     <Spacer size="0.5rem" />

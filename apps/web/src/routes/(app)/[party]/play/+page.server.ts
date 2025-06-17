@@ -1,7 +1,7 @@
 import type { SelectMarker } from '$lib/db/app/schema';
 import {
   getActiveGameSessionForParty,
-  getActiveScene,
+  getActiveSceneForParty,
   getMarkersForScene,
   getPartyFromSlug,
   getUser
@@ -26,15 +26,12 @@ export const load: PageServerLoad = async (event) => {
   // Get the active game session for this party
   const activeGameSession = await getActiveGameSessionForParty(party.id);
 
-  let activeScene = null;
+  // Get the active scene for the party (now at party level, not game session level)
+  const activeScene = await getActiveSceneForParty(party.id);
+
   let activeSceneMarkers: SelectMarker[] = [];
-
-  if (activeGameSession) {
-    activeScene = await getActiveScene(activeGameSession.id);
-
-    if (activeScene) {
-      activeSceneMarkers = await getMarkersForScene(activeScene.id);
-    }
+  if (activeScene) {
+    activeSceneMarkers = await getMarkersForScene(activeScene.id);
   }
 
   return {

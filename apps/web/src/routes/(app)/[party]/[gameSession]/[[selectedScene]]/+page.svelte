@@ -53,23 +53,25 @@
   // Y.js reactive party state - initialize with SSR data
   let yjsPartyState = $state({
     isPaused: party.gameSessionIsPaused,
-    activeGameSessionId: party.activeGameSessionId,
     activeSceneId: activeScene?.id
   });
 
   // Use SSR data until hydrated, then switch to Y.js data
   let currentScenes = $derived(isHydrated ? yjsScenes : scenes);
+  // For broadcasting: find the active scene if it's in the current game session
   let currentActiveScene = $derived(
     isHydrated && yjsPartyState.activeSceneId
-      ? yjsScenes.find((scene) => scene.id === yjsPartyState.activeSceneId) || activeScene
+      ? yjsScenes.find((scene) => scene.id === yjsPartyState.activeSceneId) || null
       : activeScene
   );
+
+  // For SceneSelector: just pass the active scene ID so it can determine if any of its scenes match
+  let activeSceneId = $derived(isHydrated ? yjsPartyState.activeSceneId : activeScene?.id);
   let currentParty = $derived(
     isHydrated
       ? {
           ...party,
-          gameSessionIsPaused: yjsPartyState.isPaused,
-          activeGameSessionId: yjsPartyState.activeGameSessionId
+          gameSessionIsPaused: yjsPartyState.isPaused
         }
       : party
   );
@@ -132,18 +134,15 @@
    * This is passed down to child components and manually called
    */
   const socketUpdate = () => {
-    // Only broadcast if this is the active game session for the party
-    // AND we're editing the active scene (so we have full scene data)
-    const isActiveGameSession = gameSession.id === currentParty.activeGameSessionId;
+    // Only broadcast if we're editing the active scene (so we have full scene data)
+    // The session containing the active scene is automatically the broadcasting session
     const isEditingActiveScene = selectedScene.id === currentActiveScene?.id;
-    const shouldBroadcast = isActiveGameSession && isEditingActiveScene;
+    const shouldBroadcast = isEditingActiveScene;
 
     console.log('socketUpdate called:', {
       gameSessionId: gameSession.id,
-      currentPartyActiveGameSessionId: currentParty.activeGameSessionId,
       selectedSceneId: selectedScene.id,
       currentActiveSceneId: currentActiveScene?.id,
-      isActiveGameSession,
       isEditingActiveScene,
       shouldBroadcast
     });
@@ -156,8 +155,7 @@
         selectedScene,
         stageProps, // We have full scene data and stage props
         activeSceneMarkers,
-        currentParty.gameSessionIsPaused,
-        currentParty.activeGameSessionId
+        currentParty.gameSessionIsPaused
       );
     } else {
       console.log('Skipping broadcast - conditions not met');
@@ -246,7 +244,6 @@
       // Initialize Y.js party state with SSR data
       partyData.initializePartyState({
         isPaused: party.gameSessionIsPaused,
-        activeGameSessionId: party.activeGameSessionId || '',
         activeSceneId: activeScene?.id
       });
 
@@ -261,7 +258,6 @@
         yjsScenes = updatedScenes as typeof scenes;
         yjsPartyState = {
           isPaused: updatedPartyState.isPaused,
-          activeGameSessionId: updatedPartyState.activeGameSessionId,
           activeSceneId: updatedPartyState.activeSceneId
         };
       });
@@ -271,7 +267,6 @@
       const currentPartyState = partyData.getPartyState();
       yjsPartyState = {
         isPaused: currentPartyState.isPaused,
-        activeGameSessionId: currentPartyState.activeGameSessionId,
         activeSceneId: currentPartyState.activeSceneId
       };
 
@@ -377,12 +372,12 @@
   });
 
   // Effect to broadcast when active scene changes via Y.js (e.g., from SceneSelector)
-  // Only send full stage updates when we're editing the active scene in the active game session
+  // Send full stage updates when we're editing the active scene
   $effect(() => {
-    if (isHydrated && currentActiveScene && gameSession.id === currentParty.activeGameSessionId) {
-      // We're in the active game session and editing the active scene - send full stage update
+    if (isHydrated && currentActiveScene) {
+      // We're editing the active scene - send full stage update
       if (selectedScene.id === currentActiveScene.id) {
-        console.log('Broadcasting full stage update - we are editing the active scene in the active game session');
+        console.log('Broadcasting full stage update - we are editing the active scene');
         socketUpdate();
       }
     }
@@ -424,7 +419,8 @@
       };
 
       // Use the optimized marker update for position changes
-      if (socket && selectedScene && selectedScene.id && gameSession.id === currentParty.activeGameSessionId) {
+      // Only broadcast if we're editing the active scene
+      if (socket && selectedScene && selectedScene.id && selectedScene.id === currentActiveScene?.id) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
     }
@@ -521,10 +517,8 @@
     }
 
     // Emit the normalized and rotated position over the WebSocket
-    const shouldEmitCursor =
-      currentActiveScene &&
-      currentActiveScene.id === selectedScene.id &&
-      gameSession.id === currentParty.activeGameSessionId;
+    // Only emit cursor if we're editing the active scene
+    const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
 
     if (shouldEmitCursor) {
       socket?.emit('cursorMove', {
@@ -805,7 +799,7 @@
         {gameSession}
         scenes={currentScenes}
         party={currentParty}
-        activeScene={currentActiveScene}
+        {activeSceneId}
         {partyData}
         {socketUpdate}
       />
@@ -857,7 +851,7 @@
           {handleMapFill}
           {handleMapFit}
           {selectedScene}
-          activeScene={currentActiveScene}
+          {activeSceneId}
           {handleSelectActiveControl}
           {activeControl}
           {socketUpdate}

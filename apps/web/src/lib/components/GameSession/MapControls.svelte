@@ -24,7 +24,7 @@
     stageProps: StageProps;
     party: SelectParty & Thumb;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;

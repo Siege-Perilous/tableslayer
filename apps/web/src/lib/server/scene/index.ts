@@ -1,5 +1,5 @@
 import { db } from '$lib/db/app';
-import { sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
@@ -170,8 +170,10 @@ export const createScene = async (
 
   const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSessiondId)).all();
 
-  if (scenes.length === 1) {
-    await setActiveScene(gameSessiondId, sceneId);
+  // If this is the first scene in the game session and the party doesn't have an active scene yet,
+  // set this scene as the party's active scene
+  if (scenes.length === 1 && !party.activeSceneId) {
+    await setActiveSceneForParty(party.id, sceneId);
   }
 
   // Return the created scene with thumbnails
@@ -216,7 +218,17 @@ export const deleteScene = async (gameSessionId: string, sceneId: string): Promi
     throw new Error('Scene not found');
   }
 
+  // Get the party for this game session to check if this scene is active
+  const party = await getPartyFromGameSessionId(gameSessionId);
+  const isActiveScene = party.activeSceneId === sceneId;
+
+  // Delete the scene
   await db.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
+
+  // If this was the active scene, clear the party's activeSceneId
+  if (isActiveScene) {
+    await db.update(partyTable).set({ activeSceneId: null }).where(eq(partyTable.id, party.id));
+  }
 
   const scenes = await db
     .select()
@@ -327,6 +339,7 @@ export const setActiveScene = async (gameSessionId: string, sceneId: string) => 
   await updateGameSession(gameSessionId, { activeSceneId: sceneId });
 };
 
+// Legacy function - kept for backwards compatibility during migration
 export const getActiveScene = async (gameSessiondId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
   const gameSession = await getGameSession(gameSessiondId);
   const activeSceneId = gameSession.activeSceneId;
@@ -341,6 +354,29 @@ export const getActiveScene = async (gameSessiondId: string): Promise<SelectScen
   }
 
   return activeScene;
+};
+
+// New party-level active scene function
+export const getActiveSceneForParty = async (
+  partyId: string
+): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
+  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+
+  if (!party || !party.activeSceneId) {
+    return null;
+  }
+
+  const activeScene = await getScene(party.activeSceneId);
+
+  if (!activeScene) {
+    return null;
+  }
+
+  return activeScene;
+};
+
+export const setActiveSceneForParty = async (partyId: string, sceneId: string): Promise<void> => {
+  await db.update(partyTable).set({ activeSceneId: sceneId }).where(eq(partyTable.id, partyId));
 };
 
 export const toggleGamePause = async (gameSessionId: string) => {

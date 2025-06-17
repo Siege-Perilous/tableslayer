@@ -178,6 +178,7 @@ export const partyTable = sqliteTable(
       .notNull()
       .default(1),
     activeGameSessionId: text('active_game_session_id'),
+    activeSceneId: text('active_scene_id'),
     gameSessionIsPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     defaultTvSize: integer('tv_size').notNull().default(40),
     defaultGridType: integer('default_grid_type').notNull().default(0),

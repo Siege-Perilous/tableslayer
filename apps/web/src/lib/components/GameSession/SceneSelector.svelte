@@ -23,6 +23,7 @@
     useReorderScenesMutation,
     useDuplicateSceneMutation
   } from '$lib/queries';
+  import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { PartyUpgrade } from '../party';
   import { flip } from 'svelte/animate';
@@ -36,7 +37,7 @@
     scenes,
     gameSession,
     selectedSceneNumber,
-    activeScene,
+    activeSceneId,
     party,
     partyData,
     socketUpdate
@@ -45,7 +46,7 @@
     gameSession: SelectGameSession;
     selectedSceneNumber: number;
     party: SelectParty & Thumb;
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
     socketUpdate: () => void;
   } = $props();
@@ -76,6 +77,7 @@
   const deleteScene = useDeleteSceneMutation();
   const updateScene = useUpdateSceneMutation();
   const updateGameSession = useUpdateGameSessionMutation();
+  const updateParty = useUpdatePartyMutation();
   const reorderScenes = useReorderScenesMutation();
   const duplicateScene = useDuplicateSceneMutation();
 
@@ -190,10 +192,9 @@
 
     await handleMutation({
       mutation: () =>
-        $updateGameSession.mutateAsync({
-          gameSessionId: gameSession.id,
-          gameSessionData: { activeSceneId: sceneId },
-          partyId: party.id
+        $updateParty.mutateAsync({
+          partyId: party.id,
+          partyData: { activeSceneId: sceneId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
@@ -624,7 +625,7 @@
             }
           }}
         >
-          {#if activeScene && activeScene.id === scene.id}
+          {#if activeSceneId && activeSceneId === scene.id}
             <div class="scene__projectedIcon">
               {#if !gameSession.isPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />

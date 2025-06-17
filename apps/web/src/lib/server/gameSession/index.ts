@@ -215,15 +215,16 @@ export const createGameSessionForImport = async (partyId: string, gameSessionDat
 
 export const getActiveGameSessionForParty = async (partyId: string): Promise<SelectGameSession | null> => {
   const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
-  if (!party) {
+  if (!party || !party.activeSceneId) {
     return null;
   }
 
-  const activeGameSessionId = party.activeGameSessionId;
-  if (!activeGameSessionId) {
+  // Find the game session that contains the active scene
+  const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, party.activeSceneId)).get();
+  if (!scene) {
     return null;
   }
 
-  const activeGameSession = await getGameSession(activeGameSessionId);
+  const activeGameSession = await getGameSession(scene.gameSessionId);
   return activeGameSession;
 };

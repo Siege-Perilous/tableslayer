@@ -9,7 +9,6 @@ export type BroadcastStageUpdate = {
   selectedScene: SelectScene | (SelectScene & Thumb) | null;
   stageProps: StageProps;
   gameIsPaused: boolean;
-  activeGameSessionId?: string;
 };
 
 export type MarkerPositionUpdate = {
@@ -41,19 +40,14 @@ export const broadcastMarkerUpdate = throttle(
  * Broadcasts a simple active scene change notification
  * This tells the playfield to reload to get the new active scene data
  */
-export const broadcastActiveSceneChange = (
-  socket: Socket | null,
-  activeSceneId: string,
-  activeGameSessionId: string
-) => {
+export const broadcastActiveSceneChange = (socket: Socket | null, activeSceneId: string) => {
   if (!socket || !activeSceneId) return;
 
-  console.log('Broadcasting active scene change:', { activeSceneId, activeGameSessionId });
+  console.log('Broadcasting active scene change:', { activeSceneId });
 
   const updateData = {
     type: 'activeSceneChange',
-    activeSceneId,
-    activeGameSessionId
+    activeSceneId
   };
 
   socket.emit('activeSceneChanged', updateData);
@@ -69,8 +63,7 @@ export const broadcastStageUpdate = (
   selectedScene: BroadcastStageUpdate['selectedScene'],
   stageProps: BroadcastStageUpdate['stageProps'],
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
-  gameIsPaused: boolean,
-  activeGameSessionId?: string
+  gameIsPaused: boolean
 ) => {
   if (!socket || !selectedScene || !stageProps) return;
 
@@ -80,7 +73,6 @@ export const broadcastStageUpdate = (
     selectedScene: null, // Don't send selected scene to playfield
     activeScene: activeScene,
     gameIsPaused,
-    activeGameSessionId,
     stageProps: { ...stageProps }
   };
 
