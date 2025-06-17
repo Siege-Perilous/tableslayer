@@ -15,9 +15,16 @@ export class CollabPlayfieldProvider {
   private unsubscribe?: () => void;
   private onStateChangeCallback?: (state: CollaborativePlayfieldState) => void;
 
-  constructor(socket: Socket, partyId: string, gameSessionId: string, userId: string, userEmail: string) {
-    // Create collaborative document
-    const docKey = `${partyId}-${gameSessionId}`;
+  constructor(
+    socket: Socket,
+    partyId: string,
+    gameSessionId: string,
+    sceneId: string,
+    userId: string,
+    userEmail: string
+  ) {
+    // Create collaborative document scoped to the specific scene
+    const docKey = `${partyId}-${gameSessionId}-${sceneId}`;
     this.doc = new CollabPlayfieldDoc(docKey);
 
     // Create SocketIO provider for Y.js synchronization

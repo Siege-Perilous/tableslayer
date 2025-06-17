@@ -188,90 +188,7 @@
       stageProps
     );
 
-    // Set up collaborative editing
-    if (socket && data.user) {
-      // console.log('Creating collaborative provider for:', party.id, gameSession.id);
-      collabProvider = new CollabPlayfieldProvider(socket, party.id, gameSession.id, data.user.id, data.user.email);
-
-      // Initialize with current scene data
-      collabProvider.initializeWithScene(
-        selectedScene,
-        data.selectedSceneMarkers || [],
-        localActiveScene,
-        activeSceneMarkers || [],
-        localParty.gameSessionIsPaused,
-        localParty.activeGameSessionId ?? undefined
-      );
-
-      // Subscribe to collaborative state changes
-      collabProvider.onStateChange((state) => {
-        // Throttle rapid updates to prevent slider lag
-        if (collabUpdateTimer) {
-          clearTimeout(collabUpdateTimer);
-        }
-
-        collabUpdateTimer = setTimeout(() => {
-          // Set flag to prevent $effects from triggering during collaborative updates
-          isUpdatingFromCollab = true;
-
-          // Update stageProps if we have valid collaborative data
-          if (state.stageProps && Object.keys(state.stageProps).length > 0) {
-            // console.log(
-            //   'Y.js state change received - grid type:',
-            //   state.stageProps.grid?.gridType,
-            //   'opacity:',
-            //   state.stageProps.grid?.opacity
-            // );
-
-            // Preserve editor-specific properties (scene offset/zoom are viewport-specific)
-            const preservedScene = {
-              offset: stageProps.scene.offset,
-              zoom: stageProps.scene.zoom
-            };
-
-            // Selectively merge collaborative state, preserving editor-specific properties
-            stageProps = {
-              ...state.stageProps,
-              activeLayer: stageProps.activeLayer, // Preserve active layer from local state
-              scene: {
-                ...state.stageProps.scene,
-                ...preservedScene
-              }
-            };
-
-            // console.log(
-            //   'Updated stageProps from Y.js - new grid type:',
-            //   stageProps.grid.gridType,
-            //   'opacity:',
-            //   stageProps.grid.opacity
-            // );
-          }
-
-          // Update session state from collaborative changes (these can happen independently of stageProps)
-          if (state.gameIsPaused !== undefined) {
-            localParty = { ...localParty, gameSessionIsPaused: state.gameIsPaused };
-          }
-          if (state.activeGameSessionId !== undefined) {
-            localParty = { ...localParty, activeGameSessionId: state.activeGameSessionId };
-          }
-          if (state.activeScene !== undefined) {
-            localActiveScene = state.activeScene;
-          }
-
-          // Reset flag after the update
-          setTimeout(() => {
-            isUpdatingFromCollab = false;
-          }, 0);
-        }, 16); // ~60fps throttle for responsive marker updates
-      });
-
-      // Register the collaborative provider with the property update broadcaster
-      setCollaborativeProvider(
-        collabProvider,
-        () => isUpdatingFromCollab,
-        () => isWindowFocused
-      );
-    }
+    // Collaborative editing is set up in the scene change effect
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -818,6 +735,100 @@
     if (selectedScene.id) {
       selectedMarkerId = undefined;
       knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
+    }
+  });
+
+  // Helper function to set up collaborative provider for a scene
+  const setupCollaborativeProvider = (sceneId: string) => {
+    if (socket && data.user) {
+      // Destroy existing provider if it exists
+      if (collabProvider) {
+        collabProvider.destroy();
+      }
+
+      // Create new collaborative provider scoped to this scene
+      collabProvider = new CollabPlayfieldProvider(
+        socket,
+        party.id,
+        gameSession.id,
+        sceneId,
+        data.user.id,
+        data.user.email
+      );
+
+      // Initialize with current scene data
+      collabProvider.initializeWithScene(
+        selectedScene,
+        data.selectedSceneMarkers || [],
+        localActiveScene,
+        activeSceneMarkers || [],
+        localParty.gameSessionIsPaused,
+        localParty.activeGameSessionId ?? undefined
+      );
+
+      // Subscribe to collaborative state changes
+      collabProvider.onStateChange((state) => {
+        // Throttle rapid updates to prevent slider lag
+        if (collabUpdateTimer) {
+          clearTimeout(collabUpdateTimer);
+        }
+
+        collabUpdateTimer = setTimeout(() => {
+          // Set flag to prevent $effects from triggering during collaborative updates
+          isUpdatingFromCollab = true;
+
+          // Update stageProps if we have valid collaborative data
+          if (state.stageProps && Object.keys(state.stageProps).length > 0) {
+            // Preserve editor-specific properties (scene offset/zoom are viewport-specific)
+            const preservedScene = {
+              offset: stageProps.scene.offset,
+              zoom: stageProps.scene.zoom
+            };
+
+            // Selectively merge collaborative state, preserving editor-specific properties
+            stageProps = {
+              ...state.stageProps,
+              activeLayer: stageProps.activeLayer, // Preserve active layer from local state
+              scene: {
+                ...state.stageProps.scene,
+                ...preservedScene
+              }
+            };
+          }
+
+          // Update session state from collaborative changes
+          if (state.gameIsPaused !== undefined) {
+            localParty = { ...localParty, gameSessionIsPaused: state.gameIsPaused };
+          }
+          if (state.activeGameSessionId !== undefined) {
+            localParty = { ...localParty, activeGameSessionId: state.activeGameSessionId };
+          }
+          if (state.activeScene !== undefined) {
+            localActiveScene = state.activeScene;
+          }
+
+          // Reset flag after the update
+          setTimeout(() => {
+            isUpdatingFromCollab = false;
+          }, 0);
+        }, 16); // ~60fps throttle for responsive marker updates
+      });
+
+      // Register the collaborative provider with the property update broadcaster
+      setCollaborativeProvider(
+        collabProvider,
+        () => isUpdatingFromCollab,
+        () => isWindowFocused
+      );
+    }
+  };
+
+  // Create/recreate collaborative provider when scene changes
+  let lastSceneId = $state<string | null>(null);
+  $effect(() => {
+    if (selectedScene.id && selectedScene.id !== lastSceneId) {
+      lastSceneId = selectedScene.id;
+      setupCollaborativeProvider(selectedScene.id);
     }
   });
 </script>
