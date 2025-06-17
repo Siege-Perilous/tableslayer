@@ -24,26 +24,28 @@
     useDuplicateSceneMutation
   } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
-  import { invalidateAll } from '$app/navigation';
   import { PartyUpgrade } from '../party';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { navigating } from '$app/state';
   import { onDestroy } from 'svelte';
   import { fly } from 'svelte/transition';
+  import { usePartyData } from '$lib/utils/yjs/stores';
 
   let {
     scenes,
     gameSession,
     selectedSceneNumber,
     activeScene,
-    party
+    party,
+    partyData
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     gameSession: SelectGameSession;
     selectedSceneNumber: number;
     party: SelectParty & Thumb;
     activeScene: SelectScene | (SelectScene & Thumb) | null;
+    partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
   let file = $state<FileList | null>(null);
@@ -142,8 +144,27 @@
         createSceneErrors = error;
         console.log('Error creating scene:', error);
       },
-      onSuccess: () => {
-        invalidateAll();
+      onSuccess: (response) => {
+        // Add scene to Y.js for real-time sync instead of invalidateAll()
+        if (partyData && response?.scene) {
+          const newScene = response.scene;
+          console.log('Scene created successfully, adding to Y.js:', newScene.name);
+          partyData.addScene({
+            id: newScene.id,
+            name: newScene.name,
+            order: newScene.order,
+            mapLocation: newScene.mapLocation,
+            mapThumbLocation: newScene.mapThumbLocation,
+            gameSessionId: newScene.gameSessionId,
+            thumb: hasThumb(newScene) ? newScene.thumb : undefined
+          });
+        } else {
+          console.warn(
+            'Cannot add scene to Y.js - partyData not available or response missing scene:',
+            !!partyData,
+            !!response?.scene
+          );
+        }
         isNewSceneAdded = true;
         file = null;
         setTimeout(() => {
@@ -167,7 +188,10 @@
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        invalidateAll();
+        // Update party state in Y.js instead of invalidateAll()
+        if (partyData) {
+          partyData.updatePartyState('activeSceneId', sceneId);
+        }
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -186,8 +210,28 @@
           partyId: party.id,
           sceneId
         }),
-      onSuccess: () => {
+      onSuccess: (response) => {
         sceneBeingDeleted = '';
+        // Update Y.js with the reordered scenes list instead of just removing one
+        if (partyData && response?.scenes) {
+          console.log('Scene deleted successfully, updating Y.js with reordered scenes');
+          const reorderedScenes = response.scenes.map((scene) => ({
+            id: scene.id,
+            name: scene.name,
+            order: scene.order,
+            mapLocation: scene.mapLocation,
+            mapThumbLocation: scene.mapThumbLocation,
+            gameSessionId: scene.gameSessionId,
+            thumb: hasThumb(scene) ? scene.thumb : undefined
+          }));
+          partyData.reorderScenes(reorderedScenes);
+        } else {
+          console.warn(
+            'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
+            !!partyData,
+            !!response?.scenes
+          );
+        }
       },
       onError: () => {
         sceneBeingDeleted = '';
@@ -214,7 +258,10 @@
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         renamingScenes[sceneId] = null;
-        invalidateAll();
+        // Update scene name in Y.js instead of invalidateAll()
+        if (partyData && name) {
+          partyData.updateScene(sceneId, { name });
+        }
       },
       toastMessages: {
         success: { title: 'Scene renamed' },
@@ -231,8 +278,27 @@
           sceneId
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        invalidateAll();
+      onSuccess: (response) => {
+        // Update Y.js with the reordered scenes list to ensure proper insertion order
+        if (partyData && response?.scenes) {
+          console.log('Scene duplicated successfully, updating Y.js with reordered scenes');
+          const reorderedScenes = response.scenes.map((scene) => ({
+            id: scene.id,
+            name: scene.name,
+            order: scene.order,
+            mapLocation: scene.mapLocation,
+            mapThumbLocation: scene.mapThumbLocation,
+            gameSessionId: scene.gameSessionId,
+            thumb: hasThumb(scene) ? scene.thumb : undefined
+          }));
+          partyData.reorderScenes(reorderedScenes);
+        } else {
+          console.warn(
+            'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
+            !!partyData,
+            !!response?.scenes
+          );
+        }
       },
       toastMessages: {
         success: { title: 'Scene duplicated' },
@@ -318,7 +384,20 @@
           }),
         formLoadingState: (loading) => (formIsLoading = loading),
         onSuccess: () => {
-          invalidateAll();
+          // Update scene order in Y.js instead of invalidateAll()
+          if (partyData) {
+            partyData.reorderScenes(
+              updatedScenes.map((scene) => ({
+                id: scene.id,
+                name: scene.name,
+                order: scene.order,
+                mapLocation: scene.mapLocation,
+                mapThumbLocation: scene.mapThumbLocation,
+                gameSessionId: scene.gameSessionId,
+                thumb: hasThumb(scene) ? scene.thumb : undefined
+              }))
+            );
+          }
         },
         toastMessages: {
           success: { title: 'Scenes reordered' },
@@ -330,12 +409,11 @@
       draggedItem = null;
       dragOverItem = null;
 
-      // Still invalidate to ensure server and client are in sync
-      invalidateAll();
+      // Y.js handles sync automatically - no need for invalidateAll()
     } catch (error) {
       // On failure, revert to original order
       console.error('Error updating scene order:', error);
-      invalidateAll(); // Refresh from server to ensure correct state
+      // Y.js will automatically revert if the server operation failed
     } finally {
       formIsLoading = false;
     }
@@ -440,7 +518,7 @@
           isDragging && dragOverItem === index && 'scene--dropTarget',
           isDragDisabled(scene.id) && 'scene--no-drag'
         ]}
-        style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        style:background-image={scene.thumb?.resizedUrl ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {
@@ -612,7 +690,7 @@
     {/each}
   </div>
 
-  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} />
+  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} {partyData} />
 </div>
 
 <style>

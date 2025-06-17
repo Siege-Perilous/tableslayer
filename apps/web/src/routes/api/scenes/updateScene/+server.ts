@@ -1,6 +1,6 @@
 import { updateSceneSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { isUserInParty, updateScene } from '$lib/server';
+import { getScene, isUserInParty, updateScene } from '$lib/server';
 import { z } from 'zod/v4';
 
 const validationSchema = z.object({
@@ -21,7 +21,10 @@ export const POST = apiFactory(
 
     await updateScene(userId, sceneId, sceneData);
 
-    return { success: true };
+    // Return the updated scene with thumbnails
+    const updatedScene = await getScene(sceneId);
+
+    return { success: true, scene: updatedScene };
   },
   {
     validationSchema,

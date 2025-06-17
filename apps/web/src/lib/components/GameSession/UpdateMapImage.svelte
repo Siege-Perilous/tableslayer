@@ -7,10 +7,19 @@
 </script>
 
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
-
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  let { sceneId, partyId }: { sceneId: string; partyId: string } = $props();
+  import { hasThumb } from '$lib/utils';
+  import type { usePartyData } from '$lib/utils/yjs/stores';
+
+  let {
+    sceneId,
+    partyId,
+    partyData
+  }: {
+    sceneId: string;
+    partyId: string;
+    partyData: ReturnType<typeof usePartyData> | null;
+  } = $props();
 
   const uploadFile = useUploadFileMutation();
   const updateScene = useUpdateSceneMutation();
@@ -41,9 +50,24 @@
             mapLocation: uploadedFile.location
           }
         }),
-      onSuccess: () => {
+      onSuccess: (response) => {
         input.value = '';
-        invalidateAll();
+        // Update Y.js with the updated scene data instead of invalidateAll()
+        if (partyData && response?.scene) {
+          const updatedScene = response.scene;
+          console.log('Map updated successfully, updating Y.js:', updatedScene.name);
+          partyData.updateScene(sceneId, {
+            mapLocation: updatedScene.mapLocation,
+            mapThumbLocation: updatedScene.mapThumbLocation,
+            thumb: hasThumb(updatedScene) ? updatedScene.thumb : undefined
+          });
+        } else {
+          console.warn(
+            'Cannot update scene in Y.js - partyData not available or response missing scene:',
+            !!partyData,
+            !!response?.scene
+          );
+        }
       },
       formLoadingState: () => {},
       toastMessages: {

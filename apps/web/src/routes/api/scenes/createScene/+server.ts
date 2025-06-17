@@ -16,9 +16,9 @@ export const POST = apiFactory(
       throw new Error('Unauthorized');
     }
 
-    await createScene(sceneData);
+    const scene = await createScene(sceneData);
 
-    return { success: true };
+    return { success: true, scene };
   },
   {
     validationSchema,

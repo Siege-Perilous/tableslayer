@@ -3,13 +3,13 @@ import { PartyDataManager, type PartyState, type SceneData, type SceneMetadata }
 let partyDataManager: PartyDataManager | null = null;
 
 /**
- * Initialize the party data manager (call once per party)
+ * Initialize the party data manager (call once per game session)
  */
-export function initializePartyDataManager(partyId: string, userId: string): PartyDataManager {
+export function initializePartyDataManager(partyId: string, userId: string, gameSessionId?: string): PartyDataManager {
   if (partyDataManager) {
     partyDataManager.destroy();
   }
-  partyDataManager = new PartyDataManager(partyId, userId);
+  partyDataManager = new PartyDataManager(partyId, userId, gameSessionId);
   return partyDataManager;
 }
 
@@ -54,7 +54,16 @@ export function usePartyData() {
     initializeSceneData: (sceneId: string, stageProps: any, markers: any[]) =>
       partyDataManager!.initializeSceneData(sceneId, stageProps, markers),
     initializeScenesList: (scenes: SceneMetadata[]) => partyDataManager!.initializeScenesList(scenes),
-    initializePartyState: (state: Partial<PartyState>) => partyDataManager!.initializePartyState(state)
+    initializePartyState: (state: Partial<PartyState>) => partyDataManager!.initializePartyState(state),
+
+    // Scene list management
+    addScene: (scene: SceneMetadata) => partyDataManager!.addScene(scene),
+    updateScene: (sceneId: string, updates: Partial<SceneMetadata>) => partyDataManager!.updateScene(sceneId, updates),
+    removeScene: (sceneId: string) => partyDataManager!.removeScene(sceneId),
+    reorderScenes: (newScenesOrder: SceneMetadata[]) => partyDataManager!.reorderScenes(newScenesOrder),
+
+    // Debug utilities
+    clearAllData: () => partyDataManager!.clearAllData()
   };
 }
 

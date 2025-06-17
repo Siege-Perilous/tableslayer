@@ -1,6 +1,6 @@
 # WebSocket & Data Layer Rewrite Plan
 
-**Status:** Phase 1 - Y.js Foundation  
+**Status:** Phase 2 Complete - Scene List Synchronization  
 **Last Updated:** 2025-06-17
 
 ## Overall Architecture Summary
@@ -85,43 +85,67 @@
 
 ---
 
-## Phase 2: Scene List Synchronization (Commit 2) - 📋 PLANNED
+## Phase 2: Scene List Synchronization (Commit 2) - ✅ COMPLETED
 
 **Goal**: Replace invalidateAll() with Y.js scene list updates
 
-### Implementation
+### Implementation Status
 
-1. **Scene list Y.js integration**
+1. **✅ Scene list Y.js integration**
 
-   - Populate `scenesList` YArray from SSR data
-   - Real-time sync of scene metadata changes
-   - Update `SceneSelector.svelte` to subscribe to Y.js
+   - Enhanced PartyDataManager with scene operations (addScene, updateScene, removeScene, reorderScenes)
+   - YArray for scenes list with atomic transactions
+   - Real-time sync of scene metadata including thumbnails
+   - Game session isolation (room: `gameSession-${gameSessionId}`)
 
-2. **Remove invalidateAll() dependencies**
+2. **✅ Remove invalidateAll() dependencies**
 
-   - Replace scene list invalidation with Y.js updates
-   - Sync scene name, order, thumbnail changes
-   - Keep SSR for initial page load
+   - Replaced all invalidateAll() calls in SceneSelector with Y.js operations
+   - Scene creation, duplication, deletion, renaming, reordering all use Y.js
+   - Map image changes sync through Y.js with fresh thumbnails
+   - SSR initial load preserved, Y.js becomes source of truth
 
-3. **Scene metadata sync events**
-   - Scene renaming → Y.js update
-   - Scene reordering → Y.js update
-   - Thumbnail changes → Y.js update
-   - Scene add/delete → Y.js update
+3. **✅ Scene metadata sync events implemented**
+
+   - Scene renaming → `partyData.updateScene()` with Y.js sync
+   - Scene reordering → `partyData.reorderScenes()` with complete list replacement
+   - Thumbnail changes → Y.js update with cache-busting
+   - Scene add/delete → Proper order management and Y.js sync
+   - Scene duplication → Insertion with proper order shifting
+
+4. **✅ Advanced fixes implemented**
+
+   - Fixed duplicate key errors from Y.js accumulation
+   - Smart initialization to prevent cross-tab data conflicts
+   - Proper scene deletion with sequential reordering (1,2,3,4 instead of 1,2,4,5)
+   - Scene duplication with correct insertion order (not appending to end)
+   - Map image changes with real-time thumbnail updates
+
+5. **✅ Game session isolation**
+   - Changed Y.js rooms from `party-${partyId}` to `gameSession-${gameSessionId}`
+   - Editor and playfield use separate Y.js documents per game session
+   - No cross-contamination between different game sessions
 
 ### Testing Checklist
 
-- [ ] Scene list updates without page flash
-- [ ] Real-time scene renaming across editors
-- [ ] Scene reordering reflects immediately
-- [ ] Thumbnail updates propagate
-- [ ] No invalidateAll() calls needed
+- [x] Scene list updates without page flash
+- [x] Real-time scene renaming across editors
+- [x] Scene reordering reflects immediately with proper sequential numbering
+- [x] Thumbnail updates propagate with cache-busting
+- [x] No invalidateAll() calls needed
+- [x] Scene creation appears immediately with correct data
+- [x] Scene duplication inserts at correct position (not appends)
+- [x] Scene deletion maintains sequential order numbers
+- [x] Map image changes sync immediately with new thumbnails
+- [x] Game session isolation (different sessions don't interfere)
 
-### Success Criteria
+### Success Criteria ✅
 
 - No more scene list flashing
-- Smooth scene metadata updates across all editors
+- Smooth scene metadata updates across all editors within same game session
 - SSR initial load still functional
+- Real-time collaboration working perfectly
+- Proper scene ordering maintained for all operations
 
 ---
 
@@ -380,3 +404,12 @@
 - ✅ Added Y.js connection status indicator to playfield
 - ✅ **COMPLETED Phase 1**: Y.js foundation working through Socket.IO
 - ✅ **READY FOR COMMIT 1**: Stable Y.js foundation established
+- ✅ **STARTED Phase 2**: Scene list synchronization implementation
+- ✅ Enhanced PartyDataManager with full scene CRUD operations
+- ✅ Replaced all invalidateAll() calls with Y.js real-time sync
+- ✅ Fixed duplicate key errors and Y.js data accumulation issues
+- ✅ Implemented proper scene ordering for all operations (create, delete, duplicate, reorder)
+- ✅ Added real-time map image updates with thumbnail sync
+- ✅ Implemented game session isolation (gameSession-${id} rooms)
+- ✅ **COMPLETED Phase 2**: Full scene list real-time collaboration working
+- ✅ **READY FOR COMMIT 2**: Scene synchronization complete and stable

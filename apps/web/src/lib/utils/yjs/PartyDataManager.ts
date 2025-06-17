@@ -9,6 +9,10 @@ export interface SceneMetadata {
   mapLocation?: string;
   mapThumbLocation?: string;
   gameSessionId: string;
+  thumb?: {
+    resizedUrl: string;
+    originalUrl: string;
+  };
 }
 
 export interface CursorData {
@@ -58,7 +62,7 @@ export class PartyDataManager {
   private subscribers = new Set<() => void>();
   private isConnected = false;
 
-  constructor(partyId: string, userId: string) {
+  constructor(partyId: string, userId: string, gameSessionId?: string) {
     this.userId = userId;
     this.partyId = partyId;
 
@@ -67,14 +71,15 @@ export class PartyDataManager {
 
     // Connect to Y.js through Socket.IO
     const socketUrl = window.location.origin;
-    const roomName = `party-${partyId}`;
+    // Use game session for room isolation, fallback to party for compatibility
+    const roomName = gameSessionId ? `gameSession-${gameSessionId}` : `party-${partyId}`;
 
-    console.log(`PartyDataManager connecting to Y.js via Socket.IO: ${socketUrl}`);
+    console.log(`PartyDataManager connecting to Y.js via Socket.IO: ${socketUrl}, room: ${roomName}`);
 
     this.provider = new SocketIOProvider(socketUrl, roomName, this.doc, {
       autoConnect: true,
       resyncInterval: -1, // Disable resync interval
-      disableBc: false // Enable broadcast channel for cross-tab communication
+      disableBc: false // Keep broadcast channel for cross-tab communication
     });
 
     // Initialize shared data structures
@@ -135,13 +140,75 @@ export class PartyDataManager {
   }
 
   /**
-   * Initialize scenes list from SSR
+   * Initialize scenes list from SSR with proper sync coordination
    */
   initializeScenesList(scenes: SceneMetadata[]) {
-    if (this.yScenesList.length === 0) {
-      // Use Y.js transaction for atomic updates
-      this.doc.transact(() => {
-        scenes.forEach((scene) => this.yScenesList.push([scene]));
+    if (scenes.length === 0) return;
+
+    // Wait for Y.js to fully sync before making initialization decisions
+    const initializeAfterSync = () => {
+      const initFlag = this.yParty.get('scenesInitialized');
+      const currentScenes = this.yScenesList.toArray();
+
+      console.log(`Y.js sync complete. Flag: ${initFlag}, Current: ${currentScenes.length}, SSR: ${scenes.length}`);
+
+      // If data is massively accumulated (more than 2x expected), force clear everything
+      if (currentScenes.length > scenes.length * 2) {
+        console.log(
+          `Force clearing accumulated Y.js data. Current: ${currentScenes.length}, Expected: ${scenes.length}`
+        );
+        this.doc.transact(() => {
+          this.yScenesList.delete(0, this.yScenesList.length);
+          this.yParty.clear();
+        });
+
+        // Reinitialize after clearing
+        setTimeout(() => {
+          this.doc.transact(() => {
+            scenes.forEach((scene) => this.yScenesList.push([scene]));
+            this.yParty.set('scenesInitialized', true);
+            this.yParty.set('lastInitTimestamp', Date.now());
+          });
+          console.log('Y.js reinitialized with clean data');
+        }, 100);
+        return;
+      }
+
+      // If already initialized recently (within 5 seconds), skip
+      const lastInit = this.yParty.get('lastInitTimestamp');
+      if (initFlag && lastInit && Date.now() - lastInit < 5000) {
+        console.log('Y.js recently initialized, skipping');
+        return;
+      }
+
+      // Initialize if not done or data doesn't match
+      const hasValidData =
+        currentScenes.length === scenes.length && currentScenes.every((scene) => scenes.some((s) => s.id === scene.id));
+
+      if (!initFlag || !hasValidData) {
+        console.log(`Initializing Y.js scenes. Current: ${currentScenes.length}, SSR: ${scenes.length}`);
+        this.doc.transact(() => {
+          this.yScenesList.delete(0, this.yScenesList.length);
+          scenes.forEach((scene) => this.yScenesList.push([scene]));
+          this.yParty.set('scenesInitialized', true);
+          this.yParty.set('lastInitTimestamp', Date.now());
+        });
+      } else {
+        console.log('Y.js scenes already properly initialized');
+      }
+    };
+
+    // Wait for provider to connect and sync
+    if (this.isConnected) {
+      // Already connected, wait a moment for any pending sync
+      setTimeout(initializeAfterSync, 1000);
+    } else {
+      // Wait for connection, then sync
+      const unsubscribe = this.subscribe(() => {
+        if (this.isConnected) {
+          unsubscribe();
+          setTimeout(initializeAfterSync, 1000);
+        }
       });
     }
   }
@@ -224,6 +291,78 @@ export class PartyDataManager {
    */
   getSceneData(sceneId: string): SceneData | null {
     return this.yScenes.get(sceneId) || null;
+  }
+
+  /**
+   * Add scene to the list
+   */
+  addScene(scene: SceneMetadata) {
+    console.log('Adding scene to Y.js:', scene.name);
+    this.doc.transact(() => {
+      this.yScenesList.push([scene]);
+      // Update timestamp to prevent initialization conflicts
+      this.yParty.set('lastInitTimestamp', Date.now());
+    });
+  }
+
+  /**
+   * Update scene metadata
+   */
+  updateScene(sceneId: string, updates: Partial<SceneMetadata>) {
+    const scenes = this.yScenesList.toArray();
+    const sceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
+
+    if (sceneIndex !== -1) {
+      console.log('Updating scene in Y.js:', sceneId, updates);
+      this.doc.transact(() => {
+        const updatedScene = { ...scenes[sceneIndex], ...updates };
+        this.yScenesList.delete(sceneIndex, 1);
+        this.yScenesList.insert(sceneIndex, [updatedScene]);
+        this.yParty.set('lastInitTimestamp', Date.now());
+      });
+    }
+  }
+
+  /**
+   * Remove scene from the list
+   */
+  removeScene(sceneId: string) {
+    const scenes = this.yScenesList.toArray();
+    const sceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
+
+    if (sceneIndex !== -1) {
+      console.log('Removing scene from Y.js:', sceneId);
+      this.doc.transact(() => {
+        this.yScenesList.delete(sceneIndex, 1);
+        this.yParty.set('lastInitTimestamp', Date.now());
+      });
+    }
+  }
+
+  /**
+   * Reorder scenes
+   */
+  reorderScenes(newScenesOrder: SceneMetadata[]) {
+    console.log('Reordering scenes in Y.js:', newScenesOrder.length);
+    this.doc.transact(() => {
+      // Clear current list and replace with new order
+      this.yScenesList.delete(0, this.yScenesList.length);
+      newScenesOrder.forEach((scene) => this.yScenesList.push([scene]));
+      this.yParty.set('lastInitTimestamp', Date.now());
+    });
+  }
+
+  /**
+   * Force clear all Y.js data (for development/debugging)
+   */
+  clearAllData() {
+    this.doc.transact(() => {
+      this.yScenesList.delete(0, this.yScenesList.length);
+      this.yScenes.clear();
+      this.yParty.clear();
+      this.yCursors.clear();
+    });
+    console.log('Y.js data cleared');
   }
 
   /**

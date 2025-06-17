@@ -86,7 +86,7 @@
     // Initialize Y.js through Socket.IO (much more stable!)
     try {
       console.log('Initializing Y.js through Socket.IO...');
-      const manager = initializePartyDataManager(party.id, user.id);
+      const manager = initializePartyDataManager(party.id, user.id, data.activeGameSession?.id);
       partyData = usePartyData();
 
       // Subscribe to Y.js connection status

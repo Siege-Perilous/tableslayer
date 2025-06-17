@@ -103,7 +103,9 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
   return scenesWithThumbs;
 };
 
-export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: number }) => {
+export const createScene = async (
+  data: Omit<InsertScene, 'order'> & { order?: number }
+): Promise<SelectScene | (SelectScene & Thumb)> => {
   const gameSessiondId = data.gameSessionId;
   let order = data.order;
   const name = data.name;
@@ -171,6 +173,9 @@ export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: n
   if (scenes.length === 1) {
     await setActiveScene(gameSessiondId, sceneId);
   }
+
+  // Return the created scene with thumbnails
+  return await getScene(sceneId);
 };
 
 export const getSceneFromOrder = async (
@@ -355,18 +360,13 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
   const newSceneName = `${name} (Copy)`;
   const newSceneId = uuidv4();
 
-  await createScene({
+  // createScene now returns the scene with thumbnails
+  const newScene = await createScene({
     ...otherProps,
     id: newSceneId,
     name: newSceneName,
     order: order + 1 // Place it right after the original scene
   });
-
-  const newScene = await db.select().from(sceneTable).where(eq(sceneTable.id, newSceneId)).get();
-
-  if (!newScene) {
-    throw new Error('Error duplicating scene');
-  }
 
   return newScene;
 };

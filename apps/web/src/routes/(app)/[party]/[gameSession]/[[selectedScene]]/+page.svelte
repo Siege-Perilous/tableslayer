@@ -40,9 +40,14 @@
     registerSocketUpdate
   } from '$lib/utils';
   import { onMount } from 'svelte';
+  import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
 
   let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
     $derived(data);
+
+  // Y.js integration
+  let partyData: ReturnType<typeof usePartyData> | null = null;
+  let yjsScenes = $state<typeof scenes>([]); // Empty initially, Y.js will be the source of truth
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
@@ -170,6 +175,39 @@
   };
 
   onMount(() => {
+    let unsubscribeYjs: (() => void) | null = null;
+
+    // Initialize Y.js for scene list synchronization
+    try {
+      console.log('Initializing Y.js for scene list sync...');
+      const manager = initializePartyDataManager(party.id, party.userId || 'unknown', gameSession.id);
+      partyData = usePartyData();
+
+      // Initialize Y.js with SSR scene data
+      const sceneMetadata = scenes.map((scene) => ({
+        id: scene.id,
+        name: scene.name,
+        order: scene.order,
+        mapLocation: scene.mapLocation,
+        mapThumbLocation: scene.mapThumbLocation,
+        gameSessionId: scene.gameSessionId,
+        thumb: hasThumb(scene) ? scene.thumb : undefined
+      }));
+      partyData.initializeScenesList(sceneMetadata);
+
+      // Subscribe to Y.js scene list changes
+      unsubscribeYjs = partyData.subscribe(() => {
+        const updatedScenes = partyData!.getScenesList();
+        console.log('Y.js scene list updated:', updatedScenes);
+        yjsScenes = updatedScenes as typeof scenes;
+      });
+
+      // Immediately populate yjsScenes with current data after initialization
+      yjsScenes = partyData.getScenesList() as typeof scenes;
+    } catch (error) {
+      console.error('Error initializing Y.js scene sync:', error);
+    }
+
     socket = setupPartyWebSocket(
       party.id,
       () => console.log('Connected to party socket'),
@@ -196,6 +234,9 @@
     return () => {
       socket?.disconnect();
       if (saveTimer) clearTimeout(saveTimer);
+      if (unsubscribeYjs) {
+        unsubscribeYjs();
+      }
     };
   });
 
@@ -667,7 +708,7 @@
         }
       }}
     >
-      <SceneSelector {selectedSceneNumber} {gameSession} {scenes} {party} {activeScene} />
+      <SceneSelector {selectedSceneNumber} {gameSession} scenes={yjsScenes} {party} {activeScene} {partyData} />
     </Pane>
     <PaneResizer class="resizer">
       <button
