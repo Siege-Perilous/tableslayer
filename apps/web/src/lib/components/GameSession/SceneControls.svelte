@@ -44,6 +44,7 @@
     FogControls,
     PlayControls
   } from './';
+  import { usePartyData } from '$lib/utils/yjs/stores';
 
   let {
     socketUpdate,
@@ -57,7 +58,8 @@
     activeScene,
     handleMapFill,
     handleMapFit,
-    errors
+    errors,
+    partyData
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -71,6 +73,7 @@
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;
     stage: StageExports;
+    partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
   type SceneControl = {
@@ -283,9 +286,10 @@
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
+                {partyData}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
+              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} {partyData} />
             {:else if scene.id === 'weather'}
               <WeatherControls bind:stageProps {errors} />
             {:else if scene.id === 'edge'}

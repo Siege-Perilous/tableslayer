@@ -5,20 +5,22 @@
   import { useUpdateGameSessionMutation } from '$lib/queries';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { handleMutation, type FormMutationError } from '$lib/factories';
-  import { invalidateAll } from '$app/navigation';
+  import { usePartyData } from '$lib/utils/yjs/stores';
 
   let {
     socketUpdate,
     party,
     gameSession,
     selectedScene,
-    activeScene
+    activeScene,
+    partyData
   }: {
     socketUpdate: () => void;
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeScene: SelectScene | (SelectScene & Thumb) | null;
+    partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
   const updateGameSession = useUpdateGameSessionMutation();
@@ -35,7 +37,10 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
-        invalidateAll();
+        // Update active scene in Y.js instead of invalidateAll()
+        if (partyData) {
+          partyData.updatePartyState('activeSceneId', selectedScene.id);
+        }
         socketUpdate();
       },
       toastMessages: {
@@ -57,7 +62,10 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
-        invalidateAll();
+        // Update pause state in Y.js instead of invalidateAll()
+        if (partyData) {
+          partyData.updatePartyState('isPaused', !party.gameSessionIsPaused);
+        }
         socketUpdate();
       },
       toastMessages: {
@@ -70,8 +78,12 @@
     });
   };
 
+  // Create a reactive derived for button visibility to ensure proper reactivity
+  const isActiveSession = $derived(gameSession.id === party.activeGameSessionId);
+  const canSetActiveScene = $derived(!activeScene || selectedScene.id !== activeScene.id);
+
   const handleSetActiveGameSession = async () => {
-    if (gameSession.id === party.activeGameSessionId) return;
+    if (isActiveSession) return;
 
     await handleMutation({
       mutation: () =>
@@ -81,7 +93,10 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
-        invalidateAll();
+        // Update active game session in Y.js instead of invalidateAll()
+        if (partyData) {
+          partyData.updatePartyState('activeGameSessionId', gameSession.id);
+        }
         socketUpdate();
       },
       toastMessages: {
@@ -104,15 +119,20 @@
   <Spacer />
   <Hr />
   <Spacer />
-  {#if gameSession.id !== party.activeGameSessionId}
+  {#if !isActiveSession}
     <Button onclick={handleSetActiveGameSession}>Set as active session</Button>
     <Spacer size="0.5rem" />
     <Text size="0.85rem" color="var(--fgMuted)">Makes this session active on the playfield.</Text>
     <Spacer />
     <Hr />
     <Spacer />
+  {:else}
+    <Text size="0.85rem" color="var(--fgMuted)">This session is currently active on the playfield.</Text>
+    <Spacer />
+    <Hr />
+    <Spacer />
   {/if}
-  {#if !activeScene || selectedScene.id !== activeScene.id}
+  {#if canSetActiveScene}
     <Button onclick={handleSetActiveScene}>Set active scene</Button>
     <Spacer size="0.5rem" />
     <Text size="0.85rem" color="var(--fgMuted)">Projects the current scene to your playfield.</Text>

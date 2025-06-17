@@ -2,7 +2,6 @@ import type { SelectMarker, SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import type { StageProps } from '@tableslayer/ui';
 import type { Socket } from 'socket.io-client';
-import { buildSceneProps } from './buildSceneProps';
 import { throttle } from './throttle';
 
 export type BroadcastStageUpdate = {
@@ -39,6 +38,28 @@ export const broadcastMarkerUpdate = throttle(
 );
 
 /**
+ * Broadcasts a simple active scene change notification
+ * This tells the playfield to reload to get the new active scene data
+ */
+export const broadcastActiveSceneChange = (
+  socket: Socket | null,
+  activeSceneId: string,
+  activeGameSessionId: string
+) => {
+  if (!socket || !activeSceneId) return;
+
+  console.log('Broadcasting active scene change:', { activeSceneId, activeGameSessionId });
+
+  const updateData = {
+    type: 'activeSceneChange',
+    activeSceneId,
+    activeGameSessionId
+  };
+
+  socket.emit('activeSceneChanged', updateData);
+};
+
+/**
  * Broadcasts a full stage update
  * For efficiency, use broadcastMarkerUpdate for simple position changes
  */
@@ -51,33 +72,17 @@ export const broadcastStageUpdate = (
   gameIsPaused: boolean,
   activeGameSessionId?: string
 ) => {
-  if (!socket || !selectedScene) return;
+  if (!socket || !selectedScene || !stageProps) return;
 
-  if (selectedScene.id && activeScene && selectedScene.id === activeScene.id) {
-    const updateData = {
-      selectedScene: selectedScene,
-      activeScene: activeScene,
-      gameIsPaused,
-      activeGameSessionId,
-      stageProps: {
-        ...stageProps
-      }
-    };
+  // Since we only call this when editor is viewing the active scene with full data,
+  // we can directly use the provided stage props
+  const updateData = {
+    selectedScene: null, // Don't send selected scene to playfield
+    activeScene: activeScene,
+    gameIsPaused,
+    activeGameSessionId,
+    stageProps: { ...stageProps }
+  };
 
-    socket.emit('updateSession', updateData);
-  } else if (activeScene) {
-    const newStageProps = buildSceneProps(activeScene, activeSceneMarkers, 'editor');
-
-    const updateData = {
-      selectedScene,
-      activeScene,
-      gameIsPaused,
-      activeGameSessionId,
-      stageProps: {
-        ...newStageProps
-      }
-    };
-
-    socket.emit('updateSession', updateData);
-  }
+  socket.emit('updateSession', updateData);
 };

@@ -57,9 +57,14 @@
           const updatedScene = response.scene;
           console.log('Map updated successfully, updating Y.js:', updatedScene.name);
           partyData.updateScene(sceneId, {
-            mapLocation: updatedScene.mapLocation,
-            mapThumbLocation: updatedScene.mapThumbLocation,
-            thumb: hasThumb(updatedScene) ? updatedScene.thumb : undefined
+            mapLocation: updatedScene.mapLocation || undefined,
+            mapThumbLocation: updatedScene.mapThumbLocation || undefined,
+            thumb: hasThumb(updatedScene)
+              ? {
+                  resizedUrl: updatedScene.thumb.resizedUrl,
+                  originalUrl: updatedScene.thumb.url
+                }
+              : undefined
           });
         } else {
           console.warn(

@@ -17,6 +17,10 @@ export const POST = apiFactory(
 
     const newScene = await duplicateScene(sceneId);
 
+    if (!newScene) {
+      throw new Error('Failed to duplicate scene');
+    }
+
     // Get the updated scenes list to ensure proper ordering
     const gameSessionId = newScene.gameSessionId;
     const updatedScenes = await getScenes(gameSessionId);

@@ -42,12 +42,37 @@
   import { onMount } from 'svelte';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers } =
+  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers, user } =
     $derived(data);
 
   // Y.js integration
-  let partyData: ReturnType<typeof usePartyData> | null = null;
-  let yjsScenes = $state<typeof scenes>([]); // Empty initially, Y.js will be the source of truth
+  let partyData: ReturnType<typeof usePartyData> | null = $state(null);
+  let yjsScenes = $state<typeof scenes>(scenes); // Initialize with SSR data to prevent hydration mismatch
+  let isHydrated = $state(false); // Track hydration status
+
+  // Y.js reactive party state - initialize with SSR data
+  let yjsPartyState = $state({
+    isPaused: party.gameSessionIsPaused,
+    activeGameSessionId: party.activeGameSessionId,
+    activeSceneId: activeScene?.id
+  });
+
+  // Use SSR data until hydrated, then switch to Y.js data
+  let currentScenes = $derived(isHydrated ? yjsScenes : scenes);
+  let currentActiveScene = $derived(
+    isHydrated && yjsPartyState.activeSceneId
+      ? yjsScenes.find((scene) => scene.id === yjsPartyState.activeSceneId) || activeScene
+      : activeScene
+  );
+  let currentParty = $derived(
+    isHydrated
+      ? {
+          ...party,
+          gameSessionIsPaused: yjsPartyState.isPaused,
+          activeGameSessionId: yjsPartyState.activeGameSessionId
+        }
+      : party
+  );
 
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
@@ -108,16 +133,34 @@
    */
   const socketUpdate = () => {
     // Only broadcast if this is the active game session for the party
-    if (gameSession.id === party.activeGameSessionId) {
+    // AND we're editing the active scene (so we have full scene data)
+    const isActiveGameSession = gameSession.id === currentParty.activeGameSessionId;
+    const isEditingActiveScene = selectedScene.id === currentActiveScene?.id;
+    const shouldBroadcast = isActiveGameSession && isEditingActiveScene;
+
+    console.log('socketUpdate called:', {
+      gameSessionId: gameSession.id,
+      currentPartyActiveGameSessionId: currentParty.activeGameSessionId,
+      selectedSceneId: selectedScene.id,
+      currentActiveSceneId: currentActiveScene?.id,
+      isActiveGameSession,
+      isEditingActiveScene,
+      shouldBroadcast
+    });
+
+    if (shouldBroadcast) {
+      console.log('Broadcasting stage update to playfield');
       broadcastStageUpdate(
         socket,
-        activeScene,
+        currentActiveScene,
         selectedScene,
-        stageProps,
+        stageProps, // We have full scene data and stage props
         activeSceneMarkers,
-        party.gameSessionIsPaused,
-        party.activeGameSessionId
+        currentParty.gameSessionIsPaused,
+        currentParty.activeGameSessionId
       );
+    } else {
+      console.log('Skipping broadcast - conditions not met');
     }
   };
 
@@ -180,7 +223,7 @@
     // Initialize Y.js for scene list synchronization
     try {
       console.log('Initializing Y.js for scene list sync...');
-      const manager = initializePartyDataManager(party.id, party.userId || 'unknown', gameSession.id);
+      const manager = initializePartyDataManager(party.id, user.id, gameSession.id);
       partyData = usePartyData();
 
       // Initialize Y.js with SSR scene data
@@ -188,24 +231,56 @@
         id: scene.id,
         name: scene.name,
         order: scene.order,
-        mapLocation: scene.mapLocation,
-        mapThumbLocation: scene.mapThumbLocation,
+        mapLocation: scene.mapLocation || undefined,
+        mapThumbLocation: scene.mapThumbLocation || undefined,
         gameSessionId: scene.gameSessionId,
-        thumb: hasThumb(scene) ? scene.thumb : undefined
+        thumb: hasThumb(scene)
+          ? {
+              resizedUrl: scene.thumb.resizedUrl,
+              originalUrl: scene.thumb.url
+            }
+          : undefined
       }));
       partyData.initializeScenesList(sceneMetadata);
 
-      // Subscribe to Y.js scene list changes
-      unsubscribeYjs = partyData.subscribe(() => {
-        const updatedScenes = partyData!.getScenesList();
-        console.log('Y.js scene list updated:', updatedScenes);
-        yjsScenes = updatedScenes as typeof scenes;
+      // Initialize Y.js party state with SSR data
+      partyData.initializePartyState({
+        isPaused: party.gameSessionIsPaused,
+        activeGameSessionId: party.activeGameSessionId || '',
+        activeSceneId: activeScene?.id
       });
 
-      // Immediately populate yjsScenes with current data after initialization
+      // Subscribe to Y.js changes (both scenes and party state)
+      unsubscribeYjs = partyData.subscribe(() => {
+        const updatedScenes = partyData!.getScenesList();
+        const updatedPartyState = partyData!.getPartyState();
+
+        console.log('Y.js data updated - scenes:', updatedScenes.length, 'party state:', updatedPartyState);
+
+        // Update reactive state
+        yjsScenes = updatedScenes as typeof scenes;
+        yjsPartyState = {
+          isPaused: updatedPartyState.isPaused,
+          activeGameSessionId: updatedPartyState.activeGameSessionId,
+          activeSceneId: updatedPartyState.activeSceneId
+        };
+      });
+
+      // Immediately populate reactive state with current Y.js data after initialization
       yjsScenes = partyData.getScenesList() as typeof scenes;
+      const currentPartyState = partyData.getPartyState();
+      yjsPartyState = {
+        isPaused: currentPartyState.isPaused,
+        activeGameSessionId: currentPartyState.activeGameSessionId,
+        activeSceneId: currentPartyState.activeSceneId
+      };
+
+      // Mark as hydrated after Y.js initialization to prevent hydration mismatch
+      isHydrated = true;
     } catch (error) {
       console.error('Error initializing Y.js scene sync:', error);
+      // Even if Y.js fails, mark as hydrated to prevent hydration issues
+      isHydrated = true;
     }
 
     socket = setupPartyWebSocket(
@@ -296,8 +371,20 @@
     } else {
       stageProps.map.url = StageDefaultProps.map.url;
     }
-    if (activeScene) {
+    if (currentActiveScene) {
       socketUpdate();
+    }
+  });
+
+  // Effect to broadcast when active scene changes via Y.js (e.g., from SceneSelector)
+  // Only send full stage updates when we're editing the active scene in the active game session
+  $effect(() => {
+    if (isHydrated && currentActiveScene && gameSession.id === currentParty.activeGameSessionId) {
+      // We're in the active game session and editing the active scene - send full stage update
+      if (selectedScene.id === currentActiveScene.id) {
+        console.log('Broadcasting full stage update - we are editing the active scene in the active game session');
+        socketUpdate();
+      }
     }
   });
 
@@ -337,7 +424,7 @@
       };
 
       // Use the optimized marker update for position changes
-      if (socket && selectedScene && selectedScene.id && gameSession.id === party.activeGameSessionId) {
+      if (socket && selectedScene && selectedScene.id && gameSession.id === currentParty.activeGameSessionId) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
     }
@@ -434,7 +521,12 @@
     }
 
     // Emit the normalized and rotated position over the WebSocket
-    if (activeScene && activeScene.id === selectedScene.id && gameSession.id === party.activeGameSessionId) {
+    const shouldEmitCursor =
+      currentActiveScene &&
+      currentActiveScene.id === selectedScene.id &&
+      gameSession.id === currentParty.activeGameSessionId;
+
+    if (shouldEmitCursor) {
       socket?.emit('cursorMove', {
         user: data.user,
         normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
@@ -476,7 +568,7 @@
   const onWheel = (e: WheelEvent) => {
     // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
-    if (activeScene && activeScene.id === selectedScene.id) {
+    if (currentActiveScene && currentActiveScene.id === selectedScene.id) {
       throttledSocketUpdate();
     }
   };
@@ -708,7 +800,15 @@
         }
       }}
     >
-      <SceneSelector {selectedSceneNumber} {gameSession} scenes={yjsScenes} {party} {activeScene} {partyData} />
+      <SceneSelector
+        {selectedSceneNumber}
+        {gameSession}
+        scenes={currentScenes}
+        party={currentParty}
+        activeScene={currentActiveScene}
+        {partyData}
+        {socketUpdate}
+      />
     </Pane>
     <PaneResizer class="resizer">
       <button
@@ -757,13 +857,14 @@
           {handleMapFill}
           {handleMapFit}
           {selectedScene}
-          {activeScene}
+          activeScene={currentActiveScene}
           {handleSelectActiveControl}
           {activeControl}
           {socketUpdate}
-          {party}
+          party={currentParty}
           {gameSession}
           {errors}
+          {partyData}
         />
         <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
         <Shortcuts />

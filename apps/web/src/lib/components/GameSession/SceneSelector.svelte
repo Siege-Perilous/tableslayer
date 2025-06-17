@@ -38,7 +38,8 @@
     selectedSceneNumber,
     activeScene,
     party,
-    partyData
+    partyData,
+    socketUpdate
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     gameSession: SelectGameSession;
@@ -46,6 +47,7 @@
     party: SelectParty & Thumb;
     activeScene: SelectScene | (SelectScene & Thumb) | null;
     partyData: ReturnType<typeof usePartyData> | null;
+    socketUpdate: () => void;
   } = $props();
 
   let file = $state<FileList | null>(null);
@@ -153,10 +155,15 @@
             id: newScene.id,
             name: newScene.name,
             order: newScene.order,
-            mapLocation: newScene.mapLocation,
-            mapThumbLocation: newScene.mapThumbLocation,
+            mapLocation: newScene.mapLocation || undefined,
+            mapThumbLocation: newScene.mapThumbLocation || undefined,
             gameSessionId: newScene.gameSessionId,
-            thumb: hasThumb(newScene) ? newScene.thumb : undefined
+            thumb: hasThumb(newScene)
+              ? {
+                  resizedUrl: newScene.thumb.resizedUrl,
+                  originalUrl: newScene.thumb.url
+                }
+              : undefined
           });
         } else {
           console.warn(
@@ -179,6 +186,8 @@
   };
 
   const handleSetActiveScene = async (sceneId: string) => {
+    const sceneToActivate = scenes.find((scene) => scene.id === sceneId);
+
     await handleMutation({
       mutation: () =>
         $updateGameSession.mutateAsync({
@@ -190,8 +199,10 @@
       onSuccess: () => {
         // Update party state in Y.js instead of invalidateAll()
         if (partyData) {
+          console.log('SceneSelector: Updating Y.js party state with activeSceneId:', sceneId);
           partyData.updatePartyState('activeSceneId', sceneId);
         }
+        // The Y.js effect in the main page will handle broadcasting
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -219,10 +230,15 @@
             id: scene.id,
             name: scene.name,
             order: scene.order,
-            mapLocation: scene.mapLocation,
-            mapThumbLocation: scene.mapThumbLocation,
+            mapLocation: scene.mapLocation || undefined,
+            mapThumbLocation: scene.mapThumbLocation || undefined,
             gameSessionId: scene.gameSessionId,
-            thumb: hasThumb(scene) ? scene.thumb : undefined
+            thumb: hasThumb(scene)
+              ? {
+                  resizedUrl: scene.thumb.resizedUrl,
+                  originalUrl: scene.thumb.url
+                }
+              : undefined
           }));
           partyData.reorderScenes(reorderedScenes);
         } else {
@@ -286,10 +302,15 @@
             id: scene.id,
             name: scene.name,
             order: scene.order,
-            mapLocation: scene.mapLocation,
-            mapThumbLocation: scene.mapThumbLocation,
+            mapLocation: scene.mapLocation || undefined,
+            mapThumbLocation: scene.mapThumbLocation || undefined,
             gameSessionId: scene.gameSessionId,
-            thumb: hasThumb(scene) ? scene.thumb : undefined
+            thumb: hasThumb(scene)
+              ? {
+                  resizedUrl: scene.thumb.resizedUrl,
+                  originalUrl: scene.thumb.url
+                }
+              : undefined
           }));
           partyData.reorderScenes(reorderedScenes);
         } else {
@@ -391,10 +412,15 @@
                 id: scene.id,
                 name: scene.name,
                 order: scene.order,
-                mapLocation: scene.mapLocation,
-                mapThumbLocation: scene.mapThumbLocation,
+                mapLocation: scene.mapLocation || undefined,
+                mapThumbLocation: scene.mapThumbLocation || undefined,
                 gameSessionId: scene.gameSessionId,
-                thumb: hasThumb(scene) ? scene.thumb : undefined
+                thumb: hasThumb(scene)
+                  ? {
+                      resizedUrl: scene.thumb.resizedUrl,
+                      originalUrl: scene.thumb.url
+                    }
+                  : undefined
               }))
             );
           }
@@ -518,7 +544,7 @@
           isDragging && dragOverItem === index && 'scene--dropTarget',
           isDragDisabled(scene.id) && 'scene--no-drag'
         ]}
-        style:background-image={scene.thumb?.resizedUrl ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {

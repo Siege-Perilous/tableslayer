@@ -6,12 +6,12 @@ export interface SceneMetadata {
   id: string;
   name: string;
   order: number;
-  mapLocation?: string;
-  mapThumbLocation?: string;
+  mapLocation?: string | null;
+  mapThumbLocation?: string | null;
   gameSessionId: string;
   thumb?: {
     resizedUrl: string;
-    originalUrl: string;
+    originalUrl?: string;
   };
 }
 
@@ -49,14 +49,19 @@ export interface PartyState {
 export class PartyDataManager {
   private doc: Y.Doc;
   private provider: SocketIOProvider;
+  private partyDoc: Y.Doc; // Separate document for party-level state
+  private partyProvider: SocketIOProvider; // Separate provider for party-level state
   private userId: string;
   private partyId: string;
 
-  // Y.js shared data structures
+  // Game session-specific Y.js shared data structures
   private yScenes: Y.Map<any>;
   private yScenesList: Y.Array<SceneMetadata>;
-  private yParty: Y.Map<any>;
+  private yGameSessionMeta: Y.Map<any>; // For game session metadata like initialization flags
   private yCursors: Y.Map<CursorData>;
+
+  // Party-level Y.js shared data structures
+  private yPartyState: Y.Map<any>;
 
   // Reactive state
   private subscribers = new Set<() => void>();
@@ -66,39 +71,58 @@ export class PartyDataManager {
     this.userId = userId;
     this.partyId = partyId;
 
-    // Initialize Y.js document and provider
-    this.doc = new Y.Doc();
-
-    // Connect to Y.js through Socket.IO
     const socketUrl = window.location.origin;
-    // Use game session for room isolation, fallback to party for compatibility
-    const roomName = gameSessionId ? `gameSession-${gameSessionId}` : `party-${partyId}`;
 
-    console.log(`PartyDataManager connecting to Y.js via Socket.IO: ${socketUrl}, room: ${roomName}`);
+    // Initialize game session-specific Y.js document and provider
+    this.doc = new Y.Doc();
+    const gameSessionRoomName = gameSessionId ? `gameSession-${gameSessionId}` : `party-${partyId}`;
 
-    this.provider = new SocketIOProvider(socketUrl, roomName, this.doc, {
+    console.log(`PartyDataManager connecting to game session Y.js: ${socketUrl}, room: ${gameSessionRoomName}`);
+
+    this.provider = new SocketIOProvider(socketUrl, gameSessionRoomName, this.doc, {
       autoConnect: true,
-      resyncInterval: -1, // Disable resync interval
-      disableBc: false // Keep broadcast channel for cross-tab communication
+      resyncInterval: -1,
+      disableBc: false
     });
 
-    // Initialize shared data structures
+    // Initialize party-level Y.js document and provider (shared across all game sessions)
+    this.partyDoc = new Y.Doc();
+    const partyRoomName = `party-${partyId}`;
+
+    console.log(`PartyDataManager connecting to party-level Y.js: ${socketUrl}, room: ${partyRoomName}`);
+
+    this.partyProvider = new SocketIOProvider(socketUrl, partyRoomName, this.partyDoc, {
+      autoConnect: true,
+      resyncInterval: -1,
+      disableBc: false
+    });
+
+    // Initialize game session-specific shared data structures
     this.yScenes = this.doc.getMap('scenes');
     this.yScenesList = this.doc.getArray('scenesList');
-    this.yParty = this.doc.getMap('party');
+    this.yGameSessionMeta = this.doc.getMap('gameSessionMeta');
     this.yCursors = this.doc.getMap('cursors');
 
-    // Set up connection status listeners
+    // Initialize party-level shared data structures
+    this.yPartyState = this.partyDoc.getMap('partyState');
+
+    // Set up connection status listeners for both providers
     this.provider.on('status', (event: { status: string }) => {
-      this.isConnected = event.status === 'connected';
-      console.log(`Y.js connection status: ${event.status}`);
+      console.log(`Y.js game session connection status: ${event.status}`);
+      this.notifySubscribers();
+    });
+
+    this.partyProvider.on('status', (event: { status: string }) => {
+      this.isConnected = event.status === 'connected'; // Use party connection for overall status
+      console.log(`Y.js party connection status: ${event.status}`);
       this.notifySubscribers();
     });
 
     // Listen for data changes
     this.yScenes.observe(() => this.notifySubscribers());
     this.yScenesList.observe(() => this.notifySubscribers());
-    this.yParty.observe(() => this.notifySubscribers());
+    this.yGameSessionMeta.observe(() => this.notifySubscribers());
+    this.yPartyState.observe(() => this.notifySubscribers());
     this.yCursors.observe(() => this.notifySubscribers());
 
     console.log(`PartyDataManager initialized for party: ${partyId}`);
@@ -147,7 +171,7 @@ export class PartyDataManager {
 
     // Wait for Y.js to fully sync before making initialization decisions
     const initializeAfterSync = () => {
-      const initFlag = this.yParty.get('scenesInitialized');
+      const initFlag = this.yGameSessionMeta.get('scenesInitialized');
       const currentScenes = this.yScenesList.toArray();
 
       console.log(`Y.js sync complete. Flag: ${initFlag}, Current: ${currentScenes.length}, SSR: ${scenes.length}`);
@@ -159,15 +183,15 @@ export class PartyDataManager {
         );
         this.doc.transact(() => {
           this.yScenesList.delete(0, this.yScenesList.length);
-          this.yParty.clear();
+          this.yGameSessionMeta.clear();
         });
 
         // Reinitialize after clearing
         setTimeout(() => {
           this.doc.transact(() => {
             scenes.forEach((scene) => this.yScenesList.push([scene]));
-            this.yParty.set('scenesInitialized', true);
-            this.yParty.set('lastInitTimestamp', Date.now());
+            this.yGameSessionMeta.set('scenesInitialized', true);
+            this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
           });
           console.log('Y.js reinitialized with clean data');
         }, 100);
@@ -175,7 +199,7 @@ export class PartyDataManager {
       }
 
       // If already initialized recently (within 5 seconds), skip
-      const lastInit = this.yParty.get('lastInitTimestamp');
+      const lastInit = this.yGameSessionMeta.get('lastInitTimestamp');
       if (initFlag && lastInit && Date.now() - lastInit < 5000) {
         console.log('Y.js recently initialized, skipping');
         return;
@@ -190,8 +214,8 @@ export class PartyDataManager {
         this.doc.transact(() => {
           this.yScenesList.delete(0, this.yScenesList.length);
           scenes.forEach((scene) => this.yScenesList.push([scene]));
-          this.yParty.set('scenesInitialized', true);
-          this.yParty.set('lastInitTimestamp', Date.now());
+          this.yGameSessionMeta.set('scenesInitialized', true);
+          this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
         });
       } else {
         console.log('Y.js scenes already properly initialized');
@@ -217,9 +241,9 @@ export class PartyDataManager {
    * Initialize party state from SSR
    */
   initializePartyState(state: Partial<PartyState>) {
-    this.doc.transact(() => {
+    this.partyDoc.transact(() => {
       Object.entries(state).forEach(([key, value]) => {
-        this.yParty.set(key, value);
+        this.yPartyState.set(key, value);
       });
     });
   }
@@ -271,9 +295,9 @@ export class PartyDataManager {
     });
 
     return {
-      isPaused: this.yParty.get('isPaused') || false,
-      activeGameSessionId: this.yParty.get('activeGameSessionId') || '',
-      activeSceneId: this.yParty.get('activeSceneId'),
+      isPaused: this.yPartyState.get('isPaused') || false,
+      activeGameSessionId: this.yPartyState.get('activeGameSessionId') || '',
+      activeSceneId: this.yPartyState.get('activeSceneId'),
       cursors
     };
   }
@@ -282,7 +306,7 @@ export class PartyDataManager {
    * Update party state
    */
   updatePartyState(key: keyof PartyState, value: any) {
-    this.yParty.set(key, value);
+    this.yPartyState.set(key, value);
     // No need to manually notify - Y.js observers handle this
   }
 
@@ -301,7 +325,7 @@ export class PartyDataManager {
     this.doc.transact(() => {
       this.yScenesList.push([scene]);
       // Update timestamp to prevent initialization conflicts
-      this.yParty.set('lastInitTimestamp', Date.now());
+      this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
     });
   }
 
@@ -318,7 +342,7 @@ export class PartyDataManager {
         const updatedScene = { ...scenes[sceneIndex], ...updates };
         this.yScenesList.delete(sceneIndex, 1);
         this.yScenesList.insert(sceneIndex, [updatedScene]);
-        this.yParty.set('lastInitTimestamp', Date.now());
+        this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
       });
     }
   }
@@ -334,7 +358,7 @@ export class PartyDataManager {
       console.log('Removing scene from Y.js:', sceneId);
       this.doc.transact(() => {
         this.yScenesList.delete(sceneIndex, 1);
-        this.yParty.set('lastInitTimestamp', Date.now());
+        this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
       });
     }
   }
@@ -348,7 +372,7 @@ export class PartyDataManager {
       // Clear current list and replace with new order
       this.yScenesList.delete(0, this.yScenesList.length);
       newScenesOrder.forEach((scene) => this.yScenesList.push([scene]));
-      this.yParty.set('lastInitTimestamp', Date.now());
+      this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
     });
   }
 
@@ -359,7 +383,7 @@ export class PartyDataManager {
     this.doc.transact(() => {
       this.yScenesList.delete(0, this.yScenesList.length);
       this.yScenes.clear();
-      this.yParty.clear();
+      this.yGameSessionMeta.clear();
       this.yCursors.clear();
     });
     console.log('Y.js data cleared');
@@ -372,8 +396,14 @@ export class PartyDataManager {
     if (this.provider) {
       this.provider.destroy();
     }
+    if (this.partyProvider) {
+      this.partyProvider.destroy();
+    }
     if (this.doc) {
       this.doc.destroy();
+    }
+    if (this.partyDoc) {
+      this.partyDoc.destroy();
     }
     this.subscribers.clear();
   }
