@@ -149,42 +149,62 @@
 
 ---
 
-## Phase 3: Party State Synchronization (Commit 3) - 📋 PLANNED
+## Phase 3: Party State Synchronization (Commit 3) - ✅ COMPLETED
 
-**Goal**: Sync pause state and active session through Y.js
+**Goal**: Sync pause state and active scenes through Y.js + Remove active game session concept
 
-### Implementation
+### Implementation Status
 
-1. **Party state Y.js integration**
+1. **✅ Party state Y.js integration**
 
-   - Add `party` YMap with isPaused, activeGameSessionId
+   - Added `party` YMap with isPaused, activeSceneId (removed activeGameSessionId)
    - Sync pause state changes across all clients
-   - Update active session propagation
+   - Migrated from game session-level to party-level active scenes
 
-2. **UI reactivity updates**
+2. **✅ UI reactivity updates**
 
-   - Editor pause state UI (buttons, overlays)
-   - Playfield pause screen display
-   - Session switching indication
+   - Editor pause state UI (buttons, overlays) working
+   - Playfield pause screen display functioning
+   - Removed "Set as active session" UI (no longer needed)
 
-3. **Active scene coordination**
-   - Track `activeSceneId` in Y.js
-   - Playfield switches scenes automatically
-   - Editor awareness of active scene changes
+3. **✅ Active scene coordination**
+
+   - Track `activeSceneId` in Y.js party state
+   - Playfield switches scenes automatically when active scene changes
+   - Cross-game-session active scene display fixed
+   - Editors show correct active state regardless of which session contains the active scene
+
+4. **✅ Major architectural improvement: Removed Active Game Session concept**
+
+   - **Before**: "Set game session X as active, then broadcast its active scene"
+   - **After**: "The session containing the active scene automatically broadcasts"
+   - Broadcasting logic simplified: only broadcast when editing the active scene
+   - Removed confusing "active session" UI and management
+   - Server function `getActiveGameSessionForParty()` now finds session containing active scene
+
+5. **✅ Scene deletion safety**
+   - Server-side `deleteScene()` clears party's `activeSceneId` when deleting active scene
+   - Y.js `removeScene()` and `reorderScenes()` handle clearing active scene state
+   - Playfield gracefully handles null/undefined active scenes
 
 ### Testing Checklist
 
-- [ ] Pause state syncs immediately
-- [ ] Active session changes propagate
-- [ ] Playfield pause screen works correctly
-- [ ] Editor UI responds to pause changes
-- [ ] Session switching is seamless
+- [x] Pause state syncs immediately across all editors and playfield
+- [x] Active scene changes propagate instantly via Y.js
+- [x] Playfield pause screen works correctly
+- [x] Editor UI responds to pause changes
+- [x] Cross-game-session active scene display works correctly
+- [x] Scene deletion properly clears active scene when needed
+- [x] Broadcasting automatically happens from session containing active scene
+- [x] No more confusing "active session" concept
 
-### Success Criteria
+### Success Criteria ✅
 
-- Global pause state synchronization
-- Session changes reflect in all clients
-- UI reactivity functions correctly
+- Global pause state synchronization working
+- Party-level active scene management implemented
+- Simplified architecture: automatic broadcasting based on active scene location
+- Cross-game-session active scene display fixed
+- Safe scene deletion with active scene cleanup
 
 ---
 
@@ -413,3 +433,13 @@
 - ✅ Implemented game session isolation (gameSession-${id} rooms)
 - ✅ **COMPLETED Phase 2**: Full scene list real-time collaboration working
 - ✅ **READY FOR COMMIT 2**: Scene synchronization complete and stable
+- ✅ **STARTED Phase 3**: Party state synchronization and architectural improvements
+- ✅ Implemented Y.js party state tracking (isPaused, activeSceneId)
+- ✅ Migrated from game session-level to party-level active scenes
+- ✅ Fixed cross-game-session active scene display issues
+- ✅ **MAJOR ARCHITECTURAL IMPROVEMENT**: Removed confusing "active game session" concept
+- ✅ Simplified broadcasting: automatic based on which session contains active scene
+- ✅ Implemented safe scene deletion with active scene cleanup
+- ✅ Updated component interfaces from activeScene objects to activeSceneId strings
+- ✅ **COMPLETED Phase 3**: Party state synchronization and architectural simplification
+- ✅ **READY FOR COMMIT 3**: Major architectural improvements complete and stable

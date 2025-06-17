@@ -177,7 +177,6 @@ export const partyTable = sqliteTable(
       .references(() => filesTable.id, { onDelete: 'cascade' })
       .notNull()
       .default(1),
-    activeGameSessionId: text('active_game_session_id'),
     activeSceneId: text('active_scene_id'),
     gameSessionIsPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     defaultTvSize: integer('tv_size').notNull().default(40),
@@ -297,9 +296,6 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
-    // TypeScript needs a way out of the circular reference
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    activeSceneId: text('active_scene_id').references((): any => sceneTable.id, { onDelete: 'set null' }),
     isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
