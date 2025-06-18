@@ -47,8 +47,16 @@
   import { onMount } from 'svelte';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
 
-  let { scenes, gameSession, selectedSceneNumber, selectedScene, party, activeScene, activeSceneMarkers, user } =
-    $derived(data);
+  let {
+    scenes,
+    gameSession,
+    selectedSceneNumber,
+    selectedScene: ssrSelectedScene,
+    party,
+    activeScene,
+    activeSceneMarkers,
+    user
+  } = $derived(data);
 
   // Helper function to merge markers while protecting ones being moved
   const mergeMarkersWithMoveProtection = (localMarkers: any[], incomingMarkers: any[], beingMoved: Set<string>) => {
@@ -124,6 +132,13 @@
     isHydrated && yjsPartyState.activeSceneId
       ? yjsScenes.find((scene) => scene.id === yjsPartyState.activeSceneId) || null
       : activeScene
+  );
+
+  // Use Y.js scene data when available for selectedScene to ensure map image updates are reflected
+  let selectedScene = $derived(
+    isHydrated && yjsScenes.length > 0
+      ? yjsScenes.find((scene) => scene.id === ssrSelectedScene.id) || ssrSelectedScene
+      : ssrSelectedScene
   );
 
   // For SceneSelector: just pass the active scene ID so it can determine if any of its scenes match

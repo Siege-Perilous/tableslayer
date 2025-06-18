@@ -449,7 +449,10 @@
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
-    openFileDialog();
+    // Use requestAnimationFrame to ensure the component re-renders with the new sceneId first
+    requestAnimationFrame(() => {
+      openFileDialog();
+    });
   };
 
   const handleFileChange = (event: Event) => {

@@ -89,7 +89,7 @@
           // Also update the stageProps with the new map URL so Stage components re-render
           const currentSceneData = partyData.getSceneData(sceneId);
           if (currentSceneData && currentSceneData.stageProps && hasThumb(updatedScene)) {
-            const newMapUrl = `${updatedScene.thumb.resizedUrl}?t=${Date.now()}`;
+            const newMapUrl = `${updatedScene.thumb.resizedUrl}?cors=1&t=${Date.now()}`;
             const updatedStageProps = {
               ...currentSceneData.stageProps,
               map: {
@@ -98,7 +98,7 @@
               }
             };
             partyData.updateSceneStageProps(sceneId, updatedStageProps);
-            console.log('Updated stageProps map URL for Stage component sync');
+            console.log('Updated stageProps map URL for Stage component sync:', newMapUrl);
           }
         } else {
           console.warn(
