@@ -208,7 +208,7 @@
 
 ---
 
-## Phase 4: StageProps Synchronization (Commit 4) - 🔄 IN PROGRESS
+## Phase 4: StageProps Synchronization (Commit 4) - ✅ COMPLETED
 
 **Goal**: Replace manual StageProps sync with Y.js + implement selective sync
 
@@ -241,11 +241,13 @@
    - MarkerManager updates deferred to Phase 5 (marker save coordination)
    - All component bind patterns converted except for legitimate local state and marker properties
 
-4. **🔄 Step 4: Final Selective Sync Strategy (TODO)**
+4. **✅ Step 4: Final Selective Sync Strategy**
 
-   - Review and optimize local vs shared property definitions
-   - Performance testing at 60 FPS
-   - Ensure playfield behavior is correct
+   - Reviewed and optimized local vs shared property definitions
+   - Added activeLayer to LOCAL_ONLY_PROPERTIES for per-editor tool state
+   - Mouse/gesture controls now sync properly between editors
+   - Map image synchronization working across all editors
+   - System performance verified through user testing
 
 ### Testing Checklist
 
@@ -255,32 +257,33 @@
 - [x] Fog of war changes sync to both editors and playfield
 - [x] Grid changes sync to both editors and playfield
 - [x] Focus-based auto-saving prevents conflicts
-- [ ] Performance verification at 60 FPS
-- [ ] All component input responsiveness maintained
+- [x] Performance verification at 60 FPS
+- [x] All component input responsiveness maintained
 
 ### Current Status
 
 **✅ Working:**
 
 - Y.js real-time sync between editors
-- Selective sync (scene rotation local, other props shared)
+- Selective sync (scene rotation, activeLayer local; other props shared)
+- Mouse/gesture controls sync between editors (zoom, map controls)
+- Map image synchronization across all editors
 - Fog of war synchronization fixed
 - Auto-save only from focused editor
 - Scene data isolation between different scenes
 - Hybrid system: Y.js for editor-to-editor + Socket.IO for playfield
 
-**🔄 Next Steps:**
+**📋 Deferred to Phase 5:**
 
-- Complete Step 4: Final selective sync optimization and testing
-- Performance testing and optimization
+- ActiveLayer reset during saves (will be addressed in save coordination)
 
-### Success Criteria (Mostly Complete)
+### Success Criteria ✅
 
 - ✅ Real-time StageProps synchronization between editors
-- ✅ Local viewport state preserved per editor (scene rotation)
+- ✅ Local viewport state preserved per editor (scene rotation, activeLayer)
 - ✅ Scene isolation prevents cross-scene contamination
 - ✅ Focus-based saving prevents conflicts
-- 🔄 Performance verification needed
+- ✅ Performance verification completed
 
 ---
 
@@ -336,9 +339,15 @@
    - Much simpler than current temp ID system
 
 6. **Map thumbnail generation and usage**
+
    - Fix scene save to generate `mapThumbLocation` properly
    - Update SceneSelector to use `mapThumbLocation` instead of full resolution images
    - Ensure map thumbnail sync works correctly in Y.js scene metadata
+
+7. **ActiveLayer persistence during saves**
+   - Fix activeLayer being reset during save operations
+   - Ensure fog tools, erase tools, etc. remain active after auto-saves
+   - Preserve tool state throughout the save coordination system
 
 ### Testing Checklist
 
@@ -478,5 +487,12 @@
 - ✅ Fixed fog of war synchronization between editors and playfield
 - ✅ Implemented scene isolation to prevent cross-scene data bleed
 - ✅ Added focus-based auto-saving using window/tab visibility detection
-- ✅ **Phase 4 Steps 1-2 COMPLETE**: Real-time StageProps sync working with selective local/shared properties
-- 🔄 **Phase 4 Steps 3-4 TODO**: Final component cleanup and performance optimization
+- ✅ **COMPLETED Phase 4 Step 3**: Final component cleanup and verification
+- ✅ Converted all remaining bind:value patterns in WeatherControls, GridControls, EffectsControls
+- ✅ Fixed DualInputSlider in EdgeControls with proper reactive synchronization
+- ✅ Fixed mouse/gesture controls to sync properly between editors (scene zoom, map controls)
+- ✅ Fixed map image synchronization across all editors (SceneSelector and Stage components)
+- ✅ Added activeLayer to LOCAL_ONLY_PROPERTIES for per-editor tool state
+- ✅ **COMPLETED Phase 4 Step 4**: Final selective sync strategy and testing
+- ✅ **PHASE 4 COMPLETE**: Real-time StageProps synchronization with selective sync working
+- 📋 **READY FOR PHASE 5**: Save coordination system with activeLayer persistence
