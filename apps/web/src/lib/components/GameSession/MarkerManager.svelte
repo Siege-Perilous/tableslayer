@@ -37,10 +37,11 @@
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
+  import { queuePropertyUpdate } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
   let {
-    stageProps = $bindable(),
+    stageProps,
     selectedMarkerId = $bindable(),
     partyId = '',
     handleSelectActiveControl,
@@ -111,12 +112,12 @@
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         // Remove the marker from stageProps without invalidating
-        stageProps.marker.markers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+        const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+        queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
         // Reset selected marker if we just deleted it
         if (selectedMarkerId === markerId) {
           selectedMarkerId = undefined;
         }
-        socketUpdate();
       },
       toastMessages: {
         success: { title: 'Marker deleted' },
@@ -175,7 +176,7 @@
         { label: 'off', value: 'false' }
       ]}
       onSelectedChange={(value) => {
-        stageProps.marker.snapToGrid = value === 'true';
+        queuePropertyUpdate(stageProps, ['marker', 'snapToGrid'], value === 'true', 'control');
       }}
     />
   </div>

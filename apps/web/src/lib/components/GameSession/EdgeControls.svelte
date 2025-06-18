@@ -5,10 +5,11 @@
   import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import { PartyPlanSelector } from '../party';
+  import { queuePropertyUpdate } from '$lib/utils';
 
   let {
     socketUpdate,
-    stageProps = $bindable(),
+    stageProps,
     errors,
     party
   }: {
@@ -30,16 +31,34 @@
   ];
 
   const handleEdgeUrlChange = (value: string) => {
-    stageProps.edgeOverlay.url = value;
-    stageProps.edgeOverlay.enabled = true;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'url'], value, 'control');
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'enabled'], true, 'control');
   };
 
   const handleEdgeOff = () => {
-    stageProps.edgeOverlay.url = null;
-    stageProps.edgeOverlay.enabled = false;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'url'], null, 'control');
+    queuePropertyUpdate(stageProps, ['edgeOverlay', 'enabled'], false, 'control');
   };
+
+  // Local state for DualInputSlider that syncs with stageProps
+  let localFadeStart = $state(stageProps.edgeOverlay.fadeStart);
+  let localFadeEnd = $state(stageProps.edgeOverlay.fadeEnd);
+
+  // Sync local state with stageProps changes
+  $effect(() => {
+    localFadeStart = stageProps.edgeOverlay.fadeStart;
+    localFadeEnd = stageProps.edgeOverlay.fadeEnd;
+  });
+
+  // Update stageProps when local values change
+  $effect(() => {
+    if (localFadeStart !== stageProps.edgeOverlay.fadeStart) {
+      queuePropertyUpdate(stageProps, ['edgeOverlay', 'fadeStart'], localFadeStart, 'control');
+    }
+    if (localFadeEnd !== stageProps.edgeOverlay.fadeEnd) {
+      queuePropertyUpdate(stageProps, ['edgeOverlay', 'fadeEnd'], localFadeEnd, 'control');
+    }
+  });
 </script>
 
 {#if party.plan === 'free'}
@@ -65,7 +84,8 @@
             min={0}
             max={1}
             step={0.01}
-            bind:value={stageProps.edgeOverlay.opacity}
+            value={stageProps.edgeOverlay.opacity}
+            oninput={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'opacity'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -77,7 +97,8 @@
             min={1}
             max={50}
             step={1}
-            bind:value={stageProps.edgeOverlay.scale}
+            value={stageProps.edgeOverlay.scale}
+            oninput={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'scale'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -90,8 +111,8 @@
           max={1}
           step={0.05}
           {...inputProps}
-          bind:valueStart={stageProps.edgeOverlay.fadeStart}
-          bind:valueEnd={stageProps.edgeOverlay.fadeEnd}
+          bind:valueStart={localFadeStart}
+          bind:valueEnd={localFadeEnd}
         />
       {/snippet}
     </FormControl>

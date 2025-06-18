@@ -316,6 +316,27 @@ export class PartyDataManager {
   }
 
   /**
+   * Update scene stageProps via Y.js transaction
+   */
+  updateSceneStageProps(sceneId: string, updatedStageProps: StageProps) {
+    const currentSceneData = this.yScenes.get(sceneId);
+    if (!currentSceneData) {
+      console.warn(`No scene data found for scene: ${sceneId}`);
+      return;
+    }
+
+    const updatedSceneData = {
+      ...currentSceneData,
+      stageProps: updatedStageProps,
+      lastSavedAt: Date.now()
+    };
+
+    this.doc.transact(() => {
+      this.yScenes.set(sceneId, updatedSceneData);
+    });
+  }
+
+  /**
    * Add scene to the list
    */
   addScene(scene: SceneMetadata) {

@@ -49,6 +49,8 @@ export function usePartyData() {
 
     // Scene data
     getSceneData: (sceneId: string): SceneData | null => partyDataManager!.getSceneData(sceneId),
+    updateSceneStageProps: (sceneId: string, stageProps: any) =>
+      partyDataManager!.updateSceneStageProps(sceneId, stageProps),
 
     // Initialization helpers
     initializeSceneData: (sceneId: string, stageProps: any, markers: any[]) =>

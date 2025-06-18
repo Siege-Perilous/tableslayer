@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
+  import { queuePropertyUpdate } from '$lib/utils';
 
   let {
-    stageProps = $bindable(),
+    stageProps,
     socketUpdate,
     handleSceneFit,
     handleMapFill
@@ -23,8 +24,7 @@
   const handleZoom = (deltaY: number, zoomType: 'map' | 'scene') => {
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
-    stageProps[zoomType].zoom = newZoom;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
   };
 
   const toggleZoomType = () => {
@@ -35,15 +35,13 @@
     const current = stageProps.map.rotation;
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
-    stageProps.map.rotation = next;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], next, 'control');
   };
   const handleSceneRotate = () => {
     const current = stageProps.scene.rotation;
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
-    stageProps.scene.rotation = next;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['scene', 'rotation'], next, 'control');
   };
 </script>
 

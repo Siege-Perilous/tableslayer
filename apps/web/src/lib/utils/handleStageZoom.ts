@@ -1,4 +1,5 @@
 import { type StageProps, MapLayerType } from '@tableslayer/ui';
+import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   const minZoom = 0.1;
@@ -13,11 +14,14 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   }
 
   if (e.shiftKey) {
-    stageProps.map.zoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    const newMapZoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], newMapZoom, 'control');
   } else if (e.ctrlKey) {
     e.preventDefault();
-    stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    const newSceneZoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
+    queuePropertyUpdate(stageProps, ['scene', 'zoom'], newSceneZoom, 'control');
   } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-    stageProps.fogOfWar.tool.size = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
+    const newFogSize = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], newFogSize, 'control');
   }
 };

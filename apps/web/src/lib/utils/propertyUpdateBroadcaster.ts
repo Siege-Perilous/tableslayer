@@ -1,9 +1,10 @@
 import type { StageProps } from '@tableslayer/ui';
-import type { Socket } from 'socket.io-client';
+import { getPartyDataManager } from './yjs/stores';
 
 // Track pending updates for different property paths
 const pendingUpdates: Record<string, any> = {};
 let updateScheduled = false;
+let currentSceneId: string | null = null;
 
 // Different throttle times for different property types
 const MARKER_UPDATE_DELAY = 150;
@@ -11,6 +12,20 @@ const UI_CONTROL_DELAY = 250;
 const SCENE_UPDATE_DELAY = 500;
 
 export type PropertyPath = string[];
+
+// Define which properties should be shared vs local per user
+const LOCAL_ONLY_PROPERTIES = new Set([
+  'scene.offset.x',
+  'scene.offset.y',
+  'scene.rotation', // Scene rotation and offset should be local only, but zoom should sync
+  'activeLayer' // Active layer should be local per editor (fog tools, etc.)
+]);
+
+// Check if a property path should be local-only
+function isLocalOnlyProperty(propertyPath: PropertyPath): boolean {
+  const pathString = propertyPath.join('.');
+  return LOCAL_ONLY_PROPERTIES.has(pathString);
+}
 
 // Update specific property and schedule broadcast
 export function queuePropertyUpdate(
@@ -21,6 +36,12 @@ export function queuePropertyUpdate(
 ) {
   // Update the property immediately in the local state
   applyUpdate(stageProps, propertyPath, value);
+
+  // Skip Y.js sync for local-only properties
+  if (isLocalOnlyProperty(propertyPath)) {
+    console.log(`Skipping Y.js sync for local-only property: ${propertyPath.join('.')}`);
+    return;
+  }
 
   // Store path and value for later batch update
   const pathKey = propertyPath.join('.');
@@ -42,10 +63,9 @@ export function queuePropertyUpdate(
       Object.keys(pendingUpdates).forEach((key) => delete pendingUpdates[key]);
       updateScheduled = false;
 
-      // Now broadcast the updates
-      if (pendingSocketUpdate && socket && sceneId) {
-        broadcastPropertyUpdates(socket, updates, sceneId);
-        pendingSocketUpdate();
+      // Now broadcast the updates via Y.js
+      if (currentSceneId && Object.keys(updates).length > 0) {
+        broadcastPropertyUpdatesViaYjs(updates, currentSceneId);
       }
     }, delay);
   }
@@ -67,31 +87,45 @@ function applyUpdate(obj: any, path: PropertyPath, value: any) {
   current[lastKey] = value;
 }
 
-// Store socket update function and socket when available
-let pendingSocketUpdate: (() => void) | null = null;
-let socket: Socket | null = null;
-let sceneId: string | null = null;
-
-export function registerSocketUpdate(
-  socketUpdateFn: () => void,
-  socketInstance: Socket | null,
-  currentSceneId: string
-) {
-  pendingSocketUpdate = socketUpdateFn;
-  socket = socketInstance;
-  sceneId = currentSceneId;
+// Register the current scene ID for property updates
+export function registerSceneForPropertyUpdates(sceneId: string) {
+  currentSceneId = sceneId;
+  console.log(`Property updates registered for scene: ${sceneId}`);
 }
 
-// Broadcast multiple property updates at once
-function broadcastPropertyUpdates(socket: Socket, updates: Record<string, any>, sceneId: string) {
-  if (!socket || !sceneId) return;
+// Broadcast multiple property updates via Y.js
+function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: string) {
+  const partyDataManager = getPartyDataManager();
+  if (!partyDataManager) {
+    console.warn('PartyDataManager not available for property updates');
+    return;
+  }
 
-  const updateData = {
-    properties: Object.values(updates),
-    sceneId
-  };
+  try {
+    console.log(`Broadcasting ${Object.keys(updates).length} property updates via Y.js for scene: ${sceneId}`);
 
-  socket.emit('propertyUpdates', updateData);
+    // Get current scene data from Y.js
+    const currentSceneData = partyDataManager.getSceneData(sceneId);
+    if (!currentSceneData) {
+      console.warn(`No scene data found for scene: ${sceneId}`);
+      return;
+    }
+
+    // Create a copy of stageProps to modify
+    const updatedStageProps = JSON.parse(JSON.stringify(currentSceneData.stageProps));
+
+    // Apply all pending updates to the copy
+    Object.values(updates).forEach(({ path, value }) => {
+      applyUpdate(updatedStageProps, path, value);
+    });
+
+    // Update scene data via the PartyDataManager method
+    partyDataManager.updateSceneStageProps(sceneId, updatedStageProps);
+
+    console.log(`Y.js property updates applied for scene: ${sceneId}`);
+  } catch (error) {
+    console.error('Error broadcasting property updates via Y.js:', error);
+  }
 }
 
 export type PropertyUpdate = {

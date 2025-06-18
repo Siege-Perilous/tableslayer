@@ -208,61 +208,79 @@
 
 ---
 
-## Phase 4: StageProps Synchronization (Commit 4) - 📋 PLANNED
+## Phase 4: StageProps Synchronization (Commit 4) - 🔄 IN PROGRESS
 
-**Goal**: Replace manual StageProps sync with Y.js
+**Goal**: Replace manual StageProps sync with Y.js + implement selective sync
 
-### Implementation
+### Implementation Status
 
-1. **StageProps Y.js integration**
+1. **✅ Step 1: Component Migration to Centralized Updates**
 
-   - Add complete StageProps to Y.js scenes
-   - Implement selective sync (shared vs local viewport)
-   - 60 FPS throttling for all Y.js updates
+   - Converted SceneZoom component to use `queuePropertyUpdate`
+   - Converted MapControls component from bind patterns to centralized updates
+   - Converted EdgeControls component to use `queuePropertyUpdate`
+   - Converted SceneControls fog tool handling
+   - Converted MarkerManager marker operations
+   - Removed all `bind:stageProps` usage throughout component tree
 
-2. **Component API changes**
+2. **✅ Step 2: Y.js Integration with Selective Sync**
 
-   - Replace `bind:stageProps` with read-only `{stageProps}`
-   - Add `{updateProperty}` prop to all child components
-   - Update components to use `updateProperty(['path'], value)`
+   - Modernized `propertyUpdateBroadcaster.ts` to use Y.js instead of Socket.IO
+   - Added `updateSceneStageProps()` method to PartyDataManager
+   - Implemented LOCAL_ONLY_PROPERTIES filtering (scene rotation, offset, zoom)
+   - Added Y.js subscription in main editor for real-time StageProps sync
+   - Fixed fog of war URL updates to use centralized system
+   - Implemented scene isolation to prevent cross-scene data bleed
+   - Added focus-based auto-saving (window/tab focus detection)
 
-3. **Selective synchronization**
+3. **✅ Step 3: Component Cleanup and Verification**
 
-   - **Shared**: All StageProps except scene offset/zoom
-   - **Local**: Scene viewport (offset/zoom) per user
-   - **Playfield**: Always uses auto-fit, ignores local viewport
+   - Converted all remaining bind:value patterns in WeatherControls, GridControls, EffectsControls
+   - Fixed DualInputSlider in EdgeControls to use local state with reactive sync to queuePropertyUpdate
+   - Verified all non-marker stageProps properties use centralized updates
+   - MarkerManager updates deferred to Phase 5 (marker save coordination)
+   - All component bind patterns converted except for legitimate local state and marker properties
 
-4. **Input field throttling strategy**
+4. **🔄 Step 4: Final Selective Sync Strategy (TODO)**
 
-   - Text/number inputs: 60 FPS throttle
-   - Sliders: 30 FPS for real-time feel
-   - onBlur for text inputs where appropriate
-
-5. **Component updates needed**
-
-   ```javascript
-   // Before:
-   stageProps.fog.opacity = newValue;
-   socketUpdate();
-
-   // After:
-   updateProperty(['fog', 'opacity'], newValue);
-   ```
+   - Review and optimize local vs shared property definitions
+   - Performance testing at 60 FPS
+   - Ensure playfield behavior is correct
 
 ### Testing Checklist
 
-- [ ] StageProps sync across editors
-- [ ] Scene isolation (no cross-scene pollution)
-- [ ] Playfield auto-fit vs editor viewport
-- [ ] Input responsiveness maintained
-- [ ] Performance at 60 FPS
+- [x] StageProps sync across editors (fog, grid, weather, etc.)
+- [x] Scene isolation (no cross-scene pollution)
+- [x] Scene rotation stays local (doesn't sync to other editors/playfield)
+- [x] Fog of war changes sync to both editors and playfield
+- [x] Grid changes sync to both editors and playfield
+- [x] Focus-based auto-saving prevents conflicts
+- [ ] Performance verification at 60 FPS
+- [ ] All component input responsiveness maintained
 
-### Success Criteria
+### Current Status
 
-- Smooth StageProps synchronization
-- Local viewport state preserved per editor
-- Playfield always shows full scene
-- No performance degradation
+**✅ Working:**
+
+- Y.js real-time sync between editors
+- Selective sync (scene rotation local, other props shared)
+- Fog of war synchronization fixed
+- Auto-save only from focused editor
+- Scene data isolation between different scenes
+- Hybrid system: Y.js for editor-to-editor + Socket.IO for playfield
+
+**🔄 Next Steps:**
+
+- Complete Step 4: Final selective sync optimization and testing
+- Performance testing and optimization
+
+### Success Criteria (Mostly Complete)
+
+- ✅ Real-time StageProps synchronization between editors
+- ✅ Local viewport state preserved per editor (scene rotation)
+- ✅ Scene isolation prevents cross-scene contamination
+- ✅ Focus-based saving prevents conflicts
+- 🔄 Performance verification needed
 
 ---
 
@@ -312,9 +330,15 @@
    - Clear pending timers on focus loss
 
 5. **Marker ID resolution**
+
    - Stage component generates permanent UUIDs
    - Y.js tracks save state, not temp IDs
    - Much simpler than current temp ID system
+
+6. **Map thumbnail generation and usage**
+   - Fix scene save to generate `mapThumbLocation` properly
+   - Update SceneSelector to use `mapThumbLocation` instead of full resolution images
+   - Ensure map thumbnail sync works correctly in Y.js scene metadata
 
 ### Testing Checklist
 
@@ -443,3 +467,16 @@
 - ✅ Updated component interfaces from activeScene objects to activeSceneId strings
 - ✅ **COMPLETED Phase 3**: Party state synchronization and architectural simplification
 - ✅ **READY FOR COMMIT 3**: Major architectural improvements complete and stable
+- ✅ **STARTED Phase 4**: StageProps synchronization and selective sync implementation
+- ✅ **COMPLETED Phase 4 Step 1**: Component migration to centralized `queuePropertyUpdate` system
+- ✅ Converted SceneZoom, MapControls, EdgeControls, SceneControls, MarkerManager to use centralized updates
+- ✅ Removed all `bind:stageProps` usage throughout component tree
+- ✅ **COMPLETED Phase 4 Step 2**: Y.js integration with selective synchronization
+- ✅ Modernized propertyUpdateBroadcaster.ts to use Y.js instead of Socket.IO
+- ✅ Implemented LOCAL_ONLY_PROPERTIES filtering (scene rotation, offset, zoom stay local)
+- ✅ Added Y.js StageProps subscription for real-time editor-to-editor sync
+- ✅ Fixed fog of war synchronization between editors and playfield
+- ✅ Implemented scene isolation to prevent cross-scene data bleed
+- ✅ Added focus-based auto-saving using window/tab visibility detection
+- ✅ **Phase 4 Steps 1-2 COMPLETE**: Real-time StageProps sync working with selective local/shared properties
+- 🔄 **Phase 4 Steps 3-4 TODO**: Final component cleanup and performance optimization

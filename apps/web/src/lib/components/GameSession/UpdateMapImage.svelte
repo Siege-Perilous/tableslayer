@@ -2,7 +2,17 @@
   import { handleMutation } from '$lib/factories';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
-    hiddenFileInput?.click();
+    console.log('openFileDialog called, hiddenFileInput:', hiddenFileInput);
+    if (hiddenFileInput) {
+      hiddenFileInput.click();
+    } else {
+      console.warn('hiddenFileInput not available yet');
+      // Try again after a short delay to allow for component rendering
+      setTimeout(() => {
+        console.log('Retry openFileDialog, hiddenFileInput:', hiddenFileInput);
+        hiddenFileInput?.click();
+      }, 100);
+    }
   };
 </script>
 
@@ -27,6 +37,15 @@
   async function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
+
+    // Ensure we have a valid sceneId before processing
+    if (!sceneId) {
+      console.warn('No sceneId provided, cannot update map image');
+      input.value = '';
+      return;
+    }
+
+    console.log('Processing map image upload for scene:', sceneId);
     const pickedFile = input.files[0];
     input.value = '';
 
@@ -66,6 +85,21 @@
                 }
               : undefined
           });
+
+          // Also update the stageProps with the new map URL so Stage components re-render
+          const currentSceneData = partyData.getSceneData(sceneId);
+          if (currentSceneData && currentSceneData.stageProps && hasThumb(updatedScene)) {
+            const newMapUrl = `${updatedScene.thumb.resizedUrl}?t=${Date.now()}`;
+            const updatedStageProps = {
+              ...currentSceneData.stageProps,
+              map: {
+                ...currentSceneData.stageProps.map,
+                url: newMapUrl
+              }
+            };
+            partyData.updateSceneStageProps(sceneId, updatedStageProps);
+            console.log('Updated stageProps map URL for Stage component sync');
+          }
         } else {
           console.warn(
             'Cannot update scene in Y.js - partyData not available or response missing scene:',

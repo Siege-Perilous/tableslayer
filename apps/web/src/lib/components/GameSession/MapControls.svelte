@@ -7,10 +7,11 @@
   import { UpdateMapImage, openFileDialog } from './';
   import { type $ZodIssue } from 'zod/v4/core';
   import { usePartyData } from '$lib/utils/yjs/stores';
+  import { queuePropertyUpdate } from '$lib/utils';
 
   let {
     socketUpdate,
-    stageProps = $bindable(),
+    stageProps,
     selectedScene,
     handleMapFill,
     handleMapFit,
@@ -38,8 +39,8 @@
   };
 
   const handleMapRotation = () => {
-    stageProps.map.rotation = (stageProps.map.rotation + 90) % 360;
-    socketUpdate();
+    const newRotation = (stageProps.map.rotation + 90) % 360;
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], newRotation, 'control');
   };
 </script>
 
@@ -53,7 +54,13 @@
   <div class="mapControls__grid">
     <FormControl label="Scale" name="mapZoom" {errors}>
       {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" bind:value={stageProps.map.zoom} />
+        <Input
+          {...inputProps}
+          type="number"
+          value={stageProps.map.zoom}
+          oninput={(e) =>
+            queuePropertyUpdate(stageProps, ['map', 'zoom'], parseFloat(e.currentTarget.value), 'control')}
+        />
       {/snippet}
       {#snippet start()}
         x
@@ -61,7 +68,13 @@
     </FormControl>
     <FormControl label="Rotate" class="sceneControls__rotate" name="mapRotation" {errors}>
       {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" bind:value={stageProps.map.rotation} />
+        <Input
+          {...inputProps}
+          type="number"
+          value={stageProps.map.rotation}
+          oninput={(e) =>
+            queuePropertyUpdate(stageProps, ['map', 'rotation'], parseFloat(e.currentTarget.value), 'control')}
+        />
       {/snippet}
       {#snippet end()}
         <IconButton variant="ghost" onclick={handleMapRotation}>
@@ -74,7 +87,13 @@
   <div class="mapControls__grid">
     <FormControl label="Offset X" name="mapOffsetX" {errors}>
       {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" bind:value={stageProps.map.offset.x} />
+        <Input
+          {...inputProps}
+          type="number"
+          value={stageProps.map.offset.x}
+          oninput={(e) =>
+            queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], parseFloat(e.currentTarget.value), 'control')}
+        />
       {/snippet}
       {#snippet end()}
         px
@@ -82,7 +101,13 @@
     </FormControl>
     <FormControl label="Offset Y" name="mapOffsetY" {errors}>
       {#snippet input({ inputProps })}
-        <Input {...inputProps} type="number" bind:value={stageProps.map.offset.y} />
+        <Input
+          {...inputProps}
+          type="number"
+          value={stageProps.map.offset.y}
+          oninput={(e) =>
+            queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], parseFloat(e.currentTarget.value), 'control')}
+        />
       {/snippet}
       {#snippet end()}
         px

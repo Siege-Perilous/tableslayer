@@ -37,7 +37,9 @@
     convertStageMarkersToDbFormat,
     throttle,
     type MarkerPositionUpdate,
-    registerSocketUpdate
+    registerSceneForPropertyUpdates,
+    queuePropertyUpdate,
+    type PropertyPath
   } from '$lib/utils';
   import { onMount } from 'svelte';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
@@ -79,6 +81,7 @@
   let socket: Socket | null = $state(null);
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
+
   let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
@@ -95,6 +98,7 @@
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   let mapThumbLocation: null | string = $state(null);
+  let isWindowFocused = $state(true); // Track if this editor window is focused
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -162,11 +166,69 @@
     }
   };
 
-  // Register the socketUpdate function with the property broadcaster
+  // Register the scene with the property broadcaster for Y.js updates
   $effect(() => {
-    if (socket && selectedScene && selectedScene.id) {
-      registerSocketUpdate(socketUpdate, socket, selectedScene.id);
+    if (selectedScene && selectedScene.id) {
+      registerSceneForPropertyUpdates(selectedScene.id);
+
+      // Initialize scene data in Y.js if partyData is available
+      if (partyData && !partyData.getSceneData(selectedScene.id)) {
+        // Create a copy of stageProps without local-only properties for Y.js storage
+        const sharedStageProps = {
+          ...stageProps,
+          scene: {
+            ...stageProps.scene,
+            // Reset local-only properties to defaults for shared state
+            offset: { x: 0, y: 0 },
+            zoom: 1,
+            rotation: 0
+          }
+        };
+        partyData.initializeSceneData(selectedScene.id, sharedStageProps, data.selectedSceneMarkers || []);
+      }
     }
+  });
+
+  // Subscribe to Y.js StageProps changes for the current scene
+  $effect(() => {
+    if (!partyData || !selectedScene || !isHydrated) return;
+
+    const unsubscribe = partyData.subscribe(() => {
+      const sceneData = partyData!.getSceneData(selectedScene.id);
+      if (sceneData && sceneData.stageProps) {
+        // Update local stageProps with shared properties from Y.js, preserving local-only properties
+        const incomingStageProps = sceneData.stageProps;
+
+        // Create a merged stageProps that preserves local-only properties
+        const mergedStageProps = {
+          ...incomingStageProps,
+          // Preserve local activeLayer (fog tools, etc.)
+          activeLayer: stageProps.activeLayer,
+          scene: {
+            ...incomingStageProps.scene,
+            // Override with local viewport state (must come after the spread)
+            offset: stageProps.scene.offset,
+            zoom: stageProps.scene.zoom,
+            rotation: stageProps.scene.rotation
+          }
+        };
+
+        // Only update if there are actual changes to avoid infinite loops
+        if (JSON.stringify(mergedStageProps) !== JSON.stringify(stageProps)) {
+          console.log('Updating stageProps from Y.js for scene:', selectedScene.id);
+          stageProps = mergedStageProps;
+
+          // Also broadcast to playfield via Socket.IO to keep it in sync
+          // Only do this if we're editing the active scene to avoid duplicate broadcasts
+          if (selectedScene.id === currentActiveScene?.id) {
+            console.log('Broadcasting Y.js changes to playfield via Socket.IO');
+            socketUpdate();
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
   });
 
   /**
@@ -330,17 +392,16 @@
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
       activeControl = 'none';
-      stageProps.activeLayer = MapLayerType.None;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
     } else if (control === 'marker') {
       selectedMarkerId = undefined;
       activeControl = 'marker';
-      stageProps.activeLayer = MapLayerType.Marker;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       markersPane.expand();
     } else {
       activeControl = control;
-      stageProps.activeLayer = MapLayerType.FogOfWar;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
     }
-    socketUpdate();
   };
 
   // We use these functions often in child components, so we define them here
@@ -531,16 +592,18 @@
   };
 
   function onMapPan(dx: number, dy: number) {
-    stageProps.map.offset.x += dx;
-    stageProps.map.offset.y += dy;
+    const newOffsetX = stageProps.map.offset.x + dx;
+    const newOffsetY = stageProps.map.offset.y + dy;
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
   }
 
   function onMapRotate(angle: number) {
-    stageProps.map.rotation = angle;
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
   }
 
   function onMapZoom(zoom: number) {
-    stageProps.map.zoom = zoom;
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
   function onScenePan(dx: number, dy: number) {
@@ -553,7 +616,7 @@
   }
 
   function onSceneZoom(zoom: number) {
-    stageProps.scene.zoom = zoom;
+    queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
   // Use throttling for wheel/zoom events to reduce update frequency
@@ -590,9 +653,13 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}?${Date.now()}`;
+          queuePropertyUpdate(
+            stageProps,
+            ['fogOfWar', 'url'],
+            `https://files.tableslayer.com/${fog.location}?${Date.now()}`,
+            'control'
+          );
           fogBlobUpdateTime = new Date();
-          socketUpdate();
           isUpdatingFog = false;
         },
         onError: () => {
@@ -751,15 +818,30 @@
     isSaving = false;
   };
 
+  // Auto-save timer - only runs when this editor window is focused
   $effect(() => {
     $state.snapshot(stageProps);
     $state.snapshot(fogBlobUpdateTime);
 
     if (isSaving) return;
 
+    // Only auto-save if this editor window is currently focused
+    if (!isWindowFocused) {
+      console.log('Skipping auto-save - editor not focused (isWindowFocused:', isWindowFocused, ')');
+      return;
+    }
+
+    console.log('Starting auto-save timer - editor is focused (isWindowFocused:', isWindowFocused, ')');
+
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      saveScene();
+      // Double-check focus before actually saving
+      if (isWindowFocused) {
+        console.log('Auto-saving from focused editor (isWindowFocused:', isWindowFocused, ')');
+        saveScene();
+      } else {
+        console.log('Cancelled auto-save - editor lost focus (isWindowFocused:', isWindowFocused, ')');
+      }
     }, 3000);
   });
 
@@ -773,8 +855,25 @@
   });
 </script>
 
-<svelte:document onkeydown={handleKeydown} bind:activeElement />
-<svelte:window bind:innerWidth />
+<svelte:document
+  onkeydown={handleKeydown}
+  onvisibilitychange={() => {
+    isWindowFocused = !document.hidden;
+    console.log('Tab visibility changed, isWindowFocused:', isWindowFocused);
+  }}
+  bind:activeElement
+/>
+<svelte:window
+  bind:innerWidth
+  onfocus={() => {
+    isWindowFocused = true;
+    console.log('Window gained focus, isWindowFocused:', isWindowFocused);
+  }}
+  onblur={() => {
+    isWindowFocused = false;
+    console.log('Window lost focus, isWindowFocused:', isWindowFocused);
+  }}
+/>
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
 <div class="container">
@@ -846,7 +945,7 @@
           />
         </div>
         <SceneControls
-          bind:stageProps
+          {stageProps}
           {stage}
           {handleMapFill}
           {handleMapFit}
@@ -860,7 +959,7 @@
           {errors}
           {partyData}
         />
-        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} bind:stageProps />
+        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
         <Hints {stageProps} />
       </div>
@@ -894,7 +993,7 @@
       {#key selectedMarkerId}
         <MarkerManager
           partyId={party.id}
-          bind:stageProps
+          {stageProps}
           bind:selectedMarkerId
           {socketUpdate}
           {handleSelectActiveControl}

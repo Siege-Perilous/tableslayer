@@ -16,7 +16,7 @@
   import chroma from 'chroma-js';
 
   let {
-    stageProps = $bindable(),
+    stageProps,
     errors
   }: {
     stageProps: StageProps;
@@ -64,8 +64,8 @@
         min={10}
         max={120}
         step={1}
-        bind:value={stageProps.weather.fov}
-        oninput={() => queuePropertyUpdate(stageProps, ['weather', 'fov'], stageProps.weather.fov, 'control')}
+        value={stageProps.weather.fov}
+        oninput={(value) => queuePropertyUpdate(stageProps, ['weather', 'fov'], value, 'control')}
       />
     {/snippet}
   </FormControl>
@@ -80,8 +80,8 @@
         min={0}
         max={1}
         step={0.05}
-        bind:value={stageProps.weather.opacity}
-        oninput={() => queuePropertyUpdate(stageProps, ['weather', 'opacity'], stageProps.weather.opacity, 'control')}
+        value={stageProps.weather.opacity}
+        oninput={(value) => queuePropertyUpdate(stageProps, ['weather', 'opacity'], value, 'control')}
       />
     {/snippet}
   </FormControl>
@@ -93,9 +93,8 @@
         min={0}
         max={1}
         step={0.05}
-        bind:value={stageProps.weather.intensity}
-        oninput={() =>
-          queuePropertyUpdate(stageProps, ['weather', 'intensity'], stageProps.weather.intensity, 'control')}
+        value={stageProps.weather.intensity}
+        oninput={(value) => queuePropertyUpdate(stageProps, ['weather', 'intensity'], value, 'control')}
       />
     {/snippet}
   </FormControl>
