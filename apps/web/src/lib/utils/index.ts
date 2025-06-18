@@ -7,6 +7,7 @@ export * from './createRandomNames';
 export * from './defaultMapState';
 export * from './extractLocationFromUrl';
 export * from './gameSessionExportImport';
+export * from './generateR2Url';
 export * from './generateSlug';
 export * from './gsWebSocket';
 export * from './handleStageZoom';

@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  import { hasThumb } from '$lib/utils';
+  import { hasThumb, generateLargeImageUrl } from '$lib/utils';
   import type { usePartyData } from '$lib/utils/yjs/stores';
 
   let {
@@ -74,10 +74,17 @@
         // Update Y.js with the updated scene data instead of invalidateAll()
         if (partyData && response?.scene) {
           const updatedScene = response.scene;
-          console.log('Map updated successfully, updating Y.js:', updatedScene.name);
+          console.log('[UpdateMapImage] Map updated successfully:', {
+            sceneName: updatedScene.name,
+            sceneId: updatedScene.id,
+            newMapLocation: updatedScene.mapLocation,
+            hasThumb: hasThumb(updatedScene),
+            thumbUrl: hasThumb(updatedScene) ? updatedScene.thumb.resizedUrl : null
+          });
           partyData.updateScene(sceneId, {
             mapLocation: updatedScene.mapLocation || undefined,
             mapThumbLocation: updatedScene.mapThumbLocation || undefined,
+            thumbUpdatedAt: Date.now(),
             thumb: hasThumb(updatedScene)
               ? {
                   resizedUrl: updatedScene.thumb.resizedUrl,
@@ -88,8 +95,8 @@
 
           // Also update the stageProps with the new map URL so Stage components re-render
           const currentSceneData = partyData.getSceneData(sceneId);
-          if (currentSceneData && currentSceneData.stageProps && hasThumb(updatedScene)) {
-            const newMapUrl = `${updatedScene.thumb.resizedUrl}?cors=1&t=${Date.now()}`;
+          if (currentSceneData && currentSceneData.stageProps && updatedScene.mapLocation) {
+            const newMapUrl = generateLargeImageUrl(updatedScene.mapLocation);
             const updatedStageProps = {
               ...currentSceneData.stageProps,
               map: {
@@ -98,7 +105,12 @@
               }
             };
             partyData.updateSceneStageProps(sceneId, updatedStageProps);
-            console.log('Updated stageProps map URL for Stage component sync:', newMapUrl);
+            console.log('[UpdateMapImage] Updated stageProps map URL for Stage sync:', {
+              sceneId,
+              oldUrl: currentSceneData.stageProps.map.url,
+              newUrl: newMapUrl,
+              mapLocation: updatedScene.mapLocation
+            });
           }
         } else {
           console.warn(

@@ -251,8 +251,9 @@
 
   // Register the scene with the property broadcaster for Y.js updates
   $effect(() => {
-    if (selectedScene && selectedScene.id) {
-      registerSceneForPropertyUpdates(selectedScene.id);
+    const sceneId = selectedScene?.id;
+    if (sceneId) {
+      registerSceneForPropertyUpdates(sceneId);
 
       // Initialize scene data in Y.js if partyData is available
       if (partyData && !partyData.getSceneData(selectedScene.id)) {
@@ -276,10 +277,11 @@
 
   // Subscribe to Y.js StageProps changes for the current scene
   $effect(() => {
-    if (!partyData || !selectedScene || !isHydrated) return;
+    const sceneId = selectedScene?.id;
+    if (!partyData || !sceneId || !isHydrated) return;
 
-    console.log('Setting up Y.js subscription for scene:', selectedScene.id);
-    const currentSceneId = selectedScene.id; // Capture the scene ID to avoid closure issues
+    console.log('Setting up Y.js subscription for scene:', sceneId);
+    const currentSceneId = sceneId; // Capture the scene ID to avoid closure issues
 
     const unsubscribe = partyData.subscribe(() => {
       console.log('Y.js subscription triggered - checking for scene:', currentSceneId);
@@ -308,7 +310,12 @@
 
       const sceneData = partyData!.getSceneData(currentSceneId);
       if (sceneData && sceneData.stageProps) {
-        console.log('Received Y.js stageProps update for scene:', currentSceneId, sceneData.stageProps);
+        console.log('[Y.js Subscription] Received stageProps update for scene:', {
+          sceneId: currentSceneId,
+          mapUrl: sceneData.stageProps.map?.url,
+          hasStageProps: !!sceneData.stageProps,
+          timestamp: Date.now()
+        });
 
         // Update local stageProps with shared properties from Y.js, preserving local-only properties
         const incomingStageProps = sceneData.stageProps;
@@ -380,6 +387,7 @@
   });
 
   // Track when initial load is complete to prevent auto-save on hydration
+  const currentSceneId = $derived(selectedScene?.id);
   $effect(() => {
     console.log(
       'Initial load check - isHydrated:',
@@ -387,9 +395,9 @@
       'stageProps:',
       !!stageProps,
       'selectedScene:',
-      !!selectedScene
+      !!currentSceneId
     );
-    if (isHydrated && stageProps && selectedScene) {
+    if (isHydrated && stageProps && currentSceneId) {
       // Wait a moment to ensure all initial updates are complete
       setTimeout(() => {
         hasInitialLoad = true;
@@ -484,7 +492,12 @@
         const updatedScenes = partyData!.getScenesList();
         const updatedPartyState = partyData!.getPartyState();
 
-        console.log('Y.js data updated - scenes:', updatedScenes.length, 'party state:', updatedPartyState);
+        console.log('[Y.js Main Subscription] Data updated:', {
+          scenesCount: updatedScenes.length,
+          selectedSceneId: selectedScene?.id,
+          selectedSceneMapLocation: updatedScenes.find((s) => s.id === selectedScene?.id)?.mapLocation,
+          partyState: updatedPartyState
+        });
 
         // Update reactive state
         yjsScenes = updatedScenes as typeof scenes;
@@ -591,20 +604,104 @@
     stage.map.fit();
   };
 
-  $effect(() => {
-    stageProps = buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor');
-  });
+  // Track previous scene ID to detect scene switches
+  let previousSceneId = $state<string | undefined>(undefined);
+
+  // Extract reactive dependencies to avoid unnecessary re-runs
+  let currentSelectedScene = $derived(data.selectedScene);
+  let currentSelectedSceneMarkers = $derived(data.selectedSceneMarkers);
+
+  // Get the Y.js version of the selected scene if available (has the latest mapLocation)
+  let yjsSelectedScene = $derived(yjsScenes.find((s) => s.id === selectedScene?.id) || currentSelectedScene);
+
+  // Track the last mapLocation we built props for
+  let lastBuiltMapLocation = $state<string | null | undefined>(undefined);
 
   $effect(() => {
-    if (selectedScene && hasThumb(selectedScene) && selectedScene.thumb) {
-      stageProps.map.url = `${selectedScene.thumb.resizedUrl}?cors=1`;
+    const currentSceneId = currentSelectedScene?.id;
+    const isSceneSwitch = currentSceneId !== previousSceneId;
+
+    // Get the current mapLocation from Y.js or SSR data
+    const sceneToUse = yjsSelectedScene || currentSelectedScene;
+    const currentMapLocation = sceneToUse?.mapLocation;
+
+    // Check if we need to rebuild due to map change
+    const mapLocationChanged = currentMapLocation !== lastBuiltMapLocation;
+
+    console.log('[StageProps Effect] Checking if rebuild needed:', {
+      currentSceneId,
+      isSceneSwitch,
+      previousSceneId,
+      currentMapLocation,
+      lastBuiltMapLocation,
+      mapLocationChanged,
+      hasStageProps: !!stageProps,
+      usingYjsData: sceneToUse === yjsSelectedScene,
+      yjsMapLocation: yjsSelectedScene?.mapLocation,
+      ssrMapLocation: currentSelectedScene?.mapLocation
+    });
+
+    // Only rebuild stageProps when scene switches, initial load, or map actually changes
+    if (isSceneSwitch || !stageProps || mapLocationChanged) {
+      console.log('[StageProps Effect] REBUILDING stageProps - reason:', {
+        isSceneSwitch,
+        noStageProps: !stageProps,
+        mapLocationChanged
+      });
+
+      // This is a scene switch or initial load - rebuild everything
+      stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+      lastBuiltMapLocation = currentMapLocation;
+
+      console.log('[StageProps Effect] Rebuilt stageProps with map URL:', stageProps.map.url);
     } else {
-      stageProps.map.url = StageDefaultProps.map.url;
+      // Same scene - only update if markers changed
+      // Compare marker IDs and positions to detect changes
+      const currentMarkerIds = stageProps.marker.markers
+        .map((m) => m.id)
+        .sort()
+        .join(',');
+      const newMarkerIds =
+        currentSelectedSceneMarkers
+          ?.map((m) => m.id)
+          .sort()
+          .join(',') || '';
+
+      // Check if markers have changed (different IDs or different count)
+      const markersChanged =
+        currentMarkerIds !== newMarkerIds ||
+        stageProps.marker.markers.length !== (currentSelectedSceneMarkers?.length || 0);
+
+      if (markersChanged) {
+        // Preserve current map and scene state when only markers change
+        const currentMapState = {
+          offset: { ...stageProps.map.offset },
+          zoom: stageProps.map.zoom,
+          rotation: stageProps.map.rotation
+        };
+        const currentSceneState = {
+          offset: { ...stageProps.scene.offset },
+          zoom: stageProps.scene.zoom,
+          rotation: stageProps.scene.rotation
+        };
+
+        stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+
+        // Restore viewport state
+        stageProps.map.offset = currentMapState.offset;
+        stageProps.map.zoom = currentMapState.zoom;
+        stageProps.map.rotation = currentMapState.rotation;
+        stageProps.scene.offset = currentSceneState.offset;
+        stageProps.scene.zoom = currentSceneState.zoom;
+        stageProps.scene.rotation = currentSceneState.rotation;
+      }
     }
-    if (currentActiveScene) {
-      socketUpdate();
-    }
+
+    previousSceneId = currentSceneId;
   });
+
+  // REMOVED: Effect that was overwriting map URL with server thumb
+  // We now generate all image URLs client-side in buildSceneProps
 
   // Effect to broadcast when active scene changes via Y.js (e.g., from SceneSelector)
   // Send full stage updates when we're editing the active scene
@@ -925,6 +1022,23 @@
               // Store just the location path in stageProps for database saving
               mapThumbLocation = result.location;
               console.log('Thumbnail uploaded successfully:', result.location);
+
+              // Update Y.js immediately with the new thumbnail location
+              if (partyData && selectedScene) {
+                console.log('Updating Y.js with new mapThumbLocation:', result.location);
+                const timestamp = Date.now();
+                // Update with both the location and the thumb object to trigger UI updates
+                partyData.updateScene(selectedScene.id, {
+                  mapThumbLocation: result.location,
+                  thumbUpdatedAt: timestamp,
+                  thumb: hasThumb(result)
+                    ? {
+                        resizedUrl: result.thumb.resizedUrl,
+                        url: result.thumb.url
+                      }
+                    : undefined
+                });
+              }
             },
             onError: (error) => {
               console.log('Error uploading thumbnail (non-blocking):', error);

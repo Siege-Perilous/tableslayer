@@ -11,7 +11,7 @@
   } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
-  import { hasThumb } from '$lib/utils';
+  import { hasThumb, generateSmallThumbnailUrl } from '$lib/utils';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
@@ -548,7 +548,11 @@
           isDragging && dragOverItem === index && 'scene--dropTarget',
           isDragDisabled(scene.id) && 'scene--no-drag'
         ]}
-        style:background-image={hasThumb(scene) ? `url('${scene.thumb.resizedUrl}')` : 'inherit'}
+        style:background-image={scene.mapThumbLocation
+          ? `url('${generateSmallThumbnailUrl(scene.mapThumbLocation)}')`
+          : scene.mapLocation && scene.mapLocation !== 'map/example1080.png'
+            ? `url('${generateSmallThumbnailUrl(scene.mapLocation)}')`
+            : 'inherit'}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         draggable={!isDragDisabled(scene.id)}
         ondragstart={(e) => {

@@ -318,6 +318,16 @@ export const updateScene = async (
   const updateData: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(details)) {
     if (value !== undefined) {
+      // Prevent overwriting existing mapLocation with the default example map
+      if (
+        key === 'mapLocation' &&
+        value === 'map/example1080.png' &&
+        scene.mapLocation &&
+        scene.mapLocation !== 'map/example1080.png'
+      ) {
+        console.warn('Preventing overwrite of existing mapLocation with default example map');
+        continue;
+      }
       updateData[key] = value;
     }
   }

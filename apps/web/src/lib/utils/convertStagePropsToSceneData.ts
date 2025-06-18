@@ -1,4 +1,3 @@
-import { extractLocationFromUrl } from '$lib/utils';
 // Utility function to set properties if they exist
 
 import type { StageProps } from '@tableslayer/ui';
@@ -129,13 +128,9 @@ export const convertPropsToSceneDetails = (
     'toneMapping.mode': 'effectsToneMappingMode'
   });
 
-  // Extract map location from URL stored in state
-  if (stageProps.map?.url) {
-    const extractedLocation = extractLocationFromUrl(stageProps.map.url);
-    if (extractedLocation) {
-      details.mapLocation = extractedLocation;
-    }
-  }
+  // IMPORTANT: Don't extract mapLocation from stage props
+  // The mapLocation should only be updated when a new map is uploaded via UpdateMapImage
+  // This prevents accidentally overwriting mapLocation with thumbnail paths
 
   setNestedIfExists(stageProps, details, 'scene', {
     'offset.x': 'sceneOffsetX',

@@ -1,10 +1,11 @@
 import { type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
-import { hasThumb } from '$lib/utils/hasThumb';
+import { StageDefaultProps } from '$lib/utils/defaultMapState';
+import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '$lib/utils/generateR2Url';
 import {
   DrawMode,
-  type GridType,
+  GridType,
   MapLayerType,
   type Marker,
   RainPreset,
@@ -21,8 +22,25 @@ export const buildSceneProps = (
   mode: 'client' | 'editor'
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
+
+  // Build the map URL - always construct R2 transformation URL from mapLocation
+  console.log('[buildSceneProps] Building map URL for scene:', {
+    sceneId: activeScene.id,
+    mapLocation: activeScene.mapLocation,
+    isDefault: isDefaultMap(activeScene.mapLocation),
+    hasMapLocation: !!activeScene.mapLocation
+  });
+
   const thumbUrl =
-    hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
+    !isDefaultMap(activeScene.mapLocation) && activeScene.mapLocation
+      ? generateLargeImageUrl(activeScene.mapLocation)
+      : StageDefaultProps.map.url;
+
+  console.log('[buildSceneProps] Generated map URL:', {
+    sceneId: activeScene.id,
+    resultUrl: thumbUrl,
+    usedDefault: thumbUrl === StageDefaultProps.map.url
+  });
 
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
@@ -34,7 +52,7 @@ export const buildSceneProps = (
       shape: marker.shape,
       shapeColor: marker.shapeColor,
       label: marker.label,
-      imageUrl: marker.imageLocation && marker.thumb?.resizedUrl ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
+      imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation) : null,
       imageScale: 1,
       visibility: marker.visibility,
       note: marker.note || null
@@ -120,7 +138,7 @@ export const buildSceneProps = (
       }
     },
     grid: {
-      gridType: (activeScene.gridType as GridType) ?? 'square',
+      gridType: (activeScene.gridType as GridType) ?? GridType.Square,
       spacing: activeScene.gridSpacing ?? 50,
       opacity: activeScene.gridOpacity ?? 0.5,
       lineColor: activeScene.gridLineColor ?? '#ffffff',
@@ -137,7 +155,7 @@ export const buildSceneProps = (
         y: activeScene.mapOffsetY ?? 0
       },
       zoom: activeScene.mapZoom ?? 1,
-      url: thumbUrl
+      url: thumbUrl // Empty string if no thumbnail exists - Stage component handles fallback
     },
     marker: {
       visible: true,
