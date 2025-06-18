@@ -6,10 +6,12 @@ let partyDataManager: PartyDataManager | null = null;
  * Initialize the party data manager (call once per game session)
  */
 export function initializePartyDataManager(partyId: string, userId: string, gameSessionId?: string): PartyDataManager {
+  console.log('Initializing PartyDataManager for party:', partyId, 'gameSession:', gameSessionId);
   if (partyDataManager) {
     partyDataManager.destroy();
   }
   partyDataManager = new PartyDataManager(partyId, userId, gameSessionId);
+  console.log('PartyDataManager initialized successfully');
   return partyDataManager;
 }
 
@@ -63,6 +65,12 @@ export function usePartyData() {
     updateScene: (sceneId: string, updates: Partial<SceneMetadata>) => partyDataManager!.updateScene(sceneId, updates),
     removeScene: (sceneId: string) => partyDataManager!.removeScene(sceneId),
     reorderScenes: (newScenesOrder: SceneMetadata[]) => partyDataManager!.reorderScenes(newScenesOrder),
+
+    // Save coordination
+    becomeActiveSaver: (sceneId: string) => partyDataManager!.becomeActiveSaver(sceneId),
+    releaseActiveSaver: (sceneId: string, success?: boolean) => partyDataManager!.releaseActiveSaver(sceneId, success),
+    isSaveInProgress: (sceneId: string) => partyDataManager!.isSaveInProgress(sceneId),
+    getActiveSaver: (sceneId: string) => partyDataManager!.getActiveSaver(sceneId),
 
     // Debug utilities
     clearAllData: () => partyDataManager!.clearAllData()
