@@ -70,9 +70,13 @@ export class PartyDataManager {
   // Track which scenes this specific instance has observers for (local to this editor)
   private sceneObservers = new Set<string>();
 
+  // SSR data protection (handled at subscription level in page component)
+  private freshPageLoadTime: number;
+
   constructor(partyId: string, userId: string, gameSessionId?: string) {
     this.userId = userId;
     this.partyId = partyId;
+    this.freshPageLoadTime = Date.now(); // Track when this instance was created (page load time)
 
     const socketUrl = window.location.origin;
 
@@ -156,6 +160,24 @@ export class PartyDataManager {
       console.log(
         `[${this.clientId}] Game session Y.js document update received - origin: ${origin}, updateSize: ${update.length} bytes`
       );
+
+      // Debug what scenes exist after this update
+      setTimeout(() => {
+        const sceneKeys = Array.from(this.yScenes.keys());
+        console.log(`[${this.clientId}] After Y.js update - available scenes:`, sceneKeys);
+        if (sceneKeys.length > 0) {
+          const firstScene = this.yScenes.get(sceneKeys[0]);
+          if (firstScene instanceof Y.Map) {
+            const markers = firstScene.get('markers');
+            console.log(
+              `[${this.clientId}] Scene ${sceneKeys[0]} markers after update:`,
+              markers?.length || 0,
+              'markers',
+              markers?.slice(0, 2)?.map((m: any) => ({ id: m.id, title: m.title })) || []
+            );
+          }
+        }
+      }, 100);
     });
 
     this.partyDoc.on('update', (update: Uint8Array, origin: any) => {
@@ -262,20 +284,48 @@ export class PartyDataManager {
    */
   initializeSceneData(sceneId: string, stageProps: StageProps, markers: Marker[]) {
     console.log(`[${this.clientId}] Initializing scene data for scene: ${sceneId}`);
+    console.log(
+      `[${this.clientId}] SSR markers provided:`,
+      markers.length,
+      'markers',
+      markers.slice(0, 2).map((m) => ({ id: m.id, title: m.title }))
+    );
+
+    const currentTime = Date.now();
+
     if (!this.yScenes.has(sceneId)) {
       // Create a Y.Map for scene data to enable save coordination
       const sceneDataMap = new Y.Map();
       sceneDataMap.set('stageProps', stageProps);
       sceneDataMap.set('markers', markers);
       sceneDataMap.set('localStates', {});
-      sceneDataMap.set('lastSavedAt', Date.now());
+      sceneDataMap.set('lastSavedAt', currentTime);
       sceneDataMap.set('saveInProgress', false);
 
       this.yScenes.set(sceneId, sceneDataMap);
       console.log(`[${this.clientId}] Scene data initialized for scene: ${sceneId}`);
     } else {
-      console.log(`[${this.clientId}] Scene data already exists for scene: ${sceneId}`);
+      // Scene data exists - check if SSR data should take precedence
+      const existingSceneData = this.yScenes.get(sceneId);
+      if (existingSceneData instanceof Y.Map) {
+        const lastSavedAt = existingSceneData.get('lastSavedAt') || 0;
+
+        // On fresh page load (SSR), always prefer database data over potentially stale Y.js data
+        // We consider this a "fresh load" if we're initializing with SSR data
+        console.log(`[${this.clientId}] Scene data exists - SSR data takes precedence over Y.js (fresh page load)`);
+        console.log(`[${this.clientId}] Updating Y.js with fresh SSR data for scene: ${sceneId}`);
+
+        // Update with fresh SSR data
+        this.doc.transact(() => {
+          existingSceneData.set('stageProps', stageProps);
+          existingSceneData.set('markers', markers);
+          existingSceneData.set('lastSavedAt', currentTime);
+        });
+      }
     }
+
+    // Fresh SSR data loaded for this scene
+    console.log(`[${this.clientId}] Scene ${sceneId} initialized with fresh SSR data`);
 
     // Always ensure this instance has an observer for the scene
     const sceneDataMap = this.yScenes.get(sceneId);

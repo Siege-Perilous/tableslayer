@@ -45,13 +45,15 @@
     selectedMarkerId = $bindable(),
     partyId = '',
     handleSelectActiveControl,
-    socketUpdate
+    socketUpdate,
+    updateMarkerAndSave
   }: {
     stageProps: StageProps;
     selectedMarkerId: string | undefined;
     partyId: string;
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
+    updateMarkerAndSave: (markerId: string, updateFn: (marker: any) => void) => void;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -99,10 +101,8 @@
     }
 
     const newFileUrl = `https://files.tableslayer.com/cdn-cgi/image/w=512,h=512,fit=cover,gravity=auto/${uploadedFile.location}`;
-    stageProps.marker.markers.forEach((marker) => {
-      if (marker.id === markerId) {
-        marker.imageUrl = newFileUrl;
-      }
+    updateMarkerAndSave(markerId, (marker) => {
+      marker.imageUrl = newFileUrl;
     });
   };
 
@@ -149,7 +149,7 @@
       <Loader />
     {:else if marker.imageUrl !== null}
       <div class="markerManager__imageRemove">
-        <IconButton variant="ghost" onclick={() => (marker.imageUrl = null)}>
+        <IconButton variant="ghost" onclick={() => updateMarkerAndSave(marker.id, (m) => (m.imageUrl = null))}>
           <Icon Icon={IconX} size="1.25rem" />
         </IconButton>
       </div>
@@ -209,7 +209,7 @@
                         { label: 'Everyone', value: MarkerVisibility.Always.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.visibility = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.visibility = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -217,12 +217,22 @@
                 </FormControl>
                 <FormControl label="Label" name="label">
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
+                    <Input
+                      {...inputProps}
+                      value={marker.label}
+                      maxlength={3}
+                      placeholder="ABC"
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.label = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
                 <FormControl label="Title" name="title">
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.title} />
+                    <Input
+                      {...inputProps}
+                      value={marker.title}
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.title = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
               </div>
@@ -235,12 +245,21 @@
                         <ColorPickerSwatch color={marker.shapeColor} />
                       {/snippet}
                       {#snippet content()}
-                        <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
+                        <ColorPicker
+                          showOpacity={false}
+                          hex={marker.shapeColor}
+                          onUpdate={(colorData) =>
+                            updateMarkerAndSave(marker.id, (m) => (m.shapeColor = colorData.hex))}
+                        />
                       {/snippet}
                     </Popover>
                   {/snippet}
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.shapeColor} />
+                    <Input
+                      {...inputProps}
+                      value={marker.shapeColor}
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.shapeColor = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
               </div>
@@ -257,7 +276,7 @@
                         { label: triangle, value: MarkerShape.Triangle.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.shape = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.shape = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -274,7 +293,7 @@
                         { label: 'L', value: MarkerSize.Large.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.size = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.size = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -282,7 +301,11 @@
                 </FormControl>
               </div>
               <Spacer />
-              <Editor debug={false} bind:content={marker.note} />
+              <Editor
+                debug={false}
+                content={marker.note}
+                onUpdate={(content) => updateMarkerAndSave(marker.id, (m) => (m.note = content))}
+              />
               <Spacer />
 
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
@@ -313,11 +336,13 @@
               <IconButton
                 variant="ghost"
                 onclick={() => {
-                  if (marker.visibility === MarkerVisibility.Always) {
-                    marker.visibility = MarkerVisibility.DM;
-                  } else {
-                    marker.visibility = MarkerVisibility.Always;
-                  }
+                  updateMarkerAndSave(marker.id, (m) => {
+                    if (m.visibility === MarkerVisibility.Always) {
+                      m.visibility = MarkerVisibility.DM;
+                    } else {
+                      m.visibility = MarkerVisibility.Always;
+                    }
+                  });
                   socketUpdate();
                 }}
               >

@@ -8,7 +8,12 @@ export const useUpdateSceneMutation = () => {
   >({
     mutationKey: ['updateScene'],
     endpoint: '/api/scenes/updateScene',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation by providing a custom onSuccess handler
+      // Scene data is managed by Y.js, no need to refetch from server
+      return;
+    }
   });
 };
 
