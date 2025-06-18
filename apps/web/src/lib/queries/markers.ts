@@ -38,3 +38,18 @@ export const useDeleteMarkerMutation = () => {
     method: 'POST'
   });
 };
+
+export const useUpsertMarkerMutation = () => {
+  return mutationFactory<
+    { partyId: string; sceneId: string; markerData: Partial<SelectMarker> },
+    { success: boolean; marker: SelectMarker; operation: 'created' | 'updated' }
+  >({
+    mutationKey: ['upsertMarker'],
+    endpoint: '/api/marker/upsertMarker',
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation by providing a custom onSuccess handler
+      return;
+    }
+  });
+};

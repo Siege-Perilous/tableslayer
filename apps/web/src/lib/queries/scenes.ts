@@ -58,3 +58,38 @@ export const useDuplicateSceneMutation = () => {
     method: 'POST'
   });
 };
+
+// Unified save mutation for scene + markers + party state
+export const useSavePartyStateMutation = () => {
+  return mutationFactory<
+    {
+      partyId: string;
+      gameSessionId: string;
+      sceneId: string;
+      sceneData: Partial<SelectScene>;
+      gameSessionData?: { lastUpdated?: Date };
+      markerOperations?: Array<{
+        operation: 'create' | 'update' | 'delete';
+        id: string;
+        data?: any;
+      }>;
+      thumbnailLocation?: string;
+    },
+    {
+      success: boolean;
+      results: {
+        scene: SelectScene;
+        markers: {
+          created: any[];
+          updated: any[];
+          deleted: string[];
+        };
+        gameSession: any;
+      };
+    }
+  >({
+    mutationKey: ['savePartyState'],
+    endpoint: '/api/party/savePartyState',
+    method: 'POST'
+  });
+};

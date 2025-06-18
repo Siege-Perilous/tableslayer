@@ -19,7 +19,8 @@
     useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
     useCreateMarkerMutation,
-    useUpdateMarkerMutation
+    useUpdateMarkerMutation,
+    useUpsertMarkerMutation
   } from '$lib/queries';
   import { type $ZodIssue } from 'zod/v4/core';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -40,6 +41,7 @@
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
+    setUserChangeCallback,
     type PropertyPath
   } from '$lib/utils';
   import { onMount } from 'svelte';
@@ -59,8 +61,32 @@
     activeSceneId: activeScene?.id
   });
 
-  // Use SSR data until hydrated, then switch to Y.js data
-  let currentScenes = $derived(isHydrated ? yjsScenes : scenes);
+  // Helper function to add thumbnails to Y.js scenes
+  const processScenesThumbnails = (rawScenes: typeof scenes) => {
+    return rawScenes.map((scene) => {
+      // Check if scene already has thumbnail information (from SSR)
+      if ('thumb' in scene && scene.thumb) {
+        return scene;
+      }
+
+      // Generate thumbnail URL if mapThumbLocation or mapLocation exists
+      const imageLocation = scene.mapThumbLocation || scene.mapLocation;
+      if (imageLocation) {
+        // Create thumbnail object using the same format as server-side processing
+        const options = 'w=400,h=225,fit=cover,gravity=center';
+        const thumb = {
+          resizedUrl: `https://files.tableslayer.com/cdn-cgi/image/${options}/${imageLocation}?t=${Date.now()}`,
+          originalUrl: `https://files.tableslayer.com/${imageLocation}`
+        };
+        return { ...scene, thumb };
+      }
+
+      return scene;
+    });
+  };
+
+  // Use SSR data until hydrated, then switch to processed Y.js data with thumbnails
+  let currentScenes = $derived(isHydrated ? processScenesThumbnails(yjsScenes) : scenes);
   // For broadcasting: find the active scene if it's in the current game session
   let currentActiveScene = $derived(
     isHydrated && yjsPartyState.activeSceneId
@@ -83,7 +109,8 @@
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
 
-  let knownMarkerIds = $state<string[]>(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
+  // Track which markers were loaded from the database for Y.js sync
+  let persistedMarkerIds = $state<Set<string>>(new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []));
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -115,6 +142,7 @@
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
   const createMarkerMutation = useCreateMarkerMutation();
   const updateMarkerMutation = useUpdateMarkerMutation();
+  const upsertMarkerMutation = useUpsertMarkerMutation();
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -244,10 +272,10 @@
           isReceivingYjsUpdate = true;
           stageProps = mergedStageProps;
 
-          // Reset flag after the update
+          // Reset flag after the update - longer timeout to prevent auto-save loop
           setTimeout(() => {
             isReceivingYjsUpdate = false;
-          }, 100);
+          }, 1000);
 
           // Also broadcast to playfield via Socket.IO to keep it in sync
           // Only do this if we're editing the active scene to avoid duplicate broadcasts
@@ -271,12 +299,20 @@
 
   // Track when initial load is complete to prevent auto-save on hydration
   $effect(() => {
+    console.log(
+      'Initial load check - isHydrated:',
+      isHydrated,
+      'stageProps:',
+      !!stageProps,
+      'selectedScene:',
+      !!selectedScene
+    );
     if (isHydrated && stageProps && selectedScene) {
       // Wait a moment to ensure all initial updates are complete
       setTimeout(() => {
         hasInitialLoad = true;
         console.log('Initial load completed - auto-save enabled');
-      }, 1000);
+      }, 500); // Reduced from 1000ms to 500ms for faster response
     }
   });
 
@@ -327,6 +363,9 @@
   };
 
   onMount(() => {
+    // Set up callback for property updates to trigger auto-save
+    setUserChangeCallback(startAutoSaveTimer);
+
     let unsubscribeYjs: (() => void) | null = null;
 
     // Initialize Y.js for scene list synchronization
@@ -444,15 +483,15 @@
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
       activeControl = 'none';
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      updateProperty(stageProps, ['activeLayer'], MapLayerType.None, 'control');
     } else if (control === 'marker') {
       selectedMarkerId = undefined;
       activeControl = 'marker';
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
+      updateProperty(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       markersPane.expand();
     } else {
       activeControl = control;
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+      updateProperty(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
     }
   };
 
@@ -521,6 +560,7 @@
   const onMarkerAdded = (marker: Marker) => {
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
     selectedMarkerId = marker.id;
+    startAutoSaveTimer(); // Trigger auto-save after marker added
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
@@ -536,6 +576,7 @@
       if (socket && selectedScene && selectedScene.id && selectedScene.id === currentActiveScene?.id) {
         broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
       }
+      startAutoSaveTimer(); // Trigger auto-save after marker moved
     }
   };
 
@@ -646,16 +687,16 @@
   function onMapPan(dx: number, dy: number) {
     const newOffsetX = stageProps.map.offset.x + dx;
     const newOffsetY = stageProps.map.offset.y + dy;
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
+    updateProperty(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+    updateProperty(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
   }
 
   function onMapRotate(angle: number) {
-    queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
+    updateProperty(stageProps, ['map', 'rotation'], angle, 'control');
   }
 
   function onMapZoom(zoom: number) {
-    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
+    updateProperty(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
   function onScenePan(dx: number, dy: number) {
@@ -668,7 +709,7 @@
   }
 
   function onSceneZoom(zoom: number) {
-    queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
+    updateProperty(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
   // Use throttling for wheel/zoom events to reduce update frequency
@@ -705,7 +746,7 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          queuePropertyUpdate(
+          updateProperty(
             stageProps,
             ['fogOfWar', 'url'],
             `https://files.tableslayer.com/${fog.location}?${Date.now()}`,
@@ -740,12 +781,13 @@
 
     let saveSuccess = false;
     try {
-      // Generate and upload thumbnail
+      // Generate and upload thumbnail (non-blocking)
       try {
         if (stage?.scene?.generateThumbnail) {
           const thumbnailBlob = await stage.scene.generateThumbnail();
 
-          await handleMutation({
+          // Upload thumbnail in background - don't block save if this fails
+          handleMutation({
             mutation: () =>
               $createThumbnailMutation.mutateAsync({
                 blob: thumbnailBlob,
@@ -755,17 +797,21 @@
             onSuccess: (result) => {
               // Store just the location path in stageProps for database saving
               mapThumbLocation = result.location;
+              console.log('Thumbnail uploaded successfully:', result.location);
             },
             onError: (error) => {
-              console.log('Error uploading thumbnail:', error);
+              console.log('Error uploading thumbnail (non-blocking):', error);
+              // Don't fail the save just because thumbnail upload failed
             },
             toastMessages: {
-              error: { title: 'Error uploading thumbnail', body: (err) => err.message || 'Error uploading thumbnail' }
+              // Remove error toast - thumbnail upload is optional
             }
+          }).catch((error) => {
+            console.log('Thumbnail upload failed silently:', error);
           });
         }
       } catch (error) {
-        console.log('Error generating thumbnail:', error);
+        console.log('Error generating thumbnail (non-blocking):', error);
       }
 
       // Save scene settings
@@ -787,72 +833,36 @@
         }
       });
 
-      // Save markers
+      // Save markers using simplified upsert approach
       if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-        // Use our knownMarkerIds list instead of just data.selectedSceneMarkers
         const stageMarkers = stageProps.marker.markers;
 
-        // Process markers one by one to handle creates and updates
+        // Process markers one by one using upsert (create or update as needed)
         for (const marker of stageMarkers) {
           const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
 
-          // If marker exists in the database, update it
-          if (knownMarkerIds.includes(marker.id)) {
-            await handleMutation({
-              mutation: () =>
-                $updateMarkerMutation.mutateAsync({
-                  partyId: party.id,
-                  markerId: marker.id,
-                  markerData
-                }),
-              formLoadingState: () => {},
-              onSuccess: () => {},
-              onError: (error) => {
-                console.log('Error updating marker:', error);
-              },
-              toastMessages: {
-                error: { title: 'Error updating marker', body: (err) => err.message || 'Error updating marker' }
+          await handleMutation({
+            mutation: () =>
+              $upsertMarkerMutation.mutateAsync({
+                partyId: party.id,
+                sceneId: selectedScene.id,
+                markerData: markerData
+              }),
+            formLoadingState: () => {},
+            onSuccess: (result) => {
+              console.log(`Marker ${marker.id} ${result.operation} successfully`);
+              // Add to persisted set if this was a create operation
+              if (result.operation === 'created') {
+                persistedMarkerIds.add(marker.id);
               }
-            });
-          }
-          // Otherwise create a new marker
-          else {
-            await handleMutation({
-              mutation: () =>
-                $createMarkerMutation.mutateAsync({
-                  partyId: party.id,
-                  sceneId: selectedScene.id,
-                  markerData: markerData
-                }),
-              formLoadingState: () => {},
-              onSuccess: (result) => {
-                // Update the marker with the DB-generated ID and any other fields
-                if (result?.marker) {
-                  // Find and update the marker in stageProps
-                  const index = stageProps.marker.markers.findIndex((m) => m.id === marker.id);
-                  if (index !== -1) {
-                    const oldId = stageProps.marker.markers[index].id;
-                    const newId = result.marker.id;
-                    stageProps.marker.markers[index].id = newId;
-
-                    // Add the new ID to our known markers list
-                    knownMarkerIds = [...knownMarkerIds, newId];
-
-                    // If this is the selectedMarker, update the ID
-                    if (selectedMarkerId === oldId) {
-                      selectedMarkerId = newId;
-                    }
-                  }
-                }
-              },
-              onError: (error) => {
-                console.log('Error creating marker:', error);
-              },
-              toastMessages: {
-                error: { title: 'Error creating marker', body: (err) => err.message || 'Error creating marker' }
-              }
-            });
-          }
+            },
+            onError: (error) => {
+              console.log('Error saving marker:', error);
+            },
+            toastMessages: {
+              error: { title: 'Error saving marker', body: (err) => err.message || 'Error saving marker' }
+            }
+          });
         }
         socketUpdate();
       }
@@ -891,51 +901,58 @@
     }
   };
 
-  // Auto-save timer - only runs when this editor window is focused and changes are from user
-  $effect(() => {
-    $state.snapshot(stageProps);
-    $state.snapshot(fogBlobUpdateTime);
+  // Wrapper function for property updates that also triggers auto-save
+  const updateProperty = (stageProps: any, propertyPath: PropertyPath, value: any, updateType: string = 'control') => {
+    queuePropertyUpdate(stageProps, propertyPath, value, updateType);
+    startAutoSaveTimer();
+  };
 
-    if (isSaving) return;
+  // Function to start auto-save timer after user changes
+  const startAutoSaveTimer = () => {
+    // Only start timer if conditions are met
+    if (isSaving) {
+      console.log('Skipping auto-save timer - save already in progress');
+      return;
+    }
 
-    // Skip auto-save during initial load
     if (!hasInitialLoad) {
-      console.log('Skipping auto-save - initial load not complete');
+      console.log('Skipping auto-save timer - initial load not complete');
       return;
     }
 
-    // Skip auto-save if receiving Y.js updates (changes from other editors)
     if (isReceivingYjsUpdate) {
-      console.log('Skipping auto-save - receiving Y.js update from another editor');
+      console.log('Skipping auto-save timer - receiving Y.js update');
       return;
     }
 
-    // Only auto-save if this editor window is currently focused
     if (!isWindowFocused) {
-      console.log('Skipping auto-save - editor not focused (isWindowFocused:', isWindowFocused, ')');
+      console.log('Skipping auto-save timer - window not focused');
       return;
     }
 
-    console.log('Starting auto-save timer - user made changes and editor is focused');
+    console.log('Starting auto-save timer after user change');
 
+    // Clear any existing timer
     if (saveTimer) clearTimeout(saveTimer);
+
+    // Start new timer for idle period after user change
     saveTimer = setTimeout(() => {
       // Double-check conditions before actually saving
-      if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad) {
-        console.log('Auto-saving from focused editor after user changes');
+      if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
+        console.log('Auto-saving after user idle period');
         saveScene();
       } else {
-        console.log('Cancelled auto-save - conditions changed');
+        console.log('Cancelled auto-save - conditions changed during idle period');
       }
     }, 3000);
-  });
+  };
 
   // Make sure the selectedMarkerId is reset when the selectedScene changes
-  // Also update knownMarkerIds to reflect what might change in state
+  // Also update persistedMarkerIds to reflect what might change in state
   $effect(() => {
     if (selectedScene.id) {
       selectedMarkerId = undefined;
-      knownMarkerIds = data.selectedSceneMarkers?.map((marker) => marker.id) || [];
+      persistedMarkerIds = new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
     }
   });
 </script>
@@ -957,6 +974,11 @@
   onblur={() => {
     isWindowFocused = false;
     console.log('Window lost focus, isWindowFocused:', isWindowFocused);
+    // Clear any pending save timer when window loses focus
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
   }}
 />
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />

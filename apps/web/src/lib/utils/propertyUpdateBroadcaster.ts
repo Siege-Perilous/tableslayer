@@ -31,6 +31,13 @@ function isLocalOnlyProperty(propertyPath: PropertyPath): boolean {
   return LOCAL_ONLY_PROPERTIES.has(pathString);
 }
 
+// Callback function for user changes (to trigger auto-save)
+let onUserChangeCallback: (() => void) | null = null;
+
+export function setUserChangeCallback(callback: () => void) {
+  onUserChangeCallback = callback;
+}
+
 // Update specific property and schedule broadcast
 export function queuePropertyUpdate(
   stageProps: StageProps,
@@ -90,6 +97,11 @@ export function queuePropertyUpdate(
         }
       }
     }, delay);
+  }
+
+  // Trigger user change callback for auto-save (only for shared properties)
+  if (onUserChangeCallback && !isLocalOnlyProperty(propertyPath)) {
+    onUserChangeCallback();
   }
 }
 
