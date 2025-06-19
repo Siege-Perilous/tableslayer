@@ -1,3 +1,4 @@
+import type { AnnotationLayerProps } from '../AnnotationLayer/types';
 import type { EdgeOverlayProps } from '../EdgeOverlayLayer/types';
 import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
@@ -51,6 +52,7 @@ export interface DisplayProps {
 export type StageProps = {
   mode: StageMode;
   activeLayer: MapLayerType;
+  annotations: AnnotationLayerProps;
   backgroundColor: string;
   debug: {
     enableStats: boolean;

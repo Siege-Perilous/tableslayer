@@ -18,7 +18,6 @@
   const { props, mapSize, onRender }: Props = $props();
   const { renderer } = useThrelte();
 
-  // This shader is used for drawing the fog of war on the GPU
   const drawMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uPreviousState: { value: null },
@@ -38,7 +37,6 @@
     fragmentShader: drawFragmentShader
   });
 
-  // Options for the render targets
   const options = {
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
