@@ -1,20 +1,5 @@
 import type { StageMode } from '../Stage/types';
 
-/**
- * The properties for a drawing layer
- */
-export interface AnnotationLayerProps {
-  /**
-   * The layers of the annotation layer
-   */
-  layers: AnnotationLayer[];
-
-  /**
-   * Global visibility of all annotation layer
-   */
-  visible: boolean;
-}
-
 export interface AnnotationLayer {
   /**
    * The ID of the annotation layer
