@@ -9,12 +9,37 @@ export enum DrawMode {
   Draw = 1
 }
 
+/**
+ * The properties for a drawing layer
+ */
 export interface DrawingLayerProps {
+  /**
+   * The URL of the texture to use for the drawing layer
+   */
   url: string | null;
+
+  /**
+   * The opacity of the drawing layer
+   */
   opacity: number;
+
+  /**
+   * The tool settings
+   */
   tool: {
+    /**
+     * The current drawing mode (`DrawMode.Erase` or `DrawMode.Draw`)
+     */
     mode: DrawMode;
+
+    /**
+     * When `toolType = ToolType.Brush`, setting this controls the brush size
+     */
     size: number;
+
+    /**
+     * The type of drawing tool currently selected
+     */
     type: ToolType;
   };
 }

@@ -1,3 +1,5 @@
+import type { DrawingLayerProps } from '../DrawingLayer/types';
+
 export enum ToolType {
   Brush = 1,
   Rectangle = 2,
@@ -9,17 +11,7 @@ export enum DrawMode {
   Draw = 1
 }
 
-export interface FogOfWarLayerProps {
-  /**
-   * Initial texture data used to populate the fog of war layer
-   */
-  url: string | null;
-
-  /**
-   * Controls the opacity of the entire fog of war layer
-   */
-  opacity: number;
-
+export interface FogOfWarLayerProps extends DrawingLayerProps {
   /**
    * The outline settings
    */
@@ -38,26 +30,6 @@ export interface FogOfWarLayerProps {
      * The thickness of the outline
      */
     thickness: number;
-  };
-
-  /**
-   * The tool settings
-   */
-  tool: {
-    /**
-     * The current drawing mode (`DrawMode.Erase` or `DrawMode.Draw`)
-     */
-    mode: DrawMode;
-
-    /**
-     * When `toolType = ToolType.Brush`, setting this controls the brush size
-     */
-    size: number;
-
-    /**
-     * The type of drawing tool currently selected
-     */
-    type: ToolType;
   };
 
   /**
