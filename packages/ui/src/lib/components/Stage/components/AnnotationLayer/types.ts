@@ -1,3 +1,5 @@
+import type { StageMode } from '../Stage/types';
+
 /**
  * The properties for a drawing layer
  */
@@ -30,7 +32,7 @@ export interface AnnotationLayer {
   opacity: number;
 
   /**
-   * The visibility of the annotation layer
+   * Control who can see the layer
    */
-  visible: boolean;
+  visibility: StageMode;
 }
