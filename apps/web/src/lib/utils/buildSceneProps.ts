@@ -45,6 +45,10 @@ export const buildSceneProps = (
     mode: StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
+    annotations: {
+      layers: [],
+      activeLayer: null
+    },
     debug: {
       enableStats: false,
       loggingRate: 30
