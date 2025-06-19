@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask, useLoader } from '@threlte/core';
+  import { T, useTask } from '@threlte/core';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
