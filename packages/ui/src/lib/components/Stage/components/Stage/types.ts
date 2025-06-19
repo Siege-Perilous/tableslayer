@@ -9,6 +9,7 @@ import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
 export interface Callbacks {
+  onAnnotationUpdate: (blob: Promise<Blob>) => void;
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;

@@ -16,12 +16,13 @@
   } from 'postprocessing';
   import { getLUT } from './luts';
   import { type Callbacks, type StageProps } from '../Stage/types';
-  import MapLayer from '../MapLayer/MapLayer.svelte';
-  import GridLayer from '../GridLayer/GridLayer.svelte';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
+  import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
+  import GridLayer from '../GridLayer/GridLayer.svelte';
+  import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
@@ -390,6 +391,12 @@
     display={props.display}
     visible={props.edgeOverlay.enabled}
     renderOrder={SceneLayerOrder.EdgeOverlay}
+  />
+
+  <AnnotationLayer
+    props={props.annotations}
+    isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
+    {mapSize}
   />
 
   <MarkerLayer
