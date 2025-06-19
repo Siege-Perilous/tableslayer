@@ -24,6 +24,7 @@
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
+  let hasDrawnAnything = false; // Track if any actual drawing occurred
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
@@ -79,23 +80,29 @@
     e.preventDefault();
     lastPos = p;
     drawing = true;
+    hasDrawnAnything = false; // Reset at start of new drawing
     draw(e, p);
   }
 
   function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
     // If using shapes, draw the shape outline when the mouse button is released
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
-      if (p && drawing) {
+      if (p && drawing && lastPos) {
         material?.drawPath(p, lastPos, true);
         outlineMaterial.visible = false;
+        hasDrawnAnything = true; // Shape was drawn
       }
     }
 
-    onFogUpdate(toPng());
+    // Only trigger fog update if actual drawing occurred
+    if (hasDrawnAnything) {
+      onFogUpdate(toPng());
+    }
 
     // Reset the drawing state
     lastPos = null;
     drawing = false;
+    hasDrawnAnything = false;
   }
 
   function onMouseLeave() {
@@ -125,6 +132,9 @@
       }
       outlineMaterial.visible = true;
       material?.drawPath(p, lastPos, drawing);
+      if (drawing) {
+        hasDrawnAnything = true; // Mark that drawing occurred
+      }
       lastPos = p.clone();
     }
   }
@@ -134,7 +144,7 @@
    */
   export function clearFog() {
     material?.render('clear', true);
-    onFogUpdate(toPng());
+    onFogUpdate(toPng()); // Always update for clear operation
   }
 
   /**
@@ -142,7 +152,7 @@
    */
   export function resetFog() {
     material?.render('fill', true);
-    onFogUpdate(toPng());
+    onFogUpdate(toPng()); // Always update for reset operation
   }
 
   /**

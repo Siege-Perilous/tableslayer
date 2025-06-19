@@ -59,12 +59,8 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-  // Add cache busting to prevent stale thumbnails
-  const thumbWithCacheBusting = {
-    ...thumb,
-    resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-  };
-  const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
+  // Removed cache busting timestamps to prevent flashing
+  const sceneWithThumb = { ...scene, thumb };
   return sceneWithThumb;
 };
 
@@ -91,12 +87,8 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
       continue;
     }
     const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-    // Add cache busting to prevent stale thumbnails
-    const thumbWithCacheBusting = {
-      ...thumb,
-      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-    };
-    const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
+    // Removed cache busting timestamps to prevent flashing
+    const sceneWithThumb = { ...scene, thumb };
     scenesWithThumbs.push(sceneWithThumb);
   }
 

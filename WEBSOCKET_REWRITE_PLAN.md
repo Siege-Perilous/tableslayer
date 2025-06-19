@@ -1,7 +1,7 @@
 # WebSocket & Data Layer Rewrite Plan
 
-**Status:** Phase 5 Complete - Save Coordination  
-**Last Updated:** 2025-06-18
+**Status:** Phase 6 In Progress - Legacy Cleanup  
+**Last Updated:** 2025-06-19
 
 ## Overall Architecture Summary
 
@@ -433,11 +433,40 @@ The application uses three different image types for scenes:
 
 ---
 
-## Phase 6: Legacy Cleanup (Commit 6) - 📋 PLANNED
+## Phase 6: Legacy Cleanup (Commit 6) - 🚧 IN PROGRESS
 
 **Goal**: Remove old websocket utilities and simplify components
 
-### Image Loading Improvements
+### Playfield Y.js Integration ✅
+
+**Problem**: Playfield was still using legacy Socket.IO for scene updates causing flashing
+
+**Implemented Solution**:
+
+- Converted playfield to use Y.js for real-time scene synchronization
+- Fixed infinite update loop with proper JSON comparison
+- Maintained playfield-specific filters (DM-only markers, scene rotation)
+- Debounced Y.js updates to prevent rapid re-renders
+
+### Fog Update Optimization ✅
+
+**Problem**: Fog images were being saved on every mouse up event, even without drawing
+
+**Implemented Solution**:
+
+- Added `hasDrawnAnything` flag to track actual drawing in FogOfWarLayer
+- Fog saves now only trigger when:
+  - User actually draws/erases on the fog layer
+  - Clear/Reset fog buttons are used
+- Property changes (opacity, color) no longer trigger fog saves
+
+**Benefits**:
+
+- Reduced unnecessary blob uploads
+- Less flashing from fog URL changes
+- Better performance
+
+### Image Loading Improvements (Future Work)
 
 **Problem**: Client-side image loading causes flashing due to cache-busting timestamps
 
@@ -591,4 +620,20 @@ The application uses three different image types for scenes:
 - ✅ Fixed `updateMarkerAndSave`, `onMarkerMoved`, and `onMarkerAdded` to trigger Y.js sync
 - ✅ Multi-editor marker workflow now working: creation, editing, movement, deletion
 - ✅ **PHASE 5 COMPLETE**: Comprehensive multi-editor collaboration with conflict prevention
-- 📋 **READY FOR PHASE 6**: Legacy cleanup and code simplification
+- ✅ **PHASE 5 COMPLETE**: All marker and save coordination issues resolved
+- 🚧 **STARTED PHASE 6**: Legacy cleanup and playfield Y.js integration
+
+### 2025-06-19
+
+- ✅ Fixed marker disappearing after save (added recentlySavedMarkerIds tracking)
+- ✅ Fixed markers not syncing between editors (prevented SSR data overwrite)
+- ✅ Converted playfield to use Y.js for scene data synchronization
+- ✅ Removed legacy Socket.IO handlers from playfield (sessionUpdated, propertiesUpdated)
+- ✅ Preserved playfield-specific StageProps filtering (DM-only markers, scene offset/zoom)
+- ✅ Fixed Y.js subscription initialization issues in playfield
+- ✅ Implemented debouncing for Y.js updates to prevent UI flashing
+- ✅ Fixed race conditions with mount guards and proper cleanup
+- ✅ Replaced granular property checking with simpler Y.js-based approach
+- ✅ Fixed infinite update loop in playfield (JSON comparison instead of reference equality)
+- ✅ Optimized fog updates to only save when actual drawing occurs (not on property changes)
+- 🚧 Continuing legacy websocket removal and simplification

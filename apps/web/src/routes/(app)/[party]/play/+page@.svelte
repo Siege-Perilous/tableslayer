@@ -6,7 +6,7 @@
   import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
+  import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -20,16 +20,25 @@
   let { data } = $props();
   const { user, party } = $derived(data);
 
-  // Y.js party state monitoring for playfield
+  // Y.js party state and scene data monitoring for playfield
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsPartyState = $state({
     isPaused: data.party.gameSessionIsPaused,
     activeSceneId: data.activeScene?.id
   });
+
+  // Debug Y.js party state initialization
+  console.log('🏁 Initial yjsPartyState:', {
+    isPaused: yjsPartyState.isPaused,
+    activeSceneId: yjsPartyState.activeSceneId,
+    dataActiveSceneId: data.activeScene?.id
+  });
+  let yjsSceneData = $state<any>(null);
   let isHydrated = $state(false);
 
   let hasActiveScene = $state(!!data.activeScene);
   let isInvalidating = $state(false);
+  let isProcessingSceneChange = $state(false);
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
@@ -41,16 +50,145 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
 
-  // Y.js is disabled on playfield - using traditional WebSocket for updates
+  // Debounce timer for Y.js updates to prevent flashing
+  let yjsUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingYjsSceneData: any = null;
+  const YJS_UPDATE_DEBOUNCE = 250; // Reduced from 500ms for faster updates
+
+  // Track initialization state to prevent race conditions
+  let yjsInitialized = false;
+  let initialDataApplied = false;
 
   // For batched marker updates
   let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
   let updateScheduled = false;
 
-  // Update stage props when active scene changes
+  // Track the last processed stage props JSON to prevent loops
+  let lastStagePropsJson: string | null = null;
+
+  // Track the last Y.js scene data we processed to avoid duplicate work
+  let lastProcessedYjsData: string | null = null;
+
+  // Update stage props from Y.js data when available
   $effect(() => {
-    if (data.activeScene && data.activeSceneMarkers) {
-      stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+    if (isUnmounting || isInvalidating || isProcessingSceneChange) {
+      console.log('Playfield stageProps effect skipped - unmounting, invalidating, or processing scene change');
+      return;
+    }
+
+    // Create a hash of the current state to detect real changes
+    const currentStateHash = `${yjsPartyState.activeSceneId}-${!!yjsSceneData?.stageProps}-${yjsSceneData?.lastSavedAt || 0}`;
+
+    // Skip if we've already processed this exact state
+    if (lastProcessedYjsData === currentStateHash && lastStagePropsJson) {
+      console.log('Skipping stageProps effect - no real changes detected');
+      return;
+    }
+
+    console.log('Playfield stageProps effect:', {
+      isHydrated,
+      yjsInitialized,
+      hasYjsSceneData: !!yjsSceneData,
+      hasStageProps: !!yjsSceneData?.stageProps,
+      activeSceneId: data.activeScene?.id,
+      yjsActiveSceneId: yjsPartyState.activeSceneId,
+      initialDataApplied
+    });
+
+    // First priority: Use Y.js data if available and initialized
+    if (isHydrated && yjsInitialized && yjsSceneData?.stageProps && yjsPartyState.activeSceneId) {
+      // Only update if we have scene data and an active scene
+      console.log('Building new stage props from Y.js data');
+
+      // Mark this data as processed
+      lastProcessedYjsData = currentStateHash;
+
+      // Build the new stage props
+      const newStageProps = {
+        ...yjsSceneData.stageProps,
+        // Force player mode
+        mode: 1,
+        // Don't allow rotate and zoom from the editor
+        scene: {
+          ...yjsSceneData.stageProps.scene,
+          autoFit: true,
+          offset: { x: 0, y: 0 },
+          rotation: 0,
+          // IMPORTANT: Preserve the current zoom value - don't use editor's zoom
+          zoom: stageProps.scene?.zoom || 1
+        },
+        // Don't allow active layer (fog tools, etc)
+        activeLayer: MapLayerType.None,
+        // Filter markers to remove DM-only ones
+        marker: {
+          ...yjsSceneData.stageProps.marker,
+          markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: any) => m.visibility !== 1) // 1 = MarkerVisibility.DM
+        }
+      };
+
+      // Check if props have changed
+      const newStagePropsJson = JSON.stringify(newStageProps);
+
+      if (newStagePropsJson !== lastStagePropsJson) {
+        console.log('Playfield updating stageProps from Y.js data');
+
+        // Track what's changing to debug flashing
+        const currentMapUrl = stageProps?.map?.url;
+        const currentFogUrl = stageProps?.fogOfWar?.url;
+        const newMapUrl = newStageProps.map?.url;
+        const newFogUrl = newStageProps.fogOfWar?.url;
+
+        if (currentMapUrl !== newMapUrl) {
+          console.log('🗺️ Map URL changing:', {
+            currentMapUrl,
+            newMapUrl,
+            hasTimestamp: newMapUrl?.includes('?t=')
+          });
+        }
+
+        if (currentFogUrl !== newFogUrl) {
+          console.log('🌫️ Fog URL changing:', {
+            currentFogUrl,
+            newFogUrl,
+            hasTimestamp: newFogUrl?.includes('?t=')
+          });
+        }
+
+        // Log other property changes for debugging
+        const keysToCheck = ['grid', 'weather', 'marker', 'edgeOverlay', 'fog', 'postProcessing'];
+        keysToCheck.forEach((key) => {
+          const currentValue = JSON.stringify(stageProps[key]);
+          const newValue = JSON.stringify(newStageProps[key]);
+          if (currentValue !== newValue) {
+            console.log(`🔄 ${key} changing:`, {
+              key,
+              hasChanged: true
+            });
+          }
+        });
+
+        // Update the stage props and track the JSON
+        stageProps = newStageProps;
+        lastStagePropsJson = newStagePropsJson;
+      }
+    }
+    // Second priority: Use SSR data when Y.js doesn't have scene data or on initial load
+    else if (data.activeScene && data.activeSceneMarkers && !isUnmounting && !isInvalidating) {
+      // Use SSR data if:
+      // 1. Initial load (!initialDataApplied && !yjsInitialized) OR
+      // 2. Y.js doesn't have scene data for the current active scene
+      const shouldUseSsrData =
+        (!initialDataApplied && !yjsInitialized) ||
+        (yjsInitialized && !yjsSceneData?.stageProps && data.activeScene.id === yjsPartyState.activeSceneId);
+
+      if (shouldUseSsrData) {
+        console.log('Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
+        const initialStageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+        stageProps = initialStageProps;
+        lastStagePropsJson = JSON.stringify(initialStageProps);
+        lastProcessedYjsData = currentStateHash;
+        initialDataApplied = true;
+      }
     }
   });
 
@@ -84,23 +222,53 @@
     }
   };
 
+  // Track mount state to prevent double initialization
+  let isMounted = false;
+  let isUnmounting = false;
+
   onMount(() => {
+    if (isMounted) {
+      console.warn('Playfield already mounted, skipping initialization');
+      return;
+    }
+    isMounted = true;
+    isUnmounting = false;
+
     let unsubscribeYjs: (() => void) | null = null;
 
-    if (data.activeScene) {
+    // Set initial stage props from SSR data
+    if (data.activeScene && !initialDataApplied) {
+      console.log('Setting initial stage props from SSR data in onMount');
       stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+      lastStagePropsJson = JSON.stringify(stageProps);
+      initialDataApplied = true;
     }
 
-    // Initialize Y.js ONLY for party state monitoring (not scene data)
-    // This allows playfield to detect active game session changes
+    // Initialize Y.js for party state AND scene data monitoring
     try {
-      console.log('Playfield initializing Y.js for party state monitoring...');
-      // Use a dummy gameSessionId to ensure we connect to party-level Y.js only
-      const manager = initializePartyDataManager(party.id, user.id, undefined);
+      console.log('Playfield initializing Y.js for party state and scene data...');
+      // Initialize with the active game session ID if available
+      const activeGameSessionId = data.activeGameSession?.id;
+
+      // Always create a new instance for the playfield
+      const manager = initializePartyDataManager(party.id, user.id, activeGameSessionId);
       partyData = usePartyData();
 
-      // Subscribe to Y.js party state changes
+      // Ensure we don't have duplicate subscriptions
+      if (unsubscribeYjs) {
+        console.warn('Y.js subscription already exists, cleaning up before creating new one');
+        unsubscribeYjs();
+        unsubscribeYjs = null;
+      }
+
+      // Subscribe to Y.js changes (both party state and scene data)
       unsubscribeYjs = partyData.subscribe(() => {
+        if (isUnmounting || isInvalidating) {
+          console.log('Playfield Y.js subscription skipped - unmounting or invalidating');
+          return;
+        }
+
+        console.log('Playfield Y.js subscription fired');
         const updatedPartyState = partyData!.getPartyState();
         console.log('Playfield detected party state change:', updatedPartyState);
 
@@ -109,17 +277,70 @@
           isPaused: updatedPartyState.isPaused,
           activeSceneId: updatedPartyState.activeSceneId
         };
+
+        // Also get scene data if we have an active scene
+        if (updatedPartyState.activeSceneId) {
+          console.log('Trying to get scene data for:', updatedPartyState.activeSceneId);
+          console.log('Active game session ID:', activeGameSessionId);
+
+          // If we don't have the game session ID, we need to find it
+          if (!activeGameSessionId) {
+            console.log('Playfield: No active game session ID, will wait for scene switch to get data');
+            // When the active scene changes, we'll invalidate and get the correct game session
+          } else {
+            const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+            console.log('Scene data result:', sceneData);
+            if (sceneData) {
+              console.log('Playfield received Y.js scene data update:', {
+                sceneId: updatedPartyState.activeSceneId,
+                hasStageProps: !!sceneData.stageProps,
+                markerCount: sceneData.markers?.length || 0
+              });
+              // Check if the scene data actually changed
+              const sceneDataJson = JSON.stringify(sceneData);
+              const currentSceneDataJson = yjsSceneData ? JSON.stringify(yjsSceneData) : null;
+
+              if (sceneDataJson === currentSceneDataJson) {
+                console.log('Y.js scene data unchanged, skipping update');
+                return;
+              }
+
+              // Debounce Y.js updates to prevent flashing
+              pendingYjsSceneData = sceneData;
+
+              if (yjsUpdateTimer) {
+                clearTimeout(yjsUpdateTimer);
+                yjsUpdateTimer = null;
+              }
+
+              // Don't start new timer if we're unmounting or invalidating
+              if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
+                yjsUpdateTimer = setTimeout(() => {
+                  if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
+                    console.log('Applying debounced Y.js scene data update');
+                    yjsSceneData = pendingYjsSceneData;
+                    pendingYjsSceneData = null;
+                    yjsUpdateTimer = null;
+                  }
+                }, YJS_UPDATE_DEBOUNCE); // Shorter debounce for quicker updates
+              }
+            } else {
+              console.log('No scene data found for active scene');
+            }
+          }
+        }
       });
 
       // Mark as hydrated after Y.js initialization
       isHydrated = true;
+      yjsInitialized = true;
     } catch (error) {
-      console.error('Error initializing Y.js party state monitoring:', error);
+      console.error('Error initializing Y.js:', error);
       // Even if Y.js fails, mark as hydrated
       isHydrated = true;
     }
 
-    console.log('Playfield using traditional WebSocket for scene updates (Y.js only for party state)');
+    console.log('Playfield using Y.js for scene updates, keeping Socket.IO for legacy compatibility');
 
     // Keep existing socket.io for now
     const socket = setupPartyWebSocket(
@@ -136,54 +357,16 @@
       return;
     };
 
+    // Legacy socket handlers disabled - using Y.js for scene updates
+    /*
     socket.on('sessionUpdated', (payload: BroadcastStageUpdate) => {
-      // Update the game pause state from the payload
-      if (payload.gameIsPaused !== undefined) {
-        gameIsPaused = payload.gameIsPaused;
-      }
-
-      // Only update hasActiveScene if we've received a real active scene
-      // We check if we have real stageProps that differ from our defaults
-      if (
-        payload.activeScene ||
-        (payload.stageProps && payload.stageProps.map && payload.stageProps.map.url !== StageDefaultProps.map.url)
-      ) {
-        hasActiveScene = true;
-      }
-
-      stageProps = {
-        ...stageProps,
-        // Override stage props with the updated props from the websocket
-        ...payload.stageProps,
-        // Don't allow rotate and zoom from the editor
-        scene: { ...stageProps.scene, autoFit: true, offset: { x: 0, y: 0 } },
-        // Don't allow erase mode
-        activeLayer: MapLayerType.None,
-        // Mode 1 is for player view
-        mode: 1
-      };
+      // Disabled - using Y.js
     });
 
-    // Handle optimized property updates
     socket.on('propertiesUpdated', (updates: PropertyUpdates) => {
-      if (!updates || !updates.properties || updates.sceneId !== data.activeScene?.id) return;
-
-      // Apply all property updates without rebuilding the entire state
-      updates.properties.forEach((update) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let current: any = stageProps;
-        // Navigate to the parent object
-        for (let i = 0; i < update.path.length - 1; i++) {
-          if (!current[update.path[i]]) {
-            current[update.path[i]] = {};
-          }
-          current = current[update.path[i]];
-        }
-        // Update the property
-        const lastKey = update.path[update.path.length - 1];
-        current[lastKey] = update.value;
-      });
+      // Disabled - using Y.js
     });
+    */
 
     $effect(() => {
       if (gameIsPaused) {
@@ -242,11 +425,34 @@
     window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
+      console.log('Playfield cleanup starting');
+      isUnmounting = true;
+      isMounted = false;
+
+      // Clear any pending timers first
+      if (yjsUpdateTimer) {
+        clearTimeout(yjsUpdateTimer);
+        yjsUpdateTimer = null;
+      }
+
+      // Clear pending data
+      pendingYjsSceneData = null;
+
+      // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
+
+      // Disconnect socket
       socket.disconnect();
+
+      // Unsubscribe from Y.js
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
+
+      // Clean up Y.js
+      destroyPartyDataManager();
+
+      console.log('Playfield cleanup completed');
     };
   });
 
@@ -257,7 +463,17 @@
   };
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
-    stageProps.scene.zoom = zoom;
+    console.log('[Playfield] onSceneUpdate called:', { offset, zoom, currentZoom: stageProps.scene.zoom });
+    // Only update if zoom actually changed to prevent unnecessary re-renders
+    if (stageProps.scene.zoom !== zoom) {
+      stageProps = {
+        ...stageProps,
+        scene: {
+          ...stageProps.scene,
+          zoom: zoom
+        }
+      };
+    }
   }
 
   function onFogUpdate(blob: Promise<Blob>) {
@@ -311,35 +527,71 @@
     return () => clearInterval(interval);
   });
 
-  // Effect to reload playfield when active scene or game session changes
+  // Effect to handle active scene changes
   $effect(() => {
-    if (isHydrated && !isInvalidating) {
+    if (isHydrated && !isInvalidating && !isProcessingSceneChange) {
       const currentActiveSceneId = data.activeScene?.id;
+      const currentGameSessionId = data.activeGameSession?.id;
 
-      console.log('Playfield checking for changes:', {
+      console.log('Playfield checking for active scene changes:', {
         yjsActiveSceneId: yjsPartyState.activeSceneId,
         currentActiveSceneId,
-        isInvalidating
+        currentGameSessionId
       });
 
       // Check if active scene changed
       if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
         console.log(
-          `Playfield: Active scene changed from ${currentActiveSceneId} to ${yjsPartyState.activeSceneId}, invalidating...`
+          `Playfield: Active scene changed from ${currentActiveSceneId} to ${yjsPartyState.activeSceneId}, reloading page...`
         );
+
+        // Set flags to prevent race conditions
+        isProcessingSceneChange = true;
         isInvalidating = true;
-        invalidateAll().then(() => {
-          // Reset flag after invalidation completes
-          setTimeout(() => {
+
+        // Clear any pending updates
+        if (yjsUpdateTimer) {
+          clearTimeout(yjsUpdateTimer);
+          yjsUpdateTimer = null;
+        }
+        pendingYjsSceneData = null;
+
+        // Clear the current scene data to show loading state
+        yjsSceneData = null;
+        hasActiveScene = !!yjsPartyState.activeSceneId;
+
+        // Invalidate the page to load the new scene data
+        // This is necessary because:
+        // 1. The new scene might be in a different game session requiring new Y.js connection
+        // 2. We need fresh SSR data for the new scene
+        // 3. The playfield needs to reinitialize with the correct scene context
+        console.log('Invalidating page due to active scene change');
+        invalidateAll()
+          .then(() => {
+            console.log('Page invalidation complete after active scene change');
+            // Reset flags after invalidation completes
             isInvalidating = false;
-          }, 1000);
-        });
+            isProcessingSceneChange = false;
+          })
+          .catch((error) => {
+            console.error('Error invalidating page after active scene change:', error);
+            // Reset flags even on error
+            isInvalidating = false;
+            isProcessingSceneChange = false;
+          });
+
         return;
       }
+
+      // Update hasActiveScene based on Y.js data (for pause/unpause without scene change)
+      hasActiveScene = !!yjsPartyState.activeSceneId;
     }
   });
 
-  $inspect(stageProps);
+  // Note: When switching between game sessions, the playfield needs to connect to the new session's Y.js document
+  // This is a limitation that may require re-initializing the Y.js manager
+
+  // $inspect(stageProps); // Commented out to prevent performance issues
 </script>
 
 <Head title={party.name} description={`${party.name} on Table Slayer`} />

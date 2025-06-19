@@ -27,8 +27,6 @@
   import { navigating } from '$app/state';
   import {
     StageDefaultProps,
-    broadcastStageUpdate,
-    broadcastMarkerUpdate,
     buildSceneProps,
     handleKeyCommands,
     setupPartyWebSocket,
@@ -37,7 +35,6 @@
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
     throttle,
-    type MarkerPositionUpdate,
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
@@ -245,42 +242,15 @@
   };
 
   /**
-   * SOCKET UPDATES
-   * SOCKET UPDATES
-   * SOCKET UPDATES
+   * SOCKET UPDATES - DEPRECATED
    *
-   * Sends the ACTIVE SCENE props across the WebSocket.
-   * If the ACTIVE SCENE is also the SELECTED SCENE, it will send the SELECTED SCENE state.
-   *
-   * This is passed down to child components and manually called
+   * Legacy socket broadcasting has been replaced by Y.js synchronization.
+   * The playfield now subscribes directly to Y.js scene data.
+   * This function is kept as a no-op for backward compatibility.
    */
   const socketUpdate = () => {
-    // Only broadcast if we're editing the active scene (so we have full scene data)
-    // The session containing the active scene is automatically the broadcasting session
-    const isEditingActiveScene = selectedScene.id === currentActiveScene?.id;
-    const shouldBroadcast = isEditingActiveScene;
-
-    console.log('socketUpdate called:', {
-      gameSessionId: gameSession.id,
-      selectedSceneId: selectedScene.id,
-      currentActiveSceneId: currentActiveScene?.id,
-      isEditingActiveScene,
-      shouldBroadcast
-    });
-
-    if (shouldBroadcast) {
-      console.log('Broadcasting stage update to playfield');
-      broadcastStageUpdate(
-        socket,
-        currentActiveScene,
-        selectedScene,
-        stageProps, // We have full scene data and stage props
-        activeSceneMarkers,
-        currentParty.gameSessionIsPaused
-      );
-    } else {
-      console.log('Skipping broadcast - conditions not met');
-    }
+    // No-op - Y.js handles synchronization now
+    console.log('socketUpdate called (no-op - using Y.js for synchronization)');
   };
 
   // Register the scene with the property broadcaster for Y.js updates
@@ -391,12 +361,7 @@
             isReceivingYjsUpdate = false;
           }, 1000);
 
-          // Also broadcast to playfield via Socket.IO to keep it in sync
-          // Only do this if we're editing the active scene to avoid duplicate broadcasts
-          if (currentSceneId === currentActiveScene?.id) {
-            console.log('Broadcasting Y.js changes to playfield via Socket.IO');
-            socketUpdate();
-          }
+          // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
         } else {
           console.log('No changes detected in Y.js update - skipping stageProps update');
         }
@@ -462,20 +427,7 @@
    * - Initialize the stage
    * - Send initial broadcast to the WebSocket
    */
-  // Handler for optimized marker updates
-  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate, props: StageProps) => {
-    // Only handle updates for the current scene
-    if (selectedScene && selectedScene.id === markerUpdate.sceneId) {
-      const index = props.marker.markers.findIndex((m) => m.id === markerUpdate.markerId);
-      if (index !== -1) {
-        // Update the marker position without rebuilding the entire state
-        props.marker.markers[index] = {
-          ...props.marker.markers[index],
-          position: markerUpdate.position
-        };
-      }
-    }
-  };
+  // Marker updates now handled via Y.js - no need for socket-based updates
 
   onMount(() => {
     // Set up callback for property updates to trigger auto-save
@@ -553,10 +505,9 @@
 
     socket = setupPartyWebSocket(
       party.id,
-      () => console.log('Connected to party socket'),
-      () => console.log('Disconnected from party socket'),
-      handleMarkerUpdate, // Pass marker update handler
-      stageProps // Pass stageProps for the handler to access
+      () => console.log('Connected to party socket (for cursor tracking)'),
+      () => console.log('Disconnected from party socket')
+      // Marker updates now handled via Y.js
     );
 
     if (stageElement) {
@@ -572,7 +523,7 @@
       );
     }
 
-    socketUpdate();
+    // Initial socket update removed - Y.js handles synchronization
 
     return () => {
       socket?.disconnect();
@@ -800,30 +751,19 @@
   // REMOVED: Effect that was overwriting map URL with server thumb
   // We now generate all image URLs client-side in buildSceneProps
 
-  // Effect to broadcast when active scene changes via Y.js (e.g., from SceneSelector)
-  // Send full stage updates when we're editing the active scene
-  $effect(() => {
-    if (isHydrated && currentActiveScene) {
-      // We're editing the active scene - send full stage update
-      if (selectedScene.id === currentActiveScene.id) {
-        console.log('Broadcasting full stage update - we are editing the active scene');
-        socketUpdate();
-      }
-    }
-  });
+  // Effect removed - Y.js now handles all synchronization automatically
 
   const onMapUpdate = (offset: { x: number; y: number }, zoom: number) => {
-    stageProps.map.offset.x = offset.x;
-    stageProps.map.offset.y = offset.y;
-    stageProps.map.zoom = zoom;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], offset.x, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], offset.y, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   };
 
   const onSceneUpdate = (offset: { x: number; y: number }, zoom: number) => {
+    // Scene offset and zoom are local-only properties - update directly without Y.js sync
     stageProps.scene.offset.x = offset.x;
     stageProps.scene.offset.y = offset.y;
     stageProps.scene.zoom = zoom;
-    socketUpdate();
   };
 
   const onStageLoading = () => {
@@ -991,8 +931,7 @@
         stageProps.scene.offset.y -= rotatedMovementY;
       }
 
-      // Use our proper throttled update (replaces manual throttling)
-      throttledSocketUpdate();
+      // Y.js handles synchronization automatically
     }
 
     // Emit the normalized and rotated position over the WebSocket
@@ -1037,15 +976,10 @@
     updateProperty(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
-  // Use throttling for wheel/zoom events to reduce update frequency
-  const throttledSocketUpdate = throttle(socketUpdate, 200);
-
   const onWheel = (e: WheelEvent) => {
     // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
     handleStageZoom(e, stageProps);
-    if (currentActiveScene && currentActiveScene.id === selectedScene.id) {
-      throttledSocketUpdate();
-    }
+    // Y.js handles synchronization automatically via queuePropertyUpdate
   };
 
   /**
@@ -1203,7 +1137,7 @@
             }
           });
         }
-        socketUpdate();
+        // Y.js already synchronized the markers - no need for socket broadcast
       }
 
       // Empty game session update will update the lastUpdated field through Drizzle

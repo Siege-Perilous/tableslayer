@@ -52,23 +52,26 @@ export const buildSceneProps = (
 
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
-    markers = activeSceneMarkers.map((marker) => ({
-      id: marker.id,
-      title: marker.title,
-      position: { x: marker.positionX, y: marker.positionY },
-      size: marker.size,
-      shape: marker.shape,
-      shapeColor: marker.shapeColor,
-      label: marker.label,
-      imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation) : null,
-      imageScale: 1,
-      visibility: marker.visibility,
-      note: marker.note || null
-    }));
+    markers = activeSceneMarkers
+      // Filter out DM-only markers for client mode
+      .filter((marker) => mode === 'editor' || marker.visibility !== 1) // 1 = MarkerVisibility.DM
+      .map((marker) => ({
+        id: marker.id,
+        title: marker.title,
+        position: { x: marker.positionX, y: marker.positionY },
+        size: marker.size,
+        shape: marker.shape,
+        shapeColor: marker.shapeColor,
+        label: marker.label,
+        imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation) : null,
+        imageScale: 1,
+        visibility: marker.visibility,
+        note: marker.note || null
+      }));
   }
 
   return {
-    mode: StageMode.DM,
+    mode: mode === 'client' ? StageMode.Player : StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
     debug: {
