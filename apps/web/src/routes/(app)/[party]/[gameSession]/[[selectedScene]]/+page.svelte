@@ -58,26 +58,57 @@
     user
   } = $derived(data);
 
-  // Helper function to merge markers while protecting ones being moved
-  const mergeMarkersWithMoveProtection = (localMarkers: any[], incomingMarkers: any[], beingMoved: Set<string>) => {
-    if (beingMoved.size === 0) {
+  // Helper function to merge markers while protecting ones being moved or edited
+  const mergeMarkersWithProtection = (
+    localMarkers: any[],
+    incomingMarkers: any[],
+    beingMoved: Set<string>,
+    beingEdited: Set<string>
+  ) => {
+    const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
+
+    console.log('🔄 Merging markers:', {
+      localCount: localMarkers.length,
+      incomingCount: incomingMarkers.length,
+      localIds: localMarkers.map((m) => m.id),
+      incomingIds: incomingMarkers.map((m) => m.id),
+      protectedCount: protectedMarkers.size
+    });
+
+    if (protectedMarkers.size === 0) {
       return incomingMarkers; // No protection needed
     }
 
-    console.log('Protecting moved markers from Y.js overwrite:', Array.from(beingMoved));
+    console.log('Protecting markers from Y.js overwrite:', {
+      beingMoved: Array.from(beingMoved),
+      beingEdited: Array.from(beingEdited),
+      total: Array.from(protectedMarkers)
+    });
+
     const result = [...incomingMarkers];
 
-    // Preserve local position for markers being moved
+    // Preserve local markers that are being moved or edited
     for (const localMarker of localMarkers) {
-      if (beingMoved.has(localMarker.id)) {
+      if (protectedMarkers.has(localMarker.id)) {
         const existingIndex = result.findIndex((m) => m.id === localMarker.id);
         if (existingIndex >= 0) {
-          // Keep incoming marker but preserve local position
-          result[existingIndex] = {
-            ...result[existingIndex],
-            position: localMarker.position
-          };
-          console.log(`Protected marker ${localMarker.id} position:`, localMarker.position);
+          // Keep incoming marker but preserve local changes
+          if (beingMoved.has(localMarker.id)) {
+            // For moved markers, preserve position
+            result[existingIndex] = {
+              ...result[existingIndex],
+              position: localMarker.position
+            };
+            console.log(`Protected moved marker ${localMarker.id} position:`, localMarker.position);
+          } else if (beingEdited.has(localMarker.id)) {
+            // For edited markers, preserve entire local marker
+            result[existingIndex] = localMarker;
+            console.log(`Protected edited marker ${localMarker.id}:`, localMarker);
+          }
+        } else if (beingEdited.has(localMarker.id)) {
+          // Newly added marker - add it to the result
+          result.push(localMarker);
+          console.log(`Protected newly added marker ${localMarker.id}:`, localMarker);
         }
       }
     }
@@ -158,6 +189,8 @@
 
   // Track which markers were loaded from the database for Y.js sync
   let persistedMarkerIds = $state<Set<string>>(new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []));
+  // Track markers that were recently saved to prevent rebuild before SSR data updates
+  let recentlySavedMarkerIds = $state<Set<string>>(new Set());
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -180,6 +213,7 @@
   let hasInitialLoad = $state(false);
   let isWindowFocused = $state(true); // Track if this editor window is focused
   let markersBeingMoved = $state(new Set<string>()); // Track markers currently being moved/saved
+  let markersBeingEdited = $state(new Set<string>()); // Track markers being added/edited (for Y.js protection)
   let isActivelyEditing = $state(false); // Track if user is actively making changes (blocks Y.js updates)
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
@@ -297,6 +331,8 @@
           sceneId: currentSceneId,
           mapUrl: sceneData.stageProps.map?.url,
           hasStageProps: !!sceneData.stageProps,
+          markersFromYjs: sceneData.stageProps.marker?.markers?.length || 0,
+          separateMarkers: sceneData.markers?.length || 0,
           timestamp: Date.now()
         });
 
@@ -322,11 +358,12 @@
           },
           marker: {
             ...incomingStageProps.marker,
-            // Protect markers being moved from Y.js overwrites
-            markers: mergeMarkersWithMoveProtection(
+            // Protect markers being moved or edited from Y.js overwrites
+            markers: mergeMarkersWithProtection(
               stageProps.marker?.markers || [],
-              incomingStageProps.marker?.markers || [],
-              markersBeingMoved
+              incomingStageProps.marker?.markers || sceneData.markers || [],
+              markersBeingMoved,
+              markersBeingEdited
             )
           }
         };
@@ -567,15 +604,15 @@
   const handleSelectActiveControl = (control: string) => {
     if (control === activeControl) {
       activeControl = 'none';
-      updateProperty(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
     } else if (control === 'marker') {
       selectedMarkerId = undefined;
       activeControl = 'marker';
-      updateProperty(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       markersPane.expand();
     } else {
       activeControl = control;
-      updateProperty(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
     }
   };
 
@@ -650,36 +687,55 @@
       });
 
       // This is a scene switch or initial load - rebuild everything
-      stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+      // For non-scene switches, preserve locally added markers
+      const markersToUse = isSceneSwitch
+        ? currentSelectedSceneMarkers
+        : stageProps?.marker?.markers || currentSelectedSceneMarkers;
+
+      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor');
       lastBuiltMapLocation = currentMapLocation;
 
       console.log('[StageProps Effect] Rebuilt stageProps:', {
         mapUrl: stageProps.map.url,
         mapLocation: sceneToUse?.mapLocation,
         sourceData: !isSceneSwitch && yjsSelectedScene ? 'Y.js' : 'SSR',
-        reason: isSceneSwitch ? 'scene switch' : mapLocationChanged ? 'map changed' : 'initial load'
+        reason: isSceneSwitch ? 'scene switch' : mapLocationChanged ? 'map changed' : 'initial load',
+        markersUsed: markersToUse?.length || 0,
+        markersInResult: stageProps.marker.markers.length
       });
 
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
-      if (isSceneSwitch && partyData && currentSceneId) {
-        console.log('[StageProps Effect] Scene switch detected - initializing Y.js with fresh SSR data');
+      if (partyData && currentSceneId) {
+        if (isSceneSwitch) {
+          console.log('[StageProps Effect] Scene switch detected - initializing Y.js with fresh SSR data');
+        } else if (!partyData.getSceneData(currentSceneId)) {
+          console.log('[StageProps Effect] No Y.js data for scene - initializing with SSR data');
+        }
 
-        // Create a copy of stageProps without local-only properties for Y.js storage
-        const sharedStageProps = {
-          ...stageProps,
-          // Reset local-only properties to defaults for shared state
-          activeLayer: MapLayerType.None,
-          scene: {
-            ...stageProps.scene,
-            // Reset local-only scene properties to defaults for shared state
-            offset: { x: 0, y: 0 },
-            zoom: 1,
-            rotation: 0
-          }
-        };
+        // Initialize if scene switch OR if Y.js doesn't have data for this scene yet
+        if (isSceneSwitch || !partyData.getSceneData(currentSceneId)) {
+          // Create a copy of stageProps without local-only properties for Y.js storage
+          const sharedStageProps = {
+            ...stageProps,
+            // Reset local-only properties to defaults for shared state
+            activeLayer: MapLayerType.None,
+            scene: {
+              ...stageProps.scene,
+              // Reset local-only scene properties to defaults for shared state
+              offset: { x: 0, y: 0 },
+              zoom: 1,
+              rotation: 0
+            }
+          };
 
-        // Always re-initialize on scene switch to ensure fresh DB data is used
-        partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
+          // Initialize Y.js with the current scene data
+          console.log('🔄 Initializing Y.js scene data with markers:', {
+            sceneId: currentSceneId,
+            markerCount: currentSelectedSceneMarkers?.length || 0,
+            markerIds: currentSelectedSceneMarkers?.map((m) => m.id) || []
+          });
+          partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
+        }
       }
     } else {
       // Same scene - only update if markers changed
@@ -699,7 +755,14 @@
         currentMarkerIds !== newMarkerIds ||
         stageProps.marker.markers.length !== (currentSelectedSceneMarkers?.length || 0);
 
-      if (markersChanged) {
+      // Check if any recently saved markers are still missing from SSR data
+      const waitingForSSRUpdate = Array.from(recentlySavedMarkerIds).some(
+        (markerId) => !currentSelectedSceneMarkers?.some((m) => m.id === markerId)
+      );
+
+      // Skip marker-based rebuilds if user is actively editing or waiting for SSR update
+      if (markersChanged && !isActivelyEditing && markersBeingEdited.size === 0 && !waitingForSSRUpdate) {
+        console.log('[StageProps Effect] Markers changed - rebuilding with SSR markers');
         // Preserve current map and scene state when only markers change
         const currentMapState = {
           offset: { ...stageProps.map.offset },
@@ -721,6 +784,13 @@
         stageProps.scene.offset = currentSceneState.offset;
         stageProps.scene.zoom = currentSceneState.zoom;
         stageProps.scene.rotation = currentSceneState.rotation;
+      } else if (markersChanged) {
+        console.log('[StageProps Effect] Skipping marker rebuild:', {
+          isActivelyEditing,
+          markersBeingEdited: markersBeingEdited.size,
+          waitingForSSRUpdate,
+          recentlySavedMarkers: Array.from(recentlySavedMarkerIds)
+        });
       }
     }
 
@@ -768,20 +838,24 @@
     // Set actively editing flag to block Y.js updates
     isActivelyEditing = true;
 
+    // Add marker to protection set
+    markersBeingEdited.add(marker.id);
+    console.log('🛡️ Added marker to protection set:', marker.id);
+
     // Clear any existing editing timer and set new one
     if (editingTimer) clearTimeout(editingTimer);
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
-      console.log('Cleared isActivelyEditing flag due to timeout');
+      markersBeingEdited.delete(marker.id);
+      console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', marker.id);
     }, 10000); // Clear after 10 seconds if no save occurs
 
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
     selectedMarkerId = marker.id;
 
     // Trigger Y.js synchronization for new marker to other editors
+    // This will also trigger auto-save through the callback
     queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
-
-    startAutoSaveTimer(); // Trigger auto-save after marker added
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
@@ -1089,17 +1163,14 @@
       });
 
       // Save markers using simplified upsert approach
-      console.log(
-        'Checking markers for save - markers:',
-        stageProps.marker?.markers?.length || 0,
-        stageProps.marker?.markers
-      );
-      if (stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-        const stageMarkers = stageProps.marker.markers;
-        console.log('Found markers to save:', stageMarkers.length);
+      // Use $state.snapshot to get actual values from Svelte proxy
+      const markersSnapshot = $state.snapshot(stageProps.marker?.markers || []);
+      console.log('Checking markers for save - markers:', markersSnapshot.length, markersSnapshot);
+      if (markersSnapshot.length > 0) {
+        console.log('Found markers to save:', markersSnapshot.length);
 
         // Process markers one by one using upsert (create or update as needed)
-        for (const marker of stageMarkers) {
+        for (const marker of markersSnapshot) {
           const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
 
           await handleMutation({
@@ -1116,6 +1187,13 @@
               if (result.operation === 'created') {
                 persistedMarkerIds.add(marker.id);
               }
+              // Track recently saved markers to prevent premature rebuilds
+              recentlySavedMarkerIds.add(marker.id);
+              // Clear from recently saved after a delay (time for SSR data to update)
+              setTimeout(() => {
+                recentlySavedMarkerIds.delete(marker.id);
+                console.log('Removed marker from recently saved set:', marker.id);
+              }, 5000); // 5 seconds should be enough for SSR update
             },
             onError: (error) => {
               console.log('Error saving marker:', error);
@@ -1161,6 +1239,19 @@
 
       // Clear actively editing flag and timer after save completes
       isActivelyEditing = false;
+      // Only clear protection for markers that were actually saved
+      if (saveSuccess && stageProps.marker.markers && stageProps.marker.markers.length > 0) {
+        // Clear protection only for markers that were saved
+        for (const marker of stageProps.marker.markers) {
+          if (persistedMarkerIds.has(marker.id)) {
+            markersBeingEdited.delete(marker.id);
+            markersBeingMoved.delete(marker.id);
+            console.log('✅ Cleared protection for saved marker:', marker.id);
+          } else {
+            console.log('⚠️ Keeping protection for unsaved marker:', marker.id);
+          }
+        }
+      }
       if (editingTimer) {
         clearTimeout(editingTimer);
         editingTimer = null;
@@ -1186,8 +1277,8 @@
       console.log('Cleared isActivelyEditing flag due to timeout');
     }, 10000); // Clear after 10 seconds if no save occurs
 
+    // queuePropertyUpdate will trigger auto-save through the callback
     queuePropertyUpdate(stageProps, propertyPath, value, updateType);
-    startAutoSaveTimer();
   };
 
   // Helper function for marker updates that triggers auto-save
@@ -1197,20 +1288,24 @@
       // Set actively editing flag to block Y.js updates
       isActivelyEditing = true;
 
+      // Add marker to protection set
+      markersBeingEdited.add(markerId);
+      console.log('🛡️ Added marker to protection set for update:', markerId);
+
       // Clear any existing editing timer and set new one
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
-        console.log('Cleared isActivelyEditing flag due to timeout');
+        markersBeingEdited.delete(markerId);
+        console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', markerId);
       }, 10000); // Clear after 10 seconds if no save occurs
 
       // Update the marker locally
       updateFn(stageProps.marker.markers[markerIndex]);
 
       // Trigger Y.js synchronization for markers to other editors
+      // This will also trigger auto-save through the callback
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
-
-      startAutoSaveTimer();
     }
   };
 
@@ -1258,10 +1353,18 @@
 
   // Make sure the selectedMarkerId is reset when the selectedScene changes
   // Also update persistedMarkerIds to reflect what might change in state
+  let previousEffectSceneId = $state<string | undefined>(undefined);
   $effect(() => {
-    if (selectedScene.id) {
+    const currentSceneId = selectedScene?.id;
+    if (currentSceneId && currentSceneId !== previousEffectSceneId) {
+      // Only run this when scene actually changes
       selectedMarkerId = undefined;
       persistedMarkerIds = new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
+      // Clear marker protection sets when switching scenes
+      markersBeingEdited.clear();
+      markersBeingMoved.clear();
+      console.log('🔄 Cleared marker protection sets on scene switch');
+      previousEffectSceneId = currentSceneId;
     }
   });
 </script>

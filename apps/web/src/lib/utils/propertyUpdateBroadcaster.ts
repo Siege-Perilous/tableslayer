@@ -49,6 +49,7 @@ export function queuePropertyUpdate(
   if (isLocalOnlyProperty(propertyPath)) {
     console.log(`Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
     applyUpdate(stageProps, propertyPath, value);
+    // Don't trigger auto-save for local-only properties
     return;
   }
 

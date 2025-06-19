@@ -310,17 +310,31 @@ export class PartyDataManager {
       if (existingSceneData instanceof Y.Map) {
         const lastSavedAt = existingSceneData.get('lastSavedAt') || 0;
 
-        // On fresh page load (SSR), always prefer database data over potentially stale Y.js data
-        // We consider this a "fresh load" if we're initializing with SSR data
-        console.log(`[${this.clientId}] Scene data exists - SSR data takes precedence over Y.js (fresh page load)`);
-        console.log(`[${this.clientId}] Updating Y.js with fresh SSR data for scene: ${sceneId}`);
+        // Check if Y.js has newer data than what we're initializing with
+        const existingMarkers = existingSceneData.get('markers') || [];
+        const hasMoreMarkers = existingMarkers.length > markers.length;
+        const timeSinceSave = currentTime - lastSavedAt;
 
-        // Update with fresh SSR data
-        this.doc.transact(() => {
-          existingSceneData.set('stageProps', stageProps);
-          existingSceneData.set('markers', markers);
-          existingSceneData.set('lastSavedAt', currentTime);
-        });
+        // Only update if SSR has more recent data or more markers
+        // This prevents Editor B from overwriting Editor A's markers
+        if (timeSinceSave > 10000 || markers.length > existingMarkers.length) {
+          console.log(`[${this.clientId}] Updating Y.js with SSR data - SSR has newer/more data`);
+          console.log(
+            `[${this.clientId}] Time since last save: ${timeSinceSave}ms, SSR markers: ${markers.length}, Y.js markers: ${existingMarkers.length}`
+          );
+
+          // Update with fresh SSR data
+          this.doc.transact(() => {
+            existingSceneData.set('stageProps', stageProps);
+            existingSceneData.set('markers', markers);
+            existingSceneData.set('lastSavedAt', currentTime);
+          });
+        } else {
+          console.log(`[${this.clientId}] Keeping existing Y.js data - it's newer than SSR`);
+          console.log(
+            `[${this.clientId}] Time since last save: ${timeSinceSave}ms, SSR markers: ${markers.length}, Y.js markers: ${existingMarkers.length}`
+          );
+        }
       }
     }
 
@@ -545,6 +559,13 @@ export class PartyDataManager {
     this.doc.transact(() => {
       console.log(`[${this.clientId}] Setting stageProps for scene ${sceneId} via Y.js transaction`);
       sceneDataMap.set('stageProps', updatedStageProps);
+      // Also update the separate markers array to keep it in sync
+      if (updatedStageProps.marker?.markers) {
+        console.log(
+          `[${this.clientId}] Also updating separate markers array with ${updatedStageProps.marker.markers.length} markers`
+        );
+        sceneDataMap.set('markers', updatedStageProps.marker.markers);
+      }
       sceneDataMap.set('lastSavedAt', Date.now());
     }, this.clientId); // Set origin to this client's ID
 
