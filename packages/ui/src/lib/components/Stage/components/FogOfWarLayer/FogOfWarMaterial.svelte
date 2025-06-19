@@ -88,21 +88,21 @@
    * Reverts the changes made to the fog of war
    */
   export function revertChanges() {
-    drawMaterial.render('revert', true);
+    drawMaterial.revert();
   }
 
   /**
    * Clears the fog of war
    */
   export function clear() {
-    drawMaterial.render('clear', true);
+    drawMaterial.clear();
   }
 
   /**
    * Fills the fog of war
    */
   export function fill() {
-    drawMaterial.render('fill', true);
+    drawMaterial.fill();
   }
 
   /**

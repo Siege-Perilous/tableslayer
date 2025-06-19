@@ -4,6 +4,7 @@
   import { DrawMode, type DrawingLayerProps } from './types';
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
+  import { RenderMode } from './types';
 
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -81,13 +82,13 @@
         loadImage(props.url);
         untrack(() => (imageUrl = props.url));
       } else {
-        render('fill', true);
+        render(RenderMode.Fill, true);
       }
     }
   });
 
   $effect(() => {
-    // If fog image is changed, load it
+    // If fog image is changed, reload the image
     if (props.url && props.url !== imageUrl) {
       loadImage(props.url);
       untrack(() => (imageUrl = props.url));
@@ -97,8 +98,6 @@
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
     drawMaterial.uniforms.uEnd.value.copy(drawMaterial.uniforms.uStart.value);
-
-    // Update brush properties
     drawMaterial.uniforms.uShapeType.value = props.tool.type;
     drawMaterial.uniforms.uBrushSize.value = props.tool.size;
 
@@ -109,13 +108,18 @@
     }
 
     // Discard the current buffer by copying the previous buffer to the current buffer
-    render('revert', true);
+    render(RenderMode.Revert, true);
+
     // Re-draw the scene to show the updated tool overlay
-    render('draw');
+    render(RenderMode.Draw);
   });
 
+  /**
+   * Loads an image into the current buffer
+   * @param url The URL of the image to load
+   */
   function loadImage(url: string) {
-    loader.load(url).then((texture) => render('revert', true, texture));
+    loader.load(url).then((texture) => render(RenderMode.Revert, true, texture));
   }
 
   /**
@@ -127,23 +131,31 @@
     persistedTarget = temp;
   }
 
+  export function clear() {
+    render(RenderMode.Clear, true);
+  }
+
+  export function fill() {
+    render(RenderMode.Fill, true);
+  }
+
+  export function revert() {
+    render(RenderMode.Revert, true);
+  }
+
   /**
    * Renders the to the current buffer
    * @param operation The operation to perform. 'fill' will reset the fog of war to the initial state, 'revert' will copy the current state to the previous state, 'clear' will clear the current state, and 'draw' will draw the current state
    * @param persist Whether to persist the current state
    * @param lastTexture The texture to use for the previous state
    */
-  export function render(
-    operation: 'fill' | 'revert' | 'clear' | 'draw',
-    persist: boolean = false,
-    lastTexture: THREE.Texture | null = null
-  ) {
+  export function render(operation: RenderMode, persist: boolean = false, lastTexture: THREE.Texture | null = null) {
     // If no previous state is provided, use the last target
     drawMaterial.uniforms.uPreviousState.value = lastTexture ?? persistedTarget.texture;
 
-    drawMaterial.uniforms.uIsRevertOperation.value = operation === 'revert';
-    drawMaterial.uniforms.uIsFillOperation.value = operation === 'fill';
-    drawMaterial.uniforms.uIsClearOperation.value = operation === 'clear';
+    drawMaterial.uniforms.uIsRevertOperation.value = operation === RenderMode.Revert;
+    drawMaterial.uniforms.uIsFillOperation.value = operation === RenderMode.Fill;
+    drawMaterial.uniforms.uIsClearOperation.value = operation === RenderMode.Clear;
 
     scene.visible = true;
     renderer.setRenderTarget(tempTarget);
@@ -163,12 +175,22 @@
     }
   }
 
+  /**
+   * Draws a path on the current buffer
+   * @param start The start position of the path
+   * @param last The last position of the path
+   * @param persist Whether to persist the current state
+   */
   export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null, persist: boolean) {
     drawMaterial.uniforms.uStart.value.copy(start);
     drawMaterial.uniforms.uEnd.value.copy(last ?? start);
-    render('draw', persist);
+    render(RenderMode.Draw, persist);
   }
 
+  /**
+   * Gets the current texture
+   * @returns The current texture
+   */
   export function getTexture() {
     return tempTarget.texture;
   }

@@ -9,6 +9,13 @@ export enum DrawMode {
   Draw = 1
 }
 
+export enum RenderMode {
+  Draw = 'draw',
+  Clear = 'clear',
+  Revert = 'revert',
+  Fill = 'fill'
+}
+
 /**
  * The properties for a drawing layer
  */
