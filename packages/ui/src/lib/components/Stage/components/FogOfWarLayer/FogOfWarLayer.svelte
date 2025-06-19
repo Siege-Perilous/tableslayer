@@ -6,10 +6,10 @@
   import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
   import { SceneLayer } from '../Scene/types';
+  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: FogOfWarLayerProps;

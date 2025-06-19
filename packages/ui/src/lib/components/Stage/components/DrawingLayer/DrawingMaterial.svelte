@@ -1,0 +1,218 @@
+<script lang="ts">
+  import * as THREE from 'three';
+  import { T, useThrelte, useLoader } from '@threlte/core';
+  import { DrawMode, type DrawingLayerProps } from './types';
+  import { onDestroy, untrack } from 'svelte';
+  import type { Size } from '../../types';
+
+  import drawVertexShader from '../../shaders/Drawing.vert?raw';
+  import drawFragmentShader from '../../shaders/Drawing.frag?raw';
+
+  interface Props {
+    props: DrawingLayerProps;
+    mapSize: Size | null;
+  }
+
+  const { props, mapSize }: Props = $props();
+  const { renderer } = useThrelte();
+
+  // This shader is used for drawing the fog of war on the GPU
+  const drawMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uPreviousState: { value: null },
+      uBrushTexture: { value: null },
+      uStart: { value: new THREE.Vector2() },
+      uEnd: { value: new THREE.Vector2() },
+      uBrushSize: { value: props.tool.size },
+      uBrushFalloff: { value: 50.0 },
+      uTextureSize: { value: new THREE.Vector2() },
+      uBrushColor: { value: new THREE.Vector4() },
+      uIsRevertOperation: { value: false },
+      uIsClearOperation: { value: false },
+      uIsFillOperation: { value: false },
+      uShapeType: { value: 0 }
+    },
+    vertexShader: drawVertexShader,
+    fragmentShader: drawFragmentShader
+  });
+
+  // Options for the render targets
+  const options = {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    minFilter: THREE.LinearMipMapLinearFilter,
+    magFilter: THREE.LinearFilter,
+    generateMipmaps: true,
+    depthBuffer: false,
+    alpha: true
+  };
+
+  let imageUrl: string | null = $state(null);
+
+  const loader = useLoader(THREE.TextureLoader);
+
+  // Double-buffered render targets
+  let tempTarget = new THREE.WebGLRenderTarget(1, 1, options);
+  let persistedTarget = new THREE.WebGLRenderTarget(1, 1, options);
+
+  // Setup the quad that the fog of war is drawn on
+  let scene = new THREE.Scene();
+  let camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const quad = new THREE.Mesh();
+
+  onDestroy(() => {
+    tempTarget?.dispose();
+    persistedTarget?.dispose();
+  });
+
+  // Map size changed
+  $effect(() => {
+    if (!mapSize) return;
+
+    // If map size changed, update the render target sizes
+    if (mapSize.width !== tempTarget.width || mapSize.height !== tempTarget.height) {
+      tempTarget.setSize(mapSize.width, mapSize.height);
+      persistedTarget.setSize(mapSize.width, mapSize.height);
+      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+
+      // If an image is provided, load it, otherwise reset the fog state
+      if (props.url) {
+        loadImage(props.url);
+        untrack(() => (imageUrl = props.url));
+      } else {
+        render('fill', true);
+      }
+    }
+  });
+
+  $effect(() => {
+    // If fog image is changed, load it
+    if (props.url && props.url !== imageUrl) {
+      loadImage(props.url);
+      untrack(() => (imageUrl = props.url));
+    }
+  });
+
+  // Whenever the fog of war props change, we need to update the material
+  $effect(() => {
+    drawMaterial.uniforms.uEnd.value.copy(drawMaterial.uniforms.uStart.value);
+
+    // Update brush properties
+    drawMaterial.uniforms.uShapeType.value = props.tool.type;
+    drawMaterial.uniforms.uBrushSize.value = props.tool.size;
+
+    if (props.tool.mode === DrawMode.Erase) {
+      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
+    } else {
+      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
+    }
+
+    // Discard the current buffer by copying the previous buffer to the current buffer
+    render('revert', true);
+    // Re-draw the scene to show the updated tool overlay
+    render('draw');
+  });
+
+  function loadImage(url: string) {
+    loader.load(url).then((texture) => render('revert', true, texture));
+  }
+
+  /**
+   * Swaps the current and previous buffers to persist the current state
+   */
+  function swapBuffers() {
+    const temp = tempTarget;
+    tempTarget = persistedTarget;
+    persistedTarget = temp;
+  }
+
+  /**
+   * Renders the to the current buffer
+   * @param operation The operation to perform. 'fill' will reset the fog of war to the initial state, 'revert' will copy the current state to the previous state, 'clear' will clear the current state, and 'draw' will draw the current state
+   * @param persist Whether to persist the current state
+   * @param lastTexture The texture to use for the previous state
+   */
+  export function render(
+    operation: 'fill' | 'revert' | 'clear' | 'draw',
+    persist: boolean = false,
+    lastTexture: THREE.Texture | null = null,
+    callback?: (texture: THREE.Texture) => void
+  ) {
+    // If no previous state is provided, use the last target
+    drawMaterial.uniforms.uPreviousState.value = lastTexture ?? persistedTarget.texture;
+
+    drawMaterial.uniforms.uIsRevertOperation.value = operation === 'revert';
+    drawMaterial.uniforms.uIsFillOperation.value = operation === 'fill';
+    drawMaterial.uniforms.uIsClearOperation.value = operation === 'clear';
+
+    scene.visible = true;
+    renderer.setRenderTarget(tempTarget);
+    renderer.render(scene, camera);
+    scene.visible = false;
+
+    callback?.(tempTarget.texture);
+
+    drawMaterial.uniforms.uIsRevertOperation.value = false;
+    drawMaterial.uniforms.uIsFillOperation.value = false;
+    drawMaterial.uniforms.uIsClearOperation.value = false;
+
+    renderer.setRenderTarget(null);
+
+    if (persist) {
+      swapBuffers();
+    }
+  }
+
+  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
+    drawMaterial.uniforms.uStart.value.copy(start);
+    drawMaterial.uniforms.uEnd.value.copy(last ?? start);
+    render('draw', persist);
+  }
+
+  export function getTexture() {
+    return tempTarget.texture;
+  }
+
+  /**
+   * Serializes the current fog of war state to a binary buffer
+   * @returns A binary buffer representation of the fog of war texture
+   */
+  export async function toPng(): Promise<Blob> {
+    // Create a temporary canvas to draw the texture
+    const canvas = new OffscreenCanvas(persistedTarget.width, persistedTarget.height);
+    const ctx = canvas.getContext('2d')!;
+
+    // Read pixels from WebGL render target
+    const pixels = new Uint8Array(4 * persistedTarget.width * persistedTarget.height);
+    renderer.readRenderTargetPixels(persistedTarget, 0, 0, persistedTarget.width, persistedTarget.height, pixels);
+
+    // Draw pixels to canvas
+    const imageData = ctx.createImageData(persistedTarget.width, persistedTarget.height);
+    imageData.data.set(pixels);
+    ctx.putImageData(imageData, 0, 0);
+
+    // The pixel data is flipped vertically when read from the WebGL render target, so we need to flip it back
+    const flippedCanvas = document.createElement('canvas');
+    flippedCanvas.width = canvas.width;
+    flippedCanvas.height = canvas.height;
+    const flippedCtx = flippedCanvas.getContext('2d')!;
+
+    flippedCtx.scale(1, -1);
+    flippedCtx.translate(0, -canvas.height);
+    flippedCtx.drawImage(canvas, 0, 0);
+
+    // Convert to blob with lossless PNG compression
+    return new Promise((resolve) => {
+      flippedCanvas.toBlob((blob) => resolve(blob!), 'image/png');
+    });
+  }
+</script>
+
+<!-- Hidden scene that renders to the render target -->
+<T.Scene is={scene} visible={false}>
+  <T.OrthographicCamera is={camera} />
+  <T.Mesh is={quad}>
+    <T.ShaderMaterial is={drawMaterial} />
+    <T.PlaneGeometry args={[2, 2]} />
+  </T.Mesh>
+</T.Scene>
