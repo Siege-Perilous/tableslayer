@@ -78,36 +78,41 @@
     fogMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
-
-    // Discard the current buffer by copying the previous buffer to the current buffer
-    render('revert', true);
-    // Re-draw the scene to show the updated tool overlay
-    render('draw');
   });
 
   useTask((delta) => {
     fogMaterial.uniforms.uTime.value += delta;
   });
 
-  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
-    drawMaterial.drawPath(start, last, persist);
+  /**
+   * Reverts the changes made to the fog of war
+   */
+  export function revertChanges() {
+    drawMaterial.render('revert', true);
   }
 
   /**
-   * Renders the to the current buffer
-   * @param operation The operation to perform. 'fill' will reset the fog of war to the initial state, 'revert' will copy the current state to the previous state, 'clear' will clear the current state, and 'draw' will draw the current state
-   * @param persist Whether to persist the current state
-   * @param lastTexture The texture to use for the previous state
+   * Clears the fog of war
    */
-  export function render(
-    operation: 'fill' | 'revert' | 'clear' | 'draw',
-    persist: boolean = false,
-    lastTexture: THREE.Texture | null = null
-  ) {
-    drawMaterial.render(operation, persist, lastTexture, (texture) => {
-      fogMaterial.uniforms.uMaskTexture.value = texture;
-      fogMaterial.uniformsNeedUpdate = true;
-    });
+  export function clear() {
+    drawMaterial.render('clear', true);
+  }
+
+  /**
+   * Fills the fog of war
+   */
+  export function fill() {
+    drawMaterial.render('fill', true);
+  }
+
+  /**
+   * Draws a path on the fog of war
+   * @param start The start position of the path
+   * @param last The last position of the path
+   * @param persist Whether to persist the current state
+   */
+  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
+    drawMaterial.drawPath(start, last, persist);
   }
 
   /**
@@ -119,7 +124,15 @@
   }
 </script>
 
-<DrawingMaterial bind:this={drawMaterial} {props} {mapSize} />
+<DrawingMaterial
+  bind:this={drawMaterial}
+  {props}
+  {mapSize}
+  onRender={(texture) => {
+    fogMaterial.uniforms.uMaskTexture.value = texture;
+    fogMaterial.uniformsNeedUpdate = true;
+  }}
+/>
 
 {#snippet attachMaterial()}
   {fogMaterial}

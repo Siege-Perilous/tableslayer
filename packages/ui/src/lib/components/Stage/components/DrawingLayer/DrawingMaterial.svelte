@@ -11,9 +11,10 @@
   interface Props {
     props: DrawingLayerProps;
     mapSize: Size | null;
+    onRender: (texture: THREE.Texture) => void;
   }
 
-  const { props, mapSize }: Props = $props();
+  const { props, mapSize, onRender }: Props = $props();
   const { renderer } = useThrelte();
 
   // This shader is used for drawing the fog of war on the GPU
@@ -135,8 +136,7 @@
   export function render(
     operation: 'fill' | 'revert' | 'clear' | 'draw',
     persist: boolean = false,
-    lastTexture: THREE.Texture | null = null,
-    callback?: (texture: THREE.Texture) => void
+    lastTexture: THREE.Texture | null = null
   ) {
     // If no previous state is provided, use the last target
     drawMaterial.uniforms.uPreviousState.value = lastTexture ?? persistedTarget.texture;
@@ -150,7 +150,7 @@
     renderer.render(scene, camera);
     scene.visible = false;
 
-    callback?.(tempTarget.texture);
+    onRender(tempTarget.texture);
 
     drawMaterial.uniforms.uIsRevertOperation.value = false;
     drawMaterial.uniforms.uIsFillOperation.value = false;
@@ -163,7 +163,7 @@
     }
   }
 
-  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
+  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null, persist: boolean) {
     drawMaterial.uniforms.uStart.value.copy(start);
     drawMaterial.uniforms.uEnd.value.copy(last ?? start);
     render('draw', persist);

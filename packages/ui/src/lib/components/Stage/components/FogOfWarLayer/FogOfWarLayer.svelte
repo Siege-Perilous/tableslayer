@@ -53,7 +53,7 @@
     if (!isActive) {
       lastPos = null;
       drawing = false;
-      material?.render('revert', false);
+      material?.revertChanges();
     }
   });
 
@@ -102,7 +102,7 @@
     lastPos = null;
     drawing = false;
     outlineMaterial.visible = false;
-    material?.render('revert', false);
+    material?.revertChanges();
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
@@ -133,7 +133,7 @@
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
-    material?.render('clear', true);
+    material?.clear();
     onFogUpdate(toPng());
   }
 
@@ -141,7 +141,7 @@
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    material?.render('fill', true);
+    material?.fill();
     onFogUpdate(toPng());
   }
 
