@@ -346,24 +346,17 @@ export const updateSceneMap = async (sceneId: string, userId: string, file: File
 };
 
 export const setActiveScene = async (gameSessionId: string, sceneId: string) => {
-  await updateGameSession(gameSessionId, { activeSceneId: sceneId });
+  // This function is deprecated - active scenes are now managed at the party level
+  const gameSession = await getGameSession(gameSessionId);
+  const party = await getPartyFromGameSessionId(gameSessionId);
+  await setActiveSceneForParty(party.id, sceneId);
 };
 
 // Legacy function - kept for backwards compatibility during migration
 export const getActiveScene = async (gameSessiondId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  const gameSession = await getGameSession(gameSessiondId);
-  const activeSceneId = gameSession.activeSceneId;
-  if (!activeSceneId) {
-    return null;
-  }
-
-  const activeScene = await getScene(activeSceneId);
-
-  if (!activeScene) {
-    return null;
-  }
-
-  return activeScene;
+  // Active scenes are now managed at the party level, not game session level
+  const party = await getPartyFromGameSessionId(gameSessiondId);
+  return getActiveSceneForParty(party.id);
 };
 
 // New party-level active scene function

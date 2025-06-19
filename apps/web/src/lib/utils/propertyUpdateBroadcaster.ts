@@ -55,6 +55,16 @@ export function queuePropertyUpdate(
   // For shared properties, apply locally for immediate UI feedback
   // But Y.js will be the source of truth for other editors
   console.log(`Queueing shared property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
+
+  // Special logging for map properties
+  if (propertyPath[0] === 'map') {
+    console.log(`🗺️ Map property update:`, {
+      path: propertyPath.join('.'),
+      value,
+      type: typeof value
+    });
+  }
+
   applyUpdate(stageProps, propertyPath, value);
 
   // Check if PartyDataManager is available early

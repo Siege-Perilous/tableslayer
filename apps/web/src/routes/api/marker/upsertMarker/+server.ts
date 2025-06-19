@@ -23,12 +23,14 @@ export const POST = apiFactory(
     }
 
     // Check if marker exists in database
-    const existingMarker = await db.select().from(markerTable).where(eq(markerTable.id, markerData.id)).get();
+    const existingMarker = markerData.id
+      ? await db.select().from(markerTable).where(eq(markerTable.id, markerData.id)).get()
+      : null;
 
     let marker;
     let operation: 'created' | 'updated';
 
-    if (existingMarker) {
+    if (existingMarker && markerData.id) {
       // Update existing marker
       marker = await updateMarker(markerData.id, markerData);
       operation = 'updated';

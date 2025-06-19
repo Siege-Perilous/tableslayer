@@ -23,7 +23,7 @@
   // Y.js party state monitoring for playfield
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsPartyState = $state({
-    isPaused: party.gameSessionIsPaused,
+    isPaused: data.party.gameSessionIsPaused,
     activeSceneId: data.activeScene?.id
   });
   let isHydrated = $state(false);

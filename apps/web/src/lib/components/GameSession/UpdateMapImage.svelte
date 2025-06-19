@@ -84,7 +84,6 @@
           partyData.updateScene(sceneId, {
             mapLocation: updatedScene.mapLocation || undefined,
             mapThumbLocation: updatedScene.mapThumbLocation || undefined,
-            thumbUpdatedAt: Date.now(),
             thumb: hasThumb(updatedScene)
               ? {
                   resizedUrl: updatedScene.thumb.resizedUrl,

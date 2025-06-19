@@ -301,11 +301,14 @@
                 </FormControl>
               </div>
               <Spacer />
-              <Editor
-                debug={false}
-                content={marker.note}
-                onUpdate={(content) => updateMarkerAndSave(marker.id, (m) => (m.note = content))}
-              />
+              <div
+                onblur={() => {
+                  // Save when editor loses focus
+                  updateMarkerAndSave(marker.id, () => {});
+                }}
+              >
+                <Editor debug={false} bind:content={marker.note} editable={true} />
+              </div>
               <Spacer />
 
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">

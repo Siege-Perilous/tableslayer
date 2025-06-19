@@ -24,7 +24,7 @@ const DEFAULT_MAP = 'map/example1080.png';
 export function generateR2Url(
   location: string | null | undefined,
   options: R2TransformOptions = {},
-  cacheBust = true
+  cacheBust = false
 ): string {
   // Return empty string if no location
   if (!location) return '';
@@ -62,7 +62,7 @@ export function generateR2Url(
 /**
  * Preset for large images (3000x3000 max) - used for Stage display
  */
-export function generateLargeImageUrl(location: string | null | undefined, cacheBust = true): string {
+export function generateLargeImageUrl(location: string | null | undefined, cacheBust = false): string {
   return generateR2Url(
     location,
     {
@@ -78,7 +78,7 @@ export function generateLargeImageUrl(location: string | null | undefined, cache
 /**
  * Preset for small thumbnails (400x225) - used for scene selector, etc.
  */
-export function generateSmallThumbnailUrl(location: string | null | undefined, cacheBust = true): string {
+export function generateSmallThumbnailUrl(location: string | null | undefined, cacheBust = false): string {
   return generateR2Url(
     location,
     {
@@ -94,7 +94,7 @@ export function generateSmallThumbnailUrl(location: string | null | undefined, c
 /**
  * Preset for square thumbnails (300x300) - used for markers, avatars, etc.
  */
-export function generateSquareThumbnailUrl(location: string | null | undefined, cacheBust = true): string {
+export function generateSquareThumbnailUrl(location: string | null | undefined, cacheBust = false): string {
   return generateR2Url(
     location,
     {

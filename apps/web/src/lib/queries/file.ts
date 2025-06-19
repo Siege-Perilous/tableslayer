@@ -38,7 +38,8 @@ export const useUploadFogFromBlobMutation = () => {
   return mutationFactory<{ blob: Blob; sceneId: string }, { location: string }, Error>({
     mutationKey: ['uploadFog'],
     mutationFn: async ({ blob, sceneId }) => {
-      const fileName = `fog/${sceneId}.png`;
+      const fileId = uuidv4();
+      const fileName = `fog/${fileId}.png`;
       const contentType = 'image/png';
       return uploadBlobToR2(blob, fileName, contentType);
     },
@@ -53,7 +54,8 @@ export const useUploadSceneThumbnailMutation = () => {
   return mutationFactory<{ blob: Blob; sceneId: string }, { location: string }, Error>({
     mutationKey: ['uploadSceneThumbnail'],
     mutationFn: async ({ blob, sceneId }) => {
-      const fileName = `thumbnail/${sceneId}.jpg`;
+      const fileId = uuidv4();
+      const fileName = `thumbnail/${fileId}.jpg`;
       const contentType = 'image/jpeg';
       return uploadBlobToR2(blob, fileName, contentType);
     },

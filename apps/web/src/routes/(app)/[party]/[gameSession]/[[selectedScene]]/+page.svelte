@@ -87,7 +87,7 @@
 
   // Y.js integration
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
-  let yjsScenes = $state<typeof scenes>(scenes); // Initialize with SSR data to prevent hydration mismatch
+  let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
 
   // SSR protection - prevent Y.js from overwriting fresh database data
@@ -97,8 +97,8 @@
 
   // Y.js reactive party state - initialize with SSR data
   let yjsPartyState = $state({
-    isPaused: party.gameSessionIsPaused,
-    activeSceneId: activeScene?.id
+    isPaused: data.party.gameSessionIsPaused,
+    activeSceneId: data.activeScene?.id
   });
 
   // Helper function to add thumbnails to Y.js scenes
@@ -115,7 +115,7 @@
         // Create thumbnail object using the same format as server-side processing
         const options = 'w=400,h=225,fit=cover,gravity=center';
         const thumb = {
-          resizedUrl: `https://files.tableslayer.com/cdn-cgi/image/${options}/${imageLocation}?t=${Date.now()}`,
+          resizedUrl: `https://files.tableslayer.com/cdn-cgi/image/${options}/${imageLocation}`,
           originalUrl: `https://files.tableslayer.com/${imageLocation}`
         };
         return { ...scene, thumb };
@@ -254,24 +254,7 @@
     const sceneId = selectedScene?.id;
     if (sceneId) {
       registerSceneForPropertyUpdates(sceneId);
-
-      // Initialize scene data in Y.js if partyData is available
-      if (partyData && !partyData.getSceneData(selectedScene.id)) {
-        // Create a copy of stageProps without local-only properties for Y.js storage
-        const sharedStageProps = {
-          ...stageProps,
-          // Reset local-only properties to defaults for shared state
-          activeLayer: MapLayerType.None, // Default activeLayer for shared state
-          scene: {
-            ...stageProps.scene,
-            // Reset local-only scene properties to defaults for shared state
-            offset: { x: 0, y: 0 },
-            zoom: 1,
-            rotation: 0
-          }
-        };
-        partyData.initializeSceneData(selectedScene.id, sharedStageProps, data.selectedSceneMarkers || []);
-      }
+      // Y.js initialization is now handled in the stageProps rebuild effect to ensure correct timing
     }
   });
 
@@ -349,6 +332,11 @@
         };
 
         console.log('Merged result:', mergedStageProps);
+        console.log('Map URL comparison:', {
+          current: currentStagePropsSnapshot?.map?.url,
+          incoming: mergedStageProps?.map?.url,
+          changed: currentStagePropsSnapshot?.map?.url !== mergedStageProps?.map?.url
+        });
 
         // Only update if there are actual changes to avoid infinite loops
         // Use $state.snapshot to get actual values from Svelte proxy for comparison
@@ -621,9 +609,15 @@
     const currentSceneId = currentSelectedScene?.id;
     const isSceneSwitch = currentSceneId !== previousSceneId;
 
-    // Get the current mapLocation from Y.js or SSR data
-    const sceneToUse = yjsSelectedScene || currentSelectedScene;
-    const currentMapLocation = sceneToUse?.mapLocation;
+    // Get the current mapLocation from Y.js for comparison
+    const currentMapLocation = yjsSelectedScene?.mapLocation || currentSelectedScene?.mapLocation;
+
+    // Use Y.js data if available when not switching scenes (it has the latest mapLocation)
+    // But on scene switch, use SSR data to ensure all properties are loaded from DB
+    const sceneToUse =
+      !isSceneSwitch && yjsSelectedScene
+        ? { ...currentSelectedScene, mapLocation: yjsSelectedScene.mapLocation }
+        : currentSelectedScene;
 
     // Check if we need to rebuild due to map change
     const mapLocationChanged = currentMapLocation !== lastBuiltMapLocation;
@@ -638,7 +632,13 @@
       hasStageProps: !!stageProps,
       usingYjsData: sceneToUse === yjsSelectedScene,
       yjsMapLocation: yjsSelectedScene?.mapLocation,
-      ssrMapLocation: currentSelectedScene?.mapLocation
+      ssrMapLocation: currentSelectedScene?.mapLocation,
+      sceneMapData: {
+        mapZoom: sceneToUse?.mapZoom,
+        mapOffsetX: sceneToUse?.mapOffsetX,
+        mapOffsetY: sceneToUse?.mapOffsetY,
+        mapRotation: sceneToUse?.mapRotation
+      }
     });
 
     // Only rebuild stageProps when scene switches, initial load, or map actually changes
@@ -653,7 +653,34 @@
       stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
       lastBuiltMapLocation = currentMapLocation;
 
-      console.log('[StageProps Effect] Rebuilt stageProps with map URL:', stageProps.map.url);
+      console.log('[StageProps Effect] Rebuilt stageProps:', {
+        mapUrl: stageProps.map.url,
+        mapLocation: sceneToUse?.mapLocation,
+        sourceData: !isSceneSwitch && yjsSelectedScene ? 'Y.js' : 'SSR',
+        reason: isSceneSwitch ? 'scene switch' : mapLocationChanged ? 'map changed' : 'initial load'
+      });
+
+      // Initialize Y.js with fresh SSR data after rebuilding stageProps
+      if (isSceneSwitch && partyData && currentSceneId) {
+        console.log('[StageProps Effect] Scene switch detected - initializing Y.js with fresh SSR data');
+
+        // Create a copy of stageProps without local-only properties for Y.js storage
+        const sharedStageProps = {
+          ...stageProps,
+          // Reset local-only properties to defaults for shared state
+          activeLayer: MapLayerType.None,
+          scene: {
+            ...stageProps.scene,
+            // Reset local-only scene properties to defaults for shared state
+            offset: { x: 0, y: 0 },
+            zoom: 1,
+            rotation: 0
+          }
+        };
+
+        // Always re-initialize on scene switch to ensure fresh DB data is used
+        partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
+      }
     } else {
       // Same scene - only update if markers changed
       // Compare marker IDs and positions to detect changes
@@ -970,12 +997,7 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          updateProperty(
-            stageProps,
-            ['fogOfWar', 'url'],
-            `https://files.tableslayer.com/${fog.location}?${Date.now()}`,
-            'control'
-          );
+          updateProperty(stageProps, ['fogOfWar', 'url'], `https://files.tableslayer.com/${fog.location}`, 'control');
           fogBlobUpdateTime = new Date();
           isUpdatingFog = false;
         },
@@ -1026,17 +1048,9 @@
               // Update Y.js immediately with the new thumbnail location
               if (partyData && selectedScene) {
                 console.log('Updating Y.js with new mapThumbLocation:', result.location);
-                const timestamp = Date.now();
-                // Update with both the location and the thumb object to trigger UI updates
+                // Just update the mapThumbLocation - we don't have full thumb data here
                 partyData.updateScene(selectedScene.id, {
-                  mapThumbLocation: result.location,
-                  thumbUpdatedAt: timestamp,
-                  thumb: hasThumb(result)
-                    ? {
-                        resizedUrl: result.thumb.resizedUrl,
-                        url: result.thumb.url
-                      }
-                    : undefined
+                  mapThumbLocation: result.location
                 });
               }
             },
@@ -1156,7 +1170,12 @@
   };
 
   // Wrapper function for property updates that also triggers auto-save
-  const updateProperty = (stageProps: any, propertyPath: PropertyPath, value: any, updateType: string = 'control') => {
+  const updateProperty = (
+    stageProps: any,
+    propertyPath: PropertyPath,
+    value: any,
+    updateType: 'marker' | 'control' | 'scene' = 'control'
+  ) => {
     // Set actively editing flag to block Y.js updates
     isActivelyEditing = true;
 

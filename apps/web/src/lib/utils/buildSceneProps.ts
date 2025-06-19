@@ -42,6 +42,14 @@ export const buildSceneProps = (
     usedDefault: thumbUrl === StageDefaultProps.map.url
   });
 
+  console.log('[buildSceneProps] Map properties from DB:', {
+    sceneId: activeScene.id,
+    mapRotation: activeScene.mapRotation,
+    mapOffsetX: activeScene.mapOffsetX,
+    mapOffsetY: activeScene.mapOffsetY,
+    mapZoom: activeScene.mapZoom
+  });
+
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
     markers = activeSceneMarkers.map((marker) => ({

@@ -109,6 +109,15 @@ export const convertPropsToSceneDetails = (
     zoom: 'mapZoom'
   });
 
+  // Debug logging for map properties during save
+  console.log('[convertPropsToSceneDetails] Map properties being saved:', {
+    mapRotation: details.mapRotation,
+    mapOffsetX: details.mapOffsetX,
+    mapOffsetY: details.mapOffsetY,
+    mapZoom: details.mapZoom,
+    sourceMapData: stageProps.map
+  });
+
   setNestedIfExists(stageProps, details, 'marker', {
     'shape.strokeColor': 'markerStrokeColor',
     'shape.strokeWidth': 'markerStrokeWidth',

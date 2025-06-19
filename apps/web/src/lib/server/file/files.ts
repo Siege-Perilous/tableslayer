@@ -135,12 +135,12 @@ export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
   try {
     const file = new File([blob], 'fog', { type: blob.type });
     const fileType = 'image/png';
-    const fileName = sceneId + '.png';
+    const fileName = `${randomUUID()}.png`;
     const fileBuffer = await file.arrayBuffer();
     const contentLength = fileBuffer.byteLength;
 
     const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, fileType, 'fog', contentLength, false);
-    return fullPath + `?t=${Date.now()}`;
+    return fullPath;
   } catch (error) {
     console.error('Error uploading fog from blob:', error);
     throw error;
