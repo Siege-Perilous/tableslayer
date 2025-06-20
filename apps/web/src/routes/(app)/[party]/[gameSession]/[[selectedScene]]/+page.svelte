@@ -860,7 +860,8 @@
 
   const onMarkerAdded = (marker: Marker) => {
     // Add marker to local state immediately
-    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    const updatedMarkers = [...stageProps.marker.markers, marker];
+    stageProps.marker.markers = updatedMarkers; // Keep direct mutation for immediate UI feedback
     selectedMarkerId = marker.id;
 
     // Add marker to protection set BEFORE any sync to prevent Y.js from overwriting
@@ -1092,10 +1093,14 @@
       if (e.shiftKey) {
         // Apply rotation to movement for map offset
         const movementFactor = 1 / stageProps.scene.zoom;
-        stageProps.map.offset.x += rotatedMovementX * movementFactor;
-        stageProps.map.offset.y -= rotatedMovementY * movementFactor;
+        const newOffsetX = stageProps.map.offset.x + rotatedMovementX * movementFactor;
+        const newOffsetY = stageProps.map.offset.y - rotatedMovementY * movementFactor;
+
+        // Use queuePropertyUpdate for map offset changes
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
       } else if (e.ctrlKey) {
-        // Scene offset also needs rotation adjustment
+        // Scene offset is local-only, direct mutation is OK
         stageProps.scene.offset.x += rotatedMovementX;
         stageProps.scene.offset.y -= rotatedMovementY;
       }
