@@ -61,7 +61,8 @@
     localMarkers: any[],
     incomingMarkers: any[],
     beingMoved: Set<string>,
-    beingEdited: Set<string>
+    beingEdited: Set<string>,
+    recentlyDeleted: Set<string>
   ) => {
     const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
 
@@ -71,13 +72,19 @@
       localIds: localMarkers.map((m) => m.id),
       incomingIds: incomingMarkers.map((m) => m.id),
       protectedCount: protectedMarkers.size,
-      protected: Array.from(protectedMarkers)
+      protected: Array.from(protectedMarkers),
+      recentlyDeleted: Array.from(recentlyDeleted)
     });
 
-    // Start with incoming markers as base
+    // Start with incoming markers as base, but exclude recently deleted ones
     const resultMap = new Map();
     incomingMarkers.forEach((marker) => {
-      resultMap.set(marker.id, marker);
+      // Skip markers that were recently deleted in this editor
+      if (!recentlyDeleted.has(marker.id)) {
+        resultMap.set(marker.id, marker);
+      } else {
+        console.log('🚫 Excluding recently deleted marker from merge:', marker.id);
+      }
     });
 
     // Apply protections and add new markers
@@ -213,6 +220,7 @@
   let isWindowFocused = $state(true); // Track if this editor window is focused
   let markersBeingMoved = $state(new Set<string>()); // Track markers currently being moved/saved
   let markersBeingEdited = $state(new Set<string>()); // Track markers being added/edited (for Y.js protection)
+  let recentlyDeletedMarkers = $state(new Set<string>()); // Track markers recently deleted to prevent re-adding
   let isActivelyEditing = $state(false); // Track if user is actively making changes
   let lastOwnYjsUpdateTime = $state(0); // Track when we last sent a Y.js update to prevent feedback loops
   const isMobile = $derived(innerWidth < 768);
@@ -364,7 +372,8 @@
               stageProps.marker?.markers || [],
               incomingStageProps.marker?.markers || sceneData.markers || [],
               markersBeingMoved,
-              markersBeingEdited
+              markersBeingEdited,
+              recentlyDeletedMarkers
             )
           }
         };
@@ -952,6 +961,68 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  const onMarkerDeleted = (markerId: string) => {
+    console.log('🗑️ onMarkerDeleted called for marker:', markerId);
+
+    // Double-check the marker is removed from local state
+    const filteredMarkers = stageProps.marker.markers.filter((m) => m.id !== markerId);
+
+    // Only update if the marker was actually found and removed
+    if (filteredMarkers.length < stageProps.marker.markers.length) {
+      console.log('Removing marker from stageProps:', markerId);
+      console.log('Markers before:', stageProps.marker.markers.length);
+
+      // Update the markers array
+      stageProps.marker.markers = filteredMarkers;
+
+      console.log('Markers after:', stageProps.marker.markers.length);
+
+      // Add to recently deleted set to prevent re-adding from Y.js
+      recentlyDeletedMarkers.add(markerId);
+      console.log('🛡️ Added marker to recently deleted set:', markerId);
+
+      // Remove from protection sets if it was there
+      markersBeingEdited.delete(markerId);
+      markersBeingMoved.delete(markerId);
+
+      // Set actively editing flag
+      isActivelyEditing = true;
+      lastOwnYjsUpdateTime = Date.now();
+
+      // Clear any existing editing timer and set new one
+      if (editingTimer) clearTimeout(editingTimer);
+      editingTimer = setTimeout(() => {
+        isActivelyEditing = false;
+        console.log('Cleared isActivelyEditing flag after marker delete');
+      }, 1000);
+
+      // Force immediate Y.js sync for marker deletion
+      if (partyData && selectedScene?.id) {
+        console.log('🚀 Force syncing marker deletion to Y.js:', markerId);
+        console.log(
+          'Current markers after deletion:',
+          stageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
+        );
+
+        lastOwnYjsUpdateTime = Date.now();
+        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+
+        console.log('✅ Y.js sync completed for marker deletion');
+      }
+
+      // Queue property update for database save
+      queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+
+      // Clear from recently deleted after some time (to allow Y.js to propagate)
+      setTimeout(() => {
+        recentlyDeletedMarkers.delete(markerId);
+        console.log('Removed marker from recently deleted set:', markerId);
+      }, 10000); // Keep for 10 seconds
+    } else {
+      console.warn('Marker not found for deletion:', markerId);
     }
   };
 
@@ -1596,6 +1667,7 @@
           {socketUpdate}
           {handleSelectActiveControl}
           {updateMarkerAndSave}
+          {onMarkerDeleted}
         />
       {/key}
     </Pane>

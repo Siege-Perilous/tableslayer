@@ -46,7 +46,8 @@
     partyId = '',
     handleSelectActiveControl,
     socketUpdate,
-    updateMarkerAndSave
+    updateMarkerAndSave,
+    onMarkerDeleted
   }: {
     stageProps: StageProps;
     selectedMarkerId: string | undefined;
@@ -54,6 +55,7 @@
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
     updateMarkerAndSave: (markerId: string, updateFn: (marker: any) => void) => void;
+    onMarkerDeleted?: (markerId: string) => void;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -111,9 +113,17 @@
       mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        // Remove the marker from stageProps without invalidating
-        const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
-        queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
+        // Call the deletion callback if provided (for Y.js sync)
+        // The callback will handle removing the marker from stageProps
+        if (onMarkerDeleted) {
+          onMarkerDeleted(markerId);
+        } else {
+          // Fallback - only update locally if no callback provided
+          const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+          stageProps.marker.markers = updatedMarkers;
+          queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
+        }
+
         // Reset selected marker if we just deleted it
         if (selectedMarkerId === markerId) {
           selectedMarkerId = undefined;
