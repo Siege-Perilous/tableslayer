@@ -1548,6 +1548,15 @@
   onfocus={() => {
     isWindowFocused = true;
     console.log('Window gained focus, isWindowFocused:', isWindowFocused);
+
+    // Trigger Y.js sync check when regaining focus to catch any missed updates
+    if (partyData && partyData.getConnectionStatus()) {
+      // Small delay to ensure Y.js has had time to reconnect if needed
+      setTimeout(() => {
+        console.log('Focus regained - forcing Y.js sync check');
+        partyData.forceSyncCheck();
+      }, 200);
+    }
   }}
   onblur={() => {
     isWindowFocused = false;

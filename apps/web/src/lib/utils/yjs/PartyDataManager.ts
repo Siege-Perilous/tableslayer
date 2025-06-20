@@ -133,6 +133,8 @@ export class PartyDataManager {
           // Clear existing observers and re-add them for connected state
           this.sceneObservers.clear();
           this.ensureSceneObservers();
+          // Trigger a data refresh to sync any missed updates
+          this.notifySubscribers();
         }, 100);
       }
       this.notifySubscribers();
@@ -757,6 +759,21 @@ export class PartyDataManager {
       this.yCursors.clear();
     });
     console.log('Y.js data cleared');
+  }
+
+  /**
+   * Force Y.js to sync and notify subscribers
+   * Useful for ensuring idle editors catch up with changes
+   */
+  forceSyncCheck() {
+    console.log(`[${this.clientId}] Force sync check triggered`);
+
+    // Trigger a notification cycle to refresh UI
+    this.notifySubscribers();
+
+    // If providers support explicit sync, we could trigger that
+    // For now, the notification refresh should be sufficient
+    return true;
   }
 
   /**

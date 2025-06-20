@@ -74,6 +74,7 @@ export function usePartyData() {
 
     // Debug utilities
     clearAllData: () => partyDataManager!.clearAllData(),
+    forceSyncCheck: () => partyDataManager!.forceSyncCheck(),
 
     // Socket access for cursor tracking
     getSocket: () => partyDataManager!.getSocket(),
