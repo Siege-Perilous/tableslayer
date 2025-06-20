@@ -40,7 +40,8 @@
     activeSceneId,
     party,
     partyData,
-    socketUpdate
+    socketUpdate,
+    isLocallyReordering = $bindable(false)
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     gameSession: SelectGameSession;
@@ -49,6 +50,7 @@
     activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
     socketUpdate: () => void;
+    isLocallyReordering?: boolean;
   } = $props();
 
   let file = $state<FileList | null>(null);
@@ -394,6 +396,9 @@
     // Temporarily prevent further dragging while updating
     formIsLoading = true;
 
+    // Set flag to prevent navigation in the origin editor
+    isLocallyReordering = true;
+
     try {
       await handleMutation({
         mutation: () =>
@@ -443,6 +448,10 @@
       // Y.js will automatically revert if the server operation failed
     } finally {
       formIsLoading = false;
+      // Reset the flag after a small delay to ensure navigation effect has run
+      setTimeout(() => {
+        isLocallyReordering = false;
+      }, 500);
     }
   };
 

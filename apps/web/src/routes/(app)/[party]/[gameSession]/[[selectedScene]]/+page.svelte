@@ -46,6 +46,7 @@
   import { page } from '$app/stores';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
+  import { goto } from '$app/navigation';
 
   let {
     scenes,
@@ -232,6 +233,7 @@
   let recentlyDeletedMarkers = $state(new Set<string>()); // Track markers recently deleted to prevent re-adding
   let isActivelyEditing = $state(false); // Track if user is actively making changes
   let lastOwnYjsUpdateTime = $state(0); // Track when we last sent a Y.js update to prevent feedback loops
+  let isLocallyReordering = $state(false); // Track if this editor is reordering scenes
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -1560,7 +1562,7 @@
       if (!partyData) return;
 
       // Refetch timestamps
-      await timestampsQuery.refetch();
+      await $timestampsQuery.refetch();
 
       const timestamps = $timestampsQuery.data?.timestamps || {};
       const driftedScenes = await partyData.detectDrift(async () => timestamps);
@@ -1601,6 +1603,44 @@
       previousEffectSceneId = currentSceneId;
     }
   });
+
+  // Monitor scene order changes and navigate if needed
+  $effect(() => {
+    // Skip if not hydrated, no selected scene, or currently navigating
+    if (!isHydrated || !selectedScene || navigating.to) return;
+
+    // Skip during initial page load to avoid navigation loops
+    if (!hasInitialLoad) return;
+
+    // Skip if this editor is currently reordering scenes
+    if (isLocallyReordering) {
+      console.log('Skipping navigation check - local reorder in progress');
+      return;
+    }
+
+    console.log('Checking for scene order changes:', {
+      selectedSceneId: selectedScene.id,
+      currentOrder: selectedSceneNumber,
+      yjsScenesCount: yjsScenes.length,
+      isLocallyReordering
+    });
+
+    // Find the current scene's new order in Y.js scenes
+    const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
+
+    if (!currentSceneInYjs) {
+      // Scene was deleted - navigate to scene 1
+      console.log('Selected scene was deleted, navigating to scene 1');
+      goto(`/${$page.params.party}/${$page.params.gameSession}/1`);
+      return;
+    }
+
+    // Check if order changed
+    if (currentSceneInYjs.order !== selectedSceneNumber) {
+      console.log(`Scene order changed from ${selectedSceneNumber} to ${currentSceneInYjs.order}, navigating...`);
+      goto(`/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`);
+    }
+  });
 </script>
 
 <svelte:document
@@ -1629,7 +1669,7 @@
         // Check for Y.js drift and refresh if needed
         try {
           // Refetch timestamps
-          await timestampsQuery.refetch();
+          await $timestampsQuery.refetch();
 
           const timestamps = $timestampsQuery.data?.timestamps || {};
           const driftedScenes = await partyData.detectDrift(async () => timestamps);
@@ -1692,6 +1732,7 @@
         {activeSceneId}
         {partyData}
         {socketUpdate}
+        bind:isLocallyReordering
       />
     </Pane>
     <PaneResizer class="resizer">
