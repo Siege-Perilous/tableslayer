@@ -4,7 +4,7 @@ import { db } from '../../../../lib/db/app/index.js';
 import { gameSessionTable, sceneTable } from '../../../../lib/db/app/schema.js';
 import { isUserInParty } from '../../../../lib/server/party/index.js';
 
-export async function POST({ request, locals }) {
+export async function POST({ request, locals }: { request: Request; locals: any }) {
   const user = locals.user;
   if (!user) {
     return json({ error: 'Unauthorized' }, { status: 401 });
