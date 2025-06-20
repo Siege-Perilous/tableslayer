@@ -70,46 +70,47 @@
       incomingCount: incomingMarkers.length,
       localIds: localMarkers.map((m) => m.id),
       incomingIds: incomingMarkers.map((m) => m.id),
-      protectedCount: protectedMarkers.size
+      protectedCount: protectedMarkers.size,
+      protected: Array.from(protectedMarkers)
     });
 
-    if (protectedMarkers.size === 0) {
-      return incomingMarkers; // No protection needed
-    }
-
-    console.log('Protecting markers from Y.js overwrite:', {
-      beingMoved: Array.from(beingMoved),
-      beingEdited: Array.from(beingEdited),
-      total: Array.from(protectedMarkers)
+    // Start with incoming markers as base
+    const resultMap = new Map();
+    incomingMarkers.forEach((marker) => {
+      resultMap.set(marker.id, marker);
     });
 
-    const result = [...incomingMarkers];
-
-    // Preserve local markers that are being moved or edited
+    // Apply protections and add new markers
     for (const localMarker of localMarkers) {
       if (protectedMarkers.has(localMarker.id)) {
-        const existingIndex = result.findIndex((m) => m.id === localMarker.id);
-        if (existingIndex >= 0) {
-          // Keep incoming marker but preserve local changes
+        if (resultMap.has(localMarker.id)) {
+          // Marker exists in incoming - apply protection
+          const incomingMarker = resultMap.get(localMarker.id);
           if (beingMoved.has(localMarker.id)) {
-            // For moved markers, preserve position
-            result[existingIndex] = {
-              ...result[existingIndex],
+            // For moved markers, only preserve position
+            resultMap.set(localMarker.id, {
+              ...incomingMarker,
               position: localMarker.position
-            };
+            });
             console.log(`Protected moved marker ${localMarker.id} position:`, localMarker.position);
           } else if (beingEdited.has(localMarker.id)) {
             // For edited markers, preserve entire local marker
-            result[existingIndex] = localMarker;
+            resultMap.set(localMarker.id, localMarker);
             console.log(`Protected edited marker ${localMarker.id}:`, localMarker);
           }
-        } else if (beingEdited.has(localMarker.id)) {
-          // Newly added marker - add it to the result
-          result.push(localMarker);
-          console.log(`Protected newly added marker ${localMarker.id}:`, localMarker);
+        } else {
+          // New marker not in incoming yet - add it
+          resultMap.set(localMarker.id, localMarker);
+          console.log(`Added protected new marker ${localMarker.id}:`, localMarker);
         }
       }
     }
+
+    const result = Array.from(resultMap.values());
+    console.log('Merge result:', {
+      count: result.length,
+      ids: result.map((m) => m.id)
+    });
 
     return result;
   };
@@ -330,7 +331,10 @@
           markersFromYjs: sceneData.stageProps.marker?.markers?.length || 0,
           separateMarkers: sceneData.markers?.length || 0,
           timestamp: Date.now(),
-          markerIds: sceneData.stageProps.marker?.markers?.map((m: any) => m.id) || []
+          markerIds: sceneData.stageProps.marker?.markers?.map((m: any) => m.id) || [],
+          isActivelyEditing,
+          timeSinceOwnUpdate,
+          hasReceivedFirstYjsUpdate
         });
 
         // Update local stageProps with shared properties from Y.js, preserving local-only properties
@@ -729,6 +733,18 @@
             existingMarkerCount: existingSceneData.markers?.length || 0,
             ssrMarkerCount: currentSelectedSceneMarkers?.length || 0
           });
+        } else {
+          // Not a scene switch - check if we have new markers from SSR that Y.js doesn't know about
+          const yjsMarkerIds = new Set((existingSceneData.markers || []).map((m: any) => m.id));
+          const ssrMarkerIds = new Set((currentSelectedSceneMarkers || []).map((m) => m.id));
+          const newMarkersFromSSR = [...ssrMarkerIds].filter((id) => !yjsMarkerIds.has(id));
+
+          if (newMarkersFromSSR.length > 0) {
+            console.log("📥 Found new markers in SSR that Y.js doesn't have:", newMarkersFromSSR);
+            // Update Y.js with the current stageProps that includes the new markers
+            lastOwnYjsUpdateTime = Date.now();
+            partyData.updateSceneStageProps(currentSceneId, stageProps);
+          }
         }
       }
     } else {
@@ -757,33 +773,49 @@
       // Skip marker-based rebuilds if user is actively editing or waiting for SSR update
       if (markersChanged && !isActivelyEditing && markersBeingEdited.size === 0 && !waitingForSSRUpdate) {
         console.log('[StageProps Effect] Markers changed - rebuilding with SSR markers');
-        // Preserve current map and scene state when only markers change
-        const currentMapState = {
-          offset: { ...stageProps.map.offset },
-          zoom: stageProps.map.zoom,
-          rotation: stageProps.map.rotation
-        };
-        const currentSceneState = {
-          offset: { ...stageProps.scene.offset },
-          zoom: stageProps.scene.zoom,
-          rotation: stageProps.scene.rotation
-        };
+        console.log(
+          '[StageProps Effect] Current markers:',
+          stageProps.marker.markers.length,
+          'SSR markers:',
+          currentSelectedSceneMarkers?.length || 0
+        );
 
-        stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+        // IMPORTANT: Only rebuild if SSR has MORE markers than current state
+        // This prevents losing newly added markers that haven't been saved yet
+        if ((currentSelectedSceneMarkers?.length || 0) > stageProps.marker.markers.length) {
+          console.log('[StageProps Effect] SSR has more markers - rebuilding');
+          // Preserve current map and scene state when only markers change
+          const currentMapState = {
+            offset: { ...stageProps.map.offset },
+            zoom: stageProps.map.zoom,
+            rotation: stageProps.map.rotation
+          };
+          const currentSceneState = {
+            offset: { ...stageProps.scene.offset },
+            zoom: stageProps.scene.zoom,
+            rotation: stageProps.scene.rotation
+          };
 
-        // Restore viewport state
-        stageProps.map.offset = currentMapState.offset;
-        stageProps.map.zoom = currentMapState.zoom;
-        stageProps.map.rotation = currentMapState.rotation;
-        stageProps.scene.offset = currentSceneState.offset;
-        stageProps.scene.zoom = currentSceneState.zoom;
-        stageProps.scene.rotation = currentSceneState.rotation;
+          stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+
+          // Restore viewport state
+          stageProps.map.offset = currentMapState.offset;
+          stageProps.map.zoom = currentMapState.zoom;
+          stageProps.map.rotation = currentMapState.rotation;
+          stageProps.scene.offset = currentSceneState.offset;
+          stageProps.scene.zoom = currentSceneState.zoom;
+          stageProps.scene.rotation = currentSceneState.rotation;
+        } else {
+          console.log('[StageProps Effect] Keeping current markers - local state has more or equal markers');
+        }
       } else if (markersChanged) {
         console.log('[StageProps Effect] Skipping marker rebuild:', {
           isActivelyEditing,
           markersBeingEdited: markersBeingEdited.size,
           waitingForSSRUpdate,
-          recentlySavedMarkers: Array.from(recentlySavedMarkerIds)
+          recentlySavedMarkers: Array.from(recentlySavedMarkerIds),
+          currentMarkers: stageProps.marker.markers.length,
+          ssrMarkers: currentSelectedSceneMarkers?.length || 0
         });
       }
     }
@@ -822,31 +854,44 @@
     stageProps.marker.markers = [...stageProps.marker.markers, marker];
     selectedMarkerId = marker.id;
 
-    // Immediately sync to Y.js for real-time collaboration
-    // This ensures other editors see the new marker right away
-    if (partyData && selectedScene?.id) {
-      console.log('🚀 Immediately syncing new marker to Y.js:', marker.id);
-      lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-      partyData.updateSceneStageProps(selectedScene.id, stageProps);
-    }
-
-    // Add marker to protection set to prevent Y.js from overwriting during save
+    // Add marker to protection set BEFORE any sync to prevent Y.js from overwriting
     markersBeingEdited.add(marker.id);
     console.log('🛡️ Added marker to protection set:', marker.id);
 
-    // Set actively editing flag briefly to prevent feedback loops
+    // Set actively editing flag and track our update time
     isActivelyEditing = true;
+    lastOwnYjsUpdateTime = Date.now();
 
     // Clear any existing editing timer and set new one (shorter timeout)
     if (editingTimer) clearTimeout(editingTimer);
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
-      markersBeingEdited.delete(marker.id);
-      console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', marker.id);
-    }, 1000); // Clear after 1 second if no save occurs
+      console.log('Cleared isActivelyEditing flag after marker add');
+    }, 1000); // Clear after 1 second
 
-    // Trigger database save through property update queue
+    // CRITICAL: Sync to Y.js IMMEDIATELY before any effects can run
+    if (partyData && selectedScene?.id) {
+      console.log('🚀 IMMEDIATE Y.js sync for new marker:', marker.id);
+      console.log(
+        'Current markers before sync:',
+        stageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
+      );
+
+      // Force immediate Y.js update
+      lastOwnYjsUpdateTime = Date.now();
+      partyData.updateSceneStageProps(selectedScene.id, stageProps);
+
+      console.log('✅ Y.js sync completed for new marker');
+    }
+
+    // Also queue for database save (this will NOT trigger another Y.js sync since we just did it)
     queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+
+    // Keep the marker protected for longer to handle save completion
+    setTimeout(() => {
+      markersBeingEdited.delete(marker.id);
+      console.log('Removed marker protection after save window:', marker.id);
+    }, 5000); // Keep protected for 5 seconds to ensure save completes
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
@@ -858,28 +903,22 @@
         position: { x: position.x, y: position.y }
       };
 
-      // Immediately sync to Y.js for real-time collaboration
-      if (partyData && selectedScene?.id) {
-        console.log('🚀 Immediately syncing marker move to Y.js:', marker.id);
-        lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-        partyData.updateSceneStageProps(selectedScene.id, stageProps);
-      }
-
-      // Mark this marker as being moved to protect it from Y.js overwrites during save
+      // Mark this marker as being moved to protect it from Y.js overwrites
       markersBeingMoved.add(marker.id);
 
-      // Set actively editing flag briefly to prevent feedback loops
+      // Set actively editing flag and track our update time
       isActivelyEditing = true;
+      lastOwnYjsUpdateTime = Date.now();
       console.log('🚫 Set isActivelyEditing=true for marker move:', marker.id);
 
       // Clear any existing editing timer and set new one (shorter timeout)
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
-        console.log('Cleared isActivelyEditing flag due to timeout after marker move');
-      }, 1000); // Clear after 1 second if no save occurs
+        console.log('Cleared isActivelyEditing flag after marker move');
+      }, 1000); // Clear after 1 second
 
-      // Trigger Y.js synchronization for marker position to other editors
+      // Use queuePropertyUpdate which will handle Y.js sync automatically
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
 
       // Use the optimized marker update for position changes
@@ -1010,16 +1049,16 @@
   function onMapPan(dx: number, dy: number) {
     const newOffsetX = stageProps.map.offset.x + dx;
     const newOffsetY = stageProps.map.offset.y + dy;
-    updateProperty(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
-    updateProperty(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
   }
 
   function onMapRotate(angle: number) {
-    updateProperty(stageProps, ['map', 'rotation'], angle, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
   }
 
   function onMapZoom(zoom: number) {
-    updateProperty(stageProps, ['map', 'zoom'], zoom, 'control');
+    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
   function onScenePan(dx: number, dy: number) {
@@ -1032,7 +1071,7 @@
   }
 
   function onSceneZoom(zoom: number) {
-    updateProperty(stageProps, ['scene', 'zoom'], zoom, 'control');
+    queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -1078,7 +1117,7 @@
           }
 
           // Also queue for database save
-          updateProperty(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
+          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
           isUpdatingFog = false;
         },
         onError: () => {
@@ -1172,6 +1211,10 @@
       // Use $state.snapshot to get actual values from Svelte proxy
       const markersSnapshot = $state.snapshot(stageProps.marker?.markers || []);
       console.log('Checking markers for save - markers:', markersSnapshot.length, markersSnapshot);
+
+      // Store the marker count at save time to detect if stageProps gets modified during save
+      const markerCountAtSave = markersSnapshot.length;
+
       if (markersSnapshot.length > 0) {
         console.log('Found markers to save:', markersSnapshot.length);
 
@@ -1209,7 +1252,52 @@
             }
           });
         }
-        // Y.js already synchronized the markers - no need for socket broadcast
+
+        // After all markers are saved, force sync the current state to Y.js
+        // This ensures other editors get the saved markers
+        // IMPORTANT: Use the markers snapshot from before the save started to avoid losing new markers
+        if (partyData && selectedScene?.id) {
+          // Check if stageProps was modified during save (e.g., by the StageProps effect)
+          const currentMarkerCount = stageProps.marker?.markers?.length || 0;
+          if (currentMarkerCount !== markerCountAtSave) {
+            console.log('⚠️ StageProps markers were modified during save!', {
+              countAtSave: markerCountAtSave,
+              currentCount: currentMarkerCount,
+              snapshotCount: markersSnapshot.length
+            });
+          }
+
+          console.log('📤 Force syncing saved markers to Y.js for other editors');
+          console.log(
+            'Markers being synced:',
+            markersSnapshot.map((m) => ({ id: m.id, title: m.title }))
+          );
+          lastOwnYjsUpdateTime = Date.now();
+
+          // Create a copy of stageProps with the correct markers FROM THE SNAPSHOT
+          // This ensures we sync all markers that were saved, not what's currently in stageProps
+          const stagePropsWithAllMarkers = {
+            ...stageProps,
+            marker: {
+              ...stageProps.marker,
+              markers: markersSnapshot // Use the snapshot that includes all markers
+            }
+          };
+
+          console.log('StageProps for Y.js sync:', {
+            markerCount: stagePropsWithAllMarkers.marker.markers.length,
+            markerIds: stagePropsWithAllMarkers.marker.markers.map((m) => m.id)
+          });
+
+          // Make sure Y.js has the scene initialized
+          const sceneData = partyData.getSceneData(selectedScene.id);
+          if (!sceneData) {
+            console.log('⚠️ Y.js scene not initialized during save, initializing now');
+            partyData.initializeSceneData(selectedScene.id, stagePropsWithAllMarkers, markersSnapshot);
+          } else {
+            partyData.updateSceneStageProps(selectedScene.id, stagePropsWithAllMarkers);
+          }
+        }
       }
 
       // Empty game session update will update the lastUpdated field through Drizzle
@@ -1265,50 +1353,6 @@
       console.log('✅ Coordinated save completed, success:', saveSuccess, '- cleared isActivelyEditing flag');
     }
   };
-
-  // Wrapper function for property updates that also triggers auto-save
-  // Single unified method for all property updates
-  const updateProp = (propertyPath: PropertyPath, value: any) => {
-    // Update local state immediately using proper path navigation
-    let current = stageProps;
-    for (let i = 0; i < propertyPath.length - 1; i++) {
-      if (!current[propertyPath[i]]) {
-        console.error('Invalid property path:', propertyPath.join('.'));
-        return;
-      }
-      current = current[propertyPath[i]];
-    }
-    current[propertyPath[propertyPath.length - 1]] = value;
-
-    const propertyKey = propertyPath.join('.');
-
-    // Immediately sync to Y.js for real-time collaboration
-    if (partyData && selectedScene?.id) {
-      console.log('🚀 Syncing property:', propertyKey, '=', value);
-      lastOwnYjsUpdateTime = Date.now();
-      partyData.updateSceneStageProps(selectedScene.id, stageProps);
-    }
-
-    // Determine update type based on property path
-    const updateType = propertyPath[0] === 'marker' ? 'marker' : propertyPath[0] === 'scene' ? 'scene' : 'control';
-
-    // Queue for database save
-    queuePropertyUpdate(stageProps, propertyPath, value, updateType);
-
-    // Brief protection against our own echo
-    isActivelyEditing = true;
-    if (editingTimer) clearTimeout(editingTimer);
-    editingTimer = setTimeout(() => {
-      isActivelyEditing = false;
-    }, 300); // Short protection window
-  };
-
-  // Backwards compatibility wrappers
-  const updateProperty = (stageProps: any, propertyPath: PropertyPath, value: any, updateType?: any) => {
-    updateProp(propertyPath, value);
-  };
-
-  const updatePropertyRealtime = updateProperty; // Alias for components expecting this
 
   // Helper function for marker updates that triggers auto-save
   const updateMarkerAndSave = (markerId: string, updateFn: (marker: any) => void) => {

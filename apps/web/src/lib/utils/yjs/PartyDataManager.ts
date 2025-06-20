@@ -558,11 +558,16 @@ export class PartyDataManager {
     // Use transaction with origin to identify this client's changes
     this.doc.transact(() => {
       console.log(`[${this.clientId}] Setting stageProps for scene ${sceneId} via Y.js transaction`);
+      console.log(
+        `[${this.clientId}] Markers being set:`,
+        updatedStageProps.marker?.markers?.map((m) => ({ id: m.id, title: m.title })) || []
+      );
       sceneDataMap.set('stageProps', updatedStageProps);
       // Also update the separate markers array to keep it in sync
       if (updatedStageProps.marker?.markers) {
         console.log(
-          `[${this.clientId}] Also updating separate markers array with ${updatedStageProps.marker.markers.length} markers`
+          `[${this.clientId}] Also updating separate markers array with ${updatedStageProps.marker.markers.length} markers:`,
+          updatedStageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
         );
         sceneDataMap.set('markers', updatedStageProps.marker.markers);
       }

@@ -466,6 +466,26 @@ The application uses three different image types for scenes:
 - Less flashing from fog URL changes
 - Better performance
 
+### Unified Property Update System ✅
+
+**Problem**: Multiple property update methods with different behaviors and user confusion
+
+**Implemented Solution**:
+
+- Enhanced `queuePropertyUpdate` with immediate Y.js sync flag
+- Added `enableImmediateYjsSync()` to activate real-time mode
+- Removed complex `updatePropertyRealtime` API
+- All components now use single `queuePropertyUpdate` method
+- Immediate Y.js sync for real-time collaboration
+- Batched database saves to prevent spam
+
+**Benefits**:
+
+- Single, simple API for all property updates
+- Real-time collaboration everywhere
+- Reduced code complexity
+- Better performance with batched saves
+
 ### Image Loading Improvements (Future Work)
 
 **Problem**: Client-side image loading causes flashing due to cache-busting timestamps
@@ -636,4 +656,18 @@ The application uses three different image types for scenes:
 - ✅ Replaced granular property checking with simpler Y.js-based approach
 - ✅ Fixed infinite update loop in playfield (JSON comparison instead of reference equality)
 - ✅ Optimized fog updates to only save when actual drawing occurs (not on property changes)
+- ✅ Implemented unified property update system with immediate Y.js sync
+- ✅ Enhanced `queuePropertyUpdate` to support real-time mode
+- ✅ Removed complex `updatePropertyRealtime` API
+- ✅ All control components now use single update method
 - 🚧 Continuing legacy websocket removal and simplification
+
+### 2025-06-20
+
+- ✅ Created unified property update system
+- ✅ Added `enableImmediateYjsSync()` flag to propertyUpdateBroadcaster
+- ✅ Modified `queuePropertyUpdate` to sync immediately when flag is enabled
+- ✅ Removed redundant `updateProp` method from editor
+- ✅ Updated GridControls to use simplified API
+- ✅ Removed `updatePropertyRealtime` prop from SceneControls
+- ✅ All components now use single `queuePropertyUpdate` method

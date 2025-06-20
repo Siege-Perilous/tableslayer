@@ -94,8 +94,17 @@ export function queuePropertyUpdate(
     const currentSceneData = partyDataManager.getSceneData(currentSceneId);
     if (currentSceneData) {
       // Update Y.js immediately with current stageProps
+      console.log('🚀 Calling updateSceneStageProps with immediate sync');
       partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
+    } else {
+      console.warn('⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
     }
+  } else {
+    console.log('⏭️ Immediate sync skipped:', {
+      enabled: immediateYjsSyncEnabled,
+      hasManager: !!partyDataManager,
+      hasSceneId: !!currentSceneId
+    });
   }
 
   // Store path and value for later batch update (for database save)
