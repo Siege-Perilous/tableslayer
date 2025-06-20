@@ -45,6 +45,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
+  import { useGetSceneTimestampsQuery } from '$lib/queries';
 
   let {
     scenes,
@@ -137,6 +138,12 @@
   let yjsPartyState = $state({
     isPaused: data.party.gameSessionIsPaused,
     activeSceneId: data.activeScene?.id
+  });
+
+  // Query for scene timestamps
+  const timestampsQuery = useGetSceneTimestampsQuery({
+    gameSessionId: gameSession.id,
+    partyId: party.id
   });
 
   // Helper function to add thumbnails to Y.js scenes
@@ -1552,23 +1559,11 @@
     try {
       if (!partyData) return;
 
-      const driftedScenes = await partyData.detectDrift(async () => {
-        const response = await fetch('/api/scenes/timestamps', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            gameSessionId: gameSession.id,
-            partyId: party.id
-          })
-        });
+      // Refetch timestamps
+      await timestampsQuery.refetch();
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch scene timestamps');
-        }
-
-        const { timestamps } = await response.json();
-        return timestamps;
-      });
+      const timestamps = $timestampsQuery.data?.timestamps || {};
+      const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
       if (driftedScenes.length > 0) {
         console.log('Periodic drift check found drifted scenes:', driftedScenes);
@@ -1633,23 +1628,11 @@
 
         // Check for Y.js drift and refresh if needed
         try {
-          const driftedScenes = await partyData.detectDrift(async () => {
-            const response = await fetch('/api/scenes/timestamps', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                gameSessionId: gameSession.id,
-                partyId: party.id
-              })
-            });
+          // Refetch timestamps
+          await timestampsQuery.refetch();
 
-            if (!response.ok) {
-              throw new Error('Failed to fetch scene timestamps');
-            }
-
-            const { timestamps } = await response.json();
-            return timestamps;
-          });
+          const timestamps = $timestampsQuery.data?.timestamps || {};
+          const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
           if (driftedScenes.length > 0) {
             console.log('Drift detected for scenes:', driftedScenes);
