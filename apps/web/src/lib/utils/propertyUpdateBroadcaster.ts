@@ -15,6 +15,17 @@ const MARKER_UPDATE_DELAY = 50; // Reduced from 150ms for faster marker sync
 const UI_CONTROL_DELAY = 100; // Reduced from 250ms
 const SCENE_UPDATE_DELAY = 200; // Reduced from 500ms
 
+// Flag to enable immediate Y.js sync mode
+let immediateYjsSyncEnabled = false;
+
+export function enableImmediateYjsSync() {
+  immediateYjsSyncEnabled = true;
+}
+
+export function disableImmediateYjsSync() {
+  immediateYjsSyncEnabled = false;
+}
+
 export type PropertyPath = string[];
 
 // Define which properties should be shared vs local per user
@@ -75,7 +86,19 @@ export function queuePropertyUpdate(
     console.warn('This update will be applied locally but not synced to other editors!');
   }
 
-  // Store path and value for later batch update
+  // If immediate sync is enabled and we have Y.js, sync immediately
+  if (immediateYjsSyncEnabled && partyDataManager && currentSceneId) {
+    console.log('🚀 Immediate Y.js sync for:', propertyPath.join('.'), '=', value);
+
+    // Get current scene data from Y.js
+    const currentSceneData = partyDataManager.getSceneData(currentSceneId);
+    if (currentSceneData) {
+      // Update Y.js immediately with current stageProps
+      partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
+    }
+  }
+
+  // Store path and value for later batch update (for database save)
   const pathKey = propertyPath.join('.');
   pendingUpdates[pathKey] = { path: propertyPath, value };
 
@@ -95,8 +118,8 @@ export function queuePropertyUpdate(
       Object.keys(pendingUpdates).forEach((key) => delete pendingUpdates[key]);
       updateScheduled = false;
 
-      // Now broadcast the updates via Y.js
-      if (currentSceneId && Object.keys(updates).length > 0) {
+      // Now broadcast the batched updates via Y.js (only needed when immediate sync is disabled)
+      if (!immediateYjsSyncEnabled && currentSceneId && Object.keys(updates).length > 0) {
         const partyDataManager = getPartyDataManager();
         if (!partyDataManager) {
           // Queue updates for when Y.js becomes ready

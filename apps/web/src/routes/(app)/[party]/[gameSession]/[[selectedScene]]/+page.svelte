@@ -39,6 +39,7 @@
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
     setUserChangeCallback,
+    enableImmediateYjsSync,
     type PropertyPath
   } from '$lib/utils';
   import { onMount } from 'svelte';
@@ -460,6 +461,9 @@
   // Marker updates now handled via Y.js - no need for socket-based updates
 
   onMount(() => {
+    // Enable immediate Y.js sync for real-time collaboration
+    enableImmediateYjsSync();
+
     // Set up callback for property updates to trigger auto-save
     setUserChangeCallback(startAutoSaveTimer);
 
@@ -1263,25 +1267,48 @@
   };
 
   // Wrapper function for property updates that also triggers auto-save
-  const updateProperty = (
-    stageProps: any,
-    propertyPath: PropertyPath,
-    value: any,
-    updateType: 'marker' | 'control' | 'scene' = 'control'
-  ) => {
-    // Set actively editing flag to block Y.js updates
-    isActivelyEditing = true;
+  // Single unified method for all property updates
+  const updateProp = (propertyPath: PropertyPath, value: any) => {
+    // Update local state immediately using proper path navigation
+    let current = stageProps;
+    for (let i = 0; i < propertyPath.length - 1; i++) {
+      if (!current[propertyPath[i]]) {
+        console.error('Invalid property path:', propertyPath.join('.'));
+        return;
+      }
+      current = current[propertyPath[i]];
+    }
+    current[propertyPath[propertyPath.length - 1]] = value;
 
-    // Clear any existing editing timer and set new one
+    const propertyKey = propertyPath.join('.');
+
+    // Immediately sync to Y.js for real-time collaboration
+    if (partyData && selectedScene?.id) {
+      console.log('🚀 Syncing property:', propertyKey, '=', value);
+      lastOwnYjsUpdateTime = Date.now();
+      partyData.updateSceneStageProps(selectedScene.id, stageProps);
+    }
+
+    // Determine update type based on property path
+    const updateType = propertyPath[0] === 'marker' ? 'marker' : propertyPath[0] === 'scene' ? 'scene' : 'control';
+
+    // Queue for database save
+    queuePropertyUpdate(stageProps, propertyPath, value, updateType);
+
+    // Brief protection against our own echo
+    isActivelyEditing = true;
     if (editingTimer) clearTimeout(editingTimer);
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
-      console.log('Cleared isActivelyEditing flag due to timeout');
-    }, 1000); // Clear after 1 second if no save occurs
-
-    // queuePropertyUpdate will trigger auto-save through the callback
-    queuePropertyUpdate(stageProps, propertyPath, value, updateType);
+    }, 300); // Short protection window
   };
+
+  // Backwards compatibility wrappers
+  const updateProperty = (stageProps: any, propertyPath: PropertyPath, value: any, updateType?: any) => {
+    updateProp(propertyPath, value);
+  };
+
+  const updatePropertyRealtime = updateProperty; // Alias for components expecting this
 
   // Helper function for marker updates that triggers auto-save
   const updateMarkerAndSave = (markerId: string, updateFn: (marker: any) => void) => {

@@ -199,7 +199,14 @@
   </FormControl>
   <FormControl label="Table padding" name="displayPaddingX" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      <Input
+        {...inputProps}
+        type="number"
+        min={0}
+        step={1}
+        bind:value={localPadding}
+        oninput={() => handlePaddingChange()}
+      />
     {/snippet}
     {#snippet end()}
       px
