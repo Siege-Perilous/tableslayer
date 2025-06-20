@@ -76,6 +76,12 @@ export function usePartyData() {
     clearAllData: () => partyDataManager!.clearAllData(),
     forceSyncCheck: () => partyDataManager!.forceSyncCheck(),
 
+    // Drift detection
+    getSceneLastUpdated: (sceneId: string) => partyDataManager!.getSceneLastUpdated(sceneId),
+    checkSceneDrift: (sceneId: string, dbTimestamp: number) => partyDataManager!.checkSceneDrift(sceneId, dbTimestamp),
+    detectDrift: (fetchSceneTimestamps: () => Promise<Record<string, number>>) =>
+      partyDataManager!.detectDrift(fetchSceneTimestamps),
+
     // Socket access for cursor tracking
     getSocket: () => partyDataManager!.getSocket(),
     isSocketConnected: () => partyDataManager!.isSocketConnected(),

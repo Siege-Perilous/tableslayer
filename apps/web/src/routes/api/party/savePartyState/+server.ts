@@ -68,6 +68,7 @@ export const POST = apiFactory(
       results.scene = await getScene(sceneId);
 
       // 2. Process marker operations
+      let markersModified = false;
       for (const operation of markerOperations) {
         switch (operation.operation) {
           case 'create':
@@ -76,6 +77,7 @@ export const POST = apiFactory(
             }
             const newMarker = await createMarker(operation.data, sceneId);
             results.markers.created.push(newMarker);
+            markersModified = true;
             break;
 
           case 'update':
@@ -84,13 +86,20 @@ export const POST = apiFactory(
             }
             const updatedMarker = await updateMarker(operation.id, operation.data);
             results.markers.updated.push(updatedMarker);
+            markersModified = true;
             break;
 
           case 'delete':
             await deleteMarker(operation.id);
             results.markers.deleted.push(operation.id);
+            markersModified = true;
             break;
         }
+      }
+
+      // Update scene timestamp if markers were modified
+      if (markersModified) {
+        await updateScene(userId, sceneId, { lastUpdated: new Date() });
       }
 
       // 3. Update game session timestamp (if provided)

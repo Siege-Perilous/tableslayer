@@ -8,8 +8,10 @@
     MapLayerType,
     Icon,
     type Marker,
-    PointerInputManager
+    PointerInputManager,
+    addToast
   } from '@tableslayer/ui';
+  import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom, Head } from '$lib/components';
   import {
@@ -200,6 +202,7 @@
   let activeControl = $state('none');
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
+  let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
@@ -555,13 +558,13 @@
     if (partyData) {
       // Wait for socket to be connected
       const checkSocketConnection = setInterval(() => {
-        if (partyData.isSocketConnected()) {
+        if (partyData && partyData.isSocketConnected()) {
           clearInterval(checkSocketConnection);
 
           // Set user data for disconnect notification
           const socket = partyData.getSocket();
           if (socket) {
-            socket.data = { userId: user.id };
+            (socket as any).data = { userId: user.id };
           }
         }
       }, 100);
@@ -585,9 +588,15 @@
 
     // Initial socket update removed - Y.js handles synchronization
 
+    // Set up periodic drift check timer (every 30 seconds)
+    driftCheckTimer = setInterval(() => {
+      checkForDrift();
+    }, 30000); // 30 seconds
+
     return () => {
       if (saveTimer) clearTimeout(saveTimer);
       if (editingTimer) clearTimeout(editingTimer);
+      if (driftCheckTimer) clearInterval(driftCheckTimer);
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
@@ -794,7 +803,7 @@
 
       // Skip marker-based rebuilds if user is actively editing or waiting for SSR update
       if (markersChanged && !isActivelyEditing && markersBeingEdited.size === 0 && !waitingForSSRUpdate) {
-        console.log('[StageProps Effect] Markers changed - rebuilding with SSR markers');
+        console.log('[StageProps Effect] Markers changed - checking Y.js vs SSR data');
         console.log(
           '[StageProps Effect] Current markers:',
           stageProps.marker.markers.length,
@@ -802,10 +811,23 @@
           currentSelectedSceneMarkers?.length || 0
         );
 
-        // IMPORTANT: Only rebuild if SSR has MORE markers than current state
-        // This prevents losing newly added markers that haven't been saved yet
-        if ((currentSelectedSceneMarkers?.length || 0) > stageProps.marker.markers.length) {
-          console.log('[StageProps Effect] SSR has more markers - rebuilding');
+        // Check if we have Y.js data available
+        const yjsSceneData = partyData?.getSceneData(currentSceneId);
+        const hasYjsData = yjsSceneData && yjsSceneData.stageProps && yjsSceneData.stageProps.marker;
+
+        // If Y.js has data and is connected, trust it over SSR
+        if (hasYjsData && partyData?.getConnectionStatus()) {
+          console.log('[StageProps Effect] Y.js is connected and has data - skipping SSR rebuild');
+          console.log(
+            '[StageProps Effect] Y.js markers:',
+            yjsSceneData.stageProps.marker.markers.length,
+            'vs SSR markers:',
+            currentSelectedSceneMarkers?.length || 0
+          );
+          // Don't rebuild from SSR - Y.js data is already being applied
+        } else if ((currentSelectedSceneMarkers?.length || 0) > stageProps.marker.markers.length) {
+          // Only use SSR data if Y.js is not available AND SSR has more markers
+          console.log('[StageProps Effect] Y.js not available, SSR has more markers - rebuilding');
           // Preserve current map and scene state when only markers change
           const currentMapState = {
             offset: { ...stageProps.map.offset },
@@ -827,8 +849,6 @@
           stageProps.scene.offset = currentSceneState.offset;
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
-        } else {
-          console.log('[StageProps Effect] Keeping current markers - local state has more or equal markers');
         }
       } else if (markersChanged) {
         console.log('[StageProps Effect] Skipping marker rebuild:', {
@@ -1448,6 +1468,9 @@
       // Update the marker locally first
       updateFn(stageProps.marker.markers[markerIndex]);
 
+      // Force Svelte to detect the change by reassigning the array
+      stageProps.marker.markers = [...stageProps.marker.markers];
+
       // Immediately sync to Y.js for real-time collaboration
       if (partyData && selectedScene?.id) {
         console.log('🚀 Immediately syncing marker update to Y.js:', markerId);
@@ -1517,6 +1540,56 @@
     }, 3000);
   };
 
+  // Function to check for drift periodically
+  const checkForDrift = async () => {
+    // Skip if window not focused, no party data, or not connected
+    if (!isWindowFocused || !partyData || !partyData.getConnectionStatus()) {
+      return;
+    }
+
+    console.log('Running periodic drift check');
+
+    try {
+      if (!partyData) return;
+
+      const driftedScenes = await partyData.detectDrift(async () => {
+        const response = await fetch('/api/scenes/timestamps', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameSessionId: gameSession.id,
+            partyId: party.id
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch scene timestamps');
+        }
+
+        const { timestamps } = await response.json();
+        return timestamps;
+      });
+
+      if (driftedScenes.length > 0) {
+        console.log('Periodic drift check found drifted scenes:', driftedScenes);
+
+        // Show toast notification
+        addToast({
+          data: {
+            title: 'Editor out of sync',
+            body: 'Reloading data to sync with other editors',
+            type: 'info'
+          }
+        });
+
+        // Refresh data from database
+        await invalidateAll();
+      }
+    } catch (error) {
+      console.error('Error in periodic drift check:', error);
+    }
+  };
+
   // Make sure the selectedMarkerId is reset when the selectedScene changes
   // Also update persistedMarkerIds to reflect what might change in state
   let previousEffectSceneId = $state<string | undefined>(undefined);
@@ -1552,9 +1625,50 @@
     // Trigger Y.js sync check when regaining focus to catch any missed updates
     if (partyData && partyData.getConnectionStatus()) {
       // Small delay to ensure Y.js has had time to reconnect if needed
-      setTimeout(() => {
+      setTimeout(async () => {
         console.log('Focus regained - forcing Y.js sync check');
+        if (!partyData) return;
+
         partyData.forceSyncCheck();
+
+        // Check for Y.js drift and refresh if needed
+        try {
+          const driftedScenes = await partyData.detectDrift(async () => {
+            const response = await fetch('/api/scenes/timestamps', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                gameSessionId: gameSession.id,
+                partyId: party.id
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch scene timestamps');
+            }
+
+            const { timestamps } = await response.json();
+            return timestamps;
+          });
+
+          if (driftedScenes.length > 0) {
+            console.log('Drift detected for scenes:', driftedScenes);
+
+            // Show toast notification
+            addToast({
+              data: {
+                title: 'Editor out of sync',
+                body: 'Reloading data to sync with other editors',
+                type: 'info'
+              }
+            });
+
+            // Refresh data from database
+            await invalidateAll();
+          }
+        } catch (error) {
+          console.error('Error checking for drift:', error);
+        }
       }, 200);
     }
   }}

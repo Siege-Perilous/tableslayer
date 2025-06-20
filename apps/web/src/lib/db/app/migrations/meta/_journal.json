@@ -169,6 +169,13 @@
       "when": 1750199973877,
       "tag": "0023_active-session-remove-from-party",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1750445077960,
+      "tag": "0024_scene-last-updated",
+      "breakpoints": true
     }
   ]
 }

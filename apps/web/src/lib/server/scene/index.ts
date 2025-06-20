@@ -325,6 +325,8 @@ export const updateScene = async (
   }
 
   if (Object.keys(updateData).length > 0) {
+    // Always update the lastUpdated timestamp when modifying scene data
+    updateData.lastUpdated = new Date();
     await db.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
   }
 };
@@ -334,7 +336,11 @@ export const updateSceneMap = async (sceneId: string, userId: string, file: File
   const fileContent = await getFile(fileRow.fileId);
   const fileLocation = fileContent.location;
 
-  await db.update(sceneTable).set({ mapLocation: fileLocation }).where(eq(sceneTable.id, sceneId)).execute();
+  await db
+    .update(sceneTable)
+    .set({ mapLocation: fileLocation, lastUpdated: new Date() })
+    .where(eq(sceneTable.id, sceneId))
+    .execute();
 };
 
 export const setActiveScene = async (gameSessionId: string, sceneId: string) => {
@@ -400,4 +406,12 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
   });
 
   return newScene;
+};
+
+/**
+ * Update a scene's lastUpdated timestamp when markers are modified
+ * This should be called whenever markers are added, updated, or deleted
+ */
+export const updateSceneTimestampForMarkerChange = async (sceneId: string): Promise<void> => {
+  await db.update(sceneTable).set({ lastUpdated: new Date() }).where(eq(sceneTable.id, sceneId)).execute();
 };

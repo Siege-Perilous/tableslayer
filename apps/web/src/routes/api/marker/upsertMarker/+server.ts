@@ -1,7 +1,7 @@
 import { db } from '$lib/db/app';
 import { insertMarkerSchema, markerTable } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { createMarker, isUserInParty, updateMarker } from '$lib/server';
+import { createMarker, isUserInParty, updateMarker, updateSceneTimestampForMarkerChange } from '$lib/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
 
@@ -39,6 +39,9 @@ export const POST = apiFactory(
       marker = await createMarker(markerData, sceneId);
       operation = 'created';
     }
+
+    // Update scene timestamp when marker is created or updated
+    await updateSceneTimestampForMarkerChange(sceneId);
 
     return {
       success: true,

@@ -49,3 +49,7 @@ export const updateMarker = async (markerId: string, markerData: Partial<SelectM
 export const deleteMarker = async (markerId: string): Promise<void> => {
   await db.delete(markerTable).where(eq(markerTable.id, markerId));
 };
+
+export const getMarker = async (markerId: string): Promise<SelectMarker | undefined> => {
+  return await db.select().from(markerTable).where(eq(markerTable.id, markerId)).get();
+};

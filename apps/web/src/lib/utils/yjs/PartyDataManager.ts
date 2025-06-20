@@ -31,7 +31,7 @@ export interface SceneData {
   stageProps: StageProps;
   markers: Marker[];
   localStates: Record<string, LocalViewportState>;
-  lastSavedAt: number;
+  lastUpdated: number;
   saveInProgress: boolean;
   activeSaver?: string;
 }
@@ -304,7 +304,7 @@ export class PartyDataManager {
       sceneDataMap.set('stageProps', stageProps);
       sceneDataMap.set('markers', markers);
       sceneDataMap.set('localStates', {});
-      sceneDataMap.set('lastSavedAt', currentTime);
+      sceneDataMap.set('lastUpdated', currentTime);
       sceneDataMap.set('saveInProgress', false);
 
       this.yScenes.set(sceneId, sceneDataMap);
@@ -313,12 +313,12 @@ export class PartyDataManager {
       // Scene data exists - check if SSR data should take precedence
       const existingSceneData = this.yScenes.get(sceneId);
       if (existingSceneData instanceof Y.Map) {
-        const lastSavedAt = existingSceneData.get('lastSavedAt') || 0;
+        const lastUpdated = existingSceneData.get('lastUpdated') || 0;
 
         // Check if Y.js has newer data than what we're initializing with
         const existingMarkers = existingSceneData.get('markers') || [];
         const hasMoreMarkers = existingMarkers.length > markers.length;
-        const timeSinceSave = currentTime - lastSavedAt;
+        const timeSinceSave = currentTime - lastUpdated;
 
         // Only update if SSR has more recent data or more markers
         // This prevents Editor B from overwriting Editor A's markers
@@ -332,7 +332,7 @@ export class PartyDataManager {
           this.doc.transact(() => {
             existingSceneData.set('stageProps', stageProps);
             existingSceneData.set('markers', markers);
-            existingSceneData.set('lastSavedAt', currentTime);
+            existingSceneData.set('lastUpdated', currentTime);
           });
         } else {
           console.log(`[${this.clientId}] Keeping existing Y.js data - it's newer than SSR`);
@@ -540,7 +540,7 @@ export class PartyDataManager {
       stageProps: sceneDataMap.get('stageProps'),
       markers: sceneDataMap.get('markers'),
       localStates: sceneDataMap.get('localStates') || {},
-      lastSavedAt: sceneDataMap.get('lastSavedAt'),
+      lastUpdated: sceneDataMap.get('lastUpdated'),
       saveInProgress: sceneDataMap.get('saveInProgress') || false,
       activeSaver: sceneDataMap.get('activeSaver')
     };
@@ -576,7 +576,7 @@ export class PartyDataManager {
         );
         sceneDataMap.set('markers', updatedStageProps.marker.markers);
       }
-      sceneDataMap.set('lastSavedAt', Date.now());
+      sceneDataMap.set('lastUpdated', Date.now());
     }, this.clientId); // Set origin to this client's ID
 
     console.log(`[${this.clientId}] Scene stageProps Y.js transaction completed for scene: ${sceneId}`);
@@ -721,7 +721,7 @@ export class PartyDataManager {
         sceneData.delete('activeSaver');
 
         if (success) {
-          sceneData.set('lastSavedAt', Date.now());
+          sceneData.set('lastUpdated', Date.now());
           console.log('Released active saver (success) for scene:', sceneId);
         } else {
           console.log('Released active saver (failed) for scene:', sceneId);
@@ -774,6 +774,72 @@ export class PartyDataManager {
     // If providers support explicit sync, we could trigger that
     // For now, the notification refresh should be sufficient
     return true;
+  }
+
+  /**
+   * Get the lastUpdated timestamp for a scene from Y.js
+   */
+  getSceneLastUpdated(sceneId: string): number | null {
+    const sceneData = this.yScenes.get(sceneId);
+    if (!sceneData) {
+      return null;
+    }
+    return sceneData.get('lastUpdated') || null;
+  }
+
+  /**
+   * Check if a scene has drifted from the database
+   */
+  checkSceneDrift(sceneId: string, dbTimestamp: number): boolean {
+    const yjsTimestamp = this.getSceneLastUpdated(sceneId);
+    if (!yjsTimestamp) {
+      // If no Y.js timestamp, don't assume drift (could be initialization lag)
+      return false;
+    }
+
+    // Database is newer than Y.js - drift detected
+    return dbTimestamp > yjsTimestamp;
+  }
+
+  /**
+   * Detect drift for all scenes and return list of drifted scene IDs
+   */
+  async detectDrift(fetchSceneTimestamps: () => Promise<Record<string, number>>): Promise<string[]> {
+    try {
+      const dbTimestamps = await fetchSceneTimestamps();
+      const driftedScenes: string[] = [];
+
+      // Only check scenes that have DB timestamps (non-NULL lastSavedAt)
+      // Scenes without DB timestamps are either new or haven't been saved since migration
+      for (const [sceneId, dbTimestamp] of Object.entries(dbTimestamps)) {
+        const yjsTimestamp = this.getSceneLastUpdated(sceneId);
+
+        // Only consider it drift if:
+        // - Y.js HAS a timestamp AND DB timestamp is newer
+        // - Don't count missing Y.js timestamps as drift (could be initialization lag)
+        if (yjsTimestamp && dbTimestamp > yjsTimestamp) {
+          driftedScenes.push(sceneId);
+          console.log(
+            `[${this.clientId}] Drift detected for scene ${sceneId}: DB=${new Date(dbTimestamp).toISOString()}, Y.js=${new Date(yjsTimestamp).toISOString()}`
+          );
+        }
+      }
+
+      // Log summary for debugging
+      const totalScenesWithTimestamps = Object.keys(dbTimestamps).length;
+      if (totalScenesWithTimestamps > 0) {
+        console.log(
+          `[${this.clientId}] Drift check complete: ${driftedScenes.length} drifted out of ${totalScenesWithTimestamps} scenes with DB timestamps`
+        );
+      } else {
+        console.log(`[${this.clientId}] Drift check complete: No scenes have timestamps yet (migration period)`);
+      }
+
+      return driftedScenes;
+    } catch (error) {
+      console.error(`[${this.clientId}] Error detecting drift:`, error);
+      return [];
+    }
   }
 
   /**

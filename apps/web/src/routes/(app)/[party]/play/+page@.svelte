@@ -62,9 +62,6 @@
   // Track the last processed stage props JSON to prevent loops
   let lastStagePropsJson: string | null = null;
 
-  // Track the last Y.js scene data we processed to avoid duplicate work
-  let lastProcessedYjsData: string | null = null;
-
   // Update stage props from Y.js data when available
   $effect(() => {
     if (isUnmounting || isInvalidating || isProcessingSceneChange) {
@@ -72,14 +69,8 @@
       return;
     }
 
-    // Create a hash of the current state to detect real changes
-    const currentStateHash = `${yjsPartyState.activeSceneId}-${!!yjsSceneData?.stageProps}-${yjsSceneData?.lastSavedAt || 0}`;
-
-    // Skip if we've already processed this exact state
-    if (lastProcessedYjsData === currentStateHash && lastStagePropsJson) {
-      console.log('Skipping stageProps effect - no real changes detected');
-      return;
-    }
+    // Note: We rely on the JSON comparison below to detect actual changes
+    // The early exit was preventing marker updates from being processed
 
     console.log('Playfield stageProps effect:', {
       isHydrated,
@@ -95,9 +86,6 @@
     if (isHydrated && yjsInitialized && yjsSceneData?.stageProps && yjsPartyState.activeSceneId) {
       // Only update if we have scene data and an active scene
       console.log('Building new stage props from Y.js data');
-
-      // Mark this data as processed
-      lastProcessedYjsData = currentStateHash;
 
       // Build the new stage props
       const newStageProps = {
@@ -182,7 +170,6 @@
         const initialStageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
         stageProps = initialStageProps;
         lastStagePropsJson = JSON.stringify(initialStageProps);
-        lastProcessedYjsData = currentStateHash;
         initialDataApplied = true;
       }
     }

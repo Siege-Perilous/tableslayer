@@ -380,6 +380,7 @@ export const sceneTable = sqliteTable(
     effectsChromaticAberrationOffset: real('effects_chromatic_aberration_intensity').notNull().default(0),
     effectsLutUrl: text('effects_lut_url'),
     effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0),
+    lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     markerStrokeColor: text('marker_stroke_color').notNull().default('#000000'),
     markerStrokeWidth: integer('marker_stroke_width').notNull().default(50),
     markerTextColor: text('marker_text_color').notNull().default('#ffffff'),
