@@ -19,28 +19,22 @@
     useUpdateGameSessionMutation,
     useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
-    useCreateMarkerMutation,
-    useUpdateMarkerMutation,
     useUpsertMarkerMutation
   } from '$lib/queries';
   import { type $ZodIssue } from 'zod/v4/core';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
-    StageDefaultProps,
     buildSceneProps,
     handleKeyCommands,
     handleStageZoom,
     hasThumb,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
-    throttle,
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
-    setUserChangeCallback,
-    enableImmediateYjsSync,
-    type PropertyPath
+    setUserChangeCallback
   } from '$lib/utils';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
@@ -55,14 +49,13 @@
     selectedScene: ssrSelectedScene,
     party,
     activeScene,
-    activeSceneMarkers,
     user
   } = $derived(data);
 
   // Helper function to merge markers while protecting ones being moved or edited
   const mergeMarkersWithProtection = (
-    localMarkers: any[],
-    incomingMarkers: any[],
+    localMarkers: Marker[],
+    incomingMarkers: Marker[],
     beingMoved: Set<string>,
     beingEdited: Set<string>,
     recentlyDeleted: Set<string>
@@ -219,7 +212,6 @@
   let markersPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let isMarkersCollapsed = $state(true);
-  let fogBlobUpdateTime: Date | null = $state(null);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   let mapThumbLocation: null | string = $state(null);
@@ -243,8 +235,6 @@
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
-  const createMarkerMutation = useCreateMarkerMutation();
-  const updateMarkerMutation = useUpdateMarkerMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
 
   const getCollapseIcon = () => {
@@ -350,7 +340,7 @@
           markersFromYjs: sceneData.stageProps.marker?.markers?.length || 0,
           separateMarkers: sceneData.markers?.length || 0,
           timestamp: Date.now(),
-          markerIds: sceneData.stageProps.marker?.markers?.map((m: any) => m.id) || [],
+          markerIds: sceneData.stageProps.marker?.markers?.map((m: Marker) => m.id) || [],
           isActivelyEditing,
           timeSinceOwnUpdate,
           hasReceivedFirstYjsUpdate
@@ -391,7 +381,7 @@
 
         console.log('Merged result:', {
           markerCount: mergedStageProps.marker?.markers?.length || 0,
-          markerIds: mergedStageProps.marker?.markers?.map((m: any) => m.id) || [],
+          markerIds: mergedStageProps.marker?.markers?.map((m: Marker) => m.id) || [],
           mapUrl: mergedStageProps?.map?.url
         });
         console.log('Map URL comparison:', {
@@ -498,7 +488,7 @@
       console.log('Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
       const partySlug = $page.params.party;
-      const manager = initializePartyDataManager(partySlug, user.id, gameSession.id);
+      initializePartyDataManager(partySlug, user.id, gameSession.id);
       partyData = usePartyData();
 
       // Initialize Y.js with SSR scene data
@@ -573,6 +563,7 @@
           // Set user data for disconnect notification
           const socket = partyData.getSocket();
           if (socket) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (socket as any).data = { userId: user.id };
           }
         }
@@ -775,7 +766,7 @@
           });
         } else {
           // Not a scene switch - check if we have new markers from SSR that Y.js doesn't know about
-          const yjsMarkerIds = new Set((existingSceneData.markers || []).map((m: any) => m.id));
+          const yjsMarkerIds = new Set((existingSceneData.markers || []).map((m: Marker) => m.id));
           const ssrMarkerIds = new Set((currentSelectedSceneMarkers || []).map((m) => m.id));
           const newMarkersFromSSR = [...ssrMarkerIds].filter((id) => !yjsMarkerIds.has(id));
 
@@ -1223,7 +1214,6 @@
 
           // Update local state immediately
           stageProps.fogOfWar.url = fogUrl;
-          fogBlobUpdateTime = new Date();
 
           // Immediately sync fog URL to Y.js for real-time collaboration
           if (partyData && selectedScene?.id) {
@@ -1471,8 +1461,8 @@
   };
 
   // Helper function for marker updates that triggers auto-save
-  const updateMarkerAndSave = (markerId: string, updateFn: (marker: any) => void) => {
-    const markerIndex = stageProps.marker.markers.findIndex((m: any) => m.id === markerId);
+  const updateMarkerAndSave = (markerId: string, updateFn: (marker: Marker) => void) => {
+    const markerIndex = stageProps.marker.markers.findIndex((m: Marker) => m.id === markerId);
     if (markerIndex !== -1) {
       // Update the marker locally first
       updateFn(stageProps.marker.markers[markerIndex]);
@@ -1731,7 +1721,6 @@
         party={currentParty}
         {activeSceneId}
         {partyData}
-        {socketUpdate}
         bind:isLocallyReordering
       />
     </Pane>

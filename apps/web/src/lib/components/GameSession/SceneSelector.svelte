@@ -19,7 +19,6 @@
     useCreateSceneMutation,
     useDeleteSceneMutation,
     useUpdateSceneMutation,
-    useUpdateGameSessionMutation,
     useReorderScenesMutation,
     useDuplicateSceneMutation
   } from '$lib/queries';
@@ -40,7 +39,6 @@
     activeSceneId,
     party,
     partyData,
-    socketUpdate,
     isLocallyReordering = $bindable(false)
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
@@ -49,7 +47,6 @@
     party: SelectParty & Thumb;
     activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
-    socketUpdate: () => void;
     isLocallyReordering?: boolean;
   } = $props();
 
@@ -78,7 +75,6 @@
   const createNewScene = useCreateSceneMutation();
   const deleteScene = useDeleteSceneMutation();
   const updateScene = useUpdateSceneMutation();
-  const updateGameSession = useUpdateGameSessionMutation();
   const updateParty = useUpdatePartyMutation();
   const reorderScenes = useReorderScenesMutation();
   const duplicateScene = useDuplicateSceneMutation();
@@ -190,8 +186,6 @@
   };
 
   const handleSetActiveScene = async (sceneId: string) => {
-    const sceneToActivate = scenes.find((scene) => scene.id === sceneId);
-
     await handleMutation({
       mutation: () =>
         $updateParty.mutateAsync({

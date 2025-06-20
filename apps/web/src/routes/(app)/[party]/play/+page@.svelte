@@ -6,7 +6,12 @@
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
+  import {
+    initializePartyDataManager,
+    usePartyData,
+    destroyPartyDataManager,
+    type SceneData
+  } from '$lib/utils/yjs/stores';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -33,7 +38,7 @@
     activeSceneId: yjsPartyState.activeSceneId,
     dataActiveSceneId: data.activeScene?.id
   });
-  let yjsSceneData = $state<any>(null);
+  let yjsSceneData = $state<SceneData | null>(null);
   let isHydrated = $state(false);
 
   let hasActiveScene = $state(!!data.activeScene);
@@ -106,7 +111,7 @@
         // Filter markers to remove DM-only ones
         marker: {
           ...yjsSceneData.stageProps.marker,
-          markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: any) => m.visibility !== 1) // 1 = MarkerVisibility.DM
+          markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
         }
       };
 
@@ -167,7 +172,7 @@
       // Always create a new instance for the playfield
       // Use the party slug from the URL params for the room name
       const partySlug = $page.params.party;
-      const manager = initializePartyDataManager(partySlug, user.id, activeGameSessionId);
+      initializePartyDataManager(partySlug, user.id, activeGameSessionId);
       partyData = usePartyData();
 
       // Ensure we don't have duplicate subscriptions
@@ -212,7 +217,7 @@
                 hasStageProps: !!sceneData.stageProps,
                 markerCount: sceneData.markers?.length || 0,
                 stagePropsMarkerCount: sceneData.stageProps?.marker?.markers?.length || 0,
-                markerIds: sceneData.stageProps?.marker?.markers?.map((m: any) => m.id).slice(0, 5) || [],
+                markerIds: sceneData.stageProps?.marker?.markers?.map((m: Marker) => m.id).slice(0, 5) || [],
                 timestamp: Date.now()
               });
 
@@ -267,7 +272,7 @@
       setTimeout(() => clearInterval(checkSocketConnection), 5000);
     }
 
-    const handleMouseMove = (event: MouseEvent) => {
+    const handleMouseMove = () => {
       // Playfield should NOT emit cursor moves - only editors should
       // The playfield only receives and displays cursor data from editors
       return;
@@ -291,6 +296,7 @@
     });
 
     // Cursor update handler
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleCursorUpdate = (payload: any) => {
       const { normalizedPosition, user, zoom: editorZoom } = payload;
 
