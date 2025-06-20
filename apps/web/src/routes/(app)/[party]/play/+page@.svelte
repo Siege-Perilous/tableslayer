@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invalidateAll } from '$app/navigation';
-  import { setupPartyWebSocket, getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
+  import { page } from '$app/stores';
+  import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
-  import type { BroadcastStageUpdate, MarkerPositionUpdate, PropertyUpdates } from '$lib/utils';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
@@ -57,8 +57,7 @@
   let initialDataApplied = false;
 
   // For batched marker updates
-  let pendingMarkerUpdates: Record<string, MarkerPositionUpdate> = {};
-  let updateScheduled = false;
+  // Marker updates now handled through Y.js scene synchronization
 
   // Track the last processed stage props JSON to prevent loops
   let lastStagePropsJson: string | null = null;
@@ -189,35 +188,7 @@
     }
   });
 
-  // Handler for optimized marker updates - now with batching
-  const handleMarkerUpdate = (markerUpdate: MarkerPositionUpdate) => {
-    // Only update if the marker belongs to the current scene
-    if (markerUpdate.sceneId === data.activeScene?.id) {
-      // Add to pending updates
-      pendingMarkerUpdates[markerUpdate.markerId] = markerUpdate;
-
-      // Schedule batch update if not already scheduled
-      if (!updateScheduled) {
-        updateScheduled = true;
-        requestAnimationFrame(() => {
-          // Apply all pending updates at once
-          Object.values(pendingMarkerUpdates).forEach((update) => {
-            const index = stageProps.marker.markers.findIndex((m) => m.id === update.markerId);
-            if (index !== -1) {
-              // Update only the position property of the marker
-              stageProps.marker.markers[index] = {
-                ...stageProps.marker.markers[index],
-                position: update.position
-              };
-            }
-          });
-          // Clear pending updates and reset flag
-          pendingMarkerUpdates = {};
-          updateScheduled = false;
-        });
-      }
-    }
-  };
+  // Marker updates now handled through Y.js scene synchronization
 
   // Track mount state to prevent double initialization
   let isMounted = false;
@@ -248,7 +219,9 @@
       const activeGameSessionId = data.activeGameSession?.id;
 
       // Always create a new instance for the playfield
-      const manager = initializePartyDataManager(party.id, user.id, activeGameSessionId);
+      // Use the party slug from the URL params for the room name
+      const partySlug = $page.params.party;
+      const manager = initializePartyDataManager(partySlug, user.id, activeGameSessionId);
       partyData = usePartyData();
 
       // Ensure we don't have duplicate subscriptions
@@ -331,16 +304,31 @@
       isHydrated = true;
     }
 
-    console.log('Playfield using Y.js for scene updates, keeping Socket.IO for legacy compatibility');
+    console.log('Playfield using Y.js for scene updates and unified cursor tracking');
 
-    // Keep existing socket.io for now
-    const socket = setupPartyWebSocket(
-      party.id,
-      () => console.log('Connected to party socket'),
-      () => console.log('Disconnected from party socket'),
-      handleMarkerUpdate,
-      stageProps
-    );
+    // Set up cursor tracking on unified Y.js connection
+    if (partyData) {
+      // Wait for socket to be connected
+      const checkSocketConnection = setInterval(() => {
+        if (partyData.isSocketConnected()) {
+          clearInterval(checkSocketConnection);
+
+          // Register cursor event handlers
+          partyData.onCursorEvent('cursorUpdate', (payload) => {
+            handleCursorUpdate(payload);
+          });
+
+          partyData.onCursorEvent('userDisconnect', (userId) => {
+            const updatedCursors = { ...cursors };
+            delete updatedCursors[userId];
+            cursors = updatedCursors;
+          });
+        }
+      }, 100);
+
+      // Timeout after 5 seconds
+      setTimeout(() => clearInterval(checkSocketConnection), 5000);
+    }
 
     const handleMouseMove = (event: MouseEvent) => {
       // Playfield should NOT emit cursor moves - only editors should
@@ -365,7 +353,8 @@
       }
     });
 
-    socket.on('cursorUpdate', (payload) => {
+    // Cursor update handler
+    const handleCursorUpdate = (payload: any) => {
       const { normalizedPosition, user, zoom: editorZoom } = payload;
 
       const stageBounds = stageElement?.getBoundingClientRect();
@@ -403,14 +392,7 @@
           fadedOut: false
         }
       };
-    });
-
-    // Remove the cursor when a user disconnects
-    socket.on('userDisconnect', (userId) => {
-      const updatedCursors = { ...cursors };
-      delete updatedCursors[userId];
-      cursors = updatedCursors;
-    });
+    };
 
     // Add mousemove event listener
     window.addEventListener('mousemove', handleMouseMove);
@@ -425,8 +407,11 @@
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
 
-      // Disconnect socket
-      socket.disconnect();
+      // Remove cursor event handlers
+      if (partyData) {
+        partyData.offCursorEvent('cursorUpdate');
+        partyData.offCursorEvent('userDisconnect');
+      }
 
       // Unsubscribe from Y.js
       if (unsubscribeYjs) {

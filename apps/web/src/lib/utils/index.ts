@@ -1,4 +1,3 @@
-export * from './broadcastStageUpdate';
 export * from './buildSceneProps';
 export * from './colors';
 export * from './convertStagePropsToMarkerData';
@@ -9,7 +8,6 @@ export * from './extractLocationFromUrl';
 export * from './gameSessionExportImport';
 export * from './generateR2Url';
 export * from './generateSlug';
-export * from './gsWebSocket';
 export * from './handleStageZoom';
 export * from './hasThumb';
 export * from './isValidEmail';

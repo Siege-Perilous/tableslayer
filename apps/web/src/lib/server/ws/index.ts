@@ -1,5 +1,3 @@
-import { type BroadcastStageUpdate, type MarkerPositionUpdate } from '$lib/utils';
-import type { PropertyUpdates } from '$lib/utils/propertyUpdateBroadcaster';
 import { Server } from 'socket.io';
 import { YSocketIO } from 'y-socket.io/dist/server';
 
@@ -11,39 +9,57 @@ export const initializeSocketIO = (server: any) => {
   const ysocketio = new YSocketIO(wsServer);
   ysocketio.initialize();
 
-  // Party namespace (for both editors and play route)
-  wsServer.of(/^\/party\/\w+$/).on('connect', (socket) => {
-    console.log(`Client connected to party namespace: ${socket.nsp.name}`);
+  console.log('Socket.IO server with Y.js initialized');
 
-    // Listen for game session updates (full state updates) from editors
-    socket.on('updateSession', (data: BroadcastStageUpdate) => {
-      socket.nsp.emit('sessionUpdated', data); // Broadcast to all clients in party
-    });
+  // Hook into the Y.js server to add cursor tracking
+  // Y.js creates namespaces dynamically, so we need to hook into the connection events
+  const originalOf = wsServer.of.bind(wsServer);
+  wsServer.of = (name: any, fn?: any) => {
+    const namespace = originalOf(name, fn);
 
-    // Listen for optimized marker position updates from editors
-    socket.on('markerPositionUpdate', (data: MarkerPositionUpdate) => {
-      // Broadcast only the marker position data (much smaller payload)
-      socket.nsp.emit('markerUpdated', data);
-    });
+    // If this is a Y.js namespace, add our cursor handlers
+    if (typeof name === 'string' && name.startsWith('/yjs|')) {
+      const roomName = name.split('|')[1];
 
-    // Listen for optimized property updates from editors
-    socket.on('propertyUpdates', (data: PropertyUpdates) => {
-      // Broadcast only the specific property updates (smaller payload)
-      socket.nsp.emit('propertiesUpdated', data);
-    });
+      namespace.on('connect', (socket) => {
+        // Ensure the socket joins the room explicitly
+        socket.join(roomName);
 
-    // Listen for cursor movements from both editors and play route
-    socket.on('cursorMove', (data) => {
-      // Broadcast cursor updates to other clients in the same namespace
-      socket.broadcast.emit('cursorUpdate', data);
-    });
+        // Set user data for disconnect tracking
+        socket.on('cursorMove', (data) => {
+          // Broadcast cursor updates to all other clients in the same room
+          socket.to(roomName).emit('cursorUpdate', data);
+        });
 
-    socket.on('disconnect', () => {
-      console.log(`Client disconnected from party namespace: ${socket.nsp.name}`);
-      // Notify other clients about user disconnect
-      socket.broadcast.emit('userDisconnect', socket.data?.userId);
-    });
-  });
+        socket.on('disconnect', () => {
+          // Notify other clients in the same room about user disconnect
+          if (socket.data?.userId) {
+            socket.to(roomName).emit('userDisconnect', socket.data.userId);
+          }
+        });
+      });
+    } else if (name instanceof RegExp && name.source.includes('yjs')) {
+      namespace.on('connect', (socket) => {
+        const namespaceName = socket.nsp.name;
+        const roomName = namespaceName.split('|')[1];
+
+        // Ensure the socket joins the room explicitly
+        socket.join(roomName);
+
+        socket.on('cursorMove', (data) => {
+          socket.to(roomName).emit('cursorUpdate', data);
+        });
+
+        socket.on('disconnect', () => {
+          if (socket.data?.userId) {
+            socket.to(roomName).emit('userDisconnect', socket.data.userId);
+          }
+        });
+      });
+    }
+
+    return namespace;
+  };
 
   return wsServer;
 };

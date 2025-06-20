@@ -73,7 +73,14 @@ export function usePartyData() {
     getActiveSaver: (sceneId: string) => partyDataManager!.getActiveSaver(sceneId),
 
     // Debug utilities
-    clearAllData: () => partyDataManager!.clearAllData()
+    clearAllData: () => partyDataManager!.clearAllData(),
+
+    // Socket access for cursor tracking
+    getSocket: () => partyDataManager!.getSocket(),
+    isSocketConnected: () => partyDataManager!.isSocketConnected(),
+    onCursorEvent: (event: string, handler: (data: any) => void) => partyDataManager!.onCursorEvent(event, handler),
+    offCursorEvent: (event: string) => partyDataManager!.offCursorEvent(event),
+    emitCursorEvent: (event: string, data: any) => partyDataManager!.emitCursorEvent(event, data)
   };
 }
 

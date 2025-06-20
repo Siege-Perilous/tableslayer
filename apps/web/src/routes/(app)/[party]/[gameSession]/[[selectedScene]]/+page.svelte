@@ -1,6 +1,5 @@
 <script lang="ts">
   let { data } = $props();
-  import { type Socket } from 'socket.io-client';
   import { handleMutation } from '$lib/factories';
   import {
     Stage,
@@ -29,7 +28,6 @@
     StageDefaultProps,
     buildSceneProps,
     handleKeyCommands,
-    setupPartyWebSocket,
     handleStageZoom,
     hasThumb,
     convertPropsToSceneDetails,
@@ -43,6 +41,7 @@
     type PropertyPath
   } from '$lib/utils';
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
 
   let {
@@ -189,7 +188,7 @@
       : party
   );
 
-  let socket: Socket | null = $state(null);
+  // Socket now managed by PartyDataManager for unified connection
   let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
   let selectedMarkerId: string | undefined = $state();
 
@@ -485,7 +484,9 @@
     // Initialize Y.js for scene list synchronization
     try {
       console.log('Initializing Y.js for scene list sync...');
-      const manager = initializePartyDataManager(party.id, user.id, gameSession.id);
+      // Use the party slug from the URL params for the room name
+      const partySlug = $page.params.party;
+      const manager = initializePartyDataManager(partySlug, user.id, gameSession.id);
       partyData = usePartyData();
 
       // Initialize Y.js with SSR scene data
@@ -550,12 +551,24 @@
       isHydrated = true;
     }
 
-    socket = setupPartyWebSocket(
-      party.id,
-      () => console.log('Connected to party socket (for cursor tracking)'),
-      () => console.log('Disconnected from party socket')
-      // Marker updates now handled via Y.js
-    );
+    // Cursor tracking setup using Y.js's Socket.IO connection
+    if (partyData) {
+      // Wait for socket to be connected
+      const checkSocketConnection = setInterval(() => {
+        if (partyData.isSocketConnected()) {
+          clearInterval(checkSocketConnection);
+
+          // Set user data for disconnect notification
+          const socket = partyData.getSocket();
+          if (socket) {
+            socket.data = { userId: user.id };
+          }
+        }
+      }, 100);
+
+      // Timeout after 5 seconds
+      setTimeout(() => clearInterval(checkSocketConnection), 5000);
+    }
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -573,12 +586,12 @@
     // Initial socket update removed - Y.js handles synchronization
 
     return () => {
-      socket?.disconnect();
       if (saveTimer) clearTimeout(saveTimer);
       if (editingTimer) clearTimeout(editingTimer);
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
+      // Socket cleanup handled by partyData.destroy()
     };
   });
 
@@ -931,11 +944,8 @@
       // Use queuePropertyUpdate which will handle Y.js sync automatically
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
 
-      // Use the optimized marker update for position changes
-      // Only broadcast if we're editing the active scene
-      if (socket && selectedScene && selectedScene.id && selectedScene.id === currentActiveScene?.id) {
-        broadcastMarkerUpdate(socket, marker.id, position, selectedScene.id);
-      }
+      // Marker position updates now handled through Y.js synchronization
+      // No need for separate Socket.IO broadcast
 
       // Delay auto-save for marker moves to avoid conflicts during dragging
       // Clear any existing timer and set a longer delay
@@ -1112,13 +1122,14 @@
     // Only emit cursor if we're editing the active scene
     const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
 
-    if (shouldEmitCursor) {
-      socket?.emit('cursorMove', {
+    if (shouldEmitCursor && partyData && partyData.isSocketConnected()) {
+      const cursorData = {
         user: data.user,
         normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
         zoom: stageProps.scene.zoom,
         offset: stageProps.scene.offset
-      });
+      };
+      partyData.emitCursorEvent('cursorMove', cursorData);
     }
   };
 

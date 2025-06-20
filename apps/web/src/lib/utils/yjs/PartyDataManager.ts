@@ -54,6 +54,9 @@ export class PartyDataManager {
   private partyId: string;
   private clientId: number; // Unique ID for this editor instance
 
+  // Cursor tracking handlers
+  private cursorHandlers = new Map<string, (data: any) => void>();
+
   // Game session-specific Y.js shared data structures
   private yScenes: Y.Map<any>;
   private yScenesList: Y.Array<SceneMetadata>;
@@ -757,10 +760,71 @@ export class PartyDataManager {
   }
 
   /**
+   * Get the raw Socket.IO connection from the party provider
+   * This is used for cursor tracking and other non-Y.js real-time features
+   */
+  getSocket() {
+    return this.partyProvider.socket;
+  }
+
+  /**
+   * Check if socket is connected
+   */
+  isSocketConnected() {
+    return this.partyProvider.socket && this.partyProvider.socket.connected;
+  }
+
+  /**
+   * Register a cursor event handler
+   * @param event The event name (e.g., 'cursorMove', 'cursorUpdate')
+   * @param handler The handler function
+   */
+  onCursorEvent(event: string, handler: (data: any) => void) {
+    if (!this.cursorHandlers.has(event)) {
+      // Register the event on the socket only once
+      this.partyProvider.socket.on(event, (data: any) => {
+        const handlers = this.cursorHandlers.get(event);
+        if (handlers) {
+          handlers(data);
+        }
+      });
+    }
+    this.cursorHandlers.set(event, handler);
+  }
+
+  /**
+   * Remove a cursor event handler
+   * @param event The event name
+   */
+  offCursorEvent(event: string) {
+    if (this.cursorHandlers.has(event)) {
+      this.cursorHandlers.delete(event);
+      this.partyProvider.socket.off(event);
+    }
+  }
+
+  /**
+   * Emit a cursor event
+   * @param event The event name
+   * @param data The data to emit
+   */
+  emitCursorEvent(event: string, data: any) {
+    // The socket is already connected to the correct namespace/room via Y.js
+    this.partyProvider.socket.emit(event, data);
+  }
+
+  /**
    * Clean up resources
    */
   destroy() {
     console.log(`[${this.clientId}] Destroying PartyDataManager for user ${this.userId}`);
+
+    // Clean up cursor handlers
+    for (const event of this.cursorHandlers.keys()) {
+      this.partyProvider.socket.off(event);
+    }
+    this.cursorHandlers.clear();
+
     if (this.provider) {
       this.provider.destroy();
     }

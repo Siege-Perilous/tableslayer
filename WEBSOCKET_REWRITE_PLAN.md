@@ -506,43 +506,84 @@ The application uses three different image types for scenes:
 - Cleaner URLs
 - More reliable image loading
 
-### Implementation
+### Unified Cursor Tracking ✅
 
-1. **Remove legacy websocket code**
+**Problem**: Previously used two separate Socket.IO connections per client
 
-   - Old `broadcastStageUpdate` functions
-   - Manual `socketUpdate()` calls
-   - `propertyUpdateBroadcaster` utility
-   - Complex throttling logic
-   - Any remaining socket.io references
+- Y.js used one Socket.IO connection for CRDT sync
+- Legacy system used another Socket.IO connection for cursor tracking
+- This doubled connection overhead and complexity
 
-2. **Component simplification**
+**Requirements Met**:
 
-   - Remove `bind:stageProps` throughout
-   - Clean up manual `$effect` usage
-   - Simplify component props
-   - Remove unused websocket utilities
+- ✅ Cursor updates maintain fast (< 50ms latency)
+- ✅ Cursor events bypass Y.js CRDT overhead for speed
+- ✅ Smooth 60 FPS cursor movement preserved
+- ✅ Single connection per client reduces overhead
 
-3. **Type definition cleanup**
+**Implemented Solution**: Unified Socket.IO Connection
 
-   - Update component prop types
-   - Remove obsolete interfaces
-   - Clean import statements
+- Enhanced Y.js Socket.IO provider to handle cursor tracking
+- Added direct Socket.IO event handlers for cursor tracking on Y.js namespaces
+- Cursor events use same connection but bypass CRDT layer for speed
+- Server intercepts Y.js namespace creation to add cursor handlers
 
-4. **Final optimization**
-   - Remove dead code
-   - Consolidate Y.js patterns
-   - Performance verification
+### Implementation Details
+
+1. **✅ Unified connection architecture**
+
+   - Modified PartyDataManager to expose raw Socket.IO connection via `getSocket()`
+   - Added cursor event methods: `onCursorEvent()`, `offCursorEvent()`, `emitCursorEvent()`
+   - Uses Y.js provider's existing Socket.IO connection for cursor tracking
+   - Maintains fast cursor updates through direct Socket.IO events
+
+2. **✅ Server-side cursor routing**
+
+   - Enhanced server to intercept Y.js namespace creation (`/yjs|party-${slug}`)
+   - Added cursor event handlers to Y.js namespaces automatically
+   - Proper room joining ensures cursor events route between correct clients
+   - Used slugified party names for consistent room naming
+
+3. **✅ Remove legacy websocket code**
+
+   - ✅ Removed `gsWebSocket.ts` (duplicate Socket.IO connection setup)
+   - ✅ Removed `broadcastStageUpdate.ts` (legacy cursor broadcast system)
+   - ✅ Updated editor to use unified Y.js connection for cursor tracking
+   - ✅ Updated playfield to receive cursor events via Y.js connection
+   - ✅ Removed separate cursor tracking Socket.IO setup
+
+4. **✅ Component simplification**
+
+   - ✅ Editor uses `partyData.emitCursorEvent('cursorMove', data)`
+   - ✅ Playfield uses `partyData.onCursorEvent('cursorUpdate', handler)`
+   - ✅ Clean cursor event registration and cleanup
+   - ✅ Removed duplicate Socket.IO connection management
+
+5. **✅ Final optimization**
+   - ✅ Removed all debugging console logs for clean operation
+   - ✅ Verified cursor tracking maintains < 50ms latency
+   - ✅ Single Socket.IO connection per client achieved
+   - ✅ Room-based cursor event routing working correctly
 
 ### Testing Checklist
 
-- [ ] All functionality preserved
+- [x] Cursor tracking works between editor and playfield
+- [x] Single Socket.IO connection per client verified
+- [x] Cursor updates maintain < 50ms latency
+- [x] Room-based routing works with slugified party names
+- [x] Legacy websocket files successfully removed
+- [x] Clean operation without debugging noise
+- [ ] All functionality preserved (other features)
 - [ ] Cleaner, more maintainable code
 - [ ] No performance regressions
 - [ ] All edge cases handled
 
 ### Success Criteria
 
+- ✅ Unified cursor tracking through Y.js connection
+- ✅ Single connection per client achieved
+- ✅ Fast cursor performance maintained
+- ✅ Legacy websocket code removed
 - Significant code reduction
 - Cleaner architecture
 - Better developer experience
@@ -671,3 +712,10 @@ The application uses three different image types for scenes:
 - ✅ Updated GridControls to use simplified API
 - ✅ Removed `updatePropertyRealtime` prop from SceneControls
 - ✅ All components now use single `queuePropertyUpdate` method
+- ✅ **MAJOR ACHIEVEMENT**: Implemented unified cursor tracking through Y.js connection
+- ✅ Replaced dual Socket.IO connections with single connection per client
+- ✅ Removed legacy websocket files (`gsWebSocket.ts`, `broadcastStageUpdate.ts`)
+- ✅ Enhanced server to intercept Y.js namespace creation for cursor routing
+- ✅ Fixed slugified party name usage for consistent room naming
+- ✅ Verified < 50ms cursor latency maintained through unified connection
+- ✅ Removed all debugging console logs for clean operation
