@@ -87,12 +87,12 @@
           // Marker exists in incoming - apply protection
           const incomingMarker = resultMap.get(localMarker.id);
           if (beingMoved.has(localMarker.id)) {
-            // For moved markers, only preserve position
+            // For moved markers, only preserve position from local state
+            // This protects the marker being actively dragged in THIS editor
             resultMap.set(localMarker.id, {
               ...incomingMarker,
               position: localMarker.position
             });
-            console.log(`Protected moved marker ${localMarker.id} position:`, localMarker.position);
           } else if (beingEdited.has(localMarker.id)) {
             // For edited markers, preserve entire local marker
             resultMap.set(localMarker.id, localMarker);
@@ -465,8 +465,8 @@
   // Marker updates now handled via Y.js - no need for socket-based updates
 
   onMount(() => {
-    // Enable immediate Y.js sync for real-time collaboration
-    enableImmediateYjsSync();
+    // Disable immediate Y.js sync - let the batching system handle updates
+    // enableImmediateYjsSync(); // This was causing too many Y.js updates
 
     // Set up callback for property updates to trigger auto-save
     setUserChangeCallback(startAutoSaveTimer);
@@ -869,23 +869,23 @@
       console.log('Cleared isActivelyEditing flag after marker add');
     }, 1000); // Clear after 1 second
 
-    // CRITICAL: Sync to Y.js IMMEDIATELY before any effects can run
+    // Queue the update which will handle both Y.js sync and database save
+    queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+
+    // For new markers, we want immediate sync to ensure they appear in other editors
+    // Force a manual Y.js sync right away for this critical operation
     if (partyData && selectedScene?.id) {
-      console.log('🚀 IMMEDIATE Y.js sync for new marker:', marker.id);
+      console.log('🚀 Force syncing new marker to Y.js:', marker.id);
       console.log(
         'Current markers before sync:',
         stageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
       );
 
-      // Force immediate Y.js update
       lastOwnYjsUpdateTime = Date.now();
       partyData.updateSceneStageProps(selectedScene.id, stageProps);
 
       console.log('✅ Y.js sync completed for new marker');
     }
-
-    // Also queue for database save (this will NOT trigger another Y.js sync since we just did it)
-    queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
 
     // Keep the marker protected for longer to handle save completion
     setTimeout(() => {
