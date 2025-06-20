@@ -6,6 +6,7 @@
   import { SceneLayer } from '../Scene/types';
 
   interface Props {
+    id: string;
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
@@ -18,6 +19,7 @@
   }
 
   let {
+    id,
     layerSize,
     isActive,
     target,

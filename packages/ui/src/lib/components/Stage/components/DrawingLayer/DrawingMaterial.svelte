@@ -11,11 +11,11 @@
 
   interface Props {
     props: DrawingLayerProps;
-    mapSize: Size | null;
+    size: Size | null;
     onRender: (texture: THREE.Texture) => void;
   }
 
-  const { props, mapSize, onRender }: Props = $props();
+  const { props, size, onRender }: Props = $props();
   const { renderer } = useThrelte();
 
   // This shader is used for drawing the fog of war on the GPU
@@ -69,13 +69,13 @@
 
   // Map size changed
   $effect(() => {
-    if (!mapSize) return;
+    if (!size) return;
 
     // If map size changed, update the render target sizes
-    if (mapSize.width !== tempTarget.width || mapSize.height !== tempTarget.height) {
-      tempTarget.setSize(mapSize.width, mapSize.height);
-      persistedTarget.setSize(mapSize.width, mapSize.height);
-      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    if (size.width !== tempTarget.width || size.height !== tempTarget.height) {
+      tempTarget.setSize(size.width, size.height);
+      persistedTarget.setSize(size.width, size.height);
+      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(size.width, size.height);
 
       // If an image is provided, load it, otherwise reset the fog state
       if (props.url) {

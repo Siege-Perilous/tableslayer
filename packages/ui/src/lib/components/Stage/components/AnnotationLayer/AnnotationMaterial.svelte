@@ -3,22 +3,39 @@
   import { T } from '@threlte/core';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayer } from './types';
-  import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   import { DrawMode, ToolType } from '../DrawingLayer/types';
+  import type { DisplayProps } from '../Stage/types';
+
+  import annotationFragmentShader from '../../shaders/Annotations.frag?raw';
+  import annotationVertexShader from '../../shaders/default.vert?raw';
 
   interface Props {
     props: AnnotationLayer;
-    mapSize: Size | null;
+    display: DisplayProps;
+    sceneZoom: number;
   }
 
-  const { props, mapSize }: Props = $props();
+  const { props, display, sceneZoom }: Props = $props();
+
+  let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   let drawMaterial: DrawingMaterial;
 
   // Material used for rendering the fog of war
-  let annotationMaterial = new THREE.MeshBasicMaterial();
+  let annotationMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uMaskTexture: { value: null },
+      uColor: { value: new THREE.Color(props.color) },
+      uClippingPlanes: new THREE.Uniform(
+        clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
+      )
+    },
+    transparent: true,
+    fragmentShader: annotationFragmentShader,
+    vertexShader: annotationVertexShader
+  });
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
@@ -71,9 +88,9 @@
       type: ToolType.Brush
     }
   }}
-  {mapSize}
+  {size}
   onRender={(texture) => {
-    annotationMaterial.map = texture;
+    annotationMaterial.uniforms.uMaskTexture.value = texture;
     annotationMaterial.needsUpdate = true;
   }}
 />

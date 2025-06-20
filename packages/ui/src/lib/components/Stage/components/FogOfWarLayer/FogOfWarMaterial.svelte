@@ -127,7 +127,7 @@
 <DrawingMaterial
   bind:this={drawMaterial}
   {props}
-  {mapSize}
+  size={mapSize}
   onRender={(texture) => {
     fogMaterial.uniforms.uMaskTexture.value = texture;
     fogMaterial.uniformsNeedUpdate = true;

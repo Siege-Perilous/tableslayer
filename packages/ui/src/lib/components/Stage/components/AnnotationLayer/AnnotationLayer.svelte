@@ -4,7 +4,7 @@
   import { T, type Props as ThrelteProps } from '@threlte/core';
   import { type AnnotationsLayerProps } from './types';
   import type { Size } from '../../types';
-  import type { Callbacks } from '../Stage/types';
+  import type { Callbacks, DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import { SceneLayer } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
@@ -12,16 +12,18 @@
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: AnnotationsLayerProps;
     isActive: boolean;
-    mapSize: Size | null;
+    display: DisplayProps;
+    sceneZoom: number;
   }
 
-  const { props, isActive, mapSize, ...meshProps }: Props = $props();
+  const { props, isActive, display, sceneZoom, ...meshProps }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: AnnotationMaterial | undefined = $state();
   let drawing = false;
+  let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
@@ -39,6 +41,7 @@
 
   function onMouseDown(e: Event, p: THREE.Vector2 | null) {
     e.preventDefault();
+    console.log('onMouseDown', p);
     lastPos = p;
     drawing = true;
     draw(e, p);
@@ -66,6 +69,7 @@
     if (!lastPos) {
       lastPos = p.clone();
     }
+    console.log('draw', p, lastPos, drawing);
     material?.drawPath(p, lastPos, drawing);
     lastPos = p.clone();
   }
@@ -87,21 +91,32 @@
   }
 </script>
 
-<LayerInput {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onMouseLeave} />
+<LayerInput
+  id="annotation"
+  {isActive}
+  layerSize={size}
+  target={mesh}
+  {onMouseDown}
+  onMouseMove={draw}
+  {onMouseUp}
+  {onMouseLeave}
+/>
 
 <!--
 Invisible mesh used for input detection.
 The plane geometry is larger than the map size to allow cursor
 events to be detected outside of the fog of war layer.
 -->
-<T.Mesh bind:ref={mesh} name="fogOfWarInput" layer={SceneLayer.Input}>
+<T.Mesh bind:ref={mesh} name="annotationInput" layer={SceneLayer.Input}>
   <T.MeshBasicMaterial visible={false} />
-  <T.PlaneGeometry args={[10, 10]} />
+  <T.PlaneGeometry args={[10 * display.resolution.x, 10 * display.resolution.y]} />
 </T.Mesh>
 
-{#each props.layers as layer}
-  <T.Mesh name="annotation" {...meshProps} layers={[SceneLayer.Main]}>
-    <AnnotationMaterial bind:this={material} props={layer} {mapSize} />
-    <T.PlaneGeometry />
-  </T.Mesh>
-{/each}
+<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
+  {#each props.layers as layer}
+    <T.Mesh name="annotation" {...meshProps} layers={[SceneLayer.Main]}>
+      <AnnotationMaterial bind:this={material} props={layer} {display} {sceneZoom} />
+      <T.PlaneGeometry />
+    </T.Mesh>
+  {/each}
+</T.Mesh>

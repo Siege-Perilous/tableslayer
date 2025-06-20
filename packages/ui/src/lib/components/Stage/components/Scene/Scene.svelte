@@ -390,13 +390,18 @@
     props={props.edgeOverlay}
     display={props.display}
     visible={props.edgeOverlay.enabled}
+    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.EdgeOverlay}
   />
 
   <AnnotationLayer
     props={props.annotations}
     isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
-    {mapSize}
+    sceneZoom={props.scene.zoom}
+    display={props.display}
+    layers={[SceneLayer.Overlay]}
+    renderOrder={SceneLayerOrder.Annotation}
+    visible={props.annotations.enabled}
   />
 
   <MarkerLayer

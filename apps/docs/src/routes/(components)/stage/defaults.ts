@@ -17,6 +17,7 @@ export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
   annotations: {
+    enabled: true,
     layers: [],
     activeLayer: null
   },

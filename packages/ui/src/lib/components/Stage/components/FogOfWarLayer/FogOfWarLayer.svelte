@@ -155,7 +155,16 @@
   }
 </script>
 
-<LayerInput {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onMouseLeave} />
+<LayerInput
+  id="fogOfWar"
+  {isActive}
+  layerSize={mapSize}
+  target={mesh}
+  {onMouseDown}
+  onMouseMove={draw}
+  {onMouseUp}
+  {onMouseLeave}
+/>
 
 <!--
 Invisible mesh used for input detection.
