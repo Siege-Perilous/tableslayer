@@ -1,29 +1,23 @@
 <script lang="ts">
   import { Spacer, Button, Text, Hr } from '@tableslayer/ui';
-  import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
+  import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
-  import { useUpdateGameSessionMutation } from '$lib/queries';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { handleMutation, type FormMutationError } from '$lib/factories';
   import { usePartyData } from '$lib/utils/yjs/stores';
 
   let {
-    socketUpdate,
     party,
-    gameSession,
     selectedScene,
     activeSceneId,
     partyData
   }: {
-    socketUpdate: () => void;
     party: SelectParty & Thumb;
-    gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
-  const updateGameSession = useUpdateGameSessionMutation();
   const updateParty = useUpdatePartyMutation();
   const handleSetActiveScene = async () => {
     if (!selectedScene || (activeSceneId && selectedScene.id === activeSceneId)) return;
@@ -40,7 +34,6 @@
         if (partyData) {
           partyData.updatePartyState('activeSceneId', selectedScene.id);
         }
-        socketUpdate();
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -65,7 +58,6 @@
         if (partyData) {
           partyData.updatePartyState('isPaused', !party.gameSessionIsPaused);
         }
-        socketUpdate();
       },
       toastMessages: {
         success: { title: 'Playfield paused' },

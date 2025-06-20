@@ -284,7 +284,6 @@
             {:else if scene.id === 'map'}
               <MapControls
                 {stageProps}
-                {socketUpdate}
                 {handleSelectActiveControl}
                 {activeControl}
                 {party}
@@ -296,11 +295,11 @@
                 {partyData}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeSceneId} {partyData} />
+              <PlayControls {party} {selectedScene} {activeSceneId} {partyData} />
             {:else if scene.id === 'weather'}
               <WeatherControls {stageProps} {errors} />
             {:else if scene.id === 'edge'}
-              <EdgeControls {stageProps} {socketUpdate} {errors} {party} />
+              <EdgeControls {stageProps} {errors} {party} />
             {:else if scene.id === 'effects'}
               <EffectsControls {stageProps} {errors} {party} />
             {/if}

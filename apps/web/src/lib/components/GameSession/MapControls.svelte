@@ -10,7 +10,6 @@
   import { queuePropertyUpdate } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps,
     selectedScene,
     handleMapFill,
@@ -19,7 +18,6 @@
     party,
     partyData
   }: {
-    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
     stageProps: StageProps;

@@ -5,12 +5,10 @@
 
   let {
     stageProps,
-    socketUpdate,
     handleSceneFit,
     handleMapFill
   }: {
     stageProps: StageProps;
-    socketUpdate: () => void;
     handleSceneFit: () => void;
     handleMapFill: () => void;
   } = $props();

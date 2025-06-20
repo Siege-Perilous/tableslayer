@@ -8,12 +8,10 @@
   import { queuePropertyUpdate } from '$lib/utils';
 
   let {
-    socketUpdate,
     stageProps,
     errors,
     party
   }: {
-    socketUpdate: () => void;
     stageProps: StageProps;
     errors: $ZodIssue[] | undefined;
     party: SelectParty & Thumb;

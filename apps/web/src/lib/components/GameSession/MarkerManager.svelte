@@ -54,6 +54,7 @@
     partyId: string;
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateMarkerAndSave: (markerId: string, updateFn: (marker: any) => void) => void;
     onMarkerDeleted?: (markerId: string) => void;
   } = $props();

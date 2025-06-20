@@ -41,6 +41,7 @@
   import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
   import { goto } from '$app/navigation';
+  import { dev } from '$app/environment';
 
   let {
     scenes,
@@ -62,15 +63,13 @@
   ) => {
     const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
 
-    console.log('🔄 Merging markers:', {
-      localCount: localMarkers.length,
-      incomingCount: incomingMarkers.length,
-      localIds: localMarkers.map((m) => m.id),
-      incomingIds: incomingMarkers.map((m) => m.id),
-      protectedCount: protectedMarkers.size,
-      protected: Array.from(protectedMarkers),
-      recentlyDeleted: Array.from(recentlyDeleted)
-    });
+    if (dev) {
+      console.log('🔄 Merging markers:', {
+        localCount: localMarkers.length,
+        incomingCount: incomingMarkers.length,
+        protectedCount: protectedMarkers.size
+      });
+    }
 
     // Start with incoming markers as base, but exclude recently deleted ones
     const resultMap = new Map();
@@ -78,8 +77,6 @@
       // Skip markers that were recently deleted in this editor
       if (!recentlyDeleted.has(marker.id)) {
         resultMap.set(marker.id, marker);
-      } else {
-        console.log('🚫 Excluding recently deleted marker from merge:', marker.id);
       }
     });
 
@@ -99,22 +96,15 @@
           } else if (beingEdited.has(localMarker.id)) {
             // For edited markers, preserve entire local marker
             resultMap.set(localMarker.id, localMarker);
-            console.log(`Protected edited marker ${localMarker.id}:`, localMarker);
           }
         } else {
           // New marker not in incoming yet - add it
           resultMap.set(localMarker.id, localMarker);
-          console.log(`Added protected new marker ${localMarker.id}:`, localMarker);
         }
       }
     }
 
     const result = Array.from(resultMap.values());
-    console.log('Merge result:', {
-      count: result.length,
-      ids: result.map((m) => m.id)
-    });
-
     return result;
   };
 
@@ -262,7 +252,6 @@
    */
   const socketUpdate = () => {
     // No-op - Y.js handles synchronization now
-    console.log('socketUpdate called (no-op - using Y.js for synchronization)');
   };
 
   // Register the scene with the property broadcaster for Y.js updates
@@ -279,29 +268,16 @@
     const sceneId = selectedScene?.id;
     if (!partyData || !sceneId || !isHydrated) return;
 
-    console.log('Setting up Y.js subscription for scene:', sceneId);
+    if (dev) console.log('DEV: Setting up Y.js subscription for scene:', sceneId);
     const currentSceneId = sceneId; // Capture the scene ID to avoid closure issues
 
     // Also ensure the scene has observers set up in Y.js
     // This is important for editor-to-editor sync
-    const sceneData = partyData.getSceneData(currentSceneId);
-    console.log('Current Y.js scene data when setting up subscription:', {
-      sceneId: currentSceneId,
-      hasData: !!sceneData,
-      markerCount: sceneData?.markers?.length || 0
-    });
+    partyData.getSceneData(currentSceneId);
 
     const unsubscribe = partyData.subscribe(() => {
-      console.log(
-        'Y.js subscription triggered - checking for scene:',
-        currentSceneId,
-        'vs selectedScene:',
-        selectedScene?.id
-      );
-
       // Make sure we're still looking at the same scene
       if (currentSceneId !== selectedScene?.id) {
-        console.log('⚠️ Scene changed, ignoring Y.js update for old scene');
         return;
       }
 
@@ -311,16 +287,16 @@
       // Check if this might be our own update echoing back
       const timeSinceOwnUpdate = Date.now() - lastOwnYjsUpdateTime;
       if (isActivelyEditing && timeSinceOwnUpdate < 500) {
-        console.log('🔄 Skipping potential echo of our own Y.js update (sent', timeSinceOwnUpdate, 'ms ago)');
         return;
       }
 
       // SSR protection: block the first Y.js update if we're in the protection period
       const timeSincePageLoad = Date.now() - pageLoadTime;
       if (!hasReceivedFirstYjsUpdate && timeSincePageLoad < ssrProtectionPeriod) {
-        console.log(
-          `🛡️ PROTECTING fresh SSR data - blocking first Y.js update (${timeSincePageLoad}ms since page load)`
-        );
+        if (dev)
+          console.log(
+            `DEV: 🛡️ PROTECTING fresh SSR data - blocking first Y.js update (${timeSincePageLoad}ms since page load)`
+          );
         hasReceivedFirstYjsUpdate = true; // Mark that we've received the first update
         return;
       }
@@ -328,31 +304,15 @@
       // Allow all subsequent updates (real-time collaboration)
       if (!hasReceivedFirstYjsUpdate) {
         hasReceivedFirstYjsUpdate = true;
-        console.log('🔄 Allowing Y.js updates - real-time collaboration enabled');
       }
 
       const sceneData = partyData!.getSceneData(currentSceneId);
       if (sceneData && sceneData.stageProps) {
-        console.log('[Y.js Subscription] Received stageProps update for scene:', {
-          sceneId: currentSceneId,
-          mapUrl: sceneData.stageProps.map?.url,
-          hasStageProps: !!sceneData.stageProps,
-          markersFromYjs: sceneData.stageProps.marker?.markers?.length || 0,
-          separateMarkers: sceneData.markers?.length || 0,
-          timestamp: Date.now(),
-          markerIds: sceneData.stageProps.marker?.markers?.map((m: Marker) => m.id) || [],
-          isActivelyEditing,
-          timeSinceOwnUpdate,
-          hasReceivedFirstYjsUpdate
-        });
-
         // Update local stageProps with shared properties from Y.js, preserving local-only properties
         const incomingStageProps = sceneData.stageProps;
-        console.log('Y.js incoming stageProps (raw):', incomingStageProps);
 
         // Get current local state for comparison
         const currentStagePropsSnapshot = $state.snapshot(stageProps);
-        console.log('Current local stageProps:', currentStagePropsSnapshot);
 
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
@@ -379,24 +339,9 @@
           }
         };
 
-        console.log('Merged result:', {
-          markerCount: mergedStageProps.marker?.markers?.length || 0,
-          markerIds: mergedStageProps.marker?.markers?.map((m: Marker) => m.id) || [],
-          mapUrl: mergedStageProps?.map?.url
-        });
-        console.log('Map URL comparison:', {
-          current: currentStagePropsSnapshot?.map?.url,
-          incoming: mergedStageProps?.map?.url,
-          changed: currentStagePropsSnapshot?.map?.url !== mergedStageProps?.map?.url
-        });
-
         // Only update if there are actual changes to avoid infinite loops
         // Use $state.snapshot to get actual values from Svelte proxy for comparison
         if (JSON.stringify(mergedStageProps) !== JSON.stringify(currentStagePropsSnapshot)) {
-          console.log('Updating stageProps from Y.js for scene:', currentSceneId);
-          console.log('Previous stageProps:', currentStagePropsSnapshot);
-          console.log('New merged stageProps:', mergedStageProps);
-
           // Set flag to prevent auto-save from triggering on Y.js updates
           isReceivingYjsUpdate = true;
           stageProps = mergedStageProps;
@@ -407,16 +352,11 @@
           }, 1000);
 
           // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
-        } else {
-          console.log('No changes detected in Y.js update - skipping stageProps update');
         }
-      } else {
-        console.log('No scene data or stageProps found in Y.js for scene:', currentSceneId);
       }
     });
 
     return () => {
-      console.log('Unsubscribing from Y.js for scene:', currentSceneId);
       unsubscribe();
     };
   });
@@ -424,19 +364,10 @@
   // Track when initial load is complete to prevent auto-save on hydration
   const currentSceneId = $derived(selectedScene?.id);
   $effect(() => {
-    console.log(
-      'Initial load check - isHydrated:',
-      isHydrated,
-      'stageProps:',
-      !!stageProps,
-      'selectedScene:',
-      !!currentSceneId
-    );
     if (isHydrated && stageProps && currentSceneId) {
       // Wait a moment to ensure all initial updates are complete
       setTimeout(() => {
         hasInitialLoad = true;
-        console.log('Initial load completed - auto-save enabled');
       }, 500); // Reduced from 1000ms to 500ms for faster response
     }
   });
@@ -485,7 +416,7 @@
 
     // Initialize Y.js for scene list synchronization
     try {
-      console.log('Initializing Y.js for scene list sync...');
+      if (dev) console.log('DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
       const partySlug = $page.params.party;
       initializePartyDataManager(partySlug, user.id, gameSession.id);
@@ -518,13 +449,6 @@
       unsubscribeYjs = partyData.subscribe(() => {
         const updatedScenes = partyData!.getScenesList();
         const updatedPartyState = partyData!.getPartyState();
-
-        console.log('[Y.js Main Subscription] Data updated:', {
-          scenesCount: updatedScenes.length,
-          selectedSceneId: selectedScene?.id,
-          selectedSceneMapLocation: updatedScenes.find((s) => s.id === selectedScene?.id)?.mapLocation,
-          partyState: updatedPartyState
-        });
 
         // Update reactive state
         yjsScenes = updatedScenes as typeof scenes;
@@ -679,65 +603,21 @@
     // Check if we need to rebuild due to map change
     const mapLocationChanged = currentMapLocation !== lastBuiltMapLocation;
 
-    console.log('[StageProps Effect] Checking if rebuild needed:', {
-      currentSceneId,
-      isSceneSwitch,
-      previousSceneId,
-      currentMapLocation,
-      lastBuiltMapLocation,
-      mapLocationChanged,
-      hasStageProps: !!stageProps,
-      usingYjsData: sceneToUse === yjsSelectedScene,
-      yjsMapLocation: yjsSelectedScene?.mapLocation,
-      ssrMapLocation: currentSelectedScene?.mapLocation,
-      sceneMapData: {
-        mapZoom: sceneToUse?.mapZoom,
-        mapOffsetX: sceneToUse?.mapOffsetX,
-        mapOffsetY: sceneToUse?.mapOffsetY,
-        mapRotation: sceneToUse?.mapRotation
-      }
-    });
-
     // Only rebuild stageProps when scene switches, initial load, or map actually changes
     if (isSceneSwitch || !stageProps || mapLocationChanged) {
-      console.log('[StageProps Effect] REBUILDING stageProps - reason:', {
-        isSceneSwitch,
-        noStageProps: !stageProps,
-        mapLocationChanged
-      });
-
       // This is a scene switch or initial load - rebuild everything
-      // For non-scene switches, preserve locally added markers
-      const markersToUse = isSceneSwitch
-        ? currentSelectedSceneMarkers
-        : stageProps?.marker?.markers || currentSelectedSceneMarkers;
+      // Always use database markers for buildSceneProps as it expects the database format
+      const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor');
       lastBuiltMapLocation = currentMapLocation;
 
-      console.log('[StageProps Effect] Rebuilt stageProps:', {
-        mapUrl: stageProps.map.url,
-        mapLocation: sceneToUse?.mapLocation,
-        sourceData: !isSceneSwitch && yjsSelectedScene ? 'Y.js' : 'SSR',
-        reason: isSceneSwitch ? 'scene switch' : mapLocationChanged ? 'map changed' : 'initial load',
-        markersUsed: markersToUse?.length || 0,
-        markersInResult: stageProps.marker.markers.length
-      });
-
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
       if (partyData && currentSceneId) {
-        if (isSceneSwitch) {
-          console.log('[StageProps Effect] Scene switch detected - initializing Y.js with fresh SSR data');
-        } else if (!partyData.getSceneData(currentSceneId)) {
-          console.log('[StageProps Effect] No Y.js data for scene - initializing with SSR data');
-        }
-
         // Only initialize Y.js data if it doesn't exist at all for this scene
         // This prevents overwriting data from other editors
         const existingSceneData = partyData.getSceneData(currentSceneId);
         if (!existingSceneData) {
-          console.log('[StageProps Effect] No Y.js data exists for scene - initializing with SSR data');
-
           // Create a copy of stageProps without local-only properties for Y.js storage
           const sharedStageProps = {
             ...stageProps,
@@ -753,17 +633,8 @@
           };
 
           // Initialize Y.js with the current scene data
-          console.log('🔄 Initializing Y.js scene data with markers:', {
-            sceneId: currentSceneId,
-            markerCount: currentSelectedSceneMarkers?.length || 0,
-            markerIds: currentSelectedSceneMarkers?.map((m) => m.id) || []
-          });
           partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
         } else if (isSceneSwitch) {
-          console.log('[StageProps Effect] Scene switch but Y.js data exists - not overwriting:', {
-            existingMarkerCount: existingSceneData.markers?.length || 0,
-            ssrMarkerCount: currentSelectedSceneMarkers?.length || 0
-          });
         } else {
           // Not a scene switch - check if we have new markers from SSR that Y.js doesn't know about
           const yjsMarkerIds = new Set((existingSceneData.markers || []).map((m: Marker) => m.id));
@@ -771,7 +642,6 @@
           const newMarkersFromSSR = [...ssrMarkerIds].filter((id) => !yjsMarkerIds.has(id));
 
           if (newMarkersFromSSR.length > 0) {
-            console.log("📥 Found new markers in SSR that Y.js doesn't have:", newMarkersFromSSR);
             // Update Y.js with the current stageProps that includes the new markers
             lastOwnYjsUpdateTime = Date.now();
             partyData.updateSceneStageProps(currentSceneId, stageProps);
@@ -803,31 +673,15 @@
 
       // Skip marker-based rebuilds if user is actively editing or waiting for SSR update
       if (markersChanged && !isActivelyEditing && markersBeingEdited.size === 0 && !waitingForSSRUpdate) {
-        console.log('[StageProps Effect] Markers changed - checking Y.js vs SSR data');
-        console.log(
-          '[StageProps Effect] Current markers:',
-          stageProps.marker.markers.length,
-          'SSR markers:',
-          currentSelectedSceneMarkers?.length || 0
-        );
-
         // Check if we have Y.js data available
         const yjsSceneData = partyData?.getSceneData(currentSceneId);
         const hasYjsData = yjsSceneData && yjsSceneData.stageProps && yjsSceneData.stageProps.marker;
 
         // If Y.js has data and is connected, trust it over SSR
         if (hasYjsData && partyData?.getConnectionStatus()) {
-          console.log('[StageProps Effect] Y.js is connected and has data - skipping SSR rebuild');
-          console.log(
-            '[StageProps Effect] Y.js markers:',
-            yjsSceneData.stageProps.marker.markers.length,
-            'vs SSR markers:',
-            currentSelectedSceneMarkers?.length || 0
-          );
           // Don't rebuild from SSR - Y.js data is already being applied
         } else if ((currentSelectedSceneMarkers?.length || 0) > stageProps.marker.markers.length) {
           // Only use SSR data if Y.js is not available AND SSR has more markers
-          console.log('[StageProps Effect] Y.js not available, SSR has more markers - rebuilding');
           // Preserve current map and scene state when only markers change
           const currentMapState = {
             offset: { ...stageProps.map.offset },
@@ -851,14 +705,15 @@
           stageProps.scene.rotation = currentSceneState.rotation;
         }
       } else if (markersChanged) {
-        console.log('[StageProps Effect] Skipping marker rebuild:', {
-          isActivelyEditing,
-          markersBeingEdited: markersBeingEdited.size,
-          waitingForSSRUpdate,
-          recentlySavedMarkers: Array.from(recentlySavedMarkerIds),
-          currentMarkers: stageProps.marker.markers.length,
-          ssrMarkers: currentSelectedSceneMarkers?.length || 0
-        });
+        if (dev)
+          console.log('DEV: [StageProps Effect] Skipping marker rebuild:', {
+            isActivelyEditing,
+            markersBeingEdited: markersBeingEdited.size,
+            waitingForSSRUpdate,
+            recentlySavedMarkers: Array.from(recentlySavedMarkerIds),
+            currentMarkers: stageProps.marker.markers.length,
+            ssrMarkers: currentSelectedSceneMarkers?.length || 0
+          });
       }
     }
 
@@ -899,7 +754,6 @@
 
     // Add marker to protection set BEFORE any sync to prevent Y.js from overwriting
     markersBeingEdited.add(marker.id);
-    console.log('🛡️ Added marker to protection set:', marker.id);
 
     // Set actively editing flag and track our update time
     isActivelyEditing = true;
@@ -909,7 +763,6 @@
     if (editingTimer) clearTimeout(editingTimer);
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
-      console.log('Cleared isActivelyEditing flag after marker add');
     }, 1000); // Clear after 1 second
 
     // Queue the update which will handle both Y.js sync and database save
@@ -918,22 +771,13 @@
     // For new markers, we want immediate sync to ensure they appear in other editors
     // Force a manual Y.js sync right away for this critical operation
     if (partyData && selectedScene?.id) {
-      console.log('🚀 Force syncing new marker to Y.js:', marker.id);
-      console.log(
-        'Current markers before sync:',
-        stageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
-      );
-
       lastOwnYjsUpdateTime = Date.now();
       partyData.updateSceneStageProps(selectedScene.id, stageProps);
-
-      console.log('✅ Y.js sync completed for new marker');
     }
 
     // Keep the marker protected for longer to handle save completion
     setTimeout(() => {
       markersBeingEdited.delete(marker.id);
-      console.log('Removed marker protection after save window:', marker.id);
     }, 5000); // Keep protected for 5 seconds to ensure save completes
   };
 
@@ -952,13 +796,11 @@
       // Set actively editing flag and track our update time
       isActivelyEditing = true;
       lastOwnYjsUpdateTime = Date.now();
-      console.log('🚫 Set isActivelyEditing=true for marker move:', marker.id);
 
       // Clear any existing editing timer and set new one (shorter timeout)
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
-        console.log('Cleared isActivelyEditing flag after marker move');
       }, 1000); // Clear after 1 second
 
       // Use queuePropertyUpdate which will handle Y.js sync automatically
@@ -973,7 +815,6 @@
       if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
         saveTimer = setTimeout(() => {
           if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
-            console.log('Auto-saving after marker move completed');
             saveScene();
             // Remove marker from being moved set after save
             markersBeingMoved.delete(marker.id);
@@ -996,24 +837,16 @@
   };
 
   const onMarkerDeleted = (markerId: string) => {
-    console.log('🗑️ onMarkerDeleted called for marker:', markerId);
-
     // Double-check the marker is removed from local state
     const filteredMarkers = stageProps.marker.markers.filter((m) => m.id !== markerId);
 
     // Only update if the marker was actually found and removed
     if (filteredMarkers.length < stageProps.marker.markers.length) {
-      console.log('Removing marker from stageProps:', markerId);
-      console.log('Markers before:', stageProps.marker.markers.length);
-
       // Update the markers array
       stageProps.marker.markers = filteredMarkers;
 
-      console.log('Markers after:', stageProps.marker.markers.length);
-
       // Add to recently deleted set to prevent re-adding from Y.js
       recentlyDeletedMarkers.add(markerId);
-      console.log('🛡️ Added marker to recently deleted set:', markerId);
 
       // Remove from protection sets if it was there
       markersBeingEdited.delete(markerId);
@@ -1027,21 +860,12 @@
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
-        console.log('Cleared isActivelyEditing flag after marker delete');
       }, 1000);
 
       // Force immediate Y.js sync for marker deletion
       if (partyData && selectedScene?.id) {
-        console.log('🚀 Force syncing marker deletion to Y.js:', markerId);
-        console.log(
-          'Current markers after deletion:',
-          stageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
-        );
-
         lastOwnYjsUpdateTime = Date.now();
         partyData.updateSceneStageProps(selectedScene.id, stageProps);
-
-        console.log('✅ Y.js sync completed for marker deletion');
       }
 
       // Queue property update for database save
@@ -1050,10 +874,9 @@
       // Clear from recently deleted after some time (to allow Y.js to propagate)
       setTimeout(() => {
         recentlyDeletedMarkers.delete(markerId);
-        console.log('Removed marker from recently deleted set:', markerId);
       }, 10000); // Keep for 10 seconds
     } else {
-      console.warn('Marker not found for deletion:', markerId);
+      if (dev) console.warn('DEV: Marker not found for deletion:', markerId);
     }
   };
 
@@ -1217,7 +1040,6 @@
 
           // Immediately sync fog URL to Y.js for real-time collaboration
           if (partyData && selectedScene?.id) {
-            console.log('🚀 Immediately syncing fog update to Y.js:', fogUrl);
             lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
             partyData.updateSceneStageProps(selectedScene.id, stageProps);
           }
@@ -1227,7 +1049,7 @@
           isUpdatingFog = false;
         },
         onError: () => {
-          console.log('Error uploading fog');
+          console.error('Error uploading fog');
           isUpdatingFog = false;
         },
         toastMessages: {
@@ -1243,12 +1065,10 @@
 
     // Try to become the active saver for this scene
     if (!partyData || !partyData.becomeActiveSaver(selectedScene.id)) {
-      console.log('Cannot save: another editor is already saving this scene');
       return;
     }
 
     isSaving = true;
-    console.log('Starting coordinated save for scene:', selectedScene.id);
 
     let saveSuccess = false;
     try {
@@ -1268,30 +1088,27 @@
             onSuccess: (result) => {
               // Store just the location path in stageProps for database saving
               mapThumbLocation = result.location;
-              console.log('Thumbnail uploaded successfully:', result.location);
 
               // Update Y.js immediately with the new thumbnail location
               if (partyData && selectedScene) {
-                console.log('Updating Y.js with new mapThumbLocation:', result.location);
                 // Just update the mapThumbLocation - we don't have full thumb data here
                 partyData.updateScene(selectedScene.id, {
                   mapThumbLocation: result.location
                 });
               }
             },
-            onError: (error) => {
-              console.log('Error uploading thumbnail (non-blocking):', error);
+            onError: () => {
               // Don't fail the save just because thumbnail upload failed
             },
             toastMessages: {
               // Remove error toast - thumbnail upload is optional
             }
-          }).catch((error) => {
-            console.log('Thumbnail upload failed silently:', error);
+          }).catch(() => {
+            // Thumbnail upload failed silently
           });
         }
-      } catch (error) {
-        console.log('Error generating thumbnail (non-blocking):', error);
+      } catch {
+        // Error generating thumbnail (non-blocking)
       }
 
       // Save scene settings
@@ -1305,7 +1122,7 @@
         formLoadingState: () => {},
         onSuccess: () => {},
         onError: (error) => {
-          console.log('Error saving scene:', error);
+          console.error('Error saving scene:', error);
         },
         toastMessages: {
           success: { title: 'Scene saved!' },
@@ -1316,14 +1133,11 @@
       // Save markers using simplified upsert approach
       // Use $state.snapshot to get actual values from Svelte proxy
       const markersSnapshot = $state.snapshot(stageProps.marker?.markers || []);
-      console.log('Checking markers for save - markers:', markersSnapshot.length, markersSnapshot);
 
       // Store the marker count at save time to detect if stageProps gets modified during save
       const markerCountAtSave = markersSnapshot.length;
 
       if (markersSnapshot.length > 0) {
-        console.log('Found markers to save:', markersSnapshot.length);
-
         // Process markers one by one using upsert (create or update as needed)
         for (const marker of markersSnapshot) {
           const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
@@ -1337,7 +1151,6 @@
               }),
             formLoadingState: () => {},
             onSuccess: (result) => {
-              console.log(`Marker ${marker.id} ${result.operation} successfully`);
               // Add to persisted set if this was a create operation
               if (result.operation === 'created') {
                 persistedMarkerIds.add(marker.id);
@@ -1347,11 +1160,10 @@
               // Clear from recently saved after a delay (time for SSR data to update)
               setTimeout(() => {
                 recentlySavedMarkerIds.delete(marker.id);
-                console.log('Removed marker from recently saved set:', marker.id);
               }, 5000); // 5 seconds should be enough for SSR update
             },
             onError: (error) => {
-              console.log('Error saving marker:', error);
+              console.error('Error saving marker:', error);
             },
             toastMessages: {
               error: { title: 'Error saving marker', body: (err) => err.message || 'Error saving marker' }
@@ -1365,19 +1177,14 @@
         if (partyData && selectedScene?.id) {
           // Check if stageProps was modified during save (e.g., by the StageProps effect)
           const currentMarkerCount = stageProps.marker?.markers?.length || 0;
-          if (currentMarkerCount !== markerCountAtSave) {
-            console.log('⚠️ StageProps markers were modified during save!', {
+          if (currentMarkerCount !== markerCountAtSave && dev) {
+            console.log('DEV: ⚠️ StageProps markers were modified during save!', {
               countAtSave: markerCountAtSave,
               currentCount: currentMarkerCount,
               snapshotCount: markersSnapshot.length
             });
           }
 
-          console.log('📤 Force syncing saved markers to Y.js for other editors');
-          console.log(
-            'Markers being synced:',
-            markersSnapshot.map((m) => ({ id: m.id, title: m.title }))
-          );
           lastOwnYjsUpdateTime = Date.now();
 
           // Create a copy of stageProps with the correct markers FROM THE SNAPSHOT
@@ -1390,15 +1197,9 @@
             }
           };
 
-          console.log('StageProps for Y.js sync:', {
-            markerCount: stagePropsWithAllMarkers.marker.markers.length,
-            markerIds: stagePropsWithAllMarkers.marker.markers.map((m) => m.id)
-          });
-
           // Make sure Y.js has the scene initialized
           const sceneData = partyData.getSceneData(selectedScene.id);
           if (!sceneData) {
-            console.log('⚠️ Y.js scene not initialized during save, initializing now');
             partyData.initializeSceneData(selectedScene.id, stagePropsWithAllMarkers, markersSnapshot);
           } else {
             partyData.updateSceneStageProps(selectedScene.id, stagePropsWithAllMarkers);
@@ -1446,9 +1247,6 @@
           if (persistedMarkerIds.has(marker.id)) {
             markersBeingEdited.delete(marker.id);
             markersBeingMoved.delete(marker.id);
-            console.log('✅ Cleared protection for saved marker:', marker.id);
-          } else {
-            console.log('⚠️ Keeping protection for unsaved marker:', marker.id);
           }
         }
       }
@@ -1456,7 +1254,6 @@
         clearTimeout(editingTimer);
         editingTimer = null;
       }
-      console.log('✅ Coordinated save completed, success:', saveSuccess, '- cleared isActivelyEditing flag');
     }
   };
 
@@ -1472,14 +1269,12 @@
 
       // Immediately sync to Y.js for real-time collaboration
       if (partyData && selectedScene?.id) {
-        console.log('🚀 Immediately syncing marker update to Y.js:', markerId);
         lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
         partyData.updateSceneStageProps(selectedScene.id, stageProps);
       }
 
       // Add marker to protection set to prevent Y.js from overwriting during save
       markersBeingEdited.add(markerId);
-      console.log('🛡️ Added marker to protection set for update:', markerId);
 
       // Set actively editing flag briefly to prevent feedback loops
       isActivelyEditing = true;
@@ -1489,7 +1284,6 @@
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
         markersBeingEdited.delete(markerId);
-        console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', markerId);
       }, 1000); // Clear after 1 second if no save occurs
 
       // Trigger database save through property update queue
@@ -1501,26 +1295,20 @@
   const startAutoSaveTimer = () => {
     // Only start timer if conditions are met
     if (isSaving) {
-      console.log('Skipping auto-save timer - save already in progress');
       return;
     }
 
     if (!hasInitialLoad) {
-      console.log('Skipping auto-save timer - initial load not complete');
       return;
     }
 
     if (isReceivingYjsUpdate) {
-      console.log('Skipping auto-save timer - receiving Y.js update');
       return;
     }
 
     if (!isWindowFocused) {
-      console.log('Skipping auto-save timer - window not focused');
       return;
     }
-
-    console.log('Starting auto-save timer after user change');
 
     // Clear any existing timer
     if (saveTimer) clearTimeout(saveTimer);
@@ -1529,10 +1317,8 @@
     saveTimer = setTimeout(() => {
       // Double-check conditions before actually saving
       if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
-        console.log('Auto-saving after user idle period');
         saveScene();
       } else {
-        console.log('Cancelled auto-save - conditions changed during idle period');
         // Clear actively editing flag if save was cancelled due to conditions
         isActivelyEditing = false;
       }
@@ -1546,8 +1332,6 @@
       return;
     }
 
-    console.log('Running periodic drift check');
-
     try {
       if (!partyData) return;
 
@@ -1558,8 +1342,6 @@
       const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
       if (driftedScenes.length > 0) {
-        console.log('Periodic drift check found drifted scenes:', driftedScenes);
-
         // Show toast notification
         addToast({
           data: {
@@ -1589,7 +1371,6 @@
       // Clear marker protection sets when switching scenes
       markersBeingEdited.clear();
       markersBeingMoved.clear();
-      console.log('🔄 Cleared marker protection sets on scene switch');
       previousEffectSceneId = currentSceneId;
     }
   });
@@ -1604,30 +1385,20 @@
 
     // Skip if this editor is currently reordering scenes
     if (isLocallyReordering) {
-      console.log('Skipping navigation check - local reorder in progress');
       return;
     }
-
-    console.log('Checking for scene order changes:', {
-      selectedSceneId: selectedScene.id,
-      currentOrder: selectedSceneNumber,
-      yjsScenesCount: yjsScenes.length,
-      isLocallyReordering
-    });
 
     // Find the current scene's new order in Y.js scenes
     const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
-      console.log('Selected scene was deleted, navigating to scene 1');
       goto(`/${$page.params.party}/${$page.params.gameSession}/1`);
       return;
     }
 
     // Check if order changed
     if (currentSceneInYjs.order !== selectedSceneNumber) {
-      console.log(`Scene order changed from ${selectedSceneNumber} to ${currentSceneInYjs.order}, navigating...`);
       goto(`/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`);
     }
   });
@@ -1637,7 +1408,6 @@
   onkeydown={handleKeydown}
   onvisibilitychange={() => {
     isWindowFocused = !document.hidden;
-    console.log('Tab visibility changed, isWindowFocused:', isWindowFocused);
   }}
   bind:activeElement
 />
@@ -1645,13 +1415,11 @@
   bind:innerWidth
   onfocus={() => {
     isWindowFocused = true;
-    console.log('Window gained focus, isWindowFocused:', isWindowFocused);
 
     // Trigger Y.js sync check when regaining focus to catch any missed updates
     if (partyData && partyData.getConnectionStatus()) {
       // Small delay to ensure Y.js has had time to reconnect if needed
       setTimeout(async () => {
-        console.log('Focus regained - forcing Y.js sync check');
         if (!partyData) return;
 
         partyData.forceSyncCheck();
@@ -1665,8 +1433,6 @@
           const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
           if (driftedScenes.length > 0) {
-            console.log('Drift detected for scenes:', driftedScenes);
-
             // Show toast notification
             addToast({
               data: {
@@ -1687,7 +1453,6 @@
   }}
   onblur={() => {
     isWindowFocused = false;
-    console.log('Window lost focus, isWindowFocused:', isWindowFocused);
     // Clear any pending save timer when window loses focus
     if (saveTimer) {
       clearTimeout(saveTimer);
@@ -1780,7 +1545,7 @@
           {errors}
           {partyData}
         />
-        <SceneZoom {socketUpdate} {handleSceneFit} {handleMapFill} {stageProps} />
+        <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
         <Hints {stageProps} />
       </div>
