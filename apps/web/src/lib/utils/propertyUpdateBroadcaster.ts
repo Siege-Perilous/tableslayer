@@ -11,9 +11,9 @@ const preYjsUpdatesQueue: Array<{ sceneId: string; updates: Record<string, any> 
 let yjsReadyCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Different throttle times for different property types
-const MARKER_UPDATE_DELAY = 150;
-const UI_CONTROL_DELAY = 250;
-const SCENE_UPDATE_DELAY = 500;
+const MARKER_UPDATE_DELAY = 50; // Reduced from 150ms for faster marker sync
+const UI_CONTROL_DELAY = 100; // Reduced from 250ms
+const SCENE_UPDATE_DELAY = 200; // Reduced from 500ms
 
 export type PropertyPath = string[];
 

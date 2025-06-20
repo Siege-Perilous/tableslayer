@@ -211,7 +211,8 @@
   let isWindowFocused = $state(true); // Track if this editor window is focused
   let markersBeingMoved = $state(new Set<string>()); // Track markers currently being moved/saved
   let markersBeingEdited = $state(new Set<string>()); // Track markers being added/edited (for Y.js protection)
-  let isActivelyEditing = $state(false); // Track if user is actively making changes (blocks Y.js updates)
+  let isActivelyEditing = $state(false); // Track if user is actively making changes
+  let lastOwnYjsUpdateTime = $state(0); // Track when we last sent a Y.js update to prevent feedback loops
   const isMobile = $derived(innerWidth < 768);
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -270,12 +271,36 @@
     console.log('Setting up Y.js subscription for scene:', sceneId);
     const currentSceneId = sceneId; // Capture the scene ID to avoid closure issues
 
-    const unsubscribe = partyData.subscribe(() => {
-      console.log('Y.js subscription triggered - checking for scene:', currentSceneId);
+    // Also ensure the scene has observers set up in Y.js
+    // This is important for editor-to-editor sync
+    const sceneData = partyData.getSceneData(currentSceneId);
+    console.log('Current Y.js scene data when setting up subscription:', {
+      sceneId: currentSceneId,
+      hasData: !!sceneData,
+      markerCount: sceneData?.markers?.length || 0
+    });
 
-      // Block Y.js updates if user is actively editing
-      if (isActivelyEditing) {
-        console.log('🛡️ BLOCKING Y.js update - user is actively editing');
+    const unsubscribe = partyData.subscribe(() => {
+      console.log(
+        'Y.js subscription triggered - checking for scene:',
+        currentSceneId,
+        'vs selectedScene:',
+        selectedScene?.id
+      );
+
+      // Make sure we're still looking at the same scene
+      if (currentSceneId !== selectedScene?.id) {
+        console.log('⚠️ Scene changed, ignoring Y.js update for old scene');
+        return;
+      }
+
+      // Don't block Y.js updates completely when editing - we still want updates from other editors!
+      // The mergeMarkersWithProtection function will handle protecting our local changes
+
+      // Check if this might be our own update echoing back
+      const timeSinceOwnUpdate = Date.now() - lastOwnYjsUpdateTime;
+      if (isActivelyEditing && timeSinceOwnUpdate < 500) {
+        console.log('🔄 Skipping potential echo of our own Y.js update (sent', timeSinceOwnUpdate, 'ms ago)');
         return;
       }
 
@@ -303,7 +328,8 @@
           hasStageProps: !!sceneData.stageProps,
           markersFromYjs: sceneData.stageProps.marker?.markers?.length || 0,
           separateMarkers: sceneData.markers?.length || 0,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          markerIds: sceneData.stageProps.marker?.markers?.map((m: any) => m.id) || []
         });
 
         // Update local stageProps with shared properties from Y.js, preserving local-only properties
@@ -338,7 +364,11 @@
           }
         };
 
-        console.log('Merged result:', mergedStageProps);
+        console.log('Merged result:', {
+          markerCount: mergedStageProps.marker?.markers?.length || 0,
+          markerIds: mergedStageProps.marker?.markers?.map((m: any) => m.id) || [],
+          mapUrl: mergedStageProps?.map?.url
+        });
         console.log('Map URL comparison:', {
           current: currentStagePropsSnapshot?.map?.url,
           incoming: mergedStageProps?.map?.url,
@@ -663,8 +693,12 @@
           console.log('[StageProps Effect] No Y.js data for scene - initializing with SSR data');
         }
 
-        // Initialize if scene switch OR if Y.js doesn't have data for this scene yet
-        if (isSceneSwitch || !partyData.getSceneData(currentSceneId)) {
+        // Only initialize Y.js data if it doesn't exist at all for this scene
+        // This prevents overwriting data from other editors
+        const existingSceneData = partyData.getSceneData(currentSceneId);
+        if (!existingSceneData) {
+          console.log('[StageProps Effect] No Y.js data exists for scene - initializing with SSR data');
+
           // Create a copy of stageProps without local-only properties for Y.js storage
           const sharedStageProps = {
             ...stageProps,
@@ -686,6 +720,11 @@
             markerIds: currentSelectedSceneMarkers?.map((m) => m.id) || []
           });
           partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
+        } else if (isSceneSwitch) {
+          console.log('[StageProps Effect] Scene switch but Y.js data exists - not overwriting:', {
+            existingMarkerCount: existingSceneData.markers?.length || 0,
+            ssrMarkerCount: currentSelectedSceneMarkers?.length || 0
+          });
         }
       }
     } else {
@@ -775,50 +814,66 @@
   };
 
   const onMarkerAdded = (marker: Marker) => {
-    // Set actively editing flag to block Y.js updates
-    isActivelyEditing = true;
+    // Add marker to local state immediately
+    stageProps.marker.markers = [...stageProps.marker.markers, marker];
+    selectedMarkerId = marker.id;
 
-    // Add marker to protection set
+    // Immediately sync to Y.js for real-time collaboration
+    // This ensures other editors see the new marker right away
+    if (partyData && selectedScene?.id) {
+      console.log('🚀 Immediately syncing new marker to Y.js:', marker.id);
+      lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+      partyData.updateSceneStageProps(selectedScene.id, stageProps);
+    }
+
+    // Add marker to protection set to prevent Y.js from overwriting during save
     markersBeingEdited.add(marker.id);
     console.log('🛡️ Added marker to protection set:', marker.id);
 
-    // Clear any existing editing timer and set new one
+    // Set actively editing flag briefly to prevent feedback loops
+    isActivelyEditing = true;
+
+    // Clear any existing editing timer and set new one (shorter timeout)
     if (editingTimer) clearTimeout(editingTimer);
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
       markersBeingEdited.delete(marker.id);
       console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', marker.id);
-    }, 10000); // Clear after 10 seconds if no save occurs
+    }, 1000); // Clear after 1 second if no save occurs
 
-    stageProps.marker.markers = [...stageProps.marker.markers, marker];
-    selectedMarkerId = marker.id;
-
-    // Trigger Y.js synchronization for new marker to other editors
-    // This will also trigger auto-save through the callback
+    // Trigger database save through property update queue
     queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
-      // Set actively editing flag to block ALL Y.js updates during marker movement
-      isActivelyEditing = true;
-      console.log('🚫 Set isActivelyEditing=true for marker move:', marker.id);
-
-      // Clear any existing editing timer and set new one
-      if (editingTimer) clearTimeout(editingTimer);
-      editingTimer = setTimeout(() => {
-        isActivelyEditing = false;
-        console.log('Cleared isActivelyEditing flag due to timeout after marker move');
-      }, 10000); // Clear after 10 seconds if no save occurs
-
+      // Update marker position immediately
       stageProps.marker.markers[index] = {
         ...marker,
         position: { x: position.x, y: position.y }
       };
 
-      // Mark this marker as being moved to protect it from Y.js overwrites
+      // Immediately sync to Y.js for real-time collaboration
+      if (partyData && selectedScene?.id) {
+        console.log('🚀 Immediately syncing marker move to Y.js:', marker.id);
+        lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+      }
+
+      // Mark this marker as being moved to protect it from Y.js overwrites during save
       markersBeingMoved.add(marker.id);
+
+      // Set actively editing flag briefly to prevent feedback loops
+      isActivelyEditing = true;
+      console.log('🚫 Set isActivelyEditing=true for marker move:', marker.id);
+
+      // Clear any existing editing timer and set new one (shorter timeout)
+      if (editingTimer) clearTimeout(editingTimer);
+      editingTimer = setTimeout(() => {
+        isActivelyEditing = false;
+        console.log('Cleared isActivelyEditing flag due to timeout after marker move');
+      }, 1000); // Clear after 1 second if no save occurs
 
       // Trigger Y.js synchronization for marker position to other editors
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
@@ -1005,8 +1060,21 @@
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          updateProperty(stageProps, ['fogOfWar', 'url'], `https://files.tableslayer.com/${fog.location}`, 'control');
+          const fogUrl = `https://files.tableslayer.com/${fog.location}`;
+
+          // Update local state immediately
+          stageProps.fogOfWar.url = fogUrl;
           fogBlobUpdateTime = new Date();
+
+          // Immediately sync fog URL to Y.js for real-time collaboration
+          if (partyData && selectedScene?.id) {
+            console.log('🚀 Immediately syncing fog update to Y.js:', fogUrl);
+            lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+            partyData.updateSceneStageProps(selectedScene.id, stageProps);
+          }
+
+          // Also queue for database save
+          updateProperty(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
           isUpdatingFog = false;
         },
         onError: () => {
@@ -1209,7 +1277,7 @@
     editingTimer = setTimeout(() => {
       isActivelyEditing = false;
       console.log('Cleared isActivelyEditing flag due to timeout');
-    }, 10000); // Clear after 10 seconds if no save occurs
+    }, 1000); // Clear after 1 second if no save occurs
 
     // queuePropertyUpdate will trigger auto-save through the callback
     queuePropertyUpdate(stageProps, propertyPath, value, updateType);
@@ -1219,26 +1287,32 @@
   const updateMarkerAndSave = (markerId: string, updateFn: (marker: any) => void) => {
     const markerIndex = stageProps.marker.markers.findIndex((m: any) => m.id === markerId);
     if (markerIndex !== -1) {
-      // Set actively editing flag to block Y.js updates
-      isActivelyEditing = true;
+      // Update the marker locally first
+      updateFn(stageProps.marker.markers[markerIndex]);
 
-      // Add marker to protection set
+      // Immediately sync to Y.js for real-time collaboration
+      if (partyData && selectedScene?.id) {
+        console.log('🚀 Immediately syncing marker update to Y.js:', markerId);
+        lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+      }
+
+      // Add marker to protection set to prevent Y.js from overwriting during save
       markersBeingEdited.add(markerId);
       console.log('🛡️ Added marker to protection set for update:', markerId);
 
-      // Clear any existing editing timer and set new one
+      // Set actively editing flag briefly to prevent feedback loops
+      isActivelyEditing = true;
+
+      // Clear any existing editing timer and set new one (shorter timeout)
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
         markersBeingEdited.delete(markerId);
         console.log('Cleared isActivelyEditing flag and removed marker protection due to timeout:', markerId);
-      }, 10000); // Clear after 10 seconds if no save occurs
+      }, 1000); // Clear after 1 second if no save occurs
 
-      // Update the marker locally
-      updateFn(stageProps.marker.markers[markerIndex]);
-
-      // Trigger Y.js synchronization for markers to other editors
-      // This will also trigger auto-save through the callback
+      // Trigger database save through property update queue
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
     }
   };

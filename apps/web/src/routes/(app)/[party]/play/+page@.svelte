@@ -50,10 +50,7 @@
   let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
   const fadeOutDelay = 5000;
 
-  // Debounce timer for Y.js updates to prevent flashing
-  let yjsUpdateTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingYjsSceneData: any = null;
-  const YJS_UPDATE_DEBOUNCE = 250; // Reduced from 500ms for faster updates
+  // No debouncing needed - flashing was caused by image versioning, not Y.js updates
 
   // Track initialization state to prevent race conditions
   let yjsInitialized = false;
@@ -294,7 +291,10 @@
               console.log('Playfield received Y.js scene data update:', {
                 sceneId: updatedPartyState.activeSceneId,
                 hasStageProps: !!sceneData.stageProps,
-                markerCount: sceneData.markers?.length || 0
+                markerCount: sceneData.markers?.length || 0,
+                stagePropsMarkerCount: sceneData.stageProps?.marker?.markers?.length || 0,
+                markerIds: sceneData.stageProps?.marker?.markers?.map((m: any) => m.id).slice(0, 5) || [],
+                timestamp: Date.now()
               });
               // Check if the scene data actually changed
               const sceneDataJson = JSON.stringify(sceneData);
@@ -305,24 +305,15 @@
                 return;
               }
 
-              // Debounce Y.js updates to prevent flashing
-              pendingYjsSceneData = sceneData;
-
-              if (yjsUpdateTimer) {
-                clearTimeout(yjsUpdateTimer);
-                yjsUpdateTimer = null;
-              }
-
-              // Don't start new timer if we're unmounting or invalidating
+              // Apply Y.js update immediately - no debouncing needed
+              // The flashing was caused by image versioning, not Y.js updates
               if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
-                yjsUpdateTimer = setTimeout(() => {
-                  if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
-                    console.log('Applying debounced Y.js scene data update');
-                    yjsSceneData = pendingYjsSceneData;
-                    pendingYjsSceneData = null;
-                    yjsUpdateTimer = null;
-                  }
-                }, YJS_UPDATE_DEBOUNCE); // Shorter debounce for quicker updates
+                console.log('Applying Y.js scene data update immediately:', {
+                  markerCount: sceneData.markers?.length || 0,
+                  stagePropsMarkerCount: sceneData.stageProps?.marker?.markers?.length || 0,
+                  timestamp: Date.now()
+                });
+                yjsSceneData = sceneData;
               }
             } else {
               console.log('No scene data found for active scene');
@@ -429,14 +420,7 @@
       isUnmounting = true;
       isMounted = false;
 
-      // Clear any pending timers first
-      if (yjsUpdateTimer) {
-        clearTimeout(yjsUpdateTimer);
-        yjsUpdateTimer = null;
-      }
-
-      // Clear pending data
-      pendingYjsSceneData = null;
+      // No timers to clear - we removed debouncing
 
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
@@ -548,13 +532,6 @@
         // Set flags to prevent race conditions
         isProcessingSceneChange = true;
         isInvalidating = true;
-
-        // Clear any pending updates
-        if (yjsUpdateTimer) {
-          clearTimeout(yjsUpdateTimer);
-          yjsUpdateTimer = null;
-        }
-        pendingYjsSceneData = null;
 
         // Clear the current scene data to show loading state
         yjsSceneData = null;
