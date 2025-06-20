@@ -59,8 +59,8 @@
   // For batched marker updates
   // Marker updates now handled through Y.js scene synchronization
 
-  // Track the last processed stage props JSON to prevent loops
-  let lastStagePropsJson: string | null = null;
+  // Track the last Y.js update to prevent loops
+  let lastYjsUpdateTimestamp = 0;
 
   // Update stage props from Y.js data when available
   $effect(() => {
@@ -69,26 +69,26 @@
       return;
     }
 
-    // Note: We rely on the JSON comparison below to detect actual changes
-    // The early exit was preventing marker updates from being processed
-
-    console.log('Playfield stageProps effect:', {
-      isHydrated,
-      yjsInitialized,
-      hasYjsSceneData: !!yjsSceneData,
-      hasStageProps: !!yjsSceneData?.stageProps,
-      activeSceneId: data.activeScene?.id,
-      yjsActiveSceneId: yjsPartyState.activeSceneId,
-      initialDataApplied
-    });
-
     // First priority: Use Y.js data if available and initialized
     if (isHydrated && yjsInitialized && yjsSceneData?.stageProps && yjsPartyState.activeSceneId) {
-      // Only update if we have scene data and an active scene
-      console.log('Building new stage props from Y.js data');
+      // Check if this is actually a new update
+      const currentTimestamp = yjsSceneData.lastUpdated || 0;
+      if (currentTimestamp === lastYjsUpdateTimestamp) {
+        // Same Y.js data, no need to update
+        return;
+      }
 
-      // Build the new stage props
-      const newStageProps = {
+      console.log('Playfield stageProps effect - new Y.js data:', {
+        currentTimestamp,
+        lastTimestamp: lastYjsUpdateTimestamp,
+        markerCount: yjsSceneData.stageProps?.marker?.markers?.length || 0
+      });
+
+      // Only update if we have scene data and an active scene
+      console.log('Building new stage props from Y.js data - immediate update');
+
+      // Build and apply the new stage props immediately
+      stageProps = {
         ...yjsSceneData.stageProps,
         // Force player mode
         mode: 1,
@@ -110,51 +110,13 @@
         }
       };
 
-      // Check if props have changed
-      const newStagePropsJson = JSON.stringify(newStageProps);
+      // Update the timestamp to prevent re-processing
+      lastYjsUpdateTimestamp = currentTimestamp;
 
-      if (newStagePropsJson !== lastStagePropsJson) {
-        console.log('Playfield updating stageProps from Y.js data');
-
-        // Track what's changing to debug flashing
-        const currentMapUrl = stageProps?.map?.url;
-        const currentFogUrl = stageProps?.fogOfWar?.url;
-        const newMapUrl = newStageProps.map?.url;
-        const newFogUrl = newStageProps.fogOfWar?.url;
-
-        if (currentMapUrl !== newMapUrl) {
-          console.log('🗺️ Map URL changing:', {
-            currentMapUrl,
-            newMapUrl,
-            hasTimestamp: newMapUrl?.includes('?t=')
-          });
-        }
-
-        if (currentFogUrl !== newFogUrl) {
-          console.log('🌫️ Fog URL changing:', {
-            currentFogUrl,
-            newFogUrl,
-            hasTimestamp: newFogUrl?.includes('?t=')
-          });
-        }
-
-        // Log other property changes for debugging
-        const keysToCheck = ['grid', 'weather', 'marker', 'edgeOverlay', 'fog', 'postProcessing'];
-        keysToCheck.forEach((key) => {
-          const currentValue = JSON.stringify(stageProps[key]);
-          const newValue = JSON.stringify(newStageProps[key]);
-          if (currentValue !== newValue) {
-            console.log(`🔄 ${key} changing:`, {
-              key,
-              hasChanged: true
-            });
-          }
-        });
-
-        // Update the stage props and track the JSON
-        stageProps = newStageProps;
-        lastStagePropsJson = newStagePropsJson;
-      }
+      console.log('Playfield stage props updated from Y.js:', {
+        markerCount: stageProps.marker?.markers?.length || 0,
+        timestamp: Date.now()
+      });
     }
     // Second priority: Use SSR data when Y.js doesn't have scene data or on initial load
     else if (data.activeScene && data.activeSceneMarkers && !isUnmounting && !isInvalidating) {
@@ -167,9 +129,7 @@
 
       if (shouldUseSsrData) {
         console.log('Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
-        const initialStageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
-        stageProps = initialStageProps;
-        lastStagePropsJson = JSON.stringify(initialStageProps);
+        stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
         initialDataApplied = true;
       }
     }
@@ -195,7 +155,6 @@
     if (data.activeScene && !initialDataApplied) {
       console.log('Setting initial stage props from SSR data in onMount');
       stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
-      lastStagePropsJson = JSON.stringify(stageProps);
       initialDataApplied = true;
     }
 
@@ -256,17 +215,8 @@
                 markerIds: sceneData.stageProps?.marker?.markers?.map((m: any) => m.id).slice(0, 5) || [],
                 timestamp: Date.now()
               });
-              // Check if the scene data actually changed
-              const sceneDataJson = JSON.stringify(sceneData);
-              const currentSceneDataJson = yjsSceneData ? JSON.stringify(yjsSceneData) : null;
 
-              if (sceneDataJson === currentSceneDataJson) {
-                console.log('Y.js scene data unchanged, skipping update');
-                return;
-              }
-
-              // Apply Y.js update immediately - no debouncing needed
-              // The flashing was caused by image versioning, not Y.js updates
+              // Apply Y.js update immediately - just like editor-to-editor updates
               if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
                 console.log('Applying Y.js scene data update immediately:', {
                   markerCount: sceneData.markers?.length || 0,
@@ -507,6 +457,7 @@
 
         // Clear the current scene data to show loading state
         yjsSceneData = null;
+        lastYjsUpdateTimestamp = 0; // Reset timestamp tracker for new scene
         hasActiveScene = !!yjsPartyState.activeSceneId;
 
         // Invalidate the page to load the new scene data
