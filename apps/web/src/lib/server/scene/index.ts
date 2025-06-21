@@ -3,7 +3,6 @@ import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
-import { getGameSession } from '../gameSession';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -341,20 +340,6 @@ export const updateSceneMap = async (sceneId: string, userId: string, file: File
     .set({ mapLocation: fileLocation, lastUpdated: new Date() })
     .where(eq(sceneTable.id, sceneId))
     .execute();
-};
-
-export const setActiveScene = async (gameSessionId: string, sceneId: string) => {
-  // This function is deprecated - active scenes are now managed at the party level
-  const gameSession = await getGameSession(gameSessionId);
-  const party = await getPartyFromGameSessionId(gameSessionId);
-  await setActiveSceneForParty(party.id, sceneId);
-};
-
-// Legacy function - kept for backwards compatibility during migration
-export const getActiveScene = async (gameSessiondId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  // Active scenes are now managed at the party level, not game session level
-  const party = await getPartyFromGameSessionId(gameSessiondId);
-  return getActiveSceneForParty(party.id);
 };
 
 // New party-level active scene function
