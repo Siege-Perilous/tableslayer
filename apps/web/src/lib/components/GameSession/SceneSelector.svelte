@@ -438,6 +438,11 @@
       // Reset the flag after a small delay to ensure navigation effect has run
       setTimeout(() => {
         isLocallyReordering = false;
+        // Also ensure orderedScenes is synced after the operation completes
+        // This prevents any lingering visual inconsistencies
+        if (!isDragging && draggedItem === null) {
+          orderedScenes = [...scenes];
+        }
       }, 500);
     }
   };
@@ -500,7 +505,18 @@
     return { offsetX, offsetY };
   };
 
+  // Keep orderedScenes in sync with scenes prop, but not during drag operations
   $effect(() => {
+    // Skip updating if we're currently dragging or have just finished dragging
+    if (isDragging || draggedItem !== null || justFinishedDragging) {
+      return;
+    }
+
+    // Skip updating if we're in the middle of a form operation (loading)
+    if (formIsLoading) {
+      return;
+    }
+
     orderedScenes = [...scenes];
   });
 </script>
