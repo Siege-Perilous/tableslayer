@@ -1,11 +1,20 @@
 import type { SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
 import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ parent, params }) => {
+export const load: PageServerLoad = async ({ parent, params, url }) => {
   const { gameSession, activeScene } = await parent();
   let selectedSceneNumber = Number(params.selectedScene);
+
+  // If no scene number is provided in the URL, redirect to scene 1
+  if (!params.selectedScene) {
+    // Ensure pathname ends with a slash before appending the scene number
+    const path = url.pathname.endsWith('/') ? url.pathname : url.pathname + '/';
+    throw redirect(302, `${path}1`);
+  }
+
   if (isNaN(selectedSceneNumber)) {
     selectedSceneNumber = 1;
   }

@@ -1390,6 +1390,14 @@
       return;
     }
 
+    // Check if we're on the base route without a scene number
+    // If so, skip navigation as the server already handles the redirect
+    const currentPath = $page.url.pathname;
+    const hasSceneNumber = $page.params.selectedScene !== undefined;
+    if (!hasSceneNumber) {
+      return;
+    }
+
     // Find the current scene's new order in Y.js scenes
     const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
 
