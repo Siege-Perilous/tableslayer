@@ -1,15 +1,41 @@
 import { Server } from 'socket.io';
 import { YSocketIO } from 'y-socket.io/dist/server';
 
+// Global instance to prevent multiple initializations
+let wsServerInstance: Server | null = null;
+let ysocketioInstance: YSocketIO | null = null;
+
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export const initializeSocketIO = (server: any) => {
+  // Return existing instance if already initialized
+  if (wsServerInstance) {
+    return wsServerInstance;
+  }
+
+  // Check if the server already has a Socket.IO instance attached
+  // @ts-ignore - accessing private property
+  if (server._socketio) {
+    console.log('Socket.IO already attached to server, reusing instance');
+    // @ts-ignore
+    return server._socketio;
+  }
+
   const wsServer = new Server(server);
+
+  // Increase max listeners to prevent warnings
+  wsServer.setMaxListeners(20);
 
   // Initialize Y.js integration with Socket.IO
   const ysocketio = new YSocketIO(wsServer);
   ysocketio.initialize();
 
   console.log('Socket.IO server with Y.js initialized');
+
+  // Store references
+  wsServerInstance = wsServer;
+  ysocketioInstance = ysocketio;
+  // @ts-ignore - storing reference on server
+  server._socketio = wsServer;
 
   // Hook into the Y.js server to add cursor tracking
   // Y.js creates namespaces dynamically, so we need to hook into the connection events
@@ -63,3 +89,14 @@ export const initializeSocketIO = (server: any) => {
 
   return wsServer;
 };
+
+// Clean up on process exit
+if (typeof process !== 'undefined') {
+  process.on('SIGTERM', () => {
+    if (wsServerInstance) {
+      wsServerInstance.close();
+      wsServerInstance = null;
+      ysocketioInstance = null;
+    }
+  });
+}

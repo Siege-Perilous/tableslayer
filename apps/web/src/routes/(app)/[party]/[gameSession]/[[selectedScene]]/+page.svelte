@@ -38,7 +38,7 @@
   } from '$lib/utils';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { initializePartyDataManager, usePartyData } from '$lib/utils/yjs/stores';
+  import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
   import { goto } from '$app/navigation';
   import { dev } from '$app/environment';
@@ -421,7 +421,12 @@
       if (dev) console.log('DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
       const partySlug = $page.params.party;
-      initializePartyDataManager(partySlug, user.id, gameSession.id);
+
+      // Check if we need to reinitialize (different game session)
+      const existingManager = getPartyDataManager();
+      if (!existingManager || existingManager.gameSessionId !== gameSession.id) {
+        initializePartyDataManager(partySlug, user.id, gameSession.id);
+      }
       partyData = usePartyData();
 
       // Initialize Y.js with SSR scene data
@@ -1377,6 +1382,10 @@
     }
   });
 
+  // Track last navigation to prevent loops
+  let lastNavigationTarget = $state<string | null>(null);
+  let navigationAttempts = $state(0);
+
   // Monitor scene order changes and navigate if needed
   $effect(() => {
     // Skip if not hydrated, no selected scene, or currently navigating
@@ -1398,19 +1407,59 @@
       return;
     }
 
+    // Skip if Y.js scenes are not yet loaded
+    if (!yjsScenes || yjsScenes.length === 0) {
+      return;
+    }
+
     // Find the current scene's new order in Y.js scenes
     const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
-      goto(`/${$page.params.party}/${$page.params.gameSession}/1`);
+      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/1`;
+
+      // Prevent navigation loops
+      if (lastNavigationTarget === targetPath) {
+        navigationAttempts++;
+        if (navigationAttempts > 2) {
+          console.warn('Navigation loop detected, stopping navigation attempts');
+          return;
+        }
+      } else {
+        navigationAttempts = 0;
+        lastNavigationTarget = targetPath;
+      }
+
+      goto(targetPath);
       return;
     }
 
     // Check if order changed
     if (currentSceneInYjs.order !== selectedSceneNumber) {
-      goto(`/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`);
+      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`;
+
+      // Prevent navigation loops
+      if (lastNavigationTarget === targetPath) {
+        navigationAttempts++;
+        if (navigationAttempts > 2) {
+          console.warn('Navigation loop detected, stopping navigation attempts');
+          return;
+        }
+      } else {
+        navigationAttempts = 0;
+        lastNavigationTarget = targetPath;
+      }
+
+      goto(targetPath);
     }
+  });
+
+  // Reset navigation tracking when game session changes
+  $effect(() => {
+    const currentGameSession = $page.params.gameSession;
+    lastNavigationTarget = null;
+    navigationAttempts = 0;
   });
 </script>
 

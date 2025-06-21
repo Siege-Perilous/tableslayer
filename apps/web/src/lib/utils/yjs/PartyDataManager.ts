@@ -54,6 +54,7 @@ export class PartyDataManager {
   private userId: string;
   private partyId: string;
   private clientId: number; // Unique ID for this editor instance
+  public gameSessionId?: string;
 
   // Cursor tracking handlers
   private cursorHandlers = new Map<string, (data: any) => void>();
@@ -80,6 +81,7 @@ export class PartyDataManager {
   constructor(partyId: string, userId: string, gameSessionId?: string) {
     this.userId = userId;
     this.partyId = partyId;
+    this.gameSessionId = gameSessionId;
     this.freshPageLoadTime = Date.now(); // Track when this instance was created (page load time)
 
     const socketUrl = window.location.origin;

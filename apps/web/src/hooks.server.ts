@@ -14,16 +14,13 @@ if (process.env.ENV_NAME === 'production') {
 }
 
 // Initialize Socket.IO with Y.js integration
-// Only initialize once to prevent "handleUpgrade() called more than once" error
-let wsInitialized = false;
+// Store the io instance globally to prevent multiple initializations
+let io: ReturnType<typeof initializeSocketIO> | null = null;
+
 useServer((server) => {
-  if (wsInitialized) {
-    console.log('Socket.IO server already initialized, skipping...');
-    return;
+  if (!io) {
+    io = initializeSocketIO(server);
   }
-  wsInitialized = true;
-  const io = initializeSocketIO(server);
-  console.log('Socket.IO server with Y.js initialized');
   return io;
 });
 
