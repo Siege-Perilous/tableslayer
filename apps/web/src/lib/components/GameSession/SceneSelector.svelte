@@ -546,7 +546,7 @@
         ]}
         style:background-image={scene.mapThumbLocation
           ? `url('${generateSmallThumbnailUrl(scene.mapThumbLocation)}')`
-          : scene.mapLocation && scene.mapLocation !== 'map/example1080.png'
+          : scene.mapLocation
             ? `url('${generateSmallThumbnailUrl(scene.mapLocation)}')`
             : 'inherit'}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
