@@ -24,7 +24,7 @@
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
-  let hasDrawnAnything = false; // Track if any actual drawing occurred
+  let hasDrawnAnything = false;
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
@@ -80,7 +80,7 @@
     e.preventDefault();
     lastPos = p;
     drawing = true;
-    hasDrawnAnything = false; // Reset at start of new drawing
+    hasDrawnAnything = false;
     draw(e, p);
   }
 
@@ -90,7 +90,7 @@
       if (p && drawing && lastPos) {
         material?.drawPath(p, lastPos, true);
         outlineMaterial.visible = false;
-        hasDrawnAnything = true; // Shape was drawn
+        hasDrawnAnything = true;
       }
     }
 
@@ -144,7 +144,7 @@
    */
   export function clearFog() {
     material?.render('clear', true);
-    onFogUpdate(toPng()); // Always update for clear operation
+    onFogUpdate(toPng());
   }
 
   /**
@@ -152,7 +152,7 @@
    */
   export function resetFog() {
     material?.render('fill', true);
-    onFogUpdate(toPng()); // Always update for reset operation
+    onFogUpdate(toPng());
   }
 
   /**

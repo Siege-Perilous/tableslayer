@@ -176,6 +176,13 @@
       "when": 1750445077960,
       "tag": "0024_scene-last-updated",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1750469151269,
+      "tag": "0025_remove-is-paused-from-game-session",
+      "breakpoints": true
     }
   ]
 }

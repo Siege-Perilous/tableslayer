@@ -296,7 +296,6 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
-    isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
   (table) => [

@@ -1,5 +1,6 @@
 import type { SelectScene } from '$lib/db/app/schema';
 import { mutationFactory } from '$lib/factories';
+import { createQuery } from '@tanstack/svelte-query';
 
 export const useUpdateSceneMutation = () => {
   return mutationFactory<
@@ -96,5 +97,39 @@ export const useSavePartyStateMutation = () => {
     mutationKey: ['savePartyState'],
     endpoint: '/api/party/savePartyState',
     method: 'POST'
+  });
+};
+
+type SceneTimestampsParams = {
+  gameSessionId: string;
+  partyId: string;
+};
+
+type SceneTimestampsResponse = {
+  timestamps: Record<string, number>;
+};
+
+export const useGetSceneTimestampsQuery = ({ gameSessionId, partyId }: SceneTimestampsParams) => {
+  return createQuery<SceneTimestampsResponse, Error>({
+    queryKey: ['sceneTimestamps', gameSessionId],
+    queryFn: async () => {
+      const response = await fetch('/api/scenes/timestamps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ gameSessionId, partyId })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch scene timestamps');
+      }
+
+      return response.json();
+    },
+    enabled: !!gameSessionId && !!partyId,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true
   });
 };

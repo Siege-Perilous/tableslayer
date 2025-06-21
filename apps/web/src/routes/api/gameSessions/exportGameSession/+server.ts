@@ -59,7 +59,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
       },
       gameSession: {
         name: gameSession.name,
-        isPaused: gameSession.isPaused,
         scenes: scenesWithMarkers
       }
     };

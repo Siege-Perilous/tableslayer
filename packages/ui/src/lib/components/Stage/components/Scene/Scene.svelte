@@ -72,22 +72,6 @@
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
-  // Update needsResize when map URL changes
-  let lastMapUrl: string | null = null;
-  $effect(() => {
-    const mapUrl = props.map.url;
-    if (mapUrl && mapUrl !== lastMapUrl) {
-      console.log('[Scene] Map URL changed:', {
-        old: lastMapUrl,
-        new: mapUrl,
-        hasTimestamp: mapUrl.includes('?t='),
-        hasQueryParams: mapUrl.includes('?')
-      });
-      needsResize = true;
-      lastMapUrl = mapUrl;
-    }
-  });
-
   // Effect to update post-processing settings when props change
   $effect(() => {
     const postProcessing = $state.snapshot(props.postProcessing);
@@ -175,11 +159,6 @@
       composer.outputBuffer.width !== $size.width ||
       composer.outputBuffer.height !== $size.height
     ) {
-      console.log('[Scene] Canvas size changed, setting needsResize=true:', {
-        oldSize: renderSize,
-        newSize: $size,
-        composerSize: { width: composer.outputBuffer.width, height: composer.outputBuffer.height }
-      });
       needsResize = true;
     }
   });
@@ -272,14 +251,6 @@
     } else {
       newZoom = $size.width / sceneWidth;
     }
-
-    console.log('[Scene] fit() calculating new zoom:', {
-      canvasSize: $size,
-      sceneResolution: { x: props.display.resolution.x, y: props.display.resolution.y },
-      currentZoom: props.scene.zoom,
-      newZoom,
-      autoFit: props.scene.autoFit
-    });
 
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }

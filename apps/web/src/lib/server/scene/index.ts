@@ -3,7 +3,7 @@ import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
-import { getGameSession, updateGameSession } from '../gameSession';
+import { getGameSession } from '../gameSession';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -378,12 +378,6 @@ export const getActiveSceneForParty = async (
 
 export const setActiveSceneForParty = async (partyId: string, sceneId: string): Promise<void> => {
   await db.update(partyTable).set({ activeSceneId: sceneId }).where(eq(partyTable.id, partyId));
-};
-
-export const toggleGamePause = async (gameSessionId: string) => {
-  const gameSession = await getGameSession(gameSessionId);
-  const newPausedState = !gameSession.isPaused;
-  await updateGameSession(gameSessionId, { isPaused: newPausedState });
 };
 
 export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {

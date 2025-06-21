@@ -30,7 +30,6 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
-        // Update active scene in Y.js instead of invalidateAll()
         if (partyData) {
           partyData.updatePartyState('activeSceneId', selectedScene.id);
         }
@@ -54,7 +53,6 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
-        // Update pause state in Y.js instead of invalidateAll()
         if (partyData) {
           partyData.updatePartyState('isPaused', !party.gameSessionIsPaused);
         }

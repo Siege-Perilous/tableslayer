@@ -63,7 +63,6 @@ export const POST = async ({ request, locals }: RequestEvent) => {
       }),
       gameSession: z.object({
         name: z.string(),
-        isPaused: z.boolean(),
         scenes: z.array(
           insertSceneSchema.omit({ gameSessionId: true }).extend({
             markers: z.array(insertMarkerSchema.omit({ sceneId: true })).optional()
@@ -96,8 +95,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
 
     // Create the game session without an initial scene (using our new function)
     const gameSession = await createGameSessionForImport(partyId, {
-      name: validatedData.gameSession.name,
-      isPaused: validatedData.gameSession.isPaused
+      name: validatedData.gameSession.name
     });
 
     // Create scenes with new IDs but preserve order

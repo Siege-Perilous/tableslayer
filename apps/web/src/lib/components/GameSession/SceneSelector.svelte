@@ -147,10 +147,8 @@
         console.log('Error creating scene:', error);
       },
       onSuccess: (response) => {
-        // Add scene to Y.js for real-time sync instead of invalidateAll()
         if (partyData && response?.scene) {
           const newScene = response.scene;
-          console.log('Scene created successfully, adding to Y.js:', newScene.name);
           partyData.addScene({
             id: newScene.id,
             name: newScene.name,
@@ -194,12 +192,9 @@
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        // Update party state in Y.js instead of invalidateAll()
         if (partyData) {
-          console.log('SceneSelector: Updating Y.js party state with activeSceneId:', sceneId);
           partyData.updatePartyState('activeSceneId', sceneId);
         }
-        // The Y.js effect in the main page will handle broadcasting
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -222,7 +217,6 @@
         sceneBeingDeleted = '';
         // Update Y.js with the reordered scenes list instead of just removing one
         if (partyData && response?.scenes) {
-          console.log('Scene deleted successfully, updating Y.js with reordered scenes');
           const reorderedScenes = response.scenes.map((scene) => ({
             id: scene.id,
             name: scene.name,
@@ -294,7 +288,6 @@
       onSuccess: (response) => {
         // Update Y.js with the reordered scenes list to ensure proper insertion order
         if (partyData && response?.scenes) {
-          console.log('Scene duplicated successfully, updating Y.js with reordered scenes');
           const reorderedScenes = response.scenes.map((scene) => ({
             id: scene.id,
             name: scene.name,

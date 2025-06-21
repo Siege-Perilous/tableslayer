@@ -2,14 +2,12 @@
   import { handleMutation } from '$lib/factories';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
-    console.log('openFileDialog called, hiddenFileInput:', hiddenFileInput);
     if (hiddenFileInput) {
       hiddenFileInput.click();
     } else {
       console.warn('hiddenFileInput not available yet');
       // Try again after a short delay to allow for component rendering
       setTimeout(() => {
-        console.log('Retry openFileDialog, hiddenFileInput:', hiddenFileInput);
         hiddenFileInput?.click();
       }, 100);
     }
@@ -45,7 +43,6 @@
       return;
     }
 
-    console.log('Processing map image upload for scene:', sceneId);
     const pickedFile = input.files[0];
     input.value = '';
 
@@ -74,13 +71,6 @@
         // Update Y.js with the updated scene data instead of invalidateAll()
         if (partyData && response?.scene) {
           const updatedScene = response.scene;
-          console.log('[UpdateMapImage] Map updated successfully:', {
-            sceneName: updatedScene.name,
-            sceneId: updatedScene.id,
-            newMapLocation: updatedScene.mapLocation,
-            hasThumb: hasThumb(updatedScene),
-            thumbUrl: hasThumb(updatedScene) ? updatedScene.thumb.resizedUrl : null
-          });
           partyData.updateScene(sceneId, {
             mapLocation: updatedScene.mapLocation || undefined,
             mapThumbLocation: updatedScene.mapThumbLocation || undefined,
@@ -104,12 +94,6 @@
               }
             };
             partyData.updateSceneStageProps(sceneId, updatedStageProps);
-            console.log('[UpdateMapImage] Updated stageProps map URL for Stage sync:', {
-              sceneId,
-              oldUrl: currentSceneData.stageProps.map.url,
-              newUrl: newMapUrl,
-              mapLocation: updatedScene.mapLocation
-            });
           }
         } else {
           console.warn(
