@@ -630,7 +630,7 @@
         >
           {#if activeSceneId && activeSceneId === scene.id}
             <div class="scene__projectedIcon">
-              {#if !gameSession.isPaused}
+              {#if !party.gameSessionIsPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />
                 Active on table
               {:else}

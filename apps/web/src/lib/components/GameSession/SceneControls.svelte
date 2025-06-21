@@ -124,7 +124,7 @@
     },
     {
       id: 'play',
-      icon: gameSession.isPaused ? IconScreenShareOff : IconScreenShare,
+      icon: party.gameSessionIsPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
       mapLayer: MapLayerType.None
     }
