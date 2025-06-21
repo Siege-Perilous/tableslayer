@@ -72,6 +72,14 @@
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
+  // Update needsResize when map URL changes
+  $effect(() => {
+    const mapUrl = props.map.url;
+    if (mapUrl) {
+      needsResize = true;
+    }
+  });
+
   // Effect to update post-processing settings when props change
   $effect(() => {
     const postProcessing = $state.snapshot(props.postProcessing);
@@ -173,7 +181,6 @@
         renderer.setSize($size.width, $size.height);
         composer.setSize($size.width, $size.height);
         if (props.scene.autoFit) {
-          console.log('[Scene] Calling fit() due to resize');
           fit();
         }
       }
