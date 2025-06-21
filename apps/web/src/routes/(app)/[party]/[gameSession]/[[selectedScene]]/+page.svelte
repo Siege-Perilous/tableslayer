@@ -1401,7 +1401,6 @@
 
     // Check if we're on the base route without a scene number
     // If so, skip navigation as the server already handles the redirect
-    const currentPath = $page.url.pathname;
     const hasSceneNumber = $page.params.selectedScene !== undefined;
     if (!hasSceneNumber) {
       return;
@@ -1453,13 +1452,6 @@
 
       goto(targetPath);
     }
-  });
-
-  // Reset navigation tracking when game session changes
-  $effect(() => {
-    const currentGameSession = $page.params.gameSession;
-    lastNavigationTarget = null;
-    navigationAttempts = 0;
   });
 </script>
 
