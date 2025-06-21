@@ -2,7 +2,7 @@ import { db } from '$lib/db/app';
 import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
+import { copySceneFile, getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -367,19 +367,84 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
     throw new Error('Scene not found');
   }
 
-  const { id: _, name, order, ...otherProps } = originalScene;
-  const newSceneName = `${name} (Copy)`;
   const newSceneId = uuidv4();
+  const newSceneName = `${originalScene.name} (Copy)`;
+  const gameSessionId = originalScene.gameSessionId;
 
-  // createScene now returns the scene with thumbnails
-  const newScene = await createScene({
-    ...otherProps,
-    id: newSceneId,
-    name: newSceneName,
-    order: order + 1 // Place it right after the original scene
-  });
+  // Copy map and thumbnail files if they exist and aren't the default
+  let newMapLocation = originalScene.mapLocation;
+  let newMapThumbLocation = originalScene.mapThumbLocation;
 
-  return newScene;
+  // Copy map file if it exists and isn't the default example map
+  if (originalScene.mapLocation && originalScene.mapLocation !== 'map/example1080.png') {
+    try {
+      newMapLocation = await copySceneFile(originalScene.mapLocation, newSceneId, 'map');
+    } catch (error) {
+      console.error('Error copying map file during scene duplication:', error);
+      // Continue with original location if copy fails
+    }
+  }
+
+  // Copy thumbnail file if it exists
+  if (originalScene.mapThumbLocation) {
+    try {
+      newMapThumbLocation = await copySceneFile(originalScene.mapThumbLocation, newSceneId, 'thumbnail');
+    } catch (error) {
+      console.error('Error copying thumbnail file during scene duplication:', error);
+      // Continue with original location if copy fails
+    }
+  }
+
+  // Place the new scene right after the original scene
+  const targetOrder = originalScene.order + 1;
+
+  // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
+  await db
+    .update(sceneTable)
+    .set({ order: sql`${sceneTable.order} + 10000` })
+    .where(eq(sceneTable.gameSessionId, gameSessionId));
+
+  // Step 2: Get all scenes for this session (now with high order numbers)
+  const scenes = await db
+    .select({ id: sceneTable.id, order: sceneTable.order })
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
+
+  // Step 3: Reassign orders, inserting the new scene at the target position
+  let currentOrder = 1;
+  for (const scene of scenes) {
+    if (currentOrder === targetOrder) {
+      currentOrder++; // Skip this order for the new scene
+    }
+    await db.update(sceneTable).set({ order: currentOrder }).where(eq(sceneTable.id, scene.id)).execute();
+    currentOrder++;
+  }
+
+  // The new scene will get the targetOrder
+  const newOrder = targetOrder;
+
+  // Copy all scene data except the fields we need to change
+  const { id: _, name: __, order: ___, fogOfWarUrl: ____, lastUpdated: _____, ...sceneDataToCopy } = originalScene;
+
+  // Insert the duplicated scene with all settings preserved
+  await db
+    .insert(sceneTable)
+    .values({
+      ...sceneDataToCopy,
+      id: newSceneId,
+      name: newSceneName,
+      order: newOrder,
+      mapLocation: newMapLocation,
+      mapThumbLocation: newMapThumbLocation,
+      fogOfWarUrl: null, // Reset fog of war URL for duplicated scene
+      lastUpdated: new Date()
+    })
+    .execute();
+
+  // Return the created scene with thumbnails
+  return await getScene(newSceneId);
 };
 
 /**

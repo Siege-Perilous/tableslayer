@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
 import { filesTable, userFilesTable } from '$lib/db/app/schema';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { CopyObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -285,6 +285,62 @@ export const createUserFileFromLocation = async (location: string, userId: strin
     };
   } catch (error) {
     console.error('Error creating file from location:', error);
+    throw error;
+  }
+};
+
+/**
+ * Copy a file in R2 storage to a new location
+ * @param sourceKey - The source file path in R2
+ * @param destinationKey - The destination file path in R2
+ * @returns The destination key if successful
+ */
+export const copyR2File = async (sourceKey: string, destinationKey: string): Promise<string> => {
+  try {
+    const copyObjectParams = {
+      Bucket: CLOUDFLARE_BUCKET_NAME,
+      CopySource: `${CLOUDFLARE_BUCKET_NAME}/${sourceKey}`,
+      Key: destinationKey
+    };
+
+    await r2.send(new CopyObjectCommand(copyObjectParams));
+    return destinationKey;
+  } catch (error) {
+    console.error('Error copying file in R2:', error);
+    throw error;
+  }
+};
+
+/**
+ * Copy a scene's map file to a new scene
+ * @param sourceLocation - The source file location (may include ?v=X versioning)
+ * @param newSceneId - The new scene ID to use for the filename
+ * @param folder - The folder to copy to (e.g., 'map', 'thumbnail')
+ * @returns The new file location with ?v=1
+ */
+export const copySceneFile = async (
+  sourceLocation: string,
+  newSceneId: string,
+  folder: 'map' | 'thumbnail'
+): Promise<string> => {
+  try {
+    // Strip any query parameters (like ?v=1) from the source location
+    const sourceKey = sourceLocation.split('?')[0];
+
+    // Extract the file extension from the source
+    const extensionMatch = sourceKey.match(/\.([a-zA-Z0-9]+)$/);
+    const extension = extensionMatch ? extensionMatch[1] : 'jpg';
+
+    // Create the new file key with the new scene ID
+    const destinationKey = `${folder}/${newSceneId}.${extension}`;
+
+    // Copy the file in R2
+    await copyR2File(sourceKey, destinationKey);
+
+    // Return the new location with version 1
+    return `${destinationKey}?v=1`;
+  } catch (error) {
+    console.error(`Error copying scene ${folder} file:`, error);
     throw error;
   }
 };
