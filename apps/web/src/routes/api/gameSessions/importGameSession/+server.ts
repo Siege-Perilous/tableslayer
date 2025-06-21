@@ -7,6 +7,7 @@ import {
   type InsertMarker,
   type InsertScene
 } from '$lib/db/app/schema';
+import { copySceneFile } from '$lib/server/file';
 import { createGameSessionForImport } from '$lib/server/gameSession';
 import { getParty, getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { setActiveSceneForParty } from '$lib/server/scene';
@@ -101,7 +102,28 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     // Create scenes with new IDs but preserve order
     for (const sceneData of sortedScenes) {
       const newSceneId = sceneIdMap.getOrCreate(sceneData.id!);
-      const { mapLocation } = sceneData;
+      let { mapLocation, mapThumbLocation } = sceneData;
+
+      // Copy map and thumbnail files to new locations based on new scene ID
+      if (mapLocation) {
+        try {
+          mapLocation = await copySceneFile(mapLocation, newSceneId, 'map');
+        } catch (err) {
+          console.error('Error copying map file during import:', err);
+          // If copy fails, clear the location to avoid broken references
+          mapLocation = null;
+        }
+      }
+
+      if (mapThumbLocation) {
+        try {
+          mapThumbLocation = await copySceneFile(mapThumbLocation, newSceneId, 'thumbnail');
+        } catch (err) {
+          console.error('Error copying thumbnail file during import:', err);
+          // If copy fails, clear the location to avoid broken references
+          mapThumbLocation = null;
+        }
+      }
 
       // Create the scene with the new ID, passing all validated properties
       const sceneToCreate: Partial<InsertScene> = {
@@ -109,13 +131,16 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         name: sceneData.name,
         gameSessionId: gameSession.id,
         order: sceneData.order,
-        mapLocation: mapLocation || null
+        mapLocation: mapLocation || null,
+        mapThumbLocation: mapThumbLocation || null,
+        fogOfWarUrl: null // Reset fog of war for imported scenes
       };
 
       const typedSceneToCreate = sceneToCreate as Partial<InsertScene> & Record<string, unknown>;
       Object.entries(sceneData).forEach(([key, value]) => {
         // Skip properties we handle separately or don't want to include
-        if (!['markers', 'fogOfWarUrl', 'id', 'mapLocation'].includes(key)) {
+        // Also skip lastUpdated as it should be set by the database on creation
+        if (!['markers', 'fogOfWarUrl', 'id', 'mapLocation', 'mapThumbLocation', 'lastUpdated'].includes(key)) {
           typedSceneToCreate[key] = value;
         }
       });

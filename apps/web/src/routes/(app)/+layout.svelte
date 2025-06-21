@@ -24,6 +24,7 @@
     IconFileDescription
   } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
+  import type { SelectGameSession } from '$lib/db/app/schema';
   let { data, children } = $props();
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -39,10 +40,27 @@
   );
   let selectedParty = $derived(parties && parties.find((party) => party.slug === page.params.party));
   const gameSession = $derived(page.data.gameSession);
+  const gameSessions = $derived(page.data.gameSessions);
   let headerContainerClasses = $derived(['headerContainer', gameSession && 'headerContainer--isSession']);
+
+  let gameSessionMenuItems = $derived(
+    gameSessions?.map((session: SelectGameSession) => ({
+      label: session.name,
+      value: session.slug,
+      href: `/${selectedParty?.slug}/${session.slug}`
+    })) || []
+  );
 
   const handleChangeParty = (selected: string) => {
     goto(`/${selected}`);
+  };
+
+  const handleChangeGameSession = (selected: string) => {
+    // Use window.location for hard navigation to avoid complex state issues
+    const selectedSession = gameSessions?.find((s: SelectGameSession) => s.slug === selected);
+    if (selectedSession && selectedParty) {
+      window.location.href = `/${selectedParty.slug}/${selectedSession.slug}`;
+    }
   };
 
   const links = [
@@ -90,10 +108,23 @@
           </SelectorMenu>
         </div>
       {/if}
-      {#if gameSession && selectedParty}
-        <Link href={`/${selectedParty.slug}/${gameSession.slug}`} color="fg" class="gameSessionLink">
-          {gameSession.name}
-        </Link>
+
+      {#if selectedParty && gameSessions && gameSessions.length > 0}
+        <div class="gameSessionDropdown">
+          <div class="gameSessionDropdown__text">
+            {#if gameSession}
+              <Text>{gameSession.name}</Text>
+            {:else}
+              Choose a game session
+            {/if}
+          </div>
+          <SelectorMenu
+            options={gameSessionMenuItems}
+            onSelectedChange={(selected) => handleChangeGameSession(selected)}
+            positioning={{ placement: 'bottom', offset: 10 }}
+            selected={gameSession ? gameSession.slug : undefined}
+          />
+        </div>
       {/if}
     </div>
 
@@ -211,6 +242,14 @@
   .partyDropdown__text {
     white-space: nowrap;
   }
+  .gameSessionDropdown {
+    display: flex;
+    gap: var(--size-2);
+    align-items: center;
+  }
+  .gameSessionDropdown__text {
+    white-space: nowrap;
+  }
   .logo {
     background: var(--fgPrimary);
     border-radius: var(--radius-2);
@@ -241,14 +280,9 @@
   .profileDropdown__link:focus-visible {
     text-decoration: underline;
   }
-  .gameSessionLink {
-    display: none;
-    max-width: 100%;
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
   @media (max-width: 768px) {
-    .partyDropdown__text {
+    .partyDropdown__text,
+    .gameSessionDropdown__text {
       display: none;
     }
   }

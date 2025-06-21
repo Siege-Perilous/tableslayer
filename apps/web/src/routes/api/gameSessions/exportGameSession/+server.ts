@@ -37,8 +37,8 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         // Remove thumb property which is temporary and not needed for export
         const { thumb, ...sceneWithoutThumb } = scene as any;
 
-        // Remove fog of war URL as per requirements
-        const { fogOfWarUrl, ...sceneData } = sceneWithoutThumb;
+        // Remove fog of war URL and lastUpdated as per requirements
+        const { fogOfWarUrl, lastUpdated, ...sceneData } = sceneWithoutThumb;
 
         return {
           ...sceneData,
