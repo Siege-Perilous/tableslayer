@@ -15,7 +15,7 @@
   let { data } = $props();
   const { party, gameSessions, members, isPartyAdmin, invitedEmails, user } = $derived(data);
 
-  const partyId = data.party.id as string;
+  const partyId = $derived(party.id as string);
   const needsToUpgrade = $derived(party.plan === 'free' && gameSessions.length >= 2);
 </script>
 
