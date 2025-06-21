@@ -152,7 +152,7 @@
       requestAnimationFrame(() => {
         if (stage?.scene?.fit) {
           stage.scene.fit();
-          if (dev) console.log('DEV: Manually fitting stage after scene change to:', data.activeScene.id);
+          if (dev) console.log('DEV: Manually fitting stage after scene change to:', data.activeScene?.id);
         }
       });
     }
