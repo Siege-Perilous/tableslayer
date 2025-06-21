@@ -187,11 +187,6 @@ export const getSceneFromOrder = async (
   let thumb = null;
   if (scene.mapLocation) {
     thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-    // Add cache busting to prevent stale thumbnails
-    thumb = {
-      ...thumb,
-      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-    };
   }
   const sceneWithThumb = { ...scene, thumb };
 

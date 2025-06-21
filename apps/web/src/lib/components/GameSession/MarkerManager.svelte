@@ -37,7 +37,7 @@
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, extractLocationFromUrl } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
   let {
@@ -88,9 +88,19 @@
 
     formIsLoading = true;
 
+    // Find the current marker to get its existing image URL
+    const currentMarker = stageProps.marker.markers.find((m) => m.id === markerId);
+    const currentImageLocation = currentMarker?.imageUrl ? extractLocationFromUrl(currentMarker.imageUrl) : null;
+
     // Upload the file
     const uploadedFile = await handleMutation({
-      mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'marker' }),
+      mutation: () =>
+        $uploadFile.mutateAsync({
+          file: pickedFile,
+          folder: 'marker',
+          id: markerId,
+          currentUrl: currentImageLocation
+        }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: { title: 'Image uploaded' },

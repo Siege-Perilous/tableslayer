@@ -135,7 +135,7 @@ export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
   try {
     const file = new File([blob], 'fog', { type: blob.type });
     const fileType = 'image/png';
-    const fileName = `${randomUUID()}.png`;
+    const fileName = `${sceneId}.png`;
     const fileBuffer = await file.arrayBuffer();
     const contentLength = fileBuffer.byteLength;
 
@@ -143,6 +143,79 @@ export const uploadFogFromBlob = async (sceneId: string, blob: Blob) => {
     return fullPath;
   } catch (error) {
     console.error('Error uploading fog from blob:', error);
+    throw error;
+  }
+};
+
+// Upload scene thumbnail with sceneId naming
+export const uploadSceneThumbnailFromBlob = async (sceneId: string, blob: Blob) => {
+  try {
+    const file = new File([blob], 'thumbnail', { type: blob.type });
+    const fileType = 'image/jpeg';
+    const fileName = `${sceneId}.jpg`;
+    const fileBuffer = await file.arrayBuffer();
+    const contentLength = fileBuffer.byteLength;
+
+    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, fileType, 'thumbnail', contentLength, false);
+    return fullPath;
+  } catch (error) {
+    console.error('Error uploading scene thumbnail from blob:', error);
+    throw error;
+  }
+};
+
+// Upload scene map with sceneId naming
+export const uploadSceneMapFromFile = async (sceneId: string, file: File, userId: string) => {
+  try {
+    const originalFileName = file.name;
+    const extensionMatch = originalFileName.match(/\.([a-zA-Z0-9]+)$/);
+    const extension = extensionMatch ? extensionMatch[1] : 'jpg';
+    const fileName = `${sceneId}.${extension}`;
+    const contentType = file.type || 'application/octet-stream';
+    const fileBuffer = await file.arrayBuffer();
+    const contentLength = fileBuffer.byteLength;
+
+    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, contentType, 'map', contentLength);
+
+    // Insert file details into database
+    const fileRow = await db.insert(filesTable).values({ location: fullPath }).returning().get();
+    const fileToUserRow = await db.insert(userFilesTable).values({ userId, fileId: fileRow.id }).returning().get();
+
+    return {
+      userId: fileToUserRow.userId,
+      fileId: fileToUserRow.fileId,
+      location: fileRow.location
+    };
+  } catch (error) {
+    console.error('Error uploading scene map from file:', error);
+    throw error;
+  }
+};
+
+// Upload marker image with markerId naming
+export const uploadMarkerImageFromFile = async (markerId: string, file: File, userId: string) => {
+  try {
+    const originalFileName = file.name;
+    const extensionMatch = originalFileName.match(/\.([a-zA-Z0-9]+)$/);
+    const extension = extensionMatch ? extensionMatch[1] : 'jpg';
+    const fileName = `${markerId}.${extension}`;
+    const contentType = file.type || 'application/octet-stream';
+    const fileBuffer = await file.arrayBuffer();
+    const contentLength = fileBuffer.byteLength;
+
+    const fullPath = await uploadToR2(Buffer.from(fileBuffer), fileName, contentType, 'marker', contentLength);
+
+    // Insert file details into database
+    const fileRow = await db.insert(filesTable).values({ location: fullPath }).returning().get();
+    const fileToUserRow = await db.insert(userFilesTable).values({ userId, fileId: fileRow.id }).returning().get();
+
+    return {
+      userId: fileToUserRow.userId,
+      fileId: fileToUserRow.fileId,
+      location: fileRow.location
+    };
+  } catch (error) {
+    console.error('Error uploading marker image from file:', error);
     throw error;
   }
 };

@@ -46,8 +46,17 @@
     const pickedFile = input.files[0];
     input.value = '';
 
+    // Get current map location from Y.js scenes list if available
+    const currentMapLocation = partyData?.getScenesList()?.find((s) => s.id === sceneId)?.mapLocation || null;
+
     const uploadedFile = await handleMutation({
-      mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'map' }),
+      mutation: () =>
+        $uploadFile.mutateAsync({
+          file: pickedFile,
+          folder: 'map',
+          id: sceneId,
+          currentUrl: currentMapLocation
+        }),
       formLoadingState: () => {},
       toastMessages: {
         success: { title: 'File uploaded' },

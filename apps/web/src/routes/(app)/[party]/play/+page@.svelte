@@ -38,12 +38,22 @@
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
-  let stageProps: StageProps = $state({ ...StageDefaultProps, mode: 1, activeLayer: MapLayerType.None });
+  let stageProps: StageProps = $state({
+    ...StageDefaultProps,
+    mode: 1,
+    activeLayer: MapLayerType.None,
+    scene: { ...StageDefaultProps.scene, autoFit: true, offset: { x: 0, y: 0 } }
+  });
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
+  let sceneIsChanging: boolean = $state(false);
   let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
-  let stageClasses = $derived(['stage', stageIsLoading && 'stage--loading', gameIsPaused && 'stage--hidden']);
+  let stageClasses = $derived([
+    'stage',
+    (stageIsLoading || sceneIsChanging) && 'stage--loading',
+    gameIsPaused && 'stage--hidden'
+  ]);
   const fadeOutDelay = 5000;
 
   // No debouncing needed - flashing was caused by image versioning, not Y.js updates
@@ -82,18 +92,15 @@
 
       // Only update if we have scene data and an active scene
 
-      // Build and apply the new stage props immediately
       stageProps = {
         ...yjsSceneData.stageProps,
         // Force player mode
         mode: 1,
-        // Don't allow rotate and zoom from the editor
+        // Build scene from scratch - don't spread editor's scene settings
         scene: {
-          ...yjsSceneData.stageProps.scene,
           autoFit: true,
           offset: { x: 0, y: 0 },
           rotation: 0,
-          // IMPORTANT: Preserve the current zoom value - don't use editor's zoom
           zoom: stageProps.scene?.zoom || 1
         },
         // Don't allow active layer (fog tools, etc)
@@ -127,6 +134,29 @@
   });
 
   // Marker updates now handled through Y.js scene synchronization
+
+  // Effect to ensure stage fits after scene changes complete
+  let lastActiveSceneId: string | undefined = undefined;
+  $effect(() => {
+    // When active scene changes and stage is ready, ensure it fits
+    if (
+      data.activeScene?.id &&
+      data.activeScene.id !== lastActiveSceneId &&
+      !stageIsLoading &&
+      !isInvalidating &&
+      stage?.scene?.fit
+    ) {
+      lastActiveSceneId = data.activeScene.id;
+
+      // Use requestAnimationFrame for smoother transition
+      requestAnimationFrame(() => {
+        if (stage?.scene?.fit) {
+          stage.scene.fit();
+          if (dev) console.log('DEV: Manually fitting stage after scene change to:', data.activeScene.id);
+        }
+      });
+    }
+  });
 
   // Track mount state to prevent double initialization
   let isMounted = false;
@@ -329,15 +359,10 @@
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     if (dev) console.log('DEV: [Playfield] onSceneUpdate called:', { offset, zoom });
-    // Only update if zoom actually changed to prevent unnecessary re-renders
-    if (stageProps.scene.zoom !== zoom) {
-      stageProps = {
-        ...stageProps,
-        scene: {
-          ...stageProps.scene,
-          zoom: zoom
-        }
-      };
+    // Update zoom only if it's a valid value from the Stage's autoFit calculation
+    // Ignore zoom: 0 which seems to be a transient state during initialization
+    if (zoom > 0 && stageProps.scene.zoom !== zoom) {
+      stageProps.scene.zoom = zoom;
     }
   }
 
@@ -346,8 +371,8 @@
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function onMapUpdate(_offset: { x: number; y: number }, _zoom: number) {
+  function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
+    console.log('Updating map', offset, zoom);
     return;
   }
 
@@ -365,6 +390,10 @@
 
   function onStageInitialized() {
     stageIsLoading = false;
+    // Immediately fit when stage is ready
+    if (stage?.scene?.fit) {
+      stage.scene.fit();
+    }
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
@@ -412,6 +441,9 @@
           );
         }
 
+        // Trigger loading fade immediately when scene change is detected
+        sceneIsChanging = true;
+
         // Set flags to prevent race conditions
         isProcessingSceneChange = true;
         isInvalidating = true;
@@ -432,12 +464,15 @@
             // Reset flags after invalidation completes
             isInvalidating = false;
             isProcessingSceneChange = false;
+            // Clear scene changing state after invalidation
+            sceneIsChanging = false;
           })
           .catch((error) => {
             console.error('Error invalidating page after active scene change:', error);
             // Reset flags even on error
             isInvalidating = false;
             isProcessingSceneChange = false;
+            sceneIsChanging = false;
           });
 
         return;

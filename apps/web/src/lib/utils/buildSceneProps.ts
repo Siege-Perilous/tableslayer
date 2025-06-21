@@ -23,32 +23,10 @@ export const buildSceneProps = (
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
 
-  // Build the map URL - always construct R2 transformation URL from mapLocation
-  console.log('[buildSceneProps] Building map URL for scene:', {
-    sceneId: activeScene.id,
-    mapLocation: activeScene.mapLocation,
-    isDefault: isDefaultMap(activeScene.mapLocation),
-    hasMapLocation: !!activeScene.mapLocation
-  });
-
   const thumbUrl =
     !isDefaultMap(activeScene.mapLocation) && activeScene.mapLocation
       ? generateLargeImageUrl(activeScene.mapLocation)
       : StageDefaultProps.map.url;
-
-  console.log('[buildSceneProps] Generated map URL:', {
-    sceneId: activeScene.id,
-    resultUrl: thumbUrl,
-    usedDefault: thumbUrl === StageDefaultProps.map.url
-  });
-
-  console.log('[buildSceneProps] Map properties from DB:', {
-    sceneId: activeScene.id,
-    mapRotation: activeScene.mapRotation,
-    mapOffsetX: activeScene.mapOffsetX,
-    mapOffsetY: activeScene.mapOffsetY,
-    mapZoom: activeScene.mapZoom
-  });
 
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {

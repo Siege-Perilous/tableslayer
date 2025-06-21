@@ -125,10 +125,12 @@
   });
 
   // Query for scene timestamps
-  const timestampsQuery = useGetSceneTimestampsQuery({
-    gameSessionId: gameSession.id,
-    partyId: party.id
-  });
+  const timestampsQuery = $derived(
+    useGetSceneTimestampsQuery({
+      gameSessionId: gameSession.id,
+      partyId: party.id
+    })
+  );
 
   // Helper function to add thumbnails to Y.js scenes
   const processScenesThumbnails = (rawScenes: typeof scenes) => {
@@ -1029,14 +1031,13 @@
         mutation: () =>
           $createFogMutation.mutateAsync({
             blob: fogBlob as Blob,
-            sceneId: selectedScene.id
+            sceneId: selectedScene.id,
+            currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
           }),
         formLoadingState: () => {},
         onSuccess: (fog) => {
-          const fogUrl = `https://files.tableslayer.com/${fog.location}`;
-
-          // Update local state immediately
-          stageProps.fogOfWar.url = fogUrl;
+          // Update local state immediately with versioned URL
+          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
 
           // Immediately sync fog URL to Y.js for real-time collaboration
           if (partyData && selectedScene?.id) {
@@ -1045,7 +1046,7 @@
           }
 
           // Also queue for database save
-          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], fogUrl, 'control');
+          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
           isUpdatingFog = false;
         },
         onError: () => {
@@ -1082,11 +1083,12 @@
             mutation: () =>
               $createThumbnailMutation.mutateAsync({
                 blob: thumbnailBlob,
-                sceneId: selectedScene.id
+                sceneId: selectedScene.id,
+                currentUrl: selectedScene.mapThumbLocation
               }),
             formLoadingState: () => {},
             onSuccess: (result) => {
-              // Store just the location path in stageProps for database saving
+              // Store the versioned location path for database saving
               mapThumbLocation = result.location;
 
               // Update Y.js immediately with the new thumbnail location

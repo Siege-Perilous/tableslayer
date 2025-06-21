@@ -18,14 +18,9 @@ const DEFAULT_MAP = 'map/example1080.png';
  * Generates an R2 transformation URL from a file location
  * @param location - The file location (e.g., 'map/uuid.jpg')
  * @param options - Transformation options
- * @param cacheBust - Whether to add a cache-busting timestamp
  * @returns The full R2 URL with transformations
  */
-export function generateR2Url(
-  location: string | null | undefined,
-  options: R2TransformOptions = {},
-  cacheBust = false
-): string {
+export function generateR2Url(location: string | null | undefined, options: R2TransformOptions = {}): string {
   // Return empty string if no location
   if (!location) return '';
 
@@ -51,60 +46,43 @@ export function generateR2Url(
     url = `${R2_BASE_URL}/${location}`;
   }
 
-  // Add cache busting if requested
-  if (cacheBust) {
-    url += `?t=${Date.now()}`;
-  }
-
   return url;
 }
 
 /**
  * Preset for large images (3000x3000 max) - used for Stage display
  */
-export function generateLargeImageUrl(location: string | null | undefined, cacheBust = false): string {
-  return generateR2Url(
-    location,
-    {
-      width: 3000,
-      height: 3000,
-      fit: 'scale-down',
-      gravity: 'center'
-    },
-    cacheBust
-  );
+export function generateLargeImageUrl(location: string | null | undefined): string {
+  return generateR2Url(location, {
+    width: 3000,
+    height: 3000,
+    fit: 'scale-down',
+    gravity: 'center'
+  });
 }
 
 /**
  * Preset for small thumbnails (400x225) - used for scene selector, etc.
  */
-export function generateSmallThumbnailUrl(location: string | null | undefined, cacheBust = false): string {
-  return generateR2Url(
-    location,
-    {
-      width: 400,
-      height: 225,
-      fit: 'cover',
-      gravity: 'center'
-    },
-    cacheBust
-  );
+export function generateSmallThumbnailUrl(location: string | null | undefined): string {
+  return generateR2Url(location, {
+    width: 400,
+    height: 225,
+    fit: 'cover',
+    gravity: 'center'
+  });
 }
 
 /**
  * Preset for square thumbnails (300x300) - used for markers, avatars, etc.
  */
-export function generateSquareThumbnailUrl(location: string | null | undefined, cacheBust = false): string {
-  return generateR2Url(
-    location,
-    {
-      width: 300,
-      height: 300,
-      fit: 'cover',
-      gravity: 'center'
-    },
-    cacheBust
-  );
+export function generateSquareThumbnailUrl(location: string | null | undefined): string {
+  return generateR2Url(location, {
+    width: 300,
+    height: 300,
+    fit: 'cover',
+    gravity: 'center'
+  });
 }
 
 /**
