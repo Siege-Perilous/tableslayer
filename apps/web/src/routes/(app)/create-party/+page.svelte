@@ -19,7 +19,12 @@
     let avatarFileId: number | undefined = undefined;
     if (file && file.length) {
       const uploadedFile = await handleMutation({
-        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'avatar' }),
+        mutation: () =>
+          $uploadFile.mutateAsync({
+            file: file![0],
+            folder: 'avatar',
+            currentUrl: undefined // No versioning needed for new party creation
+          }),
         formLoadingState: (loading) => (formIsLoading = loading),
         toastMessages: {
           success: { title: 'Image uploaded' },

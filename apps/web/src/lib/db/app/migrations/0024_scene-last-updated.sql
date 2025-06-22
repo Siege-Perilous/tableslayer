@@ -1,0 +1,1 @@
+ALTER TABLE `scene` ADD `last_updated` integer;

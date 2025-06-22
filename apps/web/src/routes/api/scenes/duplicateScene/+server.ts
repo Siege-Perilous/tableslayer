@@ -1,5 +1,5 @@
 import { apiFactory } from '$lib/factories';
-import { duplicateScene, isUserInParty } from '$lib/server';
+import { duplicateScene, getScenes, isUserInParty } from '$lib/server';
 import { z } from 'zod/v4';
 
 const validationSchema = z.object({
@@ -17,7 +17,15 @@ export const POST = apiFactory(
 
     const newScene = await duplicateScene(sceneId);
 
-    return { success: true, scene: newScene };
+    if (!newScene) {
+      throw new Error('Failed to duplicate scene');
+    }
+
+    // Get the updated scenes list to ensure proper ordering
+    const gameSessionId = newScene.gameSessionId;
+    const updatedScenes = await getScenes(gameSessionId);
+
+    return { success: true, scene: newScene, scenes: updatedScenes };
   },
   {
     validationSchema,

@@ -37,20 +37,26 @@
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
+  import { queuePropertyUpdate, extractLocationFromUrl, throttle } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
   let {
-    stageProps = $bindable(),
+    stageProps,
     selectedMarkerId = $bindable(),
     partyId = '',
     handleSelectActiveControl,
-    socketUpdate
+    socketUpdate,
+    updateMarkerAndSave,
+    onMarkerDeleted
   }: {
     stageProps: StageProps;
     selectedMarkerId: string | undefined;
     partyId: string;
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updateMarkerAndSave: (markerId: string, updateFn: (marker: any) => void) => void;
+    onMarkerDeleted?: (markerId: string) => void;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -59,6 +65,12 @@
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
   let editingMarkerId = $derived(selectedMarkerId);
+
+  // Create throttled update function for editor changes
+  const throttledNoteUpdate = throttle((markerId: string) => {
+    updateMarkerAndSave(markerId, () => {});
+    socketUpdate();
+  }, 500);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -82,9 +94,19 @@
 
     formIsLoading = true;
 
+    // Find the current marker to get its existing image URL
+    const currentMarker = stageProps.marker.markers.find((m) => m.id === markerId);
+    const currentImageLocation = currentMarker?.imageUrl ? extractLocationFromUrl(currentMarker.imageUrl) : null;
+
     // Upload the file
     const uploadedFile = await handleMutation({
-      mutation: () => $uploadFile.mutateAsync({ file: pickedFile, folder: 'marker' }),
+      mutation: () =>
+        $uploadFile.mutateAsync({
+          file: pickedFile,
+          folder: 'marker',
+          id: markerId,
+          currentUrl: currentImageLocation
+        }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: { title: 'Image uploaded' },
@@ -98,10 +120,8 @@
     }
 
     const newFileUrl = `https://files.tableslayer.com/cdn-cgi/image/w=512,h=512,fit=cover,gravity=auto/${uploadedFile.location}`;
-    stageProps.marker.markers.forEach((marker) => {
-      if (marker.id === markerId) {
-        marker.imageUrl = newFileUrl;
-      }
+    updateMarkerAndSave(markerId, (marker) => {
+      marker.imageUrl = newFileUrl;
     });
   };
 
@@ -110,13 +130,21 @@
       mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
-        // Remove the marker from stageProps without invalidating
-        stageProps.marker.markers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+        // Call the deletion callback if provided (for Y.js sync)
+        // The callback will handle removing the marker from stageProps
+        if (onMarkerDeleted) {
+          onMarkerDeleted(markerId);
+        } else {
+          // Fallback - only update locally if no callback provided
+          const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+          stageProps.marker.markers = updatedMarkers;
+          queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
+        }
+
         // Reset selected marker if we just deleted it
         if (selectedMarkerId === markerId) {
           selectedMarkerId = undefined;
         }
-        socketUpdate();
       },
       toastMessages: {
         success: { title: 'Marker deleted' },
@@ -148,7 +176,7 @@
       <Loader />
     {:else if marker.imageUrl !== null}
       <div class="markerManager__imageRemove">
-        <IconButton variant="ghost" onclick={() => (marker.imageUrl = null)}>
+        <IconButton variant="ghost" onclick={() => updateMarkerAndSave(marker.id, (m) => (m.imageUrl = null))}>
           <Icon Icon={IconX} size="1.25rem" />
         </IconButton>
       </div>
@@ -175,7 +203,7 @@
         { label: 'off', value: 'false' }
       ]}
       onSelectedChange={(value) => {
-        stageProps.marker.snapToGrid = value === 'true';
+        queuePropertyUpdate(stageProps, ['marker', 'snapToGrid'], value === 'true', 'control');
       }}
     />
   </div>
@@ -208,7 +236,7 @@
                         { label: 'Everyone', value: MarkerVisibility.Always.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.visibility = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.visibility = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -216,12 +244,22 @@
                 </FormControl>
                 <FormControl label="Label" name="label">
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.label} maxlength={3} placeholder="ABC" />
+                    <Input
+                      {...inputProps}
+                      value={marker.label}
+                      maxlength={3}
+                      placeholder="ABC"
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.label = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
                 <FormControl label="Title" name="title">
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.title} />
+                    <Input
+                      {...inputProps}
+                      value={marker.title}
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.title = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
               </div>
@@ -234,12 +272,21 @@
                         <ColorPickerSwatch color={marker.shapeColor} />
                       {/snippet}
                       {#snippet content()}
-                        <ColorPicker showOpacity={false} bind:hex={marker.shapeColor} />
+                        <ColorPicker
+                          showOpacity={false}
+                          hex={marker.shapeColor}
+                          onUpdate={(colorData) =>
+                            updateMarkerAndSave(marker.id, (m) => (m.shapeColor = colorData.hex))}
+                        />
                       {/snippet}
                     </Popover>
                   {/snippet}
                   {#snippet input(inputProps)}
-                    <Input {...inputProps} bind:value={marker.shapeColor} />
+                    <Input
+                      {...inputProps}
+                      value={marker.shapeColor}
+                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.shapeColor = e.currentTarget.value))}
+                    />
                   {/snippet}
                 </FormControl>
               </div>
@@ -256,7 +303,7 @@
                         { label: triangle, value: MarkerShape.Triangle.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.shape = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.shape = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -273,7 +320,7 @@
                         { label: 'L', value: MarkerSize.Large.toString() }
                       ]}
                       onSelectedChange={(value) => {
-                        marker.size = Number(value);
+                        updateMarkerAndSave(marker.id, (m) => (m.size = Number(value)));
                         socketUpdate();
                       }}
                     />
@@ -281,7 +328,19 @@
                 </FormControl>
               </div>
               <Spacer />
-              <Editor debug={false} bind:content={marker.note} />
+              <div
+                onblur={() => {
+                  // Save when editor loses focus
+                  updateMarkerAndSave(marker.id, () => {});
+                }}
+              >
+                <Editor
+                  debug={false}
+                  bind:content={marker.note}
+                  editable={true}
+                  onChange={() => throttledNoteUpdate(marker.id)}
+                />
+              </div>
               <Spacer />
 
               <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
@@ -312,11 +371,13 @@
               <IconButton
                 variant="ghost"
                 onclick={() => {
-                  if (marker.visibility === MarkerVisibility.Always) {
-                    marker.visibility = MarkerVisibility.DM;
-                  } else {
-                    marker.visibility = MarkerVisibility.Always;
-                  }
+                  updateMarkerAndSave(marker.id, (m) => {
+                    if (m.visibility === MarkerVisibility.Always) {
+                      m.visibility = MarkerVisibility.DM;
+                    } else {
+                      m.visibility = MarkerVisibility.Always;
+                    }
+                  });
                   socketUpdate();
                 }}
               >
@@ -496,7 +557,8 @@
     font-size: 0.875rem;
     font-weight: 900;
     color: #fff;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    -webkit-text-stroke: 2px rgba(0, 0, 0, 0.8);
+    paint-order: stroke fill;
   }
   .markerManager__read {
     display: flex;

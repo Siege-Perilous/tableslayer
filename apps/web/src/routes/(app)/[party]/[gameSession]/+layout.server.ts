@@ -1,4 +1,4 @@
-import { getActiveScene, getPartyGameSessionFromSlug } from '$lib/server';
+import { getActiveSceneForParty, getPartyGameSessionFromSlug } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
@@ -14,7 +14,7 @@ export const load = (async ({ params, parent }) => {
     return redirect(302, '/login');
   }
 
-  const activeScene = await getActiveScene(gameSession.id);
+  const activeScene = await getActiveSceneForParty(party.id);
 
   return {
     gameSession,

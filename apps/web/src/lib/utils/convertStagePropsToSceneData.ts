@@ -1,7 +1,7 @@
-import { extractLocationFromUrl } from '$lib/utils';
 // Utility function to set properties if they exist
 
 import type { StageProps } from '@tableslayer/ui';
+import { devLog } from './debug';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setIfExists(source: Record<string, any>, target: Record<string, any>, map: Record<string, string>) {
@@ -110,6 +110,15 @@ export const convertPropsToSceneDetails = (
     zoom: 'mapZoom'
   });
 
+  // Debug logging for map properties during save
+  devLog('[convertPropsToSceneDetails] Map properties being saved:', {
+    mapRotation: details.mapRotation,
+    mapOffsetX: details.mapOffsetX,
+    mapOffsetY: details.mapOffsetY,
+    mapZoom: details.mapZoom,
+    sourceMapData: stageProps.map
+  });
+
   setNestedIfExists(stageProps, details, 'marker', {
     'shape.strokeColor': 'markerStrokeColor',
     'shape.strokeWidth': 'markerStrokeWidth',
@@ -129,13 +138,9 @@ export const convertPropsToSceneDetails = (
     'toneMapping.mode': 'effectsToneMappingMode'
   });
 
-  // Extract map location from URL stored in state
-  if (stageProps.map?.url) {
-    const extractedLocation = extractLocationFromUrl(stageProps.map.url);
-    if (extractedLocation) {
-      details.mapLocation = extractedLocation;
-    }
-  }
+  // IMPORTANT: Don't extract mapLocation from stage props
+  // The mapLocation should only be updated when a new map is uploaded via UpdateMapImage
+  // This prevents accidentally overwriting mapLocation with thumbnail paths
 
   setNestedIfExists(stageProps, details, 'scene', {
     'offset.x': 'sceneOffsetX',

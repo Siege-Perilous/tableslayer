@@ -17,6 +17,7 @@
   import { handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
   import { importGameSession } from '$lib/utils';
+  import { devError } from '$lib/utils/debug';
 
   let {
     partyId
@@ -121,7 +122,7 @@
         }
       });
     } catch (error) {
-      console.error('Import error:', error);
+      devError('Import error:', error);
       // Determine the error message - get specific error from our errorData if available
       let errorMessage = 'An unknown error occurred';
       if (error instanceof Error) {

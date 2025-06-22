@@ -10,3 +10,4 @@ export * from './profile';
 export * from './scene';
 export * from './user';
 export * from './ws';
+export * from './yjs';

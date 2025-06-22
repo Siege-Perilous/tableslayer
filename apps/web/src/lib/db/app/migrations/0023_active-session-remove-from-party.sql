@@ -1,0 +1,1 @@
+ALTER TABLE `party` DROP COLUMN `active_game_session_id`;

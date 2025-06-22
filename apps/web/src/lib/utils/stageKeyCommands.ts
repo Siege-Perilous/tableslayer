@@ -1,5 +1,6 @@
 import type { StageProps } from '@tableslayer/ui';
 import { DrawMode, MapLayerType, ToolType } from '@tableslayer/ui';
+import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export function handleKeyCommands(
   event: KeyboardEvent,
@@ -16,9 +17,9 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Brush
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Erase;
         fogOfWar.tool.type = ToolType.Brush;
         return 'erase';
@@ -31,9 +32,9 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Brush
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Draw;
         fogOfWar.tool.type = ToolType.Brush;
         return 'draw';
@@ -54,9 +55,9 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Ellipse
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Erase;
         fogOfWar.tool.type = ToolType.Ellipse;
       }
@@ -68,20 +69,20 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Ellipse
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Draw;
         fogOfWar.tool.type = ToolType.Ellipse;
       }
       break;
 
     case 'm':
-      stageProps.activeLayer = MapLayerType.Marker;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       break;
 
     case 'M':
-      stageProps.activeLayer = MapLayerType.None;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
 
     case 'r':
@@ -90,9 +91,9 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Rectangle
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Erase;
         fogOfWar.tool.type = ToolType.Rectangle;
       }
@@ -104,9 +105,9 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Rectangle
       ) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
-        stageProps.activeLayer = MapLayerType.FogOfWar;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
         fogOfWar.tool.mode = DrawMode.Draw;
         fogOfWar.tool.type = ToolType.Rectangle;
       }
@@ -114,16 +115,16 @@ export function handleKeyCommands(
 
     case 'Shift':
       if (activeLayer === MapLayerType.FogOfWar) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       }
       break;
     case 'Ctrl':
       if (activeLayer === MapLayerType.FogOfWar) {
-        stageProps.activeLayer = MapLayerType.None;
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       }
       break;
     case 'Escape':
-      stageProps.activeLayer = MapLayerType.None;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
   }
 

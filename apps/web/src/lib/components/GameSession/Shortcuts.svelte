@@ -36,7 +36,7 @@
 <div class="shortcut">
   <Popover>
     {#snippet trigger()}
-      <Button variant="ghost">
+      <Button as="div" variant="ghost">
         {#snippet start()}
           <Icon Icon={IconKeyboard} size="1.5rem" />
         {/snippet}

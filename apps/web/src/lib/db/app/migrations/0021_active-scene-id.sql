@@ -1,0 +1,1 @@
+ALTER TABLE `party` ADD `active_scene_id` text;

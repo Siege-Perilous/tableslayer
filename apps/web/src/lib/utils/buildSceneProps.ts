@@ -1,10 +1,11 @@
 import { type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
-import { hasThumb } from '$lib/utils/hasThumb';
+import { StageDefaultProps } from '$lib/utils/defaultMapState';
+import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '$lib/utils/generateR2Url';
 import {
   DrawMode,
-  type GridType,
+  GridType,
   MapLayerType,
   type Marker,
   RainPreset,
@@ -20,29 +21,35 @@ export const buildSceneProps = (
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   mode: 'client' | 'editor'
 ): StageProps => {
-  const fogColors = generateGradientColors(activeScene.fogOfWarColor);
+  const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
+
   const thumbUrl =
-    hasThumb(activeScene) && activeScene.thumb !== null ? `${activeScene.thumb.resizedUrl}?t=${Date.now()}` : '';
+    !isDefaultMap(activeScene.mapLocation) && activeScene.mapLocation
+      ? generateLargeImageUrl(activeScene.mapLocation)
+      : StageDefaultProps.map.url;
 
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
-    markers = activeSceneMarkers.map((marker) => ({
-      id: marker.id,
-      title: marker.title,
-      position: { x: marker.positionX, y: marker.positionY },
-      size: marker.size,
-      shape: marker.shape,
-      shapeColor: marker.shapeColor,
-      label: marker.label,
-      imageUrl: marker.imageLocation && marker.thumb?.resizedUrl ? `${marker.thumb.resizedUrl}?t=${Date.now()}` : null,
-      imageScale: 1,
-      visibility: marker.visibility,
-      note: marker.note || null
-    }));
+    markers = activeSceneMarkers
+      // Filter out DM-only markers for client mode
+      .filter((marker) => mode === 'editor' || marker.visibility !== 1) // 1 = MarkerVisibility.DM
+      .map((marker) => ({
+        id: marker.id,
+        title: marker.title,
+        position: { x: marker.positionX, y: marker.positionY },
+        size: marker.size,
+        shape: marker.shape,
+        shapeColor: marker.shapeColor,
+        label: marker.label,
+        imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation) : null,
+        imageScale: 1,
+        visibility: marker.visibility,
+        note: marker.note || null
+      }));
   }
 
   return {
-    mode: StageMode.DM,
+    mode: mode === 'client' ? StageMode.Player : StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
     debug: {
@@ -51,30 +58,30 @@ export const buildSceneProps = (
     },
     display: {
       padding: {
-        x: activeScene.displayPaddingX,
-        y: activeScene.displayPaddingY
+        x: activeScene.displayPaddingX ?? 0,
+        y: activeScene.displayPaddingY ?? 0
       },
       size: {
-        x: activeScene.displaySizeX,
-        y: activeScene.displaySizeY
+        x: activeScene.displaySizeX ?? 1920,
+        y: activeScene.displaySizeY ?? 1080
       },
       resolution: {
-        x: activeScene.displayResolutionX,
-        y: activeScene.displayResolutionY
+        x: activeScene.displayResolutionX ?? 1920,
+        y: activeScene.displayResolutionY ?? 1080
       }
     },
     edgeOverlay: {
-      enabled: activeScene.edgeEnabled,
-      url: activeScene.edgeUrl,
-      opacity: activeScene.edgeOpacity,
-      scale: activeScene.edgeScale,
-      fadeStart: activeScene.edgeFadeStart,
-      fadeEnd: activeScene.edgeFadeEnd
+      enabled: activeScene.edgeEnabled ?? false,
+      url: activeScene.edgeUrl ?? '',
+      opacity: activeScene.edgeOpacity ?? 1,
+      scale: activeScene.edgeScale ?? 1,
+      fadeStart: activeScene.edgeFadeStart ?? 0,
+      fadeEnd: activeScene.edgeFadeEnd ?? 1
     },
     fog: {
-      enabled: activeScene.fogEnabled,
-      color: activeScene.fogColor,
-      opacity: activeScene.fogOpacity,
+      enabled: activeScene.fogEnabled ?? false,
+      color: activeScene.fogColor ?? '#ffffff',
+      opacity: activeScene.fogOpacity ?? 1,
       speed: 0.05,
       persistence: 0.5,
       lacunarity: 2.5,
@@ -84,8 +91,8 @@ export const buildSceneProps = (
       levels: 4
     },
     fogOfWar: {
-      url: activeScene.fogOfWarUrl,
-      opacity: activeScene.fogOfWarOpacity,
+      url: activeScene.fogOfWarUrl ?? '',
+      opacity: activeScene.fogOfWarOpacity ?? 1,
       outline: {
         color: '#FFFFFF',
         opacity: 1,
@@ -120,31 +127,31 @@ export const buildSceneProps = (
       }
     },
     grid: {
-      gridType: activeScene.gridType as GridType,
-      spacing: activeScene.gridSpacing,
-      opacity: activeScene.gridOpacity,
-      lineColor: activeScene.gridLineColor,
-      lineThickness: activeScene.gridLineThickness,
-      shadowColor: activeScene.gridShadowColor,
+      gridType: (activeScene.gridType as GridType) ?? GridType.Square,
+      spacing: activeScene.gridSpacing ?? 50,
+      opacity: activeScene.gridOpacity ?? 0.5,
+      lineColor: activeScene.gridLineColor ?? '#ffffff',
+      lineThickness: activeScene.gridLineThickness ?? 1,
+      shadowColor: activeScene.gridShadowColor ?? '#000000',
       shadowOpacity: 0,
-      shadowBlur: activeScene.gridShadowBlur,
-      shadowSpread: activeScene.gridShadowSpread
+      shadowBlur: activeScene.gridShadowBlur ?? 0,
+      shadowSpread: activeScene.gridShadowSpread ?? 0
     },
     map: {
-      rotation: activeScene.mapRotation,
+      rotation: activeScene.mapRotation ?? 0,
       offset: {
-        x: activeScene.mapOffsetX,
-        y: activeScene.mapOffsetY
+        x: activeScene.mapOffsetX ?? 0,
+        y: activeScene.mapOffsetY ?? 0
       },
-      zoom: activeScene.mapZoom,
-      url: thumbUrl
+      zoom: activeScene.mapZoom ?? 1,
+      url: thumbUrl // Empty string if no thumbnail exists - Stage component handles fallback
     },
     marker: {
       visible: true,
       snapToGrid: true,
       shape: {
-        strokeColor: activeScene.markerStrokeColor,
-        strokeWidth: activeScene.markerStrokeWidth,
+        strokeColor: activeScene.markerStrokeColor ?? '#ffffff',
+        strokeWidth: activeScene.markerStrokeWidth ?? 2,
         shadowColor: '#000000',
         shadowBlur: 120,
         shadowOffset: {
@@ -153,8 +160,8 @@ export const buildSceneProps = (
         }
       },
       text: {
-        color: activeScene.markerTextColor,
-        strokeColor: activeScene.markerTextStrokeColor,
+        color: activeScene.markerTextColor ?? '#ffffff',
+        strokeColor: activeScene.markerTextStrokeColor ?? '#000000',
         size: 300,
         strokeWidth: 1
       },
@@ -192,10 +199,10 @@ export const buildSceneProps = (
     scene: {
       autoFit: true,
       offset: {
-        x: activeScene.sceneOffsetX,
-        y: activeScene.sceneOffsetY
+        x: activeScene.sceneOffsetX ?? 0,
+        y: activeScene.sceneOffsetY ?? 0
       },
-      rotation: mode === 'editor' ? activeScene.sceneRotation : SceneRotation.Deg0,
+      rotation: mode === 'editor' ? (activeScene.sceneRotation ?? SceneRotation.Deg0) : SceneRotation.Deg0,
       zoom: 1
     },
     weather: {

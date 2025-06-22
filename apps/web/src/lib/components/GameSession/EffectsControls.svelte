@@ -125,14 +125,9 @@
           min={0}
           max={0.02}
           step={0.001}
-          bind:value={stageProps.postProcessing.chromaticAberration.offset}
-          oninput={() =>
-            queuePropertyUpdate(
-              stageProps,
-              ['postProcessing', 'chromaticAberration', 'offset'],
-              stageProps.postProcessing.chromaticAberration.offset,
-              'control'
-            )}
+          value={stageProps.postProcessing.chromaticAberration.offset}
+          oninput={(value) =>
+            queuePropertyUpdate(stageProps, ['postProcessing', 'chromaticAberration', 'offset'], value, 'control')}
         />
       {/snippet}
     </FormControl>
@@ -149,14 +144,9 @@
             min={0}
             max={10}
             step={0.05}
-            bind:value={stageProps.postProcessing.bloom.intensity}
-            oninput={() =>
-              queuePropertyUpdate(
-                stageProps,
-                ['postProcessing', 'bloom', 'intensity'],
-                stageProps.postProcessing.bloom.intensity,
-                'control'
-              )}
+            value={stageProps.postProcessing.bloom.intensity}
+            oninput={(value) =>
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'intensity'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -167,14 +157,9 @@
             min={0}
             max={0.5}
             step={0.01}
-            bind:value={stageProps.postProcessing.bloom.radius}
-            oninput={() =>
-              queuePropertyUpdate(
-                stageProps,
-                ['postProcessing', 'bloom', 'radius'],
-                stageProps.postProcessing.bloom.radius,
-                'control'
-              )}
+            value={stageProps.postProcessing.bloom.radius}
+            oninput={(value) =>
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'radius'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -188,14 +173,9 @@
             min={0}
             max={1}
             step={0.01}
-            bind:value={stageProps.postProcessing.bloom.threshold}
-            oninput={() =>
-              queuePropertyUpdate(
-                stageProps,
-                ['postProcessing', 'bloom', 'threshold'],
-                stageProps.postProcessing.bloom.threshold,
-                'control'
-              )}
+            value={stageProps.postProcessing.bloom.threshold}
+            oninput={(value) =>
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'threshold'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -206,14 +186,9 @@
             min={0}
             max={1}
             step={0.01}
-            bind:value={stageProps.postProcessing.bloom.smoothing}
-            oninput={() =>
-              queuePropertyUpdate(
-                stageProps,
-                ['postProcessing', 'bloom', 'smoothing'],
-                stageProps.postProcessing.bloom.smoothing,
-                'control'
-              )}
+            value={stageProps.postProcessing.bloom.smoothing}
+            oninput={(value) =>
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'smoothing'], value, 'control')}
           />
         {/snippet}
       </FormControl>
@@ -227,14 +202,9 @@
             min={0}
             max={16}
             step={1}
-            bind:value={stageProps.postProcessing.bloom.levels}
-            oninput={() =>
-              queuePropertyUpdate(
-                stageProps,
-                ['postProcessing', 'bloom', 'levels'],
-                stageProps.postProcessing.bloom.levels,
-                'control'
-              )}
+            value={stageProps.postProcessing.bloom.levels}
+            oninput={(value) =>
+              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'levels'], value, 'control')}
           />
         {/snippet}
       </FormControl>

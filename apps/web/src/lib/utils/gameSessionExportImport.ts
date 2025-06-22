@@ -2,6 +2,8 @@
  * Utility functions for exporting and importing game sessions
  */
 
+import { devError, devLog } from './debug';
+
 /**
  * Exports a game session as a downloadable JSON file
  * @param gameSessionId - The ID of the game session to export
@@ -53,7 +55,7 @@ export const exportGameSession = async (gameSessionId: string): Promise<void> =>
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    console.error('Error exporting game session:', error);
+    devError('export', 'Error exporting game session:', error);
     throw error;
   }
 };
@@ -79,7 +81,7 @@ export const importGameSession = async (partyId: string, file: File): Promise<st
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.log('Error response from importGameSession:', errorData);
+      devLog('import', 'Error response from importGameSession:', errorData);
 
       // Create a specific error with the error message from the API
       const errorMessage = errorData.message || 'Failed to import game session';
@@ -89,7 +91,7 @@ export const importGameSession = async (partyId: string, file: File): Promise<st
     const data = await response.json();
     return data.gameSessionId;
   } catch (error) {
-    console.error('Error importing game session:', error);
+    devError('import', 'Error importing game session:', error);
     throw error;
   }
 };
