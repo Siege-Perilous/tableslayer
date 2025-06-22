@@ -37,7 +37,7 @@
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
-  import { queuePropertyUpdate, extractLocationFromUrl } from '$lib/utils';
+  import { queuePropertyUpdate, extractLocationFromUrl, throttle } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
   let {
@@ -65,6 +65,12 @@
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
   let editingMarkerId = $derived(selectedMarkerId);
+
+  // Create throttled update function for editor changes
+  const throttledNoteUpdate = throttle((markerId: string) => {
+    updateMarkerAndSave(markerId, () => {});
+    socketUpdate();
+  }, 500);
 
   const openMarkerImageDialog = (markerId: string) => {
     activeMarkerId = markerId;
@@ -328,7 +334,12 @@
                   updateMarkerAndSave(marker.id, () => {});
                 }}
               >
-                <Editor debug={false} bind:content={marker.note} editable={true} />
+                <Editor
+                  debug={false}
+                  bind:content={marker.note}
+                  editable={true}
+                  onChange={() => throttledNoteUpdate(marker.id)}
+                />
               </div>
               <Spacer />
 
