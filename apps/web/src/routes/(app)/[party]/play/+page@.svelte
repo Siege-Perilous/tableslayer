@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
-  import { dev } from '$app/environment';
   import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
+  import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -83,12 +83,10 @@
         return;
       }
 
-      if (dev) {
-        console.log('DEV: Playfield stageProps effect - new Y.js data:', {
-          currentTimestamp,
-          markerCount: yjsSceneData.stageProps?.marker?.markers?.length || 0
-        });
-      }
+      devLog('playfield', 'Playfield stageProps effect - new Y.js data:', {
+        currentTimestamp,
+        markerCount: yjsSceneData.stageProps?.marker?.markers?.length || 0
+      });
 
       // Only update if we have scene data and an active scene
 
@@ -125,8 +123,7 @@
         (yjsInitialized && !yjsSceneData?.stageProps && data.activeScene.id === yjsPartyState.activeSceneId);
 
       if (shouldUseSsrData) {
-        if (dev)
-          console.log('DEV: Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
+        devLog('playfield', 'Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
         stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
         initialDataApplied = true;
       }
@@ -152,7 +149,7 @@
       requestAnimationFrame(() => {
         if (stage?.scene?.fit) {
           stage.scene.fit();
-          if (dev) console.log('DEV: Manually fitting stage after scene change to:', data.activeScene?.id);
+          devLog('playfield', 'Manually fitting stage after scene change to:', data.activeScene?.id);
         }
       });
     }
@@ -164,7 +161,7 @@
 
   onMount(() => {
     if (isMounted) {
-      if (dev) console.warn('DEV: Playfield already mounted, skipping initialization');
+      devWarn('playfield', 'Playfield already mounted, skipping initialization');
       return;
     }
     isMounted = true;
@@ -191,7 +188,7 @@
 
       // Ensure we don't have duplicate subscriptions
       if (unsubscribeYjs) {
-        if (dev) console.warn('Y.js subscription already exists, cleaning up before creating new one');
+        devWarn('playfield', 'Y.js subscription already exists, cleaning up before creating new one');
         (unsubscribeYjs as () => void)();
         unsubscribeYjs = null;
       }
@@ -203,7 +200,7 @@
         }
 
         const updatedPartyState = partyData!.getPartyState();
-        if (dev) console.log('DEV: Playfield detected party state change:', updatedPartyState);
+        devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
 
         // Update reactive state
         yjsPartyState = {
@@ -219,12 +216,10 @@
           } else {
             const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
             if (sceneData) {
-              if (dev) {
-                console.log('DEV: Playfield received Y.js scene data update:', {
-                  sceneId: updatedPartyState.activeSceneId,
-                  markerCount: sceneData.markers?.length || 0
-                });
-              }
+              devLog('playfield', 'Playfield received Y.js scene data update:', {
+                sceneId: updatedPartyState.activeSceneId,
+                markerCount: sceneData.markers?.length || 0
+              });
 
               // Apply Y.js update immediately - just like editor-to-editor updates
               if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
@@ -240,7 +235,7 @@
       isHydrated = true;
       yjsInitialized = true;
     } catch (error) {
-      console.error('Error initializing Y.js:', error);
+      devError('playfield', 'Error initializing Y.js:', error);
       // Even if Y.js fails, mark as hydrated
       isHydrated = true;
     }
@@ -358,7 +353,7 @@
   };
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
-    if (dev) console.log('DEV: [Playfield] onSceneUpdate called:', { offset, zoom });
+    devLog('playfield', '[Playfield] onSceneUpdate called:', { offset, zoom });
     // Update zoom only if it's a valid value from the Stage's autoFit calculation
     // Ignore zoom: 0 which seems to be a transient state during initialization
     if (zoom > 0 && stageProps.scene.zoom !== zoom) {
@@ -372,7 +367,7 @@
   }
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
-    console.log('Updating map', offset, zoom);
+    devLog('playfield', 'Updating map', offset, zoom);
     return;
   }
 
@@ -426,20 +421,17 @@
     if (isHydrated && !isInvalidating && !isProcessingSceneChange) {
       const currentActiveSceneId = data.activeScene?.id;
 
-      if (dev) {
-        console.log('DEV: Playfield checking for active scene changes:', {
-          yjsActiveSceneId: yjsPartyState.activeSceneId,
-          currentActiveSceneId
-        });
-      }
+      devLog('playfield', 'Playfield checking for active scene changes:', {
+        yjsActiveSceneId: yjsPartyState.activeSceneId,
+        currentActiveSceneId
+      });
 
       // Check if active scene changed
       if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
-        if (dev) {
-          console.log(
-            `DEV: Playfield: Active scene changed from ${currentActiveSceneId} to ${yjsPartyState.activeSceneId}, reloading page...`
-          );
-        }
+        devLog(
+          'playfield',
+          `Playfield: Active scene changed from ${currentActiveSceneId} to ${yjsPartyState.activeSceneId}, reloading page...`
+        );
 
         // Trigger loading fade immediately when scene change is detected
         sceneIsChanging = true;
@@ -460,7 +452,7 @@
         // 3. The playfield needs to reinitialize with the correct scene context
         invalidateAll()
           .then(() => {
-            if (dev) console.log('DEV: Page invalidation complete after active scene change');
+            devLog('playfield', 'Page invalidation complete after active scene change');
             // Reset flags after invalidation completes
             isInvalidating = false;
             isProcessingSceneChange = false;
@@ -468,7 +460,7 @@
             sceneIsChanging = false;
           })
           .catch((error) => {
-            console.error('Error invalidating page after active scene change:', error);
+            devError('playfield', 'Error invalidating page after active scene change:', error);
             // Reset flags even on error
             isInvalidating = false;
             isProcessingSceneChange = false;

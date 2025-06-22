@@ -1,4 +1,5 @@
 import type { StageProps } from '@tableslayer/ui';
+import { devError, devLog, devWarn } from './debug';
 import { getPartyDataManager } from './yjs/stores';
 
 // Track pending updates for different property paths
@@ -58,7 +59,7 @@ export function queuePropertyUpdate(
 ) {
   // Skip Y.js sync for local-only properties but still apply them locally
   if (isLocalOnlyProperty(propertyPath)) {
-    console.log(`Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
+    devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
     applyUpdate(stageProps, propertyPath, value);
     // Don't trigger auto-save for local-only properties
     return;
@@ -66,11 +67,11 @@ export function queuePropertyUpdate(
 
   // For shared properties, apply locally for immediate UI feedback
   // But Y.js will be the source of truth for other editors
-  console.log(`Queueing shared property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
+  devLog('broadcaster', `Queueing shared property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
 
   // Special logging for map properties
   if (propertyPath[0] === 'map') {
-    console.log(`🗺️ Map property update:`, {
+    devLog('broadcaster', `🗺️ Map property update:`, {
       path: propertyPath.join('.'),
       value,
       type: typeof value
@@ -82,25 +83,25 @@ export function queuePropertyUpdate(
   // Check if PartyDataManager is available early
   const partyDataManager = getPartyDataManager();
   if (!partyDataManager) {
-    console.warn(`PartyDataManager not available when queueing property update: ${propertyPath.join('.')}`);
-    console.warn('This update will be applied locally but not synced to other editors!');
+    devWarn('broadcaster', `PartyDataManager not available when queueing property update: ${propertyPath.join('.')}`);
+    devWarn('broadcaster', 'This update will be applied locally but not synced to other editors!');
   }
 
   // If immediate sync is enabled and we have Y.js, sync immediately
   if (immediateYjsSyncEnabled && partyDataManager && currentSceneId) {
-    console.log('🚀 Immediate Y.js sync for:', propertyPath.join('.'), '=', value);
+    devLog('broadcaster', '🚀 Immediate Y.js sync for:', propertyPath.join('.'), '=', value);
 
     // Get current scene data from Y.js
     const currentSceneData = partyDataManager.getSceneData(currentSceneId);
     if (currentSceneData) {
       // Update Y.js immediately with current stageProps
-      console.log('🚀 Calling updateSceneStageProps with immediate sync');
+      devLog('broadcaster', '🚀 Calling updateSceneStageProps with immediate sync');
       partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
     } else {
-      console.warn('⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
+      devWarn('broadcaster', '⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
     }
   } else {
-    console.log('⏭️ Immediate sync skipped:', {
+    devLog('broadcaster', '⏭️ Immediate sync skipped:', {
       enabled: immediateYjsSyncEnabled,
       hasManager: !!partyDataManager,
       hasSceneId: !!currentSceneId
@@ -132,7 +133,7 @@ export function queuePropertyUpdate(
         const partyDataManager = getPartyDataManager();
         if (!partyDataManager) {
           // Queue updates for when Y.js becomes ready
-          console.log('Y.js not ready, queueing updates for later processing');
+          devLog('broadcaster', 'Y.js not ready, queueing updates for later processing');
           preYjsUpdatesQueue.push({ sceneId: currentSceneId, updates });
           scheduleYjsReadyCheck();
         } else {
@@ -167,7 +168,7 @@ function applyUpdate(obj: any, path: PropertyPath, value: any) {
 // Register the current scene ID for property updates
 export function registerSceneForPropertyUpdates(sceneId: string) {
   currentSceneId = sceneId;
-  console.log(`Property updates registered for scene: ${sceneId}`);
+  devLog('broadcaster', `Property updates registered for scene: ${sceneId}`);
 }
 
 // Schedule periodic checks for Y.js readiness to process queued updates
@@ -177,7 +178,7 @@ function scheduleYjsReadyCheck() {
   yjsReadyCheckTimer = setTimeout(() => {
     const partyDataManager = getPartyDataManager();
     if (partyDataManager && preYjsUpdatesQueue.length > 0) {
-      console.log(`Y.js now ready, processing ${preYjsUpdatesQueue.length} queued update batches`);
+      devLog('broadcaster', `Y.js now ready, processing ${preYjsUpdatesQueue.length} queued update batches`);
 
       // Process all queued updates
       const queuedUpdates = [...preYjsUpdatesQueue];
@@ -209,40 +210,43 @@ export function flushQueuedPropertyUpdates() {
 function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: string) {
   const partyDataManager = getPartyDataManager();
   if (!partyDataManager) {
-    console.warn('PartyDataManager not available for property updates - Y.js sync will not work!');
-    console.warn('Updates that will be lost:', updates);
+    devWarn('broadcaster', 'PartyDataManager not available for property updates - Y.js sync will not work!');
+    devWarn('broadcaster', 'Updates that will be lost:', updates);
     return;
   }
 
   try {
-    console.log(`Broadcasting ${Object.keys(updates).length} property updates via Y.js for scene: ${sceneId}`);
-    console.log('Property paths being updated:', Object.keys(updates));
+    devLog(
+      'broadcaster',
+      `Broadcasting ${Object.keys(updates).length} property updates via Y.js for scene: ${sceneId}`
+    );
+    devLog('broadcaster', 'Property paths being updated:', Object.keys(updates));
 
     // Get current scene data from Y.js - this is the source of truth
     const currentSceneData = partyDataManager.getSceneData(sceneId);
     if (!currentSceneData) {
-      console.warn(`No scene data found for scene: ${sceneId} - scene may not be initialized in Y.js yet`);
-      console.warn('Updates that will be lost:', updates);
+      devWarn('broadcaster', `No scene data found for scene: ${sceneId} - scene may not be initialized in Y.js yet`);
+      devWarn('broadcaster', 'Updates that will be lost:', updates);
       return;
     }
 
     // IMPORTANT: Always use Y.js state as the base, not local stageProps
     // This prevents desync issues when multiple editors are making changes
     const updatedStageProps = JSON.parse(JSON.stringify(currentSceneData.stageProps));
-    console.log('Using Y.js stageProps as base for updates:', updatedStageProps);
+    devLog('broadcaster', 'Using Y.js stageProps as base for updates:', updatedStageProps);
 
     // Apply all pending updates to the copy
     Object.values(updates).forEach(({ path, value }) => {
-      console.log(`Applying update: ${path.join('.')} = ${JSON.stringify(value)}`);
+      devLog('broadcaster', `Applying update: ${path.join('.')} = ${JSON.stringify(value)}`);
       applyUpdate(updatedStageProps, path, value);
     });
 
     // Update scene data via the PartyDataManager method
     partyDataManager.updateSceneStageProps(sceneId, updatedStageProps);
 
-    console.log(`Y.js property updates applied for scene: ${sceneId}`);
+    devLog('broadcaster', `Y.js property updates applied for scene: ${sceneId}`);
   } catch (error) {
-    console.error('Error broadcasting property updates via Y.js:', error);
+    devError('broadcaster', 'Error broadcasting property updates via Y.js:', error);
   }
 }
 

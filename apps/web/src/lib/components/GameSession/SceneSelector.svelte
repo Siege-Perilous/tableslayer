@@ -1,5 +1,6 @@
 <script lang="ts">
   import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
+  import { devLog, devWarn, devError } from '$lib/utils/debug';
   import {
     IconCheck,
     IconX,
@@ -95,7 +96,7 @@
         document.body.removeChild(dragPreviewElement);
       } catch {
         // Element might already be removed
-        console.log('Element already removed from DOM');
+        devLog('scene', 'Element already removed from DOM');
       }
       dragPreviewElement = null;
     }
@@ -144,7 +145,7 @@
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         createSceneErrors = error;
-        console.log('Error creating scene:', error);
+        devLog('scene', 'Error creating scene:', error);
       },
       onSuccess: (response) => {
         if (partyData && response?.scene) {
@@ -164,7 +165,8 @@
               : undefined
           });
         } else {
-          console.warn(
+          devWarn(
+            'scene',
             'Cannot add scene to Y.js - partyData not available or response missing scene:',
             !!partyData,
             !!response?.scene
@@ -233,7 +235,8 @@
           }));
           partyData.reorderScenes(reorderedScenes);
         } else {
-          console.warn(
+          devWarn(
+            'scene',
             'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
             !!partyData,
             !!response?.scenes
@@ -304,7 +307,8 @@
           }));
           partyData.reorderScenes(reorderedScenes);
         } else {
-          console.warn(
+          devWarn(
+            'scene',
             'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
             !!partyData,
             !!response?.scenes
@@ -431,7 +435,7 @@
       // Y.js handles sync automatically - no need for invalidateAll()
     } catch (error) {
       // On failure, revert to original order
-      console.error('Error updating scene order:', error);
+      devError('scene', 'Error updating scene order:', error);
       // Y.js will automatically revert if the server operation failed
     } finally {
       formIsLoading = false;

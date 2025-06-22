@@ -557,7 +557,8 @@
     font-size: 0.875rem;
     font-weight: 900;
     color: #fff;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    -webkit-text-stroke: 2px rgba(0, 0, 0, 0.8);
+    paint-order: stroke fill;
   }
   .markerManager__read {
     display: flex;

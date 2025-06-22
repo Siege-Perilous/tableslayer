@@ -1,6 +1,7 @@
 // Utility function to set properties if they exist
 
 import type { StageProps } from '@tableslayer/ui';
+import { devLog } from './debug';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setIfExists(source: Record<string, any>, target: Record<string, any>, map: Record<string, string>) {
@@ -110,7 +111,7 @@ export const convertPropsToSceneDetails = (
   });
 
   // Debug logging for map properties during save
-  console.log('[convertPropsToSceneDetails] Map properties being saved:', {
+  devLog('[convertPropsToSceneDetails] Map properties being saved:', {
     mapRotation: details.mapRotation,
     mapOffsetX: details.mapOffsetX,
     mapOffsetY: details.mapOffsetY,

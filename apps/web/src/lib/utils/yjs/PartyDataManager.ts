@@ -1,7 +1,7 @@
-import { dev } from '$app/environment';
 import type { Marker, StageProps } from '@tableslayer/ui';
 import { SocketIOProvider } from 'y-socket.io';
 import * as Y from 'yjs';
+import { devError, devLog, devWarn } from '../debug';
 
 export interface SceneMetadata {
   id: string;
@@ -93,11 +93,10 @@ export class PartyDataManager {
     this.clientId = this.doc.clientID;
     const gameSessionRoomName = gameSessionId ? `gameSession-${gameSessionId}` : `party-${partyId}`;
 
-    if (dev) {
-      console.log(
-        `PartyDataManager connecting to game session Y.js: ${socketUrl}, room: ${gameSessionRoomName}, clientId: ${this.clientId}`
-      );
-    }
+    devLog(
+      'yjs',
+      `PartyDataManager connecting to game session Y.js: ${socketUrl}, room: ${gameSessionRoomName}, clientId: ${this.clientId}`
+    );
 
     this.provider = new SocketIOProvider(socketUrl, gameSessionRoomName, this.doc, {
       autoConnect: true,
@@ -109,7 +108,7 @@ export class PartyDataManager {
     this.partyDoc = new Y.Doc();
     const partyRoomName = `party-${partyId}`;
 
-    if (dev) console.log(`PartyDataManager connecting to party-level Y.js: ${socketUrl}, room: ${partyRoomName}`);
+    devLog('yjs', `PartyDataManager connecting to party-level Y.js: ${socketUrl}, room: ${partyRoomName}`);
 
     this.partyProvider = new SocketIOProvider(socketUrl, partyRoomName, this.partyDoc, {
       autoConnect: true,
@@ -128,14 +127,13 @@ export class PartyDataManager {
 
     // Set up connection status listeners for both providers
     this.provider.on('status', (event: { status: string }) => {
-      if (dev)
-        console.log(
-          `[${this.clientId}] Y.js game session connection status: ${event.status} - room: ${gameSessionRoomName}`
-        );
+      devLog(
+        'yjs',
+        `[${this.clientId}] Y.js game session connection status: ${event.status} - room: ${gameSessionRoomName}`
+      );
       // When game session connects, ensure scene observers are properly set up
       if (event.status === 'connected') {
-        if (dev)
-          console.log(`[${this.clientId}] Game session connected - refreshing scene observers for connected state`);
+        devLog('yjs', `[${this.clientId}] Game session connected - refreshing scene observers for connected state`);
         setTimeout(() => {
           // Clear existing observers and re-add them for connected state
           this.sceneObservers.clear();
@@ -149,10 +147,10 @@ export class PartyDataManager {
 
     this.partyProvider.on('status', (event: { status: string }) => {
       this.isConnected = event.status === 'connected'; // Use party connection for overall status
-      if (dev) console.log(`[${this.clientId}] Y.js party connection status: ${event.status} - room: ${partyRoomName}`);
+      devLog('yjs', `[${this.clientId}] Y.js party connection status: ${event.status} - room: ${partyRoomName}`);
       // When party connects, ensure scene observers are properly set up
       if (event.status === 'connected') {
-        if (dev) console.log(`[${this.clientId}] Party connected - ensuring scene observers are set up`);
+        devLog('yjs', `[${this.clientId}] Party connected - ensuring scene observers are set up`);
         setTimeout(() => this.ensureSceneObservers(), 100);
       }
       this.notifySubscribers();
@@ -160,12 +158,11 @@ export class PartyDataManager {
 
     // Add Y.js sync debugging for game session
     this.provider.on('sync', (isSynced: boolean) => {
-      if (dev)
-        console.log(`[${this.clientId}] Game session Y.js sync status: ${isSynced} - room: ${gameSessionRoomName}`);
+      devLog('yjs', `[${this.clientId}] Game session Y.js sync status: ${isSynced} - room: ${gameSessionRoomName}`);
     });
 
     this.partyProvider.on('sync', (isSynced: boolean) => {
-      if (dev) console.log(`[${this.clientId}] Party Y.js sync status: ${isSynced} - room: ${partyRoomName}`);
+      devLog('yjs', `[${this.clientId}] Party Y.js sync status: ${isSynced} - room: ${partyRoomName}`);
     });
 
     // Remove verbose Y.js document update logging
@@ -174,7 +171,7 @@ export class PartyDataManager {
 
     // Listen for data changes
     this.yScenes.observe(() => {
-      if (dev) console.log(`[${this.clientId}] Scenes Map changed - ensuring all scenes have observers`);
+      devLog('yjs', `[${this.clientId}] Scenes Map changed - ensuring all scenes have observers`);
       this.ensureSceneObservers();
       this.notifySubscribers();
     });
@@ -186,7 +183,7 @@ export class PartyDataManager {
     // Ensure any existing scenes have observers
     this.ensureSceneObservers();
 
-    if (dev) console.log(`PartyDataManager initialized for party: ${partyId}`);
+    devLog('yjs', `PartyDataManager initialized for party: ${partyId}`);
   }
 
   /**
@@ -210,51 +207,50 @@ export class PartyDataManager {
       this.sceneObservers = new Set<string>();
     }
 
-    if (dev) {
-      console.log(
-        `[${this.clientId}] Ensuring scene observers - current scenes: ${this.yScenes.size}, existing observers: ${this.sceneObservers.size}`
-      );
-      console.log(
-        `[${this.clientId}] Connection status when ensuring observers: game=${this.provider.socket?.connected}, party=${this.partyProvider.socket?.connected}`
-      );
-    }
+    devLog(
+      'yjs',
+      `[${this.clientId}] Ensuring scene observers - current scenes: ${this.yScenes.size}, existing observers: ${this.sceneObservers.size}`
+    );
+    devLog(
+      'yjs',
+      `[${this.clientId}] Connection status when ensuring observers: game=${this.provider.socket?.connected}, party=${this.partyProvider.socket?.connected}`
+    );
 
     this.yScenes.forEach((sceneDataMap, sceneId) => {
       // Check if THIS instance already has an observer for this scene
       if (sceneDataMap instanceof Y.Map && !this.sceneObservers.has(sceneId)) {
-        if (dev)
-          console.log(`[${this.clientId}] Adding observer to existing scene: ${sceneId} for user: ${this.userId}`);
+        devLog('yjs', `[${this.clientId}] Adding observer to existing scene: ${sceneId} for user: ${this.userId}`);
         sceneDataMap.observe((events, transaction) => {
           // Only notify if the change came from a different client (prevents feedback loops)
           const origin = transaction.origin;
           const isFromDifferentClient = !origin || origin !== this.clientId;
 
-          if (dev) {
-            console.log(`[${this.clientId}] Y.js observer fired for scene: ${sceneId}`);
-            console.log(
-              `[${this.clientId}] Transaction details - origin: ${transaction.origin}, local: ${transaction.local}, clientID: ${this.doc.clientID}`
-            );
-            console.log(`[${this.clientId}] Events:`, events);
-            console.log(
-              `[${this.clientId}] Scene data changed for scene: ${sceneId} - origin: ${origin}, fromDifferentClient: ${isFromDifferentClient}`
-            );
-          }
+          devLog('yjs', `[${this.clientId}] Y.js observer fired for scene: ${sceneId}`);
+          devLog(
+            'yjs',
+            `[${this.clientId}] Transaction details - origin: ${transaction.origin}, local: ${transaction.local}, clientID: ${this.doc.clientID}`
+          );
+          devLog('yjs', `[${this.clientId}] Events:`, events);
+          devLog(
+            'yjs',
+            `[${this.clientId}] Scene data changed for scene: ${sceneId} - origin: ${origin}, fromDifferentClient: ${isFromDifferentClient}`
+          );
 
           if (isFromDifferentClient) {
-            if (dev) console.log(`[${this.clientId}] Notifying subscribers due to change from different client`);
+            devLog('yjs', `[${this.clientId}] Notifying subscribers due to change from different client`);
             this.notifySubscribers();
           } else {
-            if (dev) console.log(`[${this.clientId}] Ignoring update from same client (preventing feedback loop)`);
+            devLog('yjs', `[${this.clientId}] Ignoring update from same client (preventing feedback loop)`);
           }
         });
         // Mark that THIS instance has added an observer (local tracking only)
         this.sceneObservers.add(sceneId);
-        if (dev)
-          console.log(
-            `[${this.clientId}] Observer added for scene: ${sceneId}, total observers: ${this.sceneObservers.size}`
-          );
-      } else if (dev && this.sceneObservers.has(sceneId)) {
-        console.log(`[${this.clientId}] Scene ${sceneId} already has observer - skipping`);
+        devLog(
+          'yjs',
+          `[${this.clientId}] Observer added for scene: ${sceneId}, total observers: ${this.sceneObservers.size}`
+        );
+      } else if (this.sceneObservers.has(sceneId)) {
+        devLog('yjs', `[${this.clientId}] Scene ${sceneId} already has observer - skipping`);
       }
     });
   }
@@ -270,15 +266,14 @@ export class PartyDataManager {
    * Initialize scene data from SSR
    */
   initializeSceneData(sceneId: string, stageProps: StageProps, markers: Marker[]) {
-    if (dev) {
-      console.log(`[${this.clientId}] Initializing scene data for scene: ${sceneId}`);
-      console.log(
-        `[${this.clientId}] SSR markers provided:`,
-        markers.length,
-        'markers',
-        markers.slice(0, 2).map((m) => ({ id: m.id, title: m.title }))
-      );
-    }
+    devLog('yjs', `[${this.clientId}] Initializing scene data for scene: ${sceneId}`);
+    devLog(
+      'yjs',
+      `[${this.clientId}] SSR markers provided:`,
+      markers.length,
+      'markers',
+      markers.slice(0, 2).map((m) => ({ id: m.id, title: m.title }))
+    );
 
     const currentTime = Date.now();
 
@@ -292,7 +287,7 @@ export class PartyDataManager {
       sceneDataMap.set('saveInProgress', false);
 
       this.yScenes.set(sceneId, sceneDataMap);
-      if (dev) console.log(`[${this.clientId}] Scene data initialized for scene: ${sceneId}`);
+      devLog('yjs', `[${this.clientId}] Scene data initialized for scene: ${sceneId}`);
     } else {
       // Scene data exists - check if SSR data should take precedence
       const existingSceneData = this.yScenes.get(sceneId);
@@ -307,12 +302,11 @@ export class PartyDataManager {
         // Only update if SSR has more recent data or more markers
         // This prevents Editor B from overwriting Editor A's markers
         if (timeSinceSave > 10000 || markers.length > existingMarkers.length) {
-          if (dev) {
-            console.log(`[${this.clientId}] Updating Y.js with SSR data - SSR has newer/more data`);
-            console.log(
-              `[${this.clientId}] Time since last save: ${timeSinceSave}ms, SSR markers: ${markers.length}, Y.js markers: ${existingMarkers.length}`
-            );
-          }
+          devLog('yjs', `[${this.clientId}] Updating Y.js with SSR data - SSR has newer/more data`);
+          devLog(
+            'yjs',
+            `[${this.clientId}] Time since last save: ${timeSinceSave}ms, SSR markers: ${markers.length}, Y.js markers: ${existingMarkers.length}`
+          );
 
           // Update with fresh SSR data
           this.doc.transact(() => {
@@ -320,9 +314,10 @@ export class PartyDataManager {
             existingSceneData.set('markers', markers);
             existingSceneData.set('lastUpdated', currentTime);
           });
-        } else if (dev) {
-          console.log(`[${this.clientId}] Keeping existing Y.js data - it's newer than SSR`);
-          console.log(
+        } else {
+          devLog('yjs', `[${this.clientId}] Keeping existing Y.js data - it's newer than SSR`);
+          devLog(
+            'yjs',
             `[${this.clientId}] Time since last save: ${timeSinceSave}ms, SSR markers: ${markers.length}, Y.js markers: ${existingMarkers.length}`
           );
         }
@@ -330,33 +325,33 @@ export class PartyDataManager {
     }
 
     // Fresh SSR data loaded for this scene
-    if (dev) console.log(`[${this.clientId}] Scene ${sceneId} initialized with fresh SSR data`);
+    devLog('yjs', `[${this.clientId}] Scene ${sceneId} initialized with fresh SSR data`);
 
     // Always ensure this instance has an observer for the scene
     const sceneDataMap = this.yScenes.get(sceneId);
     if (sceneDataMap instanceof Y.Map && !this.sceneObservers.has(sceneId)) {
-      if (dev) console.log(`[${this.clientId}] Adding observer for scene: ${sceneId} for user: ${this.userId}`);
+      devLog('yjs', `[${this.clientId}] Adding observer for scene: ${sceneId} for user: ${this.userId}`);
       sceneDataMap.observe((events, transaction) => {
         // Only notify if the change came from a different client (prevents feedback loops)
         const origin = transaction.origin;
         const isFromDifferentClient = !origin || origin !== this.clientId;
 
-        if (dev) {
-          console.log(`[${this.clientId}] Y.js observer fired for scene: ${sceneId}`);
-          console.log(
-            `[${this.clientId}] Transaction details - origin: ${transaction.origin}, local: ${transaction.local}, clientID: ${this.doc.clientID}`
-          );
-          console.log(`[${this.clientId}] Events:`, events);
-          console.log(
-            `[${this.clientId}] Scene data changed for scene: ${sceneId} - origin: ${origin}, fromDifferentClient: ${isFromDifferentClient}`
-          );
-        }
+        devLog('yjs', `[${this.clientId}] Y.js observer fired for scene: ${sceneId}`);
+        devLog(
+          'yjs',
+          `[${this.clientId}] Transaction details - origin: ${transaction.origin}, local: ${transaction.local}, clientID: ${this.doc.clientID}`
+        );
+        devLog('yjs', `[${this.clientId}] Events:`, events);
+        devLog(
+          'yjs',
+          `[${this.clientId}] Scene data changed for scene: ${sceneId} - origin: ${origin}, fromDifferentClient: ${isFromDifferentClient}`
+        );
 
         if (isFromDifferentClient) {
-          if (dev) console.log(`[${this.clientId}] Notifying subscribers due to change from different client`);
+          devLog('yjs', `[${this.clientId}] Notifying subscribers due to change from different client`);
           this.notifySubscribers();
         } else {
-          if (dev) console.log(`[${this.clientId}] Ignoring update from same client (preventing feedback loop)`);
+          devLog('yjs', `[${this.clientId}] Ignoring update from same client (preventing feedback loop`);
         }
       });
       // Mark that THIS instance has added an observer (local tracking only)
@@ -375,15 +370,14 @@ export class PartyDataManager {
       const initFlag = this.yGameSessionMeta.get('scenesInitialized');
       const currentScenes = this.yScenesList.toArray();
 
-      if (dev)
-        console.log(`Y.js sync complete. Flag: ${initFlag}, Current: ${currentScenes.length}, SSR: ${scenes.length}`);
+      devLog('yjs', `Y.js sync complete. Flag: ${initFlag}, Current: ${currentScenes.length}, SSR: ${scenes.length}`);
 
       // If data is massively accumulated (more than 2x expected), force clear everything
       if (currentScenes.length > scenes.length * 2) {
-        if (dev)
-          console.log(
-            `Force clearing accumulated Y.js data. Current: ${currentScenes.length}, Expected: ${scenes.length}`
-          );
+        devLog(
+          'yjs',
+          `Force clearing accumulated Y.js data. Current: ${currentScenes.length}, Expected: ${scenes.length}`
+        );
         this.doc.transact(() => {
           this.yScenesList.delete(0, this.yScenesList.length);
           this.yGameSessionMeta.clear();
@@ -396,7 +390,7 @@ export class PartyDataManager {
             this.yGameSessionMeta.set('scenesInitialized', true);
             this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
           });
-          if (dev) console.log('Y.js reinitialized with clean data');
+          devLog('yjs', 'Y.js reinitialized with clean data');
         }, 100);
         return;
       }
@@ -404,7 +398,7 @@ export class PartyDataManager {
       // If already initialized recently (within 5 seconds), skip
       const lastInit = this.yGameSessionMeta.get('lastInitTimestamp');
       if (initFlag && lastInit && Date.now() - lastInit < 5000) {
-        if (dev) console.log('Y.js recently initialized, skipping');
+        devLog('yjs', 'Y.js recently initialized, skipping');
         return;
       }
 
@@ -413,15 +407,15 @@ export class PartyDataManager {
         currentScenes.length === scenes.length && currentScenes.every((scene) => scenes.some((s) => s.id === scene.id));
 
       if (!initFlag || !hasValidData) {
-        if (dev) console.log(`Initializing Y.js scenes. Current: ${currentScenes.length}, SSR: ${scenes.length}`);
+        devLog('yjs', `Initializing Y.js scenes. Current: ${currentScenes.length}, SSR: ${scenes.length}`);
         this.doc.transact(() => {
           this.yScenesList.delete(0, this.yScenesList.length);
           scenes.forEach((scene) => this.yScenesList.push([scene]));
           this.yGameSessionMeta.set('scenesInitialized', true);
           this.yGameSessionMeta.set('lastInitTimestamp', Date.now());
         });
-      } else if (dev) {
-        console.log('Y.js scenes already properly initialized');
+      } else {
+        devLog('yjs', 'Y.js scenes already properly initialized');
       }
     };
 
@@ -518,10 +512,8 @@ export class PartyDataManager {
   getSceneData(sceneId: string): SceneData | null {
     const sceneDataMap = this.yScenes.get(sceneId);
     if (!sceneDataMap) {
-      if (dev) {
-        console.log(`getSceneData: No scene data found for scene: ${sceneId}`);
-        console.log('Available scenes:', Array.from(this.yScenes.keys()));
-      }
+      devLog('yjs', `getSceneData: No scene data found for scene: ${sceneId}`);
+      devLog('yjs', 'Available scenes:', Array.from(this.yScenes.keys()));
       return null;
     }
 
@@ -540,47 +532,46 @@ export class PartyDataManager {
    * Update scene stageProps via Y.js transaction
    */
   updateSceneStageProps(sceneId: string, updatedStageProps: StageProps) {
-    if (dev)
-      console.log(
-        `[${this.clientId}] Updating scene stageProps for scene: ${sceneId} - connections: game=${this.provider.socket?.connected}, party=${this.partyProvider.socket?.connected}`
-      );
+    devLog(
+      'yjs',
+      `[${this.clientId}] Updating scene stageProps for scene: ${sceneId} - connections: game=${this.provider.socket?.connected}, party=${this.partyProvider.socket?.connected}`
+    );
     const sceneDataMap = this.yScenes.get(sceneId);
     if (!sceneDataMap) {
-      console.warn(`[${this.clientId}] No scene data found for scene: ${sceneId} - cannot update stageProps`);
-      console.warn('Available scenes:', Array.from(this.yScenes.keys()));
+      devWarn('yjs', `[${this.clientId}] No scene data found for scene: ${sceneId} - cannot update stageProps`);
+      devWarn('yjs', 'Available scenes:', Array.from(this.yScenes.keys()));
       return;
     }
 
     // Use transaction with origin to identify this client's changes
     this.doc.transact(() => {
-      if (dev) {
-        console.log(`[${this.clientId}] Setting stageProps for scene ${sceneId} via Y.js transaction`);
-        console.log(
-          `[${this.clientId}] Markers being set:`,
-          updatedStageProps.marker?.markers?.map((m) => ({ id: m.id, title: m.title })) || []
-        );
-      }
+      devLog('yjs', `[${this.clientId}] Setting stageProps for scene ${sceneId} via Y.js transaction`);
+      devLog(
+        'yjs',
+        `[${this.clientId}] Markers being set:`,
+        updatedStageProps.marker?.markers?.map((m) => ({ id: m.id, title: m.title })) || []
+      );
       sceneDataMap.set('stageProps', updatedStageProps);
       // Also update the separate markers array to keep it in sync
       if (updatedStageProps.marker?.markers) {
-        if (dev)
-          console.log(
-            `[${this.clientId}] Also updating separate markers array with ${updatedStageProps.marker.markers.length} markers:`,
-            updatedStageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
-          );
+        devLog(
+          'yjs',
+          `[${this.clientId}] Also updating separate markers array with ${updatedStageProps.marker.markers.length} markers:`,
+          updatedStageProps.marker.markers.map((m) => ({ id: m.id, title: m.title }))
+        );
         sceneDataMap.set('markers', updatedStageProps.marker.markers);
       }
       sceneDataMap.set('lastUpdated', Date.now());
     }, this.clientId); // Set origin to this client's ID
 
-    if (dev) console.log(`[${this.clientId}] Scene stageProps Y.js transaction completed for scene: ${sceneId}`);
+    devLog('yjs', `[${this.clientId}] Scene stageProps Y.js transaction completed for scene: ${sceneId}`);
   }
 
   /**
    * Add scene to the list
    */
   addScene(scene: SceneMetadata) {
-    if (dev) console.log('Adding scene to Y.js:', scene.name);
+    devLog('yjs', 'Adding scene to Y.js:', scene.name);
     this.doc.transact(() => {
       this.yScenesList.push([scene]);
       // Update timestamp to prevent initialization conflicts
@@ -596,7 +587,7 @@ export class PartyDataManager {
     const sceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
 
     if (sceneIndex !== -1) {
-      if (dev) console.log('Updating scene in Y.js:', sceneId, updates);
+      devLog('yjs', 'Updating scene in Y.js:', sceneId, updates);
       this.doc.transact(() => {
         const updatedScene = { ...scenes[sceneIndex], ...updates };
         this.yScenesList.delete(sceneIndex, 1);
@@ -614,7 +605,7 @@ export class PartyDataManager {
     const sceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
 
     if (sceneIndex !== -1) {
-      if (dev) console.log('Removing scene from Y.js:', sceneId);
+      devLog('yjs', 'Removing scene from Y.js:', sceneId);
 
       // Check if this was the active scene and clear it
       const currentActiveSceneId = this.yPartyState.get('activeSceneId');
@@ -625,7 +616,7 @@ export class PartyDataManager {
 
         // If this was the active scene, clear the activeSceneId
         if (currentActiveSceneId === sceneId) {
-          if (dev) console.log('Clearing active scene ID from Y.js as deleted scene was active:', sceneId);
+          devLog('yjs', 'Clearing active scene ID from Y.js as deleted scene was active:', sceneId);
           this.yPartyState.set('activeSceneId', null);
         }
       });
@@ -636,7 +627,7 @@ export class PartyDataManager {
    * Reorder scenes
    */
   reorderScenes(newScenesOrder: SceneMetadata[]) {
-    if (dev) console.log('Reordering scenes in Y.js:', newScenesOrder.length);
+    devLog('yjs', 'Reordering scenes in Y.js:', newScenesOrder.length);
 
     // Check if the current active scene still exists in the new scenes list
     const currentActiveSceneId = this.yPartyState.get('activeSceneId');
@@ -651,7 +642,7 @@ export class PartyDataManager {
 
       // If the active scene no longer exists, clear it
       if (currentActiveSceneId && !activeSceneStillExists) {
-        if (dev) console.log('Clearing active scene ID from Y.js as it no longer exists:', currentActiveSceneId);
+        devLog('yjs', 'Clearing active scene ID from Y.js as it no longer exists:', currentActiveSceneId);
         this.yPartyState.set('activeSceneId', null);
       }
     });
@@ -667,7 +658,7 @@ export class PartyDataManager {
   becomeActiveSaver(sceneId: string): boolean {
     const sceneData = this.yScenes.get(sceneId);
     if (!sceneData) {
-      console.warn('Cannot become active saver: scene not found:', sceneId);
+      devWarn('yjs', 'Cannot become active saver: scene not found:', sceneId);
       return false;
     }
 
@@ -679,7 +670,7 @@ export class PartyDataManager {
       if (sceneData.get('saveInProgress') === true) {
         const currentSaver = sceneData.get('activeSaver');
         if (currentSaver && currentSaver !== this.userId) {
-          if (dev) console.log('Save already in progress by another editor:', currentSaver);
+          devLog('yjs', 'Save already in progress by another editor:', currentSaver);
           success = false;
           return;
         }
@@ -691,8 +682,8 @@ export class PartyDataManager {
       success = true;
     });
 
-    if (success && dev) {
-      console.log('Became active saver for scene:', sceneId);
+    if (success) {
+      devLog('yjs', 'Became active saver for scene:', sceneId);
     }
 
     return success;
@@ -704,7 +695,7 @@ export class PartyDataManager {
   releaseActiveSaver(sceneId: string, success: boolean = true) {
     const sceneData = this.yScenes.get(sceneId);
     if (!sceneData) {
-      console.warn('Cannot release active saver: scene not found:', sceneId);
+      devWarn('yjs', 'Cannot release active saver: scene not found:', sceneId);
       return;
     }
 
@@ -716,12 +707,12 @@ export class PartyDataManager {
 
         if (success) {
           sceneData.set('lastUpdated', Date.now());
-          if (dev) console.log('Released active saver (success) for scene:', sceneId);
-        } else if (dev) {
-          console.log('Released active saver (failed) for scene:', sceneId);
+          devLog('yjs', 'Released active saver (success) for scene:', sceneId);
+        } else {
+          devLog('yjs', 'Released active saver (failed) for scene:', sceneId);
         }
       } else {
-        console.warn('Cannot release: not the active saver for scene:', sceneId, 'Current saver:', currentSaver);
+        devWarn('yjs', 'Cannot release: not the active saver for scene:', sceneId, 'Current saver:', currentSaver);
       }
     });
   }
@@ -752,7 +743,7 @@ export class PartyDataManager {
       this.yGameSessionMeta.clear();
       this.yCursors.clear();
     });
-    if (dev) console.log('Y.js data cleared');
+    devLog('yjs', 'Y.js data cleared');
   }
 
   /**
@@ -760,7 +751,7 @@ export class PartyDataManager {
    * Useful for ensuring idle editors catch up with changes
    */
   forceSyncCheck() {
-    if (dev) console.log(`[${this.clientId}] Force sync check triggered`);
+    devLog('yjs', `[${this.clientId}] Force sync check triggered`);
 
     // Trigger a notification cycle to refresh UI
     this.notifySubscribers();
@@ -813,28 +804,27 @@ export class PartyDataManager {
         // - Don't count missing Y.js timestamps as drift (could be initialization lag)
         if (yjsTimestamp && dbTimestamp > yjsTimestamp) {
           driftedScenes.push(sceneId);
-          if (dev)
-            console.log(
-              `[${this.clientId}] Drift detected for scene ${sceneId}: DB=${new Date(dbTimestamp).toISOString()}, Y.js=${new Date(yjsTimestamp).toISOString()}`
-            );
+          devLog(
+            'yjs',
+            `[${this.clientId}] Drift detected for scene ${sceneId}: DB=${new Date(dbTimestamp).toISOString()}, Y.js=${new Date(yjsTimestamp).toISOString()}`
+          );
         }
       }
 
       // Log summary for debugging
       const totalScenesWithTimestamps = Object.keys(dbTimestamps).length;
-      if (dev) {
-        if (totalScenesWithTimestamps > 0) {
-          console.log(
-            `[${this.clientId}] Drift check complete: ${driftedScenes.length} drifted out of ${totalScenesWithTimestamps} scenes with DB timestamps`
-          );
-        } else {
-          console.log(`[${this.clientId}] Drift check complete: No scenes have timestamps yet (migration period)`);
-        }
+      if (totalScenesWithTimestamps > 0) {
+        devLog(
+          'yjs',
+          `[${this.clientId}] Drift check complete: ${driftedScenes.length} drifted out of ${totalScenesWithTimestamps} scenes with DB timestamps`
+        );
+      } else {
+        devLog('yjs', `[${this.clientId}] Drift check complete: No scenes have timestamps yet (migration period)`);
       }
 
       return driftedScenes;
     } catch (error) {
-      console.error(`[${this.clientId}] Error detecting drift:`, error);
+      devError('yjs', `[${this.clientId}] Error detecting drift:`, error);
       return [];
     }
   }
@@ -897,7 +887,7 @@ export class PartyDataManager {
    * Clean up resources
    */
   destroy() {
-    if (dev) console.log(`[${this.clientId}] Destroying PartyDataManager for user ${this.userId}`);
+    devLog('yjs', `[${this.clientId}] Destroying PartyDataManager for user ${this.userId}`);
 
     // Clean up cursor handlers
     for (const event of this.cursorHandlers.keys()) {

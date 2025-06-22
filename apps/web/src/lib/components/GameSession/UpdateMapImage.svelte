@@ -1,11 +1,12 @@
 <script lang="ts" module>
   import { handleMutation } from '$lib/factories';
+  import { devWarn } from '$lib/utils/debug';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
     if (hiddenFileInput) {
       hiddenFileInput.click();
     } else {
-      console.warn('hiddenFileInput not available yet');
+      devWarn('hiddenFileInput not available yet');
       // Try again after a short delay to allow for component rendering
       setTimeout(() => {
         hiddenFileInput?.click();
@@ -38,7 +39,7 @@
 
     // Ensure we have a valid sceneId before processing
     if (!sceneId) {
-      console.warn('No sceneId provided, cannot update map image');
+      devWarn('No sceneId provided, cannot update map image');
       input.value = '';
       return;
     }
@@ -105,7 +106,7 @@
             partyData.updateSceneStageProps(sceneId, updatedStageProps);
           }
         } else {
-          console.warn(
+          devWarn(
             'Cannot update scene in Y.js - partyData not available or response missing scene:',
             !!partyData,
             !!response?.scene

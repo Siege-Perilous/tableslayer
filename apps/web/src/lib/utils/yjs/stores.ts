@@ -1,3 +1,4 @@
+import { devLog } from '../debug';
 import { PartyDataManager, type PartyState, type SceneData, type SceneMetadata } from './PartyDataManager';
 
 let partyDataManager: PartyDataManager | null = null;
@@ -6,12 +7,12 @@ let partyDataManager: PartyDataManager | null = null;
  * Initialize the party data manager (call once per game session)
  */
 export function initializePartyDataManager(partyId: string, userId: string, gameSessionId?: string): PartyDataManager {
-  console.log('Initializing PartyDataManager for party:', partyId, 'gameSession:', gameSessionId);
+  devLog('yjs', 'Initializing PartyDataManager for party:', partyId, 'gameSession:', gameSessionId);
   if (partyDataManager) {
     partyDataManager.destroy();
   }
   partyDataManager = new PartyDataManager(partyId, userId, gameSessionId);
-  console.log('PartyDataManager initialized successfully');
+  devLog('yjs', 'PartyDataManager initialized successfully');
   return partyDataManager;
 }
 

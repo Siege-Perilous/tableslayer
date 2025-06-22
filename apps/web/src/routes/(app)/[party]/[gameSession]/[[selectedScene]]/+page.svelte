@@ -36,12 +36,12 @@
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
+  import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
   import { goto } from '$app/navigation';
-  import { dev } from '$app/environment';
 
   let {
     scenes,
@@ -63,13 +63,11 @@
   ) => {
     const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
 
-    if (dev) {
-      console.log('🔄 Merging markers:', {
-        localCount: localMarkers.length,
-        incomingCount: incomingMarkers.length,
-        protectedCount: protectedMarkers.size
-      });
-    }
+    devLog('markers', '🔄 Merging markers:', {
+      localCount: localMarkers.length,
+      incomingCount: incomingMarkers.length,
+      protectedCount: protectedMarkers.size
+    });
 
     // Start with incoming markers as base, but exclude recently deleted ones
     const resultMap = new Map();
@@ -270,7 +268,7 @@
     const sceneId = selectedScene?.id;
     if (!partyData || !sceneId || !isHydrated) return;
 
-    if (dev) console.log('DEV: Setting up Y.js subscription for scene:', sceneId);
+    devLog('scene', 'DEV: Setting up Y.js subscription for scene:', sceneId);
     const currentSceneId = sceneId; // Capture the scene ID to avoid closure issues
 
     // Also ensure the scene has observers set up in Y.js
@@ -295,10 +293,10 @@
       // SSR protection: block the first Y.js update if we're in the protection period
       const timeSincePageLoad = Date.now() - pageLoadTime;
       if (!hasReceivedFirstYjsUpdate && timeSincePageLoad < ssrProtectionPeriod) {
-        if (dev)
-          console.log(
-            `DEV: 🛡️ PROTECTING fresh SSR data - blocking first Y.js update (${timeSincePageLoad}ms since page load)`
-          );
+        devLog(
+          'save',
+          `DEV: 🛡️ PROTECTING fresh SSR data - blocking first Y.js update (${timeSincePageLoad}ms since page load)`
+        );
         hasReceivedFirstYjsUpdate = true; // Mark that we've received the first update
         return;
       }
@@ -418,7 +416,7 @@
 
     // Initialize Y.js for scene list synchronization
     try {
-      if (dev) console.log('DEV: Initializing Y.js for scene list sync...');
+      devLog('scene', 'DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
       const partySlug = $page.params.party;
 
@@ -479,7 +477,7 @@
       // Process any property updates that were queued before Y.js was ready
       flushQueuedPropertyUpdates();
     } catch (error) {
-      console.error('Error initializing Y.js scene sync:', error);
+      devError('scene', 'Error initializing Y.js scene sync:', error);
       // Even if Y.js fails, mark as hydrated to prevent hydration issues
       isHydrated = true;
     }
@@ -712,15 +710,14 @@
           stageProps.scene.rotation = currentSceneState.rotation;
         }
       } else if (markersChanged) {
-        if (dev)
-          console.log('DEV: [StageProps Effect] Skipping marker rebuild:', {
-            isActivelyEditing,
-            markersBeingEdited: markersBeingEdited.size,
-            waitingForSSRUpdate,
-            recentlySavedMarkers: Array.from(recentlySavedMarkerIds),
-            currentMarkers: stageProps.marker.markers.length,
-            ssrMarkers: currentSelectedSceneMarkers?.length || 0
-          });
+        devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
+          isActivelyEditing,
+          markersBeingEdited: markersBeingEdited.size,
+          waitingForSSRUpdate,
+          recentlySavedMarkers: Array.from(recentlySavedMarkerIds),
+          currentMarkers: stageProps.marker.markers.length,
+          ssrMarkers: currentSelectedSceneMarkers?.length || 0
+        });
       }
     }
 
@@ -883,7 +880,7 @@
         recentlyDeletedMarkers.delete(markerId);
       }, 10000); // Keep for 10 seconds
     } else {
-      if (dev) console.warn('DEV: Marker not found for deletion:', markerId);
+      devWarn('markers', 'DEV: Marker not found for deletion:', markerId);
     }
   };
 
@@ -1055,7 +1052,7 @@
           isUpdatingFog = false;
         },
         onError: () => {
-          console.error('Error uploading fog');
+          devError('save', 'Error uploading fog');
           isUpdatingFog = false;
         },
         toastMessages: {
@@ -1129,7 +1126,7 @@
         formLoadingState: () => {},
         onSuccess: () => {},
         onError: (error) => {
-          console.error('Error saving scene:', error);
+          devError('save', 'Error saving scene:', error);
         },
         toastMessages: {
           success: { title: 'Scene saved!' },
@@ -1170,7 +1167,7 @@
               }, 5000); // 5 seconds should be enough for SSR update
             },
             onError: (error) => {
-              console.error('Error saving marker:', error);
+              devError('save', 'Error saving marker:', error);
             },
             toastMessages: {
               error: { title: 'Error saving marker', body: (err) => err.message || 'Error saving marker' }
@@ -1184,8 +1181,8 @@
         if (partyData && selectedScene?.id) {
           // Check if stageProps was modified during save (e.g., by the StageProps effect)
           const currentMarkerCount = stageProps.marker?.markers?.length || 0;
-          if (currentMarkerCount !== markerCountAtSave && dev) {
-            console.log('DEV: ⚠️ StageProps markers were modified during save!', {
+          if (currentMarkerCount !== markerCountAtSave) {
+            devLog('save', 'DEV: ⚠️ StageProps markers were modified during save!', {
               countAtSave: markerCountAtSave,
               currentCount: currentMarkerCount,
               snapshotCount: markersSnapshot.length
@@ -1236,7 +1233,7 @@
       // Mark save as successful
       saveSuccess = true;
     } catch (error) {
-      console.error('Error during save operation:', error);
+      devError('save', 'Error during save operation:', error);
       saveSuccess = false;
     } finally {
       // Always release the save lock and reset flags
@@ -1362,7 +1359,7 @@
         await invalidateAll();
       }
     } catch (error) {
-      console.error('Error in periodic drift check:', error);
+      devError('save', 'Error in periodic drift check:', error);
     }
   };
 
@@ -1422,7 +1419,7 @@
       if (lastNavigationTarget === targetPath) {
         navigationAttempts++;
         if (navigationAttempts > 2) {
-          console.warn('Navigation loop detected, stopping navigation attempts');
+          devWarn('scene', 'Navigation loop detected, stopping navigation attempts');
           return;
         }
       } else {
@@ -1442,7 +1439,7 @@
       if (lastNavigationTarget === targetPath) {
         navigationAttempts++;
         if (navigationAttempts > 2) {
-          console.warn('Navigation loop detected, stopping navigation attempts');
+          devWarn('scene', 'Navigation loop detected, stopping navigation attempts');
           return;
         }
       } else {
@@ -1497,7 +1494,7 @@
             await invalidateAll();
           }
         } catch (error) {
-          console.error('Error checking for drift:', error);
+          devError('save', 'Error checking for drift:', error);
         }
       }, 200);
     }
