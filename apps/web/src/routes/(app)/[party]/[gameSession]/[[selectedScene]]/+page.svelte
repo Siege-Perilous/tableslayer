@@ -194,6 +194,7 @@
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
+  let protectionCleanupTimer: ReturnType<typeof setInterval> | null = null; // Timer for cleaning up stuck protections
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
@@ -522,10 +523,32 @@
       checkForDrift();
     }, 30000); // 30 seconds
 
+    // Set up periodic protection cleanup timer (every 15 seconds)
+    // This ensures markers don't stay protected forever if something goes wrong
+    protectionCleanupTimer = setInterval(() => {
+      const now = Date.now();
+      const protectionTimeout = 15000; // 15 seconds max protection
+
+      // Check if any markers have been protected for too long
+      if (markersBeingMoved.size > 0 || markersBeingEdited.size > 0) {
+        // If not actively editing and protections exist, clear them
+        if (!isActivelyEditing && now - lastOwnYjsUpdateTime > protectionTimeout) {
+          devLog('markers', 'Periodic cleanup: clearing old marker protections', {
+            beingMoved: Array.from(markersBeingMoved),
+            beingEdited: Array.from(markersBeingEdited),
+            timeSinceLastUpdate: now - lastOwnYjsUpdateTime
+          });
+          markersBeingMoved.clear();
+          markersBeingEdited.clear();
+        }
+      }
+    }, 15000); // Check every 15 seconds
+
     return () => {
       if (saveTimer) clearTimeout(saveTimer);
       if (editingTimer) clearTimeout(editingTimer);
       if (driftCheckTimer) clearInterval(driftCheckTimer);
+      if (protectionCleanupTimer) clearInterval(protectionCleanupTimer);
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
@@ -780,9 +803,15 @@
     }
 
     // Keep the marker protected for longer to handle save completion
+    // But add a maximum timeout to prevent permanent protection
     setTimeout(() => {
-      markersBeingEdited.delete(marker.id);
+      if (markersBeingEdited.has(marker.id)) {
+        devLog('markers', 'Removing marker from edit protection after timeout', marker.id);
+        markersBeingEdited.delete(marker.id);
+      }
     }, 5000); // Keep protected for 5 seconds to ensure save completes
+
+    // Note: The window blur handler will clear all protections if focus is lost
   };
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
@@ -807,6 +836,15 @@
         isActivelyEditing = false;
       }, 1000); // Clear after 1 second
 
+      // Add a safety timeout to ensure marker doesn't stay protected forever
+      // This prevents sync issues if save fails or window loses focus
+      setTimeout(() => {
+        if (markersBeingMoved.has(marker.id)) {
+          devLog('markers', 'Safety timeout: removing marker from protection', marker.id);
+          markersBeingMoved.delete(marker.id);
+        }
+      }, 10000); // 10 second maximum protection
+
       // Use queuePropertyUpdate which will handle Y.js sync automatically
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
 
@@ -821,6 +859,9 @@
           if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
             saveScene();
             // Remove marker from being moved set after save
+            markersBeingMoved.delete(marker.id);
+          } else {
+            // Save was cancelled - remove protection
             markersBeingMoved.delete(marker.id);
           }
         }, 5000); // Longer delay for marker moves
@@ -1505,6 +1546,24 @@
     if (saveTimer) {
       clearTimeout(saveTimer);
       saveTimer = null;
+    }
+
+    // Clear marker protection sets when losing focus
+    // This prevents markers from being stuck in protected state
+    if (markersBeingMoved.size > 0 || markersBeingEdited.size > 0) {
+      devLog('markers', 'Clearing marker protection on window blur', {
+        beingMoved: Array.from(markersBeingMoved),
+        beingEdited: Array.from(markersBeingEdited)
+      });
+      markersBeingMoved.clear();
+      markersBeingEdited.clear();
+    }
+
+    // Also clear the actively editing flag
+    isActivelyEditing = false;
+    if (editingTimer) {
+      clearTimeout(editingTimer);
+      editingTimer = null;
     }
   }}
 />

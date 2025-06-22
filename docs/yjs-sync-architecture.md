@@ -237,6 +237,67 @@ enableImmediateYjsSync(); // Bypass batching
 disableImmediateYjsSync(); // Return to batched mode
 ```
 
+## Marker Protection Mechanism
+
+To prevent marker position conflicts during real-time collaboration, the system uses protection sets:
+
+### Protection Sets
+
+```typescript
+// Track markers being actively edited
+let markersBeingMoved = new Set<string>(); // Markers currently being dragged
+let markersBeingEdited = new Set<string>(); // Markers being added/edited
+```
+
+### How Protection Works
+
+1. **During Marker Operations**:
+
+   ```typescript
+   // When a marker is being moved
+   markersBeingMoved.add(marker.id);
+
+   // When a marker is being edited
+   markersBeingEdited.add(marker.id);
+   ```
+
+2. **Protection Merge Logic**:
+
+   ```typescript
+   // mergeMarkersWithProtection function
+   if (beingMoved.has(localMarker.id)) {
+     // Only preserve position from local state
+     resultMap.set(localMarker.id, {
+       ...incomingMarker,
+       position: localMarker.position
+     });
+   }
+   ```
+
+3. **Automatic Cleanup**:
+   - **On save completion**: Markers removed from protection
+   - **On window blur**: All protections cleared to prevent deadlocks
+   - **Safety timeout**: 10 seconds for moving, 5 seconds for editing
+   - **Periodic cleanup**: Every 15 seconds removes stale protections
+
+### Focus Change Handling
+
+```typescript
+onblur={() => {
+  // Clear all marker protections when losing focus
+  markersBeingMoved.clear();
+  markersBeingEdited.clear();
+
+  // Clear save timer
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+});
+```
+
+This prevents the common issue where switching browser tabs mid-edit would leave markers permanently protected, blocking Y.js synchronization.
+
 ## Local-Only Properties
 
 Some properties don't sync between users:
@@ -669,9 +730,20 @@ const unsubscribe = partyData.subscribe(() => {
    - Code location: `Editor.svelte` lines 110-121
 
 3. **Save Conflicts**
+
    - Problem: Multiple users trying to save simultaneously
    - Solution: Use `becomeActiveSaver` coordination
    - Code location: See performSave function in `+page.svelte`
+
+4. **Sync Failure on Focus Change**
+   - Problem: Y.js sync stops working when switching browser tabs before a save completes
+   - Root Cause: Markers remain in protection sets (`markersBeingMoved`, `markersBeingEdited`) indefinitely
+   - Solution: Clear protection sets on window blur and implement timeout-based cleanup
+   - Code locations:
+     - Window blur handler clears all protections
+     - 10-second safety timeout for moving markers
+     - 15-second periodic cleanup timer
+     - See `onblur` handler and protection cleanup logic in `+page.svelte`
 
 ### Key Files and Their Roles
 
@@ -718,7 +790,13 @@ The timing constants that control synchronization behavior are defined in:
   - `SCENE_UPDATE_DELAY` - Less frequent scene property updates
 
 - **Auto-save delay** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`
+
   - Currently set to 3000ms (3 seconds) in the `startAutoSaveTimer` function
+
+- **Protection timeouts** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`
+  - Marker move protection timeout: 10 seconds
+  - Marker edit protection timeout: 5 seconds
+  - Periodic cleanup interval: 15 seconds
 
 ## Best Practices
 
@@ -732,6 +810,8 @@ The timing constants that control synchronization behavior are defined in:
 8. **Validate permissions** before allowing updates
 9. **Protect state during operations** (drag, edit) from external updates
 10. **Use dev logging** to debug sync issues (check for dev mode console logs)
+11. **Clear protections on focus loss** to prevent sync deadlocks
+12. **Implement timeout-based cleanup** for protection sets to handle edge cases
 
 ## Debugging
 
