@@ -103,7 +103,7 @@ When a user modifies a control (e.g., adjusts map opacity slider):
   min={0}
   max={1}
   step={0.1}
-  onValueChange={(value) => handleMapOpacityChange(value)}
+  oninput={(value) => handleMapOpacityChange(value)}
 />
 ```
 
@@ -442,7 +442,7 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
 ```svelte
 <!-- GridOverlayControls.svelte -->
 <script>
-  import { InputSlider, ColorPicker, Toggle } from '@tableslayer/ui';
+  import { InputSlider, ColorPicker, RadioButton, FormControl } from '@tableslayer/ui';
   import { queuePropertyUpdate } from '$lib/utils';
 
   export let stageProps;
@@ -451,28 +451,48 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
     queuePropertyUpdate(stageProps, ['gridOverlay', 'opacity'], value, 'control');
   }
 
-  function updateGridColor(value) {
-    queuePropertyUpdate(stageProps, ['gridOverlay', 'color'], value, 'control');
+  function updateGridColor(colorData) {
+    queuePropertyUpdate(stageProps, ['gridOverlay', 'color'], colorData.hex, 'control');
   }
 
   function toggleGrid(value) {
-    queuePropertyUpdate(stageProps, ['gridOverlay', 'visible'], value, 'control');
+    queuePropertyUpdate(stageProps, ['gridOverlay', 'visible'], value === 'true', 'control');
   }
 </script>
 
-<Toggle checked={stageProps.gridOverlay.visible} onCheckedChange={toggleGrid} label="Show Grid" />
+<FormControl label="Show Grid" name="gridVisible">
+  {#snippet input({ inputProps })}
+    <RadioButton
+      {...inputProps}
+      selected={stageProps.gridOverlay.visible.toString()}
+      options={[
+        { label: 'on', value: 'true' },
+        { label: 'off', value: 'false' }
+      ]}
+      onSelectedChange={toggleGrid}
+    />
+  {/snippet}
+</FormControl>
 
 {#if stageProps.gridOverlay.visible}
-  <InputSlider
-    value={stageProps.gridOverlay.opacity}
-    min={0}
-    max={1}
-    step={0.1}
-    onValueChange={updateGridOpacity}
-    label="Grid Opacity"
-  />
+  <FormControl label="Grid Opacity" name="gridOpacity">
+    {#snippet input({ inputProps })}
+      <InputSlider
+        {...inputProps}
+        value={stageProps.gridOverlay.opacity}
+        min={0}
+        max={1}
+        step={0.1}
+        oninput={updateGridOpacity}
+      />
+    {/snippet}
+  </FormControl>
 
-  <ColorPicker value={stageProps.gridOverlay.color} onColorChange={updateGridColor} label="Grid Color" />
+  <FormControl label="Grid Color" name="gridColor">
+    {#snippet input({ inputProps })}
+      <ColorPicker {...inputProps} hex={stageProps.gridOverlay.color} onUpdate={updateGridColor} />
+    {/snippet}
+  </FormControl>
 {/if}
 ```
 
