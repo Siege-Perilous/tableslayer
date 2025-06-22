@@ -58,7 +58,6 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-  // Removed cache busting timestamps to prevent flashing
   const sceneWithThumb = { ...scene, thumb };
   return sceneWithThumb;
 };

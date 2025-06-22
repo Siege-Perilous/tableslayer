@@ -42,7 +42,6 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
             'w=400,h=225,fit=cover,gravity=center'
           );
 
-          // Removed cache busting timestamps to prevent flashing
           const sceneWithThumb = { ...scene, thumb } as SelectScene & Thumb;
           scenesWithThumbs.push(sceneWithThumb);
         }

@@ -114,16 +114,16 @@
           <div class="gameSessionDropdown__text">
             {#if gameSession}
               <Text>{gameSession.name}</Text>
-            {:else}
-              Choose a game session
             {/if}
           </div>
-          <SelectorMenu
-            options={gameSessionMenuItems}
-            onSelectedChange={(selected) => handleChangeGameSession(selected)}
-            positioning={{ placement: 'bottom', offset: 10 }}
-            selected={gameSession ? gameSession.slug : undefined}
-          />
+          {#if gameSession}
+            <SelectorMenu
+              options={gameSessionMenuItems}
+              onSelectedChange={(selected) => handleChangeGameSession(selected)}
+              positioning={{ placement: 'bottom', offset: 10 }}
+              selected={gameSession ? gameSession.slug : undefined}
+            />
+          {/if}
         </div>
       {/if}
     </div>

@@ -106,6 +106,7 @@
     grid-template-columns: 3fr 1fr;
     margin-top: var(--size-8);
     gap: var(--size-12);
+    min-height: 400px; /* Prevent vertical shift */
   }
   .sessionList {
     display: grid;

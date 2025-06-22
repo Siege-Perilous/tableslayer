@@ -34,7 +34,18 @@
   }
 </script>
 
-<button type="button" onclick={openFileDialog} class={['avatarFileInput', restProps.class]}>
+<div
+  role="button"
+  onkeydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      openFileDialog();
+    }
+  }}
+  aria-label="Change Avatar"
+  tabindex="0"
+  onclick={openFileDialog}
+  class={['avatarFileInput', restProps.class]}
+>
   <Avatar src={avatarPreviewUrl || src} {alt} {initials} {isLoading} {size} {variant} {...restProps} />
   <div class="avatarFileInput__overlay">
     <Icon Icon={IconPhotoCirclePlus} size="2rem" stroke={2} />
@@ -47,7 +58,7 @@
     onchange={handleFileChange}
     style={'display: none;'}
   />
-</button>
+</div>
 
 <style>
   .avatarFileInput {
