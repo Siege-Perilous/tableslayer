@@ -629,6 +629,17 @@
     // Check if we need to rebuild due to map change
     const mapLocationChanged = currentMapLocation !== lastBuiltMapLocation;
 
+    if (isSceneSwitch) {
+      devLog('scene', 'Scene switch detected:', {
+        from: previousSceneId,
+        to: currentSceneId,
+        isInitialLoad: !previousSceneId,
+        mapLocationChanged,
+        gameSessionId: gameSession.id,
+        timestamp: Date.now()
+      });
+    }
+
     // Only rebuild stageProps when scene switches, initial load, or map actually changes
     if (isSceneSwitch || !stageProps || mapLocationChanged) {
       // This is a scene switch or initial load - rebuild everything
@@ -643,6 +654,17 @@
         // Only initialize Y.js data if it doesn't exist at all for this scene
         // This prevents overwriting data from other editors
         const existingSceneData = partyData.getSceneData(currentSceneId);
+
+        devLog('scene', 'Y.js scene data check:', {
+          sceneId: currentSceneId,
+          hasExistingData: !!existingSceneData,
+          hasStageProps: !!existingSceneData?.stageProps,
+          markerCount: existingSceneData?.markers?.length || 0,
+          lastUpdated: existingSceneData?.lastUpdated || null,
+          isSceneSwitch,
+          timestamp: Date.now()
+        });
+
         if (!existingSceneData) {
           // Create a copy of stageProps without local-only properties for Y.js storage
           const sharedStageProps = {
@@ -658,9 +680,16 @@
             }
           };
 
+          devLog('scene', 'Initializing Y.js scene data:', {
+            sceneId: currentSceneId,
+            markerCount: currentSelectedSceneMarkers?.length || 0,
+            timestamp: Date.now()
+          });
+
           // Initialize Y.js with the current scene data
           partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
         } else if (isSceneSwitch) {
+          devLog('scene', 'Scene switch - Y.js data already exists, not reinitializing');
         } else {
           // Not a scene switch - check if we have new markers from SSR that Y.js doesn't know about
           const yjsMarkerIds = new Set((existingSceneData.markers || []).map((m: Marker) => m.id));
@@ -668,6 +697,12 @@
           const newMarkersFromSSR = [...ssrMarkerIds].filter((id) => !yjsMarkerIds.has(id));
 
           if (newMarkersFromSSR.length > 0) {
+            devLog('scene', 'Updating Y.js with new markers from SSR:', {
+              sceneId: currentSceneId,
+              newMarkerIds: newMarkersFromSSR,
+              totalMarkers: stageProps.marker.markers.length,
+              timestamp: Date.now()
+            });
             // Update Y.js with the current stageProps that includes the new markers
             lastOwnYjsUpdateTime = Date.now();
             partyData.updateSceneStageProps(currentSceneId, stageProps);

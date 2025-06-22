@@ -158,10 +158,25 @@ export class PartyDataManager {
 
     // Add Y.js sync debugging for game session
     this.provider.on('sync', (isSynced: boolean) => {
+      devLog('yjs', 'Game session sync status changed:', {
+        isSynced,
+        room: gameSessionRoomName,
+        gameSessionId: this.gameSessionId,
+        scenesCount: this.yScenes.size,
+        clientId: this.clientId,
+        timestamp: Date.now()
+      });
       devLog('yjs', `[${this.clientId}] Game session Y.js sync status: ${isSynced} - room: ${gameSessionRoomName}`);
     });
 
     this.partyProvider.on('sync', (isSynced: boolean) => {
+      devLog('yjs', 'Party sync status changed:', {
+        isSynced,
+        room: partyRoomName,
+        partyId: this.partyId,
+        clientId: this.clientId,
+        timestamp: Date.now()
+      });
       devLog('yjs', `[${this.clientId}] Party Y.js sync status: ${isSynced} - room: ${partyRoomName}`);
     });
 
@@ -266,6 +281,15 @@ export class PartyDataManager {
    * Initialize scene data from SSR
    */
   initializeSceneData(sceneId: string, stageProps: StageProps, markers: Marker[]) {
+    devLog('yjs', 'initializeSceneData called:', {
+      sceneId,
+      markerCount: markers.length,
+      hasExistingData: this.yScenes.has(sceneId),
+      clientId: this.clientId,
+      gameSessionId: this.gameSessionId,
+      timestamp: Date.now()
+    });
+
     devLog('yjs', `[${this.clientId}] Initializing scene data for scene: ${sceneId}`);
     devLog(
       'yjs',
@@ -512,13 +536,20 @@ export class PartyDataManager {
   getSceneData(sceneId: string): SceneData | null {
     const sceneDataMap = this.yScenes.get(sceneId);
     if (!sceneDataMap) {
+      devLog('yjs', 'getSceneData - no data found:', {
+        sceneId,
+        availableScenes: Array.from(this.yScenes.keys()),
+        gameSessionId: this.gameSessionId,
+        clientId: this.clientId,
+        timestamp: Date.now()
+      });
       devLog('yjs', `getSceneData: No scene data found for scene: ${sceneId}`);
       devLog('yjs', 'Available scenes:', Array.from(this.yScenes.keys()));
       return null;
     }
 
     // Convert Y.Map back to plain object for compatibility
-    return {
+    const sceneData = {
       stageProps: sceneDataMap.get('stageProps'),
       markers: sceneDataMap.get('markers'),
       localStates: sceneDataMap.get('localStates') || {},
@@ -526,18 +557,43 @@ export class PartyDataManager {
       saveInProgress: sceneDataMap.get('saveInProgress') || false,
       activeSaver: sceneDataMap.get('activeSaver')
     };
+
+    devLog('yjs', 'getSceneData - data retrieved:', {
+      sceneId,
+      hasStageProps: !!sceneData.stageProps,
+      markerCount: sceneData.markers?.length || 0,
+      lastUpdated: sceneData.lastUpdated,
+      clientId: this.clientId,
+      timestamp: Date.now()
+    });
+
+    return sceneData;
   }
 
   /**
    * Update scene stageProps via Y.js transaction
    */
   updateSceneStageProps(sceneId: string, updatedStageProps: StageProps) {
+    devLog('yjs', 'updateSceneStageProps called:', {
+      sceneId,
+      markerCount: updatedStageProps.marker?.markers?.length || 0,
+      gameConnected: this.provider.socket?.connected,
+      partyConnected: this.partyProvider.socket?.connected,
+      clientId: this.clientId,
+      timestamp: Date.now()
+    });
+
     devLog(
       'yjs',
       `[${this.clientId}] Updating scene stageProps for scene: ${sceneId} - connections: game=${this.provider.socket?.connected}, party=${this.partyProvider.socket?.connected}`
     );
     const sceneDataMap = this.yScenes.get(sceneId);
     if (!sceneDataMap) {
+      devLog('yjs', 'updateSceneStageProps - scene not found:', {
+        sceneId,
+        availableScenes: Array.from(this.yScenes.keys()),
+        clientId: this.clientId
+      });
       devWarn('yjs', `[${this.clientId}] No scene data found for scene: ${sceneId} - cannot update stageProps`);
       devWarn('yjs', 'Available scenes:', Array.from(this.yScenes.keys()));
       return;
