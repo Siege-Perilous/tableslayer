@@ -529,9 +529,7 @@
       const now = Date.now();
       const protectionTimeout = 15000; // 15 seconds max protection
 
-      // Check if any markers have been protected for too long
       if (markersBeingMoved.size > 0 || markersBeingEdited.size > 0) {
-        // If not actively editing and protections exist, clear them
         if (!isActivelyEditing && now - lastOwnYjsUpdateTime > protectionTimeout) {
           devLog('markers', 'Periodic cleanup: clearing old marker protections', {
             beingMoved: Array.from(markersBeingMoved),
@@ -542,7 +540,7 @@
           markersBeingEdited.clear();
         }
       }
-    }, 15000); // Check every 15 seconds
+    }, 15000);
 
     return () => {
       if (saveTimer) clearTimeout(saveTimer);
@@ -843,7 +841,7 @@
           devLog('markers', 'Safety timeout: removing marker from protection', marker.id);
           markersBeingMoved.delete(marker.id);
         }
-      }, 10000); // 10 second maximum protection
+      }, 10000);
 
       // Use queuePropertyUpdate which will handle Y.js sync automatically
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
@@ -864,7 +862,7 @@
             // Save was cancelled - remove protection
             markersBeingMoved.delete(marker.id);
           }
-        }, 5000); // Longer delay for marker moves
+        }, 5000);
       }
     }
   };
