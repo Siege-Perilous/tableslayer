@@ -90,6 +90,25 @@ export function buildSceneProps(scene: Scene, markers: Marker[], view: 'editor' 
 }
 ```
 
+### 4. Scene Change Handling
+
+When users switch between scenes, the system preserves Y.js synchronization while updating the view:
+
+**Editor View**: When changing scenes, marker protections are cleared and new stage props are built from the selected scene data. Viewport state (zoom, offset, rotation) can be preserved across scene changes.
+
+**Player View**: Players automatically follow the DM's active scene. When Y.js broadcasts a scene change, the player view detects the mismatch between their current scene and the active scene, then calls `invalidateAll()` to reload with the new scene data. This ensures players always see what the DM intends, even across different game sessions.
+
+**Game Session Switching**: When the active scene belongs to a different game session, the Y.js connection is destroyed and reinitialized with the new session ID. This allows seamless transitions between campaigns while maintaining real-time synchronization.
+
+### 5. Y.js Connection Management
+
+The PartyDataManager handles two separate Y.js documents:
+
+1. **Game Session Document**: Contains scene data, markers, and cursors for a specific game session
+2. **Party Document**: Contains party-wide state like active scene ID and pause status
+
+This separation allows the active scene to be tracked across game sessions while keeping scene data isolated.
+
 ## Y.js Update Flow
 
 ### 1. User Makes a Change

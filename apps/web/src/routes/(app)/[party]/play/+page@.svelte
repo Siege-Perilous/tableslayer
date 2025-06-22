@@ -123,6 +123,14 @@
         (yjsInitialized && !yjsSceneData?.stageProps && data.activeScene.id === yjsPartyState.activeSceneId);
 
       if (shouldUseSsrData) {
+        devLog('playfield', 'Using SSR data instead of Y.js:', {
+          reason: !initialDataApplied ? 'initial render' : 'Y.js missing scene data',
+          sceneId: data.activeScene.id,
+          markerCount: data.activeSceneMarkers?.length || 0,
+          yjsInitialized,
+          hasYjsSceneData: !!yjsSceneData?.stageProps,
+          timestamp: Date.now()
+        });
         devLog('playfield', 'Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
         stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
         initialDataApplied = true;
@@ -159,6 +167,51 @@
   let isMounted = false;
   let isUnmounting = false;
 
+  // Track the current game session ID to detect changes
+  let currentGameSessionId = $state<string | undefined>(data.activeGameSession?.id);
+
+  // Cursor update handler - moved to component scope so it can be reused
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleCursorUpdate = (payload: any) => {
+    const { normalizedPosition, user, zoom: editorZoom } = payload;
+
+    const stageBounds = stageElement?.getBoundingClientRect();
+    if (!stageBounds) return;
+
+    const stageWidth = stageBounds.width;
+    const stageHeight = stageBounds.height;
+
+    const clientZoom = stageProps.scene.zoom;
+
+    const displayWidthClient = stageProps.display.resolution.x * clientZoom;
+    const displayHeightClient = stageProps.display.resolution.y * clientZoom;
+
+    const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
+    const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
+
+    const horizontalMargin = (stageWidth - displayWidthClient) / 2;
+    const verticalMargin = (stageHeight - displayHeightClient) / 2;
+
+    const rectX = normalizedPosition.x * displayWidthEditor;
+    const rectY = normalizedPosition.y * displayHeightEditor;
+
+    const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
+    const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
+
+    const absoluteXClient = horizontalMargin + adjustedX;
+    const absoluteYClient = verticalMargin + adjustedY;
+
+    cursors = {
+      ...cursors,
+      [user.id]: {
+        user,
+        position: { x: absoluteXClient, y: absoluteYClient },
+        lastMoveTime: Date.now(),
+        fadedOut: false
+      }
+    };
+  };
+
   onMount(() => {
     if (isMounted) {
       devWarn('playfield', 'Playfield already mounted, skipping initialization');
@@ -179,6 +232,17 @@
     try {
       // Initialize with the active game session ID if available
       const activeGameSessionId = data.activeGameSession?.id;
+
+      // Update the tracked game session ID
+      currentGameSessionId = activeGameSessionId;
+
+      devLog('playfield', 'Initializing Y.js:', {
+        partySlug: page.params.party,
+        userId: user.id,
+        gameSessionId: activeGameSessionId,
+        activeSceneId: data.activeScene?.id,
+        timestamp: Date.now()
+      });
 
       // Always create a new instance for the playfield
       // Use the party slug from the URL params for the room name
@@ -213,8 +277,26 @@
           // If we don't have the game session ID, we need to find it
           if (!activeGameSessionId) {
             // When the active scene changes, we'll invalidate and get the correct game session
+            devLog('playfield', 'No game session ID available, will invalidate to get correct session');
           } else {
+            devLog('playfield', 'Attempting to get scene data:', {
+              sceneId: updatedPartyState.activeSceneId,
+              gameSessionId: activeGameSessionId,
+              isConnected: partyData!.getConnectionStatus(),
+              timestamp: Date.now()
+            });
+
             const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+
+            devLog('playfield', 'Scene data retrieval result:', {
+              sceneId: updatedPartyState.activeSceneId,
+              hasSceneData: !!sceneData,
+              hasStageProps: !!sceneData?.stageProps,
+              markerCount: sceneData?.markers?.length || 0,
+              lastUpdated: sceneData?.lastUpdated || null,
+              timestamp: Date.now()
+            });
+
             if (sceneData) {
               devLog('playfield', 'Playfield received Y.js scene data update:', {
                 sceneId: updatedPartyState.activeSceneId,
@@ -226,6 +308,7 @@
                 yjsSceneData = sceneData;
               }
             } else {
+              devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
             }
           }
         }
@@ -276,48 +359,6 @@
       }
     });
 
-    // Cursor update handler
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleCursorUpdate = (payload: any) => {
-      const { normalizedPosition, user, zoom: editorZoom } = payload;
-
-      const stageBounds = stageElement?.getBoundingClientRect();
-      if (!stageBounds) return;
-
-      const stageWidth = stageBounds.width;
-      const stageHeight = stageBounds.height;
-
-      const clientZoom = stageProps.scene.zoom;
-
-      const displayWidthClient = stageProps.display.resolution.x * clientZoom;
-      const displayHeightClient = stageProps.display.resolution.y * clientZoom;
-
-      const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
-      const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
-
-      const horizontalMargin = (stageWidth - displayWidthClient) / 2;
-      const verticalMargin = (stageHeight - displayHeightClient) / 2;
-
-      const rectX = normalizedPosition.x * displayWidthEditor;
-      const rectY = normalizedPosition.y * displayHeightEditor;
-
-      const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
-      const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
-
-      const absoluteXClient = horizontalMargin + adjustedX;
-      const absoluteYClient = verticalMargin + adjustedY;
-
-      cursors = {
-        ...cursors,
-        [user.id]: {
-          user,
-          position: { x: absoluteXClient, y: absoluteYClient },
-          lastMoveTime: Date.now(),
-          fadedOut: false
-        }
-      };
-    };
-
     // Add mousemove event listener
     window.addEventListener('mousemove', handleMouseMove);
 
@@ -344,6 +385,119 @@
       // Clean up Y.js
       destroyPartyDataManager();
     };
+  });
+
+  // Effect to monitor game session changes and reinitialize Y.js
+  $effect(() => {
+    // Skip during initial mount, unmounting, or when processing other changes
+    if (!isMounted || isUnmounting || isInvalidating || isProcessingSceneChange) return;
+
+    const newGameSessionId = data.activeGameSession?.id;
+
+    // Check if game session has changed
+    if (partyData && newGameSessionId && currentGameSessionId && newGameSessionId !== currentGameSessionId) {
+      devLog('playfield', 'Game session changed, reinitializing Y.js:', {
+        from: currentGameSessionId,
+        to: newGameSessionId,
+        activeSceneId: data.activeScene?.id
+      });
+
+      // Update the tracked game session ID
+      currentGameSessionId = newGameSessionId;
+
+      // Unsubscribe from current Y.js updates
+      if (partyData) {
+        partyData.offCursorEvent('cursorUpdate');
+        partyData.offCursorEvent('userDisconnect');
+      }
+
+      // Destroy the old connection
+      destroyPartyDataManager();
+
+      // Reinitialize with the new game session
+      const partySlug = page.params.party;
+      initializePartyDataManager(partySlug, user.id, newGameSessionId);
+      partyData = usePartyData();
+
+      devLog('playfield', 'Y.js reinitialized with new game session:', newGameSessionId);
+
+      // Resubscribe to Y.js changes
+      partyData.subscribe(() => {
+        if (isUnmounting || isInvalidating) {
+          return;
+        }
+
+        const updatedPartyState = partyData!.getPartyState();
+        devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
+
+        // Update reactive state
+        yjsPartyState = {
+          isPaused: updatedPartyState.isPaused,
+          activeSceneId: updatedPartyState.activeSceneId
+        };
+
+        // Also get scene data if we have an active scene
+        if (updatedPartyState.activeSceneId) {
+          devLog('playfield', 'Attempting to get scene data:', {
+            sceneId: updatedPartyState.activeSceneId,
+            gameSessionId: newGameSessionId,
+            isConnected: partyData!.getConnectionStatus(),
+            timestamp: Date.now()
+          });
+
+          const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+
+          devLog('playfield', 'Scene data retrieval result:', {
+            sceneId: updatedPartyState.activeSceneId,
+            hasSceneData: !!sceneData,
+            hasStageProps: !!sceneData?.stageProps,
+            markerCount: sceneData?.markers?.length || 0,
+            lastUpdated: sceneData?.lastUpdated || null,
+            timestamp: Date.now()
+          });
+
+          if (sceneData) {
+            devLog('playfield', 'Playfield received Y.js scene data update:', {
+              sceneId: updatedPartyState.activeSceneId,
+              markerCount: sceneData.markers?.length || 0
+            });
+
+            // Apply Y.js update immediately
+            if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
+              yjsSceneData = sceneData;
+            }
+          } else {
+            devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
+          }
+        }
+      });
+
+      // Re-setup cursor tracking
+      if (partyData) {
+        // Wait for socket to be connected
+        const checkSocketConnection = setInterval(() => {
+          if (partyData && partyData.isSocketConnected()) {
+            clearInterval(checkSocketConnection);
+
+            // Register cursor event handlers
+            partyData.onCursorEvent('cursorUpdate', (payload) => {
+              handleCursorUpdate(payload);
+            });
+
+            partyData.onCursorEvent('userDisconnect', (userId) => {
+              const updatedCursors = { ...cursors };
+              delete updatedCursors[userId];
+              cursors = updatedCursors;
+            });
+
+            devLog('playfield', 'Cursor tracking re-established after game session change');
+          }
+        }, 100);
+
+        // Timeout after 5 seconds
+        setTimeout(() => clearInterval(checkSocketConnection), 5000);
+      }
+    }
   });
 
   const getRandomColor = (): string => {
@@ -428,6 +582,13 @@
 
       // Check if active scene changed
       if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
+        devLog('playfield', 'Active scene change detected:', {
+          from: currentActiveSceneId,
+          to: yjsPartyState.activeSceneId,
+          currentGameSessionId: data.activeGameSession?.id,
+          timestamp: Date.now()
+        });
+
         devLog(
           'playfield',
           `Playfield: Active scene changed from ${currentActiveSceneId} to ${yjsPartyState.activeSceneId}, reloading page...`
@@ -445,6 +606,8 @@
         lastYjsUpdateTimestamp = 0; // Reset timestamp tracker for new scene
         hasActiveScene = !!yjsPartyState.activeSceneId;
 
+        devLog('playfield', 'Starting invalidateAll() for scene change');
+
         // Invalidate the page to load the new scene data
         // This is necessary because:
         // 1. The new scene might be in a different game session requiring new Y.js connection
@@ -452,6 +615,11 @@
         // 3. The playfield needs to reinitialize with the correct scene context
         invalidateAll()
           .then(() => {
+            devLog('playfield', 'invalidateAll() completed:', {
+              newActiveSceneId: data.activeScene?.id,
+              newGameSessionId: data.activeGameSession?.id,
+              timestamp: Date.now()
+            });
             devLog('playfield', 'Page invalidation complete after active scene change');
             // Reset flags after invalidation completes
             isInvalidating = false;
@@ -460,6 +628,7 @@
             sceneIsChanging = false;
           })
           .catch((error) => {
+            devLog('playfield', 'invalidateAll() failed:', error);
             devError('playfield', 'Error invalidating page after active scene change:', error);
             // Reset flags even on error
             isInvalidating = false;
