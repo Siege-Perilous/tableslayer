@@ -2,7 +2,8 @@
   import * as THREE from 'three';
   import { getContext } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { ToolType, type FogOfWarLayerProps } from './types';
+  import { ToolType } from '../DrawingLayer/types';
+  import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';

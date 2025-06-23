@@ -14,6 +14,7 @@
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
   import {
+    AnnotationsControls,
     DisplayControls,
     EdgeOverlayControls,
     FogControls,
@@ -25,7 +26,6 @@
     SceneControls,
     WeatherControls
   } from './components/index';
-
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
@@ -243,6 +243,7 @@
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <List bind:value={stageProps.mode} label="Mode" options={{ DM: StageMode.DM, Player: StageMode.Player }} />
+  <AnnotationsControls bind:props={stageProps} />
   <DisplayControls bind:props={stageProps} />
   <FogControls bind:props={stageProps} />
   <EdgeOverlayControls bind:props={stageProps} />
