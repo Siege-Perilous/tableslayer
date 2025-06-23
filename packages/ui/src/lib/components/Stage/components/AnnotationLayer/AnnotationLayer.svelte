@@ -137,14 +137,9 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
 </T.Mesh>
 
-<T.Mesh
-  name="annotationLayer"
-  scale={[display.resolution.x, display.resolution.y, 1]}
-  {...meshProps}
-  layers={[SceneLayer.Overlay]}
->
+<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
   {#each props.layers as layer, index (layer.id)}
-    <T.Mesh name={layer.id} visible={isVisible(layer)}>
+    <T.Mesh name={layer.id} visible={isVisible(layer)} {...meshProps}>
       <AnnotationMaterial bind:this={layers[index]} props={layer} {display} />
       <T.PlaneGeometry />
     </T.Mesh>
