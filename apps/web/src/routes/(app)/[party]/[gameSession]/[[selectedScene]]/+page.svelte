@@ -429,6 +429,10 @@
     }
   };
 
+  const onAnnotationUpdate = (layerId: string, blob: Promise<Blob>) => {
+    console.log('Annotation updated:', layerId);
+  };
+
   /**
    * FOG OF WAR
    * FOG OF WAR
@@ -688,15 +692,18 @@
           <Stage
             bind:this={stage}
             props={stageProps}
-            {onFogUpdate}
-            {onMapUpdate}
-            {onSceneUpdate}
-            {onStageInitialized}
-            {onStageLoading}
-            {onMarkerAdded}
-            {onMarkerMoved}
-            {onMarkerSelected}
-            {onMarkerContextMenu}
+            callbacks={{
+              onAnnotationUpdate,
+              onFogUpdate,
+              onMapUpdate,
+              onSceneUpdate,
+              onStageInitialized,
+              onStageLoading,
+              onMarkerAdded,
+              onMarkerMoved,
+              onMarkerSelected,
+              onMarkerContextMenu
+            }}
           />
         </div>
         <SceneControls

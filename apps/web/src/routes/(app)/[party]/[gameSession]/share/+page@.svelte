@@ -207,6 +207,10 @@
     stageProps.scene.zoom = zoom;
   }
 
+  function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+    console.log('Annotation updated:', layerId);
+  }
+
   function onFogUpdate(blob: Promise<Blob>) {
     console.log('Updating fog', blob);
     return;
@@ -292,15 +296,18 @@
   <Stage
     bind:this={stage}
     props={stageProps}
-    {onFogUpdate}
-    {onSceneUpdate}
-    {onStageLoading}
-    {onStageInitialized}
-    {onMapUpdate}
-    {onMarkerAdded}
-    {onMarkerMoved}
-    {onMarkerSelected}
-    {onMarkerContextMenu}
+    callbacks={{
+      onAnnotationUpdate,
+      onFogUpdate,
+      onSceneUpdate,
+      onStageLoading,
+      onStageInitialized,
+      onMapUpdate,
+      onMarkerAdded,
+      onMarkerMoved,
+      onMarkerSelected,
+      onMarkerContextMenu
+    }}
   />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
