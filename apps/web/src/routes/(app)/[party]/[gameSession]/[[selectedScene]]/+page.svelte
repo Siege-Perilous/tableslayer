@@ -1610,7 +1610,7 @@
       collapsedSize={0}
       minSize={10}
       maxSize={50}
-      bind:pane={scenesPane}
+      bind:this={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
       onExpand={() => (isScenesCollapsed = false)}
       onResize={() => {
@@ -1707,7 +1707,7 @@
       collapsedSize={0}
       minSize={10}
       maxSize={50}
-      bind:pane={markersPane}
+      bind:this={markersPane}
       onCollapse={() => (isMarkersCollapsed = true)}
       onExpand={() => (isMarkersCollapsed = false)}
       onResize={() => {
