@@ -737,19 +737,16 @@ const unsubscribe = partyData.subscribe(() => {
 ### Common Pitfalls and Solutions
 
 1. **Marker Position During Drag**
-
    - Problem: Marker jumps when dragged due to Y.js updates from other clients
    - Solution: Use `markersBeingMoved` Set to protect markers during drag operations
    - Code location: `+page.svelte` lines 56-100 (mergeMarkersWithProtection function)
 
 2. **Editor Content Not Updating**
-
    - Problem: TipTap doesn't react to external content changes
    - Solution: Use $effect to watch content prop and update editor
    - Code location: `Editor.svelte` lines 110-121
 
 3. **Save Conflicts**
-
    - Problem: Multiple users trying to save simultaneously
    - Solution: Use `becomeActiveSaver` coordination
    - Code location: See performSave function in `+page.svelte`
@@ -803,13 +800,11 @@ const unsubscribe = partyData.subscribe(() => {
 The timing constants that control synchronization behavior are defined in:
 
 - **Throttle delays** - `/apps/web/src/lib/utils/propertyUpdateBroadcaster.ts`
-
   - `MARKER_UPDATE_DELAY` - Fast sync for marker operations
   - `UI_CONTROL_DELAY` - Standard UI control updates
   - `SCENE_UPDATE_DELAY` - Less frequent scene property updates
 
 - **Auto-save delay** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`
-
   - Currently set to 3000ms (3 seconds) in the `startAutoSaveTimer` function
 
 - **Protection timeouts** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`

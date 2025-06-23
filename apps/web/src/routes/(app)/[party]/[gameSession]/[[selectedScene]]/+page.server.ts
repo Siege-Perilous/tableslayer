@@ -4,7 +4,7 @@ import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ parent, params, url }) => {
+export const load: PageServerLoad = async ({ parent, params, url, cookies }) => {
   const { gameSession, activeScene } = await parent();
   let selectedSceneNumber = Number(params.selectedScene);
 
@@ -37,12 +37,36 @@ export const load: PageServerLoad = async ({ parent, params, url }) => {
     activeSceneMarkers = await getMarkersForScene(activeScene.id);
   }
 
+  // Get pane layouts from cookies (separate for mobile and desktop)
+  let paneLayoutDesktop: number[] | undefined;
+  let paneLayoutMobile: number[] | undefined;
+
+  const layoutDesktopCookie = cookies.get('tableslayer:paneLayoutDesktop');
+  if (layoutDesktopCookie) {
+    try {
+      paneLayoutDesktop = JSON.parse(layoutDesktopCookie);
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }
+
+  const layoutMobileCookie = cookies.get('tableslayer:paneLayoutMobile');
+  if (layoutMobileCookie) {
+    try {
+      paneLayoutMobile = JSON.parse(layoutMobileCookie);
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }
+
   return {
     scenes,
     selectedSceneNumber,
     selectedScene,
     selectedSceneMarkers,
     activeScene,
-    activeSceneMarkers
+    activeSceneMarkers,
+    paneLayoutDesktop,
+    paneLayoutMobile
   };
 };
