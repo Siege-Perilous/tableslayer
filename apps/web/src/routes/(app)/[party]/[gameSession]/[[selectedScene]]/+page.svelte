@@ -430,7 +430,7 @@
   };
 
   const onAnnotationUpdate = (layerId: string, blob: Promise<Blob>) => {
-    console.log('Annotation updated:', layerId);
+    console.log('Annotation updated:', layerId, blob);
   };
 
   /**
