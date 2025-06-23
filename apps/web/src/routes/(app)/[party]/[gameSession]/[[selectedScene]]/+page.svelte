@@ -50,7 +50,9 @@
     selectedScene: ssrSelectedScene,
     party,
     activeScene,
-    user
+    user,
+    paneLayoutDesktop,
+    paneLayoutMobile
   } = $derived(data);
 
   // Helper function to merge markers while protecting ones being moved or edited
@@ -221,6 +223,13 @@
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.0005;
+
+  // Use appropriate pane layout based on device type
+  const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
+
+  // Calculate reactive minSize for panes (250px for start, 300px for end on desktop, 10% on mobile)
+  const startPaneMinSize = $derived(isMobile ? 10 : Math.min(50, Math.ceil((250 / innerWidth) * 100)));
+  const endPaneMinSize = $derived(isMobile ? 10 : Math.min(50, Math.ceil((300 / innerWidth) * 100)));
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
@@ -1524,6 +1533,13 @@
       goto(targetPath);
     }
   });
+
+  // Handle pane layout changes
+  const onLayoutChange = (sizes: number[]) => {
+    // Save layout to cookie with device type suffix
+    const layoutKey = isMobile ? 'tableslayer:paneLayoutMobile' : 'tableslayer:paneLayoutDesktop';
+    document.cookie = `${layoutKey}=${JSON.stringify(sizes)}; path=/; max-age=${60 * 60 * 24 * 365}`; // 1 year
+  };
 </script>
 
 <svelte:document
@@ -1603,12 +1619,12 @@
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
 <div class="container">
-  <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'}>
+  <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'} {onLayoutChange}>
     <Pane
-      defaultSize={15}
+      defaultSize={paneLayout?.[0] ?? 15}
       collapsible={true}
       collapsedSize={0}
-      minSize={10}
+      minSize={startPaneMinSize}
       maxSize={50}
       bind:this={scenesPane}
       onCollapse={() => (isScenesCollapsed = true)}
@@ -1640,7 +1656,7 @@
         <Icon Icon={getCollapseIcon()} />
       </button>
     </PaneResizer>
-    <Pane defaultSize={70}>
+    <Pane defaultSize={paneLayout?.[1] ?? 70}>
       <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
           <PointerInputManager
@@ -1702,10 +1718,10 @@
       </button>
     </PaneResizer>
     <Pane
-      defaultSize={25}
+      defaultSize={paneLayout?.[2] ?? 25}
       collapsible={true}
       collapsedSize={0}
-      minSize={10}
+      minSize={endPaneMinSize}
       maxSize={50}
       bind:this={markersPane}
       onCollapse={() => (isMarkersCollapsed = true)}
