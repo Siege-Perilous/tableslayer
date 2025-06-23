@@ -4,8 +4,7 @@
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayer } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
-
-  import { DrawMode, ToolType } from '../DrawingLayer/types';
+  import { DrawMode, ToolType, InitialState } from '../DrawingLayer/types';
   import type { DisplayProps } from '../Stage/types';
 
   import annotationFragmentShader from '../../shaders/Annotations.frag?raw';
@@ -96,6 +95,7 @@
       type: ToolType.Brush
     }
   }}
+  initialState={InitialState.Clear}
   {size}
   onRender={(texture) => {
     annotationMaterial.uniforms.uMaskTexture.value = texture;

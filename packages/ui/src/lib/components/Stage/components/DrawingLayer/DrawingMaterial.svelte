@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useThrelte, useLoader } from '@threlte/core';
-  import { DrawMode, type DrawingLayerProps } from './types';
+  import { DrawMode, type DrawingLayerProps, InitialState } from './types';
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { RenderMode } from './types';
@@ -12,10 +12,11 @@
   interface Props {
     props: DrawingLayerProps;
     size: Size | null;
+    initialState: InitialState;
     onRender: (texture: THREE.Texture) => void;
   }
 
-  const { props, size, onRender }: Props = $props();
+  const { props, size, initialState, onRender }: Props = $props();
   const { renderer } = useThrelte();
 
   // This shader is used for drawing the fog of war on the GPU
@@ -82,7 +83,11 @@
         loadImage(props.url);
         untrack(() => (imageUrl = props.url));
       } else {
-        //render(RenderMode.Fill, true);
+        if (initialState === InitialState.Fill) {
+          render(RenderMode.Fill, true);
+        } else {
+          render(RenderMode.Clear, true);
+        }
       }
     }
   });

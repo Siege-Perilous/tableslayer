@@ -5,7 +5,7 @@
   import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
-
+  import { InitialState } from '../DrawingLayer/types';
   import fogVertexShader from '../../shaders/default.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
@@ -128,6 +128,7 @@
   bind:this={drawMaterial}
   {props}
   size={mapSize}
+  initialState={InitialState.Fill}
   onRender={(texture) => {
     fogMaterial.uniforms.uMaskTexture.value = texture;
     fogMaterial.uniformsNeedUpdate = true;
