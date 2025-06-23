@@ -1,5 +1,16 @@
 import type { DrawingLayerProps } from '../DrawingLayer/types';
 
+export enum ToolType {
+  Brush = 1,
+  Rectangle = 2,
+  Ellipse = 3
+}
+
+export enum DrawMode {
+  Erase = 0,
+  Draw = 1
+}
+
 export interface FogOfWarLayerProps extends DrawingLayerProps {
   /**
    * The outline settings
