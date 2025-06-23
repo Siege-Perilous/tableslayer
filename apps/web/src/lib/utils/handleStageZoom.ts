@@ -1,4 +1,5 @@
 import { type StageProps, MapLayerType } from '@tableslayer/ui';
+import { setPreference } from './gameSessionPreferences';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
@@ -23,5 +24,7 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
     const newFogSize = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], newFogSize, 'control');
+    // Save brush size to cookie
+    setPreference('brushSize', newFogSize);
   }
 };

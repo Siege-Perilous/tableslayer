@@ -36,9 +36,10 @@
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
+  import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
   import { goto } from '$app/navigation';
@@ -52,7 +53,8 @@
     activeScene,
     user,
     paneLayoutDesktop,
-    paneLayoutMobile
+    paneLayoutMobile,
+    brushSize
   } = $derived(data);
 
   // Helper function to merge markers while protecting ones being moved or edited
@@ -226,6 +228,18 @@
 
   // Use appropriate pane layout based on device type
   const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
+
+  // Initialize collapse states from preferences
+  $effect(() => {
+    if (paneLayout && Array.isArray(paneLayout)) {
+      // Both desktop and mobile have 3 panes (start, center, end)
+      const startPaneIndex = 0;
+      const endPaneIndex = 2;
+
+      isScenesCollapsed = paneLayout[startPaneIndex]?.isCollapsed ?? false;
+      isMarkersCollapsed = paneLayout[endPaneIndex]?.isCollapsed ?? true;
+    }
+  });
 
   // Calculate reactive minSize for panes (250px for start, 300px for end on desktop, 10% on mobile)
   const startPaneMinSize = $derived(isMobile ? 10 : Math.min(50, Math.ceil((250 / innerWidth) * 100)));
@@ -428,7 +442,7 @@
     try {
       devLog('scene', 'DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
-      const partySlug = $page.params.party;
+      const partySlug = page.params.party;
 
       // Check if we need to reinitialize (different game session)
       const existingManager = getPartyDataManager();
@@ -563,6 +577,14 @@
     };
   });
 
+  // Helper to save collapse state when panes are toggled
+  const saveCollapseState = () => {
+    if (!paneLayout || !Array.isArray(paneLayout)) return;
+
+    const sizes = paneLayout.map((p) => p.size);
+    onLayoutChange(sizes);
+  };
+
   // This toggles the scene selector pane
   const handleToggleScenes = () => {
     if (isScenesCollapsed) {
@@ -570,6 +592,7 @@
     } else {
       scenesPane.collapse();
     }
+    // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
   const handleToggleMarkers = () => {
@@ -578,6 +601,7 @@
     } else {
       markersPane.collapse();
     }
+    // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
   const handleSelectActiveControl = (control: string) => {
@@ -656,6 +680,11 @@
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor');
+
+      // Apply brush size from cookie if available
+      if (brushSize) {
+        stageProps.fogOfWar.tool.size = brushSize;
+      }
       lastBuiltMapLocation = currentMapLocation;
 
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
@@ -773,6 +802,11 @@
           stageProps.scene.offset = currentSceneState.offset;
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
+
+          // Apply brush size from cookie if available
+          if (brushSize) {
+            stageProps.fogOfWar.tool.size = brushSize;
+          }
         }
       } else if (markersChanged) {
         devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
@@ -1481,7 +1515,7 @@
 
     // Check if we're on the base route without a scene number
     // If so, skip navigation as the server already handles the redirect
-    const hasSceneNumber = $page.params.selectedScene !== undefined;
+    const hasSceneNumber = page.params.selectedScene !== undefined;
     if (!hasSceneNumber) {
       return;
     }
@@ -1496,7 +1530,7 @@
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
-      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/1`;
+      const targetPath = `/${page.params.party}/${page.params.gameSession}/1`;
 
       // Prevent navigation loops
       if (lastNavigationTarget === targetPath) {
@@ -1516,7 +1550,7 @@
 
     // Check if order changed
     if (currentSceneInYjs.order !== selectedSceneNumber) {
-      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`;
+      const targetPath = `/${page.params.party}/${page.params.gameSession}/${currentSceneInYjs.order}`;
 
       // Prevent navigation loops
       if (lastNavigationTarget === targetPath) {
@@ -1536,9 +1570,18 @@
 
   // Handle pane layout changes
   const onLayoutChange = (sizes: number[]) => {
-    // Save layout to cookie with device type suffix
-    const layoutKey = isMobile ? 'tableslayer:paneLayoutMobile' : 'tableslayer:paneLayoutDesktop';
-    document.cookie = `${layoutKey}=${JSON.stringify(sizes)}; path=/; max-age=${60 * 60 * 24 * 365}`; // 1 year
+    // Save layout to cookie using the preferences system
+    const newLayout = [
+      { size: sizes[0], isCollapsed: isScenesCollapsed },
+      { size: sizes[1] }, // center pane has no collapse state
+      { size: sizes[2], isCollapsed: isMarkersCollapsed }
+    ];
+
+    if (isMobile) {
+      setPreference('paneLayoutMobile', newLayout);
+    } else {
+      setPreference('paneLayoutDesktop', newLayout);
+    }
   };
 </script>
 
@@ -1621,14 +1664,20 @@
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'} {onLayoutChange}>
     <Pane
-      defaultSize={paneLayout?.[0] ?? 15}
+      defaultSize={paneLayout?.[0]?.isCollapsed ? 0 : (paneLayout?.[0]?.size ?? 15)}
       collapsible={true}
       collapsedSize={0}
       minSize={startPaneMinSize}
       maxSize={50}
       bind:this={scenesPane}
-      onCollapse={() => (isScenesCollapsed = true)}
-      onExpand={() => (isScenesCollapsed = false)}
+      onCollapse={() => {
+        isScenesCollapsed = true;
+        saveCollapseState();
+      }}
+      onExpand={() => {
+        isScenesCollapsed = false;
+        saveCollapseState();
+      }}
       onResize={() => {
         if (stage) {
           stage.scene.fit();
@@ -1656,7 +1705,7 @@
         <Icon Icon={getCollapseIcon()} />
       </button>
     </PaneResizer>
-    <Pane defaultSize={paneLayout?.[1] ?? 70}>
+    <Pane defaultSize={paneLayout?.[1]?.size ?? 70}>
       <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
           <PointerInputManager
@@ -1718,14 +1767,20 @@
       </button>
     </PaneResizer>
     <Pane
-      defaultSize={paneLayout?.[2] ?? 25}
+      defaultSize={paneLayout?.[2]?.isCollapsed ? 0 : (paneLayout?.[2]?.size ?? 25)}
       collapsible={true}
       collapsedSize={0}
       minSize={endPaneMinSize}
       maxSize={50}
       bind:this={markersPane}
-      onCollapse={() => (isMarkersCollapsed = true)}
-      onExpand={() => (isMarkersCollapsed = false)}
+      onCollapse={() => {
+        isMarkersCollapsed = true;
+        saveCollapseState();
+      }}
+      onExpand={() => {
+        isMarkersCollapsed = false;
+        saveCollapseState();
+      }}
       onResize={() => {
         if (stage) {
           stage.scene.fit();
