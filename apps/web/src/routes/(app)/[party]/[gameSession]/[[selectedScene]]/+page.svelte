@@ -39,7 +39,7 @@
   import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
   import { goto } from '$app/navigation';
@@ -442,7 +442,7 @@
     try {
       devLog('scene', 'DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
-      const partySlug = $page.params.party;
+      const partySlug = page.params.party;
 
       // Check if we need to reinitialize (different game session)
       const existingManager = getPartyDataManager();
@@ -1515,7 +1515,7 @@
 
     // Check if we're on the base route without a scene number
     // If so, skip navigation as the server already handles the redirect
-    const hasSceneNumber = $page.params.selectedScene !== undefined;
+    const hasSceneNumber = page.params.selectedScene !== undefined;
     if (!hasSceneNumber) {
       return;
     }
@@ -1530,7 +1530,7 @@
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
-      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/1`;
+      const targetPath = `/${page.params.party}/${page.params.gameSession}/1`;
 
       // Prevent navigation loops
       if (lastNavigationTarget === targetPath) {
@@ -1550,7 +1550,7 @@
 
     // Check if order changed
     if (currentSceneInYjs.order !== selectedSceneNumber) {
-      const targetPath = `/${$page.params.party}/${$page.params.gameSession}/${currentSceneInYjs.order}`;
+      const targetPath = `/${page.params.party}/${page.params.gameSession}/${currentSceneInYjs.order}`;
 
       // Prevent navigation loops
       if (lastNavigationTarget === targetPath) {
