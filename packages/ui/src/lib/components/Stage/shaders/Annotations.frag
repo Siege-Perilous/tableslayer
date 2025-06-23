@@ -22,7 +22,7 @@ void main() {
   // Sample at multiple levels of detail to get a nice feathered edge
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 
-  float mask = texture2D(uMaskTexture, vUv);
+  float mask = texture2D(uMaskTexture, vUv).a;
 
   gl_FragColor = vec4(uColor, mask);
 }

@@ -26,6 +26,7 @@
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
+  import type { AnnotationExports } from '../AnnotationLayer/types';
 
   interface Props {
     props: StageProps;
@@ -38,6 +39,7 @@
   const callbacks = getContext<Callbacks>('callbacks');
   const onSceneUpdate = callbacks.onSceneUpdate;
 
+  let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
@@ -329,6 +331,10 @@
     return offscreenCanvas.convertToBlob({ type: 'image/jpeg', quality });
   }
 
+  export const annotations = {
+    clear: (layerId: string) => annotationsLayer.clear(layerId)
+  };
+
   export const map = {
     fill: () => mapLayer.fill(),
     fit: () => mapLayer.fit()
@@ -395,13 +401,14 @@
   />
 
   <AnnotationLayer
+    bind:this={annotationsLayer}
     props={props.annotations}
+    mode={props.mode}
     isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
     sceneZoom={props.scene.zoom}
     display={props.display}
     layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.Annotation}
-    visible={props.annotations.enabled}
   />
 
   <MarkerLayer

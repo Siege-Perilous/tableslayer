@@ -59,6 +59,10 @@ export interface SceneExports {
   fit: () => void;
   generateThumbnail: () => Promise<Blob>;
 
+  annotations: {
+    clear: (layerId: string) => void;
+  };
+
   fogOfWar: {
     clear: () => void;
     reset: () => void;

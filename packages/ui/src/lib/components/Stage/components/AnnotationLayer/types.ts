@@ -5,11 +5,6 @@ import type { StageMode } from '../Stage/types';
  */
 export interface AnnotationsLayerProps {
   /**
-   * Whether the annotations layer is enabled
-   */
-  enabled: boolean;
-
-  /**
    * The layers to display
    */
   layers: AnnotationLayer[];
@@ -43,4 +38,8 @@ export interface AnnotationLayer {
    * Control who can see the layer
    */
   visibility: StageMode;
+}
+
+export interface AnnotationExports {
+  clear: (layerId: string) => void;
 }

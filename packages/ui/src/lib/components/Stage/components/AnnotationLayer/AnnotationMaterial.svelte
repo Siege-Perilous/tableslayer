@@ -14,16 +14,15 @@
   interface Props {
     props: AnnotationLayer;
     display: DisplayProps;
-    sceneZoom: number;
   }
 
-  const { props, display, sceneZoom }: Props = $props();
+  const { props, display }: Props = $props();
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   let drawMaterial: DrawingMaterial;
 
-  // Material used for rendering the fog of war
+  // Material used for rendering the annotations
   let annotationMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
@@ -39,27 +38,36 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    // fogMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
-    //   (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
-    // );
+    annotationMaterial.uniforms.uColor.value = new THREE.Color(props.color);
+    annotationMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
+      (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
+    );
   });
 
   /**
-   * Reverts the changes made to the fog of war
+   * Returns the ID of the annotation layer
+   * @returns The ID of the annotation layer
+   */
+  export function getId() {
+    return props.id;
+  }
+
+  /**
+   * Reverts the changes made to the annotation layer
    */
   export function revertChanges() {
     drawMaterial.revert();
   }
 
   /**
-   * Clears the fog of war
+   * Clears the annotation layer
    */
   export function clear() {
     drawMaterial.clear();
   }
 
   /**
-   * Draws a path on the fog of war
+   * Draws a path on the annotation layer
    * @param start The start position of the path
    * @param last The last position of the path
    * @param persist Whether to persist the current state
@@ -69,8 +77,8 @@
   }
 
   /**
-   * Serializes the current fog of war state to a binary buffer
-   * @returns A binary buffer representation of the fog of war textuare
+   * Serializes the current annotation layer state to a binary buffer
+   * @returns A binary buffer representation of the annotation layer texture
    */
   export async function toPng(): Promise<Blob> {
     return drawMaterial.toPng();

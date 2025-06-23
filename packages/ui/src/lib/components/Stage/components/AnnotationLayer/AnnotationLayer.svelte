@@ -2,53 +2,63 @@
   import * as THREE from 'three';
   import { getContext } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { type AnnotationsLayerProps } from './types';
-  import type { Size } from '../../types';
-  import type { Callbacks, DisplayProps } from '../Stage/types';
+  import { type AnnotationLayer, type AnnotationsLayerProps } from './types';
+  import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import { SceneLayer } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: AnnotationsLayerProps;
+    mode: StageMode;
     isActive: boolean;
     display: DisplayProps;
-    sceneZoom: number;
   }
 
-  const { props, isActive, display, sceneZoom, ...meshProps }: Props = $props();
+  const { props, mode, isActive, display, ...meshProps }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let material: AnnotationMaterial | undefined = $state();
   let drawing = false;
-  let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
+  // Reference the toe child layers
+  let layers: AnnotationMaterial[] = $state([]);
+
+  // Get the currently active layer
+  let activeLayer = $derived(
+    layers.find((layer) => {
+      if (!layer) return false;
+      return layer.getId() === props.activeLayer;
+    })
+  );
+
   // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    if (!isActive) {
+    if (!isActive && activeLayer) {
       lastPos = null;
       drawing = false;
-      material?.revertChanges();
+      activeLayer.revertChanges();
     }
   });
 
   function onMouseDown(e: Event, p: THREE.Vector2 | null) {
     e.preventDefault();
-    console.log('onMouseDown', p);
     lastPos = p;
     drawing = true;
     draw(e, p);
   }
 
-  function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
-    onAnnotationUpdate(toPng());
+  function onMouseUp() {
+    // If we have just finished drawing, save the annotation
+    if (props.activeLayer) {
+      onAnnotationUpdate(props.activeLayer, toPng());
+    }
 
     // Reset the drawing state
     lastPos = null;
@@ -58,43 +68,58 @@
   function onMouseLeave() {
     lastPos = null;
     drawing = false;
-    material?.revertChanges();
+
+    // Revert changes on all materials when leaving
+    activeLayer?.revertChanges();
   }
 
-  function draw(e: Event, p: THREE.Vector2 | null) {
+  function draw(_: Event, p: THREE.Vector2 | null) {
     // If the mouse is not within the drawing area, do nothing
     if (!p) return;
 
+    p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
     // If this is the first time the mouse has moved, set the last position to the current position
     if (!lastPos) {
       lastPos = p.clone();
     }
-    console.log('draw', p, lastPos, drawing);
-    material?.drawPath(p, lastPos, drawing);
+
+    // Only draw on the active material
+    activeLayer?.drawPath(p, lastPos, drawing);
     lastPos = p.clone();
   }
 
-  /**
-   * Clears all fog, revealing the entire map underneath
-   */
-  export function clear() {
-    material?.clear();
-    onAnnotationUpdate(toPng());
+  function isVisible(layer: AnnotationLayer) {
+    // Don't show DM layers to players
+    return !(mode === StageMode.Player && layer.visibility === StageMode.DM);
   }
 
   /**
-   * Serializes the fog of war image data into a binary buffer
+   * Clears the annotation layer
+   */
+  export function clear(layerId: string) {
+    if (layerId) {
+      const layer = layers.find((layer) => layer.getId() === layerId);
+      if (layer) {
+        layer.clear();
+        onAnnotationUpdate(layerId, toPng());
+      }
+    }
+  }
+
+  /**
+   * Serializes the annotation layer image data into a binary buffer
    * @return A binary buffer
    */
   export async function toPng(): Promise<Blob> {
-    return (await material?.toPng()) ?? new Blob();
+    // For now, return the active layer's PNG or an empty blob
+    return (await activeLayer?.toPng()) ?? new Blob();
   }
 </script>
 
 <LayerInput
   id="annotation"
   {isActive}
-  layerSize={size}
+  layerSize={{ width: 1, height: 1 }}
   target={mesh}
   {onMouseDown}
   onMouseMove={draw}
@@ -109,13 +134,18 @@ events to be detected outside of the fog of war layer.
 -->
 <T.Mesh bind:ref={mesh} name="annotationInput" layer={SceneLayer.Input}>
   <T.MeshBasicMaterial visible={false} />
-  <T.PlaneGeometry args={[10 * display.resolution.x, 10 * display.resolution.y]} />
+  <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
 </T.Mesh>
 
-<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
-  {#each props.layers as layer}
-    <T.Mesh name="annotation" {...meshProps} layers={[SceneLayer.Main]}>
-      <AnnotationMaterial bind:this={material} props={layer} {display} {sceneZoom} />
+<T.Mesh
+  name="annotationLayer"
+  scale={[display.resolution.x, display.resolution.y, 1]}
+  {...meshProps}
+  layers={[SceneLayer.Overlay]}
+>
+  {#each props.layers as layer, index (layer.id)}
+    <T.Mesh name={layer.id} visible={isVisible(layer)}>
+      <AnnotationMaterial bind:this={layers[index]} props={layer} {display} />
       <T.PlaneGeometry />
     </T.Mesh>
   {/each}

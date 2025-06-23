@@ -82,7 +82,7 @@
         loadImage(props.url);
         untrack(() => (imageUrl = props.url));
       } else {
-        render(RenderMode.Fill, true);
+        //render(RenderMode.Fill, true);
       }
     }
   });

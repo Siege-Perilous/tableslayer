@@ -25,6 +25,10 @@
 
   setContext('callbacks', callbacks);
 
+  export const annotations = {
+    clear: (layerId: string) => sceneRef.annotations.clear(layerId)
+  };
+
   export const map = {
     fill: () => sceneRef.map.fill(),
     fit: () => sceneRef.map.fit()

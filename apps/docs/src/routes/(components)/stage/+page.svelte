@@ -99,8 +99,13 @@
     });
   });
 
-  function onAnnotationUpdate(blob: Promise<Blob>) {
-    console.log('Annotation updated', blob);
+  async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+    blob.then((blob) => {
+      const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+      if (layer) {
+        layer.url = URL.createObjectURL(blob);
+      }
+    });
   }
 
   async function onFogUpdate() {
@@ -254,7 +259,7 @@
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <List bind:value={stageProps.mode} label="Mode" options={{ DM: StageMode.DM, Player: StageMode.Player }} />
-  <AnnotationsControls bind:props={stageProps} />
+  <AnnotationsControls bind:props={stageProps} {stage} />
   <DisplayControls bind:props={stageProps} />
   <FogControls bind:props={stageProps} />
   <EdgeOverlayControls bind:props={stageProps} />
