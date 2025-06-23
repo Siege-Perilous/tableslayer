@@ -7,7 +7,7 @@ export interface AnnotationsLayerProps {
   /**
    * The layers to display
    */
-  layers: AnnotationLayer[];
+  layers: AnnotationLayerData[];
 
   /**
    * The id of the active layer
@@ -18,7 +18,7 @@ export interface AnnotationsLayerProps {
 /**
  * The properties for an individual annotation drawing layer
  */
-export interface AnnotationLayer {
+export interface AnnotationLayerData {
   /**
    * The ID of the annotation layer
    */
@@ -42,4 +42,5 @@ export interface AnnotationLayer {
 
 export interface AnnotationExports {
   clear: (layerId: string) => void;
+  toPng: () => Promise<Blob>;
 }

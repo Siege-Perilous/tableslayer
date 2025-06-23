@@ -19,6 +19,7 @@
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
+  import type { AnnotationExports } from '../AnnotationLayer/types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
@@ -26,7 +27,6 @@
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
-  import type { AnnotationExports } from '../AnnotationLayer/types';
 
   interface Props {
     props: StageProps;

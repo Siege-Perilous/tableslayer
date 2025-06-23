@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { getContext } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { type AnnotationLayer, type AnnotationsLayerProps } from './types';
+  import { type AnnotationLayerData, type AnnotationsLayerProps } from './types';
   import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import { SceneLayer } from '../Scene/types';
@@ -88,7 +88,7 @@
     lastPos = p.clone();
   }
 
-  function isVisible(layer: AnnotationLayer) {
+  function isVisible(layer: AnnotationLayerData) {
     // Don't show DM layers to players
     return !(mode === StageMode.Player && layer.visibility === StageMode.DM);
   }

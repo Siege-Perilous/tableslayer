@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Color, Folder, Text, List, Button, type ListOptions } from 'svelte-tweakpane-ui';
-  import type { AnnotationLayer, StageProps, StageExports } from '@tableslayer/ui';
+  import type { AnnotationLayerData, StageProps, StageExports } from '@tableslayer/ui';
   import { StageMode } from '@tableslayer/ui';
 
   let { props = $bindable(), stage } = $props<{
@@ -15,7 +15,7 @@
 
   function addLayer() {
     const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
-    const newLayer: AnnotationLayer = {
+    const newLayer: AnnotationLayerData = {
       id: `layer-${Date.now()}`,
       color: randomColor,
       url: '',
@@ -30,7 +30,7 @@
   }
 
   function deleteLayer(layerId: string) {
-    props.annotations.layers = props.annotations.layers.filter((layer: AnnotationLayer) => layer.id !== layerId);
+    props.annotations.layers = props.annotations.layers.filter((layer: AnnotationLayerData) => layer.id !== layerId);
     // If the deleted layer was active, set active layer to the first layer
     if (props.annotations.activeLayer === layerId) {
       props.annotations.activeLayer = props.annotations.layers[0]?.id ?? null;
@@ -42,7 +42,7 @@
   }
 
   function viewLayer(layerId: string) {
-    const layer = props.annotations.layers.find((layer: AnnotationLayer) => layer.id === layerId);
+    const layer = props.annotations.layers.find((layer: AnnotationLayerData) => layer.id === layerId);
     if (layer) {
       const url = layer.url;
       if (url) {

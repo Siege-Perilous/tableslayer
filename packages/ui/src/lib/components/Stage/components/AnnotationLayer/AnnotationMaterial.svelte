@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T } from '@threlte/core';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
-  import { type AnnotationLayer } from './types';
+  import { type AnnotationLayerData } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { DrawMode, ToolType, InitialState } from '../DrawingLayer/types';
   import type { DisplayProps } from '../Stage/types';
@@ -11,7 +11,7 @@
   import annotationVertexShader from '../../shaders/default.vert?raw';
 
   interface Props {
-    props: AnnotationLayer;
+    props: AnnotationLayerData;
     display: DisplayProps;
   }
 
