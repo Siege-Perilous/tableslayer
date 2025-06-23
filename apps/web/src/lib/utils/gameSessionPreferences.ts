@@ -1,20 +1,12 @@
 /**
  * Generic system for managing game session preferences stored in cookies
- * Handles brush size, pane layouts, and other local settings
+ * Handles brush size and pane layouts
  */
 
 export interface GameSessionPreferences {
   brushSize?: number;
   paneLayoutDesktop?: number[];
   paneLayoutMobile?: number[];
-  // Add more preferences here as needed
-  fogBrushSize?: number;
-  eraserBrushSize?: number;
-  // Tool preferences
-  lastUsedTool?: string;
-  // View preferences
-  gridVisible?: boolean;
-  markerLabelsVisible?: boolean;
 }
 
 export interface PreferenceConfig<T> {
@@ -35,16 +27,6 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     defaultValue: 75, // Match the default in buildSceneProps
     validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
   },
-  fogBrushSize: {
-    cookieName: 'tableslayer:fogBrushSize',
-    defaultValue: 200,
-    validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
-  },
-  eraserBrushSize: {
-    cookieName: 'tableslayer:eraserBrushSize',
-    defaultValue: 200,
-    validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
-  },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',
     defaultValue: [20, 50, 30],
@@ -54,21 +36,6 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     cookieName: 'tableslayer:paneLayoutMobile',
     defaultValue: [50, 50],
     validate: (value): value is number[] => Array.isArray(value) && value.every((v) => typeof v === 'number' && v > 0)
-  },
-  lastUsedTool: {
-    cookieName: 'tableslayer:lastUsedTool',
-    defaultValue: 'select',
-    validate: (value): value is string => typeof value === 'string' && value.length > 0
-  },
-  gridVisible: {
-    cookieName: 'tableslayer:gridVisible',
-    defaultValue: false,
-    validate: (value): value is boolean => typeof value === 'boolean'
-  },
-  markerLabelsVisible: {
-    cookieName: 'tableslayer:markerLabelsVisible',
-    defaultValue: true,
-    validate: (value): value is boolean => typeof value === 'boolean'
   }
 };
 
