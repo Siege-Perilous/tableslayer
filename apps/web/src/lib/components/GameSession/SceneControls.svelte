@@ -46,6 +46,7 @@
   } from './';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { queuePropertyUpdate } from '$lib/utils';
+  import { setPreference } from '$lib/utils/gameSessionPreferences';
 
   let {
     socketUpdate,
@@ -231,7 +232,11 @@
                 <InputSlider
                   {...inputProps}
                   value={stageProps.fogOfWar.tool.size}
-                  oninput={(value) => queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control')}
+                  oninput={(e) => {
+                    const value = Number(e.currentTarget.value);
+                    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control');
+                    setPreference('brushSize', value);
+                  }}
                   min={50}
                   max={300}
                   step={1}

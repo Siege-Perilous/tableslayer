@@ -1,6 +1,7 @@
 import type { SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
 import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
+import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -37,27 +38,10 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     activeSceneMarkers = await getMarkersForScene(activeScene.id);
   }
 
-  // Get pane layouts from cookies (separate for mobile and desktop)
-  let paneLayoutDesktop: number[] | undefined;
-  let paneLayoutMobile: number[] | undefined;
-
-  const layoutDesktopCookie = cookies.get('tableslayer:paneLayoutDesktop');
-  if (layoutDesktopCookie) {
-    try {
-      paneLayoutDesktop = JSON.parse(layoutDesktopCookie);
-    } catch {
-      // Invalid JSON, ignore
-    }
-  }
-
-  const layoutMobileCookie = cookies.get('tableslayer:paneLayoutMobile');
-  if (layoutMobileCookie) {
-    try {
-      paneLayoutMobile = JSON.parse(layoutMobileCookie);
-    } catch {
-      // Invalid JSON, ignore
-    }
-  }
+  // Get preferences from cookies using the new system
+  const paneLayoutDesktop = getPreferenceServer(cookies, 'paneLayoutDesktop');
+  const paneLayoutMobile = getPreferenceServer(cookies, 'paneLayoutMobile');
+  const brushSize = getPreferenceServer(cookies, 'brushSize');
 
   return {
     scenes,
@@ -67,6 +51,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     activeScene,
     activeSceneMarkers,
     paneLayoutDesktop,
-    paneLayoutMobile
+    paneLayoutMobile,
+    brushSize
   };
 };

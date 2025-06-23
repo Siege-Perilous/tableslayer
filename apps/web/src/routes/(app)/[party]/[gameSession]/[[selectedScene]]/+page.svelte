@@ -36,6 +36,7 @@
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
+  import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
@@ -52,7 +53,8 @@
     activeScene,
     user,
     paneLayoutDesktop,
-    paneLayoutMobile
+    paneLayoutMobile,
+    brushSize
   } = $derived(data);
 
   // Helper function to merge markers while protecting ones being moved or edited
@@ -656,6 +658,11 @@
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor');
+
+      // Apply brush size from cookie if available
+      if (brushSize) {
+        stageProps.fogOfWar.tool.size = brushSize;
+      }
       lastBuiltMapLocation = currentMapLocation;
 
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
@@ -773,6 +780,11 @@
           stageProps.scene.offset = currentSceneState.offset;
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
+
+          // Apply brush size from cookie if available
+          if (brushSize) {
+            stageProps.fogOfWar.tool.size = brushSize;
+          }
         }
       } else if (markersChanged) {
         devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
@@ -1536,9 +1548,12 @@
 
   // Handle pane layout changes
   const onLayoutChange = (sizes: number[]) => {
-    // Save layout to cookie with device type suffix
-    const layoutKey = isMobile ? 'tableslayer:paneLayoutMobile' : 'tableslayer:paneLayoutDesktop';
-    document.cookie = `${layoutKey}=${JSON.stringify(sizes)}; path=/; max-age=${60 * 60 * 24 * 365}`; // 1 year
+    // Save layout to cookie using the preferences system
+    if (isMobile) {
+      setPreference('paneLayoutMobile', sizes);
+    } else {
+      setPreference('paneLayoutDesktop', sizes);
+    }
   };
 </script>
 
