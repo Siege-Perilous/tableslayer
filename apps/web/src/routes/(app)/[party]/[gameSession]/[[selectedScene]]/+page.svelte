@@ -229,6 +229,18 @@
   // Use appropriate pane layout based on device type
   const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
 
+  // Initialize collapse states from preferences
+  $effect(() => {
+    if (paneLayout && Array.isArray(paneLayout)) {
+      // Both desktop and mobile have 3 panes (start, center, end)
+      const startPaneIndex = 0;
+      const endPaneIndex = 2;
+
+      isScenesCollapsed = paneLayout[startPaneIndex]?.isCollapsed ?? false;
+      isMarkersCollapsed = paneLayout[endPaneIndex]?.isCollapsed ?? true;
+    }
+  });
+
   // Calculate reactive minSize for panes (250px for start, 300px for end on desktop, 10% on mobile)
   const startPaneMinSize = $derived(isMobile ? 10 : Math.min(50, Math.ceil((250 / innerWidth) * 100)));
   const endPaneMinSize = $derived(isMobile ? 10 : Math.min(50, Math.ceil((300 / innerWidth) * 100)));
@@ -565,6 +577,14 @@
     };
   });
 
+  // Helper to save collapse state when panes are toggled
+  const saveCollapseState = () => {
+    if (!paneLayout || !Array.isArray(paneLayout)) return;
+
+    const sizes = paneLayout.map((p) => p.size);
+    onLayoutChange(sizes);
+  };
+
   // This toggles the scene selector pane
   const handleToggleScenes = () => {
     if (isScenesCollapsed) {
@@ -572,6 +592,7 @@
     } else {
       scenesPane.collapse();
     }
+    // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
   const handleToggleMarkers = () => {
@@ -580,6 +601,7 @@
     } else {
       markersPane.collapse();
     }
+    // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
   const handleSelectActiveControl = (control: string) => {
@@ -1549,10 +1571,16 @@
   // Handle pane layout changes
   const onLayoutChange = (sizes: number[]) => {
     // Save layout to cookie using the preferences system
+    const newLayout = [
+      { size: sizes[0], isCollapsed: isScenesCollapsed },
+      { size: sizes[1] }, // center pane has no collapse state
+      { size: sizes[2], isCollapsed: isMarkersCollapsed }
+    ];
+
     if (isMobile) {
-      setPreference('paneLayoutMobile', sizes);
+      setPreference('paneLayoutMobile', newLayout);
     } else {
-      setPreference('paneLayoutDesktop', sizes);
+      setPreference('paneLayoutDesktop', newLayout);
     }
   };
 </script>
@@ -1636,14 +1664,20 @@
 <div class="container">
   <PaneGroup direction={isMobile ? 'vertical' : 'horizontal'} {onLayoutChange}>
     <Pane
-      defaultSize={paneLayout?.[0] ?? 15}
+      defaultSize={paneLayout?.[0]?.isCollapsed ? 0 : (paneLayout?.[0]?.size ?? 15)}
       collapsible={true}
       collapsedSize={0}
       minSize={startPaneMinSize}
       maxSize={50}
       bind:this={scenesPane}
-      onCollapse={() => (isScenesCollapsed = true)}
-      onExpand={() => (isScenesCollapsed = false)}
+      onCollapse={() => {
+        isScenesCollapsed = true;
+        saveCollapseState();
+      }}
+      onExpand={() => {
+        isScenesCollapsed = false;
+        saveCollapseState();
+      }}
       onResize={() => {
         if (stage) {
           stage.scene.fit();
@@ -1671,7 +1705,7 @@
         <Icon Icon={getCollapseIcon()} />
       </button>
     </PaneResizer>
-    <Pane defaultSize={paneLayout?.[1] ?? 70}>
+    <Pane defaultSize={paneLayout?.[1]?.size ?? 70}>
       <div class="stageWrapper" role="presentation">
         <div class={stageClasses} bind:this={stageElement}>
           <PointerInputManager
@@ -1733,14 +1767,20 @@
       </button>
     </PaneResizer>
     <Pane
-      defaultSize={paneLayout?.[2] ?? 25}
+      defaultSize={paneLayout?.[2]?.isCollapsed ? 0 : (paneLayout?.[2]?.size ?? 25)}
       collapsible={true}
       collapsedSize={0}
       minSize={endPaneMinSize}
       maxSize={50}
       bind:this={markersPane}
-      onCollapse={() => (isMarkersCollapsed = true)}
-      onExpand={() => (isMarkersCollapsed = false)}
+      onCollapse={() => {
+        isMarkersCollapsed = true;
+        saveCollapseState();
+      }}
+      onExpand={() => {
+        isMarkersCollapsed = false;
+        saveCollapseState();
+      }}
       onResize={() => {
         if (stage) {
           stage.scene.fit();

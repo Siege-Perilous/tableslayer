@@ -3,10 +3,15 @@
  * Handles brush size and pane layouts
  */
 
+export interface PaneConfig {
+  size: number;
+  isCollapsed?: boolean;
+}
+
 export interface GameSessionPreferences {
   brushSize?: number;
-  paneLayoutDesktop?: number[];
-  paneLayoutMobile?: number[];
+  paneLayoutDesktop?: PaneConfig[];
+  paneLayoutMobile?: PaneConfig[];
 }
 
 export interface PreferenceConfig<T> {
@@ -29,13 +34,37 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
   },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',
-    defaultValue: [20, 50, 30],
-    validate: (value): value is number[] => Array.isArray(value) && value.every((v) => typeof v === 'number' && v > 0)
+    defaultValue: [
+      { size: 20, isCollapsed: false }, // start pane
+      { size: 50 }, // center pane (stage)
+      { size: 30, isCollapsed: true } // end pane
+    ],
+    validate: (value): value is PaneConfig[] =>
+      Array.isArray(value) &&
+      value.every(
+        (pane: any) =>
+          typeof pane === 'object' &&
+          typeof pane.size === 'number' &&
+          pane.size > 0 &&
+          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+      )
   },
   paneLayoutMobile: {
     cookieName: 'tableslayer:paneLayoutMobile',
-    defaultValue: [50, 50],
-    validate: (value): value is number[] => Array.isArray(value) && value.every((v) => typeof v === 'number' && v > 0)
+    defaultValue: [
+      { size: 25, isCollapsed: false }, // start pane
+      { size: 50 }, // center pane (stage)
+      { size: 25, isCollapsed: true } // end pane
+    ],
+    validate: (value): value is PaneConfig[] =>
+      Array.isArray(value) &&
+      value.every(
+        (pane: any) =>
+          typeof pane === 'object' &&
+          typeof pane.size === 'number' &&
+          pane.size > 0 &&
+          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+      )
   }
 };
 
