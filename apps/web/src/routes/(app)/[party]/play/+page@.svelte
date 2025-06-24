@@ -545,6 +545,15 @@
     }
   }
 
+  async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+    blob.then((blob) => {
+      const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+      if (layer) {
+        layer.url = URL.createObjectURL(blob);
+      }
+    });
+  }
+
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
     if (event instanceof MouseEvent) {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
@@ -683,15 +692,18 @@
   <Stage
     bind:this={stage}
     props={stageProps}
-    {onFogUpdate}
-    {onSceneUpdate}
-    {onStageLoading}
-    {onStageInitialized}
-    {onMapUpdate}
-    {onMarkerAdded}
-    {onMarkerMoved}
-    {onMarkerSelected}
-    {onMarkerContextMenu}
+    callbacks={{
+      onAnnotationUpdate,
+      onFogUpdate,
+      onMapUpdate,
+      onStageLoading,
+      onStageInitialized,
+      onSceneUpdate,
+      onMarkerAdded,
+      onMarkerMoved,
+      onMarkerSelected,
+      onMarkerContextMenu
+    }}
   />
 
   {#each Object.values(cursors) as { user, position, fadedOut }}
