@@ -4,10 +4,26 @@
   import { goto } from '$app/navigation';
   import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown, Head } from '$lib/components';
+  import { page } from '$app/state';
+  import { onMount } from 'svelte';
+
+  let { data } = $props();
+
   let email = $state('');
   let password = $state('');
   let formIsLoading = $state(false);
   let loginErrors = $state<FormMutationError | undefined>(undefined);
+
+  // Check for OAuth error on mount
+  onMount(() => {
+    if (page.url.searchParams.get('error') === 'oauth_failed') {
+      loginErrors = {
+        success: false,
+        status: 500,
+        message: 'Failed to sign in with Google. Please try again or use email/password.'
+      };
+    }
+  });
 
   const login = useAuthLoginMutation();
 
@@ -36,11 +52,22 @@
 
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>
-  <Spacer size="0.5rem" />
-  <Text>
-    <Link href="/signup">Create a new account</Link> or <Link href="/forgot-password">recover your password</Link>.
-  </Text>
-  <Spacer size="2rem" />
+  <Spacer />
+  {#if data.envName !== 'preview'}
+    <div>
+      <Button href="/login/google" data-sveltekit-preload-data="tap">
+        {#snippet start()}
+          <img src="/google.svg" alt="Google logo" width="16" height="16" />
+        {/snippet}
+        Continue with Google
+      </Button>
+    </div>
+    <Spacer />
+    <div class="login__divider">
+      <span>or</span>
+    </div>
+    <Spacer />
+  {/if}
   <form onsubmit={handleLogin}>
     <FormControl label="Email" name="email" errors={loginErrors && loginErrors.errors}>
       {#snippet input({ inputProps })}
@@ -58,6 +85,11 @@
     <FormError error={loginErrors} />
   </form>
   <Spacer />
+  <Text>
+    Need an account? <Link href="/signup">Sign up now</Link> or <Link href="/forgot-password">
+      recover your password
+    </Link>.
+  </Text>
 </Panel>
 
 <style>
@@ -72,5 +104,28 @@
     @media (max-width: 768px) {
       margin: 3rem 3rem auto 3rem;
     }
+  }
+
+  .login__divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .login__divider::before,
+  .login__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--contrastMedium);
+  }
+
+  .login__divider span {
+    padding: 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 </style>

@@ -42,6 +42,8 @@ jobs:
           STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
           STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
           STRIPE_PRICE_ID_YEARLY=${{ secrets.STRIPE_PRICE_ID_YEARLY }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           EOF
       - name: Deploy fly productions
         run: |

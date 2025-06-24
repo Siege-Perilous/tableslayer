@@ -71,7 +71,8 @@ export const getPartyMembers = async (
       emailVerified: usersTable.emailVerified,
       avatarFileId: usersTable.avatarFileId,
       passwordHash: usersTable.passwordHash,
-      favoriteParty: usersTable.favoriteParty
+      favoriteParty: usersTable.favoriteParty,
+      googleId: usersTable.googleId
     })
     .from(partyMemberTable)
     .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))

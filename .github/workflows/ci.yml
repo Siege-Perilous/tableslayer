@@ -220,6 +220,8 @@ jobs:
           STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
           STRIPE_PRICE_ID_YEARLY=${{ secrets.STRIPE_PRICE_ID_YEARLY }}
           BASE_URL=https://pr-${{ github.event.pull_request.number }}-web.fly.dev
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           EOF
       - name: Deploy docs
         id: deploydocs
