@@ -1,13 +1,12 @@
 import { sentrySvelteKit } from '@sentry/sveltekit';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
-import ws from 'vite-sveltekit-node-ws';
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
       sveltekit(),
-      ws(),
       sentrySvelteKit({
         sourceMapsUploadOptions: {
           org: 'siege-perilous',

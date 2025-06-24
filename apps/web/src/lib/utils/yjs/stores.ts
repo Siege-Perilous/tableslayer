@@ -83,12 +83,9 @@ export function usePartyData() {
     detectDrift: (fetchSceneTimestamps: () => Promise<Record<string, number>>) =>
       partyDataManager!.detectDrift(fetchSceneTimestamps),
 
-    // Socket access for cursor tracking
-    getSocket: () => partyDataManager!.getSocket(),
-    isSocketConnected: () => partyDataManager!.isSocketConnected(),
-    onCursorEvent: (event: string, handler: (data: any) => void) => partyDataManager!.onCursorEvent(event, handler),
-    offCursorEvent: (event: string) => partyDataManager!.offCursorEvent(event),
-    emitCursorEvent: (event: string, data: any) => partyDataManager!.emitCursorEvent(event, data)
+    // Scene last updated
+    updateSceneLastUpdated: (sceneId: string, timestamp: number) =>
+      partyDataManager!.updateSceneLastUpdated(sceneId, timestamp)
   };
 }
 
