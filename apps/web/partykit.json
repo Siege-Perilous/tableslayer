@@ -1,0 +1,9 @@
+{
+  "name": "tableslayer",
+  "main": "partykit/gameSession.ts",
+  "compatibilityDate": "2025-06-24",
+  "parties": {
+    "game_session": "partykit/gameSession.ts",
+    "party": "partykit/party.ts"
+  }
+}
