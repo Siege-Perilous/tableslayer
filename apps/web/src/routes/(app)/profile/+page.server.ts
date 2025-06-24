@@ -15,6 +15,7 @@ export const load: PageServerLoad = async (event) => {
   return {
     user,
     userParties,
-    invites
+    invites,
+    envName: process.env.ENV_NAME || 'development'
   };
 };

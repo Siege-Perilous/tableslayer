@@ -11,4 +11,8 @@ export const load: PageServerLoad = async (event) => {
     }
     return redirect(302, '/profile');
   }
+
+  return {
+    envName: process.env.ENV_NAME || 'development'
+  };
 };

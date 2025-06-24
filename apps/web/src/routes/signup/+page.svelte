@@ -1,9 +1,25 @@
 <script lang="ts">
-  import { Input, InputCheckbox, FormError, Button, Title, Link, Spacer, Panel, FormControl } from '@tableslayer/ui';
+  import {
+    Input,
+    InputCheckbox,
+    FormError,
+    Button,
+    Title,
+    Link,
+    Spacer,
+    Panel,
+    FormControl,
+    ColorMode,
+    Text,
+    Hr
+  } from '@tableslayer/ui';
+  import { mode } from 'mode-watcher';
   import { IllustrationOverlook, Head } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
+
+  let { data } = $props();
 
   let email = $state('');
   let password = $state('');
@@ -42,9 +58,25 @@
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
-  <Spacer size="0.5rem" />
-  <p>Already have an account? <Link href="/login">Sign in</Link>.</p>
-  <Spacer size="2rem" />
+  <Spacer />
+  {#if data.envName !== 'preview'}
+    <div>
+      <ColorMode mode={mode.current === 'dark' ? 'light' : 'dark'}>
+        <Button href="/login/google" data-sveltekit-preload-data="tap">
+          {#snippet start()}
+            <img src="/google.svg" alt="Google logo" width="16" height="16" />
+          {/snippet}
+          Continue with Google
+        </Button>
+      </ColorMode>
+    </div>
+
+    <Spacer />
+    <div class="signup__divider">
+      <span>or</span>
+    </div>
+    <Spacer />
+  {/if}
   <form onsubmit={handleSignup}>
     <FormControl label="Email" name="email" errors={signupError && signupError.errors}>
       {#snippet input({ inputProps })}
@@ -69,6 +101,10 @@
     <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
     <FormError error={signupError} />
   </form>
+  <Spacer size="2rem" />
+  <Text>
+    Already have an account? <Link href="/login">Sign in</Link>.
+  </Text>
 </Panel>
 
 {#snippet label()}
@@ -84,6 +120,29 @@
     margin: 20vh auto auto 10vh;
     position: relative;
     z-index: 5;
+  }
+
+  .signup__divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .signup__divider::before,
+  .signup__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--contrastMedium);
+  }
+
+  .login__divider span {
+    padding: 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
   @media (max-width: 768px) {
     :global(.panel.panel--signup) {

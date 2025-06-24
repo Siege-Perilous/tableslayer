@@ -12,5 +12,8 @@ export const load: PageServerLoad = async (event) => {
       throw redirect(302, '/verify-email');
     }
   }
-  return {};
+
+  return {
+    envName: process.env.ENV_NAME || 'development'
+  };
 };

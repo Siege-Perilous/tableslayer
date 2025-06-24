@@ -17,7 +17,8 @@ export const usersTable = sqliteTable('users', {
   name: text('name').notNull(),
   email: text('email').unique().notNull(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),
+  googleId: text('google_id').unique(),
   avatarFileId: integer('avatar_file_id')
     .references(() => filesTable.id, { onDelete: 'cascade' })
     .notNull()

@@ -39,6 +39,7 @@
     "@tanstack/svelte-query": "^5.81.2",
     "@tursodatabase/api": "^1.9.0",
     "@types/ws": "^8.18.1",
+    "arctic": "^3.7.0",
     "chroma-js": "^3.1.2",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.44.2",
