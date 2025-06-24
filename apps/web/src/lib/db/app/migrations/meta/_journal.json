@@ -134,6 +134,69 @@
       "when": 1748361969576,
       "tag": "0018_scene-rotation-int-to-real",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1749733346797,
+      "tag": "0019_active-game-session",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1749735146606,
+      "tag": "0020_paused-game-session",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1750196882763,
+      "tag": "0021_active-scene-id",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1750199837845,
+      "tag": "0022_active-scene-in-party",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1750199973877,
+      "tag": "0023_active-session-remove-from-party",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1750445077960,
+      "tag": "0024_scene-last-updated",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1750469151269,
+      "tag": "0025_remove-is-paused-from-game-session",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1750483333906,
+      "tag": "0026_version-files",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1750514018270,
+      "tag": "0027_map-rotation-to-real",
+      "breakpoints": true
     }
   ]
 }

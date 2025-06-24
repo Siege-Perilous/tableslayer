@@ -1,0 +1,1 @@
+ALTER TABLE `game_session` DROP COLUMN `is_paused`;

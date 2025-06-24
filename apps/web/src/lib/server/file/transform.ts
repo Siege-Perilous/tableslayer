@@ -34,15 +34,31 @@ export const getImageDetails = async (url: string): Promise<ImageDetails> => {
   }
 };
 
-export const transformImage = async (urlFragment: string, options: string) => {
+export const transformImage = async (urlFragment: string, options: string): Promise<BuildImageResult> => {
+  const url = `https://files.tableslayer.com/${urlFragment}`;
+  const resizedUrl = `https://files.tableslayer.com/cdn-cgi/image/${options}/${urlFragment}`;
+
   try {
-    const url = `https://files.tableslayer.com/${urlFragment}`;
-    const resizedUrl = `https://files.tableslayer.com/cdn-cgi/image/${options}/${urlFragment}`;
     const detailsUrl = `https://files.tableslayer.com/cdn-cgi/image/format=json,${options}/${urlFragment}`;
     const details = await getImageDetails(detailsUrl);
     return { url, resizedUrl, details };
   } catch (error) {
-    console.error('Error transforming image:', error);
-    throw error;
+    console.error('Error transforming image, using fallback:', error);
+    // Return a fallback response when the image service is unavailable
+    // The resizedUrl will still work, we just won't have metadata
+    return {
+      url,
+      resizedUrl,
+      details: {
+        width: 0,
+        height: 0,
+        original: {
+          width: 0,
+          height: 0,
+          file_size: 0,
+          format: 'unknown'
+        }
+      }
+    };
   }
 };

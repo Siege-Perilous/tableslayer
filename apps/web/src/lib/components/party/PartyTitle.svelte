@@ -3,13 +3,19 @@
   import { type Thumb } from '$lib/server';
   import { IconChevronDown, IconHeart, IconHeartFilled } from '@tabler/icons-svelte';
   import { IconCheck } from '@tabler/icons-svelte';
-  import { useUpdatePartyMutation, useUpdateUserMutation, useDeletePartyMutation } from '$lib/queries';
+  import {
+    useUpdatePartyMutation,
+    useUpdateUserMutation,
+    useDeletePartyMutation,
+    useUploadFileMutation
+  } from '$lib/queries';
   import type { FormMutationError } from '$lib/factories';
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { handleMutation } from '$lib/factories';
 
   import {
     Avatar,
+    AvatarFileInput,
     Button,
     ConfirmActionButton,
     Spacer,
@@ -35,10 +41,21 @@
   let partyName = $state(party.name);
   let renamePartyErrors = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
+  let avatarFiles = $state<FileList | null>(null);
 
   const deleteParty = useDeletePartyMutation();
   const updateParty = useUpdatePartyMutation();
   const updateUser = useUpdateUserMutation();
+  const uploadFile = useUploadFileMutation();
+
+  // Get current avatar location from thumb URL for versioning
+  const getCurrentAvatarLocation = () => {
+    if (!party.thumb?.url) return undefined;
+    // Extract the base location from the URL (remove domain and version query)
+    const urlParts = party.thumb.url.split('?')[0].split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    return `avatar/${fileName}`;
+  };
 
   const handleDeleteParty = async (e: Event) => {
     e.preventDefault();
@@ -89,14 +106,58 @@
       }
     });
   };
+
+  const handleAvatarChange = async () => {
+    if (avatarFiles && avatarFiles.length) {
+      const uploadedFile = await handleMutation({
+        mutation: () =>
+          $uploadFile.mutateAsync({
+            file: avatarFiles![0],
+            folder: 'avatar',
+            currentUrl: getCurrentAvatarLocation()
+          }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        toastMessages: {
+          success: { title: 'Image uploaded' },
+          error: { title: 'Error uploading image', body: (error) => error.message }
+        }
+      });
+
+      if (!uploadedFile) return;
+
+      await handleMutation({
+        mutation: () =>
+          $updateParty.mutateAsync({
+            partyId: party.id,
+            partyData: { avatarFileId: uploadedFile.fileId }
+          }),
+        formLoadingState: (loading) => (formIsLoading = loading),
+        onSuccess: () => {
+          invalidateAll();
+        },
+        toastMessages: {
+          success: { title: 'Party avatar updated' },
+          error: { title: 'Error updating party avatar', body: (error) => error.message }
+        }
+      });
+    }
+  };
 </script>
 
 {#snippet title()}
   <div class="partyName__popoverTrigger">
     <div class="partyName__popoverAvatar">
-      <Avatar size="lg" src={party.thumb.resizedUrl} alt={party.name} />
       {#if isPartyAdmin}
+        <AvatarFileInput
+          onChange={handleAvatarChange}
+          src={party.thumb.resizedUrl}
+          size="lg"
+          variant="square"
+          bind:files={avatarFiles}
+        />
         <Icon Icon={IconChevronDown} />
+      {:else}
+        <Avatar size="lg" src={party.thumb.resizedUrl} alt={party.name} />
       {/if}
     </div>
     <Title as="h1" size="lg">{party.name}</Title>

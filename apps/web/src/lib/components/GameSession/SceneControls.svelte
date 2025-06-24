@@ -44,20 +44,24 @@
     FogControls,
     PlayControls
   } from './';
+  import { usePartyData } from '$lib/utils/yjs/stores';
+  import { queuePropertyUpdate } from '$lib/utils';
+  import { setPreference } from '$lib/utils/gameSessionPreferences';
 
   let {
     socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
-    stageProps = $bindable(),
+    stageProps,
     stage,
     party,
     gameSession,
     selectedScene,
-    activeScene,
+    activeSceneId,
     handleMapFill,
     handleMapFit,
-    errors
+    errors,
+    partyData
   }: {
     socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => void;
@@ -66,11 +70,12 @@
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;
     stage: StageExports;
+    partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 
   type SceneControl = {
@@ -120,7 +125,7 @@
     },
     {
       id: 'play',
-      icon: gameSession.isPaused ? IconScreenShareOff : IconScreenShare,
+      icon: party.gameSessionIsPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
       mapLayer: MapLayerType.None
     }
@@ -196,10 +201,9 @@
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
     selectedFogTool = selectedOption!;
     activeControl = 'erase';
-    stageProps.activeLayer = MapLayerType.FogOfWar;
-    stageProps.fogOfWar.tool.type = selectedOption.toolType;
-    stageProps.fogOfWar.tool.mode = selectedOption.drawMode;
-    socketUpdate();
+    queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], selectedOption.toolType, 'control');
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], selectedOption.drawMode, 'control');
   };
 </script>
 
@@ -225,7 +229,18 @@
           <div class="sceneControls__eraserFooter">
             <FormControl label="Eraser brush size" name="brushSize">
               {#snippet input(inputProps)}
-                <InputSlider {...inputProps} bind:value={stageProps.fogOfWar.tool.size} min={50} max={300} step={1} />
+                <InputSlider
+                  {...inputProps}
+                  value={stageProps.fogOfWar.tool.size}
+                  oninput={(e) => {
+                    const value = Number(e.currentTarget.value);
+                    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control');
+                    setPreference('brushSize', value);
+                  }}
+                  min={50}
+                  max={300}
+                  step={1}
+                />
               {/snippet}
             </FormControl>
           </div>
@@ -258,13 +273,13 @@
           {#snippet content()}
             {#if scene.id === 'grid'}
               <GridControls
-                bind:stageProps
+                {stageProps}
                 {handleSelectActiveControl}
                 {activeControl}
                 {party}
                 {gameSession}
                 {selectedScene}
-                {activeScene}
+                {activeSceneId}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
@@ -273,25 +288,25 @@
               <FogControls {stage} {stageProps} {socketUpdate} />
             {:else if scene.id === 'map'}
               <MapControls
-                bind:stageProps
-                {socketUpdate}
+                {stageProps}
                 {handleSelectActiveControl}
                 {activeControl}
                 {party}
                 {selectedScene}
-                {activeScene}
+                {activeSceneId}
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
+                {partyData}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {socketUpdate} {party} {gameSession} {selectedScene} {activeScene} />
+              <PlayControls {party} {selectedScene} {activeSceneId} {partyData} />
             {:else if scene.id === 'weather'}
-              <WeatherControls bind:stageProps {errors} />
+              <WeatherControls {stageProps} {errors} />
             {:else if scene.id === 'edge'}
-              <EdgeControls bind:stageProps {socketUpdate} {errors} {party} />
+              <EdgeControls {stageProps} {errors} {party} />
             {:else if scene.id === 'effects'}
-              <EffectsControls bind:stageProps {errors} {party} />
+              <EffectsControls {stageProps} {errors} {party} />
             {/if}
           {/snippet}
         </Popover>

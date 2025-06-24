@@ -26,7 +26,7 @@
   } from '$lib/utils';
 
   let {
-    stageProps = $bindable(),
+    stageProps,
     party,
     errors
   }: {
@@ -36,7 +36,7 @@
     party: SelectParty & Thumb;
     gameSession: SelectGameSession;
     selectedScene: SelectScene | (SelectScene & Thumb);
-    activeScene: SelectScene | (SelectScene & Thumb) | null;
+    activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: $ZodIssue[] | undefined;
@@ -163,7 +163,15 @@
   </FormControl>
   <FormControl label={gridTypeLabel} name="gridSpacing" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={0} step={0.25} bind:value={stageProps.grid.spacing} />
+      <Input
+        {...inputProps}
+        type="number"
+        min={0}
+        step={0.25}
+        value={stageProps.grid.spacing}
+        oninput={(e) =>
+          queuePropertyUpdate(stageProps, ['grid', 'spacing'], parseFloat(e.currentTarget.value), 'control')}
+      />
     {/snippet}
     {#snippet end()}
       in.
@@ -178,12 +186,27 @@
     {/snippet}
 
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={1} step={1} bind:value={stageProps.grid.lineThickness} />
+      <Input
+        {...inputProps}
+        type="number"
+        min={1}
+        step={1}
+        value={stageProps.grid.lineThickness}
+        oninput={(e) =>
+          queuePropertyUpdate(stageProps, ['grid', 'lineThickness'], parseInt(e.currentTarget.value), 'control')}
+      />
     {/snippet}
   </FormControl>
   <FormControl label="Table padding" name="displayPaddingX" {errors}>
     {#snippet input({ inputProps })}
-      <Input {...inputProps} type="number" min={0} step={1} bind:value={localPadding} oninput={handlePaddingChange} />
+      <Input
+        {...inputProps}
+        type="number"
+        min={0}
+        step={1}
+        bind:value={localPadding}
+        oninput={() => handlePaddingChange()}
+      />
     {/snippet}
     {#snippet end()}
       px

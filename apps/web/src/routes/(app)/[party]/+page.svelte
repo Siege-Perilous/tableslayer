@@ -15,7 +15,7 @@
   let { data } = $props();
   const { party, gameSessions, members, isPartyAdmin, invitedEmails, user } = $derived(data);
 
-  const partyId = data.party.id as string;
+  const partyId = $derived(party.id as string);
   const needsToUpgrade = $derived(party.plan === 'free' && gameSessions.length >= 2);
 </script>
 
@@ -106,6 +106,7 @@
     grid-template-columns: 3fr 1fr;
     margin-top: var(--size-8);
     gap: var(--size-12);
+    min-height: 400px; /* Prevent vertical shift */
   }
   .sessionList {
     display: grid;

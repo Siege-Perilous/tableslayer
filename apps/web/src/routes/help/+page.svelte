@@ -89,14 +89,6 @@
     seperate dedicated device like a mini-pc / mac mini or Rasberry Pi. The playfield will update as you make changes.
   </Text>
   <Spacer size="2rem" />
-  <Title as="h2" size="sm">What are Table Slayer's limitations?</Title>
-  <Spacer size="1rem" />
-  <Text>
-    Table Slayer is meant to have one editor (the editor) and one playfield (the TV or monitor) running at any one. The
-    updates are not currently bidirectional, and if you have multiple editors running, you might need to occassionally
-    run a browser refresh occassionally. time.
-  </Text>
-  <Spacer size="2rem" />
   <Title as="h2" size="sm">Why would I invite others into my party?</Title>
   <Spacer size="1rem" />
   <Text>

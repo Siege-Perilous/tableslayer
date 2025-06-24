@@ -177,6 +177,8 @@ export const partyTable = sqliteTable(
       .references(() => filesTable.id, { onDelete: 'cascade' })
       .notNull()
       .default(1),
+    activeSceneId: text('active_scene_id'),
+    gameSessionIsPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     defaultTvSize: integer('tv_size').notNull().default(40),
     defaultGridType: integer('default_grid_type').notNull().default(0),
     defaultDisplaySizeX: real('default_display_size_x').notNull().default(17.77),
@@ -294,10 +296,6 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
-    // TypeScript needs a way out of the circular reference
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    activeSceneId: text('active_scene_id').references((): any => sceneTable.id, { onDelete: 'set null' }),
-    isPaused: integer('is_paused', { mode: 'boolean' }).notNull().default(false),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
   (table) => [
@@ -342,7 +340,7 @@ export const sceneTable = sqliteTable(
     fogOfWarOpacity: real('fog_of_war_opacity').notNull().default(0.9),
     mapLocation: text('map_location'),
     mapThumbLocation: text('map_thumb_location'),
-    mapRotation: integer('map_rotation').notNull().default(0),
+    mapRotation: real('map_rotation').notNull().default(0),
     mapOffsetX: real('map_offset_x').notNull().default(0),
     mapOffsetY: real('map_offset_y').notNull().default(0),
     mapZoom: real('map_zoom').notNull().default(1.0),
@@ -381,6 +379,7 @@ export const sceneTable = sqliteTable(
     effectsChromaticAberrationOffset: real('effects_chromatic_aberration_intensity').notNull().default(0),
     effectsLutUrl: text('effects_lut_url'),
     effectsToneMappingMode: integer('effects_tone_mapping_mode').notNull().default(0),
+    lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date()),
     markerStrokeColor: text('marker_stroke_color').notNull().default('#000000'),
     markerStrokeWidth: integer('marker_stroke_width').notNull().default(50),
     markerTextColor: text('marker_text_color').notNull().default('#ffffff'),
