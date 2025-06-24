@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useThrelte, useLoader } from '@threlte/core';
-  import { DrawMode, type DrawingLayerProps } from './types';
+  import { DrawMode, type DrawingLayerProps, InitialState } from './types';
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { RenderMode } from './types';
@@ -11,11 +11,12 @@
 
   interface Props {
     props: DrawingLayerProps;
-    mapSize: Size | null;
+    size: Size | null;
+    initialState: InitialState;
     onRender: (texture: THREE.Texture) => void;
   }
 
-  const { props, mapSize, onRender }: Props = $props();
+  const { props, size, initialState, onRender }: Props = $props();
   const { renderer } = useThrelte();
 
   // This shader is used for drawing the fog of war on the GPU
@@ -69,20 +70,24 @@
 
   // Map size changed
   $effect(() => {
-    if (!mapSize) return;
+    if (!size) return;
 
     // If map size changed, update the render target sizes
-    if (mapSize.width !== tempTarget.width || mapSize.height !== tempTarget.height) {
-      tempTarget.setSize(mapSize.width, mapSize.height);
-      persistedTarget.setSize(mapSize.width, mapSize.height);
-      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
+    if (size.width !== tempTarget.width || size.height !== tempTarget.height) {
+      tempTarget.setSize(size.width, size.height);
+      persistedTarget.setSize(size.width, size.height);
+      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(size.width, size.height);
 
       // If an image is provided, load it, otherwise reset the fog state
       if (props.url) {
         loadImage(props.url);
         untrack(() => (imageUrl = props.url));
       } else {
-        render(RenderMode.Fill, true);
+        if (initialState === InitialState.Fill) {
+          render(RenderMode.Fill, true);
+        } else {
+          render(RenderMode.Clear, true);
+        }
       }
     }
   });

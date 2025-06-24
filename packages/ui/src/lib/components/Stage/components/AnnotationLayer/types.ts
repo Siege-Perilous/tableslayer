@@ -7,7 +7,7 @@ export interface AnnotationsLayerProps {
   /**
    * The layers to display
    */
-  layers: AnnotationLayer[];
+  layers: AnnotationLayerData[];
 
   /**
    * The id of the active layer
@@ -18,11 +18,26 @@ export interface AnnotationsLayerProps {
 /**
  * The properties for an individual annotation drawing layer
  */
-export interface AnnotationLayer {
+export interface AnnotationLayerData {
   /**
    * The ID of the annotation layer
    */
   id: string;
+
+  /**
+   * The name of the annotation layer
+   */
+  name?: string;
+
+  /**
+   * The opacity of the annotation layer
+   */
+  opacity: number;
+
+  /**
+   * The line width of the drawing tool
+   */
+  lineWidth: number;
 
   /**
    * The color of the annotation layer
@@ -38,4 +53,9 @@ export interface AnnotationLayer {
    * Control who can see the layer
    */
   visibility: StageMode;
+}
+
+export interface AnnotationExports {
+  clear: (layerId: string) => void;
+  toPng: () => Promise<Blob>;
 }

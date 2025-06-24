@@ -1,3 +1,8 @@
+export enum InitialState {
+  Clear = 0,
+  Fill = 1
+}
+
 export enum ToolType {
   Brush = 1,
   Rectangle = 2,

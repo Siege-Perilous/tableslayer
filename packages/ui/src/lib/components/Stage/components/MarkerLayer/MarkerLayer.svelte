@@ -144,6 +144,7 @@
 </script>
 
 <LayerInput
+  id="marker"
   {isActive}
   target={inputMesh}
   layerSize={{ width: display.resolution.x, height: display.resolution.y }}

@@ -27,11 +27,14 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.{test,spec}.{js,ts}']
     },
     optimizeDeps: {
-      exclude: ['@node-rs/argon2', '@node-rs/bcrypt']
+      exclude: ['@node-rs/argon2', '@node-rs/bcrypt', 'fsevents']
     },
     build: {
       commonjsOptions: {
         include: [/@tableslayer\/ui/, /node_modules/]
+      },
+      rollupOptions: {
+        external: ['fsevents']
       }
     }
   };

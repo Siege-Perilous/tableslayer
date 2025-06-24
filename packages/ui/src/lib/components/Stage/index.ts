@@ -1,4 +1,4 @@
-export { type AnnotationLayer, type AnnotationsLayerProps } from './components/AnnotationLayer/types';
+export { type AnnotationLayerData, type AnnotationsLayerProps } from './components/AnnotationLayer/types';
 export { DrawMode, RenderMode, ToolType } from './components/DrawingLayer/types';
 export { GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';
