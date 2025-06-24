@@ -14,10 +14,8 @@
     Input,
     Button,
     FormError,
-    Link,
-    ColorMode
+    Link
   } from '@tableslayer/ui';
-  import { mode } from 'mode-watcher';
   import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
   import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -222,14 +220,12 @@
           </Text>
           <Spacer />
 
-          <ColorMode mode={mode.current === 'dark' ? 'light' : 'dark'}>
-            <Button onclick={() => unlinkGoogle()}>
-              {#snippet start()}
-                <img src="/google.svg" alt="Google logo" width="16" height="16" />
-              {/snippet}
-              Unlink Google Account
-            </Button>
-          </ColorMode>
+          <Button onclick={() => unlinkGoogle()}>
+            {#snippet start()}
+              <img src="/google.svg" alt="Google logo" width="16" height="16" />
+            {/snippet}
+            Unlink Google Account
+          </Button>
         </Panel>
       {/if}
       {#if invites.length > 0}

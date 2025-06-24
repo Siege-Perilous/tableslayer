@@ -2,9 +2,8 @@
   import { useAuthLoginMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
-  import { FormError, ColorMode, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
+  import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown, Head } from '$lib/components';
-  import { mode } from 'mode-watcher';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
 
@@ -56,14 +55,12 @@
   <Spacer />
   {#if data.envName !== 'preview'}
     <div>
-      <ColorMode mode={mode.current === 'dark' ? 'light' : 'dark'}>
-        <Button href="/login/google" data-sveltekit-preload-data="tap">
-          {#snippet start()}
-            <img src="/google.svg" alt="Google logo" width="16" height="16" />
-          {/snippet}
-          Continue with Google
-        </Button>
-      </ColorMode>
+      <Button href="/login/google" data-sveltekit-preload-data="tap">
+        {#snippet start()}
+          <img src="/google.svg" alt="Google logo" width="16" height="16" />
+        {/snippet}
+        Continue with Google
+      </Button>
     </div>
     <Spacer />
     <div class="login__divider">

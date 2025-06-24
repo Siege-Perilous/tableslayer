@@ -9,11 +9,8 @@
     Spacer,
     Panel,
     FormControl,
-    ColorMode,
-    Text,
-    Hr
+    Text
   } from '@tableslayer/ui';
-  import { mode } from 'mode-watcher';
   import { IllustrationOverlook, Head } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
@@ -61,14 +58,12 @@
   <Spacer />
   {#if data.envName !== 'preview'}
     <div>
-      <ColorMode mode={mode.current === 'dark' ? 'light' : 'dark'}>
-        <Button href="/login/google" data-sveltekit-preload-data="tap">
-          {#snippet start()}
-            <img src="/google.svg" alt="Google logo" width="16" height="16" />
-          {/snippet}
-          Continue with Google
-        </Button>
-      </ColorMode>
+      <Button href="/login/google" data-sveltekit-preload-data="tap">
+        {#snippet start()}
+          <img src="/google.svg" alt="Google logo" width="16" height="16" />
+        {/snippet}
+        Continue with Google
+      </Button>
     </div>
 
     <Spacer />
