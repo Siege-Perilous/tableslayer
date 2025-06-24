@@ -2,6 +2,7 @@ precision highp float;
 
 uniform sampler2D uMaskTexture;
 uniform vec3 uColor;
+uniform float uOpacity;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
 varying vec2 vUv;
@@ -24,5 +25,5 @@ void main() {
 
   float mask = texture2D(uMaskTexture, vUv).a;
 
-  gl_FragColor = vec4(uColor, mask);
+  gl_FragColor = vec4(uColor, mask * uOpacity);
 }

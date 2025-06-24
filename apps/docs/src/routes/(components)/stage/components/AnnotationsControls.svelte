@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Color, Folder, Text, List, Button, type ListOptions } from 'svelte-tweakpane-ui';
+  import { Color, Folder, Text, List, Button, type ListOptions, Slider } from 'svelte-tweakpane-ui';
   import type { AnnotationLayerData, StageProps, StageExports } from '@tableslayer/ui';
   import { StageMode } from '@tableslayer/ui';
 
@@ -17,9 +17,12 @@
     const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
     const newLayer: AnnotationLayerData = {
       id: `layer-${Date.now()}`,
+      name: 'New Layer',
       color: randomColor,
       url: '',
-      visibility: StageMode.DM
+      visibility: StageMode.DM,
+      opacity: 1,
+      lineWidth: 10
     };
     props.annotations.layers = [...props.annotations.layers, newLayer];
     props.annotations.activeLayer = newLayer.id;
@@ -57,6 +60,9 @@
     {#each props.annotations.layers as layer}
       <Folder title={layer.id + (layer.id === props.annotations.activeLayer ? ' (Active)' : '')} expanded={false}>
         <Text bind:value={layer.id} label="Id" disabled={true} />
+        <Text bind:value={layer.name} label="Name" />
+        <Slider bind:value={layer.opacity} label="Opacity" min={0} max={1} step={0.01} />
+        <Slider bind:value={layer.lineWidth} label="Line Width" min={1} max={100} step={1} />
         <Color bind:value={layer.color} label="Color" />
         <Text bind:value={layer.url} label="URL" />
         <List bind:value={layer.visibility} label="Visibility" options={visibilityOptions} />

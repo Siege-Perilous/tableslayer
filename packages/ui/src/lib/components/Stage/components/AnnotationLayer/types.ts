@@ -25,6 +25,21 @@ export interface AnnotationLayerData {
   id: string;
 
   /**
+   * The name of the annotation layer
+   */
+  name?: string;
+
+  /**
+   * The opacity of the annotation layer
+   */
+  opacity: number;
+
+  /**
+   * The line width of the drawing tool
+   */
+  lineWidth: number;
+
+  /**
    * The color of the annotation layer
    */
   color: string;

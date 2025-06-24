@@ -26,6 +26,7 @@
     uniforms: {
       uMaskTexture: { value: null },
       uColor: { value: new THREE.Color(props.color) },
+      uOpacity: { value: props.opacity },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
       )
@@ -38,6 +39,7 @@
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
     annotationMaterial.uniforms.uColor.value = new THREE.Color(props.color);
+    annotationMaterial.uniforms.uOpacity.value = props.opacity;
     annotationMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
@@ -88,10 +90,10 @@
   bind:this={drawMaterial}
   props={{
     url: props.url,
-    opacity: 1,
+    opacity: props.opacity,
     tool: {
       mode: DrawMode.Draw,
-      size: 10,
+      size: props.lineWidth,
       type: ToolType.Brush
     }
   }}
