@@ -1,6 +1,6 @@
 import { insertMarkerSchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
 import { apiFactory } from '$lib/factories';
-import { createMarker, isUserInParty } from '$lib/server';
+import { createMarker, isUserInParty, updateSceneTimestampForMarkerChange } from '$lib/server';
 import { z } from 'zod/v4';
 
 // Create a custom schema that doesn't require sceneId in markerData
@@ -22,6 +22,9 @@ export const POST = apiFactory(
       }
 
       const marker = await createMarker(markerData, sceneId);
+
+      // Update scene timestamp when marker is created
+      await updateSceneTimestampForMarkerChange(sceneId);
 
       return { success: true, marker };
     } catch (error) {

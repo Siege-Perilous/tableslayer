@@ -1,9 +1,8 @@
 import { db } from '$lib/db/app';
-import { sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
-import { getGameSession, updateGameSession } from '../gameSession';
+import { copySceneFile, getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -59,12 +58,7 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-  // Add cache busting to prevent stale thumbnails
-  const thumbWithCacheBusting = {
-    ...thumb,
-    resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-  };
-  const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
+  const sceneWithThumb = { ...scene, thumb };
   return sceneWithThumb;
 };
 
@@ -91,19 +85,17 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
       continue;
     }
     const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-    // Add cache busting to prevent stale thumbnails
-    const thumbWithCacheBusting = {
-      ...thumb,
-      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-    };
-    const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting };
+    // Removed cache busting timestamps to prevent flashing
+    const sceneWithThumb = { ...scene, thumb };
     scenesWithThumbs.push(sceneWithThumb);
   }
 
   return scenesWithThumbs;
 };
 
-export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: number }) => {
+export const createScene = async (
+  data: Omit<InsertScene, 'order'> & { order?: number }
+): Promise<SelectScene | (SelectScene & Thumb)> => {
   const gameSessiondId = data.gameSessionId;
   let order = data.order;
   const name = data.name;
@@ -168,9 +160,14 @@ export const createScene = async (data: Omit<InsertScene, 'order'> & { order?: n
 
   const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSessiondId)).all();
 
-  if (scenes.length === 1) {
-    await setActiveScene(gameSessiondId, sceneId);
+  // If this is the first scene in the game session and the party doesn't have an active scene yet,
+  // set this scene as the party's active scene
+  if (scenes.length === 1 && !party.activeSceneId) {
+    await setActiveSceneForParty(party.id, sceneId);
   }
+
+  // Return the created scene with thumbnails
+  return await getScene(sceneId);
 };
 
 export const getSceneFromOrder = async (
@@ -189,11 +186,6 @@ export const getSceneFromOrder = async (
   let thumb = null;
   if (scene.mapLocation) {
     thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-    // Add cache busting to prevent stale thumbnails
-    thumb = {
-      ...thumb,
-      resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-    };
   }
   const sceneWithThumb = { ...scene, thumb };
 
@@ -211,7 +203,17 @@ export const deleteScene = async (gameSessionId: string, sceneId: string): Promi
     throw new Error('Scene not found');
   }
 
+  // Get the party for this game session to check if this scene is active
+  const party = await getPartyFromGameSessionId(gameSessionId);
+  const isActiveScene = party.activeSceneId === sceneId;
+
+  // Delete the scene
   await db.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
+
+  // If this was the active scene, clear the party's activeSceneId
+  if (isActiveScene) {
+    await db.update(partyTable).set({ activeSceneId: null }).where(eq(partyTable.id, party.id));
+  }
 
   const scenes = await db
     .select()
@@ -301,11 +303,23 @@ export const updateScene = async (
   const updateData: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(details)) {
     if (value !== undefined) {
+      // Prevent overwriting existing mapLocation with the default example map
+      if (
+        key === 'mapLocation' &&
+        value === 'map/example1080.png' &&
+        scene.mapLocation &&
+        scene.mapLocation !== 'map/example1080.png'
+      ) {
+        console.warn('Preventing overwrite of existing mapLocation with default example map');
+        continue;
+      }
       updateData[key] = value;
     }
   }
 
   if (Object.keys(updateData).length > 0) {
+    // Always update the lastUpdated timestamp when modifying scene data
+    updateData.lastUpdated = new Date();
     await db.update(sceneTable).set(updateData).where(eq(sceneTable.id, sceneId)).execute();
   }
 };
@@ -315,21 +329,24 @@ export const updateSceneMap = async (sceneId: string, userId: string, file: File
   const fileContent = await getFile(fileRow.fileId);
   const fileLocation = fileContent.location;
 
-  await db.update(sceneTable).set({ mapLocation: fileLocation }).where(eq(sceneTable.id, sceneId)).execute();
+  await db
+    .update(sceneTable)
+    .set({ mapLocation: fileLocation, lastUpdated: new Date() })
+    .where(eq(sceneTable.id, sceneId))
+    .execute();
 };
 
-export const setActiveScene = async (gameSessionId: string, sceneId: string) => {
-  await updateGameSession(gameSessionId, { activeSceneId: sceneId });
-};
+// New party-level active scene function
+export const getActiveSceneForParty = async (
+  partyId: string
+): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
+  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
 
-export const getActiveScene = async (gameSessiondId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  const gameSession = await getGameSession(gameSessiondId);
-  const activeSceneId = gameSession.activeSceneId;
-  if (!activeSceneId) {
+  if (!party || !party.activeSceneId) {
     return null;
   }
 
-  const activeScene = await getScene(activeSceneId);
+  const activeScene = await getScene(party.activeSceneId);
 
   if (!activeScene) {
     return null;
@@ -338,10 +355,8 @@ export const getActiveScene = async (gameSessiondId: string): Promise<SelectScen
   return activeScene;
 };
 
-export const toggleGamePause = async (gameSessionId: string) => {
-  const gameSession = await getGameSession(gameSessionId);
-  const newPausedState = !gameSession.isPaused;
-  await updateGameSession(gameSessionId, { isPaused: newPausedState });
+export const setActiveSceneForParty = async (partyId: string, sceneId: string): Promise<void> => {
+  await db.update(partyTable).set({ activeSceneId: sceneId }).where(eq(partyTable.id, partyId));
 };
 
 export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
@@ -351,22 +366,90 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
     throw new Error('Scene not found');
   }
 
-  const { id: _, name, order, ...otherProps } = originalScene;
-  const newSceneName = `${name} (Copy)`;
   const newSceneId = uuidv4();
+  const newSceneName = `${originalScene.name} (Copy)`;
+  const gameSessionId = originalScene.gameSessionId;
 
-  await createScene({
-    ...otherProps,
-    id: newSceneId,
-    name: newSceneName,
-    order: order + 1 // Place it right after the original scene
-  });
+  // Copy map and thumbnail files if they exist and aren't the default
+  let newMapLocation = originalScene.mapLocation;
+  let newMapThumbLocation = originalScene.mapThumbLocation;
 
-  const newScene = await db.select().from(sceneTable).where(eq(sceneTable.id, newSceneId)).get();
-
-  if (!newScene) {
-    throw new Error('Error duplicating scene');
+  // Copy map file if it exists and isn't the default example map
+  if (originalScene.mapLocation && originalScene.mapLocation !== 'map/example1080.png') {
+    try {
+      newMapLocation = await copySceneFile(originalScene.mapLocation, newSceneId, 'map');
+    } catch (error) {
+      console.error('Error copying map file during scene duplication:', error);
+      // Continue with original location if copy fails
+    }
   }
 
-  return newScene;
+  // Copy thumbnail file if it exists
+  if (originalScene.mapThumbLocation) {
+    try {
+      newMapThumbLocation = await copySceneFile(originalScene.mapThumbLocation, newSceneId, 'thumbnail');
+    } catch (error) {
+      console.error('Error copying thumbnail file during scene duplication:', error);
+      // Continue with original location if copy fails
+    }
+  }
+
+  // Place the new scene right after the original scene
+  const targetOrder = originalScene.order + 1;
+
+  // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
+  await db
+    .update(sceneTable)
+    .set({ order: sql`${sceneTable.order} + 10000` })
+    .where(eq(sceneTable.gameSessionId, gameSessionId));
+
+  // Step 2: Get all scenes for this session (now with high order numbers)
+  const scenes = await db
+    .select({ id: sceneTable.id, order: sceneTable.order })
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
+
+  // Step 3: Reassign orders, inserting the new scene at the target position
+  let currentOrder = 1;
+  for (const scene of scenes) {
+    if (currentOrder === targetOrder) {
+      currentOrder++; // Skip this order for the new scene
+    }
+    await db.update(sceneTable).set({ order: currentOrder }).where(eq(sceneTable.id, scene.id)).execute();
+    currentOrder++;
+  }
+
+  // The new scene will get the targetOrder
+  const newOrder = targetOrder;
+
+  // Copy all scene data except the fields we need to change
+  const { id: _, name: __, order: ___, fogOfWarUrl: ____, lastUpdated: _____, ...sceneDataToCopy } = originalScene;
+
+  // Insert the duplicated scene with all settings preserved
+  await db
+    .insert(sceneTable)
+    .values({
+      ...sceneDataToCopy,
+      id: newSceneId,
+      name: newSceneName,
+      order: newOrder,
+      mapLocation: newMapLocation,
+      mapThumbLocation: newMapThumbLocation,
+      fogOfWarUrl: null, // Reset fog of war URL for duplicated scene
+      lastUpdated: new Date()
+    })
+    .execute();
+
+  // Return the created scene with thumbnails
+  return await getScene(newSceneId);
+};
+
+/**
+ * Update a scene's lastUpdated timestamp when markers are modified
+ * This should be called whenever markers are added, updated, or deleted
+ */
+export const updateSceneTimestampForMarkerChange = async (sceneId: string): Promise<void> => {
+  await db.update(sceneTable).set({ lastUpdated: new Date() }).where(eq(sceneTable.id, sceneId)).execute();
 };

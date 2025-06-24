@@ -1,4 +1,5 @@
-import { deleteSessionTokenCookie, initializeSocketIO, setSessionTokenCookie, validateSessionToken } from '$lib/server';
+import { deleteSessionTokenCookie, setSessionTokenCookie, validateSessionToken } from '$lib/server';
+import { initializeSocketIO } from '$lib/server/ws';
 import * as Sentry from '@sentry/sveltekit';
 import { type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
@@ -12,12 +13,16 @@ if (process.env.ENV_NAME === 'production') {
   });
 }
 
-useServer(
-  (server) => {
-    initializeSocketIO(server);
-  },
-  (path) => /^\/(socket\.io|gameSession\/socket)/.test(path)
-);
+// Initialize Socket.IO with Y.js integration
+// Store the io instance globally to prevent multiple initializations
+let io: ReturnType<typeof initializeSocketIO> | null = null;
+
+useServer((server) => {
+  if (!io) {
+    io = initializeSocketIO(server);
+  }
+  return io;
+});
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
   const token = event.cookies.get('session') ?? null;

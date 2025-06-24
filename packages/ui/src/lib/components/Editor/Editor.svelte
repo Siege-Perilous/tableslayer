@@ -25,12 +25,14 @@
     height = 'auto',
     content = $bindable(undefined),
     debug = false,
-    editable = true
+    editable = true,
+    onChange
   }: {
     height?: number | string;
     content?: JSONContent | null | undefined;
     debug?: boolean;
     editable?: boolean;
+    onChange?: () => void;
   } = $props();
 
   let element: HTMLDivElement | undefined = $state();
@@ -104,6 +106,20 @@
     isOrderedList = editor.isActive('orderedList');
   }
 
+  // Effect to update editor content when it changes externally
+  $effect(() => {
+    if (editor && editorReady && content !== undefined) {
+      // Get current editor content
+      const currentContent = editor.getJSON();
+
+      // Only update if content actually changed (avoid infinite loops)
+      if (JSON.stringify(currentContent) !== JSON.stringify(content)) {
+        // Update editor with new content from outside
+        editor.commands.setContent(content || { type: 'doc', content: [{ type: 'paragraph' }] });
+      }
+    }
+  });
+
   onMount(() => {
     // Create portal container
     createPortalContainer();
@@ -159,6 +175,11 @@
         // Update HTML for debug purposes only
         editorHtml = editor.getHTML();
         updateActiveStates();
+
+        // Call onChange callback if provided
+        if (onChange) {
+          onChange();
+        }
       },
       onTransaction: () => {
         updateActiveStates();

@@ -1,41 +1,102 @@
-import { type BroadcastStageUpdate, type MarkerPositionUpdate } from '$lib/utils';
-import type { PropertyUpdates } from '$lib/utils/propertyUpdateBroadcaster';
 import { Server } from 'socket.io';
+import { YSocketIO } from 'y-socket.io/dist/server';
+
+// Global instance to prevent multiple initializations
+let wsServerInstance: Server | null = null;
+let ysocketioInstance: YSocketIO | null = null;
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export const initializeSocketIO = (server: any) => {
+  // Return existing instance if already initialized
+  if (wsServerInstance) {
+    return wsServerInstance;
+  }
+
+  // Check if the server already has a Socket.IO instance attached
+  // @ts-ignore - accessing private property
+  if (server._socketio) {
+    console.log('Socket.IO already attached to server, reusing instance');
+    // @ts-ignore
+    return server._socketio;
+  }
+
   const wsServer = new Server(server);
 
-  wsServer.of(/^\/gameSession\/\w+$/).on('connect', (socket) => {
-    console.log(`Client connected to namespace: ${socket.nsp.name}`);
+  // Increase max listeners to prevent warnings
+  wsServer.setMaxListeners(20);
 
-    // Listen for game session updates (full state updates)
-    socket.on('updateSession', (data: BroadcastStageUpdate) => {
-      socket.nsp.emit('sessionUpdated', data); // Broadcast to namespace
-    });
+  // Initialize Y.js integration with Socket.IO
+  const ysocketio = new YSocketIO(wsServer);
+  ysocketio.initialize();
 
-    // Listen for optimized marker position updates
-    socket.on('markerPositionUpdate', (data: MarkerPositionUpdate) => {
-      // Broadcast only the marker position data (much smaller payload)
-      socket.nsp.emit('markerUpdated', data);
-    });
+  console.log('Socket.IO server with Y.js initialized');
 
-    // Listen for optimized property updates
-    socket.on('propertyUpdates', (data: PropertyUpdates) => {
-      // Broadcast only the specific property updates (smaller payload)
-      socket.nsp.emit('propertiesUpdated', data);
-    });
+  // Store references
+  wsServerInstance = wsServer;
+  ysocketioInstance = ysocketio;
+  // @ts-ignore - storing reference on server
+  server._socketio = wsServer;
 
-    // Listen for cursor movements
-    socket.on('cursorMove', (data) => {
-      // Broadcast cursor updates to other clients in the same namespace
-      socket.broadcast.emit('cursorUpdate', data);
-    });
+  // Hook into the Y.js server to add cursor tracking
+  // Y.js creates namespaces dynamically, so we need to hook into the connection events
+  const originalOf = wsServer.of.bind(wsServer);
+  wsServer.of = (name: any, fn?: any) => {
+    const namespace = originalOf(name, fn);
 
-    socket.on('disconnect', () => {
-      console.log(`Client disconnected from namespace: ${socket.nsp.name}`);
-    });
-  });
+    // If this is a Y.js namespace, add our cursor handlers
+    if (typeof name === 'string' && name.startsWith('/yjs|')) {
+      const roomName = name.split('|')[1];
+
+      namespace.on('connect', (socket) => {
+        // Ensure the socket joins the room explicitly
+        socket.join(roomName);
+
+        // Set user data for disconnect tracking
+        socket.on('cursorMove', (data) => {
+          // Broadcast cursor updates to all other clients in the same room
+          socket.to(roomName).emit('cursorUpdate', data);
+        });
+
+        socket.on('disconnect', () => {
+          // Notify other clients in the same room about user disconnect
+          if (socket.data?.userId) {
+            socket.to(roomName).emit('userDisconnect', socket.data.userId);
+          }
+        });
+      });
+    } else if (name instanceof RegExp && name.source.includes('yjs')) {
+      namespace.on('connect', (socket) => {
+        const namespaceName = socket.nsp.name;
+        const roomName = namespaceName.split('|')[1];
+
+        // Ensure the socket joins the room explicitly
+        socket.join(roomName);
+
+        socket.on('cursorMove', (data) => {
+          socket.to(roomName).emit('cursorUpdate', data);
+        });
+
+        socket.on('disconnect', () => {
+          if (socket.data?.userId) {
+            socket.to(roomName).emit('userDisconnect', socket.data.userId);
+          }
+        });
+      });
+    }
+
+    return namespace;
+  };
 
   return wsServer;
 };
+
+// Clean up on process exit
+if (typeof process !== 'undefined') {
+  process.on('SIGTERM', () => {
+    if (wsServerInstance) {
+      wsServerInstance.close();
+      wsServerInstance = null;
+      ysocketioInstance = null;
+    }
+  });
+}

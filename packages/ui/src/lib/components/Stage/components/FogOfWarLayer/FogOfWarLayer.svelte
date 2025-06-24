@@ -25,6 +25,7 @@
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
+  let hasFinishedDrawing = false;
 
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
@@ -80,23 +81,28 @@
     e.preventDefault();
     lastPos = p;
     drawing = true;
+    hasFinishedDrawing = false;
     draw(e, p);
   }
 
   function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
     // If using shapes, draw the shape outline when the mouse button is released
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
-      if (p && drawing) {
+      if (p && drawing && lastPos) {
         material?.drawPath(p, lastPos, true);
         outlineMaterial.visible = false;
+        hasFinishedDrawing = true;
       }
     }
 
-    onFogUpdate(toPng());
+    if (hasFinishedDrawing) {
+      onFogUpdate(toPng());
+    }
 
     // Reset the drawing state
     lastPos = null;
     drawing = false;
+    hasFinishedDrawing = false;
   }
 
   function onMouseLeave() {
@@ -126,6 +132,9 @@
       }
       outlineMaterial.visible = true;
       material?.drawPath(p, lastPos, drawing);
+      if (drawing) {
+        hasFinishedDrawing = true;
+      }
       lastPos = p.clone();
     }
   }

@@ -1,5 +1,5 @@
 import { apiFactory } from '$lib/factories';
-import { deleteMarker, isUserInParty } from '$lib/server';
+import { deleteMarker, getMarker, isUserInParty, updateSceneTimestampForMarkerChange } from '$lib/server';
 import { z } from 'zod/v4';
 
 const validationSchema = z.object({
@@ -16,7 +16,15 @@ export const POST = apiFactory(
         throw new Error('Unauthorized');
       }
 
+      // Get marker info before deleting to update scene timestamp
+      const markerToDelete = await getMarker(markerId);
+
       const marker = await deleteMarker(markerId);
+
+      // Update scene timestamp when marker is deleted
+      if (markerToDelete?.sceneId) {
+        await updateSceneTimestampForMarkerChange(markerToDelete.sceneId);
+      }
 
       return { success: true, marker };
     } catch (error) {

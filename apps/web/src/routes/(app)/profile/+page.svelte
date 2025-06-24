@@ -35,6 +35,15 @@
   const uploadFile = useUploadFileMutation();
   $inspect(updateProfileError);
 
+  // Get current avatar location from thumb URL for versioning
+  const getCurrentAvatarLocation = () => {
+    if (!user.thumb?.url) return undefined;
+    // Extract the base location from the URL (remove domain and version query)
+    const urlParts = user.thumb.url.split('?')[0].split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    return `avatar/${fileName}`;
+  };
+
   const handleUpdateUser = async (e: Event) => {
     e.preventDefault();
     if (newPassword !== '' && newPassword !== newPasswordConfirm) {
@@ -80,7 +89,12 @@
   const avatarOnChange = async () => {
     if (files && files.length) {
       const uploadedFile = await handleMutation({
-        mutation: () => $uploadFile.mutateAsync({ file: files![0], folder: 'avatar' }),
+        mutation: () =>
+          $uploadFile.mutateAsync({
+            file: files![0],
+            folder: 'avatar',
+            currentUrl: getCurrentAvatarLocation()
+          }),
         formLoadingState: (loading) => (formIsLoading = loading),
         toastMessages: {
           success: { title: 'Image uploaded' },

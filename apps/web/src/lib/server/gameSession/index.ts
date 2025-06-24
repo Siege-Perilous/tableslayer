@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import {
   gameSessionTable,
+  partyTable,
   sceneTable,
   type InsertGameSession,
   type SelectGameSession,
@@ -41,11 +42,7 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
             'w=400,h=225,fit=cover,gravity=center'
           );
 
-          const thumbWithCacheBusting = {
-            ...thumb,
-            resizedUrl: `${thumb.resizedUrl}?t=${Date.now()}`
-          };
-          const sceneWithThumb = { ...scene, thumb: thumbWithCacheBusting } as SelectScene & Thumb;
+          const sceneWithThumb = { ...scene, thumb } as SelectScene & Thumb;
           scenesWithThumbs.push(sceneWithThumb);
         }
       }
@@ -210,4 +207,20 @@ export const createGameSessionForImport = async (partyId: string, gameSessionDat
     console.error('Error creating game session for import', error);
     throw error;
   }
+};
+
+export const getActiveGameSessionForParty = async (partyId: string): Promise<SelectGameSession | null> => {
+  const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+  if (!party || !party.activeSceneId) {
+    return null;
+  }
+
+  // Find the game session that contains the active scene
+  const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, party.activeSceneId)).get();
+  if (!scene) {
+    return null;
+  }
+
+  const activeGameSession = await getGameSession(scene.gameSessionId);
+  return activeGameSession;
 };

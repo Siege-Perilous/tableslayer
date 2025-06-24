@@ -1,5 +1,6 @@
 import type { InsertMarker } from '$lib/db/app/schema';
 import type { Marker } from '@tableslayer/ui';
+import { devError } from './debug';
 import { extractLocationFromUrl } from './extractLocationFromUrl';
 
 /**
@@ -7,7 +8,7 @@ import { extractLocationFromUrl } from './extractLocationFromUrl';
  */
 export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partial<InsertMarker> => {
   if (!marker) {
-    console.error('Attempted to convert undefined marker to DB format');
+    devError('converter', 'Attempted to convert undefined marker to DB format');
     return {};
   }
 
