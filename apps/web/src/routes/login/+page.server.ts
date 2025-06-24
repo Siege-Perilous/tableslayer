@@ -12,7 +12,9 @@ export const load: PageServerLoad = async (event) => {
     return redirect(302, '/profile');
   }
 
+  // Get envName from parent layout
+  const parentData = await event.parent();
   return {
-    envName: process.env.ENV_NAME || 'development'
+    envName: parentData.envName
   };
 };

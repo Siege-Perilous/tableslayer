@@ -13,7 +13,9 @@ export const load: PageServerLoad = async (event) => {
     }
   }
 
+  // Get envName from parent layout
+  const parentData = await event.parent();
   return {
-    envName: process.env.ENV_NAME || 'development'
+    envName: parentData.envName
   };
 };

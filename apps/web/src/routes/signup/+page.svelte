@@ -133,7 +133,7 @@
     background: var(--contrastMedium);
   }
 
-  .login__divider span {
+  .signup__divider span {
     padding: 0 1rem;
     color: var(--color-text-muted);
     font-size: 0.875rem;
