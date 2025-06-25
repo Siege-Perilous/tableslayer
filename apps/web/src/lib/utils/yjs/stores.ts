@@ -6,12 +6,25 @@ let partyDataManager: PartyDataManager | null = null;
 /**
  * Initialize the party data manager (call once per game session)
  */
-export function initializePartyDataManager(partyId: string, userId: string, gameSessionId?: string): PartyDataManager {
-  devLog('yjs', 'Initializing PartyDataManager for party:', partyId, 'gameSession:', gameSessionId);
+export function initializePartyDataManager(
+  partyId: string,
+  userId: string,
+  gameSessionId?: string,
+  partykitHost?: string
+): PartyDataManager {
+  devLog(
+    'yjs',
+    'Initializing PartyDataManager for party:',
+    partyId,
+    'gameSession:',
+    gameSessionId,
+    'host:',
+    partykitHost
+  );
   if (partyDataManager) {
     partyDataManager.destroy();
   }
-  partyDataManager = new PartyDataManager(partyId, userId, gameSessionId);
+  partyDataManager = new PartyDataManager(partyId, userId, gameSessionId, partykitHost);
   devLog('yjs', 'PartyDataManager initialized successfully');
   return partyDataManager;
 }

@@ -11,6 +11,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
   const { params } = event;
+  const partykitHost = process.env.PUBLIC_PARTYKIT_HOST || 'localhost:1999';
 
   const party = await getPartyFromSlug(params.party);
   if (!party) {
@@ -39,6 +40,7 @@ export const load: PageServerLoad = async (event) => {
     party,
     activeGameSession,
     activeScene,
-    activeSceneMarkers
+    activeSceneMarkers,
+    partykitHost
   };
 };

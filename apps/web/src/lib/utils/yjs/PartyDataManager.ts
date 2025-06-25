@@ -53,6 +53,7 @@ export class PartyDataManager {
   private partyProvider: YPartyKitProvider; // Separate provider for party-level state
   private userId: string;
   private partyId: string;
+  private partykitHost: string;
   private clientId: number; // Unique ID for this editor instance
   public gameSessionId?: string;
 
@@ -75,16 +76,16 @@ export class PartyDataManager {
   // SSR data protection (handled at subscription level in page component)
   private freshPageLoadTime: number;
 
-  constructor(partyId: string, userId: string, gameSessionId?: string) {
+  constructor(partyId: string, userId: string, gameSessionId?: string, partykitHost: string = 'localhost:1999') {
     this.userId = userId;
     this.partyId = partyId;
     this.gameSessionId = gameSessionId;
+    this.partykitHost = partykitHost;
     this.freshPageLoadTime = Date.now(); // Track when this instance was created (page load time)
 
-    // Get PartyKit host from environment
-    const host = import.meta.env.DEV
-      ? 'localhost:1999'
-      : import.meta.env.PUBLIC_PARTYKIT_HOST || 'tableslayer.partykit.dev';
+    // Use provided PartyKit host
+    console.log('PartyKit host:', partykitHost);
+    const host = partykitHost;
 
     // Initialize game session-specific Y.js document
     this.doc = new Y.Doc();
@@ -660,9 +661,8 @@ export class PartyDataManager {
     this.doc = new Y.Doc();
     this.clientId = this.doc.clientID;
 
-    const host = import.meta.env.DEV
-      ? 'localhost:1999'
-      : import.meta.env.PUBLIC_PARTYKIT_HOST || 'tableslayer.partykit.dev';
+    console.log('PartyKit host (switchGameSession):', this.partykitHost);
+    const host = this.partykitHost;
 
     this.gameSessionProvider = new YPartyKitProvider(host, newGameSessionId, this.doc, {
       party: 'game_session',

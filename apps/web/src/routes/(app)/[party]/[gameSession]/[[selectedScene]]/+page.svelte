@@ -36,6 +36,7 @@
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
+  import { throttle } from '$lib/utils/throttle';
   import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
@@ -114,6 +115,9 @@
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
+  let throttledCursorUpdate:
+    | ((position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => void)
+    | null = null;
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -447,9 +451,17 @@
       // Check if we need to reinitialize (different game session)
       const existingManager = getPartyDataManager();
       if (!existingManager || existingManager.gameSessionId !== gameSession.id) {
-        initializePartyDataManager(partySlug, user.id, gameSession.id);
+        initializePartyDataManager(partySlug, user.id, gameSession.id, data.partykitHost);
       }
       partyData = usePartyData();
+
+      // Create throttled cursor update function (30 FPS for smooth LCD TV display)
+      throttledCursorUpdate = throttle(
+        (position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => {
+          partyData!.updateCursor(position, normalizedPosition);
+        },
+        33
+      ); // 33ms = ~30 FPS
 
       // Initialize Y.js with SSR scene data
       const sceneMetadata = scenes.map((scene) => ({
@@ -1069,9 +1081,9 @@
     // Only emit cursor if we're editing the active scene
     const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
 
-    if (shouldEmitCursor && partyData) {
-      // Update cursor position using Y.js awareness
-      partyData.updateCursor({ x: event.x, y: event.y }, { x: finalNormalizedX, y: finalNormalizedY });
+    if (shouldEmitCursor && throttledCursorUpdate) {
+      // Update cursor position using throttled Y.js awareness (30 FPS)
+      throttledCursorUpdate({ x: event.x, y: event.y }, { x: finalNormalizedX, y: finalNormalizedY });
     }
   };
 
