@@ -201,7 +201,9 @@ jobs:
         working-directory: apps/web
         run: |
           echo "Deploying PartyKit for PR #${{ github.event.pull_request.number }}"
-          npx partykit deploy --name pr-${{ github.event.pull_request.number }}-tableslayer
+          # Create a temporary partykit.json without the domain field for PR deployments
+          cat partykit.json | jq 'del(.domain)' > partykit.pr.json
+          npx partykit deploy --config partykit.pr.json --name pr-${{ github.event.pull_request.number }}-tableslayer
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
