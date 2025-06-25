@@ -26,7 +26,7 @@ export const getImageDetails = async (url: string): Promise<ImageDetails> => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    const metadata = await response.json();
+    const metadata = (await response.json()) as ImageDetails;
     return metadata;
   } catch (error) {
     console.error('Error fetching image:', error);
