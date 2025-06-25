@@ -1,13 +1,12 @@
 import { sentrySvelteKit } from '@sentry/sveltekit';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
-import ws from 'vite-sveltekit-node-ws';
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
       sveltekit(),
-      ws(),
       sentrySvelteKit({
         sourceMapsUploadOptions: {
           org: 'siege-perilous',
@@ -24,7 +23,7 @@ export default defineConfig(({ mode }) => {
       port: 4174
     },
     test: {
-      include: ['src/**/*.{test,spec}.{js,ts}']
+      include: ['src/**/*.{test,spec}.{js,ts}', 'tests/unit/**/*.{test,spec}.{js,ts}']
     },
     optimizeDeps: {
       exclude: ['@node-rs/argon2', '@node-rs/bcrypt', 'fsevents']

@@ -42,7 +42,21 @@ jobs:
           STRIPE_PRICE_ID_LIFETIME=${{ secrets.STRIPE_PRICE_ID_LIFETIME }}
           STRIPE_PRICE_ID_MONTHLY=${{ secrets.STRIPE_PRICE_ID_MONTHLY }}
           STRIPE_PRICE_ID_YEARLY=${{ secrets.STRIPE_PRICE_ID_YEARLY }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
+          PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
           EOF
+      - uses: ./.github/shared
+      - name: Deploy PartyKit servers
+        if: github.ref == 'refs/heads/main'
+        working-directory: apps/web
+        run: npx partykit deploy --name tableslayer --domain partykit.tableslayer.com
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Deploy fly productions
         run: |
           flyctl deploy --remote-only --config fly.web.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"

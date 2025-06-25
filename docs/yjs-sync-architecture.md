@@ -1,26 +1,142 @@
-# Y.js Real-time Synchronization Architecture
+# Y.js Real-time Synchronization Architecture with PartyKit
 
-This document explains how Table Slayer's real-time collaboration system works, including data loading, synchronization, throttling, batching, and save mechanisms.
+This document explains how Table Slayer's real-time collaboration system works using PartyKit, Y.js, and the YPartyKitProvider for real-time synchronization.
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Data Loading Flow](#data-loading-flow)
-3. [Y.js Update Flow](#yjs-update-flow)
-4. [Throttling and Batching System](#throttling-and-batching-system)
-5. [Local-Only Properties](#local-only-properties)
-6. [Stale Data Detection](#stale-data-detection)
-7. [Save System](#save-system)
-8. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
+2. [PartyKit Architecture](#partykit-architecture)
+3. [Y.js Document Architecture](#yjs-document-architecture)
+4. [Data Loading Flow](#data-loading-flow)
+5. [Y.js Update Flow](#yjs-update-flow)
+6. [Cursor Handling](#cursor-handling)
+7. [Throttling and Batching System](#throttling-and-batching-system)
+8. [Local-Only Properties](#local-only-properties)
+9. [Stale Data Detection](#stale-data-detection)
+10. [Save System](#save-system)
+11. [Deployment Strategy](#deployment-strategy)
+12. [Cost Optimization](#cost-optimization)
+13. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
 
 ## Overview
 
-Table Slayer uses Y.js for real-time collaboration, allowing multiple users to edit scenes simultaneously. The system is built on several key components:
+Table Slayer uses PartyKit as its WebSocket infrastructure for real-time collaboration, with Y.js for conflict-free replicated data types (CRDTs). The system supports multiple users editing scenes simultaneously with automatic conflict resolution.
 
-- **Y.js Documents**: Shared data structures that automatically sync between clients
+### Key Components
+
+- **PartyKit**: WebSocket server infrastructure deployed to Cloudflare Workers
+- **Y.js Documents**: Shared CRDT data structures that automatically sync between clients
+- **YPartyKitProvider**: Y.js provider that connects to PartyKit servers
 - **Property Update Broadcaster**: Throttles and batches updates before sending to Y.js
 - **Auto-save System**: Periodically saves Y.js state to the database
 - **Drift Detection**: Ensures Y.js data doesn't diverge from the database
+
+## PartyKit Architecture
+
+### Server Implementation
+
+PartyKit servers are implemented as Cloudflare Workers that handle WebSocket connections and Y.js synchronization:
+
+```typescript
+// partykit/gameSession.ts
+import { onConnect } from 'y-partykit';
+import type * as Party from 'partykit/server';
+
+export default class GameSessionServer implements Party.Server {
+  constructor(public party: Party.Party) {}
+
+  async onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
+    // Get userId from query params for awareness
+    const userId = new URL(ctx.request.url).searchParams.get('userId');
+
+    return await onConnect(conn, this.party, {
+      // Use snapshot persistence mode
+      persist: { mode: 'snapshot' },
+
+      // Optional: Load initial state from database
+      load: async () => {
+        // Could implement loading from SQLite/R2 here
+        return null;
+      },
+
+      // Optional: Save Y.js state periodically
+      callback: {
+        handler: async (yDoc) => {
+          // Could implement saving to database here
+          console.log('Document updated for session:', this.party.id);
+        },
+        debounceWait: 10000, // Save 10 seconds after last change
+        debounceMaxWait: 30000 // Force save after 30 seconds
+      }
+    });
+  }
+}
+```
+
+### PartyKit Configuration
+
+```json
+// partykit.json
+{
+  "name": "tableslayer",
+  "main": "partykit/gameSession.ts",
+  "compatibilityDate": "2025-06-24",
+  "parties": {
+    "game_session": "partykit/gameSession.ts",
+    "party": "partykit/party.ts"
+  }
+}
+```
+
+Important: Party names must use underscores or hyphens, not camelCase.
+
+### Cloud-prem Deployment
+
+PartyKit is deployed to the user's own Cloudflare account for better pricing:
+
+```bash
+# Deploy to custom domain
+npx partykit deploy --name tableslayer --domain partykit.tableslayer.com
+
+# Required environment variables
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_API_TOKEN=your-workers-api-token
+```
+
+This requires a Cloudflare Workers paid plan ($5/month) for Durable Objects support.
+
+## Y.js Document Architecture
+
+The system uses two separate Y.js documents for different scopes:
+
+### 1. Game Session Document
+
+Manages scene-specific data for a game session:
+
+```typescript
+// Room naming: gameSession ID directly
+const gameSessionRoom = gameSessionId || `party-${partyId}`;
+
+// Contains:
+- yScenes: Map of scene data
+- yScenesList: Ordered array of scenes
+- yGameSessionMeta: Metadata like initialization flags
+- yCursors: Map for cursor data (deprecated, now uses awareness)
+```
+
+### 2. Party Document
+
+Manages party-wide state across game sessions:
+
+```typescript
+// Room naming: party ID directly
+const partyRoom = partyId;
+
+// Contains:
+- yPartyState: Active scene ID, pause status
+```
+
+This separation allows seamless switching between game sessions while maintaining party-level state.
 
 ## Data Loading Flow
 
@@ -31,92 +147,98 @@ When a user navigates to a scene, data is loaded server-side:
 ```typescript
 // +page.server.ts
 export const load: PageServerLoad = async (event) => {
-  const scenes = await getScenesByGameSessionId(gameSessionId);
-  const markers = await getSceneMarkers(selectedScene.id);
-  // Returns SSR data to the page
-  return { scenes, markers, selectedScene };
+  const partykitHost = process.env.PUBLIC_PARTYKIT_HOST || 'localhost:1999';
+  const scenes = await getScenes(gameSession.id);
+  const markers = await getMarkersForScene(selectedScene.id);
+
+  return {
+    scenes,
+    markers,
+    selectedScene,
+    partykitHost // Pass host to client
+  };
 };
 ```
 
-### 2. Client-Side Initialization
+### 2. Client-Side PartyKit Connection
 
-On mount, the client initializes Y.js with SSR data:
+On mount, the client initializes Y.js with PartyKit providers:
 
 ```typescript
-// +page.svelte
-onMount(() => {
-  // Initialize Y.js party data manager
-  const partyData = initializePartyDataManager(partySlug, user.id, gameSession.id);
+// PartyDataManager.ts
+export class PartyDataManager {
+  private gameSessionProvider: YPartyKitProvider;
+  private partyProvider: YPartyKitProvider;
+  private doc: Y.Doc;
+  private partyDoc: Y.Doc;
 
-  // Initialize scene data with SSR content
-  const stageProps = buildSceneProps(selectedScene, markers, 'editor');
-  partyData.initializeSceneData(selectedScene.id, stageProps, markers);
+  constructor(partyId: string, userId: string, gameSessionId?: string, partykitHost: string = 'localhost:1999') {
+    this.doc = new Y.Doc();
+    this.partyDoc = new Y.Doc();
 
-  // Subscribe to Y.js updates
-  unsubscribe = partyData.subscribe(() => {
-    const sceneData = partyData.getSceneData(selectedScene.id);
-    if (sceneData) {
-      // Apply Y.js updates to local state
-      applyYjsUpdates(sceneData);
-    }
-  });
-});
+    // Use provided host (passed from server)
+    const host = partykitHost;
+
+    // Game session connection
+    const gameSessionRoom = gameSessionId || `party-${partyId}`;
+    this.gameSessionProvider = new YPartyKitProvider(host, gameSessionRoom, this.doc, {
+      party: 'game_session',
+      params: { userId }
+    });
+
+    // Party connection
+    this.partyProvider = new YPartyKitProvider(host, partyId, this.partyDoc, {
+      party: 'party',
+      params: { userId }
+    });
+
+    // Initialize Y.js structures
+    this.yScenes = this.doc.getMap('scenes');
+    this.yScenesList = this.doc.getArray('scenesList');
+    this.yGameSessionMeta = this.doc.getMap('gameSessionMeta');
+    this.yPartyState = this.partyDoc.getMap('partyState');
+  }
+}
 ```
 
-### 3. Building StageProps
+### 3. Connection Status
 
-The `buildSceneProps` function transforms database data into the UI structure:
+YPartyKitProvider manages WebSocket connections automatically:
 
 ```typescript
-// buildSceneProps.ts
-export function buildSceneProps(scene: Scene, markers: Marker[], view: 'editor' | 'player'): StageProps {
+// Monitor connection status
+getConnectionStatus(): {
+  gameSession: 'disconnected' | 'connecting' | 'connected';
+  party: 'disconnected' | 'connecting' | 'connected';
+  overall: boolean;
+} {
+  const gameSessionStatus = this.gameSessionProvider.shouldConnect
+    ? this.gameSessionProvider.wsconnected
+      ? 'connected'
+      : 'connecting'
+    : 'disconnected';
+
+  const partyStatus = this.partyProvider.shouldConnect
+    ? this.partyProvider.wsconnected
+      ? 'connected'
+      : 'connecting'
+    : 'disconnected';
+
   return {
-    map: {
-      url: generateR2Url(scene.mapLocation),
-      offset: { x: 0, y: 0 },
-      zoom: 1,
-      rotation: 0
-    },
-    marker: {
-      visible: true,
-      markers: markers.map((m) => ({
-        ...m,
-        // Transform database marker to UI marker
-        visibility: view === 'player' && m.visibility === MarkerVisibility.DM ? MarkerVisibility.Player : m.visibility
-      }))
-    }
-    // ... other properties
+    gameSession: gameSessionStatus,
+    party: partyStatus,
+    overall: this.isConnected
   };
 }
 ```
 
-### 4. Scene Change Handling
-
-When users switch between scenes, the system preserves Y.js synchronization while updating the view:
-
-**Editor View**: When changing scenes, marker protections are cleared and new stage props are built from the selected scene data. Viewport state (zoom, offset, rotation) can be preserved across scene changes.
-
-**Player View**: Players automatically follow the DM's active scene. When Y.js broadcasts a scene change, the player view detects the mismatch between their current scene and the active scene, then calls `invalidateAll()` to reload with the new scene data. This ensures players always see what the DM intends, even across different game sessions.
-
-**Game Session Switching**: When the active scene belongs to a different game session, the Y.js connection is destroyed and reinitialized with the new session ID. This allows seamless transitions between campaigns while maintaining real-time synchronization.
-
-### 5. Y.js Connection Management
-
-The PartyDataManager handles two separate Y.js documents:
-
-1. **Game Session Document**: Contains scene data, markers, and cursors for a specific game session
-2. **Party Document**: Contains party-wide state like active scene ID and pause status
-
-This separation allows the active scene to be tracked across game sessions while keeping scene data isolated.
-
 ## Y.js Update Flow
+
+Updates flow through the Property Update Broadcaster to Y.js via PartyKit:
 
 ### 1. User Makes a Change
 
-When a user modifies a control (e.g., adjusts map opacity slider):
-
 ```svelte
-<!-- In a component template -->
 <InputSlider
   value={stageProps.map.opacity}
   min={0}
@@ -126,88 +248,87 @@ When a user modifies a control (e.g., adjusts map opacity slider):
 />
 ```
 
-### 2. Component Handles the Change
-
-The component updates the value and queues it for sync:
+### 2. Update is Queued and Broadcast
 
 ```typescript
-// +page.svelte or component
 function handleMapOpacityChange(value: number) {
-  // Update happens through queuePropertyUpdate
-  queuePropertyUpdate(
-    stageProps, // The stage props object
-    ['map', 'opacity'], // Path to the property
-    value, // New value
-    'control' // Update type for throttling
-  );
+  queuePropertyUpdate(stageProps, ['map', 'opacity'], value, 'control');
 }
 ```
 
-### 3. Property Update is Queued and Processed
+### 3. PartyKit Synchronizes
 
-The `queuePropertyUpdate` function handles the update:
+The YPartyKitProvider handles WebSocket communication with the PartyKit server, which broadcasts Y.js updates to all connected clients.
 
-```typescript
-// propertyUpdateBroadcaster.ts
-export function queuePropertyUpdate(
-  stageProps: StageProps,
-  propertyPath: PropertyPath,
-  value: any,
-  updateType: 'marker' | 'control' | 'scene' = 'control'
-) {
-  // Step 1: Apply update locally for immediate UI feedback
-  applyUpdate(stageProps, propertyPath, value);
-  // This updates stageProps.map.opacity = value immediately
-
-  // Step 2: Check if immediate sync is enabled
-  if (immediateYjsSyncEnabled && partyDataManager && currentSceneId) {
-    // Sync to Y.js immediately (bypasses batching)
-    partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
-  }
-
-  // Step 3: Queue for batched update (for database save)
-  const pathKey = propertyPath.join('.'); // "map.opacity"
-  pendingUpdates[pathKey] = { path: propertyPath, value };
-
-  // Step 4: Schedule batch update if not already scheduled
-  if (!updateScheduled) {
-    updateScheduled = true;
-    const delay = UI_CONTROL_DELAY; // 100ms for 'control' type
-
-    setTimeout(() => {
-      // After delay, broadcast all pending updates
-      broadcastPropertyUpdatesViaYjs(pendingUpdates, currentSceneId);
-      pendingUpdates = {};
-      updateScheduled = false;
-    }, delay);
-  }
-
-  // Step 5: Trigger auto-save callback
-  if (onUserChangeCallback) {
-    onUserChangeCallback(); // Starts the 5-second save timer
-  }
-}
-```
-
-### 4. Updates Sync via Y.js
-
-Other connected clients receive the update:
+### 4. Other Clients Receive Updates
 
 ```typescript
-// In receiving client's subscription
 partyData.subscribe(() => {
   const sceneData = partyData.getSceneData(selectedScene.id);
   if (sceneData && sceneData.stageProps) {
-    // Y.js update received - apply to local state
-    const yjsStageProps = sceneData.stageProps;
-
-    // Update local opacity value
-    stageProps.map.opacity = yjsStageProps.map.opacity;
-
-    // Svelte reactivity handles UI update
+    stageProps = sceneData.stageProps;
   }
 });
 ```
+
+## Cursor Handling
+
+Cursor tracking uses Y.js awareness protocol via YPartyKitProvider:
+
+### Sending Cursor Updates
+
+```typescript
+updateCursor(position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) {
+  if (this.isConnected && this.gameSessionProvider.awareness) {
+    this.gameSessionProvider.awareness.setLocalStateField('cursor', {
+      userId: this.userId,
+      position,
+      normalizedPosition,
+      lastMoveTime: Date.now()
+    });
+  }
+}
+```
+
+### Receiving Cursor Updates
+
+```typescript
+getCursors(): Record<string, CursorData> {
+  const cursors: Record<string, CursorData> = {};
+
+  if (this.gameSessionProvider.awareness) {
+    this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
+      if (state.cursor && clientId !== this.gameSessionProvider.awareness.clientID) {
+        cursors[state.cursor.userId] = state.cursor;
+      }
+    });
+  }
+
+  return cursors;
+}
+```
+
+### Cost Optimization: Cursor Throttling
+
+To reduce PartyKit request costs, cursor updates are throttled to 30 FPS:
+
+```typescript
+// Create throttled cursor update function
+throttledCursorUpdate = throttle((position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => {
+  partyData!.updateCursor(position, normalizedPosition);
+}, 33); // 33ms = ~30 FPS
+```
+
+This reduces cursor update frequency from ~60+ updates/second to 30 updates/second, cutting cursor-related costs by ~50%.
+
+### Important: Cursors are Ephemeral
+
+Cursors use Y.js awareness, which means:
+
+- They are NOT stored in Y.js documents
+- They are NOT persisted between sessions
+- They disappear when a user disconnects
+- They still count as PartyKit requests (hence throttling)
 
 ## Throttling and Batching System
 
@@ -228,8 +349,14 @@ export function queuePropertyUpdate(
   // Apply update locally immediately
   applyUpdate(stageProps, propertyPath, value);
 
-  // Store in pending updates
-  pendingUpdates[propertyPath.join('.')] = { path: propertyPath, value };
+  // Check if immediate sync is enabled
+  if (immediateYjsSyncEnabled && partyDataManager && currentSceneId) {
+    partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
+  }
+
+  // Queue for batched update
+  const pathKey = propertyPath.join('.');
+  pendingUpdates[pathKey] = { path: propertyPath, value };
 
   // Schedule batch update
   if (!updateScheduled) {
@@ -246,83 +373,11 @@ export function queuePropertyUpdate(
 }
 ```
 
-### Immediate Sync Mode
-
-For critical updates, immediate sync can be enabled:
-
-```typescript
-enableImmediateYjsSync(); // Bypass batching
-// Updates now sync immediately to Y.js
-disableImmediateYjsSync(); // Return to batched mode
-```
-
-## Marker Protection Mechanism
-
-To prevent marker position conflicts during real-time collaboration, the system uses protection sets:
-
-### Protection Sets
-
-```typescript
-// Track markers being actively edited
-let markersBeingMoved = new Set<string>(); // Markers currently being dragged
-let markersBeingEdited = new Set<string>(); // Markers being added/edited
-```
-
-### How Protection Works
-
-1. **During Marker Operations**:
-
-   ```typescript
-   // When a marker is being moved
-   markersBeingMoved.add(marker.id);
-
-   // When a marker is being edited
-   markersBeingEdited.add(marker.id);
-   ```
-
-2. **Protection Merge Logic**:
-
-   ```typescript
-   // mergeMarkersWithProtection function
-   if (beingMoved.has(localMarker.id)) {
-     // Only preserve position from local state
-     resultMap.set(localMarker.id, {
-       ...incomingMarker,
-       position: localMarker.position
-     });
-   }
-   ```
-
-3. **Automatic Cleanup**:
-   - **On save completion**: Markers removed from protection
-   - **On window blur**: All protections cleared to prevent deadlocks
-   - **Safety timeout**: 10 seconds for moving, 5 seconds for editing
-   - **Periodic cleanup**: Every 15 seconds removes stale protections
-
-### Focus Change Handling
-
-```typescript
-onblur={() => {
-  // Clear all marker protections when losing focus
-  markersBeingMoved.clear();
-  markersBeingEdited.clear();
-
-  // Clear save timer
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-  }
-});
-```
-
-This prevents the common issue where switching browser tabs mid-edit would leave markers permanently protected, blocking Y.js synchronization.
-
 ## Local-Only Properties
 
 Some properties don't sync between users:
 
 ```typescript
-// propertyUpdateBroadcaster.ts
 const LOCAL_ONLY_PROPERTIES = new Set([
   'scene.offset.x',      // Each user has their own viewport
   'scene.offset.y',
@@ -346,17 +401,14 @@ The system detects when Y.js data is out of sync with the database:
 ```typescript
 // PartyDataManager.ts
 checkSceneDrift(sceneId: string, dbTimestamp: number): boolean {
-  const sceneData = this.yScenes.get(sceneId);
-  if (!sceneData) return false;
-
-  const yjsTimestamp = sceneData.lastUpdated;
+  const yjsTimestamp = this.getSceneLastUpdated(sceneId);
+  if (!yjsTimestamp) return false;
   return dbTimestamp > yjsTimestamp;
 }
 
-// Periodic drift detection
-async detectDrift(fetchSceneTimestamps: () => Promise<Record<string, number>>) {
+async detectDrift(fetchSceneTimestamps: () => Promise<Record<string, number>>): Promise<string[]> {
   const dbTimestamps = await fetchSceneTimestamps();
-  const driftedScenes = [];
+  const driftedScenes: string[] = [];
 
   for (const [sceneId, dbTimestamp] of Object.entries(dbTimestamps)) {
     if (this.checkSceneDrift(sceneId, dbTimestamp)) {
@@ -370,26 +422,9 @@ async detectDrift(fetchSceneTimestamps: () => Promise<Record<string, number>>) {
 
 ## Save System
 
-The auto-save system prevents data loss:
+The auto-save system prevents data loss by periodically saving Y.js state to the database:
 
-### 1. Save Trigger
-
-User changes trigger the auto-save timer:
-
-```typescript
-// +page.svelte
-const startAutoSaveTimer = () => {
-  if (autoSaveTimer) clearTimeout(autoSaveTimer);
-
-  autoSaveTimer = setTimeout(() => {
-    if (!isSaving && hasUnsavedChanges) {
-      performSave();
-    }
-  }, 5000); // 5 second delay
-};
-```
-
-### 2. Save Coordination
+### Save Coordination
 
 Only one user saves at a time to prevent conflicts:
 
@@ -423,39 +458,110 @@ const performSave = async () => {
 };
 ```
 
-### 3. Conversion Functions
+## Deployment Strategy
 
-Converting between UI and database formats:
+### Production Deployment (Cloud-prem)
 
-```typescript
-// convertStagePropsToSceneData.ts
-export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scene) {
-  return {
-    mapLocation: extractLocationFromUrl(stageProps.map.url),
-    mapRotation: stageProps.map.rotation,
-    mapZoom: stageProps.map.zoom,
-    mapOffsetX: stageProps.map.offset.x,
-    mapOffsetY: stageProps.map.offset.y
-    // ... other properties
-  };
-}
+PartyKit servers are deployed to the user's own Cloudflare account:
 
-// convertStagePropsToMarkerData.ts
-export function convertStagePropsToMarkerData(stageProps: StageProps): DbMarker[] {
-  return stageProps.marker.markers.map((marker) => ({
-    id: marker.id,
-    title: marker.title,
-    positionX: marker.position.x,
-    positionY: marker.position.y,
-    note: marker.note ? JSON.stringify(marker.note) : null
-    // ... other properties
-  }));
-}
+```bash
+# Deploy to custom domain
+npx partykit deploy --name tableslayer --domain partykit.tableslayer.com
+
+# Environment variables required:
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_API_TOKEN=your-workers-api-token # Needs Workers permissions
 ```
 
-## Adding New Properties to StageProps
+GitHub Actions workflow:
 
-Let's walk through adding a new "grid overlay" feature with opacity and color settings:
+```yaml
+- name: Deploy PartyKit servers
+  if: github.ref == 'refs/heads/main'
+  working-directory: apps/web
+  run: npx partykit deploy --name tableslayer --domain partykit.tableslayer.com
+  env:
+    CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
+```
+
+### Per-PR Deployments
+
+Each pull request gets its own PartyKit deployment for isolated testing:
+
+```yaml
+# .github/workflows/ci.yml
+- name: Deploy PartyKit for PR
+  working-directory: apps/web
+  run: |
+    echo "Deploying PartyKit for PR #${{ github.event.pull_request.number }}"
+    npx partykit deploy --name pr-${{ github.event.pull_request.number }}-tableslayer
+  env:
+    CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
+
+# Set the host in the generated .env
+PUBLIC_PARTYKIT_HOST=pr-${{ github.event.pull_request.number }}-tableslayer.partykit.dev
+```
+
+### Cleanup on PR Close
+
+```yaml
+# .github/workflows/destroydb.yml
+- name: Delete PartyKit deployment
+  working-directory: apps/web
+  run: |
+    echo "Deleting PartyKit deployment for PR #${{ github.event.pull_request.number }}"
+    npx partykit delete --name pr-${{ github.event.pull_request.number }}-tableslayer --yes
+  env:
+    CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
+```
+
+## Cost Optimization
+
+### Pricing Models
+
+1. **PartyKit Managed** (original approach): $19/month for 1M requests/day
+2. **Cloudflare Workers** (cloud-prem): $5/month + usage-based pricing
+   - 10M requests/month included
+   - $0.50 per additional million requests
+   - Much more cost-effective at scale
+
+### Optimization Techniques
+
+1. **Cursor Throttling**: Reduce cursor updates from 60+ FPS to 30 FPS
+   - Before: ~20 users × 60 updates/sec = 1,200 requests/sec
+   - After: ~20 users × 30 updates/sec = 600 requests/sec
+   - 50% reduction in cursor-related costs
+
+2. **Batched Updates**: Group property changes within time windows
+   - UI controls: 100ms batching window
+   - Scene updates: 200ms batching window
+   - Reduces request count by 80-90% for rapid changes
+
+3. **Local-Only Properties**: Don't sync viewport state
+   - Offset, rotation, zoom are per-user
+   - Eliminates thousands of unnecessary syncs
+
+4. **Smart Save Coordination**: Only one user saves at a time
+   - Prevents duplicate save operations
+   - Reduces database write load
+
+### Cost Estimation
+
+With optimizations on Cloudflare Workers:
+
+- 20 concurrent users
+- 30 cursor updates/second/user
+- 10 property updates/minute/user
+- Total: ~40,000 requests/hour
+- Monthly: ~29M requests
+- Cost: $5 base + $9.50 for additional 19M requests = **$14.50/month**
+
+(Compared to $19/month for PartyKit managed or ~$1000/month for Redis)
+
+## Adding New Properties to StageProps
 
 ### 1. Update Type Definitions
 
@@ -534,298 +640,32 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
   function updateGridColor(colorData) {
     queuePropertyUpdate(stageProps, ['gridOverlay', 'color'], colorData.hex, 'control');
   }
-
-  function toggleGrid(value) {
-    queuePropertyUpdate(stageProps, ['gridOverlay', 'visible'], value === 'true', 'control');
-  }
 </script>
 
-<FormControl label="Show Grid" name="gridVisible">
+<FormControl label="Grid Opacity" name="gridOpacity">
   {#snippet input({ inputProps })}
-    <RadioButton
+    <InputSlider
       {...inputProps}
-      selected={stageProps.gridOverlay.visible.toString()}
-      options={[
-        { label: 'on', value: 'true' },
-        { label: 'off', value: 'false' }
-      ]}
-      onSelectedChange={toggleGrid}
+      value={stageProps.gridOverlay.opacity}
+      min={0}
+      max={1}
+      step={0.1}
+      oninput={updateGridOpacity}
     />
   {/snippet}
 </FormControl>
-
-{#if stageProps.gridOverlay.visible}
-  <FormControl label="Grid Opacity" name="gridOpacity">
-    {#snippet input({ inputProps })}
-      <InputSlider
-        {...inputProps}
-        value={stageProps.gridOverlay.opacity}
-        min={0}
-        max={1}
-        step={0.1}
-        oninput={updateGridOpacity}
-      />
-    {/snippet}
-  </FormControl>
-
-  <FormControl label="Grid Color" name="gridColor">
-    {#snippet input({ inputProps })}
-      <ColorPicker {...inputProps} hex={stageProps.gridOverlay.color} onUpdate={updateGridColor} />
-    {/snippet}
-  </FormControl>
-{/if}
 ```
 
-### 6. Make Properties Local-Only (Optional)
+## Key Architecture Benefits
 
-If you want grid visibility to be per-user (not synced):
-
-```typescript
-// propertyUpdateBroadcaster.ts
-const LOCAL_ONLY_PROPERTIES = new Set([
-  // ... existing properties
-  'gridOverlay.visible' // Each user can toggle their own grid
-]);
-```
-
-### 7. Handle the Property in Your Stage Component
-
-```typescript
-// Stage component effect
-$effect(() => {
-  if (stageProps.gridOverlay.visible) {
-    // Draw grid with current settings
-    drawGrid(stageProps.gridOverlay.color, stageProps.gridOverlay.opacity, stageProps.gridOverlay.size);
-  }
-});
-```
-
-## Player View Considerations
-
-The player view (`/party/play`) has specific requirements and limitations:
-
-### 1. Read-Only Mode
-
-Players cannot modify scene data:
-
-```typescript
-// +page@.svelte (player view)
-onMount(() => {
-  // Initialize Y.js but don't enable property updates
-  const partyData = initializePartyDataManager(partySlug, user.id);
-
-  // Subscribe to updates only
-  partyData.subscribe(() => {
-    const partyState = partyData.getPartyState();
-    const activeSceneId = partyState.activeSceneId;
-
-    if (activeSceneId) {
-      const sceneData = partyData.getSceneData(activeSceneId);
-      if (sceneData) {
-        // Apply updates from DM
-        stageProps = sceneData.stageProps;
-      }
-    }
-  });
-});
-```
-
-### 2. Filtered Marker Visibility
-
-Players see different marker states:
-
-```typescript
-// buildSceneProps.ts
-export function buildSceneProps(scene: Scene, markers: Marker[], view: 'editor' | 'player'): StageProps {
-  return {
-    marker: {
-      markers: markers.map((m) => ({
-        ...m,
-        // DM-only markers show without details to players
-        visibility: view === 'player' && m.visibility === MarkerVisibility.DM ? MarkerVisibility.Player : m.visibility,
-        // Hide DM notes from players
-        note: view === 'player' && m.visibility === MarkerVisibility.DM ? null : m.note
-      }))
-    }
-  };
-}
-```
-
-### 3. Active Scene Tracking
-
-Players automatically follow the DM's active scene:
-
-```typescript
-// Player view effect
-$effect(() => {
-  if (yjsPartyState?.activeSceneId && yjsPartyState.activeSceneId !== currentSceneId) {
-    // Auto-navigate to DM's active scene
-    goto(`/${party.slug}/play#${yjsPartyState.activeSceneId}`);
-  }
-});
-```
-
-### 4. Pause Screen
-
-When DM pauses, players see pause screen:
-
-```typescript
-// Player view template
-{#if yjsPartyState?.isPaused}
-  <PauseScreen imageUrl={party.pauseScreenUrl} />
-{:else}
-  <Stage {stageProps} interactive={false} />
-{/if}
-```
-
-### 5. Limited Controls
-
-Player controls are restricted:
-
-```typescript
-// Player stage props
-const playerStageProps = {
-  ...stageProps,
-  // Players can't use drawing tools
-  activeLayer: MapLayerType.None,
-  // Players can't edit markers
-  marker: {
-    ...stageProps.marker,
-    editable: false
-  },
-  // Players can pan but not save positions
-  controls: {
-    enablePan: true,
-    enableZoom: true,
-    enableRotate: false,
-    enableMarkerEdit: false,
-    enableFogEdit: false
-  }
-};
-```
-
-### 6. No Save Operations
-
-Players never trigger saves:
-
-```typescript
-// Player view - no save callbacks
-setUserChangeCallback(null); // Disable auto-save
-disableImmediateYjsSync(); // No immediate updates needed
-```
-
-### 7. Performance Optimizations
-
-Player view can skip certain subscriptions:
-
-```typescript
-// Only subscribe to essential data
-const unsubscribe = partyData.subscribe(() => {
-  // Only listen for:
-  // - Active scene changes
-  // - Pause state
-  // - Current scene data
-  // Skip:
-  // - Scene list changes
-  // - Other scenes' data
-  // - Save coordination
-});
-```
-
-## Additional Context for Development
-
-### Common Pitfalls and Solutions
-
-1. **Marker Position During Drag**
-   - Problem: Marker jumps when dragged due to Y.js updates from other clients
-   - Solution: Use `markersBeingMoved` Set to protect markers during drag operations
-   - Code location: `+page.svelte` lines 56-100 (mergeMarkersWithProtection function)
-
-2. **Editor Content Not Updating**
-   - Problem: TipTap doesn't react to external content changes
-   - Solution: Use $effect to watch content prop and update editor
-   - Code location: `Editor.svelte` lines 110-121
-
-3. **Save Conflicts**
-   - Problem: Multiple users trying to save simultaneously
-   - Solution: Use `becomeActiveSaver` coordination
-   - Code location: See performSave function in `+page.svelte`
-
-4. **Sync Failure on Focus Change**
-   - Problem: Y.js sync stops working when switching browser tabs before a save completes
-   - Root Cause: Markers remain in protection sets (`markersBeingMoved`, `markersBeingEdited`) indefinitely
-   - Solution: Clear protection sets on window blur and implement timeout-based cleanup
-   - Code locations:
-     - Window blur handler clears all protections
-     - 10-second safety timeout for moving markers
-     - 15-second periodic cleanup timer
-     - See `onblur` handler and protection cleanup logic in `+page.svelte`
-
-### Key Files and Their Roles
-
-```
-/apps/web/src/lib/utils/yjs/
-├── partyDataManager.ts      # Core Y.js document management
-├── stores.ts                # Svelte stores for Y.js integration
-└── propertyUpdateBroadcaster.ts # Throttling and batching logic
-
-/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/
-├── +page.svelte            # Main editor view with Y.js integration
-├── +page.server.ts         # SSR data loading
-└── +layout.svelte          # Party connection initialization
-
-/packages/ui/src/lib/components/
-├── Stage/                  # Canvas rendering components
-├── Editor/Editor.svelte    # TipTap rich text editor
-└── types/                  # Shared TypeScript interfaces
-```
-
-### State Management Patterns
-
-1. **Immediate Local Updates**: Always update local state first, then sync
-2. **Protected State**: During operations (drag, edit), protect local state from Y.js updates
-3. **Optimistic Updates**: Apply changes locally before confirmation
-4. **Drift Recovery**: Periodic checks ensure Y.js doesn't diverge from database
-
-### Testing Considerations
-
-- Open multiple browser tabs to test real-time sync
-- Test with network throttling to ensure graceful degradation
-- Verify save indicator shows correct state
-- Test marker drag across multiple clients
-- Ensure player view filters correctly
-
-### Key Configuration Constants
-
-The timing constants that control synchronization behavior are defined in:
-
-- **Throttle delays** - `/apps/web/src/lib/utils/propertyUpdateBroadcaster.ts`
-  - `MARKER_UPDATE_DELAY` - Fast sync for marker operations
-  - `UI_CONTROL_DELAY` - Standard UI control updates
-  - `SCENE_UPDATE_DELAY` - Less frequent scene property updates
-
-- **Auto-save delay** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`
-  - Currently set to 3000ms (3 seconds) in the `startAutoSaveTimer` function
-
-- **Protection timeouts** - `/apps/web/src/routes/(app)/[party]/[gameSession]/[[selectedScene]]/+page.svelte`
-  - Marker move protection timeout: 10 seconds
-  - Marker edit protection timeout: 5 seconds
-  - Periodic cleanup interval: 15 seconds
-
-## Best Practices
-
-1. **Always update locally first** for immediate UI feedback
-2. **Use appropriate throttle delays** based on update frequency
-3. **Mark properties as local-only** when they shouldn't sync
-4. **Test with multiple browsers** to ensure sync works correctly
-5. **Monitor for drift** between Y.js and database state
-6. **Handle save conflicts** gracefully with the coordinator system
-7. **Test player view separately** to ensure proper filtering
-8. **Validate permissions** before allowing updates
-9. **Protect state during operations** (drag, edit) from external updates
-10. **Use dev logging** to debug sync issues (check for dev mode console logs)
-11. **Clear protections on focus loss** to prevent sync deadlocks
-12. **Implement timeout-based cleanup** for protection sets to handle edge cases
+1. **Simplified Infrastructure**: No Socket.IO complexity, native WebSocket support
+2. **Global Edge Deployment**: PartyKit runs on Cloudflare's edge network
+3. **Cost Effective**: ~$15/month vs $1000+/month for Redis
+4. **First-Class Y.js Support**: Built specifically for CRDT applications
+5. **Per-PR Testing**: Isolated environments for each pull request
+6. **Automatic Scaling**: Cloudflare Workers scale automatically
+7. **Native Apple Silicon Support**: No compatibility issues with development
+8. **Cloud-prem Option**: Deploy to your own Cloudflare account for better pricing
 
 ## Debugging
 
@@ -834,6 +674,12 @@ Enable debug logging:
 ```typescript
 // In browser console
 localStorage.setItem('debug', 'y-*');
+```
+
+Monitor PartyKit connection:
+
+```typescript
+devLog('yjs', `PartyDataManager connecting to PartyKit: ${host}, room: ${gameSessionRoomName}`);
 ```
 
 Monitor Y.js updates:
@@ -846,3 +692,17 @@ partyData.subscribe(() => {
   });
 });
 ```
+
+## Best Practices
+
+1. **Always update locally first** for immediate UI feedback
+2. **Use appropriate throttle delays** based on update frequency
+3. **Mark properties as local-only** when they shouldn't sync
+4. **Test with multiple browsers** to ensure sync works correctly
+5. **Monitor for drift** between Y.js and database state
+6. **Handle save conflicts** gracefully with the coordinator system
+7. **Use cursor throttling** to reduce PartyKit costs
+8. **Deploy per-PR** for isolated testing environments
+9. **Use cloud-prem deployment** for production cost savings
+10. **Clear protections on focus loss** to prevent sync deadlocks
+11. **Use underscore party names** in partykit.json configuration

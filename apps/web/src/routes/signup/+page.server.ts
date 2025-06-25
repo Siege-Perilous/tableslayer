@@ -12,5 +12,10 @@ export const load: PageServerLoad = async (event) => {
       throw redirect(302, '/verify-email');
     }
   }
-  return {};
+
+  // Get envName from parent layout
+  const parentData = await event.parent();
+  return {
+    envName: parentData.envName
+  };
 };

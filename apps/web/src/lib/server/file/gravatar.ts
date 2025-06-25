@@ -20,7 +20,7 @@ export const getGravatarDisplayName = async (email: string): Promise<string> => 
   const response = await fetch(`https://gravatar.com/${hash}.json`);
 
   if (response.ok) {
-    const profile = await response.json();
+    const profile = (await response.json()) as { entry: Array<{ displayName?: string }> };
     if (profile.entry[0]) {
       return profile.entry[0].displayName || extractNameFromEmail(email);
     }

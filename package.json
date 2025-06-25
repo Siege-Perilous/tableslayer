@@ -9,7 +9,8 @@
     "check": "turbo run check",
     "format-check": "prettier --check .",
     "format-write": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy:party": "cd apps/web && pnpm deploy:party"
   },
   "devDependencies": {
     "husky": "^9.1.7",

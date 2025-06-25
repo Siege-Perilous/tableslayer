@@ -20,7 +20,7 @@ export const exportGameSession = async (gameSessionId: string): Promise<void> =>
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = (await response.json()) as { message?: string };
       throw new Error(errorData.message || 'Failed to export game session');
     }
 
@@ -80,7 +80,7 @@ export const importGameSession = async (partyId: string, file: File): Promise<st
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = (await response.json()) as { message?: string };
       devLog('import', 'Error response from importGameSession:', errorData);
 
       // Create a specific error with the error message from the API
@@ -88,7 +88,7 @@ export const importGameSession = async (partyId: string, file: File): Promise<st
       throw new Error(errorMessage);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { gameSessionId: string };
     return data.gameSessionId;
   } catch (error) {
     devError('import', 'Error importing game session:', error);

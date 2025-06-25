@@ -2,7 +2,8 @@ import { getPartyInvitesForEmail, getUserPartiesAndSessions } from '$lib/server'
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-  const { user } = await event.parent();
+  const parentData = await event.parent();
+  const { user, envName } = parentData;
   if (!user) {
     throw new Error('User or parties not found');
   }
@@ -15,6 +16,7 @@ export const load: PageServerLoad = async (event) => {
   return {
     user,
     userParties,
-    invites
+    invites,
+    envName
   };
 };

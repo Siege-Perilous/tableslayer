@@ -21,6 +21,11 @@ export const POST = apiFactory(
         throw new Error('Incorrect email or password');
       }
 
+      // Check if user has a password (Google-only users won't have one)
+      if (!existingUser.passwordHash) {
+        throw new Error('Please use Google sign-in or reset your password');
+      }
+
       const validPassword = await verifyArgonHash(existingUser.passwordHash, password);
       if (!validPassword) {
         throw new Error('Incorrect email or password');

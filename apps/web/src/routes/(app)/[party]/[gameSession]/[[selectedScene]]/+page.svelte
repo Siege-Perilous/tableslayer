@@ -36,6 +36,7 @@
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
+  import { throttle } from '$lib/utils/throttle';
   import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
@@ -114,6 +115,9 @@
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
+  let throttledCursorUpdate:
+    | ((position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => void)
+    | null = null;
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -447,9 +451,17 @@
       // Check if we need to reinitialize (different game session)
       const existingManager = getPartyDataManager();
       if (!existingManager || existingManager.gameSessionId !== gameSession.id) {
-        initializePartyDataManager(partySlug, user.id, gameSession.id);
+        initializePartyDataManager(partySlug, user.id, gameSession.id, data.partykitHost);
       }
       partyData = usePartyData();
+
+      // Create throttled cursor update function (30 FPS for smooth LCD TV display)
+      throttledCursorUpdate = throttle(
+        (position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => {
+          partyData!.updateCursor(position, normalizedPosition);
+        },
+        33
+      ); // 33ms = ~30 FPS
 
       // Initialize Y.js with SSR scene data
       const sceneMetadata = scenes.map((scene) => ({
@@ -506,25 +518,8 @@
       isHydrated = true;
     }
 
-    // Cursor tracking setup using Y.js's Socket.IO connection
-    if (partyData) {
-      // Wait for socket to be connected
-      const checkSocketConnection = setInterval(() => {
-        if (partyData && partyData.isSocketConnected()) {
-          clearInterval(checkSocketConnection);
-
-          // Set user data for disconnect notification
-          const socket = partyData.getSocket();
-          if (socket) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (socket as any).data = { userId: user.id };
-          }
-        }
-      }, 100);
-
-      // Timeout after 5 seconds
-      setTimeout(() => clearInterval(checkSocketConnection), 5000);
-    }
+    // Cursor tracking is now handled via Y.js awareness protocol
+    // No need for separate socket connection setup
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -1086,14 +1081,9 @@
     // Only emit cursor if we're editing the active scene
     const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
 
-    if (shouldEmitCursor && partyData && partyData.isSocketConnected()) {
-      const cursorData = {
-        user: data.user,
-        normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
-        zoom: stageProps.scene.zoom,
-        offset: stageProps.scene.offset
-      };
-      partyData.emitCursorEvent('cursorMove', cursorData);
+    if (shouldEmitCursor && throttledCursorUpdate) {
+      // Update cursor position using throttled Y.js awareness (30 FPS)
+      throttledCursorUpdate({ x: e.clientX, y: e.clientY }, { x: finalNormalizedX, y: finalNormalizedY });
     }
   };
 
@@ -1574,11 +1564,14 @@
 
   // Handle pane layout changes
   const onLayoutChange = (sizes: number[]) => {
+    // Round sizes to nearest integer to avoid float precision issues
+    const roundedSizes = sizes.map((size) => Math.round(size));
+
     // Save layout to cookie using the preferences system
     const newLayout = [
-      { size: sizes[0], isCollapsed: isScenesCollapsed },
-      { size: sizes[1] }, // center pane has no collapse state
-      { size: sizes[2], isCollapsed: isMarkersCollapsed }
+      { size: roundedSizes[0], isCollapsed: isScenesCollapsed },
+      { size: roundedSizes[1] }, // center pane has no collapse state
+      { size: roundedSizes[2], isCollapsed: isMarkersCollapsed }
     ];
 
     if (isMobile) {

@@ -86,6 +86,28 @@
       }
     });
   };
+
+  const unlinkGoogle = async () => {
+    await handleMutation({
+      mutation: () =>
+        $updateUser.mutateAsync({
+          userData: {
+            googleId: null
+          }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onError: (error) => (updateProfileError = error),
+      onSuccess: () => {
+        updateProfileError = undefined;
+        invalidateAll();
+      },
+      toastMessages: {
+        success: { title: 'Google account unlinked', body: 'You can now only sign in with your email and password' },
+        error: { title: 'Error unlinking Google account', body: (err) => err.message }
+      }
+    });
+  };
+
   const avatarOnChange = async () => {
     if (files && files.length) {
       const uploadedFile = await handleMutation({
@@ -189,6 +211,23 @@
           <FormError error={updateProfileError} />
         </form>
       </Panel>
+      {#if user.hasGoogle && data.envName !== 'preview'}
+        <Spacer />
+        <Panel class="profile__panel">
+          <Spacer size="0.5rem" />
+          <Text size="0.875rem" color="var(--fgMuted)">
+            Your Google account is linked. You can unlink it to remove Google sign-in.
+          </Text>
+          <Spacer />
+
+          <Button onclick={() => unlinkGoogle()}>
+            {#snippet start()}
+              <img src="/google.svg" alt="Google logo" width="16" height="16" />
+            {/snippet}
+            Unlink Google Account
+          </Button>
+        </Panel>
+      {/if}
       {#if invites.length > 0}
         <Spacer />
         <Title as="h2" size="sm">Party invites</Title>

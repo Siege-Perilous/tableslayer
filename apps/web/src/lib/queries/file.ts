@@ -18,7 +18,7 @@ const uploadBlobToR2 = async (blob: Blob, fileName: string, contentType: string)
     throw new Error('Failed to generate presigned URL');
   }
 
-  const { signedUrl } = await presignedUrlResponse.json();
+  const { signedUrl } = (await presignedUrlResponse.json()) as { signedUrl: string };
 
   // Step 2: Upload to Cloudflare R2
   const uploadResponse = await fetch(signedUrl, {
@@ -106,7 +106,7 @@ export const useUploadFileMutation = () => {
         throw new Error('Failed to generate presigned URL');
       }
 
-      const { signedUrl } = await presignedUrlResponse.json();
+      const { signedUrl } = (await presignedUrlResponse.json()) as { signedUrl: string };
 
       // Step 2: Upload to Cloudflare R2
       const uploadResponse = await fetch(signedUrl, {
