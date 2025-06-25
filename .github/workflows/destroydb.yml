@@ -24,7 +24,7 @@ jobs:
         working-directory: apps/web
         run: |
           echo "Deleting PartyKit deployment for PR #${{ github.event.pull_request.number }}"
-          npx partykit delete --name pr-${{ github.event.pull_request.number }}-tableslayer --yes || echo "PartyKit deployment not found or already deleted"
+          npx partykit delete --name tableslayer-pr-${{ github.event.pull_request.number }} --yes || echo "PartyKit deployment not found or already deleted"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
