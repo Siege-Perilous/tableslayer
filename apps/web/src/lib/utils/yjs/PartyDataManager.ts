@@ -84,7 +84,6 @@ export class PartyDataManager {
     this.freshPageLoadTime = Date.now(); // Track when this instance was created (page load time)
 
     // Use provided PartyKit host
-    console.log('PartyKit host:', partykitHost);
     const host = partykitHost;
 
     // Initialize game session-specific Y.js document
@@ -661,7 +660,6 @@ export class PartyDataManager {
     this.doc = new Y.Doc();
     this.clientId = this.doc.clientID;
 
-    console.log('PartyKit host (switchGameSession):', this.partykitHost);
     const host = this.partykitHost;
 
     this.gameSessionProvider = new YPartyKitProvider(host, newGameSessionId, this.doc, {
