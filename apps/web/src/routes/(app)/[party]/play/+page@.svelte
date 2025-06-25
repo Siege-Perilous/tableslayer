@@ -290,12 +290,13 @@
 
         // Clear out any cursors that are no longer in Y.js
         const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        const newCursors = { ...cursors };
         for (const cursorKey of Object.keys(cursors)) {
           if (!activeCursorKeys.has(cursorKey)) {
-            const { [cursorKey]: _, ...remainingCursors } = cursors;
-            cursors = remainingCursors;
+            delete newCursors[cursorKey];
           }
         }
+        cursors = newCursors;
 
         // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
@@ -448,12 +449,13 @@
 
         // Clear out any cursors that are no longer in Y.js
         const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        const newCursors = { ...cursors };
         for (const cursorKey of Object.keys(cursors)) {
           if (!activeCursorKeys.has(cursorKey)) {
-            const { [cursorKey]: _, ...remainingCursors } = cursors;
-            cursors = remainingCursors;
+            delete newCursors[cursorKey];
           }
         }
+        cursors = newCursors;
 
         // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
