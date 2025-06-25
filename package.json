@@ -20,6 +20,11 @@
     "prettier-plugin-svelte": "^3.4.0",
     "turbo": "^2.5.4"
   },
+  "pnpm": {
+    "overrides": {
+      "leveldown": "^6.0.0"
+    }
+  },
   "lint-staged": {
     "*.{js,ts,svelte,css}": [
       "npx prettier --config=.prettierrc.precommit.js --write"

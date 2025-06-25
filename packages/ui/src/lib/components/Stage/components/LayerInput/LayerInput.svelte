@@ -6,6 +6,7 @@
   import { SceneLayer } from '../Scene/types';
 
   interface Props {
+    id?: string;
     isActive: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
@@ -18,6 +19,7 @@
   }
 
   let {
+    id,
     layerSize,
     isActive,
     target,
@@ -72,6 +74,10 @@
     if (onMouseUp) renderer.domElement.removeEventListener('touchend', handleTouchEnd);
     if (onMouseLeave) renderer.domElement.removeEventListener('touchcancel', handleTouchCancel);
   });
+
+  export function getId() {
+    return id;
+  }
 
   // Internal event handler methods for mouse
   function handleMouseDown(event: MouseEvent) {

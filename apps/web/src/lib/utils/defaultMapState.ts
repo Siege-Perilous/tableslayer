@@ -13,6 +13,10 @@ import { ToneMappingMode } from 'postprocessing';
 export const StageDefaultProps: StageProps = {
   mode: StageMode.DM,
   activeLayer: MapLayerType.None,
+  annotations: {
+    layers: [],
+    activeLayer: null
+  },
   debug: {
     enableStats: false,
     loggingRate: 30

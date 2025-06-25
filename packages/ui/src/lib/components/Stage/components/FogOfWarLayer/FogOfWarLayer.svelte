@@ -2,14 +2,15 @@
   import * as THREE from 'three';
   import { getContext } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { ToolType, type FogOfWarLayerProps } from './types';
+  import { ToolType } from '../DrawingLayer/types';
+  import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import type { Callbacks } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
   import { SceneLayer } from '../Scene/types';
+  import FogOfWarMaterial from './FogOfWarMaterial.svelte';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: FogOfWarLayerProps;
@@ -54,7 +55,7 @@
     if (!isActive) {
       lastPos = null;
       drawing = false;
-      material?.render('revert', false);
+      material?.revertChanges();
     }
   });
 
@@ -108,7 +109,7 @@
     lastPos = null;
     drawing = false;
     outlineMaterial.visible = false;
-    material?.render('revert', false);
+    material?.revertChanges();
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
@@ -142,7 +143,7 @@
    * Clears all fog, revealing the entire map underneath
    */
   export function clearFog() {
-    material?.render('clear', true);
+    material?.clear();
     onFogUpdate(toPng());
   }
 
@@ -150,7 +151,7 @@
    * Resets the fog to fill the entire layer
    */
   export function resetFog() {
-    material?.render('fill', true);
+    material?.fill();
     onFogUpdate(toPng());
   }
 
@@ -163,7 +164,16 @@
   }
 </script>
 
-<LayerInput {isActive} layerSize={mapSize} target={mesh} {onMouseDown} onMouseMove={draw} {onMouseUp} {onMouseLeave} />
+<LayerInput
+  id="fogOfWar"
+  {isActive}
+  layerSize={mapSize}
+  target={mesh}
+  {onMouseDown}
+  onMouseMove={draw}
+  {onMouseUp}
+  {onMouseLeave}
+/>
 
 <!--
 Invisible mesh used for input detection.

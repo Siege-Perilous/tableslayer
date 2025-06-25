@@ -52,6 +52,10 @@ export const buildSceneProps = (
     mode: mode === 'client' ? StageMode.Player : StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
+    annotations: {
+      layers: [],
+      activeLayer: null
+    },
     debug: {
       enableStats: false,
       loggingRate: 30

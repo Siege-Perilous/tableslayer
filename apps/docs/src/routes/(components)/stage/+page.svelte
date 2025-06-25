@@ -14,6 +14,7 @@
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
   import {
+    AnnotationsControls,
     DisplayControls,
     EdgeOverlayControls,
     FogControls,
@@ -25,7 +26,6 @@
     SceneControls,
     WeatherControls
   } from './components/index';
-
   let stageProps: StageProps = $state(StageDefaultProps);
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
@@ -50,6 +50,9 @@
 
     document.addEventListener('keydown', (event) => {
       switch (event.key) {
+        case 'a':
+          stageProps.activeLayer = MapLayerType.Annotation;
+          break;
         case 'e':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.tool.mode = DrawMode.Erase;
@@ -95,6 +98,15 @@
       }
     });
   });
+
+  async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+    blob.then((blob) => {
+      const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+      if (layer) {
+        layer.url = URL.createObjectURL(blob);
+      }
+    });
+  }
 
   async function onFogUpdate() {
     // No-op
@@ -210,19 +222,23 @@
   <Stage
     bind:this={stage}
     props={stageProps}
-    {onFogUpdate}
-    {onMapUpdate}
-    {onStageLoading}
-    {onStageInitialized}
-    {onSceneUpdate}
-    {onMarkerAdded}
-    {onMarkerMoved}
-    {onMarkerSelected}
-    {onMarkerContextMenu}
+    callbacks={{
+      onAnnotationUpdate,
+      onFogUpdate,
+      onMapUpdate,
+      onStageLoading,
+      onStageInitialized,
+      onSceneUpdate,
+      onMarkerAdded,
+      onMarkerMoved,
+      onMarkerSelected,
+      onMarkerContextMenu
+    }}
   />
   <div>
     <h1>Keybindings</h1>
     <ul>
+      <li>a - Edit Annotations</li>
       <li>e - Erase Fog (Round Brush)</li>
       <li>o - Erase Fog (Ellipse)</li>
       <li>r - Erase Fog (Rectangle)</li>
@@ -243,6 +259,7 @@
 <!-- DEBUG UI -->
 <Pane position="draggable" title="Settings">
   <List bind:value={stageProps.mode} label="Mode" options={{ DM: StageMode.DM, Player: StageMode.Player }} />
+  <AnnotationsControls bind:props={stageProps} {stage} />
   <DisplayControls bind:props={stageProps} />
   <FogControls bind:props={stageProps} />
   <EdgeOverlayControls bind:props={stageProps} />
