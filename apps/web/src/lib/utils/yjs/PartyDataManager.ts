@@ -95,7 +95,7 @@ export class PartyDataManager {
 
     devLog(
       'yjs',
-      `PartyDataManager connecting to PartyKit: ${host}, room: ${gameSessionRoomName}, clientId: ${this.clientId}`
+      `PartyDataManager connecting to PartyKit: ${host}, room: ${gameSessionRoomName}, clientId: ${this.clientId}, userId: ${this.userId}`
     );
 
     // Create game session provider
@@ -152,6 +152,7 @@ export class PartyDataManager {
 
     // Subscribe to awareness updates for cursor tracking
     this.gameSessionProvider.awareness.on('change', () => {
+      devLog('yjs', `[${this.clientId}] Awareness changed, cursor count:`, this.getCursors());
       this.notifySubscribers();
     });
 
@@ -192,13 +193,22 @@ export class PartyDataManager {
     const cursors: Record<string, CursorData> = {};
 
     if (this.gameSessionProvider.awareness) {
+      const allStates = this.gameSessionProvider.awareness.getStates();
+      devLog('yjs', `[${this.clientId}] Getting cursors, total awareness states:`, allStates.size);
+
       this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
-        if (state.cursor && clientId !== this.gameSessionProvider.awareness.clientID) {
-          cursors[state.cursor.userId] = state.cursor;
+        if (state.cursor) {
+          if (clientId !== this.gameSessionProvider.awareness.clientID) {
+            cursors[state.cursor.userId] = state.cursor;
+            devLog('yjs', `[${this.clientId}] Found cursor from client ${clientId}:`, state.cursor.userId);
+          } else {
+            devLog('yjs', `[${this.clientId}] Skipping own cursor from client ${clientId}`);
+          }
         }
       });
     }
 
+    devLog('yjs', `[${this.clientId}] Total cursors found:`, Object.keys(cursors).length);
     return cursors;
   }
 

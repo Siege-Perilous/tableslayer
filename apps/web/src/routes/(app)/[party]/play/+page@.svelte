@@ -274,6 +274,19 @@
 
         // Update cursors from Y.js awareness
         const yjsCursors = partyData!.getCursors();
+        devLog('playfield', `Received ${Object.keys(yjsCursors).length} cursors from Y.js`);
+
+        // Clear out any cursors that are no longer in Y.js
+        const activeUserIds = new Set(Object.keys(yjsCursors));
+        for (const userId of Object.keys(cursors)) {
+          if (!activeUserIds.has(userId)) {
+            devLog('playfield', `Removing stale cursor for user ${userId}`);
+            const { [userId]: _, ...remainingCursors } = cursors;
+            cursors = remainingCursors;
+          }
+        }
+
+        // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
           // Transform cursor data to match playfield format
           handleCursorUpdate({
@@ -420,6 +433,19 @@
 
         // Update cursors from Y.js awareness
         const yjsCursors = partyData!.getCursors();
+        devLog('playfield', `Received ${Object.keys(yjsCursors).length} cursors from Y.js`);
+
+        // Clear out any cursors that are no longer in Y.js
+        const activeUserIds = new Set(Object.keys(yjsCursors));
+        for (const userId of Object.keys(cursors)) {
+          if (!activeUserIds.has(userId)) {
+            devLog('playfield', `Removing stale cursor for user ${userId}`);
+            const { [userId]: _, ...remainingCursors } = cursors;
+            cursors = remainingCursors;
+          }
+        }
+
+        // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
           // Transform cursor data to match playfield format
           handleCursorUpdate({
