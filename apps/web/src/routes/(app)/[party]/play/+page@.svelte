@@ -173,7 +173,7 @@
   // Cursor update handler - moved to component scope so it can be reused
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleCursorUpdate = (payload: any) => {
-    const { normalizedPosition, user, zoom: editorZoom } = payload;
+    const { normalizedPosition, user, zoom: editorZoom, cursorKey } = payload;
 
     const stageBounds = stageElement?.getBoundingClientRect();
     if (!stageBounds) return;
@@ -201,13 +201,26 @@
     const absoluteXClient = horizontalMargin + adjustedX;
     const absoluteYClient = verticalMargin + adjustedY;
 
+    // Use cursorKey if provided, otherwise fall back to user.id
+    const key = cursorKey || user.id;
+
+    // Check if cursor exists and if position actually changed
+    const existingCursor = cursors[key];
+    const positionChanged =
+      !existingCursor || existingCursor.position.x !== absoluteXClient || existingCursor.position.y !== absoluteYClient;
+
+    // Only update lastMoveTime if position actually changed
+    const updateTime = positionChanged ? Date.now() : existingCursor?.lastMoveTime || Date.now();
+
+    // Position change logging removed - too noisy for regular use
+
     cursors = {
       ...cursors,
-      [user.id]: {
+      [key]: {
         user,
         position: { x: absoluteXClient, y: absoluteYClient },
-        lastMoveTime: Date.now(),
-        fadedOut: false
+        lastMoveTime: updateTime,
+        fadedOut: positionChanged ? false : existingCursor?.fadedOut || false
       }
     };
   };
@@ -274,25 +287,24 @@
 
         // Update cursors from Y.js awareness
         const yjsCursors = partyData!.getCursors();
-        devLog('playfield', `Received ${Object.keys(yjsCursors).length} cursors from Y.js`);
 
         // Clear out any cursors that are no longer in Y.js
-        const activeUserIds = new Set(Object.keys(yjsCursors));
-        for (const userId of Object.keys(cursors)) {
-          if (!activeUserIds.has(userId)) {
-            devLog('playfield', `Removing stale cursor for user ${userId}`);
-            const { [userId]: _, ...remainingCursors } = cursors;
+        const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        for (const cursorKey of Object.keys(cursors)) {
+          if (!activeCursorKeys.has(cursorKey)) {
+            const { [cursorKey]: _, ...remainingCursors } = cursors;
             cursors = remainingCursors;
           }
         }
 
         // Update or add cursors from Y.js
-        Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
+        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
           // Transform cursor data to match playfield format
           handleCursorUpdate({
             normalizedPosition: cursorData.normalizedPosition,
-            user: { id: userId, email: userId }, // TODO: Get actual user data
-            zoom: 1 // TODO: Get editor zoom from cursor data
+            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
+            zoom: 1, // TODO: Get editor zoom from cursor data
+            cursorKey // Pass the unique key for tracking
           });
         });
 
@@ -433,25 +445,24 @@
 
         // Update cursors from Y.js awareness
         const yjsCursors = partyData!.getCursors();
-        devLog('playfield', `Received ${Object.keys(yjsCursors).length} cursors from Y.js`);
 
         // Clear out any cursors that are no longer in Y.js
-        const activeUserIds = new Set(Object.keys(yjsCursors));
-        for (const userId of Object.keys(cursors)) {
-          if (!activeUserIds.has(userId)) {
-            devLog('playfield', `Removing stale cursor for user ${userId}`);
-            const { [userId]: _, ...remainingCursors } = cursors;
+        const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        for (const cursorKey of Object.keys(cursors)) {
+          if (!activeCursorKeys.has(cursorKey)) {
+            const { [cursorKey]: _, ...remainingCursors } = cursors;
             cursors = remainingCursors;
           }
         }
 
         // Update or add cursors from Y.js
-        Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
+        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
           // Transform cursor data to match playfield format
           handleCursorUpdate({
             normalizedPosition: cursorData.normalizedPosition,
-            user: { id: userId, email: userId }, // TODO: Get actual user data
-            zoom: 1 // TODO: Get editor zoom from cursor data
+            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
+            zoom: 1, // TODO: Get editor zoom from cursor data
+            cursorKey // Pass the unique key for tracking
           });
         });
 
@@ -552,14 +563,20 @@
   $effect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      for (const [userId, cursor] of Object.entries(cursors)) {
+      let needsUpdate = false;
+      const updatedCursors = { ...cursors };
+
+      for (const [cursorKey, cursor] of Object.entries(updatedCursors)) {
         if (!cursor.fadedOut && now - cursor.lastMoveTime > fadeOutDelay) {
           // Mark the cursor as faded out after inactivity
-          cursors = {
-            ...cursors,
-            [userId]: { ...cursor, fadedOut: true }
-          };
+          updatedCursors[cursorKey] = { ...cursor, fadedOut: true };
+          needsUpdate = true;
         }
+      }
+
+      // Only update if something changed
+      if (needsUpdate) {
+        cursors = updatedCursors;
       }
     }, 250);
 

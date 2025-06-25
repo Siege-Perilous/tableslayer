@@ -21,6 +21,7 @@ export interface CursorData {
   position: { x: number; y: number };
   normalizedPosition: { x: number; y: number };
   lastMoveTime: number;
+  clientId?: number;
 }
 
 export interface LocalViewportState {
@@ -152,7 +153,8 @@ export class PartyDataManager {
 
     // Subscribe to awareness updates for cursor tracking
     this.gameSessionProvider.awareness.on('change', () => {
-      devLog('yjs', `[${this.clientId}] Awareness changed, cursor count:`, this.getCursors());
+      // Cursor awareness logging commented out - too noisy
+      // devLog('yjs', `[${this.clientId}] Awareness changed, cursor count:`, this.getCursors());
       this.notifySubscribers();
     });
 
@@ -194,21 +196,29 @@ export class PartyDataManager {
 
     if (this.gameSessionProvider.awareness) {
       const allStates = this.gameSessionProvider.awareness.getStates();
-      devLog('yjs', `[${this.clientId}] Getting cursors, total awareness states:`, allStates.size);
+      // Cursor state logging commented out - too noisy
+      // devLog('yjs', `[${this.clientId}] Getting cursors, total awareness states:`, allStates.size);
 
       this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
         if (state.cursor) {
           if (clientId !== this.gameSessionProvider.awareness.clientID) {
-            cursors[state.cursor.userId] = state.cursor;
-            devLog('yjs', `[${this.clientId}] Found cursor from client ${clientId}:`, state.cursor.userId);
+            // Use clientId as key to ensure each editor has a unique cursor
+            // Store the clientId in the cursor data for reference
+            const cursorKey = `${state.cursor.userId}_${clientId}`;
+            cursors[cursorKey] = {
+              ...state.cursor,
+              clientId: clientId
+            };
+            // Detailed cursor logging commented out - too noisy
+            // devLog('yjs', `[${this.clientId}] Found cursor from client ${clientId}:`, state.cursor.userId);
           } else {
-            devLog('yjs', `[${this.clientId}] Skipping own cursor from client ${clientId}`);
+            // devLog('yjs', `[${this.clientId}] Skipping own cursor from client ${clientId}`);
           }
         }
       });
     }
 
-    devLog('yjs', `[${this.clientId}] Total cursors found:`, Object.keys(cursors).length);
+    // devLog('yjs', `[${this.clientId}] Total cursors found:`, Object.keys(cursors).length);
     return cursors;
   }
 

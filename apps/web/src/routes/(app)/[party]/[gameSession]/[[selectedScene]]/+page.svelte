@@ -1083,7 +1083,7 @@
 
     if (shouldEmitCursor && throttledCursorUpdate) {
       // Update cursor position using throttled Y.js awareness (30 FPS)
-      throttledCursorUpdate({ x: event.x, y: event.y }, { x: finalNormalizedX, y: finalNormalizedY });
+      throttledCursorUpdate({ x: e.clientX, y: e.clientY }, { x: finalNormalizedX, y: finalNormalizedY });
     }
   };
 
