@@ -506,25 +506,8 @@
       isHydrated = true;
     }
 
-    // Cursor tracking setup using Y.js's Socket.IO connection
-    if (partyData) {
-      // Wait for socket to be connected
-      const checkSocketConnection = setInterval(() => {
-        if (partyData && partyData.isSocketConnected()) {
-          clearInterval(checkSocketConnection);
-
-          // Set user data for disconnect notification
-          const socket = partyData.getSocket();
-          if (socket) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (socket as any).data = { userId: user.id };
-          }
-        }
-      }, 100);
-
-      // Timeout after 5 seconds
-      setTimeout(() => clearInterval(checkSocketConnection), 5000);
-    }
+    // Cursor tracking is now handled via Y.js awareness protocol
+    // No need for separate socket connection setup
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -1086,14 +1069,9 @@
     // Only emit cursor if we're editing the active scene
     const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
 
-    if (shouldEmitCursor && partyData && partyData.isSocketConnected()) {
-      const cursorData = {
-        user: data.user,
-        normalizedPosition: { x: finalNormalizedX, y: finalNormalizedY },
-        zoom: stageProps.scene.zoom,
-        offset: stageProps.scene.offset
-      };
-      partyData.emitCursorEvent('cursorMove', cursorData);
+    if (shouldEmitCursor && partyData) {
+      // Update cursor position using Y.js awareness
+      partyData.updateCursor({ x: event.x, y: event.y }, { x: finalNormalizedX, y: finalNormalizedY });
     }
   };
 

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev & partykit dev",
     "dev:party": "partykit dev",
     "dev-local": "vite dev --host 0.0.0.0 --port 8080",
     "build": "svelte-kit sync && vite build",

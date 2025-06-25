@@ -13,7 +13,7 @@ export default class GameSessionServer implements Party.Server {
       persist: { mode: 'snapshot' },
 
       // Load from SQLite on first connection
-      async load() {
+      load: async () => {
         // TODO: Implement loading from SQLite
         // For now, return null to start with empty document
         const gameSessionId = this.party.id;
@@ -23,7 +23,7 @@ export default class GameSessionServer implements Party.Server {
 
       // Save to SQLite periodically
       callback: {
-        async handler(yDoc) {
+        handler: async (yDoc) => {
           // TODO: Implement saving to SQLite
           // This will be called periodically after document changes
           const gameSessionId = this.party.id;

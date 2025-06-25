@@ -272,6 +272,17 @@
           activeSceneId: updatedPartyState.activeSceneId
         };
 
+        // Update cursors from Y.js awareness
+        const yjsCursors = partyData!.getCursors();
+        Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
+          // Transform cursor data to match playfield format
+          handleCursorUpdate({
+            normalizedPosition: cursorData.normalizedPosition,
+            user: { id: userId, email: userId }, // TODO: Get actual user data
+            zoom: 1 // TODO: Get editor zoom from cursor data
+          });
+        });
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           // If we don't have the game session ID, we need to find it
@@ -323,29 +334,8 @@
       isHydrated = true;
     }
 
-    // Set up cursor tracking on unified Y.js connection
-    if (partyData) {
-      // Wait for socket to be connected
-      const checkSocketConnection = setInterval(() => {
-        if (partyData && partyData.isSocketConnected()) {
-          clearInterval(checkSocketConnection);
-
-          // Register cursor event handlers
-          partyData.onCursorEvent('cursorUpdate', (payload) => {
-            handleCursorUpdate(payload);
-          });
-
-          partyData.onCursorEvent('userDisconnect', (userId) => {
-            const updatedCursors = { ...cursors };
-            delete updatedCursors[userId];
-            cursors = updatedCursors;
-          });
-        }
-      }, 100);
-
-      // Timeout after 5 seconds
-      setTimeout(() => clearInterval(checkSocketConnection), 5000);
-    }
+    // Cursor tracking is now handled via Y.js awareness protocol
+    // The playfield is read-only, so it doesn't need cursor tracking setup
 
     const handleMouseMove = () => {
       // Playfield should NOT emit cursor moves - only editors should
@@ -371,11 +361,7 @@
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
 
-      // Remove cursor event handlers
-      if (partyData) {
-        partyData.offCursorEvent('cursorUpdate');
-        partyData.offCursorEvent('userDisconnect');
-      }
+      // Cursor cleanup is handled by Y.js awareness automatically
 
       // Unsubscribe from Y.js
       if (unsubscribeYjs) {
@@ -405,11 +391,7 @@
       // Update the tracked game session ID
       currentGameSessionId = newGameSessionId;
 
-      // Unsubscribe from current Y.js updates
-      if (partyData) {
-        partyData.offCursorEvent('cursorUpdate');
-        partyData.offCursorEvent('userDisconnect');
-      }
+      // Y.js cleanup will be handled by destroy
 
       // Destroy the old connection
       destroyPartyDataManager();
@@ -435,6 +417,17 @@
           isPaused: updatedPartyState.isPaused,
           activeSceneId: updatedPartyState.activeSceneId
         };
+
+        // Update cursors from Y.js awareness
+        const yjsCursors = partyData!.getCursors();
+        Object.entries(yjsCursors).forEach(([userId, cursorData]) => {
+          // Transform cursor data to match playfield format
+          handleCursorUpdate({
+            normalizedPosition: cursorData.normalizedPosition,
+            user: { id: userId, email: userId }, // TODO: Get actual user data
+            zoom: 1 // TODO: Get editor zoom from cursor data
+          });
+        });
 
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
@@ -472,31 +465,8 @@
         }
       });
 
-      // Re-setup cursor tracking
-      if (partyData) {
-        // Wait for socket to be connected
-        const checkSocketConnection = setInterval(() => {
-          if (partyData && partyData.isSocketConnected()) {
-            clearInterval(checkSocketConnection);
-
-            // Register cursor event handlers
-            partyData.onCursorEvent('cursorUpdate', (payload) => {
-              handleCursorUpdate(payload);
-            });
-
-            partyData.onCursorEvent('userDisconnect', (userId) => {
-              const updatedCursors = { ...cursors };
-              delete updatedCursors[userId];
-              cursors = updatedCursors;
-            });
-
-            devLog('playfield', 'Cursor tracking re-established after game session change');
-          }
-        }, 100);
-
-        // Timeout after 5 seconds
-        setTimeout(() => clearInterval(checkSocketConnection), 5000);
-      }
+      // Cursor tracking is now handled via Y.js awareness protocol
+      // The playfield is read-only, so it doesn't need cursor tracking setup
     }
   });
 

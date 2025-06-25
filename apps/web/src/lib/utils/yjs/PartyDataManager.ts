@@ -371,6 +371,11 @@ export class PartyDataManager {
         this.yScenes.set(sceneId, sceneMap);
       }
       sceneMap.set('stageProps', stageProps);
+      sceneMap.set('lastUpdated', Date.now());
+      // Also update markers if they're included in stageProps
+      if (stageProps.marker?.markers) {
+        sceneMap.set('markers', stageProps.marker.markers);
+      }
     });
   }
 
