@@ -9,7 +9,7 @@ const config: PlaywrightTestConfig = {
   use: {
     baseURL
   },
-  testDir: 'tests',
+  testDir: 'tests/e2e',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/
 };
 

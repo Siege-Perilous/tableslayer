@@ -100,6 +100,10 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "dev:party": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

@@ -1,10 +1,7 @@
 import { deleteSessionTokenCookie, setSessionTokenCookie, validateSessionToken } from '$lib/server';
-import { initializeSocketIO } from '$lib/server/ws';
 import * as Sentry from '@sentry/sveltekit';
 import { type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-
-import { useServer } from 'vite-sveltekit-node-ws';
 
 if (process.env.ENV_NAME === 'production') {
   Sentry.init({
@@ -12,17 +9,6 @@ if (process.env.ENV_NAME === 'production') {
     tracesSampleRate: 1
   });
 }
-
-// Initialize Socket.IO with Y.js integration
-// Store the io instance globally to prevent multiple initializations
-let io: ReturnType<typeof initializeSocketIO> | null = null;
-
-useServer((server) => {
-  if (!io) {
-    io = initializeSocketIO(server);
-  }
-  return io;
-});
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
   const token = event.cookies.get('session') ?? null;

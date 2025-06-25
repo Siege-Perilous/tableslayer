@@ -7,6 +7,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, params, url, cookies }) => {
   const { gameSession, activeScene } = await parent();
+  const partykitHost = process.env.PUBLIC_PARTYKIT_HOST || 'localhost:1999';
   let selectedSceneNumber = Number(params.selectedScene);
 
   // If no scene number is provided in the URL, redirect to scene 1
@@ -52,6 +53,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     activeSceneMarkers,
     paneLayoutDesktop,
     paneLayoutMobile,
-    brushSize
+    brushSize,
+    partykitHost
   };
 };

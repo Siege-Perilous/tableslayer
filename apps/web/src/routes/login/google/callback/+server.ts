@@ -40,7 +40,13 @@ export async function GET(event: RequestEvent): Promise<Response> {
       }
     });
 
-    const googleUser = await response.json();
+    const googleUser = (await response.json()) as {
+      sub: string;
+      email: string;
+      name?: string;
+      given_name?: string;
+      picture?: string;
+    };
 
     // Extract user information
     const googleUserId = googleUser.sub;

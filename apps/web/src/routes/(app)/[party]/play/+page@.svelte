@@ -173,7 +173,7 @@
   // Cursor update handler - moved to component scope so it can be reused
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleCursorUpdate = (payload: any) => {
-    const { normalizedPosition, user, zoom: editorZoom } = payload;
+    const { normalizedPosition, user, zoom: editorZoom, cursorKey } = payload;
 
     const stageBounds = stageElement?.getBoundingClientRect();
     if (!stageBounds) return;
@@ -201,13 +201,26 @@
     const absoluteXClient = horizontalMargin + adjustedX;
     const absoluteYClient = verticalMargin + adjustedY;
 
+    // Use cursorKey if provided, otherwise fall back to user.id
+    const key = cursorKey || user.id;
+
+    // Check if cursor exists and if position actually changed
+    const existingCursor = cursors[key];
+    const positionChanged =
+      !existingCursor || existingCursor.position.x !== absoluteXClient || existingCursor.position.y !== absoluteYClient;
+
+    // Only update lastMoveTime if position actually changed
+    const updateTime = positionChanged ? Date.now() : existingCursor?.lastMoveTime || Date.now();
+
+    // Position change logging removed - too noisy for regular use
+
     cursors = {
       ...cursors,
-      [user.id]: {
+      [key]: {
         user,
         position: { x: absoluteXClient, y: absoluteYClient },
-        lastMoveTime: Date.now(),
-        fadedOut: false
+        lastMoveTime: updateTime,
+        fadedOut: positionChanged ? false : existingCursor?.fadedOut || false
       }
     };
   };
@@ -247,7 +260,7 @@
       // Always create a new instance for the playfield
       // Use the party slug from the URL params for the room name
       const partySlug = page.params.party;
-      initializePartyDataManager(partySlug, user.id, activeGameSessionId);
+      initializePartyDataManager(partySlug, user.id, activeGameSessionId, data.partykitHost);
       partyData = usePartyData();
 
       // Ensure we don't have duplicate subscriptions
@@ -271,6 +284,30 @@
           isPaused: updatedPartyState.isPaused,
           activeSceneId: updatedPartyState.activeSceneId
         };
+
+        // Update cursors from Y.js awareness
+        const yjsCursors = partyData!.getCursors();
+
+        // Clear out any cursors that are no longer in Y.js
+        const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        const newCursors = { ...cursors };
+        for (const cursorKey of Object.keys(cursors)) {
+          if (!activeCursorKeys.has(cursorKey)) {
+            delete newCursors[cursorKey];
+          }
+        }
+        cursors = newCursors;
+
+        // Update or add cursors from Y.js
+        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+          // Transform cursor data to match playfield format
+          handleCursorUpdate({
+            normalizedPosition: cursorData.normalizedPosition,
+            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
+            zoom: 1, // TODO: Get editor zoom from cursor data
+            cursorKey // Pass the unique key for tracking
+          });
+        });
 
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
@@ -323,29 +360,8 @@
       isHydrated = true;
     }
 
-    // Set up cursor tracking on unified Y.js connection
-    if (partyData) {
-      // Wait for socket to be connected
-      const checkSocketConnection = setInterval(() => {
-        if (partyData && partyData.isSocketConnected()) {
-          clearInterval(checkSocketConnection);
-
-          // Register cursor event handlers
-          partyData.onCursorEvent('cursorUpdate', (payload) => {
-            handleCursorUpdate(payload);
-          });
-
-          partyData.onCursorEvent('userDisconnect', (userId) => {
-            const updatedCursors = { ...cursors };
-            delete updatedCursors[userId];
-            cursors = updatedCursors;
-          });
-        }
-      }, 100);
-
-      // Timeout after 5 seconds
-      setTimeout(() => clearInterval(checkSocketConnection), 5000);
-    }
+    // Cursor tracking is now handled via Y.js awareness protocol
+    // The playfield is read-only, so it doesn't need cursor tracking setup
 
     const handleMouseMove = () => {
       // Playfield should NOT emit cursor moves - only editors should
@@ -371,11 +387,7 @@
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
 
-      // Remove cursor event handlers
-      if (partyData) {
-        partyData.offCursorEvent('cursorUpdate');
-        partyData.offCursorEvent('userDisconnect');
-      }
+      // Cursor cleanup is handled by Y.js awareness automatically
 
       // Unsubscribe from Y.js
       if (unsubscribeYjs) {
@@ -405,18 +417,14 @@
       // Update the tracked game session ID
       currentGameSessionId = newGameSessionId;
 
-      // Unsubscribe from current Y.js updates
-      if (partyData) {
-        partyData.offCursorEvent('cursorUpdate');
-        partyData.offCursorEvent('userDisconnect');
-      }
+      // Y.js cleanup will be handled by destroy
 
       // Destroy the old connection
       destroyPartyDataManager();
 
       // Reinitialize with the new game session
       const partySlug = page.params.party;
-      initializePartyDataManager(partySlug, user.id, newGameSessionId);
+      initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
       partyData = usePartyData();
 
       devLog('playfield', 'Y.js reinitialized with new game session:', newGameSessionId);
@@ -435,6 +443,30 @@
           isPaused: updatedPartyState.isPaused,
           activeSceneId: updatedPartyState.activeSceneId
         };
+
+        // Update cursors from Y.js awareness
+        const yjsCursors = partyData!.getCursors();
+
+        // Clear out any cursors that are no longer in Y.js
+        const activeCursorKeys = new Set(Object.keys(yjsCursors));
+        const newCursors = { ...cursors };
+        for (const cursorKey of Object.keys(cursors)) {
+          if (!activeCursorKeys.has(cursorKey)) {
+            delete newCursors[cursorKey];
+          }
+        }
+        cursors = newCursors;
+
+        // Update or add cursors from Y.js
+        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+          // Transform cursor data to match playfield format
+          handleCursorUpdate({
+            normalizedPosition: cursorData.normalizedPosition,
+            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
+            zoom: 1, // TODO: Get editor zoom from cursor data
+            cursorKey // Pass the unique key for tracking
+          });
+        });
 
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
@@ -472,31 +504,8 @@
         }
       });
 
-      // Re-setup cursor tracking
-      if (partyData) {
-        // Wait for socket to be connected
-        const checkSocketConnection = setInterval(() => {
-          if (partyData && partyData.isSocketConnected()) {
-            clearInterval(checkSocketConnection);
-
-            // Register cursor event handlers
-            partyData.onCursorEvent('cursorUpdate', (payload) => {
-              handleCursorUpdate(payload);
-            });
-
-            partyData.onCursorEvent('userDisconnect', (userId) => {
-              const updatedCursors = { ...cursors };
-              delete updatedCursors[userId];
-              cursors = updatedCursors;
-            });
-
-            devLog('playfield', 'Cursor tracking re-established after game session change');
-          }
-        }, 100);
-
-        // Timeout after 5 seconds
-        setTimeout(() => clearInterval(checkSocketConnection), 5000);
-      }
+      // Cursor tracking is now handled via Y.js awareness protocol
+      // The playfield is read-only, so it doesn't need cursor tracking setup
     }
   });
 
@@ -556,14 +565,20 @@
   $effect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      for (const [userId, cursor] of Object.entries(cursors)) {
+      let needsUpdate = false;
+      const updatedCursors = { ...cursors };
+
+      for (const [cursorKey, cursor] of Object.entries(updatedCursors)) {
         if (!cursor.fadedOut && now - cursor.lastMoveTime > fadeOutDelay) {
           // Mark the cursor as faded out after inactivity
-          cursors = {
-            ...cursors,
-            [userId]: { ...cursor, fadedOut: true }
-          };
+          updatedCursors[cursorKey] = { ...cursor, fadedOut: true };
+          needsUpdate = true;
         }
+      }
+
+      // Only update if something changed
+      if (needsUpdate) {
+        cursors = updatedCursors;
       }
     }, 250);
 

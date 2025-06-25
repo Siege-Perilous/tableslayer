@@ -11,7 +11,7 @@ export async function POST({ request, locals }: { request: Request; locals: any 
   }
 
   try {
-    const { gameSessionId, partyId } = await request.json();
+    const { gameSessionId, partyId } = (await request.json()) as { gameSessionId: string; partyId: string };
 
     if (!gameSessionId || !partyId) {
       return json({ error: 'Missing gameSessionId or partyId' }, { status: 400 });

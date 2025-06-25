@@ -53,7 +53,7 @@ export function mutationFactory<
         body: JSON.stringify(variables)
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as SuccessType;
 
       if (!response.ok) {
         throw data;
