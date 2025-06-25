@@ -1560,11 +1560,14 @@
 
   // Handle pane layout changes
   const onLayoutChange = (sizes: number[]) => {
+    // Round sizes to nearest integer to avoid float precision issues
+    const roundedSizes = sizes.map((size) => Math.round(size));
+
     // Save layout to cookie using the preferences system
     const newLayout = [
-      { size: sizes[0], isCollapsed: isScenesCollapsed },
-      { size: sizes[1] }, // center pane has no collapse state
-      { size: sizes[2], isCollapsed: isMarkersCollapsed }
+      { size: roundedSizes[0], isCollapsed: isScenesCollapsed },
+      { size: roundedSizes[1] }, // center pane has no collapse state
+      { size: roundedSizes[2], isCollapsed: isMarkersCollapsed }
     ];
 
     if (isMobile) {

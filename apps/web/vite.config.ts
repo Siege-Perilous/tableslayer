@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
       port: 4174
     },
     test: {
-      include: ['src/**/*.{test,spec}.{js,ts}']
+      include: ['src/**/*.{test,spec}.{js,ts}', 'tests/unit/**/*.{test,spec}.{js,ts}']
     },
     optimizeDeps: {
       exclude: ['@node-rs/argon2', '@node-rs/bcrypt']

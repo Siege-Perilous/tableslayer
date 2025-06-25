@@ -331,6 +331,10 @@ jobs:
         working-directory: apps/${{ matrix.app }}
         env:
           BASE_URL: https://pr-${{ github.event.pull_request.number }}-${{ matrix.app }}.fly.dev
+          PUBLIC_PARTYKIT_HOST: pr-${{ github.event.pull_request.number }}.tableslayer.com
+          CI: true
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
+          echo "PUBLIC_PARTYKIT_HOST is ${{ env.PUBLIC_PARTYKIT_HOST }}"
           pnpm run test
