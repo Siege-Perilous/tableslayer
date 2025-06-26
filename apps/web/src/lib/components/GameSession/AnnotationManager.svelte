@@ -10,8 +10,8 @@
     Button,
     ConfirmActionButton,
     IconButton,
-    Label,
     Text,
+    Label,
     MapLayerType,
     StageMode,
     InputSlider
@@ -128,62 +128,55 @@
           class:annotationManager__listItem--active={stageProps.annotations.activeLayer === annotation.id}
         >
           <div class="annotationManager__controls">
-            <div class="annotationManager__topRow">
-              <IconButton variant="ghost" onclick={() => toggleAnnotationVisibility(annotation.id)}>
-                <Icon
-                  Icon={annotation.visibility === StageMode.Player ? IconEye : IconEyeOff}
-                  size="1.25rem"
-                  color={annotation.visibility === StageMode.Player ? 'var(--fg)' : 'var(--fgMuted)'}
+            <IconButton variant="ghost" onclick={() => toggleAnnotationVisibility(annotation.id)}>
+              <Icon
+                Icon={annotation.visibility === StageMode.Player ? IconEye : IconEyeOff}
+                size="1.25rem"
+                color={annotation.visibility === StageMode.Player ? 'var(--fg)' : 'var(--fgMuted)'}
+              />
+            </IconButton>
+            <Popover>
+              {#snippet trigger()}
+                <button
+                  class="annotationManager__colorPreview"
+                  style:background-color={annotation.color}
+                  style:opacity={annotation.opacity}
+                  aria-label={`Change color and opacity for ${annotation.name || 'Untitled'}`}
+                ></button>
+              {/snippet}
+              {#snippet content()}
+                <ColorPicker
+                  showOpacity={true}
+                  hex={annotation.color +
+                    Math.round(annotation.opacity * 255)
+                      .toString(16)
+                      .padStart(2, '0')}
+                  onUpdate={(colorData) =>
+                    updateAnnotation(annotation.id, {
+                      color: colorData.hex.slice(0, 7), // Keep only the 6-digit hex color
+                      opacity: colorData.rgba.a
+                    })}
                 />
-              </IconButton>
-              <Popover>
-                {#snippet trigger()}
-                  <button
-                    class="annotationManager__colorPreview"
-                    style:background-color={annotation.color}
-                    aria-label={`Change color for ${annotation.name || 'Untitled'}`}
-                  ></button>
-                {/snippet}
-                {#snippet content()}
-                  <ColorPicker
-                    showOpacity={false}
-                    hex={annotation.color}
-                    onUpdate={(colorData) => updateAnnotation(annotation.id, { color: colorData.hex })}
-                  />
-                {/snippet}
-              </Popover>
-              <Input
-                value={annotation.name || ''}
-                placeholder="Untitled"
-                oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
-              />
-              <ConfirmActionButton
-                action={() => handleAnnotationDelete(annotation.id)}
-                actionButtonText="Confirm delete"
-              >
-                {#snippet trigger({ triggerProps })}
-                  <IconButton as="div" variant="ghost" {...triggerProps}>
-                    <Icon Icon={IconTrash} />
-                  </IconButton>
-                {/snippet}
-                {#snippet actionMessage()}
-                  Delete annotation {annotation.name}?
-                {/snippet}
-              </ConfirmActionButton>
-            </div>
-            <div class="annotationManager__bottomRow">
-              <Label>Opacity</Label>
-              <InputSlider
-                value={annotation.opacity}
-                min={0}
-                max={1}
-                step={0.1}
-                oninput={(e) => updateAnnotation(annotation.id, { opacity: Number(e.currentTarget.value) })}
-              />
-              <Button variant="ghost" size="sm" onclick={() => setActiveAnnotation(annotation.id)}>
-                {stageProps.annotations.activeLayer === annotation.id ? 'Active' : 'Select'}
-              </Button>
-            </div>
+              {/snippet}
+            </Popover>
+            <Input
+              value={annotation.name || ''}
+              placeholder="Untitled"
+              oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
+            />
+            <Button variant="ghost" size="sm" onclick={() => setActiveAnnotation(annotation.id)}>
+              {stageProps.annotations.activeLayer === annotation.id ? 'Active' : 'Select'}
+            </Button>
+            <ConfirmActionButton action={() => handleAnnotationDelete(annotation.id)} actionButtonText="Confirm delete">
+              {#snippet trigger({ triggerProps })}
+                <IconButton as="div" variant="ghost" {...triggerProps}>
+                  <Icon Icon={IconTrash} />
+                </IconButton>
+              {/snippet}
+              {#snippet actionMessage()}
+                Delete annotation {annotation.name}?
+              {/snippet}
+            </ConfirmActionButton>
           </div>
         </div>
       {:else}
@@ -260,20 +253,9 @@
 
   .annotationManager__controls {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .annotationManager__topRow {
-    display: flex;
     align-items: center;
     gap: 0.75rem;
-  }
-
-  .annotationManager__bottomRow {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .annotationManager__header {
@@ -304,19 +286,13 @@
   }
 
   :global {
-    .annotationManager__topRow > :global(input) {
+    .annotationManager__controls > :global(input) {
       flex: 1;
       min-width: 0;
+      max-width: 15rem;
     }
 
-    .annotationManager__bottomRow > :global(.input-slider) {
-      flex: 1;
-      min-width: 0;
-      max-width: 10rem;
-    }
-
-    .annotationManager__bottomRow > :global(button:last-child) {
-      margin-left: auto;
+    .annotationManager__controls > :global(button) {
       white-space: nowrap;
     }
   }
