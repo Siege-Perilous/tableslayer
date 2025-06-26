@@ -246,6 +246,8 @@
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
   let protectionCleanupTimer: ReturnType<typeof setInterval> | null = null; // Timer for cleaning up stuck protections
+  let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null; // Timer for debouncing fog uploads
+  let annotationUpdateTimers: Map<string, ReturnType<typeof setTimeout>> = new Map(); // Timers for debouncing annotation uploads per layer
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
@@ -675,6 +677,10 @@
       if (editingTimer) clearTimeout(editingTimer);
       if (driftCheckTimer) clearInterval(driftCheckTimer);
       if (protectionCleanupTimer) clearInterval(protectionCleanupTimer);
+      if (fogUpdateTimer) clearTimeout(fogUpdateTimer);
+      // Clear all annotation timers
+      annotationUpdateTimers.forEach((timer) => clearTimeout(timer));
+      annotationUpdateTimers.clear();
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
@@ -1394,51 +1400,73 @@
    * We upload it and sync via Y.js similar to fog of war.
    */
   let isUpdatingAnnotation = false;
+  let pendingAnnotationBlobs: Map<string, Blob> = new Map();
+
+  const processAnnotationUpdate = async (layerId: string) => {
+    const annotationBlob = pendingAnnotationBlobs.get(layerId);
+    if (!annotationBlob || isSaving) return;
+
+    pendingAnnotationBlobs.delete(layerId); // Clear pending blob for this layer
+
+    // Find the current URL for this annotation layer
+    const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+    const currentUrl = currentLayer?.url || null;
+
+    await handleMutation({
+      mutation: () =>
+        $createAnnotationMutation.mutateAsync({
+          blob: annotationBlob,
+          sceneId: selectedScene.id,
+          layerId: layerId,
+          currentUrl: currentUrl
+        }),
+      formLoadingState: () => {},
+      onSuccess: (result) => {
+        // Update the specific annotation layer URL
+        const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
+        if (layerIndex !== -1) {
+          stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
+        }
+
+        // Immediately sync annotation layers to Y.js for real-time collaboration
+        if (partyData && selectedScene?.id) {
+          lastOwnYjsUpdateTime = Date.now();
+          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+        }
+
+        // Queue for database save
+        queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
+        isUpdatingAnnotation = false;
+      },
+      onError: () => {
+        devError('save', 'Error uploading annotation');
+        isUpdatingAnnotation = false;
+      },
+      toastMessages: {
+        error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
+      }
+    });
+  };
+
   const onAnnotationUpdate = async (layerId: string, blob: Promise<Blob>) => {
     isUpdatingAnnotation = true;
 
-    const annotationBlob = await blob;
+    // Store the latest blob for this layer
+    pendingAnnotationBlobs.set(layerId, await blob);
 
-    if (blob !== null && !isSaving) {
-      // Find the current URL for this annotation layer
-      const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
-      const currentUrl = currentLayer?.url || null;
-
-      await handleMutation({
-        mutation: () =>
-          $createAnnotationMutation.mutateAsync({
-            blob: annotationBlob as Blob,
-            sceneId: selectedScene.id,
-            layerId: layerId,
-            currentUrl: currentUrl
-          }),
-        formLoadingState: () => {},
-        onSuccess: (result) => {
-          // Update the specific annotation layer URL
-          const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
-          if (layerIndex !== -1) {
-            stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
-          }
-
-          // Immediately sync annotation layers to Y.js for real-time collaboration
-          if (partyData && selectedScene?.id) {
-            lastOwnYjsUpdateTime = Date.now();
-            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
-          }
-
-          // Queue for database save
-          queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
-          isUpdatingAnnotation = false;
-        },
-        onError: () => {
-          devError('save', 'Error uploading annotation');
-          isUpdatingAnnotation = false;
-        },
-        toastMessages: {
-          error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
-        }
-      });
+    // Clear any existing timer for this layer
+    const existingTimer = annotationUpdateTimers.get(layerId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
+
+    // Set a new timer to process the update after a delay
+    const timer = setTimeout(() => {
+      processAnnotationUpdate(layerId);
+      annotationUpdateTimers.delete(layerId);
+    }, 500); // 500ms delay
+
+    annotationUpdateTimers.set(layerId, timer);
   };
 
   /**
@@ -1450,43 +1478,62 @@
    * We update state so that saveScene() has something to check so uploads don't happen immediately
    */
   let isUpdatingFog = false;
+  let pendingFogBlob: Blob | null = null;
+
+  const processFogUpdate = async () => {
+    if (!pendingFogBlob || isSaving) return;
+
+    const fogBlob = pendingFogBlob;
+    pendingFogBlob = null; // Clear pending blob
+
+    await handleMutation({
+      mutation: () =>
+        $createFogMutation.mutateAsync({
+          blob: fogBlob,
+          sceneId: selectedScene.id,
+          currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
+        }),
+      formLoadingState: () => {},
+      onSuccess: (fog) => {
+        // Update local state immediately with versioned URL
+        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
+
+        // Immediately sync fog URL to Y.js for real-time collaboration
+        if (partyData && selectedScene?.id) {
+          lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+        }
+
+        // Also queue for database save
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
+        isUpdatingFog = false;
+      },
+      onError: () => {
+        devError('save', 'Error uploading fog');
+        isUpdatingFog = false;
+      },
+      toastMessages: {
+        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+      }
+    });
+  };
+
   const onFogUpdate = async (blob: Promise<Blob>) => {
     isUpdatingFog = true;
 
-    const fogBlob = await blob;
+    // Store the latest blob
+    pendingFogBlob = await blob;
 
-    if (blob !== null && !isSaving) {
-      await handleMutation({
-        mutation: () =>
-          $createFogMutation.mutateAsync({
-            blob: fogBlob as Blob,
-            sceneId: selectedScene.id,
-            currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
-          }),
-        formLoadingState: () => {},
-        onSuccess: (fog) => {
-          // Update local state immediately with versioned URL
-          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
-
-          // Immediately sync fog URL to Y.js for real-time collaboration
-          if (partyData && selectedScene?.id) {
-            lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
-          }
-
-          // Also queue for database save
-          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
-          isUpdatingFog = false;
-        },
-        onError: () => {
-          devError('save', 'Error uploading fog');
-          isUpdatingFog = false;
-        },
-        toastMessages: {
-          error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
-        }
-      });
+    // Clear any existing timer
+    if (fogUpdateTimer) {
+      clearTimeout(fogUpdateTimer);
     }
+
+    // Set a new timer to process the update after a delay
+    fogUpdateTimer = setTimeout(() => {
+      processFogUpdate();
+      fogUpdateTimer = null;
+    }, 500); // 500ms delay
   };
 
   let isSaving = false;
