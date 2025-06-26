@@ -33,13 +33,6 @@
   // Reference to the child layers
   let layers: AnnotationMaterial[] = $state([]);
 
-  // Force reactivity when layers order changes
-  $effect(() => {
-    // This effect will run whenever props.layers changes
-    // Including when the order changes
-    props.layers;
-  });
-
   // Get the currently active layer
   let activeLayer = $derived(
     layers.find((layer) => {
