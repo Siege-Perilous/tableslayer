@@ -148,7 +148,7 @@
       width: `${original.offsetWidth}px`,
       height: `${original.offsetHeight}px`,
       position: 'fixed',
-      borderColor: 'var(--fgPrimary)',
+      borderColor: 'var(--fg)',
       backgroundColor: 'var(--bg)',
       cursor: 'grabbing',
       zIndex: '1000',
@@ -496,7 +496,7 @@
   }
 
   .annotationManager__listItem--dragOver {
-    border-color: var(--fg);
+    border-color: var(--contrastHigh);
     border-style: dashed;
     background-color: var(--contrastLow);
   }
