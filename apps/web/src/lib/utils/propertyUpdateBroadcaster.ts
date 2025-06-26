@@ -61,7 +61,7 @@ export function queuePropertyUpdate(
 ) {
   // Skip Y.js sync for local-only properties but still apply them locally
   if (isLocalOnlyProperty(propertyPath)) {
-    devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
+    // devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
     applyUpdate(stageProps, propertyPath, value);
     // Don't trigger auto-save for local-only properties
     return;

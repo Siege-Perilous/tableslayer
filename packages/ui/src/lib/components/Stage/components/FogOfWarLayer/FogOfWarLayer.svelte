@@ -56,9 +56,6 @@
       lastPos = null;
       drawing = false;
       material?.revertChanges();
-      // Hide cursor when not active
-      outlineMaterial.uniforms.uStart.value.set(-10000, -10000);
-      outlineMaterial.uniforms.uEnd.value.set(-10000, -10000);
       outlineMaterial.visible = false;
     }
   });
