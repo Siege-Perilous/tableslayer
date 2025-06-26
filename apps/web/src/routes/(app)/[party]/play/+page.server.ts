@@ -1,4 +1,4 @@
-import type { SelectMarker } from '$lib/db/app/schema';
+import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
 import {
   getActiveGameSessionForParty,
   getActiveSceneForParty,
@@ -6,6 +6,7 @@ import {
   getPartyFromSlug,
   getUser
 } from '$lib/server';
+import { getAnnotationsForScene } from '$lib/server/annotations';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -31,8 +32,10 @@ export const load: PageServerLoad = async (event) => {
   const activeScene = await getActiveSceneForParty(party.id);
 
   let activeSceneMarkers: SelectMarker[] = [];
+  let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {
     activeSceneMarkers = await getMarkersForScene(activeScene.id);
+    activeSceneAnnotations = await getAnnotationsForScene(activeScene.id);
   }
 
   return {
@@ -41,6 +44,7 @@ export const load: PageServerLoad = async (event) => {
     activeGameSession,
     activeScene,
     activeSceneMarkers,
+    activeSceneAnnotations,
     partykitHost
   };
 };

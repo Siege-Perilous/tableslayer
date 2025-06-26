@@ -132,7 +132,7 @@
           timestamp: Date.now()
         });
         devLog('playfield', 'Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
-        stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+        stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client', data.activeSceneAnnotations);
         initialDataApplied = true;
       }
     }
@@ -237,7 +237,7 @@
 
     // Set initial stage props from SSR data
     if (data.activeScene && !initialDataApplied) {
-      stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client');
+      stageProps = buildSceneProps(data.activeScene, data.activeSceneMarkers, 'client', data.activeSceneAnnotations);
       initialDataApplied = true;
     }
 

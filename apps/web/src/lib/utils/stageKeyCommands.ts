@@ -85,6 +85,14 @@ export function handleKeyCommands(
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
 
+    case 'n':
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+      break;
+
+    case 'N':
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      break;
+
     case 'r':
       if (
         activeLayer === MapLayerType.FogOfWar &&

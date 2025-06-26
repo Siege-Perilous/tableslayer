@@ -10,6 +10,7 @@ export interface PaneConfig {
 
 export interface GameSessionPreferences {
   brushSize?: number;
+  annotationLineWidth?: number;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
 }
@@ -31,6 +32,11 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     cookieName: 'tableslayer:brushSize',
     defaultValue: 75, // Match the default in buildSceneProps
     validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
+  },
+  annotationLineWidth: {
+    cookieName: 'tableslayer:annotationLineWidth',
+    defaultValue: 50,
+    validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 200
   },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',

@@ -1,5 +1,6 @@
-import type { SelectMarker } from '$lib/db/app/schema';
+import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
+import { getAnnotationsForScene } from '$lib/server/annotations';
 import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
 import { redirect } from '@sveltejs/kit';
@@ -34,9 +35,12 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   }
   const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
   const selectedSceneMarkers = await getMarkersForScene(selectedScene.id);
+  const selectedSceneAnnotations = await getAnnotationsForScene(selectedScene.id);
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
+  let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {
     activeSceneMarkers = await getMarkersForScene(activeScene.id);
+    activeSceneAnnotations = await getAnnotationsForScene(activeScene.id);
   }
 
   // Get preferences from cookies using the new system
@@ -49,8 +53,10 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     selectedSceneNumber,
     selectedScene,
     selectedSceneMarkers,
+    selectedSceneAnnotations,
     activeScene,
     activeSceneMarkers,
+    activeSceneAnnotations,
     paneLayoutDesktop,
     paneLayoutMobile,
     brushSize,
