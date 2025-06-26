@@ -27,6 +27,9 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
+  // Track if cursors are hidden to avoid redundant resets
+  let cursorsHidden = false;
+
   // Reference to the child layers
   let layers: AnnotationMaterial[] = $state([]);
 
@@ -44,12 +47,18 @@
       lastPos = null;
       drawing = false;
       // Reset cursor for all layers to ensure no ghosting
-      layers.forEach((layer) => {
-        if (layer) {
-          layer.revertChanges();
-          layer.resetCursor();
-        }
-      });
+      if (!cursorsHidden) {
+        layers.forEach((layer) => {
+          if (layer) {
+            layer.revertChanges();
+            layer.resetCursor();
+          }
+        });
+        cursorsHidden = true;
+      }
+    } else {
+      // Tool is active again
+      cursorsHidden = false;
     }
   });
 
@@ -58,12 +67,18 @@
     if (!props.activeLayer && layers.length > 0) {
       // No active layer selected, reset all cursors and revert changes
       lastPos = null; // Reset last position to prevent cursor from appearing
-      layers.forEach((layer) => {
-        if (layer) {
-          layer.revertChanges();
-          layer.resetCursor();
-        }
-      });
+      if (!cursorsHidden) {
+        layers.forEach((layer) => {
+          if (layer) {
+            layer.revertChanges();
+            layer.resetCursor();
+          }
+        });
+        cursorsHidden = true;
+      }
+    } else if (props.activeLayer) {
+      // Active layer selected again
+      cursorsHidden = false;
     }
   });
 
@@ -90,7 +105,7 @@
     drawing = false;
 
     // Revert changes and hide cursor
-    if (activeLayer) {
+    if (activeLayer && !cursorsHidden) {
       activeLayer.revertChanges();
       activeLayer.resetCursor();
     }
@@ -99,25 +114,33 @@
   function draw(_: Event, p: THREE.Vector2 | null) {
     // If the mouse is not within the drawing area, hide cursor
     if (!p) {
-      // Reset cursor for all layers when mouse leaves
-      layers.forEach((layer) => {
-        if (layer) {
-          layer.resetCursor();
-        }
-      });
+      // Reset cursor for all layers when mouse leaves (only if not already hidden)
+      if (!cursorsHidden) {
+        layers.forEach((layer) => {
+          if (layer) {
+            layer.resetCursor();
+          }
+        });
+      }
       return;
     }
 
     // Only process if we have an active layer and the annotation tool is active
     if (!activeLayer || !isActive || !props.activeLayer) {
-      // Make sure all cursors are hidden when not active
-      layers.forEach((layer) => {
-        if (layer) {
-          layer.resetCursor();
-        }
-      });
+      // Make sure all cursors are hidden when not active (only if not already hidden)
+      if (!cursorsHidden) {
+        layers.forEach((layer) => {
+          if (layer) {
+            layer.resetCursor();
+          }
+        });
+        cursorsHidden = true;
+      }
       return;
     }
+
+    // Tool is active and we have a valid position
+    cursorsHidden = false;
 
     p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
 
