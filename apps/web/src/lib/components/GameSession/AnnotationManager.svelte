@@ -48,9 +48,6 @@
     onAnnotationCreated?: () => void;
   } = $props();
 
-  let editingAnnotationId = $derived(selectedAnnotationId);
-  let editingAnnotation = $derived(stageProps.annotations.layers.find((a) => a.id === editingAnnotationId));
-
   // Get line width from preferences or active annotation
   let lineWidth = $state(getPreference('annotationLineWidth') || 50);
 
@@ -65,16 +62,6 @@
       }
     }
   });
-
-  const selectAnnotationForEdit = (annotationId: string) => {
-    selectedAnnotationId = annotationId;
-    // Also make it the active annotation for drawing
-    setActiveAnnotation(annotationId);
-  };
-
-  const backToList = () => {
-    selectedAnnotationId = undefined;
-  };
 
   const handleAnnotationDelete = async (annotationId: string) => {
     // Remove from local state
@@ -178,103 +165,14 @@
     />
   </div>
   <div class="annotationManager__content">
-    {#if editingAnnotationId !== undefined && editingAnnotation}
-      <Link onclick={backToList} class="annotationManager__backButton">
-        List all annotations
-        <Icon Icon={IconArrowBack} size="1rem" />
-      </Link>
-      <div class="annotationManager__editView">
-        <div class="annotationManager__annotation">
-          <Spacer />
-          <div class="annotationManager__formGrid">
-            <FormControl label="Name" name="name">
-              {#snippet input(inputProps)}
-                <Input
-                  {...inputProps}
-                  value={editingAnnotation.name}
-                  oninput={(e) => updateAnnotation(editingAnnotation.id, { name: e.currentTarget.value })}
-                />
-              {/snippet}
-            </FormControl>
-
-            <FormControl label="Visible to" name="visibility">
-              {#snippet input(inputProps)}
-                <RadioButton
-                  {...inputProps}
-                  selected={editingAnnotation.visibility.toString()}
-                  options={[
-                    { label: 'DM', value: StageMode.DM.toString() },
-                    { label: 'Everyone', value: StageMode.Player.toString() }
-                  ]}
-                  onSelectedChange={(value) => {
-                    updateAnnotation(editingAnnotation.id, { visibility: Number(value) });
-                  }}
-                />
-              {/snippet}
-            </FormControl>
-          </div>
-          <Spacer />
-          <div class="annotationManager__colorPicker">
-            <FormControl label="Color" name="color">
-              {#snippet start()}
-                <Popover>
-                  {#snippet trigger()}
-                    <ColorPickerSwatch color={editingAnnotation.color} />
-                  {/snippet}
-                  {#snippet content()}
-                    <ColorPicker
-                      showOpacity={false}
-                      hex={editingAnnotation.color}
-                      onUpdate={(colorData) => updateAnnotation(editingAnnotation.id, { color: colorData.hex })}
-                    />
-                  {/snippet}
-                </Popover>
-              {/snippet}
-              {#snippet input(inputProps)}
-                <Input
-                  {...inputProps}
-                  value={editingAnnotation.color}
-                  oninput={(e) => updateAnnotation(editingAnnotation.id, { color: e.currentTarget.value })}
-                />
-              {/snippet}
-            </FormControl>
-          </div>
-          <Spacer />
-          <FormControl label="Opacity" name="opacity">
-            {#snippet input(inputProps)}
-              <InputSlider
-                {...inputProps}
-                value={editingAnnotation.opacity}
-                min={0}
-                max={1}
-                step={0.1}
-                oninput={(e) => updateAnnotation(editingAnnotation.id, { opacity: Number(e.currentTarget.value) })}
-              />
-            {/snippet}
-          </FormControl>
-          <Spacer />
-
-          <ConfirmActionButton
-            action={() => handleAnnotationDelete(editingAnnotation.id)}
-            actionButtonText="Confirm delete"
-          >
-            {#snippet trigger({ triggerProps })}
-              <Button as="div" variant="danger" {...triggerProps}>Delete annotation</Button>
-            {/snippet}
-            {#snippet actionMessage()}
-              Delete annotation?
-            {/snippet}
-          </ConfirmActionButton>
-        </div>
-      </div>
-    {:else}
-      <div class="annotationManager__list">
-        {#each stageProps.annotations.layers as annotation (annotation.id)}
-          <div
-            class="annotationManager__listItem"
-            class:annotationManager__listItem--active={stageProps.annotations.activeLayer === annotation.id}
-          >
-            <div class="annotationManager__read">
+    <div class="annotationManager__list">
+      {#each stageProps.annotations.layers as annotation (annotation.id)}
+        <div
+          class="annotationManager__listItem"
+          class:annotationManager__listItem--active={stageProps.annotations.activeLayer === annotation.id}
+        >
+          <div class="annotationManager__controls">
+            <div class="annotationManager__topRow">
               <IconButton variant="ghost" onclick={() => toggleAnnotationVisibility(annotation.id)}>
                 <Icon
                   Icon={annotation.visibility === StageMode.Player ? IconEye : IconEyeOff}
@@ -282,60 +180,90 @@
                   color={annotation.visibility === StageMode.Player ? 'var(--fg)' : 'var(--fgMuted)'}
                 />
               </IconButton>
-              <button
-                class="annotationManager__colorPreview"
-                style:background-color={annotation.color}
+              <Popover>
+                {#snippet trigger()}
+                  <button
+                    class="annotationManager__colorPreview"
+                    style:background-color={annotation.color}
+                    aria-label={`Change color for ${annotation.name || 'Untitled'}`}
+                  ></button>
+                {/snippet}
+                {#snippet content()}
+                  <ColorPicker
+                    showOpacity={false}
+                    hex={annotation.color}
+                    onUpdate={(colorData) => updateAnnotation(annotation.id, { color: colorData.hex })}
+                  />
+                {/snippet}
+              </Popover>
+              <Input
+                value={annotation.name || ''}
+                placeholder="Untitled"
+                oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
+                class="annotationManager__nameInput"
+              />
+              <ConfirmActionButton
+                action={() => handleAnnotationDelete(annotation.id)}
+                actionButtonText="Confirm delete"
+              >
+                {#snippet trigger({ triggerProps })}
+                  <IconButton as="div" variant="ghost" {...triggerProps}>
+                    <Icon Icon={IconTrash} />
+                  </IconButton>
+                {/snippet}
+                {#snippet actionMessage()}
+                  Delete annotation {annotation.name}?
+                {/snippet}
+              </ConfirmActionButton>
+            </div>
+            <div class="annotationManager__bottomRow">
+              <Label>Opacity</Label>
+              <InputSlider
+                value={annotation.opacity}
+                min={0}
+                max={1}
+                step={0.1}
+                oninput={(e) => updateAnnotation(annotation.id, { opacity: Number(e.currentTarget.value) })}
+                class="annotationManager__opacitySlider"
+              />
+              <Button
+                variant="ghost"
+                size="small"
                 onclick={() => setActiveAnnotation(annotation.id)}
-                aria-label={`Set ${annotation.name || 'Untitled'} as active layer`}
-              ></button>
-              <button class="annotationManager__title" onclick={() => selectAnnotationForEdit(annotation.id)}>
-                {annotation.name || 'Untitled'}
-              </button>
-              <div class="annotationManager__editIcon">
-                <ConfirmActionButton
-                  action={() => handleAnnotationDelete(annotation.id)}
-                  actionButtonText="Confirm delete"
-                >
-                  {#snippet trigger({ triggerProps })}
-                    <IconButton as="div" variant="ghost" {...triggerProps}>
-                      <Icon Icon={IconTrash} />
-                    </IconButton>
-                  {/snippet}
-                  {#snippet actionMessage()}
-                    Delete annotation {annotation.name}?
-                  {/snippet}
-                </ConfirmActionButton>
-              </div>
+                class="annotationManager__selectButton"
+              >
+                {stageProps.annotations.activeLayer === annotation.id ? 'Active' : 'Select'}
+              </Button>
             </div>
           </div>
-        {:else}
-          <div>
-            <Text weight={700}>No annotation layers in this scene</Text>
-            <Spacer size="0.5rem" />
-            <Text color="var(--fgMuted)">
-              Annotations allow you to draw notes and diagrams on top of your maps. Each layer can have its own color
-              and visibility settings.
-            </Text>
-            <Spacer />
-            <Button onclick={createNewAnnotation}>
-              {#snippet start()}
-                <Icon Icon={IconPlus} size="1.25rem" />
-              {/snippet}
-              Create annotation layer
-            </Button>
-          </div>
-        {/each}
-        {#if stageProps.annotations.layers.length > 0}
+        </div>
+      {:else}
+        <div>
+          <Text weight={700}>No annotation layers in this scene</Text>
+          <Spacer size="0.5rem" />
+          <Text color="var(--fgMuted)}">
+            Annotations allow you to draw notes and diagrams on top of your maps. Each layer can have its own color and
+            visibility settings.
+          </Text>
           <Spacer />
-          <Button onclick={createNewAnnotation} variant="ghost">
+          <Button onclick={createNewAnnotation}>
             {#snippet start()}
               <Icon Icon={IconPlus} size="1.25rem" />
             {/snippet}
-            Add new layer
+            Create annotation layer
           </Button>
-        {/if}
-      </div>
-    {/if}
+        </div>
+      {/each}
+      {#if stageProps.annotations.layers.length > 0}
+        <Spacer />
+        <Button onclick={createNewAnnotation} variant="ghost">
+          {#snippet start()}
+            <Icon Icon={IconPlus} size="1.25rem" />
+          {/snippet}
+          Add new layer
+        </Button>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -357,8 +285,8 @@
   }
 
   .annotationManager__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
     height: fit-content;
     min-height: 0;
@@ -368,29 +296,35 @@
     padding: 2rem;
   }
 
-  .annotationManager__editView {
-    grid-column: 1 / -1;
-  }
-
   .annotationManager__listItem {
     border-radius: 0.25rem;
-    padding: 0.5rem;
+    padding: 1rem;
     border: 2px solid transparent;
+    background-color: var(--contrastLow);
+    transition: border-color 0.2s;
   }
 
   .annotationManager__listItem--active {
     border-color: var(--fgPrimary);
-    background-color: var(--contrastLow);
+    background-color: var(--contrastMedium);
   }
 
-  .annotationManager__listItem:hover .annotationManager__editIcon {
-    opacity: 1;
+  .annotationManager__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .annotationManager__formGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+  .annotationManager__topRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .annotationManager__bottomRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .annotationManager__header {
@@ -402,12 +336,8 @@
     position: sticky;
     top: 0;
     width: 100%;
-  }
-
-  .annotationManager__colorPicker {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+    background-color: var(--bgColorBlur);
+    backdrop-filter: blur(10px);
   }
 
   .annotationManager__colorPreview {
@@ -417,42 +347,32 @@
     border-radius: 0.25rem;
     border: 2px solid var(--borderColor);
     cursor: pointer;
+    transition: border-color 0.2s;
   }
 
   .annotationManager__colorPreview:hover {
     border-color: var(--fgPrimary);
   }
 
-  .annotationManager__read {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+  .annotationManager__nameInput {
+    flex: 1;
+    min-width: 0;
   }
 
-  .annotationManager__annotation {
-    width: 100%;
-    padding: 0 2rem;
+  .annotationManager__opacitySlider {
+    flex: 1;
+    min-width: 0;
+    max-width: 10rem;
   }
 
-  .annotationManager__editIcon {
+  .annotationManager__selectButton {
     margin-left: auto;
-    opacity: 0;
-  }
-
-  .annotationManager__title {
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-
-  .annotationManager__title:hover {
-    text-decoration: underline;
+    white-space: nowrap;
   }
 
   :global {
-    .annotationManager__backButton {
-      display: block;
-      padding: 1rem 2rem;
-      border-bottom: var(--borderThin);
+    .annotationManager__nameInput input {
+      font-size: 0.875rem;
     }
   }
 </style>
