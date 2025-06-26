@@ -100,6 +100,10 @@
     }
   });
 
+  // Track previous values to avoid unnecessary rerenders
+  let prevToolType = props.tool.type;
+  let prevToolMode = props.tool.mode;
+
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
     drawMaterial.uniforms.uEnd.value.copy(drawMaterial.uniforms.uStart.value);
@@ -112,11 +116,20 @@
       drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
-    // Discard the current buffer by copying the previous buffer to the current buffer
-    render(RenderMode.Revert, true);
+    // Only revert and redraw if tool type or mode changed, not size
+    const toolTypeOrModeChanged = prevToolType !== props.tool.type || prevToolMode !== props.tool.mode;
 
-    // Re-draw the scene to show the updated tool overlay
+    if (toolTypeOrModeChanged) {
+      // Discard the current buffer by copying the previous buffer to the current buffer
+      render(RenderMode.Revert, true);
+    }
+
+    // Always redraw to show the updated tool overlay (including size changes)
     render(RenderMode.Draw);
+
+    // Update previous values
+    prevToolType = props.tool.type;
+    prevToolMode = props.tool.mode;
   });
 
   /**

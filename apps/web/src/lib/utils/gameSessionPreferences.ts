@@ -3,6 +3,9 @@
  * Handles brush size and pane layouts
  */
 
+// Debounce timers for each preference key
+const debounceTimers: Partial<Record<keyof GameSessionPreferences, ReturnType<typeof setTimeout>>> = {};
+
 export interface PaneConfig {
   size: number;
   isCollapsed?: boolean;
@@ -210,4 +213,26 @@ export function clearAllPreferences(): void {
   for (const key in PREFERENCE_CONFIGS) {
     clearPreference(key as keyof GameSessionPreferences);
   }
+}
+
+/**
+ * Set a preference value in cookies with debouncing (client-side)
+ * This helps prevent performance issues from rapid updates (e.g., mousewheel events)
+ * @param delay - Debounce delay in milliseconds (default: 300ms)
+ */
+export function setPreferenceDebounced<K extends keyof GameSessionPreferences>(
+  key: K,
+  value: GameSessionPreferences[K],
+  delay: number = 300
+): void {
+  // Clear any existing timer for this key
+  if (debounceTimers[key]) {
+    clearTimeout(debounceTimers[key]);
+  }
+
+  // Set a new timer
+  debounceTimers[key] = setTimeout(() => {
+    setPreference(key, value);
+    delete debounceTimers[key];
+  }, delay);
 }

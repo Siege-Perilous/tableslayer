@@ -18,7 +18,7 @@
   } from '@tableslayer/ui';
   import { IconTrash, IconEye, IconEyeOff, IconPlus } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
-  import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
+  import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
 
   let {
     stageProps,
@@ -34,20 +34,8 @@
     onAnnotationCreated?: () => void;
   } = $props();
 
-  // Get line width from preferences or active annotation
-  let lineWidth = $state(getPreference('annotationLineWidth') || 50);
-
-  // Update line width when active annotation changes
-  $effect(() => {
-    if (stageProps.annotations.activeLayer) {
-      const activeAnnotation = stageProps.annotations.layers.find(
-        (layer) => layer.id === stageProps.annotations.activeLayer
-      );
-      if (activeAnnotation && activeAnnotation.lineWidth) {
-        lineWidth = activeAnnotation.lineWidth;
-      }
-    }
-  });
+  // Line width should be reactive to the global state
+  let lineWidth = $derived(stageProps.annotations.lineWidth || 50);
 
   const handleAnnotationDelete = async (annotationId: string) => {
     // Remove from local state
@@ -87,12 +75,9 @@
 
     queuePropertyUpdate(stageProps, ['annotations', 'layers'], updatedLayers, 'control');
 
-    // Only save to database for persistent properties (not lineWidth or other local properties)
+    // Save to database if requested
     if (onAnnotationUpdated && saveToDb) {
-      const persistentUpdates = Object.keys(updates).filter((key) => key !== 'lineWidth');
-      if (persistentUpdates.length > 0) {
-        onAnnotationUpdated(updatedAnnotation);
-      }
+      onAnnotationUpdated(updatedAnnotation);
     }
   };
 
@@ -105,28 +90,13 @@
   };
 
   const handleLineWidthChange = (value: number) => {
-    lineWidth = value;
-    setPreference('annotationLineWidth', value);
-
-    // Update the active annotation's line width (don't save to DB - lineWidth is local only)
-    if (stageProps.annotations.activeLayer) {
-      updateAnnotation(stageProps.annotations.activeLayer, { lineWidth: value }, false);
-    }
+    // Update the global state
+    queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], value, 'control');
+    // Save to preferences (debounced)
+    setPreferenceDebounced('annotationLineWidth', value);
   };
 
   const setActiveAnnotation = (annotationId: string) => {
-    // Update the line width first for the selected annotation
-    const annotation = stageProps.annotations.layers.find((layer) => layer.id === annotationId);
-    if (annotation) {
-      if (annotation.lineWidth) {
-        lineWidth = annotation.lineWidth;
-        setPreference('annotationLineWidth', annotation.lineWidth);
-      }
-
-      // Update the annotation with the current line width to ensure it's synced
-      updateAnnotation(annotationId, { lineWidth: lineWidth }, false);
-    }
-
     // Set both properties in the correct order
     // First set the tool type
     queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');

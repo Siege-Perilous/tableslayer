@@ -82,12 +82,7 @@
       annotations: {
         ...props.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
-        // Remove lineWidth from all layers to prevent rubber banding
-        layers: props.annotations.layers.map((layer) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { lineWidth, ...layerWithoutLineWidth } = layer;
-          return layerWithoutLineWidth;
-        })
+        lineWidth: undefined // lineWidth is local-only, not synchronized
       },
       fogOfWar: {
         ...props.fogOfWar,
@@ -235,6 +230,9 @@
   let stageProps: StageProps = $state(
     buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor', data.selectedSceneAnnotations)
   );
+
+  // Add local annotation line width preference
+  stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
 
@@ -425,15 +423,10 @@
             ...incomingStageProps.annotations,
             // Preserve local activeLayer for annotations (should not be shared)
             activeLayer: stageProps.annotations.activeLayer,
-            // Merge layers while preserving local lineWidth values
-            layers: incomingStageProps.annotations.layers.map((incomingLayer) => {
-              const localLayer = stageProps.annotations.layers.find((l) => l.id === incomingLayer.id);
-              return {
-                ...incomingLayer,
-                // Preserve local lineWidth or use default
-                lineWidth: localLayer?.lineWidth || getPreference('annotationLineWidth') || 50
-              };
-            })
+            // Preserve local lineWidth (global setting)
+            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidth') || 50,
+            // Use incoming layers as-is (lineWidth is now global, not per-layer)
+            layers: incomingStageProps.annotations.layers
           }
         };
 
@@ -473,6 +466,12 @@
   // Handle annotation layer activation/deactivation
   $effect(() => {
     if (stageProps.activeLayer === MapLayerType.Annotation) {
+      // Ensure the annotation panel is open
+      if (activeControl !== 'annotation') {
+        activeControl = 'annotation';
+        markersPane.expand();
+      }
+
       // Check if there are any annotation layers
       if (stageProps.annotations.layers.length === 0) {
         // No annotations exist, create one
@@ -481,11 +480,6 @@
         // Annotations exist but none are selected, select the first one
         const firstAnnotation = stageProps.annotations.layers[0];
         queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
-
-        // Also update the line width to match the selected annotation
-        if (firstAnnotation.lineWidth) {
-          setPreference('annotationLineWidth', firstAnnotation.lineWidth);
-        }
       }
     } else if (stageProps.annotations.activeLayer) {
       // Annotation tool was deactivated, clear the active annotation to prevent drawing
@@ -777,19 +771,13 @@
 
     // Only rebuild stageProps when scene switches, initial load, or map actually changes
     if (isSceneSwitch || !stageProps || mapLocationChanged) {
-      devLog(
-        'annotations',
-        'Rebuilding stageProps - isSceneSwitch:',
-        isSceneSwitch,
-        'mapLocationChanged:',
-        mapLocationChanged
-      );
-
       // This is a scene switch or initial load - rebuild everything
       // Always use database markers for buildSceneProps as it expects the database format
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations);
+      // Preserve local annotation line width preference
+      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
 
       // Apply brush size from cookie if available
       if (brushSize) {
@@ -832,12 +820,6 @@
               activeLayer: null
             }
           };
-
-          devLog(
-            'annotations',
-            'Y.js initialization - sharedStageProps.annotations.activeLayer:',
-            sharedStageProps.annotations.activeLayer
-          );
 
           devLog('scene', 'Initializing Y.js scene data:', {
             sceneId: currentSceneId,
@@ -920,6 +902,8 @@
             'editor',
             currentSelectedSceneAnnotations
           );
+          // Preserve local annotation line width preference
+          stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
 
           // Restore viewport state
           stageProps.map.offset = currentMapState.offset;
@@ -1189,7 +1173,6 @@
       color: '#FFFFFF',
       opacity: 1.0,
       visibility: StageMode.Player,
-      lineWidth: 50,
       url: null
     };
 
@@ -1355,32 +1338,15 @@
         scrollDelta = e.deltaY * 0.05; // Very granular adjustment
       }
 
-      // Get current line width from active annotation or default
-      let currentLineWidth = 50;
-      if (stageProps.annotations.activeLayer) {
-        const activeAnnotation = stageProps.annotations.layers.find(
-          (layer) => layer.id === stageProps.annotations.activeLayer
-        );
-        if (activeAnnotation) {
-          currentLineWidth = activeAnnotation.lineWidth || 50;
-        }
-      }
+      // Get current line width from global setting
+      const currentLineWidth = stageProps.annotations.lineWidth || 50;
 
       // Calculate new line width (clamped between 1 and 200)
       const rawLineWidth = currentLineWidth - scrollDelta;
       const newLineWidth = Math.round(Math.max(1, Math.min(rawLineWidth, 200)));
 
-      // Update the active annotation's line width
-      if (stageProps.annotations.activeLayer) {
-        const layerIndex = stageProps.annotations.layers.findIndex(
-          (layer) => layer.id === stageProps.annotations.activeLayer
-        );
-        if (layerIndex !== -1) {
-          stageProps.annotations.layers[layerIndex].lineWidth = newLineWidth;
-          // Force reactivity
-          stageProps.annotations.layers = [...stageProps.annotations.layers];
-        }
-      }
+      // Update the global annotation line width
+      stageProps.annotations.lineWidth = newLineWidth;
 
       // Save preference
       setPreference('annotationLineWidth', newLineWidth);

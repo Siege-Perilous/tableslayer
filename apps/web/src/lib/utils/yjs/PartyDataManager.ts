@@ -412,11 +412,7 @@ export class PartyDataManager {
           annotations: {
             ...stageProps.annotations,
             activeLayer: null, // activeLayer is local-only, not synchronized
-            // Remove lineWidth from all layers to prevent rubber banding
-            layers: stageProps.annotations.layers.map((layer) => {
-              const { lineWidth, ...layerWithoutLineWidth } = layer;
-              return layerWithoutLineWidth;
-            })
+            lineWidth: undefined // lineWidth is local-only, not synchronized
           },
           fogOfWar: {
             ...stageProps.fogOfWar,

@@ -1,4 +1,4 @@
-import type { AnnotationLayerData, StageProps } from '@tableslayer/ui';
+import type { StageProps } from '@tableslayer/ui';
 import { devError, devLog, devWarn } from './debug';
 import { getPartyDataManager } from './yjs/stores';
 
@@ -36,6 +36,7 @@ const LOCAL_ONLY_PROPERTIES = new Set([
   'scene.rotation', // Scene rotation and offset should be local only, but zoom should sync
   'activeLayer', // Active layer should be local per editor (fog tools, etc.)
   'annotations.activeLayer', // Active annotation layer should be local per editor
+  'annotations.lineWidth', // Annotation line width should be local per editor
   'fogOfWar.tool.size' // Fog of war brush size should be local per editor
 ]);
 
@@ -104,12 +105,7 @@ export function queuePropertyUpdate(
         annotations: {
           ...stageProps.annotations,
           activeLayer: null, // activeLayer is local-only, not synchronized
-          // Remove lineWidth from all layers to prevent rubber banding
-          layers: stageProps.annotations.layers.map((layer) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { lineWidth, ...layerWithoutLineWidth } = layer;
-            return layerWithoutLineWidth;
-          })
+          lineWidth: undefined // lineWidth is local-only, not synchronized
         },
         fogOfWar: {
           ...stageProps.fogOfWar,
@@ -270,12 +266,7 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
       annotations: {
         ...updatedStageProps.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
-        // Remove lineWidth from all layers to prevent rubber banding
-        layers: updatedStageProps.annotations.layers.map((layer: AnnotationLayerData) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { lineWidth, ...layerWithoutLineWidth } = layer;
-          return layerWithoutLineWidth;
-        })
+        lineWidth: undefined // lineWidth is local-only, not synchronized
       },
       fogOfWar: {
         ...updatedStageProps.fogOfWar,
