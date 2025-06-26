@@ -82,7 +82,7 @@
         ...props.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
         // Remove lineWidth from all layers to prevent rubber banding
-        layers: props.annotations.layers.map((layer: any) => {
+        layers: props.annotations.layers.map((layer) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;

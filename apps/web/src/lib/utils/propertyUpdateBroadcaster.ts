@@ -105,7 +105,7 @@ export function queuePropertyUpdate(
           ...stageProps.annotations,
           activeLayer: null, // activeLayer is local-only, not synchronized
           // Remove lineWidth from all layers to prevent rubber banding
-          layers: stageProps.annotations.layers.map((layer: any) => {
+          layers: stageProps.annotations.layers.map((layer) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { lineWidth, ...layerWithoutLineWidth } = layer;
             return layerWithoutLineWidth;
@@ -271,7 +271,7 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
         ...updatedStageProps.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
         // Remove lineWidth from all layers to prevent rubber banding
-        layers: updatedStageProps.annotations.layers.map((layer: any) => {
+        layers: updatedStageProps.annotations.layers.map((layer) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;
