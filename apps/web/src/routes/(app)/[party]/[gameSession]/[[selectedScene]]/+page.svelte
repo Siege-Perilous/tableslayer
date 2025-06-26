@@ -1169,7 +1169,7 @@
     // Create a new annotation layer
     const newAnnotation: AnnotationLayerData = {
       id: crypto.randomUUID(),
-      name: `Annotation ${stageProps.annotations.layers.length + 1}`,
+      name: `Drawing ${stageProps.annotations.layers.length + 1}`,
       color: '#FFFFFF',
       opacity: 1.0,
       visibility: StageMode.Player,

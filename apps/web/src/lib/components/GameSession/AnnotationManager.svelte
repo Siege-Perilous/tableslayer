@@ -111,21 +111,32 @@
 
 <div class="annotationManager">
   <div class="annotationManager__header">
-    <Label>Drawing size</Label>
-    <InputSlider
-      value={lineWidth}
-      oninput={(e) => handleLineWidthChange(Number(e.currentTarget.value))}
-      min={1}
-      max={200}
-      step={1}
-    />
+    {#if stageProps.annotations.layers.length > 0}
+      <Button onclick={createNewAnnotation}>
+        {#snippet start()}
+          <Icon Icon={IconPlus} size="1.25rem" />
+        {/snippet}
+        Add new layer
+      </Button>
+    {/if}
+    <div class="annotationManager__lineWidthControl">
+      <Label>Line width</Label>
+      <InputSlider
+        value={lineWidth}
+        oninput={(e) => handleLineWidthChange(Number(e.currentTarget.value))}
+        min={1}
+        max={200}
+        step={1}
+      />
+    </div>
   </div>
   <div class="annotationManager__content">
     <div class="annotationManager__list">
       {#each stageProps.annotations.layers as annotation (annotation.id)}
-        <div
+        <button
           class="annotationManager__listItem"
           class:annotationManager__listItem--active={stageProps.annotations.activeLayer === annotation.id}
+          onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
             <IconButton variant="ghost" onclick={() => toggleAnnotationVisibility(annotation.id)}>
@@ -161,12 +172,10 @@
             </Popover>
             <Input
               value={annotation.name || ''}
+              variant="transparent"
               placeholder="Untitled"
               oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
             />
-            <Button variant="ghost" size="sm" onclick={() => setActiveAnnotation(annotation.id)}>
-              {stageProps.annotations.activeLayer === annotation.id ? 'Active' : 'Select'}
-            </Button>
             <ConfirmActionButton action={() => handleAnnotationDelete(annotation.id)} actionButtonText="Confirm delete">
               {#snippet trigger({ triggerProps })}
                 <IconButton as="div" variant="ghost" {...triggerProps}>
@@ -178,7 +187,7 @@
               {/snippet}
             </ConfirmActionButton>
           </div>
-        </div>
+        </button>
       {:else}
         <div>
           <Text weight={700}>No annotation layers in this scene</Text>
@@ -196,15 +205,6 @@
           </Button>
         </div>
       {/each}
-      {#if stageProps.annotations.layers.length > 0}
-        <Spacer />
-        <Button onclick={createNewAnnotation} variant="ghost">
-          {#snippet start()}
-            <Icon Icon={IconPlus} size="1.25rem" />
-          {/snippet}
-          Add new layer
-        </Button>
-      {/if}
     </div>
   </div>
 </div>
@@ -229,26 +229,28 @@
   .annotationManager__list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     height: fit-content;
     min-height: 0;
     flex-grow: 1;
     align-content: start;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 1rem 2rem 2rem 2rem;
   }
 
   .annotationManager__listItem {
     border-radius: 0.25rem;
-    padding: 1rem;
-    border: 2px solid transparent;
-    background-color: var(--contrastLow);
-    transition: border-color 0.2s;
+    padding: 0.5rem;
+    transition: border-colo;
+    border: solid 1px transparent;
+  }
+
+  .annotationManager__listItem:hover {
+    border-color: var(--inputBorderColor);
+    cursor: pointer;
   }
 
   .annotationManager__listItem--active {
-    border-color: var(--fgPrimary);
-    background-color: var(--contrastMedium);
+    background-color: var(--contrastLow);
   }
 
   .annotationManager__controls {
@@ -259,9 +261,10 @@
   }
 
   .annotationManager__header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 1rem;
+    gap: 3rem;
     padding: 1rem 2rem;
     border-bottom: var(--borderThin);
     position: sticky;
@@ -270,13 +273,18 @@
     background-color: var(--bgColorBlur);
     backdrop-filter: blur(10px);
   }
+  .annotationManager__lineWidthControl {
+    display: flex;
+    gap: 1rem;
+    text-wrap: nowrap;
+    align-items: center;
+  }
 
   .annotationManager__colorPreview {
-    min-width: 2rem;
-    width: 2rem;
-    height: 2rem;
+    min-width: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
     border-radius: 0.25rem;
-    border: 2px solid var(--borderColor);
     cursor: pointer;
     transition: border-color 0.2s;
   }
