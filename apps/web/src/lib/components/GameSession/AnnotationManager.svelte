@@ -184,17 +184,26 @@
           onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
-            <div class="annotationManager__dragHandle">
+            <div
+              class="annotationManager__dragHandle"
+              role="button"
+              tabindex="-1"
+              aria-label="Drag handle for reordering annotation layer"
+            >
               <Icon Icon={IconGripVertical} size="1.25rem" color="var(--fgMuted)" />
             </div>
-            <IconButton variant="ghost" onclick={() => toggleAnnotationVisibility(annotation.id)}>
+            <IconButton
+              variant="ghost"
+              onclick={() => toggleAnnotationVisibility(annotation.id)}
+              title={annotation.visibility === StageMode.Player ? 'Hide from players' : 'Show to players'}
+            >
               <Icon
                 Icon={annotation.visibility === StageMode.Player ? IconEye : IconEyeOff}
                 size="1.25rem"
                 color={annotation.visibility === StageMode.Player ? 'var(--fg)' : 'var(--fgMuted)'}
               />
             </IconButton>
-            <Popover>
+            <Popover portal="body">
               {#snippet trigger()}
                 <button
                   class="annotationManager__colorPreview"
@@ -204,24 +213,27 @@
                 ></button>
               {/snippet}
               {#snippet content()}
-                <ColorPicker
-                  showOpacity={true}
-                  hex={annotation.color +
-                    Math.round(annotation.opacity * 255)
-                      .toString(16)
-                      .padStart(2, '0')}
-                  onUpdate={(colorData) =>
-                    updateAnnotation(annotation.id, {
-                      color: colorData.hex.slice(0, 7), // Keep only the 6-digit hex color
-                      opacity: colorData.rgba.a
-                    })}
-                />
+                <div class="ColorPicker-container">
+                  <ColorPicker
+                    showOpacity={true}
+                    hex={annotation.color +
+                      Math.round(annotation.opacity * 255)
+                        .toString(16)
+                        .padStart(2, '0')}
+                    onUpdate={(colorData) =>
+                      updateAnnotation(annotation.id, {
+                        color: colorData.hex.slice(0, 7), // Keep only the 6-digit hex color
+                        opacity: colorData.rgba.a
+                      })}
+                  />
+                </div>
               {/snippet}
             </Popover>
             <Input
               value={annotation.name || ''}
               variant="transparent"
               placeholder="Untitled"
+              class="annotationManager__nameInput"
               oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
             />
             <div class="annotationManager__deleteButton">
@@ -409,6 +421,9 @@
 
     .annotationManager__controls > :global(button) {
       white-space: nowrap;
+    }
+    .annotationManager__nameInput {
+      cursor: text !important;
     }
   }
 </style>

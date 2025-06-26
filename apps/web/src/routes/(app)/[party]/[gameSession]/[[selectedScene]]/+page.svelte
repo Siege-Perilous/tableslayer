@@ -1198,12 +1198,36 @@
     });
   };
 
+  // Generate random high-contrast colors that complement #d73e2e
+  const getRandomAnnotationColor = () => {
+    const annotationColors = [
+      '#d73e2e', // Red
+      '#ffa500', // Orange
+      '#ffd93d', // Yellow
+      '#6bcf7f', // Green
+      '#2e86ab', // Blue
+      '#b197fc', // Purple
+      '#f06595', // Pink
+      '#20c997', // Turquoise
+      '#845ef7', // Violet
+      '#4c6ef5', // Royal Blue
+      '#15803d', // Forest Green
+      '#dc2626', // Crimson
+      '#06b6d4', // Cyan
+      '#ec4899', // Hot Pink
+      '#8b5cf6', // Indigo
+      '#059669' // Emerald
+    ];
+
+    return annotationColors[Math.floor(Math.random() * annotationColors.length)];
+  };
+
   const onAnnotationCreated = async () => {
     // Create a new annotation layer
     const newAnnotation: AnnotationLayerData = {
       id: crypto.randomUUID(),
       name: `Drawing ${stageProps.annotations.layers.length + 1}`,
-      color: '#FFFFFF',
+      color: getRandomAnnotationColor(),
       opacity: 1.0,
       visibility: StageMode.Player,
       url: null
