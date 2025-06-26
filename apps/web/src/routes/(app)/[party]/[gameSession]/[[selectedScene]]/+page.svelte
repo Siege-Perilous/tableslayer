@@ -86,6 +86,13 @@
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;
         })
+      },
+      fogOfWar: {
+        ...props.fogOfWar,
+        tool: {
+          ...props.fogOfWar.tool,
+          size: undefined // Remove size to prevent syncing
+        }
       }
     };
   };
@@ -269,15 +276,6 @@
   // Use appropriate pane layout based on device type
   const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
 
-  // Debug logging for initial state
-  $effect(() => {
-    devLog('annotations', 'Initial state check:');
-    devLog('annotations', '- stageProps.activeLayer:', stageProps.activeLayer);
-    devLog('annotations', '- stageProps.annotations.activeLayer:', stageProps.annotations.activeLayer);
-    devLog('annotations', '- stageProps.annotations.layers:', stageProps.annotations.layers);
-    devLog('annotations', '- activeControl:', activeControl);
-  });
-
   // Initialize collapse states from preferences
   $effect(() => {
     if (paneLayout && Array.isArray(paneLayout)) {
@@ -390,10 +388,6 @@
         // Get current local state for comparison
         const currentStagePropsSnapshot = $state.snapshot(stageProps);
 
-        // Log Y.js incoming data
-        devLog('annotations', 'Y.js incoming activeLayer:', incomingStageProps.activeLayer);
-        devLog('annotations', 'Y.js incoming annotations.activeLayer:', incomingStageProps.annotations?.activeLayer);
-
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
           ...incomingStageProps,
@@ -416,6 +410,14 @@
               markersBeingEdited,
               recentlyDeletedMarkers
             )
+          },
+          fogOfWar: {
+            ...incomingStageProps.fogOfWar,
+            tool: {
+              ...incomingStageProps.fogOfWar.tool,
+              // Preserve local brush size or use default from preferences
+              size: stageProps.fogOfWar.tool.size || getPreference('brushSize') || 75
+            }
           },
           annotations: {
             ...incomingStageProps.annotations,
@@ -666,8 +668,6 @@
   };
 
   const handleSelectActiveControl = (control: string) => {
-    devLog('annotations', 'handleSelectActiveControl called with:', control, 'current activeControl:', activeControl);
-
     if (control === activeControl) {
       activeControl = 'none';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
@@ -693,14 +693,6 @@
       // Clear annotation active layer when switching to fog tool
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     }
-
-    devLog(
-      'annotations',
-      'After handleSelectActiveControl - activeLayer:',
-      stageProps.activeLayer,
-      'activeControl:',
-      activeControl
-    );
   };
 
   // We use these functions often in child components, so we define them here
@@ -774,9 +766,6 @@
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations);
 
-      devLog('annotations', 'After rebuild - stageProps.activeLayer:', stageProps.activeLayer);
-      devLog('annotations', 'After rebuild - stageProps.annotations.activeLayer:', stageProps.annotations.activeLayer);
-
       // Apply brush size from cookie if available
       if (brushSize) {
         stageProps.fogOfWar.tool.size = brushSize;
@@ -819,7 +808,6 @@
             }
           };
 
-          devLog('annotations', 'Y.js initialization - sharedStageProps.activeLayer:', sharedStageProps.activeLayer);
           devLog(
             'annotations',
             'Y.js initialization - sharedStageProps.annotations.activeLayer:',
@@ -1116,13 +1104,11 @@
 
   const onAnnotationDeleted = async (annotationId: string) => {
     // Delete annotation from database
-    devLog('annotations', 'Annotation deleted:', annotationId);
 
     await handleMutation({
       mutation: () => $deleteAnnotationMutation.mutateAsync({ annotationId }),
       formLoadingState: () => {},
       onSuccess: () => {
-        devLog('annotations', 'Annotation deleted from database:', annotationId);
         // Trigger auto-save after annotation deletion
         startAutoSaveTimer();
       },
@@ -1138,12 +1124,10 @@
   const onAnnotationUpdated = async (annotation: AnnotationLayerData) => {
     // Prevent duplicate saves
     if (annotationSaveInProgress.has(annotation.id)) {
-      devLog('annotations', 'Skipping duplicate save for annotation:', annotation.id);
       return;
     }
 
     // Save annotation updates to database
-    devLog('annotations', 'Annotation updated:', annotation.id);
     annotationSaveInProgress.add(annotation.id);
 
     // Convert to database format
@@ -1157,7 +1141,6 @@
       mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
       formLoadingState: () => {},
       onSuccess: () => {
-        devLog('annotations', 'Annotation saved to database:', annotation.id);
         // Remove from in-progress after successful save
         annotationSaveInProgress.delete(annotation.id);
         // Trigger auto-save after annotation update
@@ -1201,15 +1184,12 @@
       handleSelectActiveControl('annotation');
     }
 
-    devLog('annotations', 'New annotation created:', newAnnotation.id);
-
     // Save to database
     const annotationData = convertAnnotationToDbFormat(newAnnotation, selectedScene.id, updatedLayers.length - 1);
     await handleMutation({
       mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
       formLoadingState: () => {},
       onSuccess: () => {
-        devLog('annotations', 'New annotation saved to database:', newAnnotation.id);
         // Trigger auto-save after creation
         startAutoSaveTimer();
       },

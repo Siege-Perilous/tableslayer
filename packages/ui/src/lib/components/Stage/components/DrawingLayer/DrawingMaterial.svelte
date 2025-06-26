@@ -24,8 +24,8 @@
     uniforms: {
       uPreviousState: { value: null },
       uBrushTexture: { value: null },
-      uStart: { value: new THREE.Vector2() },
-      uEnd: { value: new THREE.Vector2() },
+      uStart: { value: new THREE.Vector2(-10000, -10000) }, // Initialize off-screen
+      uEnd: { value: new THREE.Vector2(-10000, -10000) }, // Initialize off-screen
       uBrushSize: { value: props.tool.size },
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
@@ -146,6 +146,16 @@
 
   export function revert() {
     render(RenderMode.Revert, true);
+  }
+
+  /**
+   * Resets the cursor position to hide it
+   */
+  export function resetCursor() {
+    // Set both start and end to a far off-screen position
+    const offScreen = new THREE.Vector2(-10000, -10000);
+    drawMaterial.uniforms.uStart.value.copy(offScreen);
+    drawMaterial.uniforms.uEnd.value.copy(offScreen);
   }
 
   /**

@@ -35,7 +35,8 @@ const LOCAL_ONLY_PROPERTIES = new Set([
   'scene.offset.y',
   'scene.rotation', // Scene rotation and offset should be local only, but zoom should sync
   'activeLayer', // Active layer should be local per editor (fog tools, etc.)
-  'annotations.activeLayer' // Active annotation layer should be local per editor
+  'annotations.activeLayer', // Active annotation layer should be local per editor
+  'fogOfWar.tool.size' // Fog of war brush size should be local per editor
 ]);
 
 // Check if a property path should be local-only
@@ -108,6 +109,13 @@ export function queuePropertyUpdate(
             const { lineWidth, ...layerWithoutLineWidth } = layer;
             return layerWithoutLineWidth;
           })
+        },
+        fogOfWar: {
+          ...stageProps.fogOfWar,
+          tool: {
+            ...stageProps.fogOfWar.tool,
+            size: undefined // Remove size to prevent syncing
+          }
         }
       };
       partyDataManager.updateSceneStageProps(currentSceneId, cleanedStageProps);
@@ -266,6 +274,13 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;
         })
+      },
+      fogOfWar: {
+        ...updatedStageProps.fogOfWar,
+        tool: {
+          ...updatedStageProps.fogOfWar.tool,
+          size: undefined // Remove size to prevent syncing
+        }
       }
     };
 

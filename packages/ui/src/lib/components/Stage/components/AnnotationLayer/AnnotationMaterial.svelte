@@ -61,6 +61,15 @@
   }
 
   /**
+   * Resets the cursor position to hide it
+   */
+  export function resetCursor() {
+    if (drawMaterial) {
+      drawMaterial.resetCursor();
+    }
+  }
+
+  /**
    * Clears the annotation layer
    */
   export function clear() {

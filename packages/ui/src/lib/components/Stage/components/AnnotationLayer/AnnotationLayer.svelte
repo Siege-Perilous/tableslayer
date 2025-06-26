@@ -27,7 +27,7 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
-  // Reference the toe child layers
+  // Reference to the child layers
   let layers: AnnotationMaterial[] = $state([]);
 
   // Get the currently active layer
@@ -40,10 +40,14 @@
 
   // Whenever the tool type changes, we need to reset the drawing state
   $effect(() => {
-    if (!isActive && activeLayer) {
+    if (!isActive) {
       lastPos = null;
       drawing = false;
-      activeLayer.revertChanges();
+      if (activeLayer) {
+        activeLayer.revertChanges();
+        // Reset cursor position to avoid ghosting
+        activeLayer.resetCursor();
+      }
     }
   });
 
@@ -56,35 +60,51 @@
 
   function onMouseUp() {
     // If we have just finished drawing, save the annotation
-    if (props.activeLayer) {
+    if (props.activeLayer && drawing) {
       onAnnotationUpdate(props.activeLayer, toPng());
     }
 
     // Reset the drawing state
-    lastPos = null;
     drawing = false;
+    // Don't reset lastPos here to prevent cursor jumping
   }
 
   function onMouseLeave() {
     lastPos = null;
     drawing = false;
 
-    // Revert changes on all materials when leaving
-    activeLayer?.revertChanges();
+    // Revert changes and hide cursor
+    if (activeLayer) {
+      activeLayer.revertChanges();
+      activeLayer.resetCursor();
+    }
   }
 
   function draw(_: Event, p: THREE.Vector2 | null) {
-    // If the mouse is not within the drawing area, do nothing
-    if (!p) return;
+    // If the mouse is not within the drawing area, hide cursor
+    if (!p) {
+      if (activeLayer) {
+        activeLayer.resetCursor();
+      }
+      return;
+    }
+
+    // Only process if we have an active layer
+    if (!activeLayer) {
+      return;
+    }
 
     p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+
     // If this is the first time the mouse has moved, set the last position to the current position
     if (!lastPos) {
       lastPos = p.clone();
+      // On first entry, set both start and end to the same position to avoid zipping
+      activeLayer.drawPath(p, p, drawing);
+    } else {
+      // Normal drawing
+      activeLayer.drawPath(p, lastPos, drawing);
     }
-
-    // Only draw on the active material
-    activeLayer?.drawPath(p, lastPos, drawing);
     lastPos = p.clone();
   }
 
