@@ -248,7 +248,16 @@
   let protectionCleanupTimer: ReturnType<typeof setInterval> | null = null; // Timer for cleaning up stuck protections
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
+  let isCursorInScene = $state(false);
+  let stageClasses = $derived(
+    [
+      'stage',
+      (stageIsLoading || navigating.to) && 'stage--loading',
+      isCursorInScene &&
+        (stageProps.activeLayer === MapLayerType.Annotation || stageProps.activeLayer === MapLayerType.FogOfWar) &&
+        'stage--hideCursor'
+    ].filter(Boolean)
+  );
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
@@ -621,6 +630,9 @@
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('mouseleave', () => {
+        isCursorInScene = false;
+      });
       stageElement.addEventListener('wheel', onWheel, { passive: false });
 
       stageElement.addEventListener(
@@ -1246,6 +1258,9 @@
 
     const relativeX = cursorX - horizontalMargin;
     const relativeY = cursorY - verticalMargin;
+
+    // Check if cursor is within the visible scene bounds
+    isCursorInScene = relativeX >= 0 && relativeX <= rotatedWidth && relativeY >= 0 && relativeY <= rotatedHeight;
 
     // Clamp to ensure cursor stays within visible bounds after rotation
     const clampedX = Math.max(0, Math.min(relativeX, rotatedWidth));
@@ -2212,5 +2227,8 @@
   .stage.stage--loading {
     visibility: hidden;
     opacity: 0;
+  }
+  .stage.stage--hideCursor {
+    cursor: none;
   }
 </style>

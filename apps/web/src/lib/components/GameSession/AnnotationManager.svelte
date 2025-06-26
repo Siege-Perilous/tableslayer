@@ -176,16 +176,21 @@
               placeholder="Untitled"
               oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
             />
-            <ConfirmActionButton action={() => handleAnnotationDelete(annotation.id)} actionButtonText="Confirm delete">
-              {#snippet trigger({ triggerProps })}
-                <IconButton as="div" variant="ghost" {...triggerProps}>
-                  <Icon Icon={IconTrash} />
-                </IconButton>
-              {/snippet}
-              {#snippet actionMessage()}
-                Delete annotation {annotation.name}?
-              {/snippet}
-            </ConfirmActionButton>
+            <div class="annotationManager__deleteButton">
+              <ConfirmActionButton
+                action={() => handleAnnotationDelete(annotation.id)}
+                actionButtonText="Confirm delete"
+              >
+                {#snippet trigger({ triggerProps })}
+                  <IconButton as="div" variant="ghost" {...triggerProps}>
+                    <Icon Icon={IconTrash} />
+                  </IconButton>
+                {/snippet}
+                {#snippet actionMessage()}
+                  Delete annotation {annotation.name}?
+                {/snippet}
+              </ConfirmActionButton>
+            </div>
           </div>
         </button>
       {:else}
@@ -234,11 +239,10 @@
     flex-grow: 1;
     align-content: start;
     overflow-y: auto;
-    padding: 1rem 2rem 2rem 2rem;
+    padding: 2rem;
   }
 
   .annotationManager__listItem {
-    border-radius: 0.25rem;
     padding: 0.5rem;
     transition: border-colo;
     border: solid 1px transparent;
@@ -291,6 +295,10 @@
 
   .annotationManager__colorPreview:hover {
     border-color: var(--fgPrimary);
+  }
+
+  .annotationManager__deleteButton {
+    margin-left: auto;
   }
 
   :global {
