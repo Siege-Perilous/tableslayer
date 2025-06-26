@@ -1,4 +1,4 @@
-import type { StageProps } from '@tableslayer/ui';
+import type { AnnotationLayerData, StageProps } from '@tableslayer/ui';
 import { devError, devLog, devWarn } from './debug';
 import { getPartyDataManager } from './yjs/stores';
 
@@ -271,7 +271,7 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
         ...updatedStageProps.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
         // Remove lineWidth from all layers to prevent rubber banding
-        layers: updatedStageProps.annotations.layers.map((layer) => {
+        layers: updatedStageProps.annotations.layers.map((layer: AnnotationLayerData) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;

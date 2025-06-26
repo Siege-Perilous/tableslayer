@@ -75,7 +75,8 @@
 
   // Helper function to clean stage props before sending to Y.js
   // Removes local-only properties that should not be synchronized
-  const cleanStagePropsForYjs = (props: StageProps): StageProps => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cleanStagePropsForYjs = (props: StageProps): any => {
     return {
       ...props,
       annotations: {
