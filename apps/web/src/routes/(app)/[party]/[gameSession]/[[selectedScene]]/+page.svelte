@@ -230,9 +230,6 @@
   let stageProps: StageProps = $state(
     buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor', data.selectedSceneAnnotations)
   );
-
-  // Add local annotation line width preference
-  stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
 
@@ -345,6 +342,13 @@
     if (sceneId) {
       registerSceneForPropertyUpdates(sceneId);
       // Y.js initialization is now handled in the stageProps rebuild effect to ensure correct timing
+    }
+  });
+
+  // Initialize annotation line width from preferences on client side
+  $effect(() => {
+    if (typeof window !== 'undefined' && stageProps) {
+      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
     }
   });
 
