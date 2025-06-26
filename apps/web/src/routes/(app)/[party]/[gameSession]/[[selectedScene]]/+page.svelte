@@ -470,6 +470,29 @@
     }
   });
 
+  // Handle annotation layer activation/deactivation
+  $effect(() => {
+    if (stageProps.activeLayer === MapLayerType.Annotation) {
+      // Check if there are any annotation layers
+      if (stageProps.annotations.layers.length === 0) {
+        // No annotations exist, create one
+        onAnnotationCreated();
+      } else if (!stageProps.annotations.activeLayer) {
+        // Annotations exist but none are selected, select the first one
+        const firstAnnotation = stageProps.annotations.layers[0];
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
+
+        // Also update the line width to match the selected annotation
+        if (firstAnnotation.lineWidth) {
+          setPreference('annotationLineWidth', firstAnnotation.lineWidth);
+        }
+      }
+    } else if (stageProps.annotations.activeLayer) {
+      // Annotation tool was deactivated, clear the active annotation to prevent drawing
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+    }
+  });
+
   /**
    * KEYBOARD HANDLER
    * KEYBOARD HANDLER
@@ -1165,7 +1188,7 @@
       name: `Annotation ${stageProps.annotations.layers.length + 1}`,
       color: '#FFFFFF',
       opacity: 1.0,
-      visibility: StageMode.DM,
+      visibility: StageMode.Player,
       lineWidth: 50,
       url: null
     };

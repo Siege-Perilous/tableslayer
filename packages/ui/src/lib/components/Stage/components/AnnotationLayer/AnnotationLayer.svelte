@@ -43,11 +43,27 @@
     if (!isActive) {
       lastPos = null;
       drawing = false;
-      if (activeLayer) {
-        activeLayer.revertChanges();
-        // Reset cursor position to avoid ghosting
-        activeLayer.resetCursor();
-      }
+      // Reset cursor for all layers to ensure no ghosting
+      layers.forEach((layer) => {
+        if (layer) {
+          layer.revertChanges();
+          layer.resetCursor();
+        }
+      });
+    }
+  });
+
+  // Also reset cursor when active layer becomes null
+  $effect(() => {
+    if (!props.activeLayer && layers.length > 0) {
+      // No active layer selected, reset all cursors and revert changes
+      lastPos = null; // Reset last position to prevent cursor from appearing
+      layers.forEach((layer) => {
+        if (layer) {
+          layer.revertChanges();
+          layer.resetCursor();
+        }
+      });
     }
   });
 
@@ -83,14 +99,23 @@
   function draw(_: Event, p: THREE.Vector2 | null) {
     // If the mouse is not within the drawing area, hide cursor
     if (!p) {
-      if (activeLayer) {
-        activeLayer.resetCursor();
-      }
+      // Reset cursor for all layers when mouse leaves
+      layers.forEach((layer) => {
+        if (layer) {
+          layer.resetCursor();
+        }
+      });
       return;
     }
 
-    // Only process if we have an active layer
-    if (!activeLayer) {
+    // Only process if we have an active layer and the annotation tool is active
+    if (!activeLayer || !isActive || !props.activeLayer) {
+      // Make sure all cursors are hidden when not active
+      layers.forEach((layer) => {
+        if (layer) {
+          layer.resetCursor();
+        }
+      });
       return;
     }
 

@@ -85,12 +85,12 @@ export function handleKeyCommands(
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
 
-    case 'n':
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
-      break;
-
-    case 'N':
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+    case 'a':
+      if (activeLayer === MapLayerType.Annotation) {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      } else {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+      }
       break;
 
     case 'r':
