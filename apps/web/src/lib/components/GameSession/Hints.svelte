@@ -13,6 +13,11 @@
   {:else if activeLayer === 2}
     Left-click an empty space to add a new marker. <span>Shift + M</span>
     to exit marker mode.
+  {:else if activeLayer === 3}
+    Toggle drawing mode with <span>D</span>
+    . Use
+    <span>mouse wheel</span>
+    to adjust size.
   {/if}
 </div>
 

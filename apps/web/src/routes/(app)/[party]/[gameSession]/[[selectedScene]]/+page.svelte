@@ -487,6 +487,17 @@
     }
   });
 
+  // Handle marker layer activation/deactivation
+  $effect(() => {
+    if (stageProps.activeLayer === MapLayerType.Marker) {
+      // Ensure the marker panel is open
+      if (activeControl !== 'marker') {
+        activeControl = 'marker';
+        markersPane.expand();
+      }
+    }
+  });
+
   /**
    * KEYBOARD HANDLER
    * KEYBOARD HANDLER

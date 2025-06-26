@@ -85,7 +85,7 @@ export function handleKeyCommands(
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
 
-    case 'a':
+    case 'd':
       if (activeLayer === MapLayerType.Annotation) {
         queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       } else {
