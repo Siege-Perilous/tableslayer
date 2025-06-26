@@ -33,6 +33,13 @@
   // Reference to the child layers
   let layers: AnnotationMaterial[] = $state([]);
 
+  // Force reactivity when layers order changes
+  $effect(() => {
+    // This effect will run whenever props.layers changes
+    // Including when the order changes
+    props.layers;
+  });
+
   // Get the currently active layer
   let activeLayer = $derived(
     layers.find((layer) => {
@@ -207,7 +214,12 @@ events to be detected outside of the fog of war layer.
 
 <T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
   {#each props.layers as layer, index (layer.id)}
-    <T.Mesh name={layer.id} visible={isVisible(layer)} {...meshProps}>
+    <T.Mesh
+      name={layer.id}
+      visible={isVisible(layer)}
+      position.z={(props.layers.length - index) * 0.001}
+      {...meshProps}
+    >
       <AnnotationMaterial bind:this={layers[index]} props={layer} {display} lineWidth={props.lineWidth} />
       <T.PlaneGeometry />
     </T.Mesh>
