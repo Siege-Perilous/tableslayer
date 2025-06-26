@@ -80,7 +80,12 @@
       ...props,
       annotations: {
         ...props.annotations,
-        activeLayer: null // activeLayer is local-only, not synchronized
+        activeLayer: null, // activeLayer is local-only, not synchronized
+        // Remove lineWidth from all layers to prevent rubber banding
+        layers: props.annotations.layers.map((layer) => {
+          const { lineWidth, ...layerWithoutLineWidth } = layer;
+          return layerWithoutLineWidth;
+        })
       }
     };
   };
@@ -415,7 +420,16 @@
           annotations: {
             ...incomingStageProps.annotations,
             // Preserve local activeLayer for annotations (should not be shared)
-            activeLayer: stageProps.annotations.activeLayer
+            activeLayer: stageProps.annotations.activeLayer,
+            // Merge layers while preserving local lineWidth values
+            layers: incomingStageProps.annotations.layers.map((incomingLayer) => {
+              const localLayer = stageProps.annotations.layers.find((l) => l.id === incomingLayer.id);
+              return {
+                ...incomingLayer,
+                // Preserve local lineWidth or use default
+                lineWidth: localLayer?.lineWidth || getPreference('annotationLineWidth') || 50
+              };
+            })
           }
         };
 
@@ -1164,8 +1178,8 @@
     const newAnnotation: AnnotationLayerData = {
       id: crypto.randomUUID(),
       name: `Annotation ${stageProps.annotations.layers.length + 1}`,
-      color: '#FF0000',
-      opacity: 0.5,
+      color: '#FFFFFF',
+      opacity: 1.0,
       visibility: StageMode.DM,
       lineWidth: 50,
       url: null
@@ -1348,7 +1362,8 @@
       }
 
       // Calculate new line width (clamped between 1 and 200)
-      const newLineWidth = Math.max(1, Math.min(currentLineWidth - scrollDelta, 200));
+      const rawLineWidth = currentLineWidth - scrollDelta;
+      const newLineWidth = Math.round(Math.max(1, Math.min(rawLineWidth, 200)));
 
       // Update the active annotation's line width
       if (stageProps.annotations.activeLayer) {
