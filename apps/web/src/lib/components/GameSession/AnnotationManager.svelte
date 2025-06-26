@@ -29,7 +29,7 @@
     IconPencil,
     IconEraser
   } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
 
   let {
@@ -68,6 +68,8 @@
 
   const selectAnnotationForEdit = (annotationId: string) => {
     selectedAnnotationId = annotationId;
+    // Also make it the active annotation for drawing
+    setActiveAnnotation(annotationId);
   };
 
   const backToList = () => {
@@ -140,8 +142,27 @@
   };
 
   const setActiveAnnotation = (annotationId: string) => {
-    queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], annotationId, 'control');
+    // Update the line width first for the selected annotation
+    const annotation = stageProps.annotations.layers.find((layer) => layer.id === annotationId);
+    if (annotation) {
+      if (annotation.lineWidth) {
+        lineWidth = annotation.lineWidth;
+        setPreference('annotationLineWidth', annotation.lineWidth);
+      }
+
+      // Update the annotation with the current line width to ensure it's synced
+      updateAnnotation(annotationId, { lineWidth: lineWidth }, false);
+    }
+
+    // Set both properties in the correct order
+    // First set the tool type
     queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+
+    // Then set the specific annotation layer
+    queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], annotationId, 'control');
+
+    // Force the queued updates to be applied immediately
+    flushQueuedPropertyUpdates();
   };
 </script>
 

@@ -73,6 +73,18 @@
     brushSize
   } = $derived(data);
 
+  // Helper function to clean stage props before sending to Y.js
+  // Removes local-only properties that should not be synchronized
+  const cleanStagePropsForYjs = (props: StageProps): StageProps => {
+    return {
+      ...props,
+      annotations: {
+        ...props.annotations,
+        activeLayer: null // activeLayer is local-only, not synchronized
+      }
+    };
+  };
+
   // Helper function to merge markers while protecting ones being moved or edited
   const mergeMarkersWithProtection = (
     localMarkers: Marker[],
@@ -252,6 +264,15 @@
   // Use appropriate pane layout based on device type
   const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
 
+  // Debug logging for initial state
+  $effect(() => {
+    devLog('annotations', 'Initial state check:');
+    devLog('annotations', '- stageProps.activeLayer:', stageProps.activeLayer);
+    devLog('annotations', '- stageProps.annotations.activeLayer:', stageProps.annotations.activeLayer);
+    devLog('annotations', '- stageProps.annotations.layers:', stageProps.annotations.layers);
+    devLog('annotations', '- activeControl:', activeControl);
+  });
+
   // Initialize collapse states from preferences
   $effect(() => {
     if (paneLayout && Array.isArray(paneLayout)) {
@@ -364,6 +385,10 @@
         // Get current local state for comparison
         const currentStagePropsSnapshot = $state.snapshot(stageProps);
 
+        // Log Y.js incoming data
+        devLog('annotations', 'Y.js incoming activeLayer:', incomingStageProps.activeLayer);
+        devLog('annotations', 'Y.js incoming annotations.activeLayer:', incomingStageProps.annotations?.activeLayer);
+
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
           ...incomingStageProps,
@@ -386,6 +411,11 @@
               markersBeingEdited,
               recentlyDeletedMarkers
             )
+          },
+          annotations: {
+            ...incomingStageProps.annotations,
+            // Preserve local activeLayer for annotations (should not be shared)
+            activeLayer: stageProps.annotations.activeLayer
           }
         };
 
@@ -622,13 +652,21 @@
   };
 
   const handleSelectActiveControl = (control: string) => {
+    devLog('annotations', 'handleSelectActiveControl called with:', control, 'current activeControl:', activeControl);
+
     if (control === activeControl) {
       activeControl = 'none';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      // Clear annotation active layer when deselecting
+      if (control === 'annotation') {
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      }
     } else if (control === 'marker') {
       selectedMarkerId = undefined;
       activeControl = 'marker';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
+      // Clear annotation active layer when switching away
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
       markersPane.expand();
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
@@ -638,7 +676,17 @@
     } else {
       activeControl = control;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+      // Clear annotation active layer when switching to fog tool
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     }
+
+    devLog(
+      'annotations',
+      'After handleSelectActiveControl - activeLayer:',
+      stageProps.activeLayer,
+      'activeControl:',
+      activeControl
+    );
   };
 
   // We use these functions often in child components, so we define them here
@@ -698,11 +746,22 @@
 
     // Only rebuild stageProps when scene switches, initial load, or map actually changes
     if (isSceneSwitch || !stageProps || mapLocationChanged) {
+      devLog(
+        'annotations',
+        'Rebuilding stageProps - isSceneSwitch:',
+        isSceneSwitch,
+        'mapLocationChanged:',
+        mapLocationChanged
+      );
+
       // This is a scene switch or initial load - rebuild everything
       // Always use database markers for buildSceneProps as it expects the database format
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations);
+
+      devLog('annotations', 'After rebuild - stageProps.activeLayer:', stageProps.activeLayer);
+      devLog('annotations', 'After rebuild - stageProps.annotations.activeLayer:', stageProps.annotations.activeLayer);
 
       // Apply brush size from cookie if available
       if (brushSize) {
@@ -738,8 +797,20 @@
               offset: { x: 0, y: 0 },
               zoom: 1,
               rotation: 0
+            },
+            annotations: {
+              ...stageProps.annotations,
+              // Reset annotation activeLayer - it's local only
+              activeLayer: null
             }
           };
+
+          devLog('annotations', 'Y.js initialization - sharedStageProps.activeLayer:', sharedStageProps.activeLayer);
+          devLog(
+            'annotations',
+            'Y.js initialization - sharedStageProps.annotations.activeLayer:',
+            sharedStageProps.annotations.activeLayer
+          );
 
           devLog('scene', 'Initializing Y.js scene data:', {
             sceneId: currentSceneId,
@@ -766,7 +837,7 @@
             });
             // Update Y.js with the current stageProps that includes the new markers
             lastOwnYjsUpdateTime = Date.now();
-            partyData.updateSceneStageProps(currentSceneId, stageProps);
+            partyData.updateSceneStageProps(currentSceneId, cleanStagePropsForYjs(stageProps));
           }
         }
       }
@@ -903,7 +974,7 @@
     // Force a manual Y.js sync right away for this critical operation
     if (partyData && selectedScene?.id) {
       lastOwnYjsUpdateTime = Date.now();
-      partyData.updateSceneStageProps(selectedScene.id, stageProps);
+      partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
     }
 
     // Keep the marker protected for longer to handle save completion
@@ -1014,7 +1085,7 @@
       // Force immediate Y.js sync for marker deletion
       if (partyData && selectedScene?.id) {
         lastOwnYjsUpdateTime = Date.now();
-        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+        partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
       }
 
       // Queue property update for database save
@@ -1340,7 +1411,7 @@
           // Immediately sync annotation layers to Y.js for real-time collaboration
           if (partyData && selectedScene?.id) {
             lastOwnYjsUpdateTime = Date.now();
-            partyData.updateSceneStageProps(selectedScene.id, stageProps);
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
           }
 
           // Queue for database save
@@ -1388,7 +1459,7 @@
           // Immediately sync fog URL to Y.js for real-time collaboration
           if (partyData && selectedScene?.id) {
             lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-            partyData.updateSceneStageProps(selectedScene.id, stageProps);
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
           }
 
           // Also queue for database save
@@ -1548,9 +1619,13 @@
           // Make sure Y.js has the scene initialized
           const sceneData = partyData.getSceneData(selectedScene.id);
           if (!sceneData) {
-            partyData.initializeSceneData(selectedScene.id, stagePropsWithAllMarkers, markersSnapshot);
+            partyData.initializeSceneData(
+              selectedScene.id,
+              cleanStagePropsForYjs(stagePropsWithAllMarkers),
+              markersSnapshot
+            );
           } else {
-            partyData.updateSceneStageProps(selectedScene.id, stagePropsWithAllMarkers);
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stagePropsWithAllMarkers));
           }
         }
       }
@@ -1618,7 +1693,15 @@
       // Immediately sync to Y.js for real-time collaboration
       if (partyData && selectedScene?.id) {
         lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+        // Clean local-only properties before sending to Y.js
+        const stagePropsForYjs = {
+          ...stageProps,
+          annotations: {
+            ...stageProps.annotations,
+            activeLayer: null // Don't share active annotation selection
+          }
+        };
+        partyData.updateSceneStageProps(selectedScene.id, stagePropsForYjs);
       }
 
       // Add marker to protection set to prevent Y.js from overwriting during save
@@ -2021,7 +2104,7 @@
         }
       }}
     >
-      {#if activeControl === 'annotation' || stageProps.activeLayer === MapLayerType.Annotation}
+      {#if activeControl === 'annotation'}
         {#key selectedAnnotationId}
           <AnnotationManager
             {stageProps}

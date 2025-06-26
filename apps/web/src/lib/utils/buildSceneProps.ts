@@ -62,7 +62,7 @@ export const buildSceneProps = (
         opacity: annotation.opacity,
         lineWidth: 50, // Default line width, will be overridden by local preferences
         color: annotation.color,
-        url: annotation.url,
+        url: annotation.url ? `https://files.tableslayer.com/${annotation.url}` : null,
         visibility: annotation.visibility as StageMode
       }));
   }

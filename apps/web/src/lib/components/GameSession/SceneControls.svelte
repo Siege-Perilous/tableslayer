@@ -265,7 +265,7 @@
         onclick={() => handleSelectActiveControl('annotation')}
       >
         <Icon Icon={IconPencil} size="1.5rem" />
-        <span class="sceneControls__layerText">Annotate</span>
+        <span class="sceneControls__layerText">Draw</span>
       </button>
     </div>
     {#each sceneControlArray as scene}

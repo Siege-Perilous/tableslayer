@@ -415,7 +415,15 @@ export class PartyDataManager {
       const existingMarkers = sceneMap.get('markers');
 
       if (!existingStageProps && !existingMarkers) {
-        sceneMap.set('stageProps', stageProps);
+        // Clean local-only properties before storing in Y.js
+        const cleanedStageProps = {
+          ...stageProps,
+          annotations: {
+            ...stageProps.annotations,
+            activeLayer: null // activeLayer is local-only, not synchronized
+          }
+        };
+        sceneMap.set('stageProps', cleanedStageProps);
         sceneMap.set('markers', markers);
         sceneMap.set('lastUpdated', Date.now());
         sceneMap.set('localStates', {});
