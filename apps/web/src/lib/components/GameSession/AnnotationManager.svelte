@@ -3,46 +3,32 @@
     Icon,
     type StageProps,
     type AnnotationLayerData,
-    FormControl,
     Input,
-    ColorPickerSwatch,
     ColorPicker,
     Popover,
     Spacer,
     Button,
-    Link,
     ConfirmActionButton,
     IconButton,
     Label,
     Text,
     MapLayerType,
     StageMode,
-    InputSlider,
-    RadioButton
+    InputSlider
   } from '@tableslayer/ui';
-  import {
-    IconTrash,
-    IconArrowBack,
-    IconEye,
-    IconEyeOff,
-    IconPlus,
-    IconPencil,
-    IconEraser
-  } from '@tabler/icons-svelte';
+  import { IconTrash, IconEye, IconEyeOff, IconPlus } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
 
   let {
     stageProps,
     selectedAnnotationId = $bindable(),
-    handleSelectActiveControl,
     onAnnotationDeleted,
     onAnnotationUpdated,
     onAnnotationCreated
   }: {
     stageProps: StageProps;
     selectedAnnotationId: string | undefined;
-    handleSelectActiveControl: (control: string) => void;
     onAnnotationDeleted?: (annotationId: string) => void;
     onAnnotationUpdated?: (annotation: AnnotationLayerData) => void;
     onAnnotationCreated?: () => void;
@@ -200,7 +186,6 @@
                 value={annotation.name || ''}
                 placeholder="Untitled"
                 oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
-                class="annotationManager__nameInput"
               />
               <ConfirmActionButton
                 action={() => handleAnnotationDelete(annotation.id)}
@@ -224,14 +209,8 @@
                 max={1}
                 step={0.1}
                 oninput={(e) => updateAnnotation(annotation.id, { opacity: Number(e.currentTarget.value) })}
-                class="annotationManager__opacitySlider"
               />
-              <Button
-                variant="ghost"
-                size="small"
-                onclick={() => setActiveAnnotation(annotation.id)}
-                class="annotationManager__selectButton"
-              >
+              <Button variant="ghost" size="sm" onclick={() => setActiveAnnotation(annotation.id)}>
                 {stageProps.annotations.activeLayer === annotation.id ? 'Active' : 'Select'}
               </Button>
             </div>
@@ -354,25 +333,21 @@
     border-color: var(--fgPrimary);
   }
 
-  .annotationManager__nameInput {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .annotationManager__opacitySlider {
-    flex: 1;
-    min-width: 0;
-    max-width: 10rem;
-  }
-
-  .annotationManager__selectButton {
-    margin-left: auto;
-    white-space: nowrap;
-  }
-
   :global {
-    .annotationManager__nameInput input {
-      font-size: 0.875rem;
+    .annotationManager__topRow > :global(input) {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .annotationManager__bottomRow > :global(.input-slider) {
+      flex: 1;
+      min-width: 0;
+      max-width: 10rem;
+    }
+
+    .annotationManager__bottomRow > :global(button:last-child) {
+      margin-left: auto;
+      white-space: nowrap;
     }
   }
 </style>

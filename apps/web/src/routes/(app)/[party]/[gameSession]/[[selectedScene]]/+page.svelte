@@ -52,7 +52,7 @@
     setUserChangeCallback
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
-  import { setPreference } from '$lib/utils/gameSessionPreferences';
+  import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -82,7 +82,8 @@
         ...props.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
         // Remove lineWidth from all layers to prevent rubber banding
-        layers: props.annotations.layers.map((layer) => {
+        layers: props.annotations.layers.map((layer: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;
         })
@@ -90,8 +91,8 @@
       fogOfWar: {
         ...props.fogOfWar,
         tool: {
-          ...props.fogOfWar.tool,
-          size: undefined // Remove size to prevent syncing
+          ...props.fogOfWar.tool
+          // size is omitted to prevent syncing
         }
       }
     };
@@ -2104,7 +2105,6 @@
           <AnnotationManager
             {stageProps}
             bind:selectedAnnotationId
-            {handleSelectActiveControl}
             {onAnnotationDeleted}
             {onAnnotationUpdated}
             {onAnnotationCreated}

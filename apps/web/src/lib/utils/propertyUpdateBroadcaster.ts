@@ -105,7 +105,8 @@ export function queuePropertyUpdate(
           ...stageProps.annotations,
           activeLayer: null, // activeLayer is local-only, not synchronized
           // Remove lineWidth from all layers to prevent rubber banding
-          layers: stageProps.annotations.layers.map((layer) => {
+          layers: stageProps.annotations.layers.map((layer: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { lineWidth, ...layerWithoutLineWidth } = layer;
             return layerWithoutLineWidth;
           })
@@ -113,12 +114,12 @@ export function queuePropertyUpdate(
         fogOfWar: {
           ...stageProps.fogOfWar,
           tool: {
-            ...stageProps.fogOfWar.tool,
-            size: undefined // Remove size to prevent syncing
+            ...stageProps.fogOfWar.tool
+            // size is omitted to prevent syncing
           }
         }
       };
-      partyDataManager.updateSceneStageProps(currentSceneId, cleanedStageProps);
+      partyDataManager.updateSceneStageProps(currentSceneId, cleanedStageProps as StageProps);
     } else {
       devWarn('broadcaster', '⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
     }
@@ -270,7 +271,8 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
         ...updatedStageProps.annotations,
         activeLayer: null, // activeLayer is local-only, not synchronized
         // Remove lineWidth from all layers to prevent rubber banding
-        layers: updatedStageProps.annotations.layers.map((layer) => {
+        layers: updatedStageProps.annotations.layers.map((layer: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { lineWidth, ...layerWithoutLineWidth } = layer;
           return layerWithoutLineWidth;
         })
@@ -278,14 +280,14 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
       fogOfWar: {
         ...updatedStageProps.fogOfWar,
         tool: {
-          ...updatedStageProps.fogOfWar.tool,
-          size: undefined // Remove size to prevent syncing
+          ...updatedStageProps.fogOfWar.tool
+          // size is omitted to prevent syncing
         }
       }
     };
 
     // Update scene data via the PartyDataManager method
-    partyDataManager.updateSceneStageProps(sceneId, cleanedStageProps);
+    partyDataManager.updateSceneStageProps(sceneId, cleanedStageProps as StageProps);
 
     devLog('broadcaster', `Y.js property updates applied for scene: ${sceneId}`);
   } catch (error) {
