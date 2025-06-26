@@ -19,9 +19,9 @@
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
-  import { onDestroy } from 'svelte';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
+  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
 
   let {
     stageProps,
@@ -39,18 +39,6 @@
 
   // Line width should be reactive to the global state
   let lineWidth = $derived(stageProps.annotations.lineWidth || 50);
-
-  // Drag and drop state
-  let draggedItem: string | null = $state(null);
-  let draggedOverItem: string | null = $state(null);
-  let touchStartY: number = 0;
-  let dragElement: HTMLElement | null = null;
-  let dragPreviewElement: HTMLElement | null = null;
-
-  // Clean up on destroy
-  onDestroy(() => {
-    cleanupDragPreview();
-  });
 
   const handleAnnotationDelete = async (annotationId: string) => {
     // Remove from local state
@@ -111,9 +99,15 @@
     setPreferenceDebounced('annotationLineWidth', value);
   };
 
+  // Initialize drag and drop composable
+  const dragAndDrop = useDragAndDrop<AnnotationLayerData>({
+    onReorder: reorderAnnotations,
+    getItemId: (item) => item.id
+  });
+
   const setActiveAnnotation = (annotationId: string) => {
     // Don't activate if we're dragging
-    if (draggedItem) return;
+    if (dragAndDrop.draggedItem) return;
 
     // Set both properties in the correct order
     // First set the tool type
@@ -126,180 +120,7 @@
     flushQueuedPropertyUpdates();
   };
 
-  // Clean up drag preview element
-  const cleanupDragPreview = () => {
-    if (dragPreviewElement) {
-      try {
-        document.body.removeChild(dragPreviewElement);
-      } catch {
-        // Element might already be removed
-      }
-      dragPreviewElement = null;
-    }
-  };
-
-  // Apply styles to the drag preview clone
-  const applyDragPreviewStyles = (preview: HTMLElement, original: HTMLElement, event: DragEvent) => {
-    const rect = original.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const offsetY = event.clientY - rect.top;
-
-    Object.assign(preview.style, {
-      width: `${original.offsetWidth}px`,
-      height: `${original.offsetHeight}px`,
-      position: 'fixed',
-      borderColor: 'var(--fg)',
-      backgroundColor: 'var(--bg)',
-      cursor: 'grabbing',
-      zIndex: '1000',
-      pointerEvents: 'none',
-      left: `${event.clientX - offsetX}px`,
-      top: `${event.clientY - offsetY}px`,
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
-    });
-
-    return { offsetX, offsetY };
-  };
-
-  // Drag and drop handlers
-  const handleDragStart = (e: DragEvent, itemId: string) => {
-    draggedItem = itemId;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/html', ''); // Required for Firefox
-
-      // Create an invisible drag image
-      const emptyImg = new Image();
-      emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      e.dataTransfer.setDragImage(emptyImg, 0, 0);
-
-      // Create the custom drag preview
-      const original = e.currentTarget as HTMLElement;
-      const preview = original.cloneNode(true) as HTMLElement;
-      const { offsetX, offsetY } = applyDragPreviewStyles(preview, original, e);
-
-      // Add to DOM
-      document.body.appendChild(preview);
-      dragPreviewElement = preview;
-
-      // Add event listener to move the preview with the cursor
-      const handleDragMove = (moveEvent: DragEvent) => {
-        if (dragPreviewElement) {
-          dragPreviewElement.style.left = moveEvent.clientX - offsetX + 'px';
-          dragPreviewElement.style.top = moveEvent.clientY - offsetY + 'px';
-        }
-      };
-
-      document.addEventListener('dragover', handleDragMove);
-
-      // Store the cleanup function for later
-      (e.currentTarget as HTMLElement & { _dragMoveHandler?: (e: DragEvent) => void })._dragMoveHandler =
-        handleDragMove;
-    }
-  };
-
-  const handleDragOver = (e: DragEvent, itemId: string) => {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-    if (draggedItem && draggedItem !== itemId) {
-      draggedOverItem = itemId;
-    }
-  };
-
-  const handleDragLeave = () => {
-    draggedOverItem = null;
-  };
-
-  const handleDrop = (e: DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (draggedItem && draggedItem !== targetId) {
-      reorderAnnotations(draggedItem, targetId);
-    }
-    draggedItem = null;
-    draggedOverItem = null;
-  };
-
-  const handleDragEnd = (e: DragEvent) => {
-    // Clean up the drag preview
-    cleanupDragPreview();
-
-    // Remove the drag move handler
-    const handler = (e.currentTarget as HTMLElement & { _dragMoveHandler?: (e: DragEvent) => void })?._dragMoveHandler;
-    if (handler) {
-      document.removeEventListener('dragover', handler);
-      delete (e.currentTarget as HTMLElement & { _dragMoveHandler?: (e: DragEvent) => void })._dragMoveHandler;
-    }
-
-    draggedItem = null;
-    draggedOverItem = null;
-  };
-
-  // Touch handlers for mobile
-  const handleTouchStart = (e: TouchEvent, itemId: string, element: HTMLElement) => {
-    const touch = e.touches[0];
-    touchStartY = touch.clientY;
-    draggedItem = itemId;
-    dragElement = element;
-
-    // Add touch move listener to track dragging
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd);
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!draggedItem || !dragElement) return;
-
-    e.preventDefault(); // Prevent scrolling while dragging
-
-    const touch = e.touches[0];
-    const currentY = touch.clientY;
-    const deltaY = currentY - touchStartY;
-
-    // Visual feedback - translate the element
-    dragElement.style.transform = `translateY(${deltaY}px)`;
-    dragElement.style.opacity = '0.8';
-    dragElement.style.zIndex = '1000';
-
-    // Find which item we're over
-    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    const listItem = elementBelow?.closest('.annotationManager__listItem');
-
-    if (listItem && listItem !== dragElement) {
-      const targetId = listItem.getAttribute('data-annotation-id');
-      if (targetId && targetId !== draggedItem) {
-        draggedOverItem = targetId;
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!draggedItem || !dragElement) return;
-
-    // Reset visual state
-    dragElement.style.transform = '';
-    dragElement.style.opacity = '';
-    dragElement.style.zIndex = '';
-
-    // Perform the reorder if we have a target
-    if (draggedOverItem && draggedItem !== draggedOverItem) {
-      reorderAnnotations(draggedItem, draggedOverItem);
-    }
-
-    // Clean up
-    dragElement.removeEventListener('touchmove', handleTouchMove);
-    dragElement.removeEventListener('touchend', handleTouchEnd);
-
-    draggedItem = null;
-    draggedOverItem = null;
-    dragElement = null;
-
-    // Also clean up any drag preview that might exist
-    cleanupDragPreview();
-  };
-
-  const reorderAnnotations = (fromId: string, toId: string) => {
+  function reorderAnnotations(fromId: string, toId: string) {
     const layers = [...stageProps.annotations.layers];
     const fromIndex = layers.findIndex((l) => l.id === fromId);
     const toIndex = layers.findIndex((l) => l.id === toId);
@@ -319,7 +140,7 @@
     if (onAnnotationUpdated) {
       layers.forEach((layer) => onAnnotationUpdated(layer));
     }
-  };
+  }
 </script>
 
 <div class="annotationManager">
@@ -350,16 +171,16 @@
           animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
           class="annotationManager__listItem"
           class:annotationManager__listItem--active={stageProps.annotations.activeLayer === annotation.id}
-          class:annotationManager__listItem--dragging={draggedItem === annotation.id}
-          class:annotationManager__listItem--dragOver={draggedOverItem === annotation.id}
-          data-annotation-id={annotation.id}
+          class:annotationManager__listItem--dragging={dragAndDrop.draggedItem === annotation.id}
+          class:annotationManager__listItem--dragOver={dragAndDrop.draggedOverItem === annotation.id}
+          data-drag-id={annotation.id}
           draggable="true"
-          ondragstart={(e) => handleDragStart(e, annotation.id)}
-          ondragover={(e) => handleDragOver(e, annotation.id)}
-          ondragleave={handleDragLeave}
-          ondrop={(e) => handleDrop(e, annotation.id)}
-          ondragend={(e) => handleDragEnd(e)}
-          ontouchstart={(e) => handleTouchStart(e, annotation.id, e.currentTarget)}
+          ondragstart={(e) => dragAndDrop.handleDragStart(e, annotation.id)}
+          ondragover={(e) => dragAndDrop.handleDragOver(e, annotation.id)}
+          ondragleave={dragAndDrop.handleDragLeave}
+          ondrop={(e) => dragAndDrop.handleDrop(e, annotation.id)}
+          ondragend={(e) => dragAndDrop.handleDragEnd(e)}
+          ontouchstart={(e) => dragAndDrop.handleTouchStart(e, annotation.id, e.currentTarget)}
           onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
