@@ -76,6 +76,31 @@ export const useUploadSceneThumbnailMutation = () => {
   });
 };
 
+// Uploads annotation layer to R2, does not create a user file entry because they are throwaway
+export const useUploadAnnotationFromBlobMutation = () => {
+  return mutationFactory<
+    { blob: Blob; sceneId: string; layerId: string; currentUrl?: string | null },
+    { location: string },
+    Error
+  >({
+    mutationKey: ['uploadAnnotation'],
+    mutationFn: async ({ blob, sceneId, layerId, currentUrl }) => {
+      const basePath = `annotations/${sceneId}/${layerId}.png`;
+      const contentType = 'image/png';
+
+      // Upload to base path (overwrites existing file)
+      await uploadBlobToR2(blob, basePath, contentType);
+
+      // Return versioned URL
+      const versionedUrl = incrementUrlVersion(currentUrl, basePath);
+      return { location: versionedUrl };
+    },
+    onSuccess: () => {
+      return;
+    }
+  });
+};
+
 // Uploads a file to R2 and creates a user file entry
 export const useUploadFileMutation = () => {
   return mutationFactory<

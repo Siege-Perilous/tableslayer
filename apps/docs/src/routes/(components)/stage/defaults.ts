@@ -18,7 +18,8 @@ export const StageDefaultProps: StageProps = {
   backgroundColor: '#404040',
   annotations: {
     layers: [],
-    activeLayer: null
+    activeLayer: null,
+    lineWidth: 50
   },
   debug: {
     enableStats: false,

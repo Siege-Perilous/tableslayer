@@ -1,5 +1,5 @@
 import { type StageProps, MapLayerType } from '@tableslayer/ui';
-import { setPreference } from './gameSessionPreferences';
+import { setPreferenceDebounced } from './gameSessionPreferences';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
@@ -24,7 +24,18 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
     const newFogSize = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], newFogSize, 'control');
-    // Save brush size to cookie
-    setPreference('brushSize', newFogSize);
+    // Save brush size to cookie with debouncing
+    setPreferenceDebounced('brushSize', newFogSize);
+  } else if (stageProps.activeLayer === MapLayerType.Annotation) {
+    // Handle annotation line width adjustment
+    const currentLineWidth = stageProps.annotations.lineWidth || 50;
+    const lineWidthDelta = scrollDelta * 200; // Scale to make it more responsive
+    const newLineWidth = Math.round(Math.max(1, Math.min(currentLineWidth - lineWidthDelta, 200)));
+
+    // Update annotation line width locally
+    queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], newLineWidth, 'control');
+
+    // Save preference with debouncing
+    setPreferenceDebounced('annotationLineWidth', newLineWidth);
   }
 };

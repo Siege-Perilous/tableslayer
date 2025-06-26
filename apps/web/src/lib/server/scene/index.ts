@@ -6,43 +6,80 @@ import { copySceneFile, getFile, transformImage, uploadFileFromInput, type Thumb
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
-  // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
-  await db
-    .update(sceneTable)
-    .set({ order: sql`${sceneTable.order} + 10000` })
-    .where(eq(sceneTable.gameSessionId, gameSessionId));
+  try {
+    // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
+    await db
+      .update(sceneTable)
+      .set({ order: sql`${sceneTable.order} + 10000` })
+      .where(eq(sceneTable.gameSessionId, gameSessionId));
 
-  // Step 2: Get all scenes for this session (now with high order numbers)
-  const scenes = await db
-    .select({ id: sceneTable.id, order: sceneTable.order })
-    .from(sceneTable)
-    .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order));
+    // Step 2: Get all scenes for this session (now with high order numbers)
+    const scenes = await db
+      .select({ id: sceneTable.id, order: sceneTable.order })
+      .from(sceneTable)
+      .where(eq(sceneTable.gameSessionId, gameSessionId))
+      .orderBy(asc(sceneTable.order));
 
-  // Find the original position (1-based index) of the scene being moved
-  const movedSceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
-  if (movedSceneIndex === -1) return; // Scene not found
+    // Find the original position (1-based index) of the scene being moved
+    const movedSceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
+    if (movedSceneIndex === -1) {
+      // If scene not found, restore original order numbers
+      for (let i = 0; i < scenes.length; i++) {
+        await db
+          .update(sceneTable)
+          .set({ order: i + 1 })
+          .where(eq(sceneTable.id, scenes[i].id));
+      }
+      return;
+    }
 
-  const originalPosition = movedSceneIndex + 1; // Convert to 1-based
+    const originalPosition = movedSceneIndex + 1; // Convert to 1-based
 
-  // No change in position
-  if (originalPosition === newPosition) return;
+    // No change in position
+    if (originalPosition === newPosition) {
+      // Restore original order numbers
+      for (let i = 0; i < scenes.length; i++) {
+        await db
+          .update(sceneTable)
+          .set({ order: i + 1 })
+          .where(eq(sceneTable.id, scenes[i].id));
+      }
+      return;
+    }
 
-  // Step 3: Create a new ordering by removing the scene and then inserting it at the new position
+    // Step 3: Create a new ordering by removing the scene and then inserting it at the new position
 
-  // First, create a new array without the moved scene
-  const newOrdering = scenes.filter((scene) => scene.id !== sceneId);
+    // First, create a new array without the moved scene
+    const newOrdering = scenes.filter((scene) => scene.id !== sceneId);
 
-  // Then, insert the moved scene at the correct target index (using 0-based index for array insertion)
-  const targetIndex = Math.min(Math.max(newPosition - 1, 0), newOrdering.length);
-  newOrdering.splice(targetIndex, 0, scenes[movedSceneIndex]);
+    // Then, insert the moved scene at the correct target index (using 0-based index for array insertion)
+    const targetIndex = Math.min(Math.max(newPosition - 1, 0), newOrdering.length);
+    newOrdering.splice(targetIndex, 0, scenes[movedSceneIndex]);
 
-  // Step 4: Update all scenes with their new consecutive order numbers
-  for (let i = 0; i < newOrdering.length; i++) {
-    const scene = newOrdering[i];
-    const newOrder = i + 1; // 1-based ordering
+    // Step 4: Update all scenes with their new consecutive order numbers
+    for (let i = 0; i < newOrdering.length; i++) {
+      const scene = newOrdering[i];
+      const newOrder = i + 1; // 1-based ordering
 
-    await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scene.id));
+      await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scene.id));
+    }
+  } catch (error) {
+    // If any error occurs, try to restore original order
+    const scenes = await db
+      .select({ id: sceneTable.id })
+      .from(sceneTable)
+      .where(eq(sceneTable.gameSessionId, gameSessionId))
+      .orderBy(asc(sceneTable.order));
+
+    // Reset to simple consecutive ordering
+    for (let i = 0; i < scenes.length; i++) {
+      await db
+        .update(sceneTable)
+        .set({ order: i + 1 })
+        .where(eq(sceneTable.id, scenes[i].id));
+    }
+
+    throw error;
   }
 };
 
@@ -72,6 +109,20 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
 
   if (!scenes || scenes.length === 0) {
     return [];
+  }
+
+  // Check if any scene has an order > 1000 (indicating they got stuck with high numbers)
+  const needsReordering = scenes.some((scene) => scene.order > 1000);
+
+  if (needsReordering) {
+    // Fix the ordering by resetting to consecutive numbers
+    for (let i = 0; i < scenes.length; i++) {
+      await db
+        .update(sceneTable)
+        .set({ order: i + 1 })
+        .where(eq(sceneTable.id, scenes[i].id));
+      scenes[i].order = i + 1; // Update local copy too
+    }
   }
 
   const scenesWithThumbs: (SelectScene | (SelectScene & Thumb))[] = [];

@@ -1,5 +1,6 @@
 export * from './buildSceneProps';
 export * from './colors';
+export * from './convertStagePropsToAnnotationData';
 export * from './convertStagePropsToMarkerData';
 export * from './convertStagePropsToSceneData';
 export * from './createRandomNames';

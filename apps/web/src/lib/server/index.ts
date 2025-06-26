@@ -1,3 +1,4 @@
+export * from './annotations';
 export * from './auth';
 export * from './email';
 export * from './errors';

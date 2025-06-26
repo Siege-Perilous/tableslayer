@@ -1,3 +1,4 @@
+export { default as AnnotationManager } from './AnnotationManager.svelte';
 export { default as CreateGameSession } from './CreateGameSession.svelte';
 export { default as EdgeControls } from './EdgeControls.svelte';
 export { default as EffectsControls } from './EffectsControls.svelte';

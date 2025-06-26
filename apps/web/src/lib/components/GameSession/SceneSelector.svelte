@@ -29,9 +29,9 @@
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { navigating } from '$app/state';
-  import { onDestroy } from 'svelte';
   import { fly } from 'svelte/transition';
   import { usePartyData } from '$lib/utils/yjs/stores';
+  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
 
   let {
     scenes,
@@ -64,14 +64,6 @@
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
 
-  // Drag and drop states
-  let draggedItem = $state<number | null>(null);
-  let dragOverItem = $state<number | null>(null);
-  let isDragging = $state(false);
-
-  // Custom drag preview element reference
-  let dragPreviewElement: HTMLElement | null = null;
-
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
   const deleteScene = useDeleteSceneMutation();
@@ -90,27 +82,22 @@
     return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
   };
 
-  const cleanupDragPreview = () => {
-    if (dragPreviewElement) {
-      try {
-        document.body.removeChild(dragPreviewElement);
-      } catch {
-        // Element might already be removed
-        devLog('scene', 'Element already removed from DOM');
-      }
-      dragPreviewElement = null;
-    }
-  };
-
-  $effect(() => {
-    // Cleanup drag preview on unmount
-    if (navigating || formIsLoading) {
-      return cleanupDragPreview;
+  // Initialize drag and drop composable
+  const dragAndDrop = useDragAndDrop({
+    onReorder: handleReorderScenes,
+    getItemId: (index: number) => index.toString(),
+    isDisabled: (itemId: string) => {
+      const index = parseInt(itemId);
+      const scene = orderedScenes[index];
+      return scene ? isDragDisabled(scene.id) : false;
     }
   });
 
-  onDestroy(() => {
-    cleanupDragPreview();
+  // Cleanup drag preview on navigation or form loading
+  $effect(() => {
+    if (navigating.to || formIsLoading) {
+      dragAndDrop.cleanupDragPreview();
+    }
   });
 
   const handleCreateScene = async (order: number) => {
@@ -322,25 +309,12 @@
     });
   };
 
-  // Drag and drop handlers
-  const handleDragStart = (e: DragEvent, index: number, sceneId: string) => {
-    // If dragging is disabled for this scene, prevent the drag operation
-    if (isDragDisabled(sceneId)) {
-      e.preventDefault();
-      return;
-    }
+  // Handle scene reordering
+  async function handleReorderScenes(fromId: string, toId: string) {
+    const draggedItem = parseInt(fromId);
+    const dragOverItem = parseInt(toId);
 
-    draggedItem = index;
-    isDragging = true;
-  };
-
-  const handleDragOver = (e: DragEvent, index: number) => {
-    e.preventDefault();
-    dragOverItem = index;
-  };
-
-  const handleDragEnd = async () => {
-    isDragging = false;
+    if (draggedItem === dragOverItem) return;
 
     // Set the flag to prevent context menu from opening
     justFinishedDragging = true;
@@ -349,18 +323,6 @@
     setTimeout(() => {
       justFinishedDragging = false;
     }, 300); // Short delay to ensure context menu event is blocked
-
-    // Remove the drag preview element
-    if (dragPreviewElement) {
-      document.body.removeChild(dragPreviewElement);
-      dragPreviewElement = null;
-    }
-
-    if (draggedItem === null || dragOverItem === null || draggedItem === dragOverItem) {
-      draggedItem = null;
-      dragOverItem = null;
-      return;
-    }
 
     // Get the scene that was dragged and the target order
     const draggedScene = scenes[draggedItem];
@@ -401,25 +363,31 @@
             newOrder
           }),
         formLoadingState: (loading) => (formIsLoading = loading),
-        onSuccess: () => {
-          // Update scene order in Y.js instead of invalidateAll()
-          if (partyData) {
-            partyData.reorderScenes(
-              updatedScenes.map((scene) => ({
-                id: scene.id,
-                name: scene.name,
-                order: scene.order,
-                mapLocation: scene.mapLocation || undefined,
-                mapThumbLocation: scene.mapThumbLocation || undefined,
-                gameSessionId: scene.gameSessionId,
-                thumb: hasThumb(scene)
-                  ? {
-                      resizedUrl: scene.thumb.resizedUrl,
-                      originalUrl: scene.thumb.url
-                    }
-                  : undefined
-              }))
-            );
+        onSuccess: (response) => {
+          // Update local state with server-confirmed order
+          if (response?.scenes) {
+            // Sort by order to ensure correct display
+            orderedScenes = [...response.scenes].sort((a, b) => a.order - b.order);
+
+            // Update scene order in Y.js with server response
+            if (partyData) {
+              partyData.reorderScenes(
+                response.scenes.map((scene) => ({
+                  id: scene.id,
+                  name: scene.name,
+                  order: scene.order,
+                  mapLocation: scene.mapLocation || undefined,
+                  mapThumbLocation: scene.mapThumbLocation || undefined,
+                  gameSessionId: scene.gameSessionId,
+                  thumb: hasThumb(scene)
+                    ? {
+                        resizedUrl: scene.thumb.resizedUrl,
+                        originalUrl: scene.thumb.url
+                      }
+                    : undefined
+                }))
+              );
+            }
           }
         },
         toastMessages: {
@@ -428,28 +396,21 @@
         }
       });
 
-      // Reset drag states after success
-      draggedItem = null;
-      dragOverItem = null;
-
       // Y.js handles sync automatically - no need for invalidateAll()
     } catch (error) {
       // On failure, revert to original order
       devError('scene', 'Error updating scene order:', error);
+      // Revert the visual order
+      orderedScenes = [...scenes];
       // Y.js will automatically revert if the server operation failed
     } finally {
       formIsLoading = false;
       // Reset the flag after a small delay to ensure navigation effect has run
       setTimeout(() => {
         isLocallyReordering = false;
-        // Also ensure orderedScenes is synced after the operation completes
-        // This prevents any lingering visual inconsistencies
-        if (!isDragging && draggedItem === null) {
-          orderedScenes = [...scenes];
-        }
       }, 500);
     }
-  };
+  }
 
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
@@ -487,32 +448,10 @@
     }
   };
 
-  const applyDragPreviewStyles = (preview: HTMLElement, original: HTMLElement, event: DragEvent) => {
-    const rect = original.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const offsetY = event.clientY - rect.top;
-
-    Object.assign(preview.style, {
-      width: `${original.offsetWidth}px`,
-      height: `${original.offsetHeight}px`,
-      position: 'fixed',
-      transition: 'none',
-      borderColor: 'var(--fg)',
-      backgroundColor: 'var(--bg)',
-      cursor: 'grabbing',
-      zIndex: '10',
-      pointerEvents: 'none',
-      left: `${event.clientX - offsetX}px`,
-      top: `${event.clientY - offsetY}px`
-    });
-
-    return { offsetX, offsetY };
-  };
-
   // Keep orderedScenes in sync with scenes prop, but not during drag operations
   $effect(() => {
     // Skip updating if we're currently dragging or have just finished dragging
-    if (isDragging || draggedItem !== null || justFinishedDragging) {
+    if (dragAndDrop.isDragging || dragAndDrop.draggedItem !== null || justFinishedDragging) {
       return;
     }
 
@@ -560,8 +499,8 @@
           'scene',
           scene.order === selectedSceneNumber && 'scene--isSelected',
           sceneBeingDeleted === scene.id && 'scene--isLoading',
-          isDragging && draggedItem === index && 'scene--dragging',
-          isDragging && dragOverItem === index && 'scene--dropTarget',
+          dragAndDrop.isDragging && dragAndDrop.draggedItem === index.toString() && 'scene--dragging',
+          dragAndDrop.isDragging && dragAndDrop.draggedOverItem === index.toString() && 'scene--dropTarget',
           isDragDisabled(scene.id) && 'scene--no-drag'
         ]}
         style:background-image={scene.mapThumbLocation
@@ -570,38 +509,17 @@
             ? `url('${generateSmallThumbnailUrl(scene.mapLocation)}')`
             : 'inherit'}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
+        data-drag-id={index.toString()}
         draggable={!isDragDisabled(scene.id)}
-        ondragstart={(e) => {
-          if (formIsLoading || isDragDisabled(scene.id)) {
-            e.preventDefault();
-            return;
-          }
-          // Create an invisible drag image (1x1 transparent pixel)
-          if (e.dataTransfer) {
-            const emptyImg = new Image();
-            emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-            e.dataTransfer.setDragImage(emptyImg, 0, 0);
-
-            const original = e.currentTarget as HTMLElement;
-            const preview = original.cloneNode(true) as HTMLElement;
-            const { offsetX, offsetY } = applyDragPreviewStyles(preview, original, e);
-
-            // Add to DOM
-            document.body.appendChild(preview);
-            dragPreviewElement = preview;
-
-            // Add event listener to move the preview with the cursor
-            document.addEventListener('dragover', (moveEvent) => {
-              if (dragPreviewElement) {
-                dragPreviewElement.style.left = moveEvent.clientX - offsetX + 'px';
-                dragPreviewElement.style.top = moveEvent.clientY - offsetY + 'px';
-              }
-            });
-          }
-          handleDragStart(e, index, scene.id);
-        }}
-        ondragover={(e) => handleDragOver(e, index)}
-        ondragend={handleDragEnd}
+        ondragstart={(e) =>
+          dragAndDrop.handleDragStart(e, index.toString(), {
+            transition: 'none',
+            zIndex: '10'
+          })}
+        ondragover={(e) => dragAndDrop.handleDragOver(e, index.toString())}
+        ondragleave={dragAndDrop.handleDragLeave}
+        ondrop={(e) => dragAndDrop.handleDrop(e, index.toString())}
+        ondragend={dragAndDrop.handleDragEnd}
       >
         {#if isSceneBeingRenamed(scene.id)}
           <div class="scene__rename">
@@ -627,24 +545,8 @@
           class="scene__link"
           onclick={(e) => {
             // Only navigate if we're not dragging (prevent link activation during drag)
-            if (isDragging) {
+            if (dragAndDrop.isDragging) {
               e.preventDefault();
-            }
-          }}
-          onpointerdown={(e) => {
-            // Mark the target anchor to prevent default behavior on mobile
-            e.currentTarget.setAttribute('data-dragging', 'false');
-          }}
-          onpointermove={(e) => {
-            // If pointer moves, we're likely dragging
-            e.currentTarget.setAttribute('data-dragging', 'true');
-          }}
-          onpointerup={(e) => {
-            // On pointer up, check if we were dragging
-            const wasDragging = e.currentTarget.getAttribute('data-dragging') === 'true';
-            if (wasDragging) {
-              e.preventDefault();
-              e.currentTarget.removeAttribute('data-dragging');
             }
           }}
         >

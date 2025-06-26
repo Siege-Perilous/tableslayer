@@ -12,7 +12,7 @@
   const shortcuts = $derived([
     { label: 'Brush size', shortcut: 'Mouse wheel' },
     { label: 'Erase brush', shortcut: 'E' },
-    { label: 'Add brush', shortcut: 'Shoft + E' },
+    { label: 'Add brush', shortcut: 'Shift + E' },
     { divider: true },
     { label: 'Erase rectangle', shortcut: 'R' },
     { label: 'Add rectangle', shortcut: 'Shift + R' },
@@ -24,6 +24,8 @@
     { divider: true },
     { label: 'Unlock markers', shortcut: 'M' },
     { label: 'Lock markers', shortcut: 'Shift + M' },
+    { divider: true },
+    { label: 'Toggle drawing', shortcut: 'D' },
     { divider: true },
     { label: 'Scale map', shortcut: hasTouchSupport ? 'Three finger pinch' : 'Shift + Mouse wheel' },
     { label: 'Pan map', shortcut: hasTouchSupport ? 'Three finger drag' : 'Shift + Mouse drag' },

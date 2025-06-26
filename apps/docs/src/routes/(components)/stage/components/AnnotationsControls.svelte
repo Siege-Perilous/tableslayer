@@ -21,8 +21,7 @@
       color: randomColor,
       url: '',
       visibility: StageMode.DM,
-      opacity: 1,
-      lineWidth: 10
+      opacity: 1
     };
     props.annotations.layers = [...props.annotations.layers, newLayer];
     props.annotations.activeLayer = newLayer.id;
@@ -56,13 +55,13 @@
 </script>
 
 <Folder title="Annotations" expanded={false}>
+  <Slider bind:value={props.annotations.lineWidth} label="Line Width" min={1} max={200} step={1} />
   <Folder title="Layers" expanded={true}>
     {#each props.annotations.layers as layer}
       <Folder title={layer.id + (layer.id === props.annotations.activeLayer ? ' (Active)' : '')} expanded={false}>
         <Text bind:value={layer.id} label="Id" disabled={true} />
         <Text bind:value={layer.name} label="Name" />
         <Slider bind:value={layer.opacity} label="Opacity" min={0} max={1} step={0.01} />
-        <Slider bind:value={layer.lineWidth} label="Line Width" min={1} max={100} step={1} />
         <Color bind:value={layer.color} label="Color" />
         <Text bind:value={layer.url} label="URL" />
         <List bind:value={layer.visibility} label="Visibility" options={visibilityOptions} />

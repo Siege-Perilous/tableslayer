@@ -85,6 +85,14 @@ export function handleKeyCommands(
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       break;
 
+    case 'd':
+      if (activeLayer === MapLayerType.Annotation) {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      } else {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+      }
+      break;
+
     case 'r':
       if (
         activeLayer === MapLayerType.FogOfWar &&

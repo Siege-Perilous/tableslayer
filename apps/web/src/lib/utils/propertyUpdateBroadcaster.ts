@@ -34,7 +34,10 @@ const LOCAL_ONLY_PROPERTIES = new Set([
   'scene.offset.x',
   'scene.offset.y',
   'scene.rotation', // Scene rotation and offset should be local only, but zoom should sync
-  'activeLayer' // Active layer should be local per editor (fog tools, etc.)
+  'activeLayer', // Active layer should be local per editor (fog tools, etc.)
+  'annotations.activeLayer', // Active annotation layer should be local per editor
+  'annotations.lineWidth', // Annotation line width should be local per editor
+  'fogOfWar.tool.size' // Fog of war brush size should be local per editor
 ]);
 
 // Check if a property path should be local-only
@@ -59,7 +62,7 @@ export function queuePropertyUpdate(
 ) {
   // Skip Y.js sync for local-only properties but still apply them locally
   if (isLocalOnlyProperty(propertyPath)) {
-    devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
+    // devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
     applyUpdate(stageProps, propertyPath, value);
     // Don't trigger auto-save for local-only properties
     return;
@@ -96,7 +99,23 @@ export function queuePropertyUpdate(
     if (currentSceneData) {
       // Update Y.js immediately with current stageProps
       devLog('broadcaster', '🚀 Calling updateSceneStageProps with immediate sync');
-      partyDataManager.updateSceneStageProps(currentSceneId, stageProps);
+      // Clean local-only properties before sending to Y.js
+      const cleanedStageProps = {
+        ...stageProps,
+        annotations: {
+          ...stageProps.annotations,
+          activeLayer: null, // activeLayer is local-only, not synchronized
+          lineWidth: undefined // lineWidth is local-only, not synchronized
+        },
+        fogOfWar: {
+          ...stageProps.fogOfWar,
+          tool: {
+            ...stageProps.fogOfWar.tool
+            // size is omitted to prevent syncing
+          }
+        }
+      };
+      partyDataManager.updateSceneStageProps(currentSceneId, cleanedStageProps as StageProps);
     } else {
       devWarn('broadcaster', '⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
     }
@@ -241,8 +260,25 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
       applyUpdate(updatedStageProps, path, value);
     });
 
+    // Clean local-only properties before sending to Y.js
+    const cleanedStageProps = {
+      ...updatedStageProps,
+      annotations: {
+        ...updatedStageProps.annotations,
+        activeLayer: null, // activeLayer is local-only, not synchronized
+        lineWidth: undefined // lineWidth is local-only, not synchronized
+      },
+      fogOfWar: {
+        ...updatedStageProps.fogOfWar,
+        tool: {
+          ...updatedStageProps.fogOfWar.tool
+          // size is omitted to prevent syncing
+        }
+      }
+    };
+
     // Update scene data via the PartyDataManager method
-    partyDataManager.updateSceneStageProps(sceneId, updatedStageProps);
+    partyDataManager.updateSceneStageProps(sceneId, cleanedStageProps as StageProps);
 
     devLog('broadcaster', `Y.js property updates applied for scene: ${sceneId}`);
   } catch (error) {

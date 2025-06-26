@@ -153,8 +153,6 @@ export class PartyDataManager {
 
     // Subscribe to awareness updates for cursor tracking
     this.gameSessionProvider.awareness.on('change', () => {
-      // Cursor awareness logging commented out - too noisy
-      // devLog('yjs', `[${this.clientId}] Awareness changed, cursor count:`, this.getCursors());
       this.notifySubscribers();
     });
 
@@ -196,8 +194,6 @@ export class PartyDataManager {
 
     if (this.gameSessionProvider.awareness) {
       const allStates = this.gameSessionProvider.awareness.getStates();
-      // Cursor state logging commented out - too noisy
-      // devLog('yjs', `[${this.clientId}] Getting cursors, total awareness states:`, allStates.size);
 
       this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
         if (state.cursor) {
@@ -209,16 +205,11 @@ export class PartyDataManager {
               ...state.cursor,
               clientId: clientId
             };
-            // Detailed cursor logging commented out - too noisy
-            // devLog('yjs', `[${this.clientId}] Found cursor from client ${clientId}:`, state.cursor.userId);
-          } else {
-            // devLog('yjs', `[${this.clientId}] Skipping own cursor from client ${clientId}`);
           }
         }
       });
     }
 
-    // devLog('yjs', `[${this.clientId}] Total cursors found:`, Object.keys(cursors).length);
     return cursors;
   }
 
@@ -415,7 +406,23 @@ export class PartyDataManager {
       const existingMarkers = sceneMap.get('markers');
 
       if (!existingStageProps && !existingMarkers) {
-        sceneMap.set('stageProps', stageProps);
+        // Clean local-only properties before storing in Y.js
+        const cleanedStageProps = {
+          ...stageProps,
+          annotations: {
+            ...stageProps.annotations,
+            activeLayer: null, // activeLayer is local-only, not synchronized
+            lineWidth: undefined // lineWidth is local-only, not synchronized
+          },
+          fogOfWar: {
+            ...stageProps.fogOfWar,
+            tool: {
+              ...stageProps.fogOfWar.tool,
+              size: undefined // Remove size to prevent syncing
+            }
+          }
+        };
+        sceneMap.set('stageProps', cleanedStageProps);
         sceneMap.set('markers', markers);
         sceneMap.set('lastUpdated', Date.now());
         sceneMap.set('localStates', {});

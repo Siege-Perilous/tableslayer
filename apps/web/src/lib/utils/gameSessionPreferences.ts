@@ -3,6 +3,9 @@
  * Handles brush size and pane layouts
  */
 
+// Debounce timers for each preference key
+const debounceTimers: Partial<Record<keyof GameSessionPreferences, ReturnType<typeof setTimeout>>> = {};
+
 export interface PaneConfig {
   size: number;
   isCollapsed?: boolean;
@@ -10,6 +13,7 @@ export interface PaneConfig {
 
 export interface GameSessionPreferences {
   brushSize?: number;
+  annotationLineWidth?: number;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
 }
@@ -31,6 +35,11 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     cookieName: 'tableslayer:brushSize',
     defaultValue: 75, // Match the default in buildSceneProps
     validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
+  },
+  annotationLineWidth: {
+    cookieName: 'tableslayer:annotationLineWidth',
+    defaultValue: 50,
+    validate: (value): value is number => typeof value === 'number' && value >= 1 && value <= 200
   },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',
@@ -204,4 +213,26 @@ export function clearAllPreferences(): void {
   for (const key in PREFERENCE_CONFIGS) {
     clearPreference(key as keyof GameSessionPreferences);
   }
+}
+
+/**
+ * Set a preference value in cookies with debouncing (client-side)
+ * This helps prevent performance issues from rapid updates (e.g., mousewheel events)
+ * @param delay - Debounce delay in milliseconds (default: 300ms)
+ */
+export function setPreferenceDebounced<K extends keyof GameSessionPreferences>(
+  key: K,
+  value: GameSessionPreferences[K],
+  delay: number = 300
+): void {
+  // Clear any existing timer for this key
+  if (debounceTimers[key]) {
+    clearTimeout(debounceTimers[key]);
+  }
+
+  // Set a new timer
+  debounceTimers[key] = setTimeout(() => {
+    setPreference(key, value);
+    delete debounceTimers[key];
+  }, delay);
 }
