@@ -544,12 +544,8 @@
    * - Initialize the stage
    * - Send initial broadcast to the WebSocket
    */
-  // Marker updates now handled via Y.js - no need for socket-based updates
 
   onMount(() => {
-    // Disable immediate Y.js sync - let the batching system handle updates
-    // enableImmediateYjsSync(); // This was causing too many Y.js updates
-
     // Set up callback for property updates to trigger auto-save
     setUserChangeCallback(startAutoSaveTimer);
 
@@ -649,8 +645,6 @@
         false
       );
     }
-
-    // Initial socket update removed - Y.js handles synchronization
 
     // Set up periodic drift check timer (every 30 seconds)
     driftCheckTimer = setInterval(() => {
@@ -1863,8 +1857,7 @@
         // Show toast notification
         addToast({
           data: {
-            title: 'Editor out of sync',
-            body: 'Reloading data to sync with other editors',
+            title: 'Syncing',
             type: 'info'
           }
         });
@@ -2018,8 +2011,7 @@
             // Show toast notification
             addToast({
               data: {
-                title: 'Editor out of sync',
-                body: 'Reloading data to sync with other editors',
+                title: 'Syncing data',
                 type: 'info'
               }
             });
