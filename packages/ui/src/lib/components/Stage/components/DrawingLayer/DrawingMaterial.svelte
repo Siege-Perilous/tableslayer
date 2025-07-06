@@ -24,8 +24,8 @@
     uniforms: {
       uPreviousState: { value: null },
       uBrushTexture: { value: null },
-      uStart: { value: new THREE.Vector2(infinity, infinity) }, // Initialize off-screen
-      uEnd: { value: new THREE.Vector2(infinity, infinity) }, // Initialize off-screen
+      uStart: { value: new THREE.Vector2(Infinity, Infinity) }, // Initialize off-screen
+      uEnd: { value: new THREE.Vector2(Infinity, Infinity) }, // Initialize off-screen
       uBrushSize: { value: props.tool.size },
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
@@ -166,7 +166,7 @@
    */
   export function resetCursor() {
     // Set both start and end to a far off-screen position
-    const offScreen = new THREE.Vector2(infinity, infinity);
+    const offScreen = new THREE.Vector2(Infinity, Infinity);
     drawMaterial.uniforms.uStart.value.copy(offScreen);
     drawMaterial.uniforms.uEnd.value.copy(offScreen);
   }
