@@ -35,8 +35,8 @@
   // Add outline material
   const outlineMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      uStart: { value: new THREE.Vector2(-10000, -10000) },
-      uEnd: { value: new THREE.Vector2(-10000, -10000) },
+      uStart: { value: new THREE.Vector2(infinity, infinity) },
+      uEnd: { value: new THREE.Vector2(infinity, infinity) },
       uBrushSize: { value: props.tool.size },
       uTextureSize: { value: new THREE.Vector2(0, 0) },
       uShapeType: { value: props.tool.type },
@@ -113,16 +113,16 @@
     material?.revertChanges();
 
     // Hide cursor when mouse leaves
-    outlineMaterial.uniforms.uStart.value.set(-10000, -10000);
-    outlineMaterial.uniforms.uEnd.value.set(-10000, -10000);
+    outlineMaterial.uniforms.uStart.value.set(infinity, infinity);
+    outlineMaterial.uniforms.uEnd.value.set(infinity, infinity);
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
     // If the mouse is not within the drawing area, do nothing
     if (!p) {
       // Move cursor off-screen when mouse is outside
-      outlineMaterial.uniforms.uStart.value.set(-10000, -10000);
-      outlineMaterial.uniforms.uEnd.value.set(-10000, -10000);
+      outlineMaterial.uniforms.uStart.value.set(infinity, infinity);
+      outlineMaterial.uniforms.uEnd.value.set(infinity, infinity);
       return;
     }
 
