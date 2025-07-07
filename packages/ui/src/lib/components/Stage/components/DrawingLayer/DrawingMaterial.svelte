@@ -24,8 +24,8 @@
     uniforms: {
       uPreviousState: { value: null },
       uBrushTexture: { value: null },
-      uStart: { value: new THREE.Vector2() },
-      uEnd: { value: new THREE.Vector2() },
+      uStart: { value: new THREE.Vector2(Infinity, Infinity) }, // Initialize off-screen
+      uEnd: { value: new THREE.Vector2(Infinity, Infinity) }, // Initialize off-screen
       uBrushSize: { value: props.tool.size },
       uBrushFalloff: { value: 50.0 },
       uTextureSize: { value: new THREE.Vector2() },
@@ -100,6 +100,10 @@
     }
   });
 
+  // Track previous values to avoid unnecessary rerenders
+  let prevToolType = props.tool.type;
+  let prevToolMode = props.tool.mode;
+
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
     drawMaterial.uniforms.uEnd.value.copy(drawMaterial.uniforms.uStart.value);
@@ -112,11 +116,20 @@
       drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
     }
 
-    // Discard the current buffer by copying the previous buffer to the current buffer
-    render(RenderMode.Revert, true);
+    // Only revert and redraw if tool type or mode changed, not size
+    const toolTypeOrModeChanged = prevToolType !== props.tool.type || prevToolMode !== props.tool.mode;
 
-    // Re-draw the scene to show the updated tool overlay
+    if (toolTypeOrModeChanged) {
+      // Discard the current buffer by copying the previous buffer to the current buffer
+      render(RenderMode.Revert, true);
+    }
+
+    // Always redraw to show the updated tool overlay (including size changes)
     render(RenderMode.Draw);
+
+    // Update previous values
+    prevToolType = props.tool.type;
+    prevToolMode = props.tool.mode;
   });
 
   /**
@@ -146,6 +159,16 @@
 
   export function revert() {
     render(RenderMode.Revert, true);
+  }
+
+  /**
+   * Resets the cursor position to hide it
+   */
+  export function resetCursor() {
+    // Set both start and end to a far off-screen position
+    const offScreen = new THREE.Vector2(Infinity, Infinity);
+    drawMaterial.uniforms.uStart.value.copy(offScreen);
+    drawMaterial.uniforms.uEnd.value.copy(offScreen);
   }
 
   /**

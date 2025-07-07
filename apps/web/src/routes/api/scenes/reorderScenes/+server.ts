@@ -1,5 +1,5 @@
 import { apiFactory } from '$lib/factories';
-import { isUserInParty, reorderScenes } from '$lib/server';
+import { getScenes, isUserInParty, reorderScenes } from '$lib/server';
 import { z } from 'zod/v4';
 
 const validationSchema = z.object({
@@ -20,7 +20,10 @@ export const POST = apiFactory(
 
     await reorderScenes(gameSessionId, sceneId, newOrder);
 
-    return { success: true };
+    // Return the updated scenes list
+    const scenes = await getScenes(gameSessionId);
+
+    return { success: true, scenes };
   },
   {
     validationSchema,

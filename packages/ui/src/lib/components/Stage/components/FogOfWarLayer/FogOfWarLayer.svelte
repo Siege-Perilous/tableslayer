@@ -56,6 +56,7 @@
       lastPos = null;
       drawing = false;
       material?.revertChanges();
+      outlineMaterial.visible = false;
     }
   });
 
@@ -110,11 +111,20 @@
     drawing = false;
     outlineMaterial.visible = false;
     material?.revertChanges();
+
+    // Hide cursor when mouse leaves
+    outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+    outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
     // If the mouse is not within the drawing area, do nothing
-    if (!p) return;
+    if (!p) {
+      // Move cursor off-screen when mouse is outside
+      outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+      outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
+      return;
+    }
 
     outlineMaterial.uniforms.uStart.value.copy(p);
     outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? p);

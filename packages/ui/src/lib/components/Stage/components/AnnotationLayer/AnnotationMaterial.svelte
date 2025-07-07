@@ -13,9 +13,10 @@
   interface Props {
     props: AnnotationLayerData;
     display: DisplayProps;
+    lineWidth?: number;
   }
 
-  const { props, display }: Props = $props();
+  const { props, display, lineWidth = 50 }: Props = $props();
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
@@ -61,6 +62,15 @@
   }
 
   /**
+   * Resets the cursor position to hide it
+   */
+  export function resetCursor() {
+    if (drawMaterial) {
+      drawMaterial.resetCursor();
+    }
+  }
+
+  /**
    * Clears the annotation layer
    */
   export function clear() {
@@ -93,7 +103,7 @@
     opacity: props.opacity,
     tool: {
       mode: DrawMode.Draw,
-      size: props.lineWidth,
+      size: lineWidth,
       type: ToolType.Brush
     }
   }}

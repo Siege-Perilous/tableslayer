@@ -13,6 +13,11 @@ export interface AnnotationsLayerProps {
    * The id of the active layer
    */
   activeLayer: string | null;
+
+  /**
+   * The line width for drawing (global setting)
+   */
+  lineWidth?: number;
 }
 
 /**
@@ -33,11 +38,6 @@ export interface AnnotationLayerData {
    * The opacity of the annotation layer
    */
   opacity: number;
-
-  /**
-   * The line width of the drawing tool
-   */
-  lineWidth: number;
 
   /**
    * The color of the annotation layer
