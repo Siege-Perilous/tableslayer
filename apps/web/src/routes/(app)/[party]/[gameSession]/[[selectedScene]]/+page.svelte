@@ -8,18 +8,32 @@
     MapLayerType,
     Icon,
     type Marker,
+    type AnnotationLayerData,
+    StageMode,
     PointerInputManager,
     addToast
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
-  import { MarkerManager, Hints, SceneControls, Shortcuts, SceneSelector, SceneZoom, Head } from '$lib/components';
+  import {
+    MarkerManager,
+    AnnotationManager,
+    Hints,
+    SceneControls,
+    Shortcuts,
+    SceneSelector,
+    SceneZoom,
+    Head
+  } from '$lib/components';
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
     useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
-    useUpsertMarkerMutation
+    useUploadAnnotationFromBlobMutation,
+    useUpsertMarkerMutation,
+    useUpsertAnnotationMutation,
+    useDeleteAnnotationMutation
   } from '$lib/queries';
   import { type $ZodIssue } from 'zod/v4/core';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -31,13 +45,14 @@
     hasThumb,
     convertPropsToSceneDetails,
     convertStageMarkersToDbFormat,
+    convertAnnotationToDbFormat,
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
     setUserChangeCallback
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
-  import { setPreference } from '$lib/utils/gameSessionPreferences';
+  import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -57,6 +72,27 @@
     paneLayoutMobile,
     brushSize
   } = $derived(data);
+
+  // Helper function to clean stage props before sending to Y.js
+  // Removes local-only properties that should not be synchronized
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cleanStagePropsForYjs = (props: StageProps): any => {
+    return {
+      ...props,
+      annotations: {
+        ...props.annotations,
+        activeLayer: null, // activeLayer is local-only, not synchronized
+        lineWidth: undefined // lineWidth is local-only, not synchronized
+      },
+      fogOfWar: {
+        ...props.fogOfWar,
+        tool: {
+          ...props.fogOfWar.tool
+          // size is omitted to prevent syncing
+        }
+      }
+    };
+  };
 
   // Helper function to merge markers while protecting ones being moved or edited
   const mergeMarkersWithProtection = (
@@ -189,9 +225,13 @@
       : party
   );
 
+  devLog('annoations', data.selectedSceneAnnotations);
   // Socket now managed by PartyDataManager for unified connection
-  let stageProps: StageProps = $state(buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor'));
+  let stageProps: StageProps = $state(
+    buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor', data.selectedSceneAnnotations)
+  );
   let selectedMarkerId: string | undefined = $state();
+  let selectedAnnotationId: string | undefined = $state();
 
   // Track which markers were loaded from the database for Y.js sync
   let persistedMarkerIds = $state<Set<string>>(new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []));
@@ -203,9 +243,20 @@
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
   let protectionCleanupTimer: ReturnType<typeof setInterval> | null = null; // Timer for cleaning up stuck protections
+  let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null; // Timer for debouncing fog uploads
+  let annotationUpdateTimers: Map<string, ReturnType<typeof setTimeout>> = new Map(); // Timers for debouncing annotation uploads per layer
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
-  let stageClasses = $derived(['stage', (stageIsLoading || navigating.to) && 'stage--loading']);
+  let isCursorInScene = $state(false);
+  let stageClasses = $derived(
+    [
+      'stage',
+      (stageIsLoading || navigating.to) && 'stage--loading',
+      isCursorInScene &&
+        (stageProps.activeLayer === MapLayerType.Annotation || stageProps.activeLayer === MapLayerType.FogOfWar) &&
+        'stage--hideCursor'
+    ].filter(Boolean)
+  );
   let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
@@ -253,7 +304,10 @@
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
+  const createAnnotationMutation = useUploadAnnotationFromBlobMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
+  const upsertAnnotationMutation = useUpsertAnnotationMutation();
+  const deleteAnnotationMutation = useDeleteAnnotationMutation();
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -288,6 +342,13 @@
     if (sceneId) {
       registerSceneForPropertyUpdates(sceneId);
       // Y.js initialization is now handled in the stageProps rebuild effect to ensure correct timing
+    }
+  });
+
+  // Initialize annotation line width from preferences on client side
+  $effect(() => {
+    if (typeof window !== 'undefined' && stageProps) {
+      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
     }
   });
 
@@ -364,6 +425,23 @@
               markersBeingEdited,
               recentlyDeletedMarkers
             )
+          },
+          fogOfWar: {
+            ...incomingStageProps.fogOfWar,
+            tool: {
+              ...incomingStageProps.fogOfWar.tool,
+              // Preserve local brush size or use default from preferences
+              size: stageProps.fogOfWar.tool.size || getPreference('brushSize') || 75
+            }
+          },
+          annotations: {
+            ...incomingStageProps.annotations,
+            // Preserve local activeLayer for annotations (should not be shared)
+            activeLayer: stageProps.annotations.activeLayer,
+            // Preserve local lineWidth (global setting)
+            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidth') || 50,
+            // Use incoming layers as-is (lineWidth is now global, not per-layer)
+            layers: incomingStageProps.annotations.layers
           }
         };
 
@@ -400,6 +478,41 @@
     }
   });
 
+  // Handle annotation layer activation/deactivation
+  $effect(() => {
+    if (stageProps.activeLayer === MapLayerType.Annotation) {
+      // Ensure the annotation panel is open
+      if (activeControl !== 'annotation') {
+        activeControl = 'annotation';
+        markersPane.expand();
+      }
+
+      // Check if there are any annotation layers
+      if (stageProps.annotations.layers.length === 0) {
+        // No annotations exist, create one
+        onAnnotationCreated();
+      } else if (!stageProps.annotations.activeLayer) {
+        // Annotations exist but none are selected, select the first one
+        const firstAnnotation = stageProps.annotations.layers[0];
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
+      }
+    } else if (stageProps.annotations.activeLayer) {
+      // Annotation tool was deactivated, clear the active annotation to prevent drawing
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+    }
+  });
+
+  // Handle marker layer activation/deactivation
+  $effect(() => {
+    if (stageProps.activeLayer === MapLayerType.Marker) {
+      // Ensure the marker panel is open
+      if (activeControl !== 'marker') {
+        activeControl = 'marker';
+        markersPane.expand();
+      }
+    }
+  });
+
   /**
    * KEYBOARD HANDLER
    * KEYBOARD HANDLER
@@ -431,12 +544,8 @@
    * - Initialize the stage
    * - Send initial broadcast to the WebSocket
    */
-  // Marker updates now handled via Y.js - no need for socket-based updates
 
   onMount(() => {
-    // Disable immediate Y.js sync - let the batching system handle updates
-    // enableImmediateYjsSync(); // This was causing too many Y.js updates
-
     // Set up callback for property updates to trigger auto-save
     setUserChangeCallback(startAutoSaveTimer);
 
@@ -523,6 +632,9 @@
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
+      stageElement.addEventListener('mouseleave', () => {
+        isCursorInScene = false;
+      });
       stageElement.addEventListener('wheel', onWheel, { passive: false });
 
       stageElement.addEventListener(
@@ -533,8 +645,6 @@
         false
       );
     }
-
-    // Initial socket update removed - Y.js handles synchronization
 
     // Set up periodic drift check timer (every 30 seconds)
     driftCheckTimer = setInterval(() => {
@@ -565,6 +675,10 @@
       if (editingTimer) clearTimeout(editingTimer);
       if (driftCheckTimer) clearInterval(driftCheckTimer);
       if (protectionCleanupTimer) clearInterval(protectionCleanupTimer);
+      if (fogUpdateTimer) clearTimeout(fogUpdateTimer);
+      // Clear all annotation timers
+      annotationUpdateTimers.forEach((timer) => clearTimeout(timer));
+      annotationUpdateTimers.clear();
       if (unsubscribeYjs) {
         unsubscribeYjs();
       }
@@ -603,14 +717,27 @@
     if (control === activeControl) {
       activeControl = 'none';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      // Clear annotation active layer when deselecting
+      if (control === 'annotation') {
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      }
     } else if (control === 'marker') {
       selectedMarkerId = undefined;
       activeControl = 'marker';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
+      // Clear annotation active layer when switching away
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      markersPane.expand();
+    } else if (control === 'annotation') {
+      selectedAnnotationId = undefined;
+      activeControl = 'annotation';
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
       markersPane.expand();
     } else {
       activeControl = control;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+      // Clear annotation active layer when switching to fog tool
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     }
   };
 
@@ -633,6 +760,7 @@
   // Extract reactive dependencies to avoid unnecessary re-runs
   let currentSelectedScene = $derived(data.selectedScene);
   let currentSelectedSceneMarkers = $derived(data.selectedSceneMarkers);
+  let currentSelectedSceneAnnotations = $derived(data.selectedSceneAnnotations);
 
   // Get the Y.js version of the selected scene if available (has the latest mapLocation)
   let yjsSelectedScene = $derived(yjsScenes.find((s) => s.id === selectedScene?.id) || currentSelectedScene);
@@ -674,7 +802,9 @@
       // Always use database markers for buildSceneProps as it expects the database format
       const markersToUse = currentSelectedSceneMarkers;
 
-      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor');
+      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations);
+      // Preserve local annotation line width preference
+      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
 
       // Apply brush size from cookie if available
       if (brushSize) {
@@ -710,6 +840,11 @@
               offset: { x: 0, y: 0 },
               zoom: 1,
               rotation: 0
+            },
+            annotations: {
+              ...stageProps.annotations,
+              // Reset annotation activeLayer - it's local only
+              activeLayer: null
             }
           };
 
@@ -738,7 +873,7 @@
             });
             // Update Y.js with the current stageProps that includes the new markers
             lastOwnYjsUpdateTime = Date.now();
-            partyData.updateSceneStageProps(currentSceneId, stageProps);
+            partyData.updateSceneStageProps(currentSceneId, cleanStagePropsForYjs(stageProps));
           }
         }
       }
@@ -788,7 +923,14 @@
             rotation: stageProps.scene.rotation
           };
 
-          stageProps = buildSceneProps(sceneToUse, currentSelectedSceneMarkers, 'editor');
+          stageProps = buildSceneProps(
+            sceneToUse,
+            currentSelectedSceneMarkers,
+            'editor',
+            currentSelectedSceneAnnotations
+          );
+          // Preserve local annotation line width preference
+          stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
 
           // Restore viewport state
           stageProps.map.offset = currentMapState.offset;
@@ -870,7 +1012,7 @@
     // Force a manual Y.js sync right away for this critical operation
     if (partyData && selectedScene?.id) {
       lastOwnYjsUpdateTime = Date.now();
-      partyData.updateSceneStageProps(selectedScene.id, stageProps);
+      partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
     }
 
     // Keep the marker protected for longer to handle save completion
@@ -981,7 +1123,7 @@
       // Force immediate Y.js sync for marker deletion
       if (partyData && selectedScene?.id) {
         lastOwnYjsUpdateTime = Date.now();
-        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+        partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
       }
 
       // Queue property update for database save
@@ -994,6 +1136,126 @@
     } else {
       devWarn('markers', 'DEV: Marker not found for deletion:', markerId);
     }
+  };
+
+  const onAnnotationDeleted = async (annotationId: string) => {
+    // Delete annotation from database
+
+    await handleMutation({
+      mutation: () => $deleteAnnotationMutation.mutateAsync({ annotationId }),
+      formLoadingState: () => {},
+      onSuccess: () => {
+        // Trigger auto-save after annotation deletion
+        startAutoSaveTimer();
+      },
+      toastMessages: {
+        error: { title: 'Error deleting annotation' }
+      }
+    });
+  };
+
+  // Track annotation save state to prevent loops
+  let annotationSaveInProgress = $state<Set<string>>(new Set());
+
+  const onAnnotationUpdated = async (annotation: AnnotationLayerData) => {
+    // Prevent duplicate saves
+    if (annotationSaveInProgress.has(annotation.id)) {
+      return;
+    }
+
+    // Save annotation updates to database
+    annotationSaveInProgress.add(annotation.id);
+
+    // Convert to database format
+    const annotationData = convertAnnotationToDbFormat(
+      annotation,
+      selectedScene.id,
+      stageProps.annotations.layers.findIndex((a) => a.id === annotation.id)
+    );
+
+    await handleMutation({
+      mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
+      formLoadingState: () => {},
+      onSuccess: () => {
+        // Remove from in-progress after successful save
+        annotationSaveInProgress.delete(annotation.id);
+        // Trigger auto-save after annotation update
+        startAutoSaveTimer();
+      },
+      onError: () => {
+        // Remove from in-progress on error too
+        annotationSaveInProgress.delete(annotation.id);
+      },
+      toastMessages: {
+        error: { title: 'Error saving annotation' }
+      }
+    });
+  };
+
+  // Generate random high-contrast colors that complement #d73e2e
+  const getRandomAnnotationColor = () => {
+    const annotationColors = [
+      '#d73e2e', // Red
+      '#ffa500', // Orange
+      '#ffd93d', // Yellow
+      '#6bcf7f', // Green
+      '#2e86ab', // Blue
+      '#b197fc', // Purple
+      '#f06595', // Pink
+      '#20c997', // Turquoise
+      '#845ef7', // Violet
+      '#4c6ef5', // Royal Blue
+      '#15803d', // Forest Green
+      '#dc2626', // Crimson
+      '#06b6d4', // Cyan
+      '#ec4899', // Hot Pink
+      '#8b5cf6', // Indigo
+      '#059669' // Emerald
+    ];
+
+    return annotationColors[Math.floor(Math.random() * annotationColors.length)];
+  };
+
+  const onAnnotationCreated = async () => {
+    // Create a new annotation layer
+    const newAnnotation: AnnotationLayerData = {
+      id: crypto.randomUUID(),
+      name: `Drawing ${stageProps.annotations.layers.length + 1}`,
+      color: getRandomAnnotationColor(),
+      opacity: 1.0,
+      visibility: StageMode.Player,
+      url: null
+    };
+
+    // Add the new annotation to the layers
+    const updatedLayers = [...stageProps.annotations.layers, newAnnotation];
+    queuePropertyUpdate(stageProps, ['annotations', 'layers'], updatedLayers, 'control');
+
+    // Set it as the active layer
+    queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], newAnnotation.id, 'control');
+    queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+
+    // Select it for editing
+    selectedAnnotationId = newAnnotation.id;
+
+    // Ensure annotations panel is expanded
+    if (activeControl !== 'annotation') {
+      handleSelectActiveControl('annotation');
+    }
+
+    // Save to database
+    const annotationData = convertAnnotationToDbFormat(newAnnotation, selectedScene.id, updatedLayers.length - 1);
+    await handleMutation({
+      mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
+      formLoadingState: () => {},
+      onSuccess: () => {
+        // Trigger auto-save after creation
+        startAutoSaveTimer();
+      },
+      toastMessages: {
+        error: { title: 'Error creating annotation' }
+      }
+    });
   };
 
   /**
@@ -1024,6 +1286,9 @@
 
     const relativeX = cursorX - horizontalMargin;
     const relativeY = cursorY - verticalMargin;
+
+    // Check if cursor is within the visible scene bounds
+    isCursorInScene = relativeX >= 0 && relativeX <= rotatedWidth && relativeY >= 0 && relativeY <= rotatedHeight;
 
     // Clamp to ensure cursor stays within visible bounds after rotation
     const clampedX = Math.max(0, Math.min(relativeX, rotatedWidth));
@@ -1116,9 +1381,114 @@
   }
 
   const onWheel = (e: WheelEvent) => {
-    // This tracks shift + crtl + mouse wheel and calls the appropriate zoom function
+    // Handle annotation line width adjustment
+    if (stageProps.activeLayer === MapLayerType.Annotation && !e.shiftKey && !e.ctrlKey) {
+      e.preventDefault();
+
+      let scrollDelta;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        scrollDelta = e.deltaX * 0.05; // Very granular adjustment
+      } else {
+        scrollDelta = e.deltaY * 0.05; // Very granular adjustment
+      }
+
+      // Get current line width from global setting
+      const currentLineWidth = stageProps.annotations.lineWidth || 50;
+
+      // Calculate new line width (clamped between 1 and 200)
+      const rawLineWidth = currentLineWidth - scrollDelta;
+      const newLineWidth = Math.round(Math.max(1, Math.min(rawLineWidth, 200)));
+
+      // Update the global annotation line width
+      stageProps.annotations.lineWidth = newLineWidth;
+
+      // Save preference
+      setPreference('annotationLineWidth', newLineWidth);
+
+      return;
+    }
+
+    // Handle other zoom operations
     handleStageZoom(e, stageProps);
     // Y.js handles synchronization automatically via queuePropertyUpdate
+  };
+
+  /**
+   * ANNOTATION LAYER
+   * ANNOTATION LAYER
+   * ANNOTATION LAYER
+   *
+   * The Stage component emits a blob when an annotation layer is updated.
+   * We upload it and sync via Y.js similar to fog of war.
+   */
+  let isUpdatingAnnotation = false;
+  let pendingAnnotationBlobs: Map<string, Blob> = new Map();
+
+  const processAnnotationUpdate = async (layerId: string) => {
+    const annotationBlob = pendingAnnotationBlobs.get(layerId);
+    if (!annotationBlob || isSaving) return;
+
+    pendingAnnotationBlobs.delete(layerId); // Clear pending blob for this layer
+
+    // Find the current URL for this annotation layer
+    const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+    const currentUrl = currentLayer?.url || null;
+
+    await handleMutation({
+      mutation: () =>
+        $createAnnotationMutation.mutateAsync({
+          blob: annotationBlob,
+          sceneId: selectedScene.id,
+          layerId: layerId,
+          currentUrl: currentUrl
+        }),
+      formLoadingState: () => {},
+      onSuccess: (result) => {
+        // Update the specific annotation layer URL
+        const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
+        if (layerIndex !== -1) {
+          stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
+        }
+
+        // Immediately sync annotation layers to Y.js for real-time collaboration
+        if (partyData && selectedScene?.id) {
+          lastOwnYjsUpdateTime = Date.now();
+          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+        }
+
+        // Queue for database save
+        queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
+        isUpdatingAnnotation = false;
+      },
+      onError: () => {
+        devError('save', 'Error uploading annotation');
+        isUpdatingAnnotation = false;
+      },
+      toastMessages: {
+        error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
+      }
+    });
+  };
+
+  const onAnnotationUpdate = async (layerId: string, blob: Promise<Blob>) => {
+    isUpdatingAnnotation = true;
+
+    // Store the latest blob for this layer
+    pendingAnnotationBlobs.set(layerId, await blob);
+
+    // Clear any existing timer for this layer
+    const existingTimer = annotationUpdateTimers.get(layerId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set a new timer to process the update after a delay
+    const timer = setTimeout(() => {
+      processAnnotationUpdate(layerId);
+      annotationUpdateTimers.delete(layerId);
+    }, 500); // 500ms delay
+
+    annotationUpdateTimers.set(layerId, timer);
   };
 
   /**
@@ -1130,48 +1500,67 @@
    * We update state so that saveScene() has something to check so uploads don't happen immediately
    */
   let isUpdatingFog = false;
+  let pendingFogBlob: Blob | null = null;
+
+  const processFogUpdate = async () => {
+    if (!pendingFogBlob || isSaving) return;
+
+    const fogBlob = pendingFogBlob;
+    pendingFogBlob = null; // Clear pending blob
+
+    await handleMutation({
+      mutation: () =>
+        $createFogMutation.mutateAsync({
+          blob: fogBlob,
+          sceneId: selectedScene.id,
+          currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
+        }),
+      formLoadingState: () => {},
+      onSuccess: (fog) => {
+        // Update local state immediately with versioned URL
+        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
+
+        // Immediately sync fog URL to Y.js for real-time collaboration
+        if (partyData && selectedScene?.id) {
+          lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+        }
+
+        // Also queue for database save
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
+        isUpdatingFog = false;
+      },
+      onError: () => {
+        devError('save', 'Error uploading fog');
+        isUpdatingFog = false;
+      },
+      toastMessages: {
+        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+      }
+    });
+  };
+
   const onFogUpdate = async (blob: Promise<Blob>) => {
     isUpdatingFog = true;
 
-    const fogBlob = await blob;
+    // Store the latest blob
+    pendingFogBlob = await blob;
 
-    if (blob !== null && !isSaving) {
-      await handleMutation({
-        mutation: () =>
-          $createFogMutation.mutateAsync({
-            blob: fogBlob as Blob,
-            sceneId: selectedScene.id,
-            currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
-          }),
-        formLoadingState: () => {},
-        onSuccess: (fog) => {
-          // Update local state immediately with versioned URL
-          stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
-
-          // Immediately sync fog URL to Y.js for real-time collaboration
-          if (partyData && selectedScene?.id) {
-            lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-            partyData.updateSceneStageProps(selectedScene.id, stageProps);
-          }
-
-          // Also queue for database save
-          queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
-          isUpdatingFog = false;
-        },
-        onError: () => {
-          devError('save', 'Error uploading fog');
-          isUpdatingFog = false;
-        },
-        toastMessages: {
-          error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
-        }
-      });
+    // Clear any existing timer
+    if (fogUpdateTimer) {
+      clearTimeout(fogUpdateTimer);
     }
+
+    // Set a new timer to process the update after a delay
+    fogUpdateTimer = setTimeout(() => {
+      processFogUpdate();
+      fogUpdateTimer = null;
+    }, 500); // 500ms delay
   };
 
   let isSaving = false;
   const saveScene = async () => {
-    if (isSaving || isUpdatingFog) return;
+    if (isSaving || isUpdatingFog || isUpdatingAnnotation) return;
 
     // Try to become the active saver for this scene
     if (!partyData || !partyData.becomeActiveSaver(selectedScene.id)) {
@@ -1311,9 +1700,13 @@
           // Make sure Y.js has the scene initialized
           const sceneData = partyData.getSceneData(selectedScene.id);
           if (!sceneData) {
-            partyData.initializeSceneData(selectedScene.id, stagePropsWithAllMarkers, markersSnapshot);
+            partyData.initializeSceneData(
+              selectedScene.id,
+              cleanStagePropsForYjs(stagePropsWithAllMarkers),
+              markersSnapshot
+            );
           } else {
-            partyData.updateSceneStageProps(selectedScene.id, stagePropsWithAllMarkers);
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stagePropsWithAllMarkers));
           }
         }
       }
@@ -1381,7 +1774,15 @@
       // Immediately sync to Y.js for real-time collaboration
       if (partyData && selectedScene?.id) {
         lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
-        partyData.updateSceneStageProps(selectedScene.id, stageProps);
+        // Clean local-only properties before sending to Y.js
+        const stagePropsForYjs = {
+          ...stageProps,
+          annotations: {
+            ...stageProps.annotations,
+            activeLayer: null // Don't share active annotation selection
+          }
+        };
+        partyData.updateSceneStageProps(selectedScene.id, stagePropsForYjs);
       }
 
       // Add marker to protection set to prevent Y.js from overwriting during save
@@ -1456,8 +1857,7 @@
         // Show toast notification
         addToast({
           data: {
-            title: 'Editor out of sync',
-            body: 'Reloading data to sync with other editors',
+            title: 'Syncing',
             type: 'info'
           }
         });
@@ -1478,6 +1878,7 @@
     if (currentSceneId && currentSceneId !== previousEffectSceneId) {
       // Only run this when scene actually changes
       selectedMarkerId = undefined;
+      selectedAnnotationId = undefined;
       persistedMarkerIds = new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
       // Clear marker protection sets when switching scenes
       markersBeingEdited.clear();
@@ -1610,8 +2011,7 @@
             // Show toast notification
             addToast({
               data: {
-                title: 'Editor out of sync',
-                body: 'Reloading data to sync with other editors',
+                title: 'Syncing data',
                 type: 'info'
               }
             });
@@ -1717,15 +2117,18 @@
           <Stage
             bind:this={stage}
             props={stageProps}
-            {onFogUpdate}
-            {onMapUpdate}
-            {onSceneUpdate}
-            {onStageInitialized}
-            {onStageLoading}
-            {onMarkerAdded}
-            {onMarkerMoved}
-            {onMarkerSelected}
-            {onMarkerContextMenu}
+            callbacks={{
+              onAnnotationUpdate,
+              onFogUpdate,
+              onMapUpdate,
+              onSceneUpdate,
+              onStageInitialized,
+              onStageLoading,
+              onMarkerAdded,
+              onMarkerMoved,
+              onMarkerSelected,
+              onMarkerContextMenu
+            }}
           />
         </div>
         <SceneControls
@@ -1780,17 +2183,29 @@
         }
       }}
     >
-      {#key selectedMarkerId}
-        <MarkerManager
-          partyId={party.id}
-          {stageProps}
-          bind:selectedMarkerId
-          {socketUpdate}
-          {handleSelectActiveControl}
-          {updateMarkerAndSave}
-          {onMarkerDeleted}
-        />
-      {/key}
+      {#if activeControl === 'annotation'}
+        {#key selectedAnnotationId}
+          <AnnotationManager
+            {stageProps}
+            bind:selectedAnnotationId
+            {onAnnotationDeleted}
+            {onAnnotationUpdated}
+            {onAnnotationCreated}
+          />
+        {/key}
+      {:else}
+        {#key selectedMarkerId}
+          <MarkerManager
+            partyId={party.id}
+            {stageProps}
+            bind:selectedMarkerId
+            {socketUpdate}
+            {handleSelectActiveControl}
+            {updateMarkerAndSave}
+            {onMarkerDeleted}
+          />
+        {/key}
+      {/if}
     </Pane>
   </PaneGroup>
 </div>
@@ -1879,5 +2294,8 @@
   .stage.stage--loading {
     visibility: hidden;
     opacity: 0;
+  }
+  .stage.stage--hideCursor {
+    cursor: none;
   }
 </style>

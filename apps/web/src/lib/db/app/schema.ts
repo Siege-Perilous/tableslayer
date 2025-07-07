@@ -384,7 +384,8 @@ export const sceneTable = sqliteTable(
     markerStrokeColor: text('marker_stroke_color').notNull().default('#000000'),
     markerStrokeWidth: integer('marker_stroke_width').notNull().default(50),
     markerTextColor: text('marker_text_color').notNull().default('#ffffff'),
-    markerTextStrokeColor: text('marker_text_stroke_color').notNull().default('#000000')
+    markerTextStrokeColor: text('marker_text_stroke_color').notNull().default('#000000'),
+    annotationLayers: text('annotation_layers', { mode: 'json' })
   },
   (table) => [
     uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
@@ -446,3 +447,38 @@ export type SelectMarker = typeof markerTable.$inferSelect;
 export const insertMarkerSchema = createInsertSchema(markerTable);
 export const selectMarkerSchema = createSelectSchema(markerTable);
 export const updateMarkerSchema = createUpdateSchema(markerTable);
+
+// ANNOTATIONS
+// ANNOTATIONS
+// ANNOTATIONS
+
+export const annotationsTable = sqliteTable(
+  'annotations',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    sceneId: text('scene_id')
+      .notNull()
+      .references(() => sceneTable.id, { onDelete: 'cascade' }),
+    name: text('name').notNull().default('New Annotation'),
+    opacity: real('opacity').notNull().default(1.0),
+    color: text('color').notNull().default('#FF0000'),
+    url: text('url'), // S3/R2 storage for the drawn texture
+    visibility: integer('visibility').notNull().default(1), // StageMode enum (0=DM, 1=Player)
+    order: integer('order').notNull().default(0) // For layer ordering
+  },
+  (table) => [
+    index('idx_annotations_scene_id').on(table.sceneId),
+    index('idx_annotations_order').on(table.sceneId, table.order),
+    check('protected_annotation_opacity', sql`${table.opacity} >= 0 AND ${table.opacity} <= 1`),
+    check('protected_annotation_visibility', sql`${table.visibility} >= 0 AND ${table.visibility} <= 1`)
+  ]
+);
+
+export type InsertAnnotation = typeof annotationsTable.$inferInsert;
+export type SelectAnnotation = typeof annotationsTable.$inferSelect;
+export const insertAnnotationSchema = createInsertSchema(annotationsTable);
+export const selectAnnotationSchema = createSelectSchema(annotationsTable);
+export const updateAnnotationSchema = createUpdateSchema(annotationsTable);

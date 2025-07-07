@@ -1,9 +1,10 @@
-import { type SelectMarker, type SelectScene } from '$lib/db/app/schema';
+import { type SelectAnnotation, type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { StageDefaultProps } from '$lib/utils/defaultMapState';
 import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '$lib/utils/generateR2Url';
 import {
+  type AnnotationLayerData,
   DrawMode,
   GridType,
   MapLayerType,
@@ -19,7 +20,8 @@ import {
 export const buildSceneProps = (
   activeScene: SelectScene | (SelectScene & Thumb),
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
-  mode: 'client' | 'editor'
+  mode: 'client' | 'editor',
+  activeSceneAnnotations: SelectAnnotation[] = []
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
 
@@ -48,10 +50,30 @@ export const buildSceneProps = (
       }));
   }
 
+  // Map annotations to AnnotationLayerData format
+  let annotationLayers: AnnotationLayerData[] = [];
+  if (activeSceneAnnotations && Array.isArray(activeSceneAnnotations)) {
+    annotationLayers = activeSceneAnnotations
+      // Filter out player-only annotations for client mode
+      .filter((annotation) => mode === 'editor' || annotation.visibility === 0) // 0 = StageMode.DM (visible to all)
+      .map((annotation) => ({
+        id: annotation.id,
+        name: annotation.name,
+        opacity: annotation.opacity,
+        color: annotation.color,
+        url: annotation.url ? `https://files.tableslayer.com/${annotation.url}` : null,
+        visibility: annotation.visibility as StageMode
+      }));
+  }
+
   return {
     mode: mode === 'client' ? StageMode.Player : StageMode.DM,
     activeLayer: MapLayerType.None,
     backgroundColor: activeScene.backgroundColor,
+    annotations: {
+      layers: annotationLayers,
+      activeLayer: null
+    },
     debug: {
       enableStats: false,
       loggingRate: 30

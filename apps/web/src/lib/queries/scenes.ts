@@ -41,13 +41,16 @@ export const useDeleteSceneMutation = () => {
 };
 
 export const useReorderScenesMutation = () => {
-  return mutationFactory<{
-    partyId: string;
-    gameSessionId: string;
-    sceneId: string;
-    newOrder: number;
-    oldOrder: number;
-  }>({
+  return mutationFactory<
+    {
+      partyId: string;
+      gameSessionId: string;
+      sceneId: string;
+      newOrder: number;
+      oldOrder: number;
+    },
+    { success: boolean; scenes: SelectScene[] }
+  >({
     mutationKey: ['reorderScenes'],
     endpoint: '/api/scenes/reorderScenes',
     method: 'POST'

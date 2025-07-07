@@ -1,3 +1,4 @@
+import AnnotationsControls from './AnnotationsControls.svelte';
 import DisplayControls from './DisplayControls.svelte';
 import EdgeOverlayControls from './EdgeOverlayControls.svelte';
 import FogControls from './FogControls.svelte';
@@ -10,6 +11,7 @@ import SceneControls from './SceneControls.svelte';
 import WeatherControls from './WeatherControls.svelte';
 
 export {
+  AnnotationsControls,
   DisplayControls,
   EdgeOverlayControls,
   FogControls,
