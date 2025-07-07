@@ -414,7 +414,7 @@
     align-items: center;
   }
 
-  @container stageWrapper (max-width: 840px) {
+  @container stageWrapper (max-width: 950px) {
     .sceneControls {
       gap: 0.25rem !important;
     }
