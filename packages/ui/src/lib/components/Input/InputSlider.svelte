@@ -69,4 +69,18 @@
     background-color: transparent;
     filter: drop-shadow(0 0 1px rgba(0, 0, 0, 1));
   }
+  @media (pointer: coarse) {
+    .inputSlider {
+      height: 0.75rem;
+      border-radius: 0.25rem;
+    }
+    .inputSlider::-webkit-slider-thumb {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+    .inputSlider::-moz-range-thumb {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
 </style>
