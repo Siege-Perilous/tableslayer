@@ -824,15 +824,15 @@
     }
 
     .colorPicker__sliderWrapper::before {
-      height: 0.5rem;
+      height: 1.5rem;
     }
     .colorPicker__slider::-webkit-slider-thumb {
-      width: 0.75rem;
-      height: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
     .colorPicker__slider::-moz-range-thumb {
-      width: 0.75rem;
-      height: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
   }
 </style>

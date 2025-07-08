@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { InputSliderProps } from './types';
   import chroma from 'chroma-js';
-  let { value = $bindable(), hex = '#666666', variant = 'default', ...restProps }: InputSliderProps = $props();
+  let { value = $bindable(), hex = '#222', variant = 'default', ...restProps }: InputSliderProps = $props();
 
   const sliderClasses = $derived(['inputSlider', variant && `inputSlider--${variant}`, restProps.class ?? '']);
 
@@ -71,16 +71,16 @@
   }
   @media (pointer: coarse) {
     .inputSlider {
-      height: 0.75rem;
-      border-radius: 0.25rem;
+      height: 1.5rem;
+      border-radius: 1.5rem;
     }
     .inputSlider::-webkit-slider-thumb {
-      width: 0.75rem;
-      height: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
     .inputSlider::-moz-range-thumb {
-      width: 0.75rem;
-      height: 0.75rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
   }
 </style>
