@@ -58,4 +58,5 @@ export interface AnnotationLayerData {
 export interface AnnotationExports {
   clear: (layerId: string) => void;
   toPng: () => Promise<Blob>;
+  isDrawing: () => boolean;
 }

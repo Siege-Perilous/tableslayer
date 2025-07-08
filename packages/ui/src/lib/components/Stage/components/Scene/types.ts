@@ -61,12 +61,14 @@ export interface SceneExports {
 
   annotations: {
     clear: (layerId: string) => void;
+    isDrawing: () => boolean;
   };
 
   fogOfWar: {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    isDrawing: () => boolean;
   };
 
   map: {

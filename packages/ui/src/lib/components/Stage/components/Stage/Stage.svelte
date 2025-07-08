@@ -26,7 +26,8 @@
   setContext('callbacks', callbacks);
 
   export const annotations = {
-    clear: (layerId: string) => sceneRef.annotations.clear(layerId)
+    clear: (layerId: string) => sceneRef.annotations.clear(layerId),
+    isDrawing: () => sceneRef?.annotations?.isDrawing() ?? false
   };
 
   export const map = {
@@ -37,7 +38,8 @@
   export const fogOfWar = {
     clear: () => sceneRef?.fogOfWar.clear(),
     reset: () => sceneRef?.fogOfWar.reset(),
-    toPng: () => sceneRef?.fogOfWar.toPng()
+    toPng: () => sceneRef?.fogOfWar.toPng(),
+    isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false
   };
 
   export const scene = {

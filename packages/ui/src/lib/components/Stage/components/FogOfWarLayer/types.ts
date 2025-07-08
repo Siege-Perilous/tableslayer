@@ -110,4 +110,5 @@ export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
   toPng: () => Promise<Blob>;
+  isDrawing: () => boolean;
 }
