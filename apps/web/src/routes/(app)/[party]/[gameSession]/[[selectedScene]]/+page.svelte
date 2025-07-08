@@ -1483,6 +1483,32 @@
         const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
         if (layerIndex !== -1) {
           stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
+
+          // Also update the annotation in the database immediately
+          const annotation = stageProps.annotations.layers[layerIndex];
+
+          // Fire and forget - save annotation to database
+          handleMutation({
+            mutation: () =>
+              $upsertAnnotationMutation.mutateAsync({
+                id: annotation.id,
+                sceneId: selectedScene.id,
+                name: annotation.name,
+                opacity: annotation.opacity,
+                color: annotation.color,
+                url: result.location, // Use the location directly, not the full URL
+                visibility: annotation.visibility,
+                order: layerIndex
+              }),
+            formLoadingState: () => {},
+            onSuccess: () => {},
+            onError: (error) => {
+              devError('annotation', 'Error saving annotation to database:', error);
+            },
+            toastMessages: {}
+          }).catch((error) => {
+            devError('annotation', 'Error in annotation save mutation:', error);
+          });
         }
 
         // Immediately sync annotation layers to Y.js for real-time collaboration
@@ -1780,6 +1806,42 @@
             );
           } else {
             partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stagePropsWithAllMarkers));
+          }
+        }
+      }
+
+      // Save annotations to individual annotation records
+      const annotationsSnapshot = $state.snapshot(stageProps.annotations?.layers || []);
+      if (annotationsSnapshot.length > 0) {
+        for (const annotation of annotationsSnapshot) {
+          if (annotation.url) {
+            // Extract the location from the full URL
+            const locationMatch = annotation.url.match(/https:\/\/files\.tableslayer\.com\/(.+)/);
+            const location = locationMatch ? locationMatch[1] : null;
+
+            if (location) {
+              await handleMutation({
+                mutation: () =>
+                  $upsertAnnotationMutation.mutateAsync({
+                    id: annotation.id,
+                    sceneId: selectedScene.id,
+                    name: annotation.name,
+                    opacity: annotation.opacity,
+                    color: annotation.color,
+                    url: location,
+                    visibility: annotation.visibility,
+                    order: annotationsSnapshot.indexOf(annotation)
+                  }),
+                formLoadingState: () => {},
+                onSuccess: () => {},
+                onError: (error) => {
+                  devError('save', 'Error saving annotation:', error);
+                },
+                toastMessages: {
+                  error: { title: 'Error saving annotation', body: (err) => err.message || 'Error saving annotation' }
+                }
+              });
+            }
           }
         }
       }
