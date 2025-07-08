@@ -1155,11 +1155,22 @@
 
   const onAnnotationDeleted = async (annotationId: string) => {
     // Delete annotation from database
-
     await handleMutation({
       mutation: () => $deleteAnnotationMutation.mutateAsync({ annotationId }),
       formLoadingState: () => {},
-      onSuccess: () => {
+      onSuccess: async () => {
+        // After deletion, update the orders of remaining annotations to remove gaps
+        const remainingLayers = stageProps.annotations.layers.filter((layer) => layer.id !== annotationId);
+
+        // Save all remaining annotations with their new sequential orders
+        const updatePromises = remainingLayers.map(async (layer, index) => {
+          const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
+          return $upsertAnnotationMutation.mutateAsync(annotationData);
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(updatePromises);
+
         // Trigger auto-save after annotation deletion
         startAutoSaveTimer();
       },
@@ -1242,8 +1253,8 @@
       url: null
     };
 
-    // Add the new annotation to the layers
-    const updatedLayers = [...stageProps.annotations.layers, newAnnotation];
+    // Add the new annotation to the beginning of the layers array
+    const updatedLayers = [newAnnotation, ...stageProps.annotations.layers];
     queuePropertyUpdate(stageProps, ['annotations', 'layers'], updatedLayers, 'control');
 
     // Set it as the active layer
@@ -1258,10 +1269,15 @@
       handleSelectActiveControl('annotation');
     }
 
-    // Save to database
-    const annotationData = convertAnnotationToDbFormat(newAnnotation, selectedScene.id, updatedLayers.length - 1);
+    // Save all annotations with their correct orders in a single batch
+    // This prevents race conditions when adding multiple annotations quickly
+    const savePromises = updatedLayers.map(async (layer, index) => {
+      const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
+      return $upsertAnnotationMutation.mutateAsync(annotationData);
+    });
+
     await handleMutation({
-      mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
+      mutation: () => Promise.all(savePromises),
       formLoadingState: () => {},
       onSuccess: () => {
         // Trigger auto-save after creation

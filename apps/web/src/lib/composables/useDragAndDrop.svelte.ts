@@ -161,15 +161,22 @@ export function useDragAndDrop<T>(options: DragAndDropOptions<T>) {
   let dragElement: HTMLElement | null = null;
 
   const handleTouchStart = (e: TouchEvent, itemId: string, element: HTMLElement) => {
+    // Check if dragging is disabled for this item
+    if (isDisabled && isDisabled(itemId)) {
+      e.preventDefault();
+      return;
+    }
+
     const touch = e.touches[0];
     touchStartY = touch.clientY;
     draggedItem = itemId;
     dragElement = element;
     isDragging = true;
 
-    // Add touch move listener to track dragging
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd);
+    // Add touch move listener to document to track dragging globally
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd); // Handle touch cancel events
   };
 
   const handleTouchMove = (e: TouchEvent) => {
@@ -186,15 +193,23 @@ export function useDragAndDrop<T>(options: DragAndDropOptions<T>) {
     dragElement.style.opacity = '0.8';
     dragElement.style.zIndex = '1000';
 
+    // Temporarily disable pointer events on the dragged element to find what's below
+    dragElement.style.pointerEvents = 'none';
+
     // Find which item we're over
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const listItem = elementBelow?.closest('[data-drag-id]');
+
+    // Re-enable pointer events
+    dragElement.style.pointerEvents = '';
 
     if (listItem && listItem !== dragElement) {
       const targetId = listItem.getAttribute('data-drag-id');
       if (targetId && targetId !== draggedItem) {
         draggedOverItem = targetId;
       }
+    } else {
+      draggedOverItem = null;
     }
   };
 
@@ -205,6 +220,7 @@ export function useDragAndDrop<T>(options: DragAndDropOptions<T>) {
     dragElement.style.transform = '';
     dragElement.style.opacity = '';
     dragElement.style.zIndex = '';
+    dragElement.style.pointerEvents = '';
 
     // Perform the reorder if we have a target
     if (draggedOverItem && draggedItem !== draggedOverItem) {
@@ -212,8 +228,9 @@ export function useDragAndDrop<T>(options: DragAndDropOptions<T>) {
     }
 
     // Clean up
-    dragElement.removeEventListener('touchmove', handleTouchMove);
-    dragElement.removeEventListener('touchend', handleTouchEnd);
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+    document.removeEventListener('touchcancel', handleTouchEnd);
 
     draggedItem = null;
     draggedOverItem = null;

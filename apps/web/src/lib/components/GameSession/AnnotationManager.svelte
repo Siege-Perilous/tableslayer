@@ -180,7 +180,6 @@
           ondragleave={dragAndDrop.handleDragLeave}
           ondrop={(e) => dragAndDrop.handleDrop(e, annotation.id)}
           ondragend={(e) => dragAndDrop.handleDragEnd(e)}
-          ontouchstart={(e) => dragAndDrop.handleTouchStart(e, annotation.id, e.currentTarget)}
           onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
@@ -189,6 +188,10 @@
               role="button"
               tabindex="-1"
               aria-label="Drag handle for reordering annotation layer"
+              ontouchstart={(e) => {
+                e.stopPropagation();
+                dragAndDrop.handleTouchStart(e, annotation.id, e.currentTarget.closest('[data-drag-id]'));
+              }}
             >
               <Icon Icon={IconGripVertical} size="1.25rem" color="var(--fgMuted)" />
             </div>
