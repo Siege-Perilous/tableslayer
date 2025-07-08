@@ -520,6 +520,7 @@
         ondragleave={dragAndDrop.handleDragLeave}
         ondrop={(e) => dragAndDrop.handleDrop(e, index.toString())}
         ondragend={dragAndDrop.handleDragEnd}
+        ontouchstart={(e) => dragAndDrop.handleTouchStart(e, index.toString(), e.currentTarget)}
       >
         {#if isSceneBeingRenamed(scene.id)}
           <div class="scene__rename">
