@@ -332,7 +332,8 @@
   }
 
   export const annotations = {
-    clear: (layerId: string) => annotationsLayer.clear(layerId)
+    clear: (layerId: string) => annotationsLayer.clear(layerId),
+    isDrawing: () => annotationsLayer?.isDrawing() ?? false
   };
 
   export const map = {
@@ -345,7 +346,8 @@
   export const fogOfWar = {
     clear: () => mapLayer.fogOfWar.clear(),
     reset: () => mapLayer.fogOfWar.reset(),
-    toPng: () => mapLayer.fogOfWar.toPng()
+    toPng: () => mapLayer.fogOfWar.toPng(),
+    isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
 </script>
 

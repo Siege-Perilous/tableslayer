@@ -43,5 +43,6 @@ export interface MapLayerExports {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    isDrawing: () => boolean;
   };
 }

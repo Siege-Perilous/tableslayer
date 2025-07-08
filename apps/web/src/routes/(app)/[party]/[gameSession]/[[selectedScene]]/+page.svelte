@@ -403,6 +403,14 @@
         // Get current local state for comparison
         const currentStagePropsSnapshot = $state.snapshot(stageProps);
 
+        // Check if user is currently drawing on fog or annotations
+        const isDrawingFog = stage?.fogOfWar?.isDrawing() ?? false;
+        const isDrawingAnnotation = stage?.annotations?.isDrawing() ?? false;
+
+        if (isDrawingFog || isDrawingAnnotation) {
+          devLog('yjs', 'Blocking Y.js update for drawing layer', { isDrawingFog, isDrawingAnnotation });
+        }
+
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
           ...incomingStageProps,
@@ -428,6 +436,8 @@
           },
           fogOfWar: {
             ...incomingStageProps.fogOfWar,
+            // Block fog URL updates while drawing
+            url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
               ...incomingStageProps.fogOfWar.tool,
               // Preserve local brush size or use default from preferences
@@ -440,8 +450,13 @@
             activeLayer: stageProps.annotations.activeLayer,
             // Preserve local lineWidth (global setting)
             lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidth') || 50,
-            // Use incoming layers as-is (lineWidth is now global, not per-layer)
-            layers: incomingStageProps.annotations.layers
+            // Block annotation URL updates while drawing
+            layers: isDrawingAnnotation
+              ? stageProps.annotations.layers.map((localLayer) => {
+                  const incomingLayer = incomingStageProps.annotations.layers.find((l) => l.id === localLayer.id);
+                  return incomingLayer ? { ...incomingLayer, url: localLayer.url } : localLayer;
+                })
+              : incomingStageProps.annotations.layers
           }
         };
 
@@ -1423,12 +1438,24 @@
    */
   let isUpdatingAnnotation = false;
   let pendingAnnotationBlobs: Map<string, Blob> = new Map();
+  let annotationUploadAbortControllers: Map<string, AbortController> = new Map();
 
   const processAnnotationUpdate = async (layerId: string) => {
     const annotationBlob = pendingAnnotationBlobs.get(layerId);
     if (!annotationBlob || isSaving) return;
 
+    // Check if user is still drawing
+    if (stage?.annotations?.isDrawing()) {
+      // User is still drawing, abort the update
+      devLog('annotation', 'Aborting annotation update - user is still drawing');
+      return;
+    }
+
     pendingAnnotationBlobs.delete(layerId); // Clear pending blob for this layer
+
+    // Create new abort controller for this upload
+    const abortController = new AbortController();
+    annotationUploadAbortControllers.set(layerId, abortController);
 
     // Find the current URL for this annotation layer
     const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
@@ -1444,6 +1471,14 @@
         }),
       formLoadingState: () => {},
       onSuccess: (result) => {
+        // Check if user started drawing while upload was in progress
+        if (stage?.annotations?.isDrawing()) {
+          devLog('annotation', 'Annotation update completed but user is drawing - skipping URL update');
+          isUpdatingAnnotation = false;
+          annotationUploadAbortControllers.delete(layerId);
+          return;
+        }
+
         // Update the specific annotation layer URL
         const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
         if (layerIndex !== -1) {
@@ -1459,10 +1494,12 @@
         // Queue for database save
         queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
         isUpdatingAnnotation = false;
+        annotationUploadAbortControllers.delete(layerId);
       },
       onError: () => {
         devError('save', 'Error uploading annotation');
         isUpdatingAnnotation = false;
+        annotationUploadAbortControllers.delete(layerId);
       },
       toastMessages: {
         error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
@@ -1471,6 +1508,14 @@
   };
 
   const onAnnotationUpdate = async (layerId: string, blob: Promise<Blob>) => {
+    // If there's an existing upload for this layer, abort it
+    const existingController = annotationUploadAbortControllers.get(layerId);
+    if (existingController) {
+      devLog('annotation', 'Aborting previous annotation upload - new drawing started');
+      existingController.abort();
+      annotationUploadAbortControllers.delete(layerId);
+    }
+
     isUpdatingAnnotation = true;
 
     // Store the latest blob for this layer
@@ -1501,12 +1546,23 @@
    */
   let isUpdatingFog = false;
   let pendingFogBlob: Blob | null = null;
+  let fogUploadAbortController: AbortController | null = null;
 
   const processFogUpdate = async () => {
     if (!pendingFogBlob || isSaving) return;
 
+    // Check if user is still drawing
+    if (stage?.fogOfWar?.isDrawing()) {
+      // User is still drawing, abort the update
+      devLog('fog', 'Aborting fog update - user is still drawing');
+      return;
+    }
+
     const fogBlob = pendingFogBlob;
     pendingFogBlob = null; // Clear pending blob
+
+    // Create new abort controller for this upload
+    fogUploadAbortController = new AbortController();
 
     await handleMutation({
       mutation: () =>
@@ -1517,6 +1573,14 @@
         }),
       formLoadingState: () => {},
       onSuccess: (fog) => {
+        // Check if user started drawing while upload was in progress
+        if (stage?.fogOfWar?.isDrawing()) {
+          devLog('fog', 'Fog update completed but user is drawing - skipping URL update');
+          isUpdatingFog = false;
+          fogUploadAbortController = null;
+          return;
+        }
+
         // Update local state immediately with versioned URL
         stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
 
@@ -1529,10 +1593,12 @@
         // Also queue for database save
         queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
         isUpdatingFog = false;
+        fogUploadAbortController = null;
       },
       onError: () => {
         devError('save', 'Error uploading fog');
         isUpdatingFog = false;
+        fogUploadAbortController = null;
       },
       toastMessages: {
         error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
@@ -1541,6 +1607,13 @@
   };
 
   const onFogUpdate = async (blob: Promise<Blob>) => {
+    // If there's an existing upload, abort it
+    if (fogUploadAbortController) {
+      devLog('fog', 'Aborting previous fog upload - new drawing started');
+      fogUploadAbortController.abort();
+      fogUploadAbortController = null;
+    }
+
     isUpdatingFog = true;
 
     // Store the latest blob

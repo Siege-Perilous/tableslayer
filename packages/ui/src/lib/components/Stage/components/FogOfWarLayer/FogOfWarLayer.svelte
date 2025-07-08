@@ -27,6 +27,11 @@
   let drawing = false;
   let hasFinishedDrawing = false;
 
+  // Export drawing state so parent can check it
+  export function isDrawing() {
+    return drawing;
+  }
+
   // If mouse leaves the drawing area, we need to reset the start position
   // when it re-enters the drawing area to prevent the drawing from "jumping"
   // to the new point
