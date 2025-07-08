@@ -820,19 +820,19 @@
   @media (pointer: coarse) {
     .colorPicker__slider {
       height: 1rem;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-2);
     }
 
     .colorPicker__sliderWrapper::before {
-      height: 1.5rem;
+      height: 1rem;
     }
     .colorPicker__slider::-webkit-slider-thumb {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1rem;
+      height: 1rem;
     }
     .colorPicker__slider::-moz-range-thumb {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1rem;
+      height: 1rem;
     }
   }
 </style>

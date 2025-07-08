@@ -107,20 +107,20 @@
 
   @media (pointer: coarse) {
     .dualInputSlider__activeTrack {
-      height: 1.5rem;
-      border-radius: 0.25rem;
+      height: 1rem;
+      border-radius: var(--radius-2);
     }
     .dualInputSlider__bgTrack {
-      height: 1.5rem;
-      border-radius: 0.25rem;
+      height: 1rem;
+      border-radius: var(--radius-2);
     }
     .dualInputSlider::-webkit-slider-thumb {
-      width: 1.5rem;
-      height: 0.75rem;
+      width: 1rem;
+      height: 1rem;
     }
     .dualInputSlider::-moz-range-thumb {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1rem;
+      height: 1rem;
     }
   }
 </style>
