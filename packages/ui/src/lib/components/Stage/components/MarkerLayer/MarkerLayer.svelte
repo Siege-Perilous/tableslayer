@@ -179,6 +179,7 @@
         strokeColor={props.marker.shape.strokeColor}
         strokeWidth={props.marker.shape.strokeWidth}
         isSelected={selectedMarker?.id === marker.id}
+        sceneRotation={props.scene.rotation}
       />
     {/if}
   {/each}
@@ -200,6 +201,7 @@
       strokeColor={props.marker.shape.strokeColor}
       strokeWidth={props.marker.shape.strokeWidth}
       isSelected={false}
+      sceneRotation={props.scene.rotation}
     />
   {/if}
 </T.Group>
