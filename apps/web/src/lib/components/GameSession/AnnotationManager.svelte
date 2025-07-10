@@ -190,7 +190,10 @@
               aria-label="Drag handle for reordering annotation layer"
               ontouchstart={(e) => {
                 e.stopPropagation();
-                dragAndDrop.handleTouchStart(e, annotation.id, e.currentTarget.closest('[data-drag-id]'));
+                const dragElement = e.currentTarget.closest('[data-drag-id]') as HTMLElement | null;
+                if (dragElement) {
+                  dragAndDrop.handleTouchStart(e, annotation.id, dragElement);
+                }
               }}
             >
               <Icon Icon={IconGripVertical} size="1.25rem" color="var(--fgMuted)" />
