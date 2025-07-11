@@ -92,6 +92,8 @@ This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://v
   - [Tweakpane](https://kitschpatrol.com/svelte-tweakpane-ui/docs/getting-started) for debug controls for the Three.js scene
 - [Cloudflare R2](https://developers.cloudflare.com/r2/) is used for a CDN.
   - [Cloudflare Image Transformations](https://developers.cloudflare.com/images/transform-images/transform-via-url/) is used to resize images.
+- [Party Kit](https://www.partykit.io/) hosted on Cloudflare workers handle realtime web socket updates.
+  - [Yjs](https://yjs.dev/) provides conflict resolution and typing for the Party Kit Layer
 - [Resend](https://resend.com) is used for email management.
 - [Turso](https://turso.com) is used for SQLite db hosting.
   - [Drizzle](https://orm.drizzle.team) provides the ORM

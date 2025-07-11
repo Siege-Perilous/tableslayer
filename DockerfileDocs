@@ -1,7 +1,7 @@
 # vim: filetype=dockerfile
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=18.20.3
+ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-slim as build
 
 LABEL fly_launch_runtime="NodeJS"
