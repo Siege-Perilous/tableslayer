@@ -15,7 +15,7 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
-    "prettier": "^3.6.0",
+    "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-svelte": "^3.4.0",
     "turbo": "^2.5.4"
@@ -35,7 +35,7 @@
   },
   "packageManager": "pnpm@9.11.0+sha256.1c0e33f70e5df9eede84a357bdfa0b1f9dba6e58194628d48a1055756f553754",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "name": "@tableslayer"
 }
