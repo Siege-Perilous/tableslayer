@@ -40,8 +40,12 @@ A full guide for self-hosting is coming soon. Here's a quick list for anyone who
 
 1. Copy `.env-example` in the `apps/web` folder to `.env`
 2. Create a new database on Turso. Add the required keys to `.env`.
-3. Create a Cloudflare R2 bucket. Add the required keys to `.env`.
-4. Create a Resend account for email. Add the required keys to `.env`
+3. Create a Cloudflare account. Add the required API keys to `.env`.
+
+- You will need to set up an R2 bucket for assets.
+- You will need to setup [Partykit](https://docs.partykit.io/) with a partykit token. For dev, Parykit will run locally. For production, Partykit is hosted with Cloudflare workers.
+
+4. Create a Resend account for email. Add the required keys to `.env`.
 5. `pnpm install` in the root of this repo.
 6. Jump into the `apps/web` folder and run `pnpm run migrate` to initialize your db.
 7. Run `pnpm run dev` from the repo root. Two runservers will open.
