@@ -25,6 +25,7 @@
     textStrokeColor: string;
     textSize: number;
     isSelected: boolean;
+    sceneRotation: number;
   }
 
   const {
@@ -40,14 +41,22 @@
     strokeWidth,
     shadowColor,
     shadowBlur,
-    shadowOffset
+    shadowOffset,
+    sceneRotation
   }: Props = $props();
 
   const loader = useLoader(THREE.TextureLoader);
   const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
-
-  // The size of the marker is 90% of the grid cell size
   const sizeMultiplier = 0.9;
+
+  // Counter-rotate markers to keep them upright relative to the viewport
+  const normalizedRotation = $derived(((sceneRotation % 360) + 360) % 360);
+  const needsFlip = $derived(
+    (normalizedRotation > 85 && normalizedRotation < 95) || (normalizedRotation > 265 && normalizedRotation < 275)
+  );
+  const counterRotation = $derived(
+    needsFlip ? -((sceneRotation + 180) * Math.PI) / 180 : -(sceneRotation * Math.PI) / 180
+  );
 
   const canvasSize = 1024;
 
@@ -210,7 +219,11 @@
   });
 </script>
 
-<T.Group position={[marker.position.x, marker.position.y, 0]} scale={[markerSize, markerSize, 1]}>
+<T.Group
+  position={[marker.position.x, marker.position.y, 0]}
+  scale={[markerSize, markerSize, 1]}
+  rotation={[0, 0, counterRotation]}
+>
   <!-- Combined shape, stroke and text -->
   <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Main]}>
     <T.MeshBasicMaterial is={markerMaterial} />

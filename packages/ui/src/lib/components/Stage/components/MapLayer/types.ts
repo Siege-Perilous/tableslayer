@@ -3,7 +3,8 @@ import * as THREE from 'three';
 export enum MapLayerType {
   None = 0,
   FogOfWar = 1,
-  Marker = 2
+  Marker = 2,
+  Annotation = 3
 }
 
 /**
@@ -42,5 +43,6 @@ export interface MapLayerExports {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    isDrawing: () => boolean;
   };
 }

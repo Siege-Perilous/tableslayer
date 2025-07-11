@@ -148,5 +148,10 @@ export const convertPropsToSceneDetails = (
     rotation: 'sceneRotation'
   });
 
+  // Save annotation layers as JSON
+  if (stageProps.annotations?.layers && stageProps.annotations.layers.length > 0) {
+    details.annotationLayers = JSON.stringify(stageProps.annotations.layers);
+  }
+
   return details;
 };

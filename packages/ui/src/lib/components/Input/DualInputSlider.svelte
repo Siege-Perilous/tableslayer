@@ -104,4 +104,23 @@
     pointer-events: none;
     z-index: 2;
   }
+
+  @media (pointer: coarse) {
+    .dualInputSlider__activeTrack {
+      height: 1rem;
+      border-radius: var(--radius-2);
+    }
+    .dualInputSlider__bgTrack {
+      height: 1rem;
+      border-radius: var(--radius-2);
+    }
+    .dualInputSlider::-webkit-slider-thumb {
+      width: 1rem;
+      height: 1rem;
+    }
+    .dualInputSlider::-moz-range-thumb {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
 </style>

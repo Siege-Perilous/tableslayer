@@ -28,7 +28,8 @@ export enum SceneLayerOrder {
   Weather = 30,
   FogOfWar = 40,
   Grid = 50,
-  EdgeOverlay = 70
+  EdgeOverlay = 70,
+  Annotation = 80
 }
 
 export interface SceneLayerProps {
@@ -58,10 +59,16 @@ export interface SceneExports {
   fit: () => void;
   generateThumbnail: () => Promise<Blob>;
 
+  annotations: {
+    clear: (layerId: string) => void;
+    isDrawing: () => boolean;
+  };
+
   fogOfWar: {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    isDrawing: () => boolean;
   };
 
   map: {

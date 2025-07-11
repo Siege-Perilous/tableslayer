@@ -656,6 +656,129 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
 </FormControl>
 ```
 
+## Drawing Protection System
+
+The architecture includes a sophisticated drawing protection system for fog of war and annotation layers that prevents user drawings from being wiped out during uploads and synchronization.
+
+### Problem
+
+When users draw on fog of war or annotation layers:
+
+1. The drawing is captured as an image blob
+2. The blob is uploaded to R2 storage (takes time)
+3. The URL is updated in stage props and synced via Y.js
+4. During the upload/sync period, users can continue drawing
+5. When the URL update completes, it could wipe out new drawings made during upload
+
+### Solution Architecture
+
+#### 1. Drawing State Tracking
+
+Each drawing layer exports an `isDrawing()` method:
+
+```typescript
+// FogOfWarLayer.svelte
+let drawing = false;
+
+export function isDrawing() {
+  return drawing;
+}
+
+function onMouseDown(e: Event, p: THREE.Vector2 | null) {
+  drawing = true;
+  // Start drawing...
+}
+
+function onMouseUp() {
+  drawing = false;
+  // Finish drawing and trigger upload
+}
+```
+
+#### 2. Upload Abort Support
+
+Uploads can be aborted if new drawing starts:
+
+```typescript
+// In page.svelte
+let fogUploadAbortController: AbortController | null = null;
+
+const onFogUpdate = async (blob: Promise<Blob>) => {
+  // Abort previous upload if exists
+  if (fogUploadAbortController) {
+    fogUploadAbortController.abort();
+  }
+
+  // Store blob and defer processing
+  pendingFogBlob = await blob;
+
+  // Process after delay
+  fogUpdateTimer = setTimeout(() => {
+    processFogUpdate();
+  }, 500);
+};
+
+const processFogUpdate = async () => {
+  // Check if still drawing
+  if (stage?.fogOfWar?.isDrawing()) {
+    return; // Skip update
+  }
+
+  // Proceed with upload...
+};
+```
+
+#### 3. Y.js Update Blocking
+
+Incoming Y.js updates are blocked while drawing:
+
+```typescript
+// In Y.js subscription
+const isDrawingFog = stage?.fogOfWar?.isDrawing() ?? false;
+const isDrawingAnnotation = stage?.annotations?.isDrawing() ?? false;
+
+const mergedStageProps = {
+  ...incomingStageProps,
+  fogOfWar: {
+    ...incomingStageProps.fogOfWar,
+    // Block URL updates while drawing
+    url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url
+  },
+  annotations: {
+    ...incomingStageProps.annotations,
+    // Block annotation URL updates while drawing
+    layers: isDrawingAnnotation
+      ? stageProps.annotations.layers.map((localLayer) => {
+          const incomingLayer = incomingStageProps.annotations.layers.find((l) => l.id === localLayer.id);
+          return incomingLayer ? { ...incomingLayer, url: localLayer.url } : localLayer;
+        })
+      : incomingStageProps.annotations.layers
+  }
+};
+```
+
+### Benefits
+
+1. **Uninterrupted Drawing**: Users can draw continuously without canvas resets
+2. **Efficient Uploads**: Only the final drawing state is uploaded
+3. **Multi-Editor Support**: Multiple users can draw simultaneously without conflicts
+4. **Bandwidth Savings**: Aborted uploads save bandwidth and R2 costs
+5. **Responsive UI**: Local canvas remains responsive during sync operations
+
+### Debug Logging
+
+Enable drawing protection debug logs:
+
+```javascript
+localStorage.setItem('debug', 'fog,annotation,yjs');
+```
+
+Expected log messages:
+
+- "Aborting fog update - user is still drawing"
+- "Aborting previous fog upload - new drawing started"
+- "Blocking Y.js update for drawing layer"
+
 ## Key Architecture Benefits
 
 1. **Simplified Infrastructure**: No Socket.IO complexity, native WebSocket support
@@ -666,6 +789,7 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
 6. **Automatic Scaling**: Cloudflare Workers scale automatically
 7. **Native Apple Silicon Support**: No compatibility issues with development
 8. **Cloud-prem Option**: Deploy to your own Cloudflare account for better pricing
+9. **Drawing Protection**: Sophisticated system prevents drawing interruptions
 
 ## Debugging
 

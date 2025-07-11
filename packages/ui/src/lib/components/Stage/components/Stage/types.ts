@@ -1,3 +1,4 @@
+import type { AnnotationsLayerProps } from '../AnnotationLayer/types';
 import type { EdgeOverlayProps } from '../EdgeOverlayLayer/types';
 import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
@@ -8,6 +9,7 @@ import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
 export interface Callbacks {
+  onAnnotationUpdate: (layerId: string, blob: Promise<Blob>) => void;
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
@@ -51,6 +53,7 @@ export interface DisplayProps {
 export type StageProps = {
   mode: StageMode;
   activeLayer: MapLayerType;
+  annotations: AnnotationsLayerProps;
   backgroundColor: string;
   debug: {
     enableStats: boolean;
@@ -69,10 +72,16 @@ export type StageProps = {
 };
 
 export interface StageExports {
+  annotations: {
+    clear: (layerId: string) => void;
+    isDrawing: () => boolean;
+  };
+
   fogOfWar: {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    isDrawing: () => boolean;
   };
   map: {
     fit: () => void;

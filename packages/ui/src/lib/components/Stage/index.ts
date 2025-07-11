@@ -1,4 +1,5 @@
-export { DrawMode, ToolType } from './components/FogOfWarLayer/types';
+export { type AnnotationLayerData, type AnnotationsLayerProps } from './components/AnnotationLayer/types';
+export { DrawMode, RenderMode, ToolType } from './components/DrawingLayer/types';
 export { GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';
 export { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './components/MarkerLayer/types';

@@ -816,4 +816,23 @@
   .colorPicker__inputs--hex {
     grid-template-columns: 1fr 2fr;
   }
+
+  @media (pointer: coarse) {
+    .colorPicker__slider {
+      height: 1rem;
+      border-radius: var(--radius-2);
+    }
+
+    .colorPicker__sliderWrapper::before {
+      height: 1rem;
+    }
+    .colorPicker__slider::-webkit-slider-thumb {
+      width: 1rem;
+      height: 1rem;
+    }
+    .colorPicker__slider::-moz-range-thumb {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
 </style>

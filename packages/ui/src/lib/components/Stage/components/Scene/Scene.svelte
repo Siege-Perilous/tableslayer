@@ -16,12 +16,14 @@
   } from 'postprocessing';
   import { getLUT } from './luts';
   import { type Callbacks, type StageProps } from '../Stage/types';
-  import MapLayer from '../MapLayer/MapLayer.svelte';
-  import GridLayer from '../GridLayer/GridLayer.svelte';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
+  import type { AnnotationExports } from '../AnnotationLayer/types';
+  import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
+  import GridLayer from '../GridLayer/GridLayer.svelte';
+  import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
@@ -37,6 +39,7 @@
   const callbacks = getContext<Callbacks>('callbacks');
   const onSceneUpdate = callbacks.onSceneUpdate;
 
+  let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
@@ -328,6 +331,11 @@
     return offscreenCanvas.convertToBlob({ type: 'image/jpeg', quality });
   }
 
+  export const annotations = {
+    clear: (layerId: string) => annotationsLayer.clear(layerId),
+    isDrawing: () => annotationsLayer?.isDrawing() ?? false
+  };
+
   export const map = {
     fill: () => mapLayer.fill(),
     fit: () => mapLayer.fit()
@@ -338,7 +346,8 @@
   export const fogOfWar = {
     clear: () => mapLayer.fogOfWar.clear(),
     reset: () => mapLayer.fogOfWar.reset(),
-    toPng: () => mapLayer.fogOfWar.toPng()
+    toPng: () => mapLayer.fogOfWar.toPng(),
+    isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
 </script>
 
@@ -389,7 +398,19 @@
     props={props.edgeOverlay}
     display={props.display}
     visible={props.edgeOverlay.enabled}
+    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.EdgeOverlay}
+  />
+
+  <AnnotationLayer
+    bind:this={annotationsLayer}
+    props={props.annotations}
+    mode={props.mode}
+    isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
+    sceneZoom={props.scene.zoom}
+    display={props.display}
+    layers={[SceneLayer.Overlay]}
+    renderOrder={SceneLayerOrder.Annotation}
   />
 
   <MarkerLayer
