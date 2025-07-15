@@ -133,7 +133,7 @@ export const StageDefaultProps: StageProps = {
     snapToGrid: true,
     autoHideDelay: 3000,
     color: '#ffff00',
-    thickness: 2,
+    thickness: 10,
     opacity: 0.8,
     showDistance: true,
     distanceUnit: 'ft'
