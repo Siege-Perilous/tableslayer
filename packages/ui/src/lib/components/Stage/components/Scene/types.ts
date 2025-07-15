@@ -29,7 +29,8 @@ export enum SceneLayerOrder {
   FogOfWar = 40,
   Grid = 50,
   EdgeOverlay = 70,
-  Annotation = 80
+  Annotation = 80,
+  Measurement = 90
 }
 
 export interface SceneLayerProps {

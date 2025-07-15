@@ -22,6 +22,7 @@
     GridControls,
     MapControls,
     MarkerControls,
+    MeasurementControls,
     PostProcessingControls,
     SceneControls,
     WeatherControls
@@ -267,6 +268,7 @@
   <GridControls bind:props={stageProps} />
   <MapControls bind:props={stageProps} {stage} />
   <MarkerControls bind:props={stageProps} bind:selectedMarker />
+  <MeasurementControls bind:props={stageProps} />
   <PostProcessingControls bind:props={stageProps} />
   <SceneControls bind:props={stageProps} {stage} />
   <WeatherControls bind:props={stageProps} />

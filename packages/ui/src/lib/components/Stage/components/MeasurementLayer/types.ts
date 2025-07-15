@@ -1,0 +1,72 @@
+import * as THREE from 'three';
+
+export enum MeasurementType {
+  Line = 1,
+  Beam = 2,
+  Cone = 3,
+  Circle = 4,
+  Square = 5
+}
+
+export enum SnapType {
+  None = 0,
+  Center = 1,
+  Corner = 2
+}
+
+export interface Measurement {
+  id: string;
+  type: MeasurementType;
+  startPoint: THREE.Vector2;
+  endPoint: THREE.Vector2;
+  distance: number;
+  unit: string;
+  createdAt: number;
+}
+
+export interface MeasurementLayerProps {
+  /**
+   * Whether measurement layer is enabled
+   */
+  enabled: boolean;
+
+  /**
+   * The type of measurement to display
+   */
+  type: MeasurementType;
+
+  /**
+   * The type of grid snapping to use
+   */
+  snapType: SnapType;
+
+  /**
+   * Auto-hide delay in milliseconds (default 3000ms)
+   */
+  autoHideDelay: number;
+
+  /**
+   * Color of the measurement line
+   */
+  color: string;
+
+  /**
+   * Thickness of the measurement line
+   */
+  thickness: number;
+
+  /**
+   * Opacity of the measurement
+   */
+  opacity: number;
+
+  /**
+   * Whether to show distance text
+   */
+  showDistance: boolean;
+
+  /**
+   * Distance unit to display
+   */
+  distanceUnit: string;
+}

@@ -2,7 +2,9 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
+  MeasurementType,
   RainPreset,
+  SnapType,
   StageMode,
   ToolType,
   WeatherType,
@@ -126,6 +128,17 @@ export const StageDefaultProps: StageProps = {
       strokeWidth: 1
     },
     markers: []
+  },
+  measurement: {
+    enabled: false,
+    type: MeasurementType.Line,
+    snapType: SnapType.Center,
+    autoHideDelay: 3000,
+    color: '#ffff00',
+    thickness: 2,
+    opacity: 0.8,
+    showDistance: true,
+    distanceUnit: 'ft'
   },
   postProcessing: {
     enabled: true,
