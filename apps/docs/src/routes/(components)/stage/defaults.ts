@@ -136,7 +136,9 @@ export const StageDefaultProps: StageProps = {
     thickness: 10,
     opacity: 0.8,
     showDistance: true,
-    distanceUnit: 'ft'
+    distanceUnit: 'ft',
+    outlineThickness: 4,
+    outlineColor: '#000000'
   },
   postProcessing: {
     enabled: true,

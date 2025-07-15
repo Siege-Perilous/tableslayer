@@ -4,8 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { type MeasurementLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
-  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
-  import { MapLayerType } from '../MapLayer/types';
+  import { SceneLayer } from '../Scene/types';
   import { type GridLayerProps } from '../GridLayer/types';
   import { snapToGrid } from '../../helpers/grid';
   import LayerInput from '../LayerInput/LayerInput.svelte';

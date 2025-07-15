@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { MeasurementType } from '../types';
+import type { DisplayProps } from '../../Stage/types';
+import { MeasurementType, type MeasurementLayerProps } from '../types';
 
 export interface IMeasurement {
   id: string;
@@ -12,6 +13,8 @@ export interface IMeasurement {
   color: string;
   opacity: number;
   thickness: number;
+  outlineThickness: number;
+  outlineColor: string;
 
   // Lifecycle methods
   update(endPoint: THREE.Vector2): void;
@@ -32,7 +35,10 @@ export abstract class BaseMeasurement implements IMeasurement {
   public color: string;
   public opacity: number;
   public thickness: number;
+  public outlineThickness: number;
+  public outlineColor: string;
   public showDistance: boolean;
+  protected displayProps: DisplayProps;
 
   protected shapeObject: THREE.Object3D | null = null;
   protected textObject: THREE.Object3D | null = null;
@@ -41,23 +47,23 @@ export abstract class BaseMeasurement implements IMeasurement {
   constructor(
     type: MeasurementType,
     startPoint: THREE.Vector2,
-    color: string,
-    opacity: number,
-    thickness: number,
-    unit: string = 'ft',
-    showDistance: boolean = true
+    measurementProps: MeasurementLayerProps,
+    displayProps: DisplayProps
   ) {
     this.id = crypto.randomUUID();
     this.type = type;
     this.startPoint = startPoint.clone();
     this.endPoint = startPoint.clone();
     this.distance = 0;
-    this.unit = unit;
+    this.unit = measurementProps.distanceUnit;
     this.createdAt = Date.now();
-    this.color = color;
-    this.opacity = opacity;
-    this.thickness = thickness;
-    this.showDistance = showDistance;
+    this.color = measurementProps.color;
+    this.opacity = measurementProps.opacity;
+    this.thickness = measurementProps.thickness;
+    this.outlineThickness = measurementProps.outlineThickness;
+    this.outlineColor = measurementProps.outlineColor;
+    this.showDistance = measurementProps.showDistance;
+    this.displayProps = displayProps;
   }
 
   update(endPoint: THREE.Vector2): void {
@@ -161,54 +167,39 @@ export abstract class BaseMeasurement implements IMeasurement {
    * Creates a text mesh with consistent styling across all measurements
    * @param text The text to display
    * @param position The world position where the text should be placed
-   * @param displayProps Display properties for sizing
    * @returns A Three.js mesh containing the rendered text
    */
-  protected createTextMesh(text: string, position: THREE.Vector2, displayProps: any): THREE.Mesh {
+  protected createTextMesh(text: string, position: THREE.Vector2): THREE.Mesh {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d')!;
-
-    const fontSize = 160;
-
-    // Set text properties for measurement
-    context.font = `Raven Hell ${fontSize}px`;
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-
-    // Measure text
-    const textMetrics = context.measureText(text);
-    const textWidth = textMetrics.width;
-    const textHeight = fontSize;
-
-    // Set canvas size with proper padding for outline
-    const outlineWidth = 4;
-    const canvasWidth = textWidth + outlineWidth * 2;
-    const canvasHeight = textHeight + outlineWidth * 2;
-
-    // Create high-resolution canvas for crisp text
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
 
     // Clear canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw text outline (black)
-    context.font = `Raven Hell ${fontSize + 1}px`;
-    context.strokeStyle = '#000000';
-    context.lineWidth = outlineWidth;
-    context.strokeText(text, canvas.width / 2, canvas.height / 2);
+    const fontSize = this.displayProps.resolution.y / 15;
+    context.canvas.width = 1024;
+    context.canvas.height = 1024;
 
-    // Draw text fill (colored)
-    context.font = `Raven Hell ${fontSize}px`;
+    context.font = `${fontSize}px Raven Hell`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.lineWidth = 16;
+    context.strokeStyle = '#000000';
+    context.fillStyle = 'transparent';
+
+    context.strokeText(text, canvas.width / 2, canvas.height / 2, 1024);
+
     context.fillStyle = this.color;
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
+    context.strokeStyle = 'transparent';
+
+    context.fillText(text, canvas.width / 2, canvas.height / 2, 1024);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
     // Create plane geometry for text with world dimensions
-    const geometry = new THREE.PlaneGeometry(canvas.width * 2, canvas.height * 2);
+    const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -217,7 +208,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     });
 
     const textMesh = new THREE.Mesh(geometry, material);
-    textMesh.position.set(position.x - canvas.width / 2, position.y - canvas.height / 2, 1);
+    textMesh.position.set(position.x, position.y, 1); // Slightly above the line
 
     return textMesh;
   }

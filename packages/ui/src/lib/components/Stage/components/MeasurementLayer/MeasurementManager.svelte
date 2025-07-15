@@ -4,11 +4,12 @@
   import { MeasurementType, type MeasurementLayerProps } from './types';
   import type { IMeasurement } from './measurements/BaseMeasurement';
   import { LineMeasurement } from './measurements/LineMeasurement';
+  import type { DisplayProps } from '../Stage/types';
 
   interface Props {
     props: MeasurementLayerProps;
     visible: boolean;
-    displayProps: any;
+    displayProps: DisplayProps;
   }
 
   const { props, visible, displayProps }: Props = $props();
@@ -29,26 +30,10 @@
 
     switch (props.type) {
       case MeasurementType.Line:
-        measurement = new LineMeasurement(
-          startPoint,
-          props.color,
-          props.opacity,
-          props.thickness,
-          props.distanceUnit,
-          props.showDistance,
-          displayProps
-        );
+        measurement = new LineMeasurement(startPoint, props, displayProps);
         break;
       default:
-        measurement = new LineMeasurement(
-          startPoint,
-          props.color,
-          props.opacity,
-          props.thickness,
-          props.distanceUnit,
-          props.showDistance,
-          displayProps
-        );
+        measurement = new LineMeasurement(startPoint, props, displayProps);
         break;
     }
 

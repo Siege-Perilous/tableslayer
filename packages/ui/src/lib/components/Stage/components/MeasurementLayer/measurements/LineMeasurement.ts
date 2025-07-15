@@ -1,25 +1,15 @@
 import * as THREE from 'three';
-import { calculateLineDistance } from '../distanceCalculations';
-import { MeasurementType } from '../types';
+import type { DisplayProps } from '../../Stage/types';
+import { MeasurementType, type MeasurementLayerProps } from '../types';
+import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class LineMeasurement extends BaseMeasurement {
   private canvasGeometry: THREE.BufferGeometry | null = null;
   private canvasMaterial: THREE.MeshBasicMaterial | null = null;
 
-  private displayProps: any;
-
-  constructor(
-    startPoint: THREE.Vector2,
-    color: string,
-    opacity: number,
-    thickness: number,
-    unit: string = 'ft',
-    showDistance: boolean = true,
-    displayProps: any
-  ) {
-    super(MeasurementType.Line, startPoint, color, opacity, thickness, unit, showDistance);
-    this.displayProps = displayProps;
+  constructor(startPoint: THREE.Vector2, measurementProps: MeasurementLayerProps, displayProps: DisplayProps) {
+    super(MeasurementType.Line, startPoint, measurementProps, displayProps);
   }
 
   getDistance(): number {
@@ -123,7 +113,7 @@ export class LineMeasurement extends BaseMeasurement {
     );
 
     // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), midPoint, this.displayProps);
+    return this.createTextMesh(this.getDisplayText(), midPoint);
   }
 
   dispose(): void {

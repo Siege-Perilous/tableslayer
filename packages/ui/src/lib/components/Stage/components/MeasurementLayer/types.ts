@@ -60,4 +60,14 @@ export interface MeasurementLayerProps {
    * Distance unit to display
    */
   distanceUnit: string;
+
+  /**
+   * Thickness of the text outline
+   */
+  outlineThickness: number;
+
+  /**
+   * Color of the text outline
+   */
+  outlineColor: string;
 }
