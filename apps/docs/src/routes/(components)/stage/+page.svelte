@@ -70,6 +70,12 @@
         case 'F':
           stage?.fogOfWar.reset();
           break;
+        case 'm':
+          stageProps.activeLayer = MapLayerType.Marker;
+          break;
+        case 'M':
+          stageProps.activeLayer = MapLayerType.Measurement;
+          break;
         case 'o':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.tool.type = ToolType.Ellipse;
@@ -79,9 +85,6 @@
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.tool.type = ToolType.Ellipse;
           stageProps.fogOfWar.tool.mode = DrawMode.Draw;
-          break;
-        case 'm':
-          stageProps.activeLayer = MapLayerType.Marker;
           break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
@@ -249,6 +252,7 @@
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
       <li>m - Edit Markers</li>
+      <li>M - Edit Measurements</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
       <li>SHIFT + Wheel - Zoom Map</li>
       <li>CONTROL + Mouse Down - Pan Scene</li>

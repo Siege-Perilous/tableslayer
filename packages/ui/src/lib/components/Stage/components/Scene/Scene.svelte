@@ -406,11 +406,11 @@
   <AnnotationLayer
     bind:this={annotationsLayer}
     props={props.annotations}
+    layers={[SceneLayer.Overlay]}
     mode={props.mode}
     isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
     sceneZoom={props.scene.zoom}
     display={props.display}
-    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.Annotation}
   />
 
@@ -423,9 +423,10 @@
 
   <MeasurementLayer
     props={props.measurement}
+    layers={[SceneLayer.Overlay]}
+    renderOrder={SceneLayerOrder.Measurement}
     isActive={props.activeLayer === MapLayerType.Measurement || props.activeLayer === MapLayerType.None}
     display={props.display}
     grid={props.grid}
-    activeLayer={props.activeLayer}
   />
 </T.Object3D>

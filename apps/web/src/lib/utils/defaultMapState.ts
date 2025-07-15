@@ -4,7 +4,6 @@ import {
   MapLayerType,
   MeasurementType,
   SceneRotation,
-  SnapType,
   StageMode,
   ToolType,
   WeatherType,
@@ -124,9 +123,8 @@ export const StageDefaultProps: StageProps = {
     markers: []
   },
   measurement: {
-    enabled: false,
     type: MeasurementType.Line,
-    snapType: SnapType.Center,
+    snapToGrid: true,
     autoHideDelay: 3000,
     color: '#ffff00',
     thickness: 2,

@@ -8,11 +8,7 @@ export enum MeasurementType {
   Square = 5
 }
 
-export enum SnapType {
-  None = 0,
-  Center = 1,
-  Corner = 2
-}
+// Removed SnapType enum - using boolean instead
 
 export interface Measurement {
   id: string;
@@ -26,19 +22,14 @@ export interface Measurement {
 
 export interface MeasurementLayerProps {
   /**
-   * Whether measurement layer is enabled
-   */
-  enabled: boolean;
-
-  /**
    * The type of measurement to display
    */
   type: MeasurementType;
 
   /**
-   * The type of grid snapping to use
+   * Whether to snap to grid
    */
-  snapType: SnapType;
+  snapToGrid: boolean;
 
   /**
    * Auto-hide delay in milliseconds (default 3000ms)
