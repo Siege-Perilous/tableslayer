@@ -4,6 +4,10 @@
   import { MeasurementType, type MeasurementLayerProps } from './types';
   import type { IMeasurement } from './measurements/BaseMeasurement';
   import { LineMeasurement } from './measurements/LineMeasurement';
+  import { CircleMeasurement } from './measurements/CircleMeasurement';
+  import { RectangleMeasurement } from './measurements/RectangleMeasurement';
+  import { BeamMeasurement } from './measurements/BeamMeasurement';
+  import { ConeMeasurement } from './measurements/ConeMeasurement';
   import type { DisplayProps } from '../Stage/types';
 
   interface Props {
@@ -32,6 +36,18 @@
     switch (props.type) {
       case MeasurementType.Line:
         measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);
+        break;
+      case MeasurementType.Beam:
+        measurement = new BeamMeasurement(startPoint, props, displayProps, gridProps);
+        break;
+      case MeasurementType.Cone:
+        measurement = new ConeMeasurement(startPoint, props, displayProps, gridProps);
+        break;
+      case MeasurementType.Circle:
+        measurement = new CircleMeasurement(startPoint, props, displayProps, gridProps);
+        break;
+      case MeasurementType.Square:
+        measurement = new RectangleMeasurement(startPoint, props, displayProps, gridProps);
         break;
       default:
         measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);

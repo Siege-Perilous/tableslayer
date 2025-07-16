@@ -1,0 +1,158 @@
+import * as THREE from 'three';
+import type { DisplayProps } from '../../Stage/types';
+import { MeasurementType, type MeasurementLayerProps } from '../types';
+import { drawCircle, drawLargeCircle } from '../utils/canvasDrawing';
+import { calculateLineDistance } from '../utils/distanceCalculations';
+import { BaseMeasurement } from './BaseMeasurement';
+
+export class CircleMeasurement extends BaseMeasurement {
+  private canvasGeometry: THREE.BufferGeometry | null = null;
+  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
+
+  constructor(
+    startPoint: THREE.Vector2,
+    measurementProps: MeasurementLayerProps,
+    displayProps: DisplayProps,
+    gridProps: any
+  ) {
+    super(MeasurementType.Circle, startPoint, measurementProps, displayProps, gridProps);
+  }
+
+  getDistance(): number {
+    // For circles, distance is the radius
+    return calculateLineDistance(
+      this.startPoint,
+      this.endPoint,
+      this.gridProps.spacing,
+      this.displayProps.size,
+      this.displayProps.resolution,
+      this.gridProps.gridType,
+      this.snapToGrid,
+      this.enableDMG252,
+      this.gridProps.worldGridSize,
+      this.gridProps.worldGridUnits
+    );
+  }
+
+  getDisplayText(): string {
+    const radius = this.getDistance();
+    return `${radius.toFixed(1)} ${this.gridProps.worldGridUnits}`;
+  }
+
+  renderShape(): THREE.Object3D {
+    // Dispose previous geometry and material
+    if (this.canvasGeometry) {
+      this.canvasGeometry.dispose();
+    }
+    if (this.canvasMaterial) {
+      this.canvasMaterial.dispose();
+    }
+
+    // Calculate radius in pixels
+    const radiusPixels = this.startPoint.distanceTo(this.endPoint);
+
+    // Create canvas for the circle
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+
+    // Calculate canvas size - need to accommodate the full circle plus outline and points
+    const padding = Math.max(this.thickness * 4 + this.outlineThickness, 40);
+    const canvasSize = (radiusPixels + padding) * 2;
+
+    canvas.width = Math.max(canvasSize, 100);
+    canvas.height = Math.max(canvasSize, 100);
+
+    // Clear canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Canvas center coordinates
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
+
+    // Draw the large circle with fill and stroke using utility function
+    drawLargeCircle(
+      context,
+      canvasCenterX,
+      canvasCenterY,
+      radiusPixels,
+      this.color,
+      this.thickness,
+      this.color,
+      0.2,
+      this.outlineThickness > 0 ? this.outlineColor : undefined,
+      this.outlineThickness > 0 ? this.outlineThickness : undefined
+    );
+
+    // Draw center point
+    drawCircle(
+      context,
+      canvasCenterX,
+      canvasCenterY,
+      this.thickness * 2,
+      this.color,
+      this.outlineColor,
+      this.outlineThickness
+    );
+
+    // Draw radius indicator point at the edge of the circle
+    // Calculate the position of the end point relative to start point, then place on circle edge
+    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
+    const edgeX = canvasCenterX + direction.x * radiusPixels;
+    const edgeY = canvasCenterY - direction.y * radiusPixels; // Invert Y for canvas coordinates
+    drawCircle(context, edgeX, edgeY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+
+    // Create plane geometry for the circle
+    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+    this.canvasMaterial = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: this.opacity,
+      side: THREE.DoubleSide
+    });
+
+    const circleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
+    // Position the mesh so the center aligns with the start point (circle center)
+    circleMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
+
+    return circleMesh;
+  }
+
+  renderText(): THREE.Object3D {
+    if (!this.showDistance) {
+      return new THREE.Group();
+    }
+
+    // Position text outside the circle, offset from the end point
+    const radius = this.startPoint.distanceTo(this.endPoint);
+    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
+    const textOffset = 150; // Offset text outside the circle
+    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(textOffset));
+
+    // Use the shared text rendering method
+    return this.createTextMesh(this.getDisplayText(), textPosition);
+  }
+
+  updateShape(): void {
+    // Override to handle circle-specific updates if needed
+  }
+
+  updateText(): void {
+    // Override to handle circle-specific text updates if needed
+  }
+
+  dispose(): void {
+    super.dispose();
+    if (this.canvasGeometry) {
+      this.canvasGeometry.dispose();
+      this.canvasGeometry = null;
+    }
+    if (this.canvasMaterial) {
+      this.canvasMaterial.dispose();
+      this.canvasMaterial = null;
+    }
+  }
+}

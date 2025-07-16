@@ -83,6 +83,175 @@ export function drawCircle(
 }
 
 /**
+ * Draws a large circle with stroke and optional fill
+ * @param context Canvas 2D context
+ * @param x Center X coordinate
+ * @param y Center Y coordinate
+ * @param radius Circle radius
+ * @param strokeColor Stroke color
+ * @param strokeThickness Stroke thickness
+ * @param fillColor Optional fill color
+ * @param fillOpacity Optional fill opacity (0-1)
+ * @param outlineColor Optional outline color
+ * @param outlineThickness Optional outline thickness
+ */
+export function drawLargeCircle(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  strokeColor: string,
+  strokeThickness: number,
+  fillColor?: string,
+  fillOpacity?: number,
+  outlineColor?: string,
+  outlineThickness?: number
+): void {
+  // Draw fill if specified
+  if (fillColor && fillOpacity !== undefined) {
+    const originalAlpha = context.globalAlpha;
+    context.globalAlpha = fillOpacity;
+    context.fillStyle = fillColor;
+    context.beginPath();
+    context.arc(x, y, radius, 0, 2 * Math.PI);
+    context.fill();
+    context.globalAlpha = originalAlpha;
+  }
+
+  // Draw outline if specified
+  if (outlineColor && outlineThickness) {
+    context.strokeStyle = outlineColor;
+    context.lineWidth = strokeThickness + outlineThickness * 2;
+    context.beginPath();
+    context.arc(x, y, radius, 0, 2 * Math.PI);
+    context.stroke();
+  }
+
+  // Draw the main stroke
+  context.strokeStyle = strokeColor;
+  context.lineWidth = strokeThickness;
+  context.beginPath();
+  context.arc(x, y, radius, 0, 2 * Math.PI);
+  context.stroke();
+}
+
+/**
+ * Draws a rectangle with stroke and optional fill
+ * @param context Canvas 2D context
+ * @param x Top-left X coordinate
+ * @param y Top-left Y coordinate
+ * @param width Rectangle width
+ * @param height Rectangle height
+ * @param strokeColor Stroke color
+ * @param strokeThickness Stroke thickness
+ * @param fillColor Optional fill color
+ * @param fillOpacity Optional fill opacity (0-1)
+ * @param outlineColor Optional outline color
+ * @param outlineThickness Optional outline thickness
+ */
+export function drawRectangle(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  strokeColor: string,
+  strokeThickness: number,
+  fillColor?: string,
+  fillOpacity?: number,
+  outlineColor?: string,
+  outlineThickness?: number
+): void {
+  // Draw fill if specified
+  if (fillColor && fillOpacity !== undefined) {
+    const originalAlpha = context.globalAlpha;
+    context.globalAlpha = fillOpacity;
+    context.fillStyle = fillColor;
+    context.fillRect(x, y, width, height);
+    context.globalAlpha = originalAlpha;
+  }
+
+  // Draw outline if specified
+  if (outlineColor && outlineThickness) {
+    context.strokeStyle = outlineColor;
+    context.lineWidth = strokeThickness + outlineThickness * 2;
+    context.strokeRect(x, y, width, height);
+  }
+
+  // Draw the main stroke
+  context.strokeStyle = strokeColor;
+  context.lineWidth = strokeThickness;
+  context.strokeRect(x, y, width, height);
+}
+
+/**
+ * Draws a cone/sector with stroke and optional fill
+ * @param context Canvas 2D context
+ * @param x Center X coordinate
+ * @param y Center Y coordinate
+ * @param radius Cone radius
+ * @param startAngle Start angle in radians
+ * @param endAngle End angle in radians
+ * @param strokeColor Stroke color
+ * @param strokeThickness Stroke thickness
+ * @param fillColor Optional fill color
+ * @param fillOpacity Optional fill opacity (0-1)
+ * @param outlineColor Optional outline color
+ * @param outlineThickness Optional outline thickness
+ */
+export function drawCone(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  strokeColor: string,
+  strokeThickness: number,
+  fillColor?: string,
+  fillOpacity?: number,
+  outlineColor?: string,
+  outlineThickness?: number
+): void {
+  // Invert angles for canvas coordinate system (Y increases downward)
+  const invertedStartAngle = -endAngle;
+  const invertedEndAngle = -startAngle;
+
+  // Draw fill if specified
+  if (fillColor && fillOpacity !== undefined) {
+    const originalAlpha = context.globalAlpha;
+    context.globalAlpha = fillOpacity;
+    context.fillStyle = fillColor;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y, radius, invertedStartAngle, invertedEndAngle);
+    context.closePath();
+    context.fill();
+    context.globalAlpha = originalAlpha;
+  }
+
+  // Draw outline if specified
+  if (outlineColor && outlineThickness) {
+    context.strokeStyle = outlineColor;
+    context.lineWidth = strokeThickness + outlineThickness * 2;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y, radius, invertedStartAngle, invertedEndAngle);
+    context.closePath();
+    context.stroke();
+  }
+
+  // Draw the main stroke
+  context.strokeStyle = strokeColor;
+  context.lineWidth = strokeThickness;
+  context.beginPath();
+  context.moveTo(x, y);
+  context.arc(x, y, radius, invertedStartAngle, invertedEndAngle);
+  context.closePath();
+  context.stroke();
+}
+
+/**
  * Creates a text canvas with consistent styling
  * @param text The text to display
  * @param fontSize Font size in pixels

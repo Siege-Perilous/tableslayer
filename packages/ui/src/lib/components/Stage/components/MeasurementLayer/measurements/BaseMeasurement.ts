@@ -41,6 +41,8 @@ export abstract class BaseMeasurement implements IMeasurement {
   public showDistance: boolean;
   public snapToGrid: boolean;
   public enableDMG252: boolean;
+  public beamWidth: number;
+  public coneAngle: number;
   protected displayProps: DisplayProps;
   protected gridProps: any; // Grid layer properties
 
@@ -70,6 +72,8 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.showDistance = measurementProps.showDistance;
     this.snapToGrid = measurementProps.snapToGrid;
     this.enableDMG252 = measurementProps.enableDMG252;
+    this.beamWidth = measurementProps.beamWidth;
+    this.coneAngle = measurementProps.coneAngle;
     this.displayProps = displayProps;
     this.gridProps = gridProps;
   }

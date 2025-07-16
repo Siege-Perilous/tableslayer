@@ -76,4 +76,14 @@ export interface MeasurementLayerProps {
    * Color of the text outline
    */
   outlineColor: string;
+
+  /**
+   * Width of beam measurements in world grid units
+   */
+  beamWidth: number;
+
+  /**
+   * Angle of cone measurements in degrees
+   */
+  coneAngle: number;
 }
