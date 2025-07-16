@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLargeCircle } from '../utils/canvasDrawing';
@@ -14,11 +15,6 @@ export class CircleMeasurement extends BaseMeasurement {
     super(MeasurementType.Circle, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  getDisplayText(): string {
-    const radius = this.getDistance();
-    return `${radius.toFixed(1)} ${this.gridProps.worldGridUnits}`;
-  }
-
   renderShape(): THREE.Object3D {
     // Dispose previous geometry and material using base class helper
     this.disposeCanvasResources();
@@ -31,7 +27,7 @@ export class CircleMeasurement extends BaseMeasurement {
     const context = canvas.getContext('2d')!;
 
     // Calculate canvas size - need to accommodate the full circle plus outline and points
-    const padding = Math.max(this.thickness * 4 + this.outlineThickness, 40);
+    const padding = Math.max(this.markerSize + this.outlineThickness, 40);
     const canvasSize = (radiusPixels + padding) * 2;
 
     canvas.width = Math.max(canvasSize, 100);
@@ -63,7 +59,7 @@ export class CircleMeasurement extends BaseMeasurement {
       context,
       canvasCenterX,
       canvasCenterY,
-      this.thickness * 2,
+      this.markerSize / 2,
       this.color,
       this.outlineColor,
       this.outlineThickness
@@ -74,7 +70,7 @@ export class CircleMeasurement extends BaseMeasurement {
     const direction = this.endPoint.clone().sub(this.startPoint).normalize();
     const edgeX = canvasCenterX + direction.x * radiusPixels;
     const edgeY = canvasCenterY - direction.y * radiusPixels; // Invert Y for canvas coordinates
-    drawCircle(context, edgeX, edgeY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, edgeX, edgeY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -85,7 +81,8 @@ export class CircleMeasurement extends BaseMeasurement {
     this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const circleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    // Position the mesh so the center aligns with the start point (circle center)
+    circleMesh.layers.set(SceneLayer.Overlay);
+    circleMesh.renderOrder = SceneLayerOrder.Measurement;
     circleMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
 
     return circleMesh;

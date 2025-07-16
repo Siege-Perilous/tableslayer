@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawCone } from '../utils/canvasDrawing';
@@ -36,7 +37,7 @@ export class ConeMeasurement extends BaseMeasurement {
     const context = canvas.getContext('2d')!;
 
     // Calculate canvas size - accommodate full cone plus padding
-    const padding = Math.max(this.thickness * 4 + this.outlineThickness, 40);
+    const padding = Math.max(this.markerSize + this.outlineThickness, 40);
     const canvasSize = (radius + padding) * 2;
 
     canvas.width = Math.max(canvasSize, 100);
@@ -72,7 +73,7 @@ export class ConeMeasurement extends BaseMeasurement {
       context,
       canvasCenterX,
       canvasCenterY,
-      this.thickness * 2,
+      this.markerSize / 2,
       this.color,
       this.outlineColor,
       this.outlineThickness
@@ -81,7 +82,15 @@ export class ConeMeasurement extends BaseMeasurement {
     // Draw point at the center of the cone's end arc (invert Y for canvas coordinates)
     const endPointX = canvasCenterX + Math.cos(centerAngle) * radius;
     const endPointY = canvasCenterY - Math.sin(centerAngle) * radius;
-    drawCircle(context, endPointX, endPointY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(
+      context,
+      endPointX,
+      endPointY,
+      this.markerSize / 2,
+      this.color,
+      this.outlineColor,
+      this.outlineThickness
+    );
 
     // Draw points at the cone's edges (invert Y for canvas coordinates)
     const startEdgeX = canvasCenterX + Math.cos(startAngle) * radius;
@@ -90,7 +99,7 @@ export class ConeMeasurement extends BaseMeasurement {
       context,
       startEdgeX,
       startEdgeY,
-      this.thickness * 1.5,
+      this.markerSize / 2,
       this.color,
       this.outlineColor,
       this.outlineThickness
@@ -98,7 +107,7 @@ export class ConeMeasurement extends BaseMeasurement {
 
     const endEdgeX = canvasCenterX + Math.cos(endAngle) * radius;
     const endEdgeY = canvasCenterY - Math.sin(endAngle) * radius;
-    drawCircle(context, endEdgeX, endEdgeY, this.thickness * 1.5, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, endEdgeX, endEdgeY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -109,7 +118,8 @@ export class ConeMeasurement extends BaseMeasurement {
     this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const coneMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    // Position the mesh so the center aligns with the start point (cone origin)
+    coneMesh.layers.set(SceneLayer.Overlay);
+    coneMesh.renderOrder = SceneLayerOrder.Measurement;
     coneMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
 
     return coneMesh;

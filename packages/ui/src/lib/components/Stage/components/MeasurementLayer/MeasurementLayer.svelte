@@ -16,7 +16,7 @@
     grid: GridLayerProps;
   }
 
-  const { props, isActive, display, grid, ...meshProps }: Props = $props();
+  const { props, isActive, display, grid }: Props = $props();
 
   let snappedPosition = new THREE.Vector2();
   let inputMesh = $state(new THREE.Mesh());
@@ -35,7 +35,7 @@
    * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
    * @returns {void}
    */
-  function handleMouseDown(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+  function handleMouseDown(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!coords || !isActive || !measurementManager) return;
 
     coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
@@ -62,7 +62,7 @@
    * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
    * @returns {void}
    */
-  function handleMouseMove(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+  function handleMouseMove(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!coords || !isActive || !measurementManager) return;
 
     coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
@@ -92,7 +92,7 @@
    * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
    * @returns {void}
    */
-  function handleMouseUp(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+  function handleMouseUp(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!isDrawing || !startPoint || !measurementManager || !coords) return;
 
     coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
@@ -112,7 +112,7 @@
    * cannot be placed outside the active area.
    * @returns {void}
    */
-  function handleMouseLeave() {
+  function handleMouseLeave(): void {
     if (measurementManager) {
       measurementManager.hidePreview();
     }
@@ -124,7 +124,7 @@
    * visual feedback for where measurements can be placed.
    * @returns {void}
    */
-  function handleMouseEnter() {
+  function handleMouseEnter(): void {
     if (measurementManager && isActive) {
       measurementManager.showPreviewIndicator();
     }
@@ -150,11 +150,4 @@
 </T.Mesh>
 
 <!-- Measurement Manager Component -->
-<MeasurementManager
-  bind:this={measurementManager}
-  {props}
-  visible={isActive}
-  displayProps={display}
-  gridProps={grid}
-  {...meshProps}
-/>
+<MeasurementManager bind:this={measurementManager} {props} visible={isActive} displayProps={display} gridProps={grid} />

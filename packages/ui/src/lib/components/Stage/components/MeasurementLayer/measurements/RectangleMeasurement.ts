@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
@@ -12,11 +13,6 @@ export class RectangleMeasurement extends BaseMeasurement {
     gridProps: any
   ) {
     super(MeasurementType.Square, startPoint, measurementProps, displayProps, gridProps);
-  }
-
-  getDisplayText(): string {
-    const distance = this.getDistance();
-    return `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
   }
 
   renderShape(): THREE.Object3D {
@@ -37,7 +33,7 @@ export class RectangleMeasurement extends BaseMeasurement {
     const context = canvas.getContext('2d')!;
 
     // Add padding for outline and corner points
-    const padding = Math.max(this.thickness * 4 + this.outlineThickness, 40);
+    const padding = Math.max(this.markerSize + this.outlineThickness, 40);
 
     canvas.width = Math.max(width + padding * 2, 100);
     canvas.height = Math.max(height + padding * 2, 100);
@@ -69,7 +65,7 @@ export class RectangleMeasurement extends BaseMeasurement {
     }
 
     // Draw corner points
-    const cornerRadius = this.thickness * 2;
+    const cornerRadius = this.markerSize / 2;
 
     // Top-left corner
     drawCircle(context, rectX, rectY, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
@@ -100,7 +96,8 @@ export class RectangleMeasurement extends BaseMeasurement {
     this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const rectangleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    // Position the mesh so it aligns with the rectangle bounds
+    rectangleMesh.layers.set(SceneLayer.Overlay);
+    rectangleMesh.renderOrder = SceneLayerOrder.Measurement;
     rectangleMesh.position.set(minX + width / 2, minY + height / 2, 0);
 
     return rectangleMesh;

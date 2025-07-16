@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
@@ -36,7 +37,7 @@ export class BeamMeasurement extends BaseMeasurement {
     const context = canvas.getContext('2d')!;
 
     // Calculate canvas size - accommodate beam dimensions plus padding
-    const padding = Math.max(this.thickness * 4 + this.outlineThickness + beamWidthPixels, 40);
+    const padding = Math.max(this.markerSize + this.outlineThickness + beamWidthPixels, 40);
     const canvasWidth = length + padding * 2;
     const canvasHeight = beamWidthPixels + padding * 2;
 
@@ -74,10 +75,18 @@ export class BeamMeasurement extends BaseMeasurement {
     }
 
     // Draw start point circle
-    drawCircle(context, rectX, 0, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, rectX, 0, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Draw end point circle
-    drawCircle(context, rectX + rectWidth, 0, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(
+      context,
+      rectX + rectWidth,
+      0,
+      this.markerSize / 2,
+      this.color,
+      this.outlineColor,
+      this.outlineThickness
+    );
 
     // Restore context
     context.restore();
@@ -91,6 +100,8 @@ export class BeamMeasurement extends BaseMeasurement {
     this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const beamMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
+    beamMesh.layers.set(SceneLayer.Overlay);
+    beamMesh.renderOrder = SceneLayerOrder.Measurement;
 
     // Position and rotate the mesh
     const centerX = (this.startPoint.x + this.endPoint.x) / 2;

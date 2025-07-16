@@ -53,6 +53,11 @@ export interface MeasurementLayerProps {
   thickness: number;
 
   /**
+   * Diameter of the measurement markers/points
+   */
+  markerSize: number;
+
+  /**
    * Opacity of the measurement
    */
   opacity: number;

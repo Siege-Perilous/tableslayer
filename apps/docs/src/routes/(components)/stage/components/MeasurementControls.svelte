@@ -23,7 +23,10 @@
   <Slider bind:value={props.measurement.coneAngle} label="Cone Angle (degrees)" min={15} max={180} step={15} />
   <Slider bind:value={props.measurement.autoHideDelay} label="Auto Hide Delay (ms)" min={1000} max={10000} step={500} />
   <Color bind:value={props.measurement.color} label="Color" />
-  <Slider bind:value={props.measurement.thickness} label="Thickness" min={1} max={1000} step={1} />
+  <Color bind:value={props.measurement.outlineColor} label="Outline Color" />
+  <Slider bind:value={props.measurement.thickness} label="Line Thickness" min={1} max={100} step={1} />
+  <Slider bind:value={props.measurement.outlineThickness} label="Outline Thickness" min={1} max={100} step={1} />
+  <Slider bind:value={props.measurement.markerSize} label="Marker Size" min={1} max={100} step={1} />
   <Slider bind:value={props.measurement.opacity} label="Opacity" min={0} max={1} step={0.01} />
   <List bind:value={props.measurement.showDistance} label="Show Distance" options={{ Yes: true, No: false }} />
 </Folder>

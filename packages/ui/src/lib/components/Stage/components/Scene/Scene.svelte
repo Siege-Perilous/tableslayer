@@ -423,8 +423,6 @@
 
   <MeasurementLayer
     props={props.measurement}
-    layers={[SceneLayer.Overlay]}
-    renderOrder={SceneLayerOrder.Measurement}
     isActive={props.activeLayer === MapLayerType.Measurement || props.activeLayer === MapLayerType.None}
     display={props.display}
     grid={props.grid}

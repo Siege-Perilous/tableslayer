@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLine } from '../utils/canvasDrawing';
@@ -52,10 +53,10 @@ export class LineMeasurement extends BaseMeasurement {
     drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
 
     // Start point circle
-    drawCircle(context, startX, startY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, startX, startY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // End point circle
-    drawCircle(context, endX, endY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, endX, endY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -66,7 +67,8 @@ export class LineMeasurement extends BaseMeasurement {
     this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const lineMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    // Position the mesh so its center aligns with the center of the line area
+    lineMesh.layers.set(SceneLayer.Overlay);
+    lineMesh.renderOrder = SceneLayerOrder.Measurement;
     lineMesh.position.set(minX + width / 2 - padding, minY + height / 2 - padding, 0);
 
     return lineMesh;

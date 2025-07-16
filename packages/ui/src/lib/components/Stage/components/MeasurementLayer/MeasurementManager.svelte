@@ -11,6 +11,7 @@
   import { ConeMeasurement } from './measurements/ConeMeasurement';
   import { drawCircle } from './utils/canvasDrawing';
   import type { DisplayProps } from '../Stage/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
 
   interface Props {
     props: MeasurementLayerProps;
@@ -19,7 +20,7 @@
     gridProps: any;
   }
 
-  const { props, visible, displayProps, gridProps, ...meshProps }: Props = $props();
+  const { props, visible, displayProps, gridProps }: Props = $props();
 
   let currentMeasurement: IMeasurement | null = null;
   let measurementGroup = $state(new THREE.Group());
@@ -28,13 +29,11 @@
   let previewMesh = $state(new THREE.Mesh());
   let previewMaterial = $state(new THREE.MeshBasicMaterial());
   let previewGeometry = $state(new THREE.PlaneGeometry());
+  let previewSize = $derived(props.markerSize + props.outlineThickness * 2);
   let showPreview = $state(false);
 
-  onMount(() => {
-    initializePreview();
-  });
-
   onDestroy(() => {
+    currentMeasurement?.dispose();
     if (previewGeometry) {
       previewGeometry.dispose();
     }
@@ -47,21 +46,19 @@
   });
 
   /**
-   * Initializes the preview indicator mesh with geometry, material, and default styling.
-   * Sets up the preview mesh that shows where the next measurement point will be placed.
-   * @returns {void}
+   * Creates a canvas texture for the preview marker that matches the measurement point styling.
+   * The marker uses the same visual properties (color, thickness, outline) as measurement start/end points.
    */
-  function initializePreview() {
-    previewGeometry = new THREE.PlaneGeometry(32, 32);
-    previewMaterial = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: props.opacity,
-      alphaTest: 0.01,
-      depthWrite: false
-    });
-    previewMesh = new THREE.Mesh(previewGeometry, previewMaterial);
-    updatePreviewMarker();
-  }
+  $effect(() => {
+    // Create the preview marker texture
+    const markerCanvas = createMarkerCanvas();
+    const markerTexture = new THREE.CanvasTexture(markerCanvas);
+    markerTexture.needsUpdate = true;
+
+    // Assign the texture to the preview material
+    previewMaterial.map = markerTexture;
+    previewMaterial.needsUpdate = true;
+  });
 
   /**
    * Updates the preview indicator position and visibility based on mouse position and measurement state.
@@ -113,62 +110,24 @@
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d')!;
 
-    // Calculate marker size based on thickness (same as measurement points)
-    const radius = props.thickness * 2;
-    const size = Math.max(radius * 2 + props.outlineThickness * 4, 32);
+    const width = previewSize;
+    const height = previewSize;
 
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = width;
+    canvas.height = height;
 
-    // Clear canvas to fully transparent
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw circle marker at center
     drawCircle(
       context,
-      canvas.width / 2,
-      canvas.height / 2,
-      radius,
+      previewSize / 2,
+      previewSize / 2,
+      props.markerSize / 2,
       props.color,
-      props.outlineThickness > 0 ? props.outlineColor : undefined,
-      props.outlineThickness > 0 ? props.outlineThickness : undefined
+      props.outlineColor,
+      props.outlineThickness
     );
 
     return canvas;
-  }
-
-  /**
-   * Updates the preview indicator's styling and texture to match current measurement properties.
-   * Recreates the canvas texture and updates material properties whenever measurement settings change.
-   * Properly disposes of old textures to prevent memory leaks.
-   * @returns {void}
-   */
-  function updatePreviewMarker() {
-    if (!previewMaterial || !previewGeometry) return;
-
-    // Create new canvas texture
-    const canvas = createMarkerCanvas();
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.premultiplyAlpha = false;
-    texture.needsUpdate = true;
-
-    // Dispose old texture if exists
-    if (previewMaterial.map) {
-      previewMaterial.map.dispose();
-    }
-
-    // Update material
-    previewMaterial.map = texture;
-    previewMaterial.transparent = true;
-    previewMaterial.opacity = props.opacity;
-    previewMaterial.alphaTest = 0.01;
-    previewMaterial.depthWrite = false;
-    previewMaterial.needsUpdate = true;
-
-    // Update geometry size to match canvas
-    previewGeometry.dispose();
-    previewGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    previewMesh.geometry = previewGeometry;
   }
 
   /**
@@ -283,12 +242,24 @@
 </script>
 
 <!-- Measurement Group -->
-<T.Group bind:ref={measurementGroup} {visible} {...meshProps}>
+<T.Group bind:ref={measurementGroup} {visible} layers={[SceneLayer.Overlay]} renderOrder={SceneLayerOrder.Measurement}>
   <!-- Measurement objects will be added here dynamically -->
 </T.Group>
 
 <!-- Preview indicator -->
-<T.Mesh bind:ref={previewMesh} visible={showPreview && visible} {...meshProps}>
-  <T.MeshBasicMaterial bind:ref={previewMaterial} />
-  <T.PlaneGeometry bind:ref={previewGeometry} />
+<T.Mesh
+  bind:ref={previewMesh}
+  visible={showPreview && visible}
+  layers={[SceneLayer.Overlay]}
+  renderOrder={SceneLayerOrder.Measurement}
+>
+  <T.MeshBasicMaterial
+    bind:ref={previewMaterial}
+    transparent={true}
+    opacity={props.opacity}
+    alphaTest={0.01}
+    depthWrite={false}
+    color={props.color}
+  />
+  <T.PlaneGeometry bind:ref={previewGeometry} args={[previewSize, previewSize]} />
 </T.Mesh>
