@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
@@ -15,10 +14,7 @@ export class RectangleMeasurement extends BaseMeasurement {
     super(MeasurementType.Square, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material using base class helper
-    this.disposeCanvasResources();
-
+  renderShape(): void {
     // Calculate rectangle bounds
     const minX = Math.min(this.startPoint.x, this.endPoint.x);
     const maxX = Math.max(this.startPoint.x, this.endPoint.x);
@@ -87,19 +83,14 @@ export class RectangleMeasurement extends BaseMeasurement {
     // Bottom-left corner
     drawCircle(context, rectX, rectY + rectHeight, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
 
-    // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
-    // Create plane geometry for the rectangle
-    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = this.createCanvasMaterial(texture);
+    this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), texture);
 
-    const rectangleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    rectangleMesh.layers.set(SceneLayer.Overlay);
-    rectangleMesh.renderOrder = SceneLayerOrder.Measurement;
-    rectangleMesh.position.set(minX + width / 2, minY + height / 2, 0);
-
-    return rectangleMesh;
+    // Position the rectangle at its true center point
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    this.shapeMesh.position.set(centerX, centerY, 0);
   }
 }

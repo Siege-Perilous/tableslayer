@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
@@ -18,10 +17,7 @@ export class BeamMeasurement extends BaseMeasurement {
     this.beamWidth = measurementProps.beamWidth;
   }
 
-  renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material using base class helper
-    this.disposeCanvasResources();
-
+  renderShape(): void {
     // Calculate beam parameters
     const direction = this.endPoint.clone().sub(this.startPoint);
     const length = direction.length();
@@ -91,24 +87,15 @@ export class BeamMeasurement extends BaseMeasurement {
     // Restore context
     context.restore();
 
-    // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
-    // Create plane geometry for the beam
-    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = this.createCanvasMaterial(texture);
+    this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), texture);
 
-    const beamMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    beamMesh.layers.set(SceneLayer.Overlay);
-    beamMesh.renderOrder = SceneLayerOrder.Measurement;
-
-    // Position and rotate the mesh
+    // Position the beam at the center point between start and end
     const centerX = (this.startPoint.x + this.endPoint.x) / 2;
     const centerY = (this.startPoint.y + this.endPoint.y) / 2;
-    beamMesh.position.set(centerX, centerY, 0);
-    beamMesh.rotation.z = angle;
-
-    return beamMesh;
+    this.shapeMesh.position.set(centerX, centerY, 0);
+    this.shapeMesh.rotation.z = angle;
   }
 }

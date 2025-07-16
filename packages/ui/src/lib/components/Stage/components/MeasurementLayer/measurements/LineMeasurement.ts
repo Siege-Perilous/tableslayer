@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLine } from '../utils/canvasDrawing';
@@ -15,10 +14,7 @@ export class LineMeasurement extends BaseMeasurement {
     super(MeasurementType.Line, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material using base class helper
-    this.disposeCanvasResources();
-
+  renderShape(): void {
     // Create canvas for the line
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d')!;
@@ -62,15 +58,7 @@ export class LineMeasurement extends BaseMeasurement {
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
-    // Create plane geometry for the line
-    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = this.createCanvasMaterial(texture);
-
-    const lineMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    lineMesh.layers.set(SceneLayer.Overlay);
-    lineMesh.renderOrder = SceneLayerOrder.Measurement;
-    lineMesh.position.set(minX + width / 2 - padding, minY + height / 2 - padding, 0);
-
-    return lineMesh;
+    this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), texture);
+    this.shapeMesh.position.set(minX + width / 2 - padding, minY + height / 2 - padding, 0);
   }
 }

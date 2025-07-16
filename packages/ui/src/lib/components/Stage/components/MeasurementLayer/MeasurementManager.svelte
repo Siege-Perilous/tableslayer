@@ -228,10 +228,7 @@
     }
 
     currentMeasurement = measurement;
-
-    // Add the measurement object to the group
-    const measurementObject = measurement.render();
-    measurementGroup.add(measurementObject);
+    measurementGroup.add(measurement.object);
   }
 
   /**
@@ -242,12 +239,7 @@
    * @returns {void}
    */
   function updateMeasurement(endPoint: THREE.Vector2): void {
-    if (currentMeasurement) {
-      currentMeasurement.update(endPoint);
-      measurementGroup.clear();
-      const measurementObject = currentMeasurement.render();
-      measurementGroup.add(measurementObject);
-    }
+    currentMeasurement?.update(endPoint);
   }
 
   /**
@@ -282,9 +274,9 @@
     fadeOpacity = 1.0;
 
     if (currentMeasurement) {
-      measurementGroup.clear();
       currentMeasurement.dispose();
       currentMeasurement = null;
+      measurementGroup.clear();
     }
   }
 

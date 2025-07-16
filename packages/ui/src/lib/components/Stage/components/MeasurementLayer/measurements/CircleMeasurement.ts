@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLargeCircle } from '../utils/canvasDrawing';
@@ -15,10 +14,7 @@ export class CircleMeasurement extends BaseMeasurement {
     super(MeasurementType.Circle, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material using base class helper
-    this.disposeCanvasResources();
-
+  renderShape(): void {
     // Calculate radius in pixels
     const radiusPixels = this.startPoint.distanceTo(this.endPoint);
 
@@ -73,18 +69,10 @@ export class CircleMeasurement extends BaseMeasurement {
     drawCircle(context, edgeX, edgeY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
+    const shapeTexture = new THREE.CanvasTexture(canvas);
+    shapeTexture.needsUpdate = true;
 
-    // Create plane geometry for the circle
-    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = this.createCanvasMaterial(texture);
-
-    const circleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    circleMesh.layers.set(SceneLayer.Overlay);
-    circleMesh.renderOrder = SceneLayerOrder.Measurement;
-    circleMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
-
-    return circleMesh;
+    this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), shapeTexture);
+    this.shapeMesh.position.set(canvasCenterX, canvasCenterY, 0);
   }
 }

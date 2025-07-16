@@ -11,6 +11,9 @@ import { calculateLineDistance } from '../utils/distanceCalculations';
  * Provides methods for lifecycle management, rendering, and data access for measurements.
  */
 export interface IMeasurement {
+  /** The Three.js group object containing the measurement visualization */
+  object: THREE.Group;
+
   /**
    * Updates the measurement with a new end point, typically called during mouse movement.
    * @param {THREE.Vector2} endPoint - The new end point coordinates in world space
@@ -19,16 +22,10 @@ export interface IMeasurement {
   update(endPoint: THREE.Vector2): void;
 
   /**
-   * Renders the complete measurement including shape and text as a Three.js object.
-   * @returns {THREE.Object3D} A Three.js group containing the measurement visualization
-   */
-  render(): THREE.Object3D;
-
-  /**
    * Renders only the shape portion of the measurement (without text labels).
-   * @returns {THREE.Object3D} A Three.js object representing the measurement shape
+   * @returns {void}
    */
-  renderShape(): THREE.Object3D;
+  renderShape(): void;
 
   /**
    * Cleans up all Three.js resources and removes the measurement from memory.
@@ -36,18 +33,6 @@ export interface IMeasurement {
    * @returns {void}
    */
   dispose(): void;
-
-  /**
-   * Calculates and returns the current distance of the measurement.
-   * @returns {number} The distance value in the configured world units
-   */
-  getDistance(): number;
-
-  /**
-   * Gets the formatted text that should be displayed for this measurement.
-   * @returns {string} The formatted distance text with units
-   */
-  getDisplayText(): string;
 }
 
 /**
@@ -64,8 +49,6 @@ export abstract class BaseMeasurement implements IMeasurement {
   public startPoint: THREE.Vector2;
   /** Current end point of the measurement in world coordinates */
   public endPoint: THREE.Vector2;
-  /** Calculated distance value in world units */
-  public distance: number;
   /** Timestamp when the measurement was created */
   public createdAt: number;
   /** Primary color for the measurement visualization */
@@ -91,14 +74,13 @@ export abstract class BaseMeasurement implements IMeasurement {
   protected displayProps: DisplayProps;
   /** Grid properties containing spacing and units information */
   protected gridProps: GridLayerProps;
+  /** The group object in the Three.js scene */
+  public object: THREE.Group;
   /** The rendered shape object in the Three.js scene */
-  protected shapeObject: THREE.Object3D | null = null;
+  protected shapeMesh: THREE.Mesh;
   /** The rendered text object in the Three.js scene */
-  protected textObject: THREE.Object3D | null = null;
-  /** Reusable canvas geometry for efficient rendering */
-  protected canvasGeometry: THREE.BufferGeometry | null = null;
-  /** Reusable canvas material for efficient rendering */
-  protected canvasMaterial: THREE.MeshBasicMaterial | null = null;
+  protected textMesh: THREE.Mesh;
+
   /** Flag indicating whether this measurement has been disposed */
   protected isDisposed = false;
 
@@ -123,7 +105,6 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.type = type;
     this.startPoint = startPoint.clone();
     this.endPoint = startPoint.clone();
-    this.distance = 0;
     this.createdAt = Date.now();
     this.color = measurementProps.color;
     this.opacity = measurementProps.opacity;
@@ -136,6 +117,27 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.enableDMG252 = measurementProps.enableDMG252;
     this.displayProps = displayProps;
     this.gridProps = gridProps;
+
+    this.object = new THREE.Group();
+    this.object.userData.measurementId = this.id;
+
+    const shapeMaterial = new THREE.MeshBasicMaterial({
+      map: null,
+      transparent: true,
+      opacity: this.opacity,
+      side: THREE.DoubleSide
+    });
+
+    this.shapeMesh = new THREE.Mesh(undefined, shapeMaterial);
+    this.shapeMesh.layers.set(SceneLayer.Overlay);
+    this.shapeMesh.renderOrder = SceneLayerOrder.Measurement;
+
+    this.textMesh = this.createTextMesh('', new THREE.Vector2(0, 0));
+    this.textMesh.layers.set(SceneLayer.Overlay);
+    this.textMesh.renderOrder = SceneLayerOrder.Measurement;
+
+    this.object.add(this.shapeMesh);
+    this.object.add(this.textMesh);
   }
 
   /**
@@ -150,70 +152,27 @@ export abstract class BaseMeasurement implements IMeasurement {
     if (this.isDisposed) return;
 
     this.endPoint = endPoint.clone();
-    this.distance = this.getDistance();
 
-    if (this.shapeObject) {
-      this.shapeObject.removeFromParent();
-    }
-    this.shapeObject = this.renderShape();
-
-    if (this.textObject) {
-      this.textObject.removeFromParent();
-    }
-    this.textObject = this.renderText();
+    this.renderShape();
+    this.renderText();
   }
 
   /**
-   * Renders the complete measurement as a Three.js group containing both shape and text elements.
-   * Creates a new group with proper metadata and adds all visualization components.
-   * Returns an empty group if the measurement has been disposed.
+   * Renders the distance text label for this measurement with standard positioning logic.
+   * Positions text 150 pixels away from the end point in the direction of the measurement.
+   * All measurement types share this text positioning and styling approach.
+   * Returns an empty group if distance display is disabled.
    *
-   * @returns {THREE.Object3D} A Three.js group containing the complete measurement visualization
+   * @returns {void}
    */
-  render(): THREE.Object3D {
-    if (this.isDisposed) {
-      const emptyGroup = new THREE.Group();
-      return emptyGroup;
-    }
+  renderText(): void {
+    // Calculate direction from start to end point and normalize
+    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
 
-    const group = new THREE.Group();
-    group.userData.measurementId = this.id;
+    // Position text 150px offset from the end point
+    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(150));
 
-    // Render shape
-    const shape = this.renderShape();
-    if (shape) {
-      group.add(shape);
-    }
-
-    // Render text
-    const text = this.renderText();
-    if (text) {
-      group.add(text);
-    }
-
-    return group;
-  }
-
-  /**
-   * Generates the formatted text string that represents this measurement's distance.
-   * Includes the distance value rounded to one decimal place plus the world units.
-   *
-   * @returns {string} Formatted distance text (e.g., "15.3 ft" or "4.7 m")
-   */
-  getDisplayText(): string {
-    const distance = this.getDistance();
-    return `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
-  }
-
-  /**
-   * Calculates the distance between start and end points using the configured measurement system.
-   * Uses the standard line distance calculation that accounts for grid snapping, world scaling,
-   * and optional DMG 252 measurement standards. This implementation is shared by all measurement types.
-   *
-   * @returns {number} The calculated distance in the configured world units
-   */
-  getDistance(): number {
-    return calculateLineDistance(
+    const distance = calculateLineDistance(
       this.startPoint,
       this.endPoint,
       this.gridProps.spacing,
@@ -225,7 +184,34 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.gridProps.worldGridSize,
       this.gridProps.worldGridUnits
     );
+    const text = `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
+
+    const fontSize = this.displayProps.resolution.y / 15;
+    const textCanvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
+
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(textCanvas);
+    texture.premultiplyAlpha = false;
+    texture.needsUpdate = true;
+
+    if (this.textMesh.material instanceof THREE.MeshBasicMaterial) {
+      this.textMesh.material.dispose();
+      this.textMesh.material.map = texture;
+      this.textMesh.material.map.needsUpdate = true;
+    }
+
+    this.textMesh.position.set(textPosition.x, textPosition.y, 1);
   }
+
+  /**
+   * Abstract method that must be implemented by each measurement type to render its specific shape.
+   * Should create and return a Three.js object representing the measurement's visual geometry
+   * (line, circle, rectangle, etc.) based on the current start and end points.
+   * The mesh should be stored in the `this.mesh` property.
+   *
+   * @returns {void}
+   */
+  abstract renderShape(): void;
 
   /**
    * Creates a Three.js mesh displaying text with consistent styling across all measurements.
@@ -266,36 +252,18 @@ export abstract class BaseMeasurement implements IMeasurement {
   }
 
   /**
-   * Safely disposes of existing canvas-based rendering resources to prevent memory leaks.
-   * Should be called before creating new geometry and materials in renderShape() implementations.
-   * Properly cleans up Three.js geometry and material objects.
+   * Updates the shape mesh with a new geometry and texture.
+   * @param {THREE.PlaneGeometry} geometry - The new geometry to use
+   * @param {THREE.CanvasTexture} texture - The new texture to use
    * @returns {void}
    */
-  protected disposeCanvasResources(): void {
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
+  protected updateShapeMesh(geometry: THREE.PlaneGeometry, texture: THREE.CanvasTexture): void {
+    this.shapeMesh.geometry?.dispose();
+    this.shapeMesh.geometry = geometry;
+    if (this.shapeMesh.material instanceof THREE.MeshBasicMaterial) {
+      this.shapeMesh.material.map = texture;
+      this.shapeMesh.material.map.needsUpdate = true;
     }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
-  }
-
-  /**
-   * Creates a Three.js material configured for canvas-based textures with standard measurement settings.
-   * Applies consistent transparency, opacity, and rendering properties used across all measurements.
-   *
-   * @param {THREE.CanvasTexture} texture - The canvas texture to apply to the material
-   * @returns {THREE.MeshBasicMaterial} A configured material ready for use with measurement meshes
-   */
-  protected createCanvasMaterial(texture: THREE.CanvasTexture): THREE.MeshBasicMaterial {
-    return new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
   }
 
   /**
@@ -307,54 +275,18 @@ export abstract class BaseMeasurement implements IMeasurement {
   dispose(): void {
     this.isDisposed = true;
 
-    if (this.shapeObject) {
-      this.shapeObject.removeFromParent();
-      if (this.shapeObject instanceof THREE.Mesh) {
-        this.shapeObject.geometry?.dispose();
-        (this.shapeObject.material as THREE.Material)?.dispose();
-      }
+    this.shapeMesh.removeFromParent();
+    if (this.shapeMesh instanceof THREE.Mesh) {
+      this.shapeMesh.geometry?.dispose();
+      (this.shapeMesh.material as THREE.Material)?.dispose();
     }
 
-    if (this.textObject) {
-      this.textObject.removeFromParent();
-      if (this.textObject instanceof THREE.Mesh) {
-        this.textObject.geometry?.dispose();
-        (this.textObject.material as THREE.Material)?.dispose();
-      }
+    this.textMesh.removeFromParent();
+    if (this.textMesh instanceof THREE.Mesh) {
+      this.textMesh.geometry?.dispose();
+      (this.textMesh.material as THREE.Material)?.dispose();
     }
 
-    this.disposeCanvasResources();
+    this.object.removeFromParent();
   }
-
-  /**
-   * Renders the distance text label for this measurement with standard positioning logic.
-   * Positions text 150 pixels away from the end point in the direction of the measurement.
-   * All measurement types share this text positioning and styling approach.
-   * Returns an empty group if distance display is disabled.
-   *
-   * @returns {THREE.Object3D} A Three.js object containing the distance text, or empty group if disabled
-   */
-  renderText(): THREE.Object3D {
-    if (!this.showDistance) {
-      return new THREE.Group();
-    }
-
-    // Calculate direction from start to end point and normalize
-    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
-
-    // Position text 150px offset from the end point
-    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(150));
-
-    // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
-
-  /**
-   * Abstract method that must be implemented by each measurement type to render its specific shape.
-   * Should create and return a Three.js object representing the measurement's visual geometry
-   * (line, circle, rectangle, etc.) based on the current start and end points.
-   *
-   * @returns {THREE.Object3D} A Three.js object representing the measurement shape
-   */
-  abstract renderShape(): THREE.Object3D;
 }

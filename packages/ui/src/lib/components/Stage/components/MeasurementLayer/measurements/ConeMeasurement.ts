@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawCone } from '../utils/canvasDrawing';
@@ -18,10 +17,7 @@ export class ConeMeasurement extends BaseMeasurement {
     this.coneAngle = measurementProps.coneAngle;
   }
 
-  renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material using base class helper
-    this.disposeCanvasResources();
-
+  renderShape(): void {
     // Calculate cone parameters
     const radius = this.startPoint.distanceTo(this.endPoint);
     const direction = this.endPoint.clone().sub(this.startPoint);
@@ -113,15 +109,9 @@ export class ConeMeasurement extends BaseMeasurement {
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
-    // Create plane geometry for the cone
-    this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = this.createCanvasMaterial(texture);
+    this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), texture);
 
-    const coneMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
-    coneMesh.layers.set(SceneLayer.Overlay);
-    coneMesh.renderOrder = SceneLayerOrder.Measurement;
-    coneMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
-
-    return coneMesh;
+    // Position the cone at the start point (cone origin) in world coordinates
+    this.shapeMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
   }
 }
