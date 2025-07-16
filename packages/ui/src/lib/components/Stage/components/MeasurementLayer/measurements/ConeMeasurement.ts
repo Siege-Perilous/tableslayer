@@ -114,17 +114,4 @@ export class ConeMeasurement extends BaseMeasurement {
 
     return coneMesh;
   }
-
-  renderText(): THREE.Object3D {
-    if (!this.showDistance) {
-      return new THREE.Group();
-    }
-
-    // Position text with 150px offset from the end point, like other measurements
-    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
-    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(150));
-
-    // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
 }

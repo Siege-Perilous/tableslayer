@@ -39,6 +39,7 @@ export class LineMeasurement extends BaseMeasurement {
 
     // Clear canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.globalCompositeOperation = 'source-over';
 
     // Transform coordinates: Three.js world space -> Canvas space
     // Canvas origin is top-left, Three.js origin is center of the plane
@@ -69,20 +70,5 @@ export class LineMeasurement extends BaseMeasurement {
     lineMesh.position.set(minX + width / 2 - padding, minY + height / 2 - padding, 0);
 
     return lineMesh;
-  }
-
-  renderText(): THREE.Object3D {
-    if (!this.showDistance) {
-      return new THREE.Group();
-    }
-
-    const r = new THREE.Vector2(this.endPoint.x - this.startPoint.x, this.endPoint.y - this.startPoint.y);
-    const rhat = r.clone().normalize();
-
-    // Calculate text position (midpoint of the line)
-    const position = this.endPoint.clone().add(rhat.multiplyScalar(150));
-
-    // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), position);
   }
 }

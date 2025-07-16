@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { onDestroy, onMount } from 'svelte';
   import { type MeasurementLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
@@ -21,34 +20,21 @@
 
   let snappedPosition = new THREE.Vector2();
   let inputMesh = $state(new THREE.Mesh());
-  let measurementMesh = $state(new THREE.Mesh());
-  let measurementMaterial = $state(new THREE.MeshBasicMaterial());
-  let measurementGeometry = $state(new THREE.CircleGeometry());
 
   // Measurement state
   let isDrawing = false;
   let startPoint: THREE.Vector2 | null = null;
   let measurementManager: any; // Will be the component instance
 
-  // Create the measurement indicator geometry and material
-  onMount(() => {
-    measurementGeometry = new THREE.CircleGeometry(10, 16);
-    measurementMaterial = new THREE.MeshBasicMaterial({
-      color: props.color,
-      transparent: true,
-      opacity: props.opacity
-    });
-  });
-
-  onDestroy(() => {
-    if (measurementGeometry) {
-      measurementGeometry.dispose();
-    }
-    if (measurementMaterial) {
-      measurementMaterial.dispose();
-    }
-  });
-
+  /**
+   * Handles mouse down events to initiate measurement creation.
+   * Converts screen coordinates to world coordinates, applies grid snapping if enabled,
+   * and starts a new measurement at the clicked position.
+   *
+   * @param {MouseEvent | TouchEvent} event - The mouse or touch event that triggered this handler
+   * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
+   * @returns {void}
+   */
   function handleMouseDown(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
     if (!coords || !isActive || !measurementManager) return;
 
@@ -67,6 +53,15 @@
     measurementManager.startMeasurement(snappedCoords);
   }
 
+  /**
+   * Handles mouse move events to update measurement preview and active measurements.
+   * Converts coordinates to world space, applies grid snapping, and either updates
+   * the current measurement being drawn or shows a preview indicator.
+   *
+   * @param {MouseEvent | TouchEvent} event - The mouse or touch event that triggered this handler
+   * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
+   * @returns {void}
+   */
   function handleMouseMove(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
     if (!coords || !isActive || !measurementManager) return;
 
@@ -83,13 +78,20 @@
       // Update current measurement
       measurementManager.updateMeasurement(snappedPosition);
     } else {
-      // Update the measurement indicator position
-      if (measurementMesh) {
-        measurementMesh.position.set(snappedPosition.x, snappedPosition.y, 0);
-      }
+      // Update the preview indicator position
+      measurementManager.updatePreview(snappedPosition, isActive);
     }
   }
 
+  /**
+   * Handles mouse up events to complete measurement creation.
+   * Finalizes the current measurement at the release position and resets the drawing state.
+   * Applies grid snapping to the final position if enabled.
+   *
+   * @param {MouseEvent | TouchEvent} event - The mouse or touch event that triggered this handler
+   * @param {THREE.Vector2 | null} coords - The world coordinates of the mouse/touch position, or null if outside bounds
+   * @returns {void}
+   */
   function handleMouseUp(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
     if (!isDrawing || !startPoint || !measurementManager || !coords) return;
 
@@ -104,28 +106,30 @@
     startPoint = null;
   }
 
+  /**
+   * Handles mouse leave events when the cursor exits the measurement area.
+   * Hides the preview indicator to provide clear visual feedback that measurements
+   * cannot be placed outside the active area.
+   * @returns {void}
+   */
   function handleMouseLeave() {
-    console.log('handleMouseLeave');
-    // Hide the measurement indicator when mouse leaves
-    if (measurementMesh) {
-      measurementMesh.visible = false;
+    if (measurementManager) {
+      measurementManager.hidePreview();
     }
   }
 
+  /**
+   * Handles mouse enter events when the cursor enters the measurement area.
+   * Shows the preview indicator if the measurement layer is active, providing
+   * visual feedback for where measurements can be placed.
+   * @returns {void}
+   */
   function handleMouseEnter() {
-    console.log('handleMouseEnter');
-    // Show the measurement indicator when mouse enters
-    if (measurementMesh && isActive) {
-      measurementMesh.visible = true;
+    if (measurementManager && isActive) {
+      measurementManager.showPreviewIndicator();
     }
   }
 </script>
-
-<!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]} layers={[SceneLayer.Input]}>
-  <T.MeshBasicMaterial visible={false} />
-  <T.PlaneGeometry />
-</T.Mesh>
 
 <!-- Input handling -->
 <LayerInput
@@ -139,11 +143,18 @@
   onMouseEnter={handleMouseEnter}
 />
 
-<!-- Preview indicator (follows mouse when not drawing) -->
-<T.Mesh bind:ref={measurementMesh} name="measurementLayer" visible={!isDrawing && isActive} {...meshProps}>
-  <T.MeshBasicMaterial bind:ref={measurementMaterial} color={props.color} transparent={true} opacity={props.opacity} />
-  <T.CircleGeometry args={[10, 16]} bind:ref={measurementGeometry} />
+<!-- This quad is user for raycasting / mouse input detection. It is invisible -->
+<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]} layers={[SceneLayer.Input]}>
+  <T.MeshBasicMaterial visible={false} />
+  <T.PlaneGeometry />
 </T.Mesh>
 
 <!-- Measurement Manager Component -->
-<MeasurementManager bind:this={measurementManager} {props} visible={isActive} displayProps={display} gridProps={grid} />
+<MeasurementManager
+  bind:this={measurementManager}
+  {props}
+  visible={isActive}
+  displayProps={display}
+  gridProps={grid}
+  {...meshProps}
+/>

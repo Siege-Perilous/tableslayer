@@ -271,28 +271,29 @@ export function createTextCanvas(
   const context = canvas.getContext('2d')!;
 
   // Set canvas size
-  canvas.width = 1024;
-  canvas.height = 1024;
+  canvas.width = 256;
+  canvas.height = 256;
 
-  // Clear canvas
+  // Set composite operation to ensure proper alpha blending
+  context.globalCompositeOperation = 'source-over';
+
+  // Clear canvas to fully transparent (alpha = 0)
   context.clearRect(0, 0, canvas.width, canvas.height);
-
-  context.moveTo(-canvas.width / 2, -canvas.height / 2);
 
   // Set text properties
   context.font = `${fontSize}px Raven Hell`;
   context.textAlign = 'center';
   context.textBaseline = 'middle';
 
-  // Draw text outline
-  context.strokeStyle = outlineColor;
-  context.fillStyle = 'transparent';
-  context.lineWidth = outlineThickness * 4;
-  context.strokeText(text, canvas.width / 2, canvas.height / 2, canvas.width);
+  // Draw text outline first
+  if (outlineThickness > 0) {
+    context.strokeStyle = outlineColor;
+    context.lineWidth = outlineThickness * 4;
+    context.strokeText(text, canvas.width / 2, canvas.height / 2, canvas.width);
+  }
 
-  // Draw text fill
+  // Draw text fill on top
   context.fillStyle = color;
-  context.strokeStyle = 'transparent';
   context.fillText(text, canvas.width / 2, canvas.height / 2, canvas.width);
 
   return canvas;

@@ -90,19 +90,4 @@ export class CircleMeasurement extends BaseMeasurement {
 
     return circleMesh;
   }
-
-  renderText(): THREE.Object3D {
-    if (!this.showDistance) {
-      return new THREE.Group();
-    }
-
-    // Position text outside the circle, offset from the end point
-    const radius = this.startPoint.distanceTo(this.endPoint);
-    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
-    const textOffset = 150; // Offset text outside the circle
-    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(textOffset));
-
-    // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
 }

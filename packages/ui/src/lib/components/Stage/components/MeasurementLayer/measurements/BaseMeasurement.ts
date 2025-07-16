@@ -179,6 +179,7 @@ export abstract class BaseMeasurement implements IMeasurement {
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
+    texture.premultiplyAlpha = false;
     texture.needsUpdate = true;
 
     // Create plane geometry for text with world dimensions
@@ -187,7 +188,9 @@ export abstract class BaseMeasurement implements IMeasurement {
       map: texture,
       transparent: true,
       opacity: this.opacity,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      alphaTest: 0.01, // Only render pixels with alpha > 0.01
+      depthWrite: false // Don't write to depth buffer to avoid z-fighting
     });
 
     const textMesh = new THREE.Mesh(geometry, material);
@@ -249,5 +252,26 @@ export abstract class BaseMeasurement implements IMeasurement {
 
   // Abstract methods that must be implemented by subclasses
   abstract renderShape(): THREE.Object3D;
-  abstract renderText(): THREE.Object3D;
+
+  /**
+   * Renders the distance text for the measurement.
+   * All measurement types use the same text positioning logic:
+   * - Text is positioned 150px away from the end point
+   * - Direction is calculated from start point to end point
+   * - Uses the shared createTextMesh method for consistent styling
+   */
+  renderText(): THREE.Object3D {
+    if (!this.showDistance) {
+      return new THREE.Group();
+    }
+
+    // Calculate direction from start to end point and normalize
+    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
+
+    // Position text 150px offset from the end point
+    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(150));
+
+    // Use the shared text rendering method
+    return this.createTextMesh(this.getDisplayText(), textPosition);
+  }
 }
