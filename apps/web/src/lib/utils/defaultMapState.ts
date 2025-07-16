@@ -93,7 +93,9 @@ export const StageDefaultProps: StageProps = {
     shadowOpacity: 0.4,
     shadowBlur: 0.5,
     shadowColor: '#000000',
-    shadowSpread: 2
+    shadowSpread: 2,
+    worldGridSize: 1,
+    worldGridUnits: 'ft'
   },
   map: {
     rotation: 0,
@@ -125,12 +127,16 @@ export const StageDefaultProps: StageProps = {
   measurement: {
     type: MeasurementType.Line,
     snapToGrid: true,
+    enableDMG252: true,
     autoHideDelay: 3000,
     color: '#ffff00',
     thickness: 2,
     opacity: 0.8,
     showDistance: true,
-    distanceUnit: 'ft'
+    outlineThickness: 4,
+    outlineColor: '#000000',
+    beamWidth: 1,
+    coneAngle: 60
   },
   postProcessing: {
     enabled: true,

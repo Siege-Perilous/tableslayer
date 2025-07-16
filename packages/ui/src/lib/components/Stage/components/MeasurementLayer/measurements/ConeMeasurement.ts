@@ -2,12 +2,10 @@ import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawCone } from '../utils/canvasDrawing';
-import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class ConeMeasurement extends BaseMeasurement {
-  private canvasGeometry: THREE.BufferGeometry | null = null;
-  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
+  private coneAngle: number;
 
   constructor(
     startPoint: THREE.Vector2,
@@ -16,32 +14,12 @@ export class ConeMeasurement extends BaseMeasurement {
     gridProps: any
   ) {
     super(MeasurementType.Cone, startPoint, measurementProps, displayProps, gridProps);
-  }
-
-  getDistance(): number {
-    // For cones, distance is the radius/range
-    return calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
-    );
+    this.coneAngle = measurementProps.coneAngle;
   }
 
   renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-    }
+    // Dispose previous geometry and material using base class helper
+    this.disposeCanvasResources();
 
     // Calculate cone parameters
     const radius = this.startPoint.distanceTo(this.endPoint);
@@ -128,12 +106,7 @@ export class ConeMeasurement extends BaseMeasurement {
 
     // Create plane geometry for the cone
     this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
+    this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const coneMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
     // Position the mesh so the center aligns with the start point (cone origin)
@@ -153,25 +126,5 @@ export class ConeMeasurement extends BaseMeasurement {
 
     // Use the shared text rendering method
     return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
-
-  updateShape(): void {
-    // Override to handle cone-specific updates if needed
-  }
-
-  updateText(): void {
-    // Override to handle cone-specific text updates if needed
-  }
-
-  dispose(): void {
-    super.dispose();
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
   }
 }

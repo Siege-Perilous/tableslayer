@@ -139,7 +139,6 @@ export const StageDefaultProps: StageProps = {
     thickness: 10,
     opacity: 1,
     showDistance: true,
-    distanceUnit: 'ft',
     outlineThickness: 4,
     outlineColor: '#000000',
     beamWidth: 1,

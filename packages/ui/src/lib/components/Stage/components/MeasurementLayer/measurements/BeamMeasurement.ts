@@ -2,12 +2,10 @@ import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
-import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class BeamMeasurement extends BaseMeasurement {
-  private canvasGeometry: THREE.BufferGeometry | null = null;
-  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
+  private beamWidth: number;
 
   constructor(
     startPoint: THREE.Vector2,
@@ -16,32 +14,12 @@ export class BeamMeasurement extends BaseMeasurement {
     gridProps: any
   ) {
     super(MeasurementType.Beam, startPoint, measurementProps, displayProps, gridProps);
-  }
-
-  getDistance(): number {
-    // For beams, distance is the length
-    return calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
-    );
+    this.beamWidth = measurementProps.beamWidth;
   }
 
   renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-    }
+    // Dispose previous geometry and material using base class helper
+    this.disposeCanvasResources();
 
     // Calculate beam parameters
     const direction = this.endPoint.clone().sub(this.startPoint);
@@ -110,12 +88,7 @@ export class BeamMeasurement extends BaseMeasurement {
 
     // Create plane geometry for the beam
     this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
+    this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const beamMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
 
@@ -139,25 +112,5 @@ export class BeamMeasurement extends BaseMeasurement {
 
     // Use the shared text rendering method
     return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
-
-  updateShape(): void {
-    // Override to handle beam-specific updates if needed
-  }
-
-  updateText(): void {
-    // Override to handle beam-specific text updates if needed
-  }
-
-  dispose(): void {
-    super.dispose();
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
   }
 }

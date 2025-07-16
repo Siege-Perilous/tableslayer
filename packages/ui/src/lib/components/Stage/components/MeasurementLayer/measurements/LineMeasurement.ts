@@ -2,13 +2,9 @@ import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLine } from '../utils/canvasDrawing';
-import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class LineMeasurement extends BaseMeasurement {
-  private canvasGeometry: THREE.BufferGeometry | null = null;
-  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
-
   constructor(
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
@@ -18,29 +14,9 @@ export class LineMeasurement extends BaseMeasurement {
     super(MeasurementType.Line, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  getDistance(): number {
-    return calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
-    );
-  }
-
   renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-    }
+    // Dispose previous geometry and material using base class helper
+    this.disposeCanvasResources();
 
     // Create canvas for the line
     const canvas = document.createElement('canvas');
@@ -71,11 +47,6 @@ export class LineMeasurement extends BaseMeasurement {
     const endX = this.endPoint.x - minX + padding;
     const endY = canvas.height - (this.endPoint.y - minY + padding); // Invert Y
 
-    console.log('Drawing line:', {
-      startX: startX,
-      startY: startY
-    });
-
     // Draw the line
     drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
 
@@ -91,12 +62,7 @@ export class LineMeasurement extends BaseMeasurement {
 
     // Create plane geometry for the line
     this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
+    this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const lineMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
     // Position the mesh so its center aligns with the center of the line area
@@ -118,19 +84,5 @@ export class LineMeasurement extends BaseMeasurement {
 
     // Use the shared text rendering method
     return this.createTextMesh(this.getDisplayText(), position);
-  }
-
-  dispose(): void {
-    super.dispose();
-
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
-    }
-
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
   }
 }

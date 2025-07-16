@@ -26,5 +26,4 @@
   <Slider bind:value={props.measurement.thickness} label="Thickness" min={1} max={1000} step={1} />
   <Slider bind:value={props.measurement.opacity} label="Opacity" min={0} max={1} step={0.01} />
   <List bind:value={props.measurement.showDistance} label="Show Distance" options={{ Yes: true, No: false }} />
-  <List bind:value={props.measurement.distanceUnit} label="Distance Unit" options={{ Feet: 'ft', Meters: 'm' }} />
 </Folder>

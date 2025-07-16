@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import type { GridLayerProps } from '../../GridLayer/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { createTextCanvas } from '../utils/canvasDrawing';
+import { calculateLineDistance } from '../utils/distanceCalculations';
 
 export interface IMeasurement {
   id: string;
@@ -9,7 +11,6 @@ export interface IMeasurement {
   startPoint: THREE.Vector2;
   endPoint: THREE.Vector2;
   distance: number;
-  unit: string;
   createdAt: number;
   color: string;
   opacity: number;
@@ -31,7 +32,6 @@ export abstract class BaseMeasurement implements IMeasurement {
   public startPoint: THREE.Vector2;
   public endPoint: THREE.Vector2;
   public distance: number;
-  public unit: string;
   public createdAt: number;
   public color: string;
   public opacity: number;
@@ -41,13 +41,13 @@ export abstract class BaseMeasurement implements IMeasurement {
   public showDistance: boolean;
   public snapToGrid: boolean;
   public enableDMG252: boolean;
-  public beamWidth: number;
-  public coneAngle: number;
   protected displayProps: DisplayProps;
-  protected gridProps: any; // Grid layer properties
+  protected gridProps: GridLayerProps;
 
   protected shapeObject: THREE.Object3D | null = null;
   protected textObject: THREE.Object3D | null = null;
+  protected canvasGeometry: THREE.BufferGeometry | null = null;
+  protected canvasMaterial: THREE.MeshBasicMaterial | null = null;
   protected isDisposed = false;
 
   constructor(
@@ -55,14 +55,13 @@ export abstract class BaseMeasurement implements IMeasurement {
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
     displayProps: DisplayProps,
-    gridProps: any
+    gridProps: GridLayerProps
   ) {
     this.id = crypto.randomUUID();
     this.type = type;
     this.startPoint = startPoint.clone();
     this.endPoint = startPoint.clone();
     this.distance = 0;
-    this.unit = measurementProps.distanceUnit;
     this.createdAt = Date.now();
     this.color = measurementProps.color;
     this.opacity = measurementProps.opacity;
@@ -72,8 +71,6 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.showDistance = measurementProps.showDistance;
     this.snapToGrid = measurementProps.snapToGrid;
     this.enableDMG252 = measurementProps.enableDMG252;
-    this.beamWidth = measurementProps.beamWidth;
-    this.coneAngle = measurementProps.coneAngle;
     this.displayProps = displayProps;
     this.gridProps = gridProps;
   }
@@ -113,35 +110,29 @@ export abstract class BaseMeasurement implements IMeasurement {
     return group;
   }
 
-  dispose(): void {
-    this.isDisposed = true;
-
-    if (this.shapeObject) {
-      this.shapeObject.removeFromParent();
-      if (this.shapeObject instanceof THREE.Mesh) {
-        this.shapeObject.geometry?.dispose();
-        (this.shapeObject.material as THREE.Material)?.dispose();
-      }
-    }
-
-    if (this.textObject) {
-      this.textObject.removeFromParent();
-      if (this.textObject instanceof THREE.Mesh) {
-        this.textObject.geometry?.dispose();
-        (this.textObject.material as THREE.Material)?.dispose();
-      }
-    }
-  }
-
   getDisplayText(): string {
     const distance = this.getDistance();
     return `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
   }
 
-  // Abstract methods that must be implemented by subclasses
-  abstract getDistance(): number;
-  abstract renderShape(): THREE.Object3D;
-  abstract renderText(): THREE.Object3D;
+  /**
+   * Calculate the distance between start and end points using the standard line distance calculation.
+   * This implementation is shared by all measurement types as they all use the same distance calculation.
+   */
+  getDistance(): number {
+    return calculateLineDistance(
+      this.startPoint,
+      this.endPoint,
+      this.gridProps.spacing,
+      this.displayProps.size,
+      this.displayProps.resolution,
+      this.gridProps.gridType,
+      this.snapToGrid,
+      this.enableDMG252,
+      this.gridProps.worldGridSize,
+      this.gridProps.worldGridUnits
+    );
+  }
 
   // Protected helper methods
   protected updateShape(): void {
@@ -204,4 +195,59 @@ export abstract class BaseMeasurement implements IMeasurement {
 
     return textMesh;
   }
+
+  /**
+   * Helper method to dispose existing canvas resources before creating new ones
+   * This should be called at the start of renderShape() in derived classes
+   */
+  protected disposeCanvasResources(): void {
+    if (this.canvasGeometry) {
+      this.canvasGeometry.dispose();
+      this.canvasGeometry = null;
+    }
+    if (this.canvasMaterial) {
+      this.canvasMaterial.dispose();
+      this.canvasMaterial = null;
+    }
+  }
+
+  /**
+   * Helper method to create canvas-based material with consistent settings
+   * @param texture The canvas texture to use
+   * @returns A configured MeshBasicMaterial
+   */
+  protected createCanvasMaterial(texture: THREE.CanvasTexture): THREE.MeshBasicMaterial {
+    return new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: this.opacity,
+      side: THREE.DoubleSide
+    });
+  }
+
+  dispose(): void {
+    this.isDisposed = true;
+
+    if (this.shapeObject) {
+      this.shapeObject.removeFromParent();
+      if (this.shapeObject instanceof THREE.Mesh) {
+        this.shapeObject.geometry?.dispose();
+        (this.shapeObject.material as THREE.Material)?.dispose();
+      }
+    }
+
+    if (this.textObject) {
+      this.textObject.removeFromParent();
+      if (this.textObject instanceof THREE.Mesh) {
+        this.textObject.geometry?.dispose();
+        (this.textObject.material as THREE.Material)?.dispose();
+      }
+    }
+
+    this.disposeCanvasResources();
+  }
+
+  // Abstract methods that must be implemented by subclasses
+  abstract renderShape(): THREE.Object3D;
+  abstract renderText(): THREE.Object3D;
 }

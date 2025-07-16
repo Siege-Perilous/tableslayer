@@ -2,13 +2,9 @@ import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
-import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class RectangleMeasurement extends BaseMeasurement {
-  private canvasGeometry: THREE.BufferGeometry | null = null;
-  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
-
   constructor(
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
@@ -18,35 +14,14 @@ export class RectangleMeasurement extends BaseMeasurement {
     super(MeasurementType.Square, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  getDistance(): number {
-    // For rectangles, calculate the diagonal distance to opposite corner
-    return calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
-    );
-  }
-
   getDisplayText(): string {
     const distance = this.getDistance();
     return `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
   }
 
   renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-    }
+    // Dispose previous geometry and material using base class helper
+    this.disposeCanvasResources();
 
     // Calculate rectangle bounds
     const minX = Math.min(this.startPoint.x, this.endPoint.x);
@@ -122,12 +97,7 @@ export class RectangleMeasurement extends BaseMeasurement {
 
     // Create plane geometry for the rectangle
     this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
+    this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const rectangleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
     // Position the mesh so it aligns with the rectangle bounds
@@ -147,25 +117,5 @@ export class RectangleMeasurement extends BaseMeasurement {
 
     // Use the shared text rendering method
     return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
-
-  updateShape(): void {
-    // Override to handle rectangle-specific updates if needed
-  }
-
-  updateText(): void {
-    // Override to handle rectangle-specific text updates if needed
-  }
-
-  dispose(): void {
-    super.dispose();
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
   }
 }

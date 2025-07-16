@@ -2,13 +2,9 @@ import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawLargeCircle } from '../utils/canvasDrawing';
-import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class CircleMeasurement extends BaseMeasurement {
-  private canvasGeometry: THREE.BufferGeometry | null = null;
-  private canvasMaterial: THREE.MeshBasicMaterial | null = null;
-
   constructor(
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
@@ -18,35 +14,14 @@ export class CircleMeasurement extends BaseMeasurement {
     super(MeasurementType.Circle, startPoint, measurementProps, displayProps, gridProps);
   }
 
-  getDistance(): number {
-    // For circles, distance is the radius
-    return calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
-    );
-  }
-
   getDisplayText(): string {
     const radius = this.getDistance();
     return `${radius.toFixed(1)} ${this.gridProps.worldGridUnits}`;
   }
 
   renderShape(): THREE.Object3D {
-    // Dispose previous geometry and material
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-    }
+    // Dispose previous geometry and material using base class helper
+    this.disposeCanvasResources();
 
     // Calculate radius in pixels
     const radiusPixels = this.startPoint.distanceTo(this.endPoint);
@@ -107,12 +82,7 @@ export class CircleMeasurement extends BaseMeasurement {
 
     // Create plane geometry for the circle
     this.canvasGeometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-    this.canvasMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      opacity: this.opacity,
-      side: THREE.DoubleSide
-    });
+    this.canvasMaterial = this.createCanvasMaterial(texture);
 
     const circleMesh = new THREE.Mesh(this.canvasGeometry, this.canvasMaterial);
     // Position the mesh so the center aligns with the start point (circle center)
@@ -134,25 +104,5 @@ export class CircleMeasurement extends BaseMeasurement {
 
     // Use the shared text rendering method
     return this.createTextMesh(this.getDisplayText(), textPosition);
-  }
-
-  updateShape(): void {
-    // Override to handle circle-specific updates if needed
-  }
-
-  updateText(): void {
-    // Override to handle circle-specific text updates if needed
-  }
-
-  dispose(): void {
-    super.dispose();
-    if (this.canvasGeometry) {
-      this.canvasGeometry.dispose();
-      this.canvasGeometry = null;
-    }
-    if (this.canvasMaterial) {
-      this.canvasMaterial.dispose();
-      this.canvasMaterial = null;
-    }
   }
 }

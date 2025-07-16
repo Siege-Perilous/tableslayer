@@ -28,8 +28,6 @@
   function startMeasurement(startPoint: THREE.Vector2): void {
     clearMeasurement();
 
-    console.log('startMeasurement');
-
     // Create new measurement based on type
     let measurement: IMeasurement;
 
