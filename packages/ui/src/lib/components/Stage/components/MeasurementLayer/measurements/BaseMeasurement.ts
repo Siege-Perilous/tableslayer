@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
+import { createTextCanvas } from '../utils/canvasDrawing';
 
 export interface IMeasurement {
   id: string;
@@ -38,7 +39,10 @@ export abstract class BaseMeasurement implements IMeasurement {
   public outlineThickness: number;
   public outlineColor: string;
   public showDistance: boolean;
+  public snapToGrid: boolean;
+  public enableDMG252: boolean;
   protected displayProps: DisplayProps;
+  protected gridProps: any; // Grid layer properties
 
   protected shapeObject: THREE.Object3D | null = null;
   protected textObject: THREE.Object3D | null = null;
@@ -48,7 +52,8 @@ export abstract class BaseMeasurement implements IMeasurement {
     type: MeasurementType,
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
-    displayProps: DisplayProps
+    displayProps: DisplayProps,
+    gridProps: any
   ) {
     this.id = crypto.randomUUID();
     this.type = type;
@@ -63,7 +68,10 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.outlineThickness = measurementProps.outlineThickness;
     this.outlineColor = measurementProps.outlineColor;
     this.showDistance = measurementProps.showDistance;
+    this.snapToGrid = measurementProps.snapToGrid;
+    this.enableDMG252 = measurementProps.enableDMG252;
     this.displayProps = displayProps;
+    this.gridProps = gridProps;
   }
 
   update(endPoint: THREE.Vector2): void {
@@ -123,7 +131,7 @@ export abstract class BaseMeasurement implements IMeasurement {
 
   getDisplayText(): string {
     const distance = this.getDistance();
-    return `${distance.toFixed(1)} ${this.unit}`;
+    return `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
   }
 
   // Abstract methods that must be implemented by subclasses
@@ -170,29 +178,9 @@ export abstract class BaseMeasurement implements IMeasurement {
    * @returns A Three.js mesh containing the rendered text
    */
   protected createTextMesh(text: string, position: THREE.Vector2): THREE.Mesh {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
-
-    // Clear canvas
-    context.clearRect(0, 0, canvas.width, canvas.height);
-
     const fontSize = this.displayProps.resolution.y / 15;
-    context.canvas.width = 1024;
-    context.canvas.height = 1024;
 
-    context.font = `${fontSize}px Raven Hell`;
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.lineWidth = 16;
-    context.strokeStyle = '#000000';
-    context.fillStyle = 'transparent';
-
-    context.strokeText(text, canvas.width / 2, canvas.height / 2, 1024);
-
-    context.fillStyle = this.color;
-    context.strokeStyle = 'transparent';
-
-    context.fillText(text, canvas.width / 2, canvas.height / 2, 1024);
+    const canvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);

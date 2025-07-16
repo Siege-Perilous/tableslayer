@@ -90,6 +90,8 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     spacing: 1,
+    worldGridSize: 5,
+    worldGridUnits: 'ft',
     opacity: 0.25,
     lineColor: '#ffffff',
     lineThickness: 1.0,
@@ -131,10 +133,11 @@ export const StageDefaultProps: StageProps = {
   measurement: {
     type: MeasurementType.Line,
     snapToGrid: true,
+    enableDMG252: true,
     autoHideDelay: 3000,
     color: '#ffff00',
     thickness: 10,
-    opacity: 0.8,
+    opacity: 1,
     showDistance: true,
     distanceUnit: 'ft',
     outlineThickness: 4,

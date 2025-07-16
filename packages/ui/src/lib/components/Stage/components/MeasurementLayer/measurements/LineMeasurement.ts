@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
+import { drawCircle, drawLine } from '../utils/canvasDrawing';
 import { calculateLineDistance } from '../utils/distanceCalculations';
 import { BaseMeasurement } from './BaseMeasurement';
 
@@ -8,12 +9,28 @@ export class LineMeasurement extends BaseMeasurement {
   private canvasGeometry: THREE.BufferGeometry | null = null;
   private canvasMaterial: THREE.MeshBasicMaterial | null = null;
 
-  constructor(startPoint: THREE.Vector2, measurementProps: MeasurementLayerProps, displayProps: DisplayProps) {
-    super(MeasurementType.Line, startPoint, measurementProps, displayProps);
+  constructor(
+    startPoint: THREE.Vector2,
+    measurementProps: MeasurementLayerProps,
+    displayProps: DisplayProps,
+    gridProps: any
+  ) {
+    super(MeasurementType.Line, startPoint, measurementProps, displayProps, gridProps);
   }
 
   getDistance(): number {
-    return calculateLineDistance(this.startPoint, this.endPoint);
+    return calculateLineDistance(
+      this.startPoint,
+      this.endPoint,
+      this.gridProps.spacing,
+      this.displayProps.size,
+      this.displayProps.resolution,
+      this.gridProps.gridType,
+      this.snapToGrid,
+      this.enableDMG252,
+      this.gridProps.worldGridSize,
+      this.gridProps.worldGridUnits
+    );
   }
 
   renderShape(): THREE.Object3D {
@@ -36,22 +53,16 @@ export class LineMeasurement extends BaseMeasurement {
     const maxY = Math.max(this.startPoint.y, this.endPoint.y);
 
     // Add padding for line thickness and circles at endpoints
-    const endpointRadius = this.thickness * 2;
-    const padding = Math.max(this.thickness, endpointRadius, 20);
+    const endpointRadius = (this.thickness + this.outlineThickness) * 2;
+    const padding = Math.max(endpointRadius, 20);
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
-    canvas.width = Math.max(width, 100); // Increased minimum width
-    canvas.height = Math.max(height, 100); // Increased minimum height
+    canvas.width = width;
+    canvas.height = height;
 
     // Clear canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw the line
-    context.strokeStyle = this.color;
-    context.lineWidth = this.thickness;
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
 
     // Transform coordinates: Three.js world space -> Canvas space
     // Canvas origin is top-left, Three.js origin is center of the plane
@@ -60,26 +71,19 @@ export class LineMeasurement extends BaseMeasurement {
     const endX = this.endPoint.x - minX + padding;
     const endY = canvas.height - (this.endPoint.y - minY + padding); // Invert Y
 
-    // Draw the line
-    context.beginPath();
-    context.moveTo(startX, startY);
-    context.lineTo(endX, endY);
-    context.stroke();
+    console.log('Drawing line:', {
+      startX: startX,
+      startY: startY
+    });
 
-    // Draw circles at start and end points
-    const circleRadius = this.thickness * 2;
+    // Draw the line
+    drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
 
     // Start point circle
-    context.beginPath();
-    context.arc(startX, startY, circleRadius, 0, Math.PI * 2);
-    context.fillStyle = this.color;
-    context.fill();
+    drawCircle(context, startX, startY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
 
     // End point circle
-    context.beginPath();
-    context.arc(endX, endY, circleRadius, 0, Math.PI * 2);
-    context.fillStyle = this.color;
-    context.fill();
+    drawCircle(context, endX, endY, this.thickness * 2, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -106,14 +110,14 @@ export class LineMeasurement extends BaseMeasurement {
       return new THREE.Group();
     }
 
+    const r = new THREE.Vector2(this.endPoint.x - this.startPoint.x, this.endPoint.y - this.startPoint.y);
+    const rhat = r.clone().normalize();
+
     // Calculate text position (midpoint of the line)
-    const midPoint = new THREE.Vector2(
-      (this.startPoint.x + this.endPoint.x) / 2,
-      (this.startPoint.y + this.endPoint.y) / 2
-    );
+    const position = this.endPoint.clone().add(rhat.multiplyScalar(150));
 
     // Use the shared text rendering method
-    return this.createTextMesh(this.getDisplayText(), midPoint);
+    return this.createTextMesh(this.getDisplayText(), position);
   }
 
   dispose(): void {

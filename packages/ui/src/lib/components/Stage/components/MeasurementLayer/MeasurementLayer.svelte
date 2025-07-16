@@ -146,4 +146,4 @@
 </T.Mesh>
 
 <!-- Measurement Manager Component -->
-<MeasurementManager bind:this={measurementManager} {props} visible={isActive} displayProps={display} />
+<MeasurementManager bind:this={measurementManager} {props} visible={isActive} displayProps={display} gridProps={grid} />

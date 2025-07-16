@@ -18,6 +18,7 @@
 <Folder title="Measurement" expanded={false}>
   <List bind:value={props.measurement.type} label="Type" options={measurementTypeOptions} />
   <List bind:value={props.measurement.snapToGrid} label="Snap to Grid" options={{ true: true, false: false }} />
+  <List bind:value={props.measurement.enableDMG252} label="DMG 252 Diagonals" options={{ true: true, false: false }} />
   <Slider bind:value={props.measurement.autoHideDelay} label="Auto Hide Delay (ms)" min={1000} max={10000} step={500} />
   <Color bind:value={props.measurement.color} label="Color" />
   <Slider bind:value={props.measurement.thickness} label="Thickness" min={1} max={10} step={1} />

@@ -10,9 +10,10 @@
     props: MeasurementLayerProps;
     visible: boolean;
     displayProps: DisplayProps;
+    gridProps: any;
   }
 
-  const { props, visible, displayProps }: Props = $props();
+  const { props, visible, displayProps, gridProps }: Props = $props();
 
   let currentMeasurement: IMeasurement | null = null;
   let measurementGroup = $state(new THREE.Group());
@@ -30,10 +31,10 @@
 
     switch (props.type) {
       case MeasurementType.Line:
-        measurement = new LineMeasurement(startPoint, props, displayProps);
+        measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);
         break;
       default:
-        measurement = new LineMeasurement(startPoint, props, displayProps);
+        measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);
         break;
     }
 
@@ -49,7 +50,6 @@
    */
   function updateMeasurement(endPoint: THREE.Vector2): void {
     if (currentMeasurement) {
-      console.log('updateMeasurement');
       currentMeasurement.update(endPoint);
 
       // Update the rendered object in the scene
@@ -63,8 +63,6 @@
   function finishMeasurement(): void {
     if (!currentMeasurement) return;
 
-    console.log('finishMeasurement');
-
     setTimeout(() => {
       clearMeasurement();
     }, props.autoHideDelay);
@@ -75,7 +73,6 @@
    */
   function clearMeasurement(): void {
     if (currentMeasurement) {
-      console.log('clearMeasurement');
       measurementGroup.clear();
       currentMeasurement.dispose();
       currentMeasurement = null;

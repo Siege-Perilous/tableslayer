@@ -32,6 +32,12 @@ export interface MeasurementLayerProps {
   snapToGrid: boolean;
 
   /**
+   * Enable DMG 252 diagonal movement rules (only applies when snapping to square grid)
+   * First diagonal = 5ft, second = 10ft, alternating
+   */
+  enableDMG252: boolean;
+
+  /**
    * Auto-hide delay in milliseconds (default 3000ms)
    */
   autoHideDelay: number;

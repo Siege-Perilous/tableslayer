@@ -22,10 +22,10 @@ export function getGridCellSize(grid: GridLayerProps, display: DisplayProps): nu
  * @returns Snapped position in pixels
  */
 function snapToSquareGrid(position: THREE.Vector2, spacing: THREE.Vector2): THREE.Vector2 {
-  return new THREE.Vector2(
-    Math.round(position.x / spacing.x) * spacing.x,
-    Math.round(position.y / spacing.y) * spacing.y
-  );
+  const roundedX = Math.round(position.x / spacing.x) * spacing.x;
+  const roundedY = Math.round(position.y / spacing.y) * spacing.y;
+
+  return new THREE.Vector2(roundedX, roundedY);
 }
 
 /**
@@ -142,6 +142,7 @@ export function snapToGrid(position: THREE.Vector2, grid: GridLayerProps, displa
 
   if (grid.gridType === GridType.Square) {
     const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
+
     return snapToSquareGrid(position, halfSpacing);
   } else {
     return distanceToHexCenter(position, gridSpacingPixels);
