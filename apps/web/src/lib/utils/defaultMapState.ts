@@ -131,12 +131,14 @@ export const StageDefaultProps: StageProps = {
     autoHideDelay: 3000,
     color: '#ffff00',
     thickness: 2,
+    markerSize: 8,
     opacity: 0.8,
     showDistance: true,
     outlineThickness: 4,
     outlineColor: '#000000',
     beamWidth: 1,
-    coneAngle: 60
+    coneAngle: 60,
+    fadeoutTime: 500
   },
   postProcessing: {
     enabled: true,

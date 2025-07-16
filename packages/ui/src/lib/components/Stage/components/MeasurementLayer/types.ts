@@ -86,4 +86,9 @@ export interface MeasurementLayerProps {
    * Angle of cone measurements in degrees
    */
   coneAngle: number;
+
+  /**
+   * Fadeout animation duration in milliseconds (default 500ms)
+   */
+  fadeoutTime: number;
 }

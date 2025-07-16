@@ -135,6 +135,7 @@ export const StageDefaultProps: StageProps = {
     snapToGrid: true,
     enableDMG252: true,
     autoHideDelay: 3000,
+    fadeoutTime: 500,
     color: '#ffff00',
     thickness: 10,
     opacity: 1,

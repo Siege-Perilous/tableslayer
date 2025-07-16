@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T } from '@threlte/core';
+  import { T, useTask } from '@threlte/core';
   import { onDestroy, onMount } from 'svelte';
   import { MeasurementType, type MeasurementLayerProps } from './types';
   import type { IMeasurement } from './measurements/BaseMeasurement';
@@ -24,6 +24,12 @@
 
   let currentMeasurement: IMeasurement | null = null;
   let measurementGroup = $state(new THREE.Group());
+  let autoHideTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  // Fade animation state
+  let isFading = $state(false);
+  let fadeStartTime = $state(0);
+  let fadeOpacity = $state(1.0);
 
   // Preview indicator
   let previewMesh = $state(new THREE.Mesh());
@@ -32,7 +38,53 @@
   let previewSize = $derived(props.markerSize + props.outlineThickness * 2);
   let showPreview = $state(false);
 
+  // Task for fade animation
+  useTask((delta: number) => {
+    if (isFading) {
+      const now = performance.now();
+      const fadeElapsed = now - fadeStartTime;
+      const progress = Math.min(fadeElapsed / props.fadeoutTime, 1);
+
+      fadeOpacity = 1 - progress;
+
+      // Update the opacity of all materials in the measurement group
+      if (measurementGroup) {
+        measurementGroup.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((material) => {
+                if (material.transparent !== undefined) {
+                  material.opacity = props.opacity * fadeOpacity;
+                  material.needsUpdate = true;
+                }
+              });
+            } else {
+              if (child.material.transparent !== undefined) {
+                child.material.opacity = props.opacity * fadeOpacity;
+                child.material.needsUpdate = true;
+              }
+            }
+          }
+        });
+      }
+
+      if (progress >= 1) {
+        isFading = false;
+        clearMeasurement();
+      }
+    }
+  });
+
   onDestroy(() => {
+    // Clear any pending auto-hide timeout
+    if (autoHideTimeoutId !== null) {
+      clearTimeout(autoHideTimeoutId);
+      autoHideTimeoutId = null;
+    }
+
+    // Stop fade animation
+    isFading = false;
+
     currentMeasurement?.dispose();
     if (previewGeometry) {
       previewGeometry.dispose();
@@ -138,6 +190,16 @@
    * @returns {void}
    */
   function startMeasurement(startPoint: THREE.Vector2): void {
+    // Clear any existing auto-hide timeout
+    if (autoHideTimeoutId !== null) {
+      clearTimeout(autoHideTimeoutId);
+      autoHideTimeoutId = null;
+    }
+
+    // Reset fade state
+    isFading = false;
+    fadeOpacity = 1.0;
+
     clearMeasurement();
     showPreview = false; // Hide preview when starting measurement
 
@@ -182,22 +244,24 @@
   function updateMeasurement(endPoint: THREE.Vector2): void {
     if (currentMeasurement) {
       currentMeasurement.update(endPoint);
-
-      // Update the rendered object in the scene
-      updateMeasurementInScene();
+      measurementGroup.clear();
+      const measurementObject = currentMeasurement.render();
+      measurementGroup.add(measurementObject);
     }
   }
 
   /**
    * Completes the current measurement and schedules its automatic removal.
-   * The measurement is displayed for the duration specified by autoHideDelay before being cleared.
+   * The measurement is displayed for the duration specified by autoHideDelay, then fades out over fadeoutTime before being cleared.
    * @returns {void}
    */
   function finishMeasurement(): void {
     if (!currentMeasurement) return;
 
-    setTimeout(() => {
-      clearMeasurement();
+    autoHideTimeoutId = setTimeout(() => {
+      // Start the fade animation
+      fadeStartTime = performance.now();
+      isFading = true;
     }, props.autoHideDelay);
   }
 
@@ -207,26 +271,21 @@
    * @returns {void}
    */
   function clearMeasurement(): void {
+    // Clear any existing auto-hide timeout
+    if (autoHideTimeoutId !== null) {
+      clearTimeout(autoHideTimeoutId);
+      autoHideTimeoutId = null;
+    }
+
+    // Reset fade state
+    isFading = false;
+    fadeOpacity = 1.0;
+
     if (currentMeasurement) {
       measurementGroup.clear();
       currentMeasurement.dispose();
       currentMeasurement = null;
     }
-  }
-
-  /**
-   * Updates the visual representation of the current measurement in the Three.js scene.
-   * Removes the old measurement object and adds the updated version with current geometry.
-   * Called internally when measurement properties change during creation.
-   * @returns {void}
-   */
-  function updateMeasurementInScene(): void {
-    if (!currentMeasurement) return;
-
-    // Clear and re-add the measurement object
-    measurementGroup.clear();
-    const measurementObject = currentMeasurement.render();
-    measurementGroup.add(measurementObject);
   }
 
   // Export the methods for use by parent components
