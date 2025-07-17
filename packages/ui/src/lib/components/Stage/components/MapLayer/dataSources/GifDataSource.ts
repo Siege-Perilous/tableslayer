@@ -31,6 +31,10 @@ export class GifDataSource implements IMapDataSource {
   private animationId: number | null = null;
   /** Timestamp when the animation started for timing calculations */
   private startTime = 0;
+  /** Timestamp of the last frame render */
+  private lastFrameTime = 0;
+  /** The total time the animation has been playing */
+  private totalPlayTime = 0;
 
   /**
    * Gets the Three.js texture containing the animated GIF.
@@ -121,42 +125,39 @@ export class GifDataSource implements IMapDataSource {
 
     this.gifCtx = this.gifCanvas.getContext('2d')!;
     this.startTime = performance.now();
-    this.currentFrameIndex = 0;
+    this.lastFrameTime = this.startTime;
+    this.currentFrameIndex = -1;
+    this.totalPlayTime = 0;
 
     const animate = () => {
-      if (!this.gifCanvas || this.frames.length === 0) return;
+      this.animationId = requestAnimationFrame(animate);
 
-      const currentTime = performance.now() - this.startTime;
-      let totalDelay = 0;
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - this.lastFrameTime;
+      this.lastFrameTime = currentTime;
 
-      // Find the current frame based on timing
-      for (let i = 0; i < this.frames.length; i++) {
-        const frame = this.frames[i];
-        const frameDelay = frame.delay; // Delay is already in milliseconds
-        totalDelay += frameDelay;
+      const currentFrame = this.frames[this.currentFrameIndex];
+      const frameDelay = currentFrame?.delay ?? 0;
 
-        if (currentTime < totalDelay) {
-          this.currentFrameIndex = i;
-          break;
+      this.totalPlayTime += elapsedTime;
+
+      // If the current frame has played for its duration, advance to the next frame
+      if (this.totalPlayTime >= frameDelay) {
+        this.totalPlayTime -= frameDelay;
+        this.currentFrameIndex++;
+
+        // Loop back to the beginning
+        if (this.currentFrameIndex >= this.frames.length) {
+          this.currentFrameIndex = 0;
+        }
+
+        this.renderFrame(this.currentFrameIndex);
+
+        // Update texture
+        if (this.texture) {
+          this.texture.needsUpdate = true;
         }
       }
-
-      // If we've gone through all frames, loop back
-      if (currentTime >= totalDelay) {
-        this.currentFrameIndex = 0;
-        this.startTime = performance.now();
-      }
-
-      // Render current frame
-      this.renderFrame(this.currentFrameIndex);
-
-      // Update texture
-      if (this.texture) {
-        this.texture.needsUpdate = true;
-      }
-
-      // Continue animation
-      this.animationId = requestAnimationFrame(animate);
     };
 
     // Start the animation loop

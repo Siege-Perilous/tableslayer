@@ -23,7 +23,8 @@ import { VideoDataSource } from './VideoDataSource';
  * ```
  */
 export function createDataSource(url: string): IMapDataSource {
-  const extension = url.split('.').pop()?.toLowerCase() || '';
+  const urlWithoutParams = url.split('?')[0];
+  const extension = urlWithoutParams.split('.').pop()?.toLowerCase() || '';
 
   switch (extension) {
     case 'mp4':
