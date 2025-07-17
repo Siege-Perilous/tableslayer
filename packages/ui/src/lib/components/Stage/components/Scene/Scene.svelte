@@ -26,7 +26,6 @@
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import type { Size } from '../../types';
 
   interface Props {
     props: StageProps;
@@ -41,7 +40,6 @@
 
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
-  let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
