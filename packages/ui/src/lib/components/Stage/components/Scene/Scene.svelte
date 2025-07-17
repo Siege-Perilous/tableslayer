@@ -25,6 +25,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
+  import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
 
@@ -405,11 +406,11 @@
   <AnnotationLayer
     bind:this={annotationsLayer}
     props={props.annotations}
+    layers={[SceneLayer.Overlay]}
     mode={props.mode}
     isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
     sceneZoom={props.scene.zoom}
     display={props.display}
-    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.Annotation}
   />
 
@@ -418,5 +419,12 @@
     isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
     grid={props.grid}
     display={props.display}
+  />
+
+  <MeasurementLayer
+    props={props.measurement}
+    isActive={props.activeLayer === MapLayerType.Measurement || props.activeLayer === MapLayerType.None}
+    display={props.display}
+    grid={props.grid}
   />
 </T.Object3D>

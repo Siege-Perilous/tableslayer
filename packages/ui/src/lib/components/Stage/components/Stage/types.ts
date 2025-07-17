@@ -5,6 +5,7 @@ import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
 import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
+import type { MeasurementLayerProps } from '../MeasurementLayer/types';
 import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
@@ -66,6 +67,7 @@ export type StageProps = {
   grid: GridLayerProps;
   map: MapLayerProps;
   marker: MarkerLayerProps;
+  measurement: MeasurementLayerProps;
   postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
