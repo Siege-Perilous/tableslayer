@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useLoader } from '@threlte/core';
-  import { TextureLoader } from 'three';
+  import { T } from '@threlte/core';
   import { MapLayerType } from './types';
   import type { Size } from '../../types';
   import FogOfWarLayer from '../FogOfWarLayer/FogOfWarLayer.svelte';
@@ -10,6 +9,7 @@
   import { getContext } from 'svelte';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import FogLayer from '../FogLayer/FogLayer.svelte';
+  import { createDataSource, type IMapDataSource } from './dataSources';
 
   interface Props {
     props: StageProps;
@@ -22,8 +22,8 @@
   const callbacks = getContext<Callbacks>('callbacks');
   const onMapUpdate = callbacks.onMapUpdate;
 
-  const loader = useLoader(TextureLoader);
-  let imageUrl: string | null = $state(null);
+  let currentMapUrl: string | null = $state(null);
+  let dataSource: IMapDataSource | null = null;
   let mapImageMaterial = new THREE.MeshBasicMaterial();
   let fogOfWarLayer: FogOfWarExports;
 
@@ -32,43 +32,48 @@
 
   $effect(() => {
     if (!props.map.url) {
-      imageUrl = props.map.url;
+      currentMapUrl = props.map.url;
       return;
     }
 
-    // Check if the actual map image URL is changing (ignoring timestamp)
+    // Check if the actual map URL is changing (ignoring timestamp)
     const newMapUrlWithoutParams = getUrlWithoutParams(props.map.url);
-    const currentMapUrlWithoutParams = getUrlWithoutParams(imageUrl);
+    const currentMapUrlWithoutParams = getUrlWithoutParams(currentMapUrl);
 
-    // Do not update if the image url has not changed
+    // Do not update if the URL has not changed
     if (currentMapUrlWithoutParams === newMapUrlWithoutParams) {
       return;
     } else {
-      imageUrl = props.map.url;
+      currentMapUrl = props.map.url;
     }
 
     onMapLoading();
 
-    // Update the image whenever the URL is changed
-    loader
-      .load(props.map.url, {
-        transform: (texture) => {
-          texture.colorSpace = THREE.SRGBColorSpace;
-          return texture;
+    // Dispose of previous data source
+    if (dataSource) {
+      dataSource.dispose();
+    }
+
+    // Create new data source based on file type
+    dataSource = createDataSource(props.map.url);
+
+    // Load the new data source
+    dataSource
+      .load(props.map.url)
+      .then(() => {
+        const texture = dataSource?.getTexture();
+        const size = dataSource?.getSize();
+
+        if (texture && size) {
+          mapImageMaterial.map?.dispose();
+          mapImageMaterial.map = texture;
+          mapImageMaterial.needsUpdate = true;
+          mapSize = size;
+          onMapLoaded(props.map.url, mapSize);
         }
       })
-      .then((texture) => {
-        mapImageMaterial.map?.dispose();
-        mapImageMaterial.map = texture;
-        mapImageMaterial.needsUpdate = true;
-        mapSize = {
-          width: texture.image.width,
-          height: texture.image.height
-        };
-        onMapLoaded(props.map.url, mapSize);
-      })
       .catch((reason) => {
-        console.error(JSON.stringify(reason));
+        console.error('Failed to load map:', reason);
       });
   });
 
