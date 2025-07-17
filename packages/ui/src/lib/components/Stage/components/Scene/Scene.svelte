@@ -369,8 +369,6 @@
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
     onMapLoaded={(mapUrl, s) => {
-      console.log('mapUrl', mapUrl);
-      console.log('mapSize', s);
       mapSize = s;
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
@@ -382,7 +380,6 @@
   <WeatherLayer
     {props}
     size={props.display.resolution}
-    {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Weather}
   />
