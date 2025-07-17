@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { MeasurementType, type MeasurementLayerProps } from './types';
   import type { IMeasurement } from './measurements/BaseMeasurement';
   import { LineMeasurement } from './measurements/LineMeasurement';
@@ -40,7 +40,7 @@
   let showPreview = $state(false);
 
   // Task for fade animation
-  useTask((delta: number) => {
+  useTask(() => {
     if (isFading) {
       const now = performance.now();
       const fadeElapsed = now - fadeStartTime;
