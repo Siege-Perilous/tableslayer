@@ -366,8 +366,7 @@
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
-    onMapLoaded={(mapUrl, s) => {
-      mapSize = s;
+    onMapLoaded={() => {
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
         setLoadingState(SceneLoadingState.Resizing);
