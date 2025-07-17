@@ -104,6 +104,7 @@
 
   export function fit() {
     if (!mapSize) return;
+
     const imageAspectRatio = mapSize.width / mapSize.height;
     const sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
 

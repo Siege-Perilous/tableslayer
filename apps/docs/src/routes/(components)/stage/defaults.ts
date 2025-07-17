@@ -10,7 +10,6 @@ import {
 } from '@tableslayer/ui';
 import { ToneMappingMode } from 'postprocessing';
 
-import videoUrl from './components/maps/animated.webm?url';
 import frostImageUrl from './components/overlays/frost.png?url';
 
 export const StageDefaultProps: StageProps = {
@@ -105,8 +104,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: videoUrl,
-    autoplay: true
+    url: 'https://files.tableslayer.com/maps/11.jpeg'
   },
   marker: {
     visible: true,

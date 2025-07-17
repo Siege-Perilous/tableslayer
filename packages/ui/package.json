@@ -69,6 +69,7 @@
     "@tiptap/starter-kit": "^2.25.0",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
+    "gifuct-js": "^2.1.2",
     "postprocessing": "6.37.6",
     "shiki": "^3.7.0",
     "three": "0.178.0",
