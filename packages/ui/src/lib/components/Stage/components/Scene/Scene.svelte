@@ -26,7 +26,6 @@
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import type { Size } from '../../types';
 
   interface Props {
     props: StageProps;
@@ -41,7 +40,6 @@
 
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
-  let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
@@ -368,8 +366,7 @@
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
-    onMapLoaded={(mapUrl, s) => {
-      mapSize = s;
+    onMapLoaded={() => {
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
         setLoadingState(SceneLoadingState.Resizing);
@@ -380,7 +377,6 @@
   <WeatherLayer
     {props}
     size={props.display.resolution}
-    {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Weather}
   />
