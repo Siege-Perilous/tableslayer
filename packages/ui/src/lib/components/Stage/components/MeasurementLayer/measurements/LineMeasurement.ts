@@ -44,7 +44,6 @@ export class LineMeasurement extends BaseMeasurement {
     const endX = this.endPoint.x - minX + padding;
     const endY = canvas.height - (this.endPoint.y - minY + padding); // Invert Y
 
-    console.log(this.color);
     // Draw the line
     drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
 

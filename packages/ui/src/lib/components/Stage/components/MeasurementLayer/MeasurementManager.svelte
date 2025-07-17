@@ -11,13 +11,14 @@
   import { ConeMeasurement } from './measurements/ConeMeasurement';
   import { drawCircle } from './utils/canvasDrawing';
   import type { DisplayProps } from '../Stage/types';
+  import type { GridLayerProps } from '../GridLayer/types';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
 
   interface Props {
     props: MeasurementLayerProps;
     visible: boolean;
     displayProps: DisplayProps;
-    gridProps: any;
+    gridProps: GridLayerProps;
   }
 
   const { props, visible, displayProps, gridProps }: Props = $props();
@@ -48,24 +49,13 @@
       fadeOpacity = 1 - progress;
 
       // Update the opacity of all materials in the measurement group
-      if (measurementGroup) {
-        measurementGroup.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach((material) => {
-                if (material.transparent !== undefined) {
-                  material.opacity = props.opacity * fadeOpacity;
-                  material.needsUpdate = true;
-                }
-              });
-            } else {
-              if (child.material.transparent !== undefined) {
-                child.material.opacity = props.opacity * fadeOpacity;
-                child.material.needsUpdate = true;
-              }
-            }
-          }
-        });
+      if (currentMeasurement) {
+        if (currentMeasurement.shapeMesh.material instanceof THREE.MeshBasicMaterial) {
+          currentMeasurement.shapeMesh.material.opacity = props.opacity * fadeOpacity;
+        }
+        if (currentMeasurement.textMesh.material instanceof THREE.MeshBasicMaterial) {
+          currentMeasurement.textMesh.material.opacity = props.opacity * fadeOpacity;
+        }
       }
 
       if (progress >= 1) {

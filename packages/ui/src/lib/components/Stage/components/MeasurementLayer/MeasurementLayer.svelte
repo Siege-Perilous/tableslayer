@@ -18,13 +18,14 @@
 
   const { props, isActive, display, grid }: Props = $props();
 
+  let centerOffset = $derived(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
   let snappedPosition = new THREE.Vector2();
   let inputMesh = $state(new THREE.Mesh());
 
   // Measurement state
   let isDrawing = false;
   let startPoint: THREE.Vector2 | null = null;
-  let measurementManager: any; // Will be the component instance
+  let measurementManager: MeasurementManager | null = null;
 
   /**
    * Handles mouse down events to initiate measurement creation.
@@ -38,7 +39,7 @@
   function handleMouseDown(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!coords || !isActive || !measurementManager) return;
 
-    coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+    coords.sub(centerOffset);
 
     const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display) : coords;
 
@@ -65,7 +66,7 @@
   function handleMouseMove(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!coords || !isActive || !measurementManager) return;
 
-    coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+    coords.sub(centerOffset);
 
     // Apply snapping if enabled
     if (props.snapToGrid) {
@@ -95,7 +96,7 @@
   function handleMouseUp(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
     if (!isDrawing || !startPoint || !measurementManager || !coords) return;
 
-    coords.sub(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+    coords.sub(centerOffset);
     const snappedCoords = coords && props.snapToGrid ? snapToGrid(coords, grid, display) : coords;
 
     if (snappedCoords) {

@@ -6,6 +6,19 @@ import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { createTextCanvas } from '../utils/canvasDrawing';
 import { calculateLineDistance } from '../utils/distanceCalculations';
 
+// =============================================================================
+// MEASUREMENT CONSTANTS
+// =============================================================================
+
+/** Distance in pixels to offset text labels from measurement end points */
+const TEXT_OFFSET_DISTANCE = 150;
+
+/** Divisor for calculating font size based on display resolution */
+const FONT_SIZE_DIVISOR = 15;
+
+/** Decimal places for distance display */
+const DISTANCE_DECIMAL_PLACES = 1;
+
 /**
  * Interface defining the contract that all measurement implementations must follow.
  * Provides methods for lifecycle management, rendering, and data access for measurements.
@@ -13,6 +26,10 @@ import { calculateLineDistance } from '../utils/distanceCalculations';
 export interface IMeasurement {
   /** The Three.js group object containing the measurement visualization */
   object: THREE.Group;
+  /** The rendered shape object in the Three.js scene */
+  shapeMesh: THREE.Mesh;
+  /** The rendered text object in the Three.js scene */
+  textMesh: THREE.Mesh;
 
   /**
    * Updates the measurement with a new end point, typically called during mouse movement.
@@ -77,9 +94,9 @@ export abstract class BaseMeasurement implements IMeasurement {
   /** The group object in the Three.js scene */
   public object: THREE.Group;
   /** The rendered shape object in the Three.js scene */
-  protected shapeMesh: THREE.Mesh;
+  public shapeMesh: THREE.Mesh;
   /** The rendered text object in the Three.js scene */
-  protected textMesh: THREE.Mesh;
+  public textMesh: THREE.Mesh;
 
   /** Flag indicating whether this measurement has been disposed */
   protected isDisposed = false;
@@ -121,6 +138,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.object = new THREE.Group();
     this.object.userData.measurementId = this.id;
 
+    // Create meshes and materials once, only update the texture when the measurement is updated
     const shapeMaterial = new THREE.MeshBasicMaterial({
       map: null,
       transparent: true,
@@ -170,8 +188,8 @@ export abstract class BaseMeasurement implements IMeasurement {
     // Calculate direction from start to end point and normalize
     const direction = this.endPoint.clone().sub(this.startPoint).normalize();
 
-    // Position text 150px offset from the end point
-    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(150));
+    // Position text at standard offset distance from the end point
+    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE));
 
     const distance = calculateLineDistance(
       this.startPoint,
@@ -185,9 +203,9 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.gridProps.worldGridSize,
       this.gridProps.worldGridUnits
     );
-    const text = `${distance.toFixed(1)} ${this.gridProps.worldGridUnits}`;
+    const text = `${distance.toFixed(DISTANCE_DECIMAL_PLACES)} ${this.gridProps.worldGridUnits}`;
 
-    const fontSize = this.displayProps.resolution.y / 15;
+    const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
     const textCanvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
 
     // Create texture from canvas
@@ -204,7 +222,7 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.textMesh.material.map.needsUpdate = true;
     }
 
-    this.textMesh.position.set(textPosition.x, textPosition.y, 1);
+    this.textMesh.position.set(textPosition.x, textPosition.y, 0);
   }
 
   /**
@@ -227,7 +245,7 @@ export abstract class BaseMeasurement implements IMeasurement {
    * @returns {THREE.Mesh} A Three.js mesh containing the rendered text
    */
   protected createTextMesh(text: string, position: THREE.Vector2): THREE.Mesh {
-    const fontSize = this.displayProps.resolution.y / 15;
+    const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
 
     const canvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
 
@@ -247,7 +265,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     const textMesh = new THREE.Mesh(geometry, material);
     textMesh.layers.set(SceneLayer.Overlay);
     textMesh.renderOrder = SceneLayerOrder.Measurement;
-    textMesh.position.set(position.x, position.y, 1); // Slightly above the line
+    textMesh.position.set(position.x, position.y, 0);
 
     return textMesh;
   }
