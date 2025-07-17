@@ -73,6 +73,6 @@ export class CircleMeasurement extends BaseMeasurement {
     shapeTexture.needsUpdate = true;
 
     this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), shapeTexture);
-    this.shapeMesh.position.set(canvasCenterX, canvasCenterY, 0);
+    this.shapeMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
   }
 }

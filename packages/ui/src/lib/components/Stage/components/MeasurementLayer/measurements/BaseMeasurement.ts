@@ -125,6 +125,7 @@ export abstract class BaseMeasurement implements IMeasurement {
       map: null,
       transparent: true,
       opacity: this.opacity,
+      color: this.color,
       side: THREE.DoubleSide
     });
 
@@ -195,7 +196,10 @@ export abstract class BaseMeasurement implements IMeasurement {
     texture.needsUpdate = true;
 
     if (this.textMesh.material instanceof THREE.MeshBasicMaterial) {
-      this.textMesh.material.dispose();
+      // Dispose the old texture before assigning new one to prevent memory leak
+      if (this.textMesh.material.map) {
+        this.textMesh.material.map.dispose();
+      }
       this.textMesh.material.map = texture;
       this.textMesh.material.map.needsUpdate = true;
     }
@@ -229,7 +233,6 @@ export abstract class BaseMeasurement implements IMeasurement {
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
-    texture.premultiplyAlpha = false;
     texture.needsUpdate = true;
 
     // Create plane geometry for text with world dimensions
@@ -238,9 +241,7 @@ export abstract class BaseMeasurement implements IMeasurement {
       map: texture,
       transparent: true,
       opacity: this.opacity,
-      side: THREE.DoubleSide,
-      alphaTest: 0.01, // Only render pixels with alpha > 0.01
-      depthWrite: false // Don't write to depth buffer to avoid z-fighting
+      color: this.color
     });
 
     const textMesh = new THREE.Mesh(geometry, material);
@@ -261,6 +262,10 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.shapeMesh.geometry?.dispose();
     this.shapeMesh.geometry = geometry;
     if (this.shapeMesh.material instanceof THREE.MeshBasicMaterial) {
+      // Dispose the old texture before assigning new one to prevent memory leak
+      if (this.shapeMesh.material.map) {
+        this.shapeMesh.material.map.dispose();
+      }
       this.shapeMesh.material.map = texture;
       this.shapeMesh.material.map.needsUpdate = true;
     }
@@ -278,12 +283,20 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.shapeMesh.removeFromParent();
     if (this.shapeMesh instanceof THREE.Mesh) {
       this.shapeMesh.geometry?.dispose();
+      // Dispose texture before disposing material
+      if (this.shapeMesh.material instanceof THREE.MeshBasicMaterial && this.shapeMesh.material.map) {
+        this.shapeMesh.material.map.dispose();
+      }
       (this.shapeMesh.material as THREE.Material)?.dispose();
     }
 
     this.textMesh.removeFromParent();
     if (this.textMesh instanceof THREE.Mesh) {
       this.textMesh.geometry?.dispose();
+      // Dispose texture before disposing material
+      if (this.textMesh.material instanceof THREE.MeshBasicMaterial && this.textMesh.material.map) {
+        this.textMesh.material.map.dispose();
+      }
       (this.textMesh.material as THREE.Material)?.dispose();
     }
 

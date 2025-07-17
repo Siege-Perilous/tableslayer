@@ -107,6 +107,11 @@
     const markerTexture = new THREE.CanvasTexture(markerCanvas);
     markerTexture.needsUpdate = true;
 
+    // Dispose the old texture before assigning new one to prevent memory leak
+    if (previewMaterial.map) {
+      previewMaterial.map.dispose();
+    }
+
     // Assign the texture to the preview material
     previewMaterial.map = markerTexture;
     previewMaterial.needsUpdate = true;
@@ -308,9 +313,8 @@
     bind:ref={previewMaterial}
     transparent={true}
     opacity={props.opacity}
-    alphaTest={0.01}
-    depthWrite={false}
     color={props.color}
+    side={THREE.DoubleSide}
   />
   <T.PlaneGeometry bind:ref={previewGeometry} args={[previewSize, previewSize]} />
 </T.Mesh>

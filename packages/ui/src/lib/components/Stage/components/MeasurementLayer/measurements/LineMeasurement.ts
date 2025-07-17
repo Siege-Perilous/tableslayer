@@ -26,7 +26,7 @@ export class LineMeasurement extends BaseMeasurement {
     const maxY = Math.max(this.startPoint.y, this.endPoint.y);
 
     // Add padding for line thickness and circles at endpoints
-    const endpointRadius = (this.thickness + this.outlineThickness) * 2;
+    const endpointRadius = (this.markerSize + this.outlineThickness) * 2;
     const padding = Math.max(endpointRadius, 20);
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
@@ -36,7 +36,6 @@ export class LineMeasurement extends BaseMeasurement {
 
     // Clear canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.globalCompositeOperation = 'source-over';
 
     // Transform coordinates: Three.js world space -> Canvas space
     // Canvas origin is top-left, Three.js origin is center of the plane
@@ -45,6 +44,7 @@ export class LineMeasurement extends BaseMeasurement {
     const endX = this.endPoint.x - minX + padding;
     const endY = canvas.height - (this.endPoint.y - minY + padding); // Invert Y
 
+    console.log(this.color);
     // Draw the line
     drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
 
