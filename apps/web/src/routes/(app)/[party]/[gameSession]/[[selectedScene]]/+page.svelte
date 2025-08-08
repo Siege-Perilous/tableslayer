@@ -11,7 +11,8 @@
     type AnnotationLayerData,
     StageMode,
     PointerInputManager,
-    addToast
+    addToast,
+    ToolType
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -248,13 +249,34 @@
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
+  let isHoveringMarker = $state(false);
+
+  // Check marker hover state periodically
+  $effect(() => {
+    if (stage && isCursorInScene) {
+      const checkInterval = setInterval(() => {
+        isHoveringMarker = stage.markers?.isHoveringMarker() ?? false;
+      }, 50); // Check every 50ms
+
+      return () => clearInterval(checkInterval);
+    }
+  });
+
   let stageClasses = $derived(
     [
       'stage',
       (stageIsLoading || navigating.to) && 'stage--loading',
+      isCursorInScene && isHoveringMarker && 'stage--pointerCursor',
       isCursorInScene &&
-        (stageProps.activeLayer === MapLayerType.Annotation || stageProps.activeLayer === MapLayerType.FogOfWar) &&
-        'stage--hideCursor'
+        !isHoveringMarker &&
+        (stageProps.activeLayer === MapLayerType.Annotation ||
+          (stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush)) &&
+        'stage--hideCursor',
+      isCursorInScene &&
+        !isHoveringMarker &&
+        stageProps.activeLayer === MapLayerType.FogOfWar &&
+        (stageProps.fogOfWar.tool.type === ToolType.Rectangle || stageProps.fogOfWar.tool.type === ToolType.Ellipse) &&
+        'stage--crosshairCursor'
     ].filter(Boolean)
   );
   let stage: StageExports = $state(null)!;
@@ -2448,5 +2470,11 @@
   }
   .stage.stage--hideCursor {
     cursor: none;
+  }
+  .stage.stage--crosshairCursor {
+    cursor: crosshair;
+  }
+  .stage.stage--pointerCursor {
+    cursor: pointer;
   }
 </style>

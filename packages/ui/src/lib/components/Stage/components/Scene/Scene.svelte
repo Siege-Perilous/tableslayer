@@ -41,6 +41,7 @@
 
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
+  let markerLayer: any;
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
@@ -349,6 +350,10 @@
     toPng: () => mapLayer.fogOfWar.toPng(),
     isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
+
+  export const markers = {
+    isHoveringMarker: () => markerLayer?.isHoveringMarker() ?? false
+  };
 </script>
 
 <T.OrthographicCamera
@@ -414,6 +419,7 @@
   />
 
   <MarkerLayer
+    bind:this={markerLayer}
     {props}
     isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
     grid={props.grid}
