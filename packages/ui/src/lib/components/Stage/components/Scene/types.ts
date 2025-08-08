@@ -77,8 +77,8 @@ export interface SceneExports {
   };
 
   markers: {
-    isHoveringMarker: () => boolean;
-    isDraggingMarker: () => boolean;
+    isHoveringMarker: boolean;
+    isDraggingMarker: boolean;
   };
 }
 

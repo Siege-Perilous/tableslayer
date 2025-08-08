@@ -351,9 +351,14 @@
     isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
 
+  // Export marker state getters
   export const markers = {
-    isHoveringMarker: () => markerLayer?.isHoveringMarker() ?? false,
-    isDraggingMarker: () => markerLayer?.isDraggingMarker() ?? false
+    get isHoveringMarker() {
+      return markerLayer?.markerState?.isHovering ?? false;
+    },
+    get isDraggingMarker() {
+      return markerLayer?.markerState?.isDragging ?? false;
+    }
   };
 </script>
 

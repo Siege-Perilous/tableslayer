@@ -165,16 +165,15 @@
     }
   }
 
-  // Export function to check if hovering over a marker
-  export function isHoveringMarker() {
-    // Only return true if we actually have a hovered marker (not undefined or null)
-    return hoveredMarker !== null && hoveredMarker !== undefined;
-  }
-
-  // Export function to check if dragging a marker
-  export function isDraggingMarker() {
-    return isDragging;
-  }
+  // Export reactive state for hover and drag
+  export const markerState = {
+    get isHovering() {
+      return hoveredMarker !== null && hoveredMarker !== undefined;
+    },
+    get isDragging() {
+      return isDragging;
+    }
+  };
 </script>
 
 <LayerInput

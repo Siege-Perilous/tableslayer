@@ -48,9 +48,14 @@
     generateThumbnail: () => sceneRef?.generateThumbnail()
   };
 
+  // Export marker state getters
   export const markers = {
-    isHoveringMarker: () => sceneRef?.markers?.isHoveringMarker() ?? false,
-    isDraggingMarker: () => sceneRef?.markers?.isDraggingMarker() ?? false
+    get isHoveringMarker() {
+      return sceneRef?.markers?.isHoveringMarker ?? false;
+    },
+    get isDraggingMarker() {
+      return sceneRef?.markers?.isDraggingMarker ?? false;
+    }
   };
 </script>
 

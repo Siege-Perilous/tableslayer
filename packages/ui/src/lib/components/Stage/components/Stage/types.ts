@@ -93,7 +93,7 @@ export interface StageExports {
     generateThumbnail: () => Promise<Blob>;
   };
   markers: {
-    isHoveringMarker: () => boolean;
-    isDraggingMarker: () => boolean;
+    isHoveringMarker: boolean;
+    isDraggingMarker: boolean;
   };
 }
