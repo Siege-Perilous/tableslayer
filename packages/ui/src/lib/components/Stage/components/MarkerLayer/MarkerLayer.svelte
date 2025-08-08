@@ -171,6 +171,11 @@
     // Only return true if we actually have a hovered marker (not undefined or null)
     return hoveredMarker !== null && hoveredMarker !== undefined;
   }
+
+  // Export function to check if dragging a marker
+  export function isDraggingMarker() {
+    return isDragging;
+  }
 </script>
 
 <LayerInput
@@ -210,6 +215,7 @@
         strokeColor={props.marker.shape.strokeColor}
         strokeWidth={props.marker.shape.strokeWidth}
         isSelected={selectedMarker?.id === marker.id}
+        isHovered={hoveredMarker?.id === marker.id}
         sceneRotation={props.scene.rotation}
       />
     {/if}
@@ -232,6 +238,7 @@
       strokeColor={props.marker.shape.strokeColor}
       strokeWidth={props.marker.shape.strokeWidth}
       isSelected={false}
+      isHovered={false}
       sceneRotation={props.scene.rotation}
     />
   {/if}

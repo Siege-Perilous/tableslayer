@@ -250,12 +250,14 @@
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
   let isHoveringMarker = $state(false);
+  let isDraggingMarker = $state(false);
 
-  // Check marker hover state periodically
+  // Check marker hover and drag state periodically
   $effect(() => {
     if (stage && isCursorInScene) {
       const checkInterval = setInterval(() => {
         isHoveringMarker = stage.markers?.isHoveringMarker() ?? false;
+        isDraggingMarker = stage.markers?.isDraggingMarker() ?? false;
       }, 50); // Check every 50ms
 
       return () => clearInterval(checkInterval);
@@ -266,14 +268,17 @@
     [
       'stage',
       (stageIsLoading || navigating.to) && 'stage--loading',
-      isCursorInScene && isHoveringMarker && 'stage--pointerCursor',
+      isCursorInScene && isDraggingMarker && 'stage--grabbingCursor',
+      isCursorInScene && !isDraggingMarker && isHoveringMarker && 'stage--pointerCursor',
       isCursorInScene &&
         !isHoveringMarker &&
+        !isDraggingMarker &&
         (stageProps.activeLayer === MapLayerType.Annotation ||
           (stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush)) &&
         'stage--hideCursor',
       isCursorInScene &&
         !isHoveringMarker &&
+        !isDraggingMarker &&
         stageProps.activeLayer === MapLayerType.FogOfWar &&
         (stageProps.fogOfWar.tool.type === ToolType.Rectangle || stageProps.fogOfWar.tool.type === ToolType.Ellipse) &&
         'stage--crosshairCursor'
@@ -2476,5 +2481,8 @@
   }
   .stage.stage--pointerCursor {
     cursor: pointer;
+  }
+  .stage.stage--grabbingCursor {
+    cursor: grabbing;
   }
 </style>

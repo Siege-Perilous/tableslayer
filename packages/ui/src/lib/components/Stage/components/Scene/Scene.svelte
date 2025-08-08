@@ -352,7 +352,8 @@
   };
 
   export const markers = {
-    isHoveringMarker: () => markerLayer?.isHoveringMarker() ?? false
+    isHoveringMarker: () => markerLayer?.isHoveringMarker() ?? false,
+    isDraggingMarker: () => markerLayer?.isDraggingMarker() ?? false
   };
 </script>
 

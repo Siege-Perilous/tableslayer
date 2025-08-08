@@ -49,7 +49,8 @@
   };
 
   export const markers = {
-    isHoveringMarker: () => sceneRef?.markers?.isHoveringMarker() ?? false
+    isHoveringMarker: () => sceneRef?.markers?.isHoveringMarker() ?? false,
+    isDraggingMarker: () => sceneRef?.markers?.isDraggingMarker() ?? false
   };
 </script>
 
