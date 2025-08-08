@@ -11,7 +11,8 @@
     type AnnotationLayerData,
     StageMode,
     PointerInputManager,
-    addToast
+    addToast,
+    ToolType
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -248,16 +249,32 @@
   let errors = $state<$ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
+  let stage: StageExports = $state(null)!;
+
+  // Derive marker states reactively from stage
+  let isHoveringMarker = $derived(stage?.markers?.isHoveringMarker ?? false);
+  let isDraggingMarker = $derived(stage?.markers?.isDraggingMarker ?? false);
+
   let stageClasses = $derived(
     [
       'stage',
       (stageIsLoading || navigating.to) && 'stage--loading',
+      isCursorInScene && isDraggingMarker && 'stage--grabbingCursor',
+      isCursorInScene && !isDraggingMarker && isHoveringMarker && 'stage--pointerCursor',
       isCursorInScene &&
-        (stageProps.activeLayer === MapLayerType.Annotation || stageProps.activeLayer === MapLayerType.FogOfWar) &&
-        'stage--hideCursor'
+        !isHoveringMarker &&
+        !isDraggingMarker &&
+        (stageProps.activeLayer === MapLayerType.Annotation ||
+          (stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush)) &&
+        'stage--hideCursor',
+      isCursorInScene &&
+        !isHoveringMarker &&
+        !isDraggingMarker &&
+        stageProps.activeLayer === MapLayerType.FogOfWar &&
+        (stageProps.fogOfWar.tool.type === ToolType.Rectangle || stageProps.fogOfWar.tool.type === ToolType.Ellipse) &&
+        'stage--crosshairCursor'
     ].filter(Boolean)
   );
-  let stage: StageExports = $state(null)!;
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
@@ -2448,5 +2465,14 @@
   }
   .stage.stage--hideCursor {
     cursor: none;
+  }
+  .stage.stage--crosshairCursor {
+    cursor: crosshair;
+  }
+  .stage.stage--pointerCursor {
+    cursor: pointer;
+  }
+  .stage.stage--grabbingCursor {
+    cursor: grabbing;
   }
 </style>

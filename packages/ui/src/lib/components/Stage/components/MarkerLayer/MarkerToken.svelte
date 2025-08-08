@@ -25,6 +25,7 @@
     textStrokeColor: string;
     textSize: number;
     isSelected: boolean;
+    isHovered?: boolean;
     sceneRotation: number;
   }
 
@@ -42,11 +43,14 @@
     shadowColor,
     shadowBlur,
     shadowOffset,
+    isSelected = false,
+    isHovered = false,
     sceneRotation
   }: Props = $props();
 
   const loader = useLoader(THREE.TextureLoader);
-  const markerSize = $derived(getGridCellSize(grid, display) * marker.size);
+  const baseMarkerSize = $derived(getGridCellSize(grid, display) * marker.size);
+  const markerSize = $derived(isHovered ? baseMarkerSize * 1.15 : baseMarkerSize);
   const sizeMultiplier = 0.9;
 
   // Counter-rotate markers to keep them upright relative to the viewport
@@ -166,7 +170,8 @@
 
     if (marker.shape !== undefined) {
       // Set stroke and fill styles for shape
-      ctx.strokeStyle = strokeColor ?? '#000000';
+      // Use --fgPrimary color when hovered or selected, otherwise use the default stroke color
+      ctx.strokeStyle = isHovered || isSelected ? getCSSVariable('--fgPrimary') : (strokeColor ?? '#000000');
       ctx.lineWidth = strokeWidth;
       ctx.fillStyle = marker.shapeColor ?? '#ffffff';
 
@@ -210,13 +215,21 @@
     return markerCanvas;
   }
 
-  // Create and update marker texture when properties change
+  // Create and update marker texture when properties change (including hover state)
   $effect(() => {
     markerCanvas = drawMarker();
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
     markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
     markerMaterial.map.needsUpdate = true;
   });
+
+  // Get CSS variable value for hover color
+  function getCSSVariable(varName: string): string {
+    if (typeof window !== 'undefined') {
+      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+    return '#ffffff';
+  }
 </script>
 
 <T.Group
