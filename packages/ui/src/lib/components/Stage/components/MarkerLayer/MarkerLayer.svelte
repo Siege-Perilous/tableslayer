@@ -54,7 +54,6 @@
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
     props.marker.markers.forEach((marker) => {
-      // Only check visible markers
       if (!isTokenVisible(marker)) return;
 
       const distance = gridCoords.distanceTo(marker.position);
@@ -124,7 +123,7 @@
       // Check if there are any visible markers
       const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
       if (hasVisibleMarkers) {
-        hoveredMarker = findClosestMarker(position);
+        hoveredMarker = findClosestMarker(position) ?? null;
       } else {
         hoveredMarker = null;
       }
