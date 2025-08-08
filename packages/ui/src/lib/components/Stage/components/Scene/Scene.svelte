@@ -25,6 +25,7 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
+  import type { MarkerLayerExports } from '../MarkerLayer/types';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
 
@@ -41,7 +42,7 @@
 
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
-  let markerLayer: any;
+  let markerLayer: MarkerLayerExports;
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
