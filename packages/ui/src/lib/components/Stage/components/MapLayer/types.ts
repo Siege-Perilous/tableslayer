@@ -30,6 +30,12 @@ export interface MapLayerProps {
   url: string;
 
   /**
+   * Indicates if the map should autoplay (for video assets)
+   * @default true
+   */
+  autoplay?: boolean;
+
+  /**
    * The scale of the map relative to the scene
    */
   zoom: number;
