@@ -517,7 +517,20 @@
             zIndex: '10'
           })}
         ondragover={(e) => dragAndDrop.handleDragOver(e, index.toString())}
-        ondragleave={dragAndDrop.handleDragLeave}
+        ondragleave={(e) => {
+          // Only clear the drag over state if we're leaving to a different scene or outside
+          const relatedTarget = e.relatedTarget as HTMLElement | null;
+          if (relatedTarget) {
+            const targetScene = relatedTarget.closest('.scene');
+            const currentScene = e.currentTarget as HTMLElement;
+            // Only call handleDragLeave if we're moving to a different scene or outside
+            if (targetScene !== currentScene) {
+              dragAndDrop.handleDragLeave();
+            }
+          } else {
+            dragAndDrop.handleDragLeave();
+          }
+        }}
         ondrop={(e) => dragAndDrop.handleDrop(e, index.toString())}
         ondragend={dragAndDrop.handleDragEnd}
         ontouchstart={(e) => dragAndDrop.handleTouchStart(e, index.toString(), e.currentTarget)}
@@ -544,12 +557,15 @@
         <a
           href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
           class="scene__link"
+          draggable="false"
           onclick={(e) => {
             // Only navigate if we're not dragging (prevent link activation during drag)
             if (dragAndDrop.isDragging) {
               e.preventDefault();
             }
           }}
+          ondragover={(e) => e.preventDefault()}
+          ondrop={(e) => e.preventDefault()}
         >
           {#if activeSceneId && activeSceneId === scene.id}
             <div class="scene__projectedIcon">
@@ -710,6 +726,7 @@
     height: 100%;
     z-index: 2;
     -webkit-touch-callout: none;
+    cursor: pointer;
   }
   .scene__rename {
     gap: 1rem;
