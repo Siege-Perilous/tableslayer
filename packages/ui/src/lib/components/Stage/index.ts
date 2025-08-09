@@ -2,7 +2,13 @@ export { type AnnotationLayerData, type AnnotationsLayerProps } from './componen
 export { DrawMode, RenderMode, ToolType } from './components/DrawingLayer/types';
 export { GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';
-export { MarkerShape, MarkerSize, MarkerVisibility, type Marker } from './components/MarkerLayer/types';
+export {
+  MarkerShape,
+  MarkerSize,
+  MarkerVisibility,
+  type Marker,
+  type MarkerLayerExports
+} from './components/MarkerLayer/types';
 export { ParticleType } from './components/ParticleSystem/types';
 export { default as PointerInputManager } from './components/PointerInputManager/PointerInputManager.svelte';
 export { SceneRotation } from './components/Scene/types';
