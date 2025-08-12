@@ -76,12 +76,12 @@ export class VideoDataSource implements IMapDataSource {
           // Create video texture
           this.texture = new THREE.VideoTexture(this.videoElement);
           this.texture.colorSpace = THREE.SRGBColorSpace;
-          // Ensure texture updates when video frames change
-          this.texture.needsUpdate = true;
           // Set texture parameters for better compatibility
           this.texture.minFilter = THREE.LinearFilter;
           this.texture.magFilter = THREE.LinearFilter;
           this.texture.format = THREE.RGBAFormat;
+          // Disable mipmaps to prevent power-of-two issues
+          this.texture.generateMipmaps = false;
 
           this.videoElement.play();
 

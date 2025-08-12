@@ -277,8 +277,20 @@
 
     const displayWidth = props.display.resolution.x;
     const displayHeight = props.display.resolution.y;
-    const imageWidth = texture.image.width;
-    const imageHeight = texture.image.height;
+
+    // Handle both image and video textures
+    let imageWidth: number;
+    let imageHeight: number;
+
+    if (texture.image instanceof HTMLVideoElement) {
+      // For video textures, use videoWidth and videoHeight
+      imageWidth = texture.image.videoWidth || displayWidth;
+      imageHeight = texture.image.videoHeight || displayHeight;
+    } else {
+      // For image textures, use width and height
+      imageWidth = texture.image.width;
+      imageHeight = texture.image.height;
+    }
 
     // Create a temporary scene and camera for rendering
     const tempScene = new THREE.Scene();
