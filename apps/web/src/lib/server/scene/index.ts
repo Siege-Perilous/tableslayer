@@ -83,6 +83,12 @@ export const reorderScenes = async (gameSessionId: string, sceneId: string, newP
   }
 };
 
+const isVideoFile = (location: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
+  const lowerLocation = location.toLowerCase();
+  return videoExtensions.some((ext) => lowerLocation.includes(ext));
+};
+
 export const getScene = async (sceneId: string): Promise<SelectScene | (SelectScene & Thumb)> => {
   const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
 
@@ -92,6 +98,27 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
 
   if (!scene?.mapLocation) {
     return scene;
+  }
+
+  // For video files, return direct URL without transformation
+  if (isVideoFile(scene.mapLocation)) {
+    const directUrl = `https://files.tableslayer.com/${scene.mapLocation}`;
+    const thumb = {
+      url: directUrl,
+      resizedUrl: directUrl,
+      details: {
+        width: 0,
+        height: 0,
+        original: {
+          width: 0,
+          height: 0,
+          file_size: 0,
+          format: 'video'
+        }
+      }
+    };
+    const sceneWithThumb = { ...scene, thumb };
+    return sceneWithThumb;
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
@@ -135,10 +162,32 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
       scenesWithThumbs.push(scene);
       continue;
     }
-    const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-    // Removed cache busting timestamps to prevent flashing
-    const sceneWithThumb = { ...scene, thumb };
-    scenesWithThumbs.push(sceneWithThumb);
+
+    // For video files, return direct URL without transformation
+    if (isVideoFile(imageLocation)) {
+      const directUrl = `https://files.tableslayer.com/${imageLocation}`;
+      const thumb = {
+        url: directUrl,
+        resizedUrl: directUrl,
+        details: {
+          width: 0,
+          height: 0,
+          original: {
+            width: 0,
+            height: 0,
+            file_size: 0,
+            format: 'video'
+          }
+        }
+      };
+      const sceneWithThumb = { ...scene, thumb };
+      scenesWithThumbs.push(sceneWithThumb);
+    } else {
+      const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
+      // Removed cache busting timestamps to prevent flashing
+      const sceneWithThumb = { ...scene, thumb };
+      scenesWithThumbs.push(sceneWithThumb);
+    }
   }
 
   return scenesWithThumbs;
@@ -236,7 +285,26 @@ export const getSceneFromOrder = async (
 
   let thumb = null;
   if (scene.mapLocation) {
-    thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+    // For video files, return direct URL without transformation
+    if (isVideoFile(scene.mapLocation)) {
+      const directUrl = `https://files.tableslayer.com/${scene.mapLocation}`;
+      thumb = {
+        url: directUrl,
+        resizedUrl: directUrl,
+        details: {
+          width: 0,
+          height: 0,
+          original: {
+            width: 0,
+            height: 0,
+            file_size: 0,
+            format: 'video'
+          }
+        }
+      };
+    } else {
+      thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+    }
   }
   const sceneWithThumb = { ...scene, thumb };
 

@@ -55,11 +55,15 @@ export class VideoDataSource implements IMapDataSource {
     return new Promise((resolve, reject) => {
       // Create video element
       this.videoElement = document.createElement('video');
+      // Set crossOrigin to 'anonymous' for CORS-enabled servers
+      // This is required for THREE.VideoTexture to work with cross-origin videos
       this.videoElement.crossOrigin = 'anonymous';
       this.videoElement.loop = true;
       this.videoElement.muted = true;
       this.videoElement.playsInline = true;
       this.videoElement.autoplay = true;
+      // Preload the video to ensure it's ready
+      this.videoElement.preload = 'auto';
 
       // Set up event listeners
       this.videoElement.addEventListener('loadedmetadata', () => {
@@ -72,6 +76,12 @@ export class VideoDataSource implements IMapDataSource {
           // Create video texture
           this.texture = new THREE.VideoTexture(this.videoElement);
           this.texture.colorSpace = THREE.SRGBColorSpace;
+          // Ensure texture updates when video frames change
+          this.texture.needsUpdate = true;
+          // Set texture parameters for better compatibility
+          this.texture.minFilter = THREE.LinearFilter;
+          this.texture.magFilter = THREE.LinearFilter;
+          this.texture.format = THREE.RGBAFormat;
 
           this.videoElement.play();
 

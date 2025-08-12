@@ -122,4 +122,10 @@
   }
 </script>
 
-<input type="file" accept="image/*" bind:this={hiddenFileInput} onchange={handleFileChange} style="display: none;" />
+<input
+  type="file"
+  accept="image/*,video/*,.gif,.mp4,.webm,.mov,.avi"
+  bind:this={hiddenFileInput}
+  onchange={handleFileChange}
+  style="display: none;"
+/>

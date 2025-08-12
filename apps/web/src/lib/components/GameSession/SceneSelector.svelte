@@ -480,6 +480,7 @@
               variant="transparent"
               {...inputProps}
               type="file"
+              accept="image/*,video/*,.gif,.mp4,.webm,.mov,.avi"
               bind:files={file}
               onchange={handleFileChange}
             />

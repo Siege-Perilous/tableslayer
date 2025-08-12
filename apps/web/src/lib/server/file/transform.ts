@@ -34,8 +34,33 @@ export const getImageDetails = async (url: string): Promise<ImageDetails> => {
   }
 };
 
+const isVideoFile = (urlFragment: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
+  const lowerUrl = urlFragment.toLowerCase();
+  return videoExtensions.some((ext) => lowerUrl.includes(ext));
+};
+
 export const transformImage = async (urlFragment: string, options: string): Promise<BuildImageResult> => {
   const url = `https://files.tableslayer.com/${urlFragment}`;
+
+  // For video files, skip transformation and return the direct URL
+  if (isVideoFile(urlFragment)) {
+    return {
+      url,
+      resizedUrl: url, // Use the same URL for videos (no resizing)
+      details: {
+        width: 0,
+        height: 0,
+        original: {
+          width: 0,
+          height: 0,
+          file_size: 0,
+          format: 'video'
+        }
+      }
+    };
+  }
+
   const resizedUrl = `https://files.tableslayer.com/cdn-cgi/image/${options}/${urlFragment}`;
 
   try {
