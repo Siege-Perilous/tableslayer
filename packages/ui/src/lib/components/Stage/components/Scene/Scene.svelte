@@ -26,6 +26,7 @@
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
+  import type { MarkerLayerExports } from '../MarkerLayer/types';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
 
@@ -42,6 +43,7 @@
 
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
+  let markerLayer: MarkerLayerExports;
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
@@ -350,6 +352,16 @@
     toPng: () => mapLayer.fogOfWar.toPng(),
     isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
+
+  // Export marker state getters
+  export const markers = {
+    get isHoveringMarker() {
+      return markerLayer?.markerState?.isHovering ?? false;
+    },
+    get isDraggingMarker() {
+      return markerLayer?.markerState?.isDragging ?? false;
+    }
+  };
 </script>
 
 <T.OrthographicCamera
@@ -415,6 +427,7 @@
   />
 
   <MarkerLayer
+    bind:this={markerLayer}
     {props}
     isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
     grid={props.grid}

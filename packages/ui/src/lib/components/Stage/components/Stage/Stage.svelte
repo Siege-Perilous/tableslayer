@@ -47,6 +47,16 @@
     fit: () => sceneRef?.fit(),
     generateThumbnail: () => sceneRef?.generateThumbnail()
   };
+
+  // Export marker state getters
+  export const markers = {
+    get isHoveringMarker() {
+      return sceneRef?.markers?.isHoveringMarker ?? false;
+    },
+    get isDraggingMarker() {
+      return sceneRef?.markers?.isDraggingMarker ?? false;
+    }
+  };
 </script>
 
 <div style="height: 100%; width: 100%;">

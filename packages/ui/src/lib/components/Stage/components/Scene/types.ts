@@ -76,6 +76,11 @@ export interface SceneExports {
     fit: () => void;
     fill: () => void;
   };
+
+  markers: {
+    isHoveringMarker: boolean;
+    isDraggingMarker: boolean;
+  };
 }
 
 /**

@@ -32,6 +32,7 @@
   // Track the currently selected marker and dragging state
   let selectedMarker: Marker | null = $state(null);
   let isDragging = $state(false);
+  let hoveredMarker: Marker | null = $state(null);
 
   const ghostMarker: Marker = $state({
     id: uuidv4(),
@@ -53,6 +54,8 @@
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
     props.marker.markers.forEach((marker) => {
+      if (!isTokenVisible(marker)) return;
+
       const distance = gridCoords.distanceTo(marker.position);
       const markerRadius = getGridCellSize(grid, display) * marker.size;
       if (distance < minDistance && distance <= markerRadius / 2) {
@@ -105,12 +108,28 @@
   }
 
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
-    if (!coords) return;
+    if (!coords) {
+      hoveredMarker = null;
+      return;
+    }
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
     const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
 
     ghostMarker.position = snapPosition;
+
+    // Only check for hover when we're not dragging and when we're not in a drawing mode
+    if (!isDragging && props.activeLayer !== MapLayerType.Annotation && props.activeLayer !== MapLayerType.FogOfWar) {
+      // Check if there are any visible markers
+      const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
+      if (hasVisibleMarkers) {
+        hoveredMarker = findClosestMarker(position) ?? null;
+      } else {
+        hoveredMarker = null;
+      }
+    } else {
+      hoveredMarker = null;
+    }
 
     if (isDragging && selectedMarker) {
       onMarkerMoved(selectedMarker, snapPosition);
@@ -131,6 +150,10 @@
     }
   }
 
+  function onMouseLeave() {
+    hoveredMarker = null;
+  }
+
   function onContextMenu(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
     if (!coords) return;
 
@@ -141,6 +164,16 @@
       onMarkerContextMenu(closestMarker, e);
     }
   }
+
+  // Export reactive state for hover and drag
+  export const markerState = {
+    get isHovering() {
+      return hoveredMarker !== null && hoveredMarker !== undefined;
+    },
+    get isDragging() {
+      return isDragging;
+    }
+  };
 </script>
 
 <LayerInput
@@ -151,6 +184,7 @@
   {onMouseDown}
   {onMouseMove}
   {onMouseUp}
+  {onMouseLeave}
   {onContextMenu}
 />
 
@@ -179,6 +213,7 @@
         strokeColor={props.marker.shape.strokeColor}
         strokeWidth={props.marker.shape.strokeWidth}
         isSelected={selectedMarker?.id === marker.id}
+        isHovered={hoveredMarker?.id === marker.id}
         sceneRotation={props.scene.rotation}
       />
     {/if}
@@ -201,6 +236,7 @@
       strokeColor={props.marker.shape.strokeColor}
       strokeWidth={props.marker.shape.strokeWidth}
       isSelected={false}
+      isHovered={false}
       sceneRotation={props.scene.rotation}
     />
   {/if}

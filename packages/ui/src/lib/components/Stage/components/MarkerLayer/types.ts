@@ -110,3 +110,10 @@ export interface MarkerLayerProps {
    */
   markers: Marker[];
 }
+
+export interface MarkerLayerExports {
+  markerState: {
+    isHovering: boolean;
+    isDragging: boolean;
+  };
+}
