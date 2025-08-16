@@ -9,6 +9,7 @@ import {
   GridType,
   MapLayerType,
   type Marker,
+  MeasurementType,
   RainPreset,
   SceneRotation,
   StageMode,
@@ -157,7 +158,9 @@ export const buildSceneProps = (
       shadowColor: activeScene.gridShadowColor ?? '#000000',
       shadowOpacity: 0,
       shadowBlur: activeScene.gridShadowBlur ?? 0,
-      shadowSpread: activeScene.gridShadowSpread ?? 0
+      shadowSpread: activeScene.gridShadowSpread ?? 0,
+      worldGridUnits: 'ft',
+      worldGridSize: 5
     },
     map: {
       rotation: activeScene.mapRotation ?? 0,
@@ -188,6 +191,22 @@ export const buildSceneProps = (
         strokeWidth: 1
       },
       markers: markers
+    },
+    measurement: {
+      type: MeasurementType.Line,
+      opacity: 1,
+      autoHideDelay: 1000,
+      fadeoutTime: 1000,
+      markerSize: 10,
+      color: '#ffffff',
+      outlineColor: '#000000',
+      outlineThickness: 1,
+      snapToGrid: true,
+      enableDMG252: false,
+      thickness: 1,
+      showDistance: true,
+      beamWidth: 5,
+      coneAngle: 60
     },
     postProcessing: {
       enabled: true,

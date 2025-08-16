@@ -14,6 +14,7 @@
     onMouseUp?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseMove?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onContextMenu?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
+    onMouseEnter?: () => void;
     onMouseLeave?: () => void;
     onWheel?: (e: WheelEvent) => void;
   }
@@ -26,6 +27,7 @@
     onMouseDown,
     onMouseUp,
     onMouseMove,
+    onMouseEnter,
     onMouseLeave,
     onWheel,
     onContextMenu
@@ -48,6 +50,7 @@
     if (onMouseDown) renderer.domElement.addEventListener('mousedown', handleMouseDown);
     if (onMouseMove) renderer.domElement.addEventListener('mousemove', handleMouseMove);
     if (onMouseUp) renderer.domElement.addEventListener('mouseup', handleMouseUp);
+    if (onMouseEnter) renderer.domElement.addEventListener('mouseenter', handleMouseEnter);
     if (onMouseLeave) renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
     if (onContextMenu) renderer.domElement.addEventListener('contextmenu', handleContextMenu);
     if (onWheel) renderer.domElement.addEventListener('wheel', handleWheel);
@@ -64,6 +67,7 @@
     if (onMouseDown) renderer.domElement.removeEventListener('mousedown', handleMouseDown);
     if (onMouseMove) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
     if (onMouseUp) renderer.domElement.removeEventListener('mouseup', handleMouseUp);
+    if (onMouseEnter) renderer.domElement.removeEventListener('mouseenter', handleMouseEnter);
     if (onMouseLeave) renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
     if (onContextMenu) renderer.domElement.removeEventListener('contextmenu', handleContextMenu);
     if (onWheel) renderer.domElement.removeEventListener('wheel', handleWheel);
@@ -95,6 +99,12 @@
   function handleMouseMove(event: MouseEvent) {
     if (onMouseMove && isActive) {
       onMouseMove(event, mouseToCanvasCoords(event));
+    }
+  }
+
+  function handleMouseEnter() {
+    if (onMouseEnter && isActive) {
+      onMouseEnter();
     }
   }
 

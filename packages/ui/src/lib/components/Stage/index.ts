@@ -9,6 +9,7 @@ export {
   type Marker,
   type MarkerLayerExports
 } from './components/MarkerLayer/types';
+export { MeasurementType } from './components/MeasurementLayer/types';
 export { ParticleType } from './components/ParticleSystem/types';
 export { default as PointerInputManager } from './components/PointerInputManager/PointerInputManager.svelte';
 export { SceneRotation } from './components/Scene/types';
