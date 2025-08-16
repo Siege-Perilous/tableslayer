@@ -110,9 +110,13 @@ export const useUploadFileMutation = () => {
   >({
     mutationKey: ['uploadFile'],
     mutationFn: async ({ file, folder, id, currentUrl }) => {
-      const MAX_FILE_SIZE = 15 * 1024 * 1024;
+      // Check if file is a video based on MIME type
+      const isVideo = file.type.startsWith('video/') || file.type === 'image/gif';
+      const MAX_FILE_SIZE = isVideo ? 100 * 1024 * 1024 : 15 * 1024 * 1024; // 100MB for videos, 15MB for others
+
       if (file.size > MAX_FILE_SIZE) {
-        throw new Error('File size exceeds the 15MB limit');
+        const limitMB = isVideo ? 100 : 15;
+        throw new Error(`File size exceeds the ${limitMB}MB limit`);
       }
 
       const fileId = id || uuidv4();

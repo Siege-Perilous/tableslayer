@@ -1,6 +1,9 @@
 <script lang="ts">
   import { List, Slider, Button, Folder, type ListOptions, Separator } from 'svelte-tweakpane-ui';
   import type { StageProps, StageExports } from '@tableslayer/ui';
+  import caveWebmUrl from './maps/cave.webm?url';
+  import bridgeMp4Url from './maps/bridge.mp4?url';
+  import bridgeGifUrl from './maps/bridge.gif?url';
 
   let { props = $bindable(), stage } = $props<{
     props: StageProps;
@@ -19,7 +22,10 @@
     'Map 9': 'https://files.tableslayer.com/maps/09.jpeg',
     'Map 10': 'https://files.tableslayer.com/maps/10.jpeg',
     'Map 11': 'https://files.tableslayer.com/maps/11.jpeg',
-    'Map 12': 'https://files.tableslayer.com/maps/12.jpeg'
+    'Map 12': 'https://files.tableslayer.com/maps/12.jpeg',
+    'Cave (webm)': caveWebmUrl,
+    'Bridge (mp4)': bridgeMp4Url,
+    'Bridge (gif)': bridgeGifUrl
   };
 
   let mapUrl = $state(props.map.url);

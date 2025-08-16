@@ -7,7 +7,7 @@ import {
   type SelectGameSession,
   type SelectScene
 } from '$lib/db/app/schema';
-import { SlugConflictError, transformImage } from '$lib/server';
+import { getVideoUrl, SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
@@ -26,6 +26,12 @@ export const getPartyGameSessions = async (partyId: string): Promise<SelectGameS
   return gameSessions;
 };
 
+const isVideoFile = (location: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
+  const lowerLocation = location.toLowerCase();
+  return videoExtensions.some((ext) => lowerLocation.includes(ext));
+};
+
 export const getPartyGameSessionsWithScenes = async (partyId: string) => {
   const gameSessions = await getPartyGameSessions(partyId);
 
@@ -37,10 +43,14 @@ export const getPartyGameSessionsWithScenes = async (partyId: string) => {
 
       for (const scene of scenes) {
         if (scene.mapLocation) {
-          const thumb = await transformImage(
-            scene.mapThumbLocation || scene.mapLocation,
-            'w=400,h=225,fit=cover,gravity=center'
-          );
+          const imageLocation = scene.mapThumbLocation || scene.mapLocation;
+
+          let thumb;
+          if (isVideoFile(imageLocation)) {
+            thumb = getVideoUrl(imageLocation);
+          } else {
+            thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
+          }
 
           const sceneWithThumb = { ...scene, thumb } as SelectScene & Thumb;
           scenesWithThumbs.push(sceneWithThumb);
