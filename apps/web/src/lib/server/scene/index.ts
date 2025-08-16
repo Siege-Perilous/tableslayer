@@ -2,7 +2,7 @@ import { db } from '$lib/db/app';
 import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { copySceneFile, getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
+import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -102,21 +102,7 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
 
   // For video files, return direct URL without transformation
   if (isVideoFile(scene.mapLocation)) {
-    const directUrl = `https://files.tableslayer.com/${scene.mapLocation}`;
-    const thumb = {
-      url: directUrl,
-      resizedUrl: directUrl,
-      details: {
-        width: 0,
-        height: 0,
-        original: {
-          width: 0,
-          height: 0,
-          file_size: 0,
-          format: 'video'
-        }
-      }
-    };
+    const thumb = getVideoUrl(scene.mapLocation);
     const sceneWithThumb = { ...scene, thumb };
     return sceneWithThumb;
   }
@@ -165,21 +151,7 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
 
     // For video files, return direct URL without transformation
     if (isVideoFile(imageLocation)) {
-      const directUrl = `https://files.tableslayer.com/${imageLocation}`;
-      const thumb = {
-        url: directUrl,
-        resizedUrl: directUrl,
-        details: {
-          width: 0,
-          height: 0,
-          original: {
-            width: 0,
-            height: 0,
-            file_size: 0,
-            format: 'video'
-          }
-        }
-      };
+      const thumb = getVideoUrl(imageLocation);
       const sceneWithThumb = { ...scene, thumb };
       scenesWithThumbs.push(sceneWithThumb);
     } else {
@@ -287,21 +259,7 @@ export const getSceneFromOrder = async (
   if (scene.mapLocation) {
     // For video files, return direct URL without transformation
     if (isVideoFile(scene.mapLocation)) {
-      const directUrl = `https://files.tableslayer.com/${scene.mapLocation}`;
-      thumb = {
-        url: directUrl,
-        resizedUrl: directUrl,
-        details: {
-          width: 0,
-          height: 0,
-          original: {
-            width: 0,
-            height: 0,
-            file_size: 0,
-            format: 'video'
-          }
-        }
-      };
+      thumb = getVideoUrl(scene.mapLocation);
     } else {
       thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
     }
