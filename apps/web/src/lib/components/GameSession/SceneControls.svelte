@@ -30,7 +30,9 @@
     IconBorderSides,
     IconAdjustmentsHorizontal,
     IconPokerChip,
-    IconPencil
+    IconPencil,
+    IconRuler,
+    IconChevronDown
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
@@ -43,7 +45,8 @@
     EdgeControls,
     MapControls,
     FogControls,
-    PlayControls
+    PlayControls,
+    MeasurementControls
   } from './';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { queuePropertyUpdate } from '$lib/utils';
@@ -88,6 +91,12 @@
   };
 
   const sceneControlArray: SceneControl[] = $derived([
+    {
+      id: 'measurement',
+      icon: IconRuler,
+      text: 'Measure',
+      mapLayer: MapLayerType.Measurement
+    },
     {
       id: 'map',
       icon: IconMap,
@@ -269,59 +278,86 @@
       </button>
     </div>
     {#each sceneControlArray as scene}
-      <div class="sceneControls__item">
-        <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
-          {#snippet trigger()}
-            <div class="sceneControls__trigger">
-              <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
-                <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
-                <span class="sceneControls__layerText">
-                  {scene.text}
-                </span>
+      {#if scene.id === 'measurement'}
+        <!-- Special handling for measurement with both toggle and popover -->
+        <div class="sceneControls__item">
+          <button
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Measurement &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => handleSelectActiveControl('measurement')}
+          >
+            <Icon Icon={scene.icon} size="1.5rem" stroke={2} />
+            <span class="sceneControls__layerText">
+              {scene.text}
+            </span>
+          </button>
+          <Popover positioning={{ placement: 'bottom', offset: 8 }}>
+            {#snippet trigger()}
+              <div class="sceneControls__selectorBtn">
+                <Icon Icon={IconChevronDown} size="1rem" class="sceneControls__selectorIcon" />
               </div>
-            </div>
-          {/snippet}
-          {#snippet content()}
-            {#if scene.id === 'grid'}
-              <GridControls
-                {stageProps}
-                {handleSelectActiveControl}
-                {activeControl}
-                {party}
-                {gameSession}
-                {selectedScene}
-                {activeSceneId}
-                {handleMapFill}
-                {handleMapFit}
-                {errors}
-              />
-            {:else if scene.id === 'fog'}
-              <FogControls {stage} {stageProps} {socketUpdate} />
-            {:else if scene.id === 'map'}
-              <MapControls
-                {stageProps}
-                {handleSelectActiveControl}
-                {activeControl}
-                {party}
-                {selectedScene}
-                {activeSceneId}
-                {handleMapFill}
-                {handleMapFit}
-                {errors}
-                {partyData}
-              />
-            {:else if scene.id === 'play'}
-              <PlayControls {party} {selectedScene} {activeSceneId} {partyData} />
-            {:else if scene.id === 'weather'}
-              <WeatherControls {stageProps} {errors} />
-            {:else if scene.id === 'edge'}
-              <EdgeControls {stageProps} {errors} {party} />
-            {:else if scene.id === 'effects'}
-              <EffectsControls {stageProps} {errors} {party} />
-            {/if}
-          {/snippet}
-        </Popover>
-      </div>
+            {/snippet}
+            {#snippet content()}
+              <MeasurementControls {stageProps} {party} {gameSession} {selectedScene} />
+            {/snippet}
+          </Popover>
+        </div>
+      {:else}
+        <!-- Regular popover controls for other tools -->
+        <div class="sceneControls__item">
+          <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
+            {#snippet trigger()}
+              <div class="sceneControls__trigger">
+                <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
+                  <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                  <span class="sceneControls__layerText">
+                    {scene.text}
+                  </span>
+                </div>
+              </div>
+            {/snippet}
+            {#snippet content()}
+              {#if scene.id === 'grid'}
+                <GridControls
+                  {stageProps}
+                  {handleSelectActiveControl}
+                  {activeControl}
+                  {party}
+                  {gameSession}
+                  {selectedScene}
+                  {activeSceneId}
+                  {handleMapFill}
+                  {handleMapFit}
+                  {errors}
+                />
+              {:else if scene.id === 'fog'}
+                <FogControls {stage} {stageProps} {socketUpdate} />
+              {:else if scene.id === 'map'}
+                <MapControls
+                  {stageProps}
+                  {handleSelectActiveControl}
+                  {activeControl}
+                  {party}
+                  {selectedScene}
+                  {activeSceneId}
+                  {handleMapFill}
+                  {handleMapFit}
+                  {errors}
+                  {partyData}
+                />
+              {:else if scene.id === 'play'}
+                <PlayControls {party} {selectedScene} {activeSceneId} {partyData} />
+              {:else if scene.id === 'weather'}
+                <WeatherControls {stageProps} {errors} />
+              {:else if scene.id === 'edge'}
+                <EdgeControls {stageProps} {errors} {party} />
+              {:else if scene.id === 'effects'}
+                <EffectsControls {stageProps} {errors} {party} />
+              {/if}
+            {/snippet}
+          </Popover>
+        </div>
+      {/if}
     {/each}
   </div>
 </ColorMode>
@@ -346,10 +382,10 @@
       border-radius: var(--radius-2);
       width: 1.25rem;
       border: var(--sceneControlItemBorder);
+      cursor: pointer;
     }
 
     .sceneControls__selectorBtn:hover {
-      cursor: pointer;
       background: var(--sceneControlItemBgHover);
       border: var(--sceneControlItemBorderHover);
     }

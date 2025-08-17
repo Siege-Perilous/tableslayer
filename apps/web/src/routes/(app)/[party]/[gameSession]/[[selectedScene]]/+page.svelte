@@ -474,7 +474,9 @@
                   return incomingLayer ? { ...incomingLayer, url: localLayer.url } : localLayer;
                 })
               : incomingStageProps.annotations.layers
-          }
+          },
+          // Preserve entire measurement object (it's local-only/ephemeral)
+          measurement: stageProps.measurement
         };
 
         // Only update if there are actual changes to avoid infinite loops
@@ -759,12 +761,21 @@
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
-      markersPane.expand();
+      if (markersPane) {
+        markersPane.expand();
+      }
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
       activeControl = 'annotation';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
-      markersPane.expand();
+      if (markersPane) {
+        markersPane.expand();
+      }
+    } else if (control === 'measurement') {
+      activeControl = 'measurement';
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
+      // Clear annotation active layer when switching away
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     } else {
       activeControl = control;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');

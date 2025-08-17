@@ -93,6 +93,14 @@ export function handleKeyCommands(
       }
       break;
 
+    case 't':
+      if (activeLayer === MapLayerType.Measurement) {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      } else {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
+      }
+      break;
+
     case 'r':
       if (
         activeLayer === MapLayerType.FogOfWar &&

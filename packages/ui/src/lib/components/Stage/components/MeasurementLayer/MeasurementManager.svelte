@@ -37,12 +37,12 @@
   let previewMesh = $state(new THREE.Mesh());
   let previewMaterial = $state(new THREE.MeshBasicMaterial());
   let previewGeometry = $state(new THREE.PlaneGeometry());
-  let previewSize = $derived(props.markerSize + props.outlineThickness * 2);
+  let previewSize = $derived(props ? props.markerSize + props.outlineThickness * 2 : 22);
   let showPreview = $state(false);
 
   // Task for fade animation
   useTask(() => {
-    if (isFading) {
+    if (isFading && props) {
       const now = performance.now();
       const fadeElapsed = now - fadeStartTime;
       const progress = Math.min(fadeElapsed / props.fadeoutTime, 1);
@@ -93,6 +93,8 @@
    * The marker uses the same visual properties (color, thickness, outline) as measurement start/end points.
    */
   $effect(() => {
+    if (!props) return;
+
     // Create the preview marker texture
     const markerCanvas = createMarkerCanvas();
     const markerTexture = new THREE.CanvasTexture(markerCanvas);
@@ -165,15 +167,18 @@
     canvas.height = height;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
-    drawCircle(
-      context,
-      previewSize / 2,
-      previewSize / 2,
-      props.markerSize / 2,
-      props.color,
-      props.outlineColor,
-      props.outlineThickness
-    );
+
+    if (props) {
+      drawCircle(
+        context,
+        previewSize / 2,
+        previewSize / 2,
+        props.markerSize / 2,
+        props.color,
+        props.outlineColor,
+        props.outlineThickness
+      );
+    }
 
     return canvas;
   }
@@ -186,6 +191,8 @@
    * @returns {void}
    */
   function startMeasurement(startPoint: THREE.Vector2): void {
+    if (!props) return;
+
     // Clear any existing auto-hide timeout
     if (autoHideTimeoutId !== null) {
       clearTimeout(autoHideTimeoutId);
@@ -244,7 +251,7 @@
    * @returns {void}
    */
   function finishMeasurement(): void {
-    if (!currentMeasurement) return;
+    if (!currentMeasurement || !props) return;
 
     // Don't finish measurements with zero distance (same start and end point)
     const distance = currentMeasurement.startPoint.distanceTo(currentMeasurement.endPoint);
@@ -310,9 +317,11 @@
   <T.MeshBasicMaterial
     bind:ref={previewMaterial}
     transparent={true}
-    opacity={props.opacity}
-    color={props.color}
+    opacity={props?.opacity ?? 1}
+    color={props?.color ?? '#ffffff'}
     side={THREE.DoubleSide}
+    depthWrite={false}
+    depthTest={false}
   />
   <T.PlaneGeometry bind:ref={previewGeometry} args={[previewSize, previewSize]} />
 </T.Mesh>

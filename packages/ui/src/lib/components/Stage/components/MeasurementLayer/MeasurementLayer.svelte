@@ -38,7 +38,7 @@
    * @returns {void}
    */
   function handleMouseDown(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
-    if (!coords || !isActive || !measurementManager) return;
+    if (!coords || !isActive || !measurementManager || !props) return;
 
     coords.sub(centerOffset);
 
@@ -68,7 +68,7 @@
    * @returns {void}
    */
   function handleMouseMove(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
-    if (!coords || !isActive || !measurementManager) return;
+    if (!coords || !isActive || !measurementManager || !props) return;
 
     coords.sub(centerOffset);
 
@@ -149,7 +149,11 @@
 />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]} layers={[SceneLayer.Input]}>
+<T.Mesh
+  bind:ref={inputMesh}
+  scale={[display.resolution.x, display.resolution.y, 1]}
+  layers={isActive ? [SceneLayer.Input] : []}
+>
   <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry />
 </T.Mesh>

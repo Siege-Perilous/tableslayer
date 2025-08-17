@@ -151,7 +151,9 @@ export abstract class BaseMeasurement implements IMeasurement {
       transparent: true,
       opacity: this.opacity,
       color: this.color,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: false
     });
 
     this.shapeMesh = new THREE.Mesh(undefined, shapeMaterial);
@@ -166,7 +168,9 @@ export abstract class BaseMeasurement implements IMeasurement {
     const textMaterial = new THREE.MeshBasicMaterial({
       map: emptyTexture,
       transparent: true,
-      opacity: this.opacity
+      opacity: this.opacity,
+      depthWrite: false,
+      depthTest: false
     });
     this.textMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), textMaterial);
     this.textMesh.layers.set(SceneLayer.Overlay);

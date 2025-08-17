@@ -420,7 +420,7 @@
     props={props.annotations}
     layers={[SceneLayer.Overlay]}
     mode={props.mode}
-    isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
+    isActive={props.activeLayer === MapLayerType.Annotation}
     sceneZoom={props.scene.zoom}
     display={props.display}
     renderOrder={SceneLayerOrder.Annotation}
@@ -434,11 +434,15 @@
     display={props.display}
   />
 
-  <MeasurementLayer
-    props={props.measurement}
-    isActive={props.activeLayer === MapLayerType.Measurement || props.activeLayer === MapLayerType.None}
-    display={props.display}
-    grid={props.grid}
-    sceneRotation={props.scene.rotation}
-  />
+  {#if props.measurement}
+    <MeasurementLayer
+      props={props.measurement}
+      isActive={props.activeLayer === MapLayerType.Measurement}
+      display={props.display}
+      grid={props.grid}
+      sceneRotation={props.scene.rotation}
+    />
+  {:else}
+    <!-- MeasurementLayer skipped: props.measurement is undefined -->
+  {/if}
 </T.Object3D>
