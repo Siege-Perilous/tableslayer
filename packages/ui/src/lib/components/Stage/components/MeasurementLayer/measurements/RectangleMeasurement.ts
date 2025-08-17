@@ -15,42 +15,44 @@ export class RectangleMeasurement extends BaseMeasurement {
   }
 
   renderShape(): void {
-    // Calculate rectangle bounds
-    const minX = Math.min(this.startPoint.x, this.endPoint.x);
-    const maxX = Math.max(this.startPoint.x, this.endPoint.x);
-    const minY = Math.min(this.startPoint.y, this.endPoint.y);
-    const maxY = Math.max(this.startPoint.y, this.endPoint.y);
+    // Calculate the distance from center to mouse position
+    const distance = this.startPoint.distanceTo(this.endPoint);
 
-    const width = maxX - minX;
-    const height = maxY - minY;
+    // For a square, use the same distance for both width and height
+    // This creates a square where the distance from center to edge equals the distance to the mouse
+    const halfSize = distance;
+    const squareSize = halfSize * 2;
 
-    // Create canvas for the rectangle
+    // Create canvas for the square
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Add padding for outline and corner points
     const padding = Math.max(this.markerSize + this.outlineThickness, 40);
+    const canvasSize = squareSize + padding * 2;
 
-    canvas.width = Math.max(width + padding * 2, 100);
-    canvas.height = Math.max(height + padding * 2, 100);
+    canvas.width = Math.max(canvasSize, 100);
+    canvas.height = Math.max(canvasSize, 100);
 
     // Clear canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate rectangle position on canvas
-    const rectX = padding;
-    const rectY = padding;
-    const rectWidth = width;
-    const rectHeight = height;
+    // Canvas center coordinates
+    const canvasCenterX = canvas.width / 2;
+    const canvasCenterY = canvas.height / 2;
 
-    // Draw rectangle using utility function
-    if (rectWidth > 0 && rectHeight > 0) {
+    // Calculate square position on canvas (centered)
+    const rectX = canvasCenterX - halfSize;
+    const rectY = canvasCenterY - halfSize;
+
+    // Draw square using utility function
+    if (squareSize > 0) {
       drawRectangle(
         context,
         rectX,
         rectY,
-        rectWidth,
-        rectHeight,
+        squareSize,
+        squareSize,
         this.color,
         this.thickness,
         this.color,
@@ -60,6 +62,17 @@ export class RectangleMeasurement extends BaseMeasurement {
       );
     }
 
+    // Draw center point (like circle measurement)
+    drawCircle(
+      context,
+      canvasCenterX,
+      canvasCenterY,
+      this.markerSize / 2,
+      this.color,
+      this.outlineColor,
+      this.outlineThickness
+    );
+
     // Draw corner points
     const cornerRadius = this.markerSize / 2;
 
@@ -67,13 +80,13 @@ export class RectangleMeasurement extends BaseMeasurement {
     drawCircle(context, rectX, rectY, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
 
     // Top-right corner
-    drawCircle(context, rectX + rectWidth, rectY, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, rectX + squareSize, rectY, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
 
     // Bottom-right corner
     drawCircle(
       context,
-      rectX + rectWidth,
-      rectY + rectHeight,
+      rectX + squareSize,
+      rectY + squareSize,
       cornerRadius,
       this.color,
       this.outlineColor,
@@ -81,16 +94,14 @@ export class RectangleMeasurement extends BaseMeasurement {
     );
 
     // Bottom-left corner
-    drawCircle(context, rectX, rectY + rectHeight, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
+    drawCircle(context, rectX, rectY + squareSize, cornerRadius, this.color, this.outlineColor, this.outlineThickness);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
 
     this.updateShapeMesh(new THREE.PlaneGeometry(canvas.width, canvas.height), texture);
 
-    // Position the rectangle at its true center point
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-    this.shapeMesh.position.set(centerX, centerY, 0);
+    // Position the square at the center point (startPoint), like circle measurement
+    this.shapeMesh.position.set(this.startPoint.x, this.startPoint.y, 0);
   }
 }
