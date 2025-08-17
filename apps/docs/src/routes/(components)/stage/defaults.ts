@@ -140,7 +140,7 @@ export const StageDefaultProps: StageProps = {
     thickness: 10,
     opacity: 1,
     showDistance: true,
-    outlineThickness: 0,
+    outlineThickness: 2,
     outlineColor: '#000',
     beamWidth: 10,
     coneAngle: 60,

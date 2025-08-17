@@ -30,6 +30,10 @@ export interface IMeasurement {
   shapeMesh: THREE.Mesh;
   /** The rendered text object in the Three.js scene */
   textMesh: THREE.Mesh;
+  /** Starting point of the measurement in world coordinates */
+  startPoint: THREE.Vector2;
+  /** Current end point of the measurement in world coordinates */
+  endPoint: THREE.Vector2;
 
   /**
    * Updates the measurement with a new end point, typically called during mouse movement.
