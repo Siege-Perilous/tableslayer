@@ -198,7 +198,7 @@ export const buildSceneProps = (
       autoHideDelay: 1000,
       fadeoutTime: 1000,
       markerSize: 24,
-      color: '#ffffff',
+      color: '#FFFFFF',
       outlineColor: '#000000',
       outlineThickness: 2,
       snapToGrid: true,

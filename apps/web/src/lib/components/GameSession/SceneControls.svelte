@@ -291,7 +291,7 @@
               {scene.text}
             </span>
           </button>
-          <Popover positioning={{ placement: 'bottom', offset: 8 }}>
+          <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
             {#snippet trigger()}
               <div class="sceneControls__selectorBtn">
                 <Icon Icon={IconChevronDown} size="1rem" class="sceneControls__selectorIcon" />

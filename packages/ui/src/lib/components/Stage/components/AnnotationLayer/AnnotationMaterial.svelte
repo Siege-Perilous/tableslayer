@@ -33,8 +33,6 @@
       )
     },
     transparent: true,
-    depthWrite: true,
-    depthTest: true,
     fragmentShader: annotationFragmentShader,
     vertexShader: annotationVertexShader
   });

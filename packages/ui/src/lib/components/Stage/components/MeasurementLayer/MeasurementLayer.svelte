@@ -152,7 +152,7 @@
 <T.Mesh
   bind:ref={inputMesh}
   scale={[display.resolution.x, display.resolution.y, 1]}
-  layers={isActive ? [SceneLayer.Input] : []}
+  layers={isActive ? [SceneLayer.Input] : undefined}
 >
   <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry />

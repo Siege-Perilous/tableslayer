@@ -273,7 +273,6 @@ export abstract class BaseMeasurement implements IMeasurement {
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(textCanvas);
-    texture.premultiplyAlpha = false;
     texture.needsUpdate = true;
 
     // Update the text mesh geometry to match canvas size
