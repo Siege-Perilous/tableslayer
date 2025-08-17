@@ -14,9 +14,10 @@
     isActive: boolean;
     display: DisplayProps;
     grid: GridLayerProps;
+    sceneRotation?: number;
   }
 
-  const { props, isActive, display, grid }: Props = $props();
+  const { props, isActive, display, grid, sceneRotation = 0 }: Props = $props();
 
   let centerOffset = $derived(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
   let snappedPosition = new THREE.Vector2();
@@ -154,4 +155,11 @@
 </T.Mesh>
 
 <!-- Measurement Manager Component -->
-<MeasurementManager bind:this={measurementManager} {props} visible={isActive} displayProps={display} gridProps={grid} />
+<MeasurementManager
+  bind:this={measurementManager}
+  {props}
+  visible={isActive}
+  displayProps={display}
+  gridProps={grid}
+  {sceneRotation}
+/>

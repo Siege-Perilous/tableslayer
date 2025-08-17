@@ -19,9 +19,10 @@
     visible: boolean;
     displayProps: DisplayProps;
     gridProps: GridLayerProps;
+    sceneRotation?: number;
   }
 
-  const { props, visible, displayProps, gridProps }: Props = $props();
+  const { props, visible, displayProps, gridProps, sceneRotation = 0 }: Props = $props();
 
   let currentMeasurement: IMeasurement | null = null;
   let measurementGroup = $state(new THREE.Group());
@@ -234,7 +235,7 @@
    * @returns {void}
    */
   function updateMeasurement(endPoint: THREE.Vector2): void {
-    currentMeasurement?.update(endPoint);
+    currentMeasurement?.update(endPoint, sceneRotation);
   }
 
   /**

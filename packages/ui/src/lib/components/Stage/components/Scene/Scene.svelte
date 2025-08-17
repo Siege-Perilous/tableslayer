@@ -439,5 +439,6 @@
     isActive={props.activeLayer === MapLayerType.Measurement || props.activeLayer === MapLayerType.None}
     display={props.display}
     grid={props.grid}
+    sceneRotation={props.scene.rotation}
   />
 </T.Object3D>

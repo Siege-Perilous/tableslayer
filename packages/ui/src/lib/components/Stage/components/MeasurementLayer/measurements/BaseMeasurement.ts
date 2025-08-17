@@ -34,9 +34,10 @@ export interface IMeasurement {
   /**
    * Updates the measurement with a new end point, typically called during mouse movement.
    * @param {THREE.Vector2} endPoint - The new end point coordinates in world space
+   * @param {number} sceneRotation - Optional scene rotation in degrees
    * @returns {void}
    */
-  update(endPoint: THREE.Vector2): void;
+  update(endPoint: THREE.Vector2, sceneRotation?: number): void;
 
   /**
    * Renders only the shape portion of the measurement (without text labels).
@@ -91,6 +92,8 @@ export abstract class BaseMeasurement implements IMeasurement {
   protected displayProps: DisplayProps;
   /** Grid properties containing spacing and units information */
   protected gridProps: GridLayerProps;
+  /** Scene rotation in degrees for text alignment */
+  protected sceneRotation: number = 0;
   /** The group object in the Three.js scene */
   public object: THREE.Group;
   /** The rendered shape object in the Three.js scene */
@@ -176,12 +179,16 @@ export abstract class BaseMeasurement implements IMeasurement {
    * This method is called continuously during measurement creation as the user moves the mouse.
    *
    * @param {THREE.Vector2} endPoint - The new end point coordinates in world space
+   * @param {number} sceneRotation - Optional scene rotation in degrees
    * @returns {void}
    */
-  update(endPoint: THREE.Vector2): void {
+  update(endPoint: THREE.Vector2, sceneRotation?: number): void {
     if (this.isDisposed) return;
 
     this.endPoint = endPoint.clone();
+    if (sceneRotation !== undefined) {
+      this.sceneRotation = sceneRotation;
+    }
 
     this.renderShape();
     this.renderText();
@@ -199,8 +206,26 @@ export abstract class BaseMeasurement implements IMeasurement {
     // Calculate direction from start to end point and normalize
     const direction = this.endPoint.clone().sub(this.startPoint).normalize();
 
-    // Position text at standard offset distance from the end point
-    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE));
+    // Initial text position at standard offset distance from the end point
+    let textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE));
+
+    // Edge detection and adjustment
+    const padding = 150; // Padding from edges to prevent clipping
+    const halfWidth = this.displayProps.resolution.x / 2;
+    const halfHeight = this.displayProps.resolution.y / 2;
+
+    // Check and adjust for edge clipping
+    if (textPosition.x > halfWidth - padding) {
+      textPosition.x = halfWidth - padding;
+    } else if (textPosition.x < -halfWidth + padding) {
+      textPosition.x = -halfWidth + padding;
+    }
+
+    if (textPosition.y > halfHeight - padding) {
+      textPosition.y = halfHeight - padding;
+    } else if (textPosition.y < -halfHeight + padding) {
+      textPosition.y = -halfHeight + padding;
+    }
 
     const distance = calculateLineDistance(
       this.startPoint,
@@ -259,6 +284,17 @@ export abstract class BaseMeasurement implements IMeasurement {
     }
 
     this.textMesh.position.set(textPosition.x, textPosition.y, 0);
+
+    // Apply counter-rotation to keep text aligned to browser bottom
+    // Similar to how markers handle rotation
+    const normalizedRotation = ((this.sceneRotation % 360) + 360) % 360;
+    const needsFlip =
+      (normalizedRotation > 85 && normalizedRotation < 95) || (normalizedRotation > 265 && normalizedRotation < 275);
+    const counterRotation = needsFlip
+      ? -((this.sceneRotation + 180) * Math.PI) / 180
+      : -(this.sceneRotation * Math.PI) / 180;
+
+    this.textMesh.rotation.z = counterRotation;
   }
 
   /**
