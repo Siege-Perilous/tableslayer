@@ -245,6 +245,13 @@
   function finishMeasurement(): void {
     if (!currentMeasurement) return;
 
+    // Don't finish measurements with zero distance (same start and end point)
+    const distance = currentMeasurement.startPoint.distanceTo(currentMeasurement.endPoint);
+    if (distance === 0) {
+      clearMeasurement();
+      return;
+    }
+
     autoHideTimeoutId = setTimeout(() => {
       // Start the fade animation
       fadeStartTime = performance.now();

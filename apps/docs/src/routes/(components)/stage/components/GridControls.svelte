@@ -9,10 +9,10 @@
   };
 
   const gridUnitsOptions: ListOptions<string> = {
-    Feet: 'ft',
-    Meters: 'm',
-    Yards: 'yd',
-    Inches: 'in'
+    Feet: 'FT',
+    Meters: 'M',
+    Yards: 'YD',
+    Inches: 'IN'
   };
 </script>
 

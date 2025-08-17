@@ -46,6 +46,9 @@
     if (isDrawing) {
       // Reset current measurement
       measurementManager.clearMeasurement();
+      isDrawing = false;
+      startPoint = null;
+      return; // Don't start a new measurement immediately after clearing
     }
 
     // Start new measurement

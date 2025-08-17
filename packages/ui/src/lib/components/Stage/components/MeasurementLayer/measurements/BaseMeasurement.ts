@@ -151,9 +151,20 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.shapeMesh.layers.set(SceneLayer.Overlay);
     this.shapeMesh.renderOrder = SceneLayerOrder.Measurement;
 
-    this.textMesh = this.createTextMesh('', new THREE.Vector2(0, 0));
+    // Create an empty text mesh that will be updated when measurement has actual distance
+    const emptyCanvas = document.createElement('canvas');
+    emptyCanvas.width = 1;
+    emptyCanvas.height = 1;
+    const emptyTexture = new THREE.CanvasTexture(emptyCanvas);
+    const textMaterial = new THREE.MeshBasicMaterial({
+      map: emptyTexture,
+      transparent: true,
+      opacity: this.opacity
+    });
+    this.textMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), textMaterial);
     this.textMesh.layers.set(SceneLayer.Overlay);
     this.textMesh.renderOrder = SceneLayerOrder.Measurement;
+    this.textMesh.visible = false; // Start invisible until we have actual content
 
     this.object.add(this.shapeMesh);
     this.object.add(this.textMesh);
@@ -203,15 +214,40 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.gridProps.worldGridSize,
       this.gridProps.worldGridUnits
     );
-    const text = `${distance.toFixed(DISTANCE_DECIMAL_PLACES)} ${this.gridProps.worldGridUnits}`;
+
+    // Don't render text for zero distance
+    if (distance === 0) {
+      this.textMesh.visible = false;
+      return;
+    }
+
+    // Show the text mesh since we have content
+    this.textMesh.visible = true;
+
+    // Format number to only show decimals if needed
+    const formattedDistance = distance % 1 === 0 ? distance.toString() : distance.toFixed(DISTANCE_DECIMAL_PLACES);
+    const text = `${formattedDistance} ${this.gridProps.worldGridUnits}`;
 
     const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
-    const textCanvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
+    const textCanvas = createTextCanvas(
+      formattedDistance,
+      fontSize,
+      this.color,
+      this.outlineColor,
+      this.outlineThickness,
+      this.gridProps.worldGridUnits
+    );
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(textCanvas);
     texture.premultiplyAlpha = false;
     texture.needsUpdate = true;
+
+    // Update the text mesh geometry to match canvas size
+    if (this.textMesh.geometry) {
+      this.textMesh.geometry.dispose();
+    }
+    this.textMesh.geometry = new THREE.PlaneGeometry(textCanvas.width, textCanvas.height);
 
     if (this.textMesh.material instanceof THREE.MeshBasicMaterial) {
       // Dispose the old texture before assigning new one to prevent memory leak
@@ -258,8 +294,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: this.opacity,
-      color: this.color
+      opacity: this.opacity
     });
 
     const textMesh = new THREE.Mesh(geometry, material);

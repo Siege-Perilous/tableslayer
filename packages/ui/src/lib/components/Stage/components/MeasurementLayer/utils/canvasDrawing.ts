@@ -258,6 +258,7 @@ export function drawCone(
  * @param color Text color
  * @param outlineColor Outline color
  * @param outlineThickness Outline thickness
+ * @param units Optional units text to display in smaller font
  * @returns Canvas element with rendered text
  */
 export function createTextCanvas(
@@ -265,7 +266,8 @@ export function createTextCanvas(
   fontSize: number,
   color: string,
   outlineColor: string = '#000000',
-  outlineThickness: number = 16
+  outlineThickness: number = 16,
+  units?: string
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d')!;
@@ -280,21 +282,75 @@ export function createTextCanvas(
   // Clear canvas to fully transparent (alpha = 0)
   context.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Set text properties
-  context.font = `${fontSize}px Raven Hell`;
+  // Set text properties with semi-bold font
+  context.font = `600 ${fontSize}px Inter`;
   context.textAlign = 'center';
-  context.textBaseline = 'middle';
+  context.textBaseline = 'alphabetic';
 
-  // Draw text outline first
-  if (outlineThickness > 0) {
-    context.strokeStyle = outlineColor;
-    context.lineWidth = outlineThickness * 4;
-    context.strokeText(text, canvas.width / 2, canvas.height / 2, canvas.width);
+  if (units) {
+    // Split rendering for number and units
+    const unitsFontSize = fontSize * 0.5; // 50% of the main font size
+
+    // Measure both parts with the same font we'll use for drawing
+    context.font = `600 ${fontSize}px Inter`;
+    const numberWidth = context.measureText(text).width;
+    context.font = `600 ${unitsFontSize}px Inter`;
+    const unitsWidth = context.measureText(' ' + units).width;
+    const totalWidth = numberWidth + unitsWidth;
+
+    // Calculate padding for the background box
+    const padding = fontSize * 0.3;
+    const boxWidth = totalWidth + padding * 2;
+    const boxHeight = fontSize + padding;
+    const boxX = (canvas.width - boxWidth) / 2;
+    const boxY = (canvas.height - boxHeight) / 2;
+
+    // Draw background box
+    context.fillStyle = color;
+    context.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    // Calculate starting position to center the combined text
+    const startX = (canvas.width - totalWidth) / 2;
+    // Center the text vertically - the baseline should be at the vertical center plus some offset
+    const baselineY = canvas.height / 2 + fontSize * 0.35;
+
+    // Draw number text
+    context.font = `600 ${fontSize}px Inter`;
+    context.textAlign = 'left';
+    context.textBaseline = 'alphabetic';
+    context.fillStyle = outlineColor;
+    context.fillText(text, startX, baselineY);
+
+    // Re-measure the actual rendered width to ensure proper spacing
+    const actualNumberWidth = context.measureText(text).width;
+
+    // Draw units text in smaller font, aligned to same baseline
+    context.font = `600 ${unitsFontSize}px Inter`;
+    context.textBaseline = 'alphabetic';
+    context.fillText(' ' + units, startX + actualNumberWidth, baselineY);
+  } else {
+    // Original behavior for text without units
+    // Measure text for box dimensions
+    context.font = `600 ${fontSize}px Inter`;
+    const textMetrics = context.measureText(text);
+    const padding = fontSize * 0.3;
+    const boxWidth = textMetrics.width + padding * 2;
+    const boxHeight = fontSize + padding;
+    const boxX = (canvas.width - boxWidth) / 2;
+    const boxY = (canvas.height - boxHeight) / 2;
+
+    // Draw background box
+    context.fillStyle = color;
+    context.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    // Center the text vertically - the baseline should be at the vertical center plus some offset
+    const baselineY = canvas.height / 2 + fontSize * 0.35;
+
+    // Draw text on top
+    context.textBaseline = 'alphabetic';
+    context.fillStyle = outlineColor;
+    context.fillText(text, canvas.width / 2, baselineY);
   }
-
-  // Draw text fill on top
-  context.fillStyle = color;
-  context.fillText(text, canvas.width / 2, canvas.height / 2, canvas.width);
 
   return canvas;
 }
