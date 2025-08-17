@@ -270,7 +270,7 @@ export function createTextCanvas(
   units?: string
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d')!;
+  const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
   // Set canvas size
   canvas.width = 256;

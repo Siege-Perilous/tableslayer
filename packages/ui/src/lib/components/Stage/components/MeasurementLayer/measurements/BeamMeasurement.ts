@@ -30,7 +30,7 @@ export class BeamMeasurement extends BaseMeasurement {
 
     // Create canvas for the beam
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Calculate canvas size - accommodate beam dimensions plus padding
     const padding = Math.max(this.markerSize + this.outlineThickness + beamWidthPixels, 40);

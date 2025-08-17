@@ -30,7 +30,7 @@ export class ConeMeasurement extends BaseMeasurement {
 
     // Create canvas for the cone
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Calculate canvas size - accommodate full cone plus padding
     const padding = Math.max(this.markerSize + this.outlineThickness, 40);

@@ -17,7 +17,7 @@ export class LineMeasurement extends BaseMeasurement {
   renderShape(): void {
     // Create canvas for the line
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Calculate the bounding box of the line
     const minX = Math.min(this.startPoint.x, this.endPoint.x);

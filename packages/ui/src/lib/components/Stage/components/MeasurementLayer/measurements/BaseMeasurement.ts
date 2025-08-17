@@ -150,10 +150,10 @@ export abstract class BaseMeasurement implements IMeasurement {
       map: null,
       transparent: true,
       opacity: this.opacity,
-      color: this.color,
       side: THREE.DoubleSide,
       depthWrite: false,
-      depthTest: false
+      depthTest: false,
+      toneMapped: false // Prevent tone mapping from making white appear gray
     });
 
     this.shapeMesh = new THREE.Mesh(undefined, shapeMaterial);
@@ -170,7 +170,8 @@ export abstract class BaseMeasurement implements IMeasurement {
       transparent: true,
       opacity: this.opacity,
       depthWrite: false,
-      depthTest: false
+      depthTest: false,
+      toneMapped: false // Prevent tone mapping from making white appear gray
     });
     this.textMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), textMaterial);
     this.textMesh.layers.set(SceneLayer.Overlay);
@@ -337,7 +338,8 @@ export abstract class BaseMeasurement implements IMeasurement {
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: this.opacity
+      opacity: this.opacity,
+      toneMapped: false // Prevent tone mapping from making white appear gray
     });
 
     const textMesh = new THREE.Mesh(geometry, material);

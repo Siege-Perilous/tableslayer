@@ -200,7 +200,7 @@ export const buildSceneProps = (
       markerSize: 24,
       color: '#FFFFFF',
       outlineColor: '#000000',
-      outlineThickness: 2,
+      outlineThickness: 4,
       snapToGrid: true,
       enableDMG252: true,
       thickness: 12,

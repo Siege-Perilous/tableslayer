@@ -26,7 +26,7 @@ export class RectangleMeasurement extends BaseMeasurement {
 
     // Create canvas for the rectangle
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Add padding for outline and corner points
     const padding = Math.max(this.markerSize + this.outlineThickness, 40);

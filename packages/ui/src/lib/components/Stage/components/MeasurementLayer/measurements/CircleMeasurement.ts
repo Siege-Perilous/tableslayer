@@ -20,7 +20,7 @@ export class CircleMeasurement extends BaseMeasurement {
 
     // Create canvas for the circle
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     // Calculate canvas size - need to accommodate the full circle plus outline and points
     const padding = Math.max(this.markerSize + this.outlineThickness, 40);

@@ -158,7 +158,7 @@
    */
   function createMarkerCanvas(): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d')!;
+    const context = canvas.getContext('2d', { colorSpace: 'srgb' })!;
 
     const width = previewSize;
     const height = previewSize;
@@ -318,10 +318,10 @@
     bind:ref={previewMaterial}
     transparent={true}
     opacity={props?.opacity ?? 1}
-    color={props?.color ?? '#ffffff'}
     side={THREE.DoubleSide}
     depthWrite={false}
     depthTest={false}
+    toneMapped={false}
   />
   <T.PlaneGeometry bind:ref={previewGeometry} args={[previewSize, previewSize]} />
 </T.Mesh>
