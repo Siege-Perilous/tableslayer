@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
-import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
+import { drawCircle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class RectangleMeasurement extends BaseMeasurement {
@@ -45,21 +45,30 @@ export class RectangleMeasurement extends BaseMeasurement {
     const rectX = canvasCenterX - halfSize;
     const rectY = canvasCenterY - halfSize;
 
-    // Draw square using utility function
+    // Draw square with dashed pattern
     if (squareSize > 0) {
-      drawRectangle(
-        context,
-        rectX,
-        rectY,
-        squareSize,
-        squareSize,
-        this.color,
-        this.thickness,
-        this.color,
-        0.2,
-        this.outlineThickness > 0 ? this.outlineColor : undefined,
-        this.outlineThickness > 0 ? this.outlineThickness : undefined
-      );
+      // First draw the fill
+      context.fillStyle = this.color;
+      context.globalAlpha = 0.2;
+      context.fillRect(rectX, rectY, squareSize, squareSize);
+      context.globalAlpha = 1.0;
+
+      // Draw the outline with dashed pattern if needed
+      if (this.outlineThickness > 0) {
+        context.strokeStyle = this.outlineColor;
+        context.lineWidth = this.thickness + this.outlineThickness * 2;
+        context.setLineDash([20, 10]); // Dashed pattern
+        context.strokeRect(rectX, rectY, squareSize, squareSize);
+      }
+
+      // Draw the main stroke with dashed pattern
+      context.strokeStyle = this.color;
+      context.lineWidth = this.thickness;
+      context.setLineDash([20, 10]); // Dashed pattern
+      context.strokeRect(rectX, rectY, squareSize, squareSize);
+
+      // Reset dash pattern for other elements
+      context.setLineDash([]);
     }
 
     // Draw center point (like circle measurement)

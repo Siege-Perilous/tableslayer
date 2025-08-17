@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
-import { drawCircle, drawLargeCircle } from '../utils/canvasDrawing';
+import { drawCircle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class CircleMeasurement extends BaseMeasurement {
@@ -36,19 +36,35 @@ export class CircleMeasurement extends BaseMeasurement {
     const canvasCenterX = canvas.width / 2;
     const canvasCenterY = canvas.height / 2;
 
-    // Draw the large circle with fill and stroke using utility function
-    drawLargeCircle(
-      context,
-      canvasCenterX,
-      canvasCenterY,
-      radiusPixels,
-      this.color,
-      this.thickness,
-      this.color,
-      0.2,
-      this.outlineThickness > 0 ? this.outlineColor : undefined,
-      this.outlineThickness > 0 ? this.outlineThickness : undefined
-    );
+    // Draw the large circle with dashed pattern
+    // First draw the fill
+    context.fillStyle = this.color;
+    context.globalAlpha = 0.2;
+    context.beginPath();
+    context.arc(canvasCenterX, canvasCenterY, radiusPixels, 0, Math.PI * 2);
+    context.fill();
+    context.globalAlpha = 1.0;
+
+    // Draw the outline with dashed pattern if needed
+    if (this.outlineThickness > 0) {
+      context.strokeStyle = this.outlineColor;
+      context.lineWidth = this.thickness + this.outlineThickness * 2;
+      context.setLineDash([20, 10]); // Dashed pattern
+      context.beginPath();
+      context.arc(canvasCenterX, canvasCenterY, radiusPixels, 0, Math.PI * 2);
+      context.stroke();
+    }
+
+    // Draw the main stroke with dashed pattern
+    context.strokeStyle = this.color;
+    context.lineWidth = this.thickness;
+    context.setLineDash([20, 10]); // Dashed pattern
+    context.beginPath();
+    context.arc(canvasCenterX, canvasCenterY, radiusPixels, 0, Math.PI * 2);
+    context.stroke();
+
+    // Reset dash pattern for other elements
+    context.setLineDash([]);
 
     // Draw center point
     drawCircle(

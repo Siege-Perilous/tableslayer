@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
-import { drawCircle, drawLine } from '../utils/canvasDrawing';
+import { drawCircle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
 
 export class LineMeasurement extends BaseMeasurement {
@@ -44,8 +44,43 @@ export class LineMeasurement extends BaseMeasurement {
     const endX = this.endPoint.x - minX + padding;
     const endY = canvas.height - (this.endPoint.y - minY + padding); // Invert Y
 
-    // Draw the line
-    drawLine(context, startX, startY, endX, endY, this.color, this.thickness, this.outlineColor, this.outlineThickness);
+    // Draw the line with dashed pattern
+    // First draw the outline if needed
+    if (this.outlineThickness > 0) {
+      context.strokeStyle = this.outlineColor;
+      context.lineWidth = this.thickness + this.outlineThickness * 2;
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+
+      // Set dash pattern for outline
+      const dashLength = 20;
+      const gapLength = 10;
+      context.setLineDash([dashLength, gapLength]);
+
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(endX, endY);
+      context.stroke();
+    }
+
+    // Draw the main line with dashed pattern
+    context.strokeStyle = this.color;
+    context.lineWidth = this.thickness;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+
+    // Set dash pattern - adjust based on line thickness for good visual proportion
+    const dashLength = 20;
+    const gapLength = 10;
+    context.setLineDash([dashLength, gapLength]);
+
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.stroke();
+
+    // Reset dash pattern for other elements
+    context.setLineDash([]);
 
     // Start point circle
     drawCircle(context, startX, startY, this.markerSize / 2, this.color, this.outlineColor, this.outlineThickness);
