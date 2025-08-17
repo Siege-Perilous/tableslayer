@@ -159,7 +159,7 @@ export const buildSceneProps = (
       shadowOpacity: 0,
       shadowBlur: activeScene.gridShadowBlur ?? 0,
       shadowSpread: activeScene.gridShadowSpread ?? 0,
-      worldGridUnits: 'ft',
+      worldGridUnits: 'FT',
       worldGridSize: 5
     },
     map: {

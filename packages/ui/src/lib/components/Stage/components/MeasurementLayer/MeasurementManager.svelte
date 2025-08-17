@@ -20,9 +20,14 @@
     displayProps: DisplayProps;
     gridProps: GridLayerProps;
     sceneRotation?: number;
+    onFadeComplete?: () => void;
   }
 
-  const { props, visible, displayProps, gridProps, sceneRotation = 0 }: Props = $props();
+  const { props, visible, displayProps, gridProps, sceneRotation = 0, onFadeComplete }: Props = $props();
+
+  $effect(() => {
+    console.log('[MeasurementManager] Grid props:', gridProps);
+  });
 
   let currentMeasurement: IMeasurement | null = null;
   let measurementGroup = $state(new THREE.Group());
@@ -62,6 +67,10 @@
       if (progress >= 1) {
         isFading = false;
         clearMeasurement();
+        // Notify parent that fade is complete
+        if (onFadeComplete) {
+          onFadeComplete();
+        }
       }
     }
   });
@@ -290,6 +299,79 @@
     }
   }
 
+  /**
+   * Displays a measurement received from another user (via Y.js).
+   * Creates the measurement and immediately sets it to finished state to trigger auto-fade.
+   *
+   * @param {THREE.Vector2} startPoint - The starting point of the measurement
+   * @param {THREE.Vector2} endPoint - The ending point of the measurement
+   * @param {number} type - The type of measurement (MeasurementType enum)
+   * @returns {void}
+   */
+  function displayReceivedMeasurement(startPoint: THREE.Vector2, endPoint: THREE.Vector2, type: number): void {
+    if (!props) {
+      console.log('[MeasurementManager] No props available for displayReceivedMeasurement');
+      return;
+    }
+
+    console.log('[MeasurementManager] displayReceivedMeasurement called:', {
+      startPoint,
+      endPoint,
+      type,
+      hasCurrentMeasurement: !!currentMeasurement
+    });
+
+    // Clear any existing measurement
+    clearMeasurement();
+
+    // Create the appropriate measurement type
+    let measurement: IMeasurement;
+
+    // Use the received type, but override the props type temporarily
+    const measurementProps = { ...props, type };
+
+    switch (type) {
+      case MeasurementType.Line:
+        measurement = new LineMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+      case MeasurementType.Beam:
+        measurement = new BeamMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+      case MeasurementType.Cone:
+        measurement = new ConeMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+      case MeasurementType.Circle:
+        measurement = new CircleMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+      case MeasurementType.Square:
+        measurement = new RectangleMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+      default:
+        measurement = new LineMeasurement(startPoint, measurementProps, displayProps, gridProps);
+        break;
+    }
+
+    // Set the measurement
+    currentMeasurement = measurement;
+    measurementGroup.add(measurement.object);
+
+    console.log('[MeasurementManager] Measurement created and added to group:', {
+      groupChildren: measurementGroup.children.length,
+      measurementObject: measurement.object,
+      visible: measurementGroup.visible
+    });
+
+    // Update to the end point
+    currentMeasurement.update(endPoint, sceneRotation);
+
+    console.log('[MeasurementManager] Measurement updated to endpoint');
+
+    // Immediately finish it to trigger auto-fade
+    finishMeasurement();
+
+    console.log('[MeasurementManager] Measurement finished, auto-fade scheduled');
+  }
+
   // Export the methods for use by parent components
   export {
     startMeasurement,
@@ -298,12 +380,19 @@
     clearMeasurement,
     updatePreview,
     hidePreview,
-    showPreviewIndicator
+    showPreviewIndicator,
+    displayReceivedMeasurement
   };
 </script>
 
 <!-- Measurement Group -->
-<T.Group bind:ref={measurementGroup} {visible} layers={[SceneLayer.Overlay]} renderOrder={SceneLayerOrder.Measurement}>
+<!-- Always visible to show received measurements in playfield -->
+<T.Group
+  bind:ref={measurementGroup}
+  visible={true}
+  layers={[SceneLayer.Overlay]}
+  renderOrder={SceneLayerOrder.Measurement}
+>
   <!-- Measurement objects will be added here dynamically -->
 </T.Group>
 

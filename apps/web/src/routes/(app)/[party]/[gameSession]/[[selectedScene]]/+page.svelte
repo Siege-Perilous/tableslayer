@@ -91,6 +91,12 @@
           ...props.fogOfWar.tool
           // size is omitted to prevent syncing
         }
+      },
+      // Ensure grid props are fully included with worldGridUnits and worldGridSize
+      grid: {
+        ...props.grid,
+        worldGridUnits: props.grid.worldGridUnits || 'FT',
+        worldGridSize: props.grid.worldGridSize || 5
       }
     };
   };
@@ -1134,6 +1140,50 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  // Measurement callbacks for Y.js broadcasting
+  const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Broadcast measurement start to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const visualProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize
+      };
+      partyData.updateMeasurement(startPoint, startPoint, type, visualProps);
+      devLog('measurement', 'Broadcasting measurement start:', { startPoint, type, visualProps });
+    }
+  };
+
+  const onMeasurementUpdate = (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => {
+    // Broadcast measurement update to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const visualProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize
+      };
+      partyData.updateMeasurement(startPoint, endPoint, type, visualProps);
+    }
+  };
+
+  const onMeasurementEnd = () => {
+    // Clear measurement when finished (it will fade out on its own in the playfield)
+    if (partyData) {
+      partyData.updateMeasurement(null, null, 0);
+      devLog('measurement', 'Clearing measurement broadcast');
     }
   };
 
@@ -2306,7 +2356,10 @@
               onMarkerAdded,
               onMarkerMoved,
               onMarkerSelected,
-              onMarkerContextMenu
+              onMarkerContextMenu,
+              onMeasurementStart,
+              onMeasurementUpdate,
+              onMeasurementEnd
             }}
           />
         </div>

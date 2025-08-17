@@ -95,7 +95,7 @@ export const StageDefaultProps: StageProps = {
     shadowColor: '#000000',
     shadowSpread: 2,
     worldGridSize: 1,
-    worldGridUnits: 'ft'
+    worldGridUnits: 'FT'
   },
   map: {
     rotation: 0,

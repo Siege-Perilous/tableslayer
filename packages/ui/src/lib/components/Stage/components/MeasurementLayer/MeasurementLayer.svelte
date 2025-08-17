@@ -15,9 +15,27 @@
     display: DisplayProps;
     grid: GridLayerProps;
     sceneRotation?: number;
+    onMeasurementStart?: (startPoint: THREE.Vector2, type: number) => void;
+    onMeasurementUpdate?: (startPoint: THREE.Vector2, endPoint: THREE.Vector2, type: number) => void;
+    onMeasurementEnd?: () => void;
+    receivedMeasurement?: {
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      type: number;
+    } | null;
   }
 
-  const { props, isActive, display, grid, sceneRotation = 0 }: Props = $props();
+  const {
+    props,
+    isActive,
+    display,
+    grid,
+    sceneRotation = 0,
+    onMeasurementStart,
+    onMeasurementUpdate,
+    onMeasurementEnd,
+    receivedMeasurement
+  }: Props = $props();
 
   let centerOffset = $derived(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
   let snappedPosition = new THREE.Vector2();
@@ -56,6 +74,11 @@
     isDrawing = true;
     startPoint = snappedCoords;
     measurementManager.startMeasurement(snappedCoords);
+
+    // Notify parent component
+    if (onMeasurementStart) {
+      onMeasurementStart(snappedCoords, props.type);
+    }
   }
 
   /**
@@ -82,6 +105,11 @@
     if (isDrawing && startPoint && measurementManager) {
       // Update current measurement
       measurementManager.updateMeasurement(snappedPosition);
+
+      // Notify parent component
+      if (onMeasurementUpdate) {
+        onMeasurementUpdate(startPoint, snappedPosition, props.type);
+      }
     } else {
       // Update the preview indicator position
       measurementManager.updatePreview(snappedPosition, isActive);
@@ -109,6 +137,11 @@
 
     isDrawing = false;
     startPoint = null;
+
+    // Notify parent component
+    if (onMeasurementEnd) {
+      onMeasurementEnd();
+    }
   }
 
   /**
@@ -134,6 +167,93 @@
       measurementManager.showPreviewIndicator();
     }
   }
+
+  // Export methods for parent components to get measurement state
+  export function getCurrentMeasurement(): {
+    startPoint: THREE.Vector2 | null;
+    endPoint: THREE.Vector2 | null;
+    type: number;
+  } | null {
+    if (!measurementManager || !isDrawing || !startPoint) return null;
+
+    return {
+      startPoint: startPoint.clone(),
+      endPoint: snappedPosition.clone(),
+      type: props.type
+    };
+  }
+
+  export function isCurrentlyDrawing(): boolean {
+    return isDrawing;
+  }
+
+  // Track the last displayed measurement to avoid redundant updates
+  let lastDisplayedMeasurement: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    type: number;
+  } | null = null;
+
+  // Track if a measurement is currently fading (so we don't clear it prematurely)
+  let measurementIsFading = false;
+
+  // Effect to handle received measurements from other users
+  $effect(() => {
+    if (receivedMeasurement) {
+      console.log(
+        '[MeasurementLayer] Received measurement prop:',
+        receivedMeasurement,
+        'isActive:',
+        isActive,
+        'has manager:',
+        !!measurementManager
+      );
+    }
+    if (receivedMeasurement && measurementManager && !isActive) {
+      // Check if this is a new measurement (not the same as last displayed)
+      const isNewMeasurement =
+        !lastDisplayedMeasurement ||
+        lastDisplayedMeasurement.startX !== receivedMeasurement.startPoint.x ||
+        lastDisplayedMeasurement.startY !== receivedMeasurement.startPoint.y ||
+        lastDisplayedMeasurement.endX !== receivedMeasurement.endPoint.x ||
+        lastDisplayedMeasurement.endY !== receivedMeasurement.endPoint.y ||
+        lastDisplayedMeasurement.type !== receivedMeasurement.type;
+
+      if (isNewMeasurement) {
+        // Convert to Vector2 with center offset adjustment
+        const startPoint = new THREE.Vector2(receivedMeasurement.startPoint.x, receivedMeasurement.startPoint.y);
+        const endPoint = new THREE.Vector2(receivedMeasurement.endPoint.x, receivedMeasurement.endPoint.y);
+
+        console.log('[MeasurementLayer] Displaying NEW received measurement:', {
+          startPoint,
+          endPoint,
+          type: receivedMeasurement.type
+        });
+
+        // Display the received measurement
+        measurementManager.displayReceivedMeasurement(startPoint, endPoint, receivedMeasurement.type);
+
+        // Mark that a measurement is now fading
+        measurementIsFading = true;
+
+        // Update last displayed measurement
+        lastDisplayedMeasurement = {
+          startX: receivedMeasurement.startPoint.x,
+          startY: receivedMeasurement.startPoint.y,
+          endX: receivedMeasurement.endPoint.x,
+          endY: receivedMeasurement.endPoint.y,
+          type: receivedMeasurement.type
+        };
+      }
+    } else if (!receivedMeasurement && lastDisplayedMeasurement && !measurementIsFading) {
+      // Only clear if no measurement is fading
+      // The measurement will clear itself after fade completes
+      console.log('[MeasurementLayer] No measurement received, but one is fading - letting it complete');
+      lastDisplayedMeasurement = null;
+    }
+  });
 </script>
 
 <!-- Input handling -->
@@ -166,4 +286,8 @@
   displayProps={display}
   gridProps={grid}
   {sceneRotation}
+  onFadeComplete={() => {
+    measurementIsFading = false;
+    console.log('[MeasurementLayer] Fade complete, measurement can be cleared');
+  }}
 />

@@ -25,7 +25,7 @@ export function calculateLineDistance(
   snapToGrid: boolean = false,
   enableDMG252: boolean = false,
   worldGridSize: number = 5,
-  worldGridUnits: string = 'ft'
+  worldGridUnits: string = 'FT'
 ): number {
   // Convert pixel coordinates to world coordinates (inches)
   const pixelsPerInchX = displayResolution.x / displaySize.x;

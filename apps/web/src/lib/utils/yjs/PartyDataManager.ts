@@ -24,6 +24,22 @@ export interface CursorData {
   clientId?: number;
 }
 
+export interface MeasurementData {
+  userId: string;
+  startPoint: { x: number; y: number };
+  endPoint: { x: number; y: number };
+  type: number; // MeasurementType enum value
+  timestamp: number;
+  clientId?: number;
+  // Visual properties
+  color: string;
+  thickness: number;
+  outlineColor: string;
+  outlineThickness: number;
+  opacity: number;
+  markerSize: number;
+}
+
 export interface LocalViewportState {
   sceneOffset: { x: number; y: number };
   sceneZoom: number;
@@ -211,6 +227,68 @@ export class PartyDataManager {
     }
 
     return cursors;
+  }
+
+  /**
+   * Update measurement data using Y.js awareness
+   * Measurements are ephemeral like cursors - they broadcast but don't persist
+   */
+  updateMeasurement(
+    startPoint: { x: number; y: number } | null,
+    endPoint: { x: number; y: number } | null,
+    type: number,
+    visualProps?: {
+      color: string;
+      thickness: number;
+      outlineColor: string;
+      outlineThickness: number;
+      opacity: number;
+      markerSize: number;
+    }
+  ) {
+    if (this.isConnected && this.gameSessionProvider.awareness) {
+      if (startPoint === null || endPoint === null) {
+        // Clear measurement when null points are provided
+        this.gameSessionProvider.awareness.setLocalStateField('measurement', null);
+      } else {
+        this.gameSessionProvider.awareness.setLocalStateField('measurement', {
+          userId: this.userId,
+          startPoint,
+          endPoint,
+          type,
+          timestamp: Date.now(),
+          // Include visual properties or use defaults
+          color: visualProps?.color ?? '#FFFFFF',
+          thickness: visualProps?.thickness ?? 12,
+          outlineColor: visualProps?.outlineColor ?? '#000000',
+          outlineThickness: visualProps?.outlineThickness ?? 4,
+          opacity: visualProps?.opacity ?? 1,
+          markerSize: visualProps?.markerSize ?? 24
+        });
+      }
+    }
+  }
+
+  /**
+   * Get current measurements from all users via awareness
+   */
+  getMeasurements(): Record<string, MeasurementData> {
+    const measurements: Record<string, MeasurementData> = {};
+
+    if (this.gameSessionProvider.awareness) {
+      this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
+        if (state.measurement) {
+          // Include all measurements (including self for debugging)
+          const measurementKey = `${state.measurement.userId}_${clientId}`;
+          measurements[measurementKey] = {
+            ...state.measurement,
+            clientId: clientId
+          };
+        }
+      });
+    }
+
+    return measurements;
   }
 
   /**

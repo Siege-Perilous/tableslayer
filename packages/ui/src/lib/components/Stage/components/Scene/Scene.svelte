@@ -32,9 +32,14 @@
 
   interface Props {
     props: StageProps;
+    receivedMeasurement?: {
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      type: number;
+    } | null;
   }
 
-  let { props }: Props = $props();
+  let { props, receivedMeasurement = null }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -44,6 +49,7 @@
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
+  let measurementLayer: any = $state(null); // MeasurementLayer exports
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
@@ -362,6 +368,12 @@
       return markerLayer?.markerState?.isDragging ?? false;
     }
   };
+
+  // Export measurement layer methods
+  export const measurement = {
+    getCurrentMeasurement: () => measurementLayer?.getCurrentMeasurement?.() ?? null,
+    isDrawing: () => measurementLayer?.isCurrentlyDrawing?.() ?? false
+  };
 </script>
 
 <T.OrthographicCamera
@@ -436,11 +448,16 @@
 
   {#if props.measurement}
     <MeasurementLayer
+      bind:this={measurementLayer}
       props={props.measurement}
       isActive={props.activeLayer === MapLayerType.Measurement}
       display={props.display}
       grid={props.grid}
       sceneRotation={props.scene.rotation}
+      onMeasurementStart={callbacks.onMeasurementStart}
+      onMeasurementUpdate={callbacks.onMeasurementUpdate}
+      onMeasurementEnd={callbacks.onMeasurementEnd}
+      {receivedMeasurement}
     />
   {:else}
     <!-- MeasurementLayer skipped: props.measurement is undefined -->

@@ -20,6 +20,13 @@ export interface Callbacks {
   onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
   onMarkerSelected: (marker: Marker) => void;
   onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
+  onMeasurementStart?: (startPoint: { x: number; y: number }, type: number) => void;
+  onMeasurementUpdate?: (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => void;
+  onMeasurementEnd?: () => void;
 }
 
 export enum StageMode {
@@ -97,5 +104,13 @@ export interface StageExports {
   markers: {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
+  };
+  measurement: {
+    getCurrentMeasurement: () => {
+      startPoint: { x: number; y: number } | null;
+      endPoint: { x: number; y: number } | null;
+      type: number;
+    } | null;
+    isDrawing: () => boolean;
   };
 }

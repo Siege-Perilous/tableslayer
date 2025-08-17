@@ -81,6 +81,15 @@ export interface SceneExports {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
   };
+
+  measurement: {
+    getCurrentMeasurement: () => {
+      startPoint: { x: number; y: number } | null;
+      endPoint: { x: number; y: number } | null;
+      type: number;
+    } | null;
+    isDrawing: () => boolean;
+  };
 }
 
 /**

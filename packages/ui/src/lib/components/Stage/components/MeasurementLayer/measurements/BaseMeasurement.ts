@@ -245,8 +245,8 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.gridProps.gridType,
       this.snapToGrid,
       this.enableDMG252,
-      this.gridProps.worldGridSize,
-      this.gridProps.worldGridUnits
+      this.gridProps.worldGridSize || 5, // Default to 5 if missing
+      this.gridProps.worldGridUnits || 'FT' // Default to 'FT' if missing
     );
 
     // Don't render text for zero distance
@@ -260,16 +260,18 @@ export abstract class BaseMeasurement implements IMeasurement {
 
     // Format number to only show decimals if needed
     const formattedDistance = distance % 1 === 0 ? distance.toString() : distance.toFixed(DISTANCE_DECIMAL_PLACES);
-    const text = `${formattedDistance} ${this.gridProps.worldGridUnits}`;
 
     const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
+    // Use 'FT' as default if worldGridUnits is not provided (Y.js sync issue)
+    const units = this.gridProps.worldGridUnits || 'FT';
+    console.log('[BaseMeasurement] Creating text canvas with units:', units);
     const textCanvas = createTextCanvas(
       formattedDistance,
       fontSize,
       this.color,
       this.outlineColor,
       this.outlineThickness,
-      this.gridProps.worldGridUnits
+      units
     );
 
     // Create texture from canvas
