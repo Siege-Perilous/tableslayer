@@ -37,6 +37,7 @@
   let isFading = $state(false);
   let fadeStartTime = $state(0);
   let fadeOpacity = $state(1.0);
+  let receivedFadeoutTime = $state<number | null>(null); // Store fadeout time for received measurements
 
   // Preview indicator
   let previewMesh = $state(new THREE.Mesh());
@@ -50,7 +51,9 @@
     if (isFading && props) {
       const now = performance.now();
       const fadeElapsed = now - fadeStartTime;
-      const progress = Math.min(fadeElapsed / props.fadeoutTime, 1);
+      // Use receivedFadeoutTime if set, otherwise use props.fadeoutTime
+      const fadeTime = receivedFadeoutTime ?? props.fadeoutTime;
+      const progress = Math.min(fadeElapsed / fadeTime, 1);
 
       fadeOpacity = 1 - progress;
 
@@ -291,6 +294,7 @@
     // Reset fade state
     isFading = false;
     fadeOpacity = 1.0;
+    receivedFadeoutTime = null; // Reset received fadeout time
 
     if (currentMeasurement) {
       currentMeasurement.dispose();
@@ -313,7 +317,18 @@
     endPoint: THREE.Vector2,
     type: number,
     beamWidth?: number,
-    coneAngle?: number
+    coneAngle?: number,
+    color?: string,
+    thickness?: number,
+    outlineColor?: string,
+    outlineThickness?: number,
+    opacity?: number,
+    markerSize?: number,
+    autoHideDelay?: number,
+    fadeoutTime?: number,
+    showDistance?: boolean,
+    snapToGrid?: boolean,
+    enableDMG252?: boolean
   ): void {
     if (!props) {
       console.log('[MeasurementManager] No props available for displayReceivedMeasurement');
@@ -326,6 +341,7 @@
       type,
       beamWidth,
       coneAngle,
+      thickness,
       hasCurrentMeasurement: !!currentMeasurement
     });
 
@@ -335,12 +351,23 @@
     // Create the appropriate measurement type
     let measurement: IMeasurement;
 
-    // Use the received type and beam/cone properties if provided, override the props temporarily
+    // Use the received properties if provided, override the props temporarily
     const measurementProps = {
       ...props,
       type,
       ...(beamWidth !== undefined && { beamWidth }),
-      ...(coneAngle !== undefined && { coneAngle })
+      ...(coneAngle !== undefined && { coneAngle }),
+      ...(color !== undefined && { color }),
+      ...(thickness !== undefined && { thickness }),
+      ...(outlineColor !== undefined && { outlineColor }),
+      ...(outlineThickness !== undefined && { outlineThickness }),
+      ...(opacity !== undefined && { opacity }),
+      ...(markerSize !== undefined && { markerSize }),
+      ...(autoHideDelay !== undefined && { autoHideDelay }),
+      ...(fadeoutTime !== undefined && { fadeoutTime }),
+      ...(showDistance !== undefined && { showDistance }),
+      ...(snapToGrid !== undefined && { snapToGrid }),
+      ...(enableDMG252 !== undefined && { enableDMG252 })
     };
 
     switch (type) {
@@ -379,10 +406,27 @@
 
     console.log('[MeasurementManager] Measurement updated to endpoint');
 
-    // Immediately finish it to trigger auto-fade
-    finishMeasurement();
+    // Store the fadeout time if provided for the fade animation
+    if (fadeoutTime !== undefined) {
+      receivedFadeoutTime = fadeoutTime;
+    }
 
-    console.log('[MeasurementManager] Measurement finished, auto-fade scheduled');
+    // Schedule auto-fade with the received timing properties
+    const delay = autoHideDelay ?? props.autoHideDelay;
+    console.log(
+      '[MeasurementManager] Scheduling auto-fade with delay:',
+      delay,
+      'fadeTime:',
+      fadeoutTime ?? props.fadeoutTime
+    );
+
+    autoHideTimeoutId = setTimeout(() => {
+      // Start the fade animation
+      fadeStartTime = performance.now();
+      isFading = true;
+    }, delay);
+
+    console.log('[MeasurementManager] Measurement auto-fade scheduled');
   }
 
   // Export the methods for use by parent components

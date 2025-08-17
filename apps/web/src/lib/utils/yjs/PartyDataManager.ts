@@ -38,6 +38,13 @@ export interface MeasurementData {
   outlineThickness: number;
   opacity: number;
   markerSize: number;
+  // Timing properties
+  autoHideDelay: number;
+  fadeoutTime: number;
+  // Distance properties
+  showDistance: boolean;
+  snapToGrid: boolean;
+  enableDMG252: boolean;
   // Beam and Cone specific properties
   beamWidth?: number;
   coneAngle?: number;
@@ -240,13 +247,18 @@ export class PartyDataManager {
     startPoint: { x: number; y: number } | null,
     endPoint: { x: number; y: number } | null,
     type: number,
-    visualProps?: {
+    measurementProps?: {
       color: string;
       thickness: number;
       outlineColor: string;
       outlineThickness: number;
       opacity: number;
       markerSize: number;
+      autoHideDelay: number;
+      fadeoutTime: number;
+      showDistance: boolean;
+      snapToGrid: boolean;
+      enableDMG252: boolean;
       beamWidth?: number;
       coneAngle?: number;
     }
@@ -262,16 +274,21 @@ export class PartyDataManager {
           endPoint,
           type,
           timestamp: Date.now(),
-          // Include visual properties or use defaults
-          color: visualProps?.color ?? '#FFFFFF',
-          thickness: visualProps?.thickness ?? 12,
-          outlineColor: visualProps?.outlineColor ?? '#000000',
-          outlineThickness: visualProps?.outlineThickness ?? 4,
-          opacity: visualProps?.opacity ?? 1,
-          markerSize: visualProps?.markerSize ?? 24,
+          // Include all measurement properties or use defaults
+          color: measurementProps?.color ?? '#FFFFFF',
+          thickness: measurementProps?.thickness ?? 12,
+          outlineColor: measurementProps?.outlineColor ?? '#000000',
+          outlineThickness: measurementProps?.outlineThickness ?? 4,
+          opacity: measurementProps?.opacity ?? 1,
+          markerSize: measurementProps?.markerSize ?? 24,
+          autoHideDelay: measurementProps?.autoHideDelay ?? 3000,
+          fadeoutTime: measurementProps?.fadeoutTime ?? 500,
+          showDistance: measurementProps?.showDistance ?? true,
+          snapToGrid: measurementProps?.snapToGrid ?? true,
+          enableDMG252: measurementProps?.enableDMG252 ?? true,
           // Beam and Cone specific properties
-          beamWidth: visualProps?.beamWidth,
-          coneAngle: visualProps?.coneAngle
+          beamWidth: measurementProps?.beamWidth,
+          coneAngle: measurementProps?.coneAngle
         });
       }
     }

@@ -15,6 +15,20 @@
       type: number;
       beamWidth?: number;
       coneAngle?: number;
+      // Visual properties
+      color?: string;
+      thickness?: number;
+      outlineColor?: string;
+      outlineThickness?: number;
+      opacity?: number;
+      markerSize?: number;
+      // Timing properties
+      autoHideDelay?: number;
+      fadeoutTime?: number;
+      // Distance properties
+      showDistance?: boolean;
+      snapToGrid?: boolean;
+      enableDMG252?: boolean;
     } | null;
   }
 

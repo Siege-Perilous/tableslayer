@@ -744,7 +744,21 @@
           endPoint: latestMeasurement.endPoint,
           type: latestMeasurement.type,
           beamWidth: latestMeasurement.beamWidth,
-          coneAngle: latestMeasurement.coneAngle
+          coneAngle: latestMeasurement.coneAngle,
+          // Visual properties
+          color: latestMeasurement.color,
+          thickness: latestMeasurement.thickness,
+          outlineColor: latestMeasurement.outlineColor,
+          outlineThickness: latestMeasurement.outlineThickness,
+          opacity: latestMeasurement.opacity,
+          markerSize: latestMeasurement.markerSize,
+          // Timing properties
+          autoHideDelay: latestMeasurement.autoHideDelay,
+          fadeoutTime: latestMeasurement.fadeoutTime,
+          // Distance properties
+          showDistance: latestMeasurement.showDistance,
+          snapToGrid: latestMeasurement.snapToGrid,
+          enableDMG252: latestMeasurement.enableDMG252
         }
       : null}
     callbacks={{

@@ -24,6 +24,20 @@
       type: number;
       beamWidth?: number;
       coneAngle?: number;
+      // Visual properties
+      color?: string;
+      thickness?: number;
+      outlineColor?: string;
+      outlineThickness?: number;
+      opacity?: number;
+      markerSize?: number;
+      // Timing properties
+      autoHideDelay?: number;
+      fadeoutTime?: number;
+      // Distance properties
+      showDistance?: boolean;
+      snapToGrid?: boolean;
+      enableDMG252?: boolean;
     } | null;
   }
 
@@ -234,13 +248,24 @@
           type: receivedMeasurement.type
         });
 
-        // Display the received measurement with beam/cone properties if available
+        // Display the received measurement with all properties if available
         measurementManager.displayReceivedMeasurement(
           startPoint,
           endPoint,
           receivedMeasurement.type,
           receivedMeasurement.beamWidth,
-          receivedMeasurement.coneAngle
+          receivedMeasurement.coneAngle,
+          receivedMeasurement.color,
+          receivedMeasurement.thickness,
+          receivedMeasurement.outlineColor,
+          receivedMeasurement.outlineThickness,
+          receivedMeasurement.opacity,
+          receivedMeasurement.markerSize,
+          receivedMeasurement.autoHideDelay,
+          receivedMeasurement.fadeoutTime,
+          receivedMeasurement.showDistance,
+          receivedMeasurement.snapToGrid,
+          receivedMeasurement.enableDMG252
         );
 
         // Mark that a measurement is now fading

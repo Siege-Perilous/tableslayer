@@ -1147,18 +1147,23 @@
   const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
     // Broadcast measurement start to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
-      const visualProps = {
+      const measurementProps = {
         color: stageProps.measurement.color,
         thickness: stageProps.measurement.thickness,
         outlineColor: stageProps.measurement.outlineColor,
         outlineThickness: stageProps.measurement.outlineThickness,
         opacity: stageProps.measurement.opacity,
         markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
         beamWidth: stageProps.measurement.beamWidth,
         coneAngle: stageProps.measurement.coneAngle
       };
-      partyData.updateMeasurement(startPoint, startPoint, type, visualProps);
-      devLog('measurement', 'Broadcasting measurement start:', { startPoint, type, visualProps });
+      partyData.updateMeasurement(startPoint, startPoint, type, measurementProps);
+      devLog('measurement', 'Broadcasting measurement start:', { startPoint, type, measurementProps });
     }
   };
 
@@ -1169,17 +1174,22 @@
   ) => {
     // Broadcast measurement update to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
-      const visualProps = {
+      const measurementProps = {
         color: stageProps.measurement.color,
         thickness: stageProps.measurement.thickness,
         outlineColor: stageProps.measurement.outlineColor,
         outlineThickness: stageProps.measurement.outlineThickness,
         opacity: stageProps.measurement.opacity,
         markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
         beamWidth: stageProps.measurement.beamWidth,
         coneAngle: stageProps.measurement.coneAngle
       };
-      partyData.updateMeasurement(startPoint, endPoint, type, visualProps);
+      partyData.updateMeasurement(startPoint, endPoint, type, measurementProps);
     }
   };
 
