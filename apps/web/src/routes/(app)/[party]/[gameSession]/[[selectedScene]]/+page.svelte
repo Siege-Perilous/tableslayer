@@ -1153,7 +1153,9 @@
         outlineColor: stageProps.measurement.outlineColor,
         outlineThickness: stageProps.measurement.outlineThickness,
         opacity: stageProps.measurement.opacity,
-        markerSize: stageProps.measurement.markerSize
+        markerSize: stageProps.measurement.markerSize,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
       };
       partyData.updateMeasurement(startPoint, startPoint, type, visualProps);
       devLog('measurement', 'Broadcasting measurement start:', { startPoint, type, visualProps });
@@ -1173,7 +1175,9 @@
         outlineColor: stageProps.measurement.outlineColor,
         outlineThickness: stageProps.measurement.outlineThickness,
         opacity: stageProps.measurement.opacity,
-        markerSize: stageProps.measurement.markerSize
+        markerSize: stageProps.measurement.markerSize,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
       };
       partyData.updateMeasurement(startPoint, endPoint, type, visualProps);
     }

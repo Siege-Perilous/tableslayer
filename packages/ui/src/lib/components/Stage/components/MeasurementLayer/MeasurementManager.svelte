@@ -308,7 +308,13 @@
    * @param {number} type - The type of measurement (MeasurementType enum)
    * @returns {void}
    */
-  function displayReceivedMeasurement(startPoint: THREE.Vector2, endPoint: THREE.Vector2, type: number): void {
+  function displayReceivedMeasurement(
+    startPoint: THREE.Vector2,
+    endPoint: THREE.Vector2,
+    type: number,
+    beamWidth?: number,
+    coneAngle?: number
+  ): void {
     if (!props) {
       console.log('[MeasurementManager] No props available for displayReceivedMeasurement');
       return;
@@ -318,6 +324,8 @@
       startPoint,
       endPoint,
       type,
+      beamWidth,
+      coneAngle,
       hasCurrentMeasurement: !!currentMeasurement
     });
 
@@ -327,8 +335,13 @@
     // Create the appropriate measurement type
     let measurement: IMeasurement;
 
-    // Use the received type, but override the props type temporarily
-    const measurementProps = { ...props, type };
+    // Use the received type and beam/cone properties if provided, override the props temporarily
+    const measurementProps = {
+      ...props,
+      type,
+      ...(beamWidth !== undefined && { beamWidth }),
+      ...(coneAngle !== undefined && { coneAngle })
+    };
 
     switch (type) {
       case MeasurementType.Line:

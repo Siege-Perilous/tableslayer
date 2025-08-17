@@ -742,7 +742,9 @@
       ? {
           startPoint: latestMeasurement.startPoint,
           endPoint: latestMeasurement.endPoint,
-          type: latestMeasurement.type
+          type: latestMeasurement.type,
+          beamWidth: latestMeasurement.beamWidth,
+          coneAngle: latestMeasurement.coneAngle
         }
       : null}
     callbacks={{

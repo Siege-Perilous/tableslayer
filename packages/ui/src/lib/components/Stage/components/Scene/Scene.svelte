@@ -36,6 +36,8 @@
       startPoint: { x: number; y: number };
       endPoint: { x: number; y: number };
       type: number;
+      beamWidth?: number;
+      coneAngle?: number;
     } | null;
   }
 

@@ -22,6 +22,8 @@
       startPoint: { x: number; y: number };
       endPoint: { x: number; y: number };
       type: number;
+      beamWidth?: number;
+      coneAngle?: number;
     } | null;
   }
 
@@ -232,8 +234,14 @@
           type: receivedMeasurement.type
         });
 
-        // Display the received measurement
-        measurementManager.displayReceivedMeasurement(startPoint, endPoint, receivedMeasurement.type);
+        // Display the received measurement with beam/cone properties if available
+        measurementManager.displayReceivedMeasurement(
+          startPoint,
+          endPoint,
+          receivedMeasurement.type,
+          receivedMeasurement.beamWidth,
+          receivedMeasurement.coneAngle
+        );
 
         // Mark that a measurement is now fading
         measurementIsFading = true;

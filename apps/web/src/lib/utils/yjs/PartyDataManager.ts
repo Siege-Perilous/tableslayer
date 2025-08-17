@@ -38,6 +38,9 @@ export interface MeasurementData {
   outlineThickness: number;
   opacity: number;
   markerSize: number;
+  // Beam and Cone specific properties
+  beamWidth?: number;
+  coneAngle?: number;
 }
 
 export interface LocalViewportState {
@@ -244,6 +247,8 @@ export class PartyDataManager {
       outlineThickness: number;
       opacity: number;
       markerSize: number;
+      beamWidth?: number;
+      coneAngle?: number;
     }
   ) {
     if (this.isConnected && this.gameSessionProvider.awareness) {
@@ -263,7 +268,10 @@ export class PartyDataManager {
           outlineColor: visualProps?.outlineColor ?? '#000000',
           outlineThickness: visualProps?.outlineThickness ?? 4,
           opacity: visualProps?.opacity ?? 1,
-          markerSize: visualProps?.markerSize ?? 24
+          markerSize: visualProps?.markerSize ?? 24,
+          // Beam and Cone specific properties
+          beamWidth: visualProps?.beamWidth,
+          coneAngle: visualProps?.coneAngle
         });
       }
     }
