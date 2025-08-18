@@ -306,7 +306,7 @@
             />
           {/snippet}
           {#snippet toolTipContent()}
-            Measurement tools
+            Change the measurement method
           {/snippet}
         </ToolTip>
       </div>

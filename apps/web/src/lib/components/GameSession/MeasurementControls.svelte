@@ -104,43 +104,51 @@
     <Hr />
     <Spacer />
     <div class="measurementControls__footer">
+      <div class="measrurmentControls__inputs">
+        <FormControl label="Beam width" name="beamWidth">
+          {#snippet input(inputProps)}
+            <Input
+              {...inputProps}
+              type="number"
+              value={stageProps.measurement?.beamWidth ?? 5}
+              oninput={(e) => handleBeamWidthChange(Number(e.currentTarget.value))}
+              min={0.5}
+              max={10}
+              step={0.5}
+            />
+          {/snippet}
+        </FormControl>
+        <FormControl label="Cone angle" name="coneAngle">
+          {#snippet input(inputProps)}
+            <Input
+              {...inputProps}
+              type="number"
+              value={stageProps.measurement?.coneAngle ?? 60}
+              oninput={(e) => handleConeAngleChange(Number(e.currentTarget.value))}
+              min={15}
+              max={180}
+              step={15}
+            />
+          {/snippet}
+        </FormControl>
+      </div>
+      <Spacer />
       <Text size="0.875rem" color="var(--fgMuted)">
-        Grid measurement assumes 5ft squares, with altering diagnals counting for 10ft.
+        Square grid measurement assumes 5ft squares, with altering diagonals counting for 10ft.
       </Text>
-      <Spacer />
-      <FormControl label="Beam width" name="beamWidth">
-        {#snippet input(inputProps)}
-          <Input
-            {...inputProps}
-            type="number"
-            value={stageProps.measurement?.beamWidth ?? 5}
-            oninput={(e) => handleBeamWidthChange(Number(e.currentTarget.value))}
-            min={0.5}
-            max={10}
-            step={0.5}
-          />
-        {/snippet}
-      </FormControl>
-      <Spacer />
-      <FormControl label="Cone angle" name="coneAngle">
-        {#snippet input(inputProps)}
-          <Input
-            {...inputProps}
-            type="number"
-            value={stageProps.measurement?.coneAngle ?? 60}
-            oninput={(e) => handleConeAngleChange(Number(e.currentTarget.value))}
-            min={15}
-            max={180}
-            step={15}
-          />
-        {/snippet}
-      </FormControl>
     </div>
   {/snippet}
 </SelectorMenu>
 
 <style>
   .measurementControls__footer {
+    width: 240px;
+    text-wrap: auto;
     padding: 0 0.5rem 0.5rem 0.5rem;
+  }
+  .measrurmentControls__inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 </style>
