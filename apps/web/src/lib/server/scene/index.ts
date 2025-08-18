@@ -2,7 +2,7 @@ import { db } from '$lib/db/app';
 import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { copySceneFile, getFile, transformImage, uploadFileFromInput, type Thumb } from '../file';
+import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
@@ -83,6 +83,12 @@ export const reorderScenes = async (gameSessionId: string, sceneId: string, newP
   }
 };
 
+const isVideoFile = (location: string): boolean => {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
+  const lowerLocation = location.toLowerCase();
+  return videoExtensions.some((ext) => lowerLocation.includes(ext));
+};
+
 export const getScene = async (sceneId: string): Promise<SelectScene | (SelectScene & Thumb)> => {
   const scene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
 
@@ -92,6 +98,13 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
 
   if (!scene?.mapLocation) {
     return scene;
+  }
+
+  // For video files, return direct URL without transformation
+  if (isVideoFile(scene.mapLocation)) {
+    const thumb = getVideoUrl(scene.mapLocation);
+    const sceneWithThumb = { ...scene, thumb };
+    return sceneWithThumb;
   }
 
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
@@ -135,10 +148,18 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
       scenesWithThumbs.push(scene);
       continue;
     }
-    const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-    // Removed cache busting timestamps to prevent flashing
-    const sceneWithThumb = { ...scene, thumb };
-    scenesWithThumbs.push(sceneWithThumb);
+
+    // For video files, return direct URL without transformation
+    if (isVideoFile(imageLocation)) {
+      const thumb = getVideoUrl(imageLocation);
+      const sceneWithThumb = { ...scene, thumb };
+      scenesWithThumbs.push(sceneWithThumb);
+    } else {
+      const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
+      // Removed cache busting timestamps to prevent flashing
+      const sceneWithThumb = { ...scene, thumb };
+      scenesWithThumbs.push(sceneWithThumb);
+    }
   }
 
   return scenesWithThumbs;
@@ -236,7 +257,12 @@ export const getSceneFromOrder = async (
 
   let thumb = null;
   if (scene.mapLocation) {
-    thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+    // For video files, return direct URL without transformation
+    if (isVideoFile(scene.mapLocation)) {
+      thumb = getVideoUrl(scene.mapLocation);
+    } else {
+      thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
+    }
   }
   const sceneWithThumb = { ...scene, thumb };
 
