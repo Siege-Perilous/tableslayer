@@ -7,7 +7,8 @@
     Hr,
     Spacer,
     MeasurementType,
-    MapLayerType
+    MapLayerType,
+    Text
   } from '@tableslayer/ui';
   import { IconLine, IconCone2, IconCircle, IconSquare, IconRectangleVertical } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
@@ -101,7 +102,12 @@
   {#snippet footer()}
     <Spacer />
     <Hr />
+    <Spacer />
     <div class="measurementControls__footer">
+      <Text size="0.875rem" color="var(--fgMuted)">
+        Grid measurement assumes 5ft squares, with altering diagnals counting for 10ft.
+      </Text>
+      <Spacer />
       <FormControl label="Beam width" name="beamWidth">
         {#snippet input(inputProps)}
           <Input
@@ -135,6 +141,6 @@
 
 <style>
   .measurementControls__footer {
-    padding: 1rem 0.5rem 0.5rem 0.5rem;
+    padding: 0 0.5rem 0.5rem 0.5rem;
   }
 </style>
