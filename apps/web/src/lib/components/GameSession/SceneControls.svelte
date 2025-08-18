@@ -31,8 +31,7 @@
     IconAdjustmentsHorizontal,
     IconPokerChip,
     IconPencil,
-    IconRuler,
-    IconChevronDown
+    IconRuler
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
@@ -279,7 +278,7 @@
     </div>
     {#each sceneControlArray as scene}
       {#if scene.id === 'measurement'}
-        <!-- Special handling for measurement with both toggle and popover -->
+        <!-- Measurement controls with integrated selector -->
         <div class="sceneControls__item">
           <button
             class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Measurement &&
@@ -291,16 +290,13 @@
               {scene.text}
             </span>
           </button>
-          <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
-            {#snippet trigger()}
-              <div class="sceneControls__selectorBtn">
-                <Icon Icon={IconChevronDown} size="1rem" class="sceneControls__selectorIcon" />
-              </div>
-            {/snippet}
-            {#snippet content()}
-              <MeasurementControls {stageProps} {party} {gameSession} {selectedScene} />
-            {/snippet}
-          </Popover>
+          <MeasurementControls
+            {stageProps}
+            {party}
+            {gameSession}
+            {selectedScene}
+            onSelectedChange={() => handleSelectActiveControl('measurement')}
+          />
         </div>
       {:else}
         <!-- Regular popover controls for other tools -->

@@ -25,6 +25,7 @@
     { label: 'Unlock markers', shortcut: 'M' },
     { label: 'Lock markers', shortcut: 'Shift + M' },
     { divider: true },
+    { label: 'Toggle measurement', shortcut: 'T' },
     { label: 'Toggle drawing', shortcut: 'D' },
     { divider: true },
     { label: 'Scale map', shortcut: hasTouchSupport ? 'Three finger pinch' : 'Shift + Mouse wheel' },
