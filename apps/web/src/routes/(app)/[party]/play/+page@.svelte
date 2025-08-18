@@ -8,7 +8,7 @@
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
-  import { type SceneData } from '$lib/utils/yjs/PartyDataManager';
+  import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
 
   type CursorData = {
     position: { x: number; y: number };
@@ -18,6 +18,8 @@
   };
 
   let cursors: Record<string, CursorData> = $state({});
+  let measurements: Record<string, MeasurementData> = $state({});
+  let latestMeasurement: MeasurementData | null = $state(null);
 
   let { data } = $props();
   const { user, party } = $derived(data);
@@ -309,6 +311,13 @@
           });
         });
 
+        // Update measurements from Y.js awareness
+        const yjsMeasurements = partyData!.getMeasurements();
+        if (Object.keys(yjsMeasurements).length > 0) {
+          devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
+        }
+        measurements = yjsMeasurements;
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           // If we don't have the game session ID, we need to find it
@@ -468,6 +477,13 @@
           });
         });
 
+        // Update measurements from Y.js awareness
+        const yjsMeasurements = partyData!.getMeasurements();
+        if (Object.keys(yjsMeasurements).length > 0) {
+          devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
+        }
+        measurements = yjsMeasurements;
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           devLog('playfield', 'Attempting to get scene data:', {
@@ -570,6 +586,21 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
     }
   }
+
+  // Track the latest measurement to pass to Stage
+  $effect(() => {
+    const measurementValues = Object.values(measurements);
+    if (measurementValues.length > 0) {
+      // Find the most recent measurement
+      const newest = measurementValues.reduce((latest, current) =>
+        current.timestamp > latest.timestamp ? current : latest
+      );
+      devLog('playfield', 'Latest measurement to pass to Stage:', newest);
+      latestMeasurement = newest;
+    } else {
+      latestMeasurement = null;
+    }
+  });
 
   $effect(() => {
     const interval = setInterval(() => {
@@ -707,6 +738,29 @@
   <Stage
     bind:this={stage}
     props={stageProps}
+    receivedMeasurement={latestMeasurement
+      ? {
+          startPoint: latestMeasurement.startPoint,
+          endPoint: latestMeasurement.endPoint,
+          type: latestMeasurement.type,
+          beamWidth: latestMeasurement.beamWidth,
+          coneAngle: latestMeasurement.coneAngle,
+          // Visual properties
+          color: latestMeasurement.color,
+          thickness: latestMeasurement.thickness,
+          outlineColor: latestMeasurement.outlineColor,
+          outlineThickness: latestMeasurement.outlineThickness,
+          opacity: latestMeasurement.opacity,
+          markerSize: latestMeasurement.markerSize,
+          // Timing properties
+          autoHideDelay: latestMeasurement.autoHideDelay,
+          fadeoutTime: latestMeasurement.fadeoutTime,
+          // Distance properties
+          showDistance: latestMeasurement.showDistance,
+          snapToGrid: latestMeasurement.snapToGrid,
+          enableDMG252: latestMeasurement.enableDMG252
+        }
+      : null}
     callbacks={{
       onAnnotationUpdate,
       onFogUpdate,
@@ -717,7 +771,11 @@
       onMarkerAdded,
       onMarkerMoved,
       onMarkerSelected,
-      onMarkerContextMenu
+      onMarkerContextMenu,
+      // Measurements are read-only in playfield, but we still need the callbacks
+      onMeasurementStart: () => {},
+      onMeasurementUpdate: () => {},
+      onMeasurementEnd: () => {}
     }}
   />
 

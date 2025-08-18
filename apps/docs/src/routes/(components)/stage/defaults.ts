@@ -2,6 +2,7 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
+  MeasurementType,
   RainPreset,
   StageMode,
   ToolType,
@@ -89,6 +90,8 @@ export const StageDefaultProps: StageProps = {
   grid: {
     gridType: GridType.Square,
     spacing: 1,
+    worldGridSize: 5,
+    worldGridUnits: 'FT',
     opacity: 0.25,
     lineColor: '#ffffff',
     lineThickness: 1.0,
@@ -126,6 +129,22 @@ export const StageDefaultProps: StageProps = {
       strokeWidth: 1
     },
     markers: []
+  },
+  measurement: {
+    type: MeasurementType.Line,
+    snapToGrid: true,
+    enableDMG252: true,
+    autoHideDelay: 3000,
+    fadeoutTime: 500,
+    color: '#FFF',
+    thickness: 10,
+    opacity: 1,
+    showDistance: true,
+    outlineThickness: 2,
+    outlineColor: '#000',
+    beamWidth: 10,
+    coneAngle: 60,
+    markerSize: 20
   },
   postProcessing: {
     enabled: true,

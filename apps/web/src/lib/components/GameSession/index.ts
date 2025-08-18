@@ -8,6 +8,7 @@ export { default as GridControls } from './GridControls.svelte';
 export { default as Hints } from './Hints.svelte';
 export { default as MapControls } from './MapControls.svelte';
 export { default as MarkerManager } from './MarkerManager.svelte';
+export { default as MeasurementControls } from './MeasurementControls.svelte';
 export { default as PlayControls } from './PlayControls.svelte';
 export { default as SceneControls } from './SceneControls.svelte';
 export { default as SceneSelector } from './SceneSelector.svelte';

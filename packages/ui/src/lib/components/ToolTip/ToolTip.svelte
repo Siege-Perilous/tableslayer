@@ -11,6 +11,7 @@
     closeDelay = 0,
     closeOnPointerDown = false,
     forceVisible = true,
+    disableHoverableContent = false,
     toolTipContent
   }: ToolTipProps = $props();
 
@@ -18,6 +19,7 @@
     elements: { trigger, content, arrow },
     states: { open }
   } = createTooltip({
+    disableHoverableContent,
     positioning,
     defaultOpen,
     openDelay,
@@ -27,9 +29,9 @@
   });
 </script>
 
-<button type="button" class="trigger" use:melt={$trigger} aria-label="Add">
+<div class="trigger" use:melt={$trigger}>
   {@render children()}
-</button>
+</div>
 
 {#if $open}
   <div use:melt={$content} transition:fade={{ duration: 100 }} class="tooltip">
@@ -56,9 +58,12 @@
     border-radius: var(--radius-1);
     box-shadow: var(--shadow-1);
     z-index: 1000;
+    text-align: center;
+    text-wrap: balance;
   }
   .trigger {
-    display: inline-flex;
+    max-width: 100px;
+    display: block;
     align-items: center;
     justify-content: center;
   }

@@ -56,6 +56,29 @@ export function usePartyData() {
       partyDataManager!.updateCursor(position, normalizedPosition),
     getCursors: () => partyDataManager!.getCursors(),
 
+    // Measurement management
+    updateMeasurement: (
+      startPoint: { x: number; y: number } | null,
+      endPoint: { x: number; y: number } | null,
+      type: number,
+      measurementProps?: {
+        color: string;
+        thickness: number;
+        outlineColor: string;
+        outlineThickness: number;
+        opacity: number;
+        markerSize: number;
+        autoHideDelay: number;
+        fadeoutTime: number;
+        showDistance: boolean;
+        snapToGrid: boolean;
+        enableDMG252: boolean;
+        beamWidth?: number;
+        coneAngle?: number;
+      }
+    ) => partyDataManager!.updateMeasurement(startPoint, endPoint, type, measurementProps),
+    getMeasurements: () => partyDataManager!.getMeasurements(),
+
     // Scenes list
     getScenesList: (): SceneMetadata[] => partyDataManager!.getScenesList(),
 
