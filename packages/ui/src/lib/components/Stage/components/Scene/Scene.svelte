@@ -62,10 +62,20 @@
   const callbacks = getContext<Callbacks>('callbacks');
   const onSceneUpdate = callbacks.onSceneUpdate;
 
+  // Type definition for MeasurementLayer exports
+  type MeasurementLayerExports = {
+    getCurrentMeasurement: () => {
+      startPoint: THREE.Vector2 | null;
+      endPoint: THREE.Vector2 | null;
+      type: number;
+    } | null;
+    isCurrentlyDrawing: () => boolean;
+  };
+
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
-  let measurementLayer: any = $state(null); // MeasurementLayer exports
+  let measurementLayer: MeasurementLayerExports | null = $state(null);
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
