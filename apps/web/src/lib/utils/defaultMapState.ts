@@ -2,6 +2,7 @@ import {
   DrawMode,
   GridType,
   MapLayerType,
+  MeasurementType,
   SceneRotation,
   StageMode,
   ToolType,
@@ -92,7 +93,9 @@ export const StageDefaultProps: StageProps = {
     shadowOpacity: 0.4,
     shadowBlur: 0.5,
     shadowColor: '#000000',
-    shadowSpread: 2
+    shadowSpread: 2,
+    worldGridSize: 1,
+    worldGridUnits: 'FT'
   },
   map: {
     rotation: 0,
@@ -120,6 +123,22 @@ export const StageDefaultProps: StageProps = {
       strokeWidth: 1
     },
     markers: []
+  },
+  measurement: {
+    type: MeasurementType.Line,
+    snapToGrid: true,
+    enableDMG252: true,
+    autoHideDelay: 3000,
+    color: '#ffff00',
+    thickness: 2,
+    markerSize: 8,
+    opacity: 0.8,
+    showDistance: true,
+    outlineThickness: 4,
+    outlineColor: '#000000',
+    beamWidth: 1,
+    coneAngle: 60,
+    fadeoutTime: 500
   },
   postProcessing: {
     enabled: true,

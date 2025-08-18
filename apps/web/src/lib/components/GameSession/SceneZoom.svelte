@@ -49,6 +49,7 @@
     <span class="sceneZoom__mutedText">|</span>
     <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}>Map</span>
   </Button>
+
   <IconButton
     title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
     class="zoomControls__button"
@@ -121,9 +122,15 @@
     .sceneZoomButton {
       padding: 0.25rem;
     }
+    .zoomControls__button svg {
+      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+    }
   }
   .sceneZoom {
     position: absolute;
+    text-shadow:
+      0 0 2px rgba(0, 0, 0, 0.8),
+      0 0 8px rgba(0, 0, 0, 0.5);
     bottom: 1rem;
     left: 1rem;
     display: flex;

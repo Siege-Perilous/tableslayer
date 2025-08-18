@@ -20,6 +20,16 @@ export interface GridLayerProps {
   spacing: number;
 
   /**
+   * The real-world size of one grid square
+   */
+  worldGridSize: number;
+
+  /**
+   * The units for the world grid size (e.g., 'ft', 'm', 'yd')
+   */
+  worldGridUnits: string;
+
+  /**
    * Line thickness
    */
   lineThickness: number;

@@ -12,7 +12,8 @@
     InputSlider,
     FormControl,
     Hr,
-    Spacer
+    Spacer,
+    ToolTip
   } from '@tableslayer/ui';
   import {
     IconGrid4x4,
@@ -30,7 +31,8 @@
     IconBorderSides,
     IconAdjustmentsHorizontal,
     IconPokerChip,
-    IconPencil
+    IconPencil,
+    IconRuler
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
@@ -43,7 +45,8 @@
     EdgeControls,
     MapControls,
     FogControls,
-    PlayControls
+    PlayControls,
+    MeasurementControls
   } from './';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { queuePropertyUpdate } from '$lib/utils';
@@ -84,6 +87,7 @@
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     icon: any;
     text: string;
+    tooltip: string;
     mapLayer: number;
   };
 
@@ -92,42 +96,49 @@
       id: 'map',
       icon: IconMap,
       text: 'Map',
+      tooltip: 'Change the map, scale, and position',
       mapLayer: MapLayerType.None
     },
     {
       id: 'fog',
       icon: IconShadow,
       text: 'Fog',
+      tooltip: 'Adjust fog of war color and opacity',
       mapLayer: MapLayerType.None
     },
     {
       id: 'weather',
       icon: IconCloudSnow,
       text: 'Weather',
+      tooltip: 'Add weather effects to the scene',
       mapLayer: MapLayerType.None
     },
     {
       id: 'grid',
       icon: IconGrid4x4,
       text: 'Grid',
+      tooltip: 'Adjust the grid settings and TV size',
       mapLayer: MapLayerType.None
     },
     {
       id: 'edge',
       icon: IconBorderSides,
       text: 'Edge',
+      tooltip: 'Add edge effects along the border of the scene',
       mapLayer: MapLayerType.None
     },
     {
       id: 'effects',
       icon: IconAdjustmentsHorizontal,
       text: 'Effects',
+      tooltip: 'Change the mood with color and visual effects',
       mapLayer: MapLayerType.None
     },
     {
       id: 'play',
       icon: party.gameSessionIsPaused ? IconScreenShareOff : IconScreenShare,
       text: 'Play',
+      tooltip: "Open or pause the player's view",
       mapLayer: MapLayerType.None
     }
   ]);
@@ -139,6 +150,7 @@
       icon: IconPaint,
       toolType: ToolType.Brush,
       drawMode: DrawMode.Erase,
+      tooltip: 'Erase fog from the map with a brush',
       key: 'E'
     },
     {
@@ -147,6 +159,7 @@
       icon: IconPaintFilled,
       toolType: ToolType.Brush,
       drawMode: DrawMode.Draw,
+      tooltip: 'Add fog to the map with a brush',
       key: `Shift+E`
     },
     {
@@ -155,6 +168,7 @@
       icon: IconSquare,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Erase,
+      tooltip: 'Erase fog from the map with a rectangle',
       key: 'R'
     },
     {
@@ -163,6 +177,7 @@
       icon: IconSquareFilled,
       toolType: ToolType.Rectangle,
       drawMode: DrawMode.Draw,
+      tooltip: 'Add fog to the map with a rectangle',
       key: 'Shift+R'
     },
     {
@@ -171,6 +186,7 @@
       icon: IconCircle,
       toolType: ToolType.Ellipse,
       drawMode: DrawMode.Erase,
+      tooltip: 'Erase fog from the map with an ellipse',
       key: 'O'
     },
     {
@@ -179,6 +195,7 @@
       icon: IconCircleFilled,
       toolType: ToolType.Ellipse,
       drawMode: DrawMode.Draw,
+      tooltip: 'Add fog to the map with an ellipse',
       key: 'Shift+O'
     }
   ];
@@ -211,75 +228,145 @@
 <ColorMode mode="dark">
   <div class="sceneControls">
     <div class="sceneControls__item sceneControls__item--primary">
-      <button
-        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
-          'sceneControls__layer--isActive'}"
-        onclick={() => handleSelectActiveControl('erase')}
-      >
-        <Icon Icon={selectedFogTool.icon} size="1.5rem" />
-      </button>
-      <SelectorMenu
-        selected={selectedFogTool.value}
-        options={eraseOptions}
-        positioning={{ placement: 'bottom', offset: 8 }}
-        onSelectedChange={(selected) => handleSelectedFogTool(selected)}
-      >
-        {#snippet footer()}
-          <Spacer />
-          <Hr />
-          <div class="sceneControls__eraserFooter">
-            <FormControl label="Eraser brush size" name="brushSize">
-              {#snippet input(inputProps)}
-                <InputSlider
-                  {...inputProps}
-                  value={stageProps.fogOfWar.tool.size}
-                  oninput={(e) => {
-                    const value = Number(e.currentTarget.value);
-                    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control');
-                    setPreference('brushSize', value);
-                  }}
-                  min={50}
-                  max={300}
-                  step={1}
-                />
-              {/snippet}
-            </FormControl>
-          </div>
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <button
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => handleSelectActiveControl('erase')}
+          >
+            <Icon Icon={selectedFogTool.icon} size="1.5rem" />
+          </button>
         {/snippet}
-      </SelectorMenu>
+        {#snippet toolTipContent()}
+          {selectedFogTool.tooltip}
+        {/snippet}
+      </ToolTip>
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <SelectorMenu
+            selected={selectedFogTool.value}
+            options={eraseOptions}
+            positioning={{ placement: 'bottom', offset: 8 }}
+            onSelectedChange={(selected) => handleSelectedFogTool(selected)}
+          >
+            {#snippet footer()}
+              <Spacer />
+              <Hr />
+              <div class="sceneControls__eraserFooter">
+                <FormControl label="Eraser brush size" name="brushSize">
+                  {#snippet input(inputProps)}
+                    <InputSlider
+                      {...inputProps}
+                      value={stageProps.fogOfWar.tool.size}
+                      oninput={(e) => {
+                        const value = Number(e.currentTarget.value);
+                        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control');
+                        setPreference('brushSize', value);
+                      }}
+                      min={50}
+                      max={300}
+                      step={1}
+                    />
+                  {/snippet}
+                </FormControl>
+              </div>
+            {/snippet}
+          </SelectorMenu>
+        {/snippet}
+        {#snippet toolTipContent()}
+          Change the tool used to erase or add fog
+        {/snippet}
+      </ToolTip>
+
+      <!-- Measurement controls with integrated selector -->
+      <div class="sceneControls__item">
+        <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+          {#snippet children()}
+            <button
+              class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Measurement &&
+                'sceneControls__layer--isActive'}"
+              onclick={() => handleSelectActiveControl('measurement')}
+            >
+              <Icon Icon={IconRuler} size="1.5rem" stroke={2} />
+            </button>
+          {/snippet}
+          {#snippet toolTipContent()}
+            Measure distances and angles on the map.
+          {/snippet}
+        </ToolTip>
+        <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+          {#snippet children()}
+            <MeasurementControls
+              {stageProps}
+              {party}
+              {gameSession}
+              {selectedScene}
+              onSelectedChange={() => handleSelectActiveControl('measurement')}
+            />
+          {/snippet}
+          {#snippet toolTipContent()}
+            Change the measurement method
+          {/snippet}
+        </ToolTip>
+      </div>
     </div>
     <div class="sceneControls__item sceneControls__item--marker">
-      <button
-        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
-          'sceneControls__layer--isActive'}"
-        onclick={() => handleSelectActiveControl('marker')}
-      >
-        <Icon Icon={IconPokerChip} size="1.5rem" />
-        <span class="sceneControls__layerText">Marker</span>
-      </button>
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <button
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => handleSelectActiveControl('marker')}
+          >
+            <Icon Icon={IconPokerChip} size="1.5rem" />
+            <span class="sceneControls__layerText">Marker</span>
+          </button>
+        {/snippet}
+        {#snippet toolTipContent()}
+          Place markers to note points of interest on the map with notes.
+        {/snippet}
+      </ToolTip>
     </div>
     <div class="sceneControls__item sceneControls__item--annotation">
-      <button
-        class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
-          'sceneControls__layer--isActive'}"
-        onclick={() => handleSelectActiveControl('annotation')}
-      >
-        <Icon Icon={IconPencil} size="1.5rem" />
-        <span class="sceneControls__layerText">Draw</span>
-      </button>
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <button
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => handleSelectActiveControl('annotation')}
+          >
+            <Icon Icon={IconPencil} size="1.5rem" />
+            <span class="sceneControls__layerText">Draw</span>
+          </button>
+        {/snippet}
+        {#snippet toolTipContent()}
+          Draw freehand annotations on the map
+        {/snippet}
+      </ToolTip>
     </div>
     {#each sceneControlArray as scene}
+      <!-- Regular popover controls for other tools -->
       <div class="sceneControls__item">
         <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
           {#snippet trigger()}
-            <div class="sceneControls__trigger">
-              <div class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}">
-                <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
-                <span class="sceneControls__layerText">
-                  {scene.text}
-                </span>
-              </div>
-            </div>
+            <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+              {#snippet children()}
+                <div class="sceneControls__trigger">
+                  <div
+                    class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
+                  >
+                    <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                    <span class="sceneControls__layerText">
+                      {scene.text}
+                    </span>
+                  </div>
+                </div>
+              {/snippet}
+              {#snippet toolTipContent()}
+                {scene.tooltip}
+              {/snippet}
+            </ToolTip>
           {/snippet}
           {#snippet content()}
             {#if scene.id === 'grid'}
@@ -346,10 +433,10 @@
       border-radius: var(--radius-2);
       width: 1.25rem;
       border: var(--sceneControlItemBorder);
+      cursor: pointer;
     }
 
     .sceneControls__selectorBtn:hover {
-      cursor: pointer;
       background: var(--sceneControlItemBgHover);
       border: var(--sceneControlItemBorderHover);
     }
@@ -414,7 +501,7 @@
     align-items: center;
   }
 
-  @container stageWrapper (max-width: 950px) {
+  @container stageWrapper (max-width: 1060px) {
     .sceneControls {
       gap: 0.25rem !important;
     }

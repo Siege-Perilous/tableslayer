@@ -25,6 +25,7 @@
     { label: 'Unlock markers', shortcut: 'M' },
     { label: 'Lock markers', shortcut: 'Shift + M' },
     { divider: true },
+    { label: 'Toggle measurement', shortcut: 'T' },
     { label: 'Toggle drawing', shortcut: 'D' },
     { divider: true },
     { label: 'Scale map', shortcut: hasTouchSupport ? 'Three finger pinch' : 'Shift + Mouse wheel' },
@@ -38,7 +39,7 @@
 <div class="shortcut">
   <Popover>
     {#snippet trigger()}
-      <Button as="div" variant="ghost">
+      <Button as="div" variant="ghost" class="shortcut__button">
         {#snippet start()}
           <Icon Icon={IconKeyboard} size="1.5rem" />
         {/snippet}
@@ -65,6 +66,13 @@
 </div>
 
 <style>
+  :global {
+    .shortcut__button {
+      text-shadow:
+        0 0 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(0, 0, 0, 0.5);
+    }
+  }
   .shortcut {
     position: absolute;
     bottom: 1rem;

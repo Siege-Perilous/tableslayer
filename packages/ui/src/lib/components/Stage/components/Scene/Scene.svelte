@@ -25,24 +25,57 @@
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
+  import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
   import type { MarkerLayerExports } from '../MarkerLayer/types';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
   import type { Size } from '../../types';
 
   interface Props {
     props: StageProps;
+    receivedMeasurement?: {
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      type: number;
+      beamWidth?: number;
+      coneAngle?: number;
+      // Visual properties
+      color?: string;
+      thickness?: number;
+      outlineColor?: string;
+      outlineThickness?: number;
+      opacity?: number;
+      markerSize?: number;
+      // Timing properties
+      autoHideDelay?: number;
+      fadeoutTime?: number;
+      // Distance properties
+      showDistance?: boolean;
+      snapToGrid?: boolean;
+      enableDMG252?: boolean;
+    } | null;
   }
 
-  let { props }: Props = $props();
+  let { props, receivedMeasurement = null }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
   const callbacks = getContext<Callbacks>('callbacks');
   const onSceneUpdate = callbacks.onSceneUpdate;
 
+  // Type definition for MeasurementLayer exports
+  type MeasurementLayerExports = {
+    getCurrentMeasurement: () => {
+      startPoint: THREE.Vector2 | null;
+      endPoint: THREE.Vector2 | null;
+      type: number;
+    } | null;
+    isCurrentlyDrawing: () => boolean;
+  };
+
   let annotationsLayer: AnnotationExports;
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
+  let measurementLayer: MeasurementLayerExports | null = $state(null);
   let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
@@ -361,6 +394,12 @@
       return markerLayer?.markerState?.isDragging ?? false;
     }
   };
+
+  // Export measurement layer methods
+  export const measurement = {
+    getCurrentMeasurement: () => measurementLayer?.getCurrentMeasurement?.() ?? null,
+    isDrawing: () => measurementLayer?.isCurrentlyDrawing?.() ?? false
+  };
 </script>
 
 <T.OrthographicCamera
@@ -417,11 +456,11 @@
   <AnnotationLayer
     bind:this={annotationsLayer}
     props={props.annotations}
+    layers={[SceneLayer.Overlay]}
     mode={props.mode}
-    isActive={props.activeLayer === MapLayerType.Annotation || props.activeLayer === MapLayerType.None}
+    isActive={props.activeLayer === MapLayerType.Annotation}
     sceneZoom={props.scene.zoom}
     display={props.display}
-    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.Annotation}
   />
 
@@ -432,4 +471,21 @@
     grid={props.grid}
     display={props.display}
   />
+
+  {#if props.measurement}
+    <MeasurementLayer
+      bind:this={measurementLayer}
+      props={props.measurement}
+      isActive={props.activeLayer === MapLayerType.Measurement}
+      display={props.display}
+      grid={props.grid}
+      sceneRotation={props.scene.rotation}
+      onMeasurementStart={callbacks.onMeasurementStart}
+      onMeasurementUpdate={callbacks.onMeasurementUpdate}
+      onMeasurementEnd={callbacks.onMeasurementEnd}
+      {receivedMeasurement}
+    />
+  {:else}
+    <!-- MeasurementLayer skipped: props.measurement is undefined -->
+  {/if}
 </T.Object3D>

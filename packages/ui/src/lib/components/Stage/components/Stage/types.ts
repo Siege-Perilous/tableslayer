@@ -5,6 +5,7 @@ import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
 import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
+import type { MeasurementLayerProps } from '../MeasurementLayer/types';
 import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
 
@@ -19,6 +20,13 @@ export interface Callbacks {
   onMarkerMoved: (marker: Marker, position: { x: number; y: number }) => void;
   onMarkerSelected: (marker: Marker) => void;
   onMarkerContextMenu: (marker: Marker, event: MouseEvent | TouchEvent) => void;
+  onMeasurementStart?: (startPoint: { x: number; y: number }, type: number) => void;
+  onMeasurementUpdate?: (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => void;
+  onMeasurementEnd?: () => void;
 }
 
 export enum StageMode {
@@ -66,6 +74,7 @@ export type StageProps = {
   grid: GridLayerProps;
   map: MapLayerProps;
   marker: MarkerLayerProps;
+  measurement: MeasurementLayerProps;
   postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;
@@ -95,5 +104,13 @@ export interface StageExports {
   markers: {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
+  };
+  measurement: {
+    getCurrentMeasurement: () => {
+      startPoint: { x: number; y: number } | null;
+      endPoint: { x: number; y: number } | null;
+      type: number;
+    } | null;
+    isDrawing: () => boolean;
   };
 }
