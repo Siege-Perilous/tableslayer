@@ -43,10 +43,6 @@
   };
 </script>
 
-{#snippet toolTipContent()}
-  Toggle zoom mode between scene and the map
-{/snippet}
-
 <div class="sceneZoom">
   <Button onclick={toggleZoomType} variant="ghost">
     <span class={zoomType === 'map' ? 'sceneZoom__mutedText' : ''}>Scene</span>
