@@ -74,8 +74,13 @@
     if (option) {
       selectedMeasurement = option;
       queuePropertyUpdate(stageProps, ['measurement', 'type'], option.type, 'control');
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
-      onSelectedChange?.(value);
+
+      // Only activate the measurement layer if it's not already active
+      // This prevents the layer from toggling off when selecting a different measurement type
+      if (stageProps.activeLayer !== MapLayerType.Measurement) {
+        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
+        onSelectedChange?.(value);
+      }
     }
   }
 
