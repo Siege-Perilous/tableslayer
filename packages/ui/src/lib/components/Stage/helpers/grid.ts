@@ -389,14 +389,20 @@ export function hexDistance(
   const dq = Math.abs(q2 - q1);
   const dr = Math.abs(r2 - r1);
 
-  // Simple case: same row or column in the unified grid
+  // For pointy-top hexagons in the shader's two-grid system:
+  // Direct neighbors can be at different patterns depending on direction
+
+  // Simple case: same column (dq === 0)
   if (dq === 0) {
-    // Same column, different row
-    // In the shader's arrangement, moving vertically by 2 units = 1 hex
-    return Math.ceil(dr / 2);
+    // Moving directly north/south
+    // Adjacent hexes are at dr = 1 (switching between grid1 and grid2)
+    // Two hexes away are at dr = 2 (same grid type)
+    return dr;
   }
+
+  // Same row (dr === 0)
   if (dr === 0) {
-    // Same row, different column
+    // Moving directly east/west
     // In the shader's arrangement, moving horizontally by 2 units = 1 hex
     return Math.ceil(dq / 2);
   }

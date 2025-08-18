@@ -99,10 +99,6 @@
   positioning={{ placement: 'bottom', offset: 8 }}
   onSelectedChange={handleMeasurementChange}
 >
-  {#snippet trigger()}
-    <Icon Icon={selectedMeasurement.icon} size="1.5rem" />
-  {/snippet}
-
   {#snippet footer()}
     <Spacer />
     <Hr />
