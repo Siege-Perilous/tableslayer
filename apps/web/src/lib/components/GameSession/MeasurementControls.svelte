@@ -7,8 +7,7 @@
     Hr,
     Spacer,
     MeasurementType,
-    MapLayerType,
-    Icon
+    MapLayerType
   } from '@tableslayer/ui';
   import { IconLine, IconCone2, IconCircle, IconSquare, IconRectangleVertical } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
