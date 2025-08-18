@@ -205,7 +205,7 @@ export const buildSceneProps = (
       enableDMG252: true,
       thickness: 6,
       showDistance: true,
-      beamWidth: 5,
+      beamWidth: 10,
       coneAngle: 60
     },
     postProcessing: {
