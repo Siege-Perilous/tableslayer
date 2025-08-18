@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { hexDistance, pixelToHex, type HexCoordinate } from '../../../helpers/grid';
 import type { GridLayerProps } from '../../GridLayer/types';
+import { GridType } from '../../GridLayer/types';
 import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
@@ -236,18 +238,44 @@ export abstract class BaseMeasurement implements IMeasurement {
       textPosition.y = -halfHeight + padding;
     }
 
-    const distance = calculateLineDistance(
-      this.startPoint,
-      this.endPoint,
-      this.gridProps.spacing,
-      this.displayProps.size,
-      this.displayProps.resolution,
-      this.gridProps.gridType,
-      this.snapToGrid,
-      this.enableDMG252,
-      this.gridProps.worldGridSize || 5, // Default to 5 if missing
-      this.gridProps.worldGridUnits || 'FT' // Default to 'FT' if missing
-    );
+    // For hex grids with snapping, we want to show hex count instead of distance
+    const isHexGrid = this.gridProps.gridType === GridType.Hex;
+    const showHexCount = isHexGrid && this.snapToGrid;
+
+    let distance: number;
+    let displayText: string;
+    let displayUnits: string;
+
+    if (showHexCount) {
+      // Calculate hex count directly
+      const pixelsPerInchX = this.displayProps.resolution.x / this.displayProps.size.x;
+      const hexSizePixels = this.gridProps.spacing * pixelsPerInchX;
+      const startHex = pixelToHex(this.startPoint, hexSizePixels) as HexCoordinate & { isGrid2?: boolean };
+      const endHex = pixelToHex(this.endPoint, hexSizePixels) as HexCoordinate & { isGrid2?: boolean };
+      distance = hexDistance(startHex, endHex);
+
+      // Format as integer hex count
+      displayText = Math.round(distance).toString();
+      displayUnits = distance === 1 ? 'hex' : 'hexes';
+    } else {
+      // Standard distance calculation
+      distance = calculateLineDistance(
+        this.startPoint,
+        this.endPoint,
+        this.gridProps.spacing,
+        this.displayProps.size,
+        this.displayProps.resolution,
+        this.gridProps.gridType,
+        this.snapToGrid,
+        this.enableDMG252,
+        this.gridProps.worldGridSize || 5,
+        this.gridProps.worldGridUnits || 'FT'
+      );
+
+      // Format number to only show decimals if needed
+      displayText = distance % 1 === 0 ? distance.toString() : distance.toFixed(DISTANCE_DECIMAL_PLACES);
+      displayUnits = this.gridProps.worldGridUnits || 'FT';
+    }
 
     // Don't render text for zero distance
     if (distance === 0) {
@@ -258,20 +286,14 @@ export abstract class BaseMeasurement implements IMeasurement {
     // Show the text mesh since we have content
     this.textMesh.visible = true;
 
-    // Format number to only show decimals if needed
-    const formattedDistance = distance % 1 === 0 ? distance.toString() : distance.toFixed(DISTANCE_DECIMAL_PLACES);
-
     const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
-    // Use 'FT' as default if worldGridUnits is not provided (Y.js sync issue)
-    const units = this.gridProps.worldGridUnits || 'FT';
-    console.log('[BaseMeasurement] Creating text canvas with units:', units);
     const textCanvas = createTextCanvas(
-      formattedDistance,
+      displayText,
       fontSize,
       this.color,
       this.outlineColor,
       this.outlineThickness,
-      units
+      displayUnits
     );
 
     // Create texture from canvas

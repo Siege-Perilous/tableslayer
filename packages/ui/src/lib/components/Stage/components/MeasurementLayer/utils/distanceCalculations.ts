@@ -1,5 +1,45 @@
 import * as THREE from 'three';
+import { hexDistance, pixelToHex, type HexCoordinate } from '../../../helpers/grid';
 import { GridType } from '../../GridLayer/types';
+
+/**
+ * Calculate hex grid distance between two points
+ * @param startPoint Start point in pixel coordinates
+ * @param endPoint End point in pixel coordinates
+ * @param gridSpacing Grid spacing in inches
+ * @param displaySize Display size in inches
+ * @param displayResolution Display resolution in pixels
+ * @param worldGridSize The real-world size of one hex
+ * @param returnHexCount If true, returns hex count instead of world units
+ * @returns Distance in world grid units or hex count
+ */
+export function calculateHexGridDistance(
+  startPoint: THREE.Vector2,
+  endPoint: THREE.Vector2,
+  gridSpacing: number,
+  displaySize: { x: number; y: number },
+  displayResolution: { x: number; y: number },
+  worldGridSize: number = 5,
+  returnHexCount: boolean = false
+): number {
+  // Convert pixel coordinates to world coordinates (inches)
+  const pixelsPerInchX = displayResolution.x / displaySize.x;
+
+  // Calculate hex size in pixels
+  // The grid spacing represents the distance between hex centers
+  // For pointy-top hexagons, this is the width of the hex
+  const hexSizePixels = gridSpacing * pixelsPerInchX;
+
+  // Convert points to hex coordinates
+  const startHex = pixelToHex(startPoint, hexSizePixels) as HexCoordinate & { isGrid2?: boolean };
+  const endHex = pixelToHex(endPoint, hexSizePixels) as HexCoordinate & { isGrid2?: boolean };
+
+  // Calculate distance in hex units
+  const hexes = hexDistance(startHex, endHex);
+
+  // Return either hex count or world units
+  return returnHexCount ? hexes : hexes * worldGridSize;
+}
 
 /**
  * Calculate grid-based distance between two points
@@ -27,6 +67,11 @@ export function calculateLineDistance(
   worldGridSize: number = 5,
   worldGridUnits: string = 'FT'
 ): number {
+  // For hex grids with snapping enabled, use hex pathfinding
+  if (gridType === GridType.Hex && snapToGrid) {
+    return calculateHexGridDistance(startPoint, endPoint, gridSpacing, displaySize, displayResolution, worldGridSize);
+  }
+
   // Convert pixel coordinates to world coordinates (inches)
   const pixelsPerInchX = displayResolution.x / displaySize.x;
   const pixelsPerInchY = displayResolution.y / displaySize.y;

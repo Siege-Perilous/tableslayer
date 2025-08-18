@@ -4,7 +4,7 @@
   import { type MeasurementLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
-  import { type GridLayerProps } from '../GridLayer/types';
+  import { type GridLayerProps, GridType } from '../GridLayer/types';
   import { snapToGrid } from '../../helpers/grid';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import MeasurementManager from './MeasurementManager.svelte';
@@ -76,7 +76,9 @@
 
     coords.sub(centerOffset);
 
-    const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display) : coords;
+    // For measurements on hex grids, snap to centers only
+    const isHexGrid = grid.gridType === GridType.Hex;
+    const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
 
     if (isDrawing) {
       // Reset current measurement
@@ -112,8 +114,10 @@
     coords.sub(centerOffset);
 
     // Apply snapping if enabled
+    // For measurements on hex grids, snap to centers only
+    const isHexGrid = grid.gridType === GridType.Hex;
     if (props.snapToGrid) {
-      snappedPosition = snapToGrid(coords, grid, display);
+      snappedPosition = snapToGrid(coords, grid, display, isHexGrid);
     } else {
       snappedPosition.copy(coords);
     }
@@ -145,7 +149,9 @@
     if (!isDrawing || !startPoint || !measurementManager || !coords) return;
 
     coords.sub(centerOffset);
-    const snappedCoords = coords && props.snapToGrid ? snapToGrid(coords, grid, display) : coords;
+    // For measurements on hex grids, snap to centers only
+    const isHexGrid = grid.gridType === GridType.Hex;
+    const snappedCoords = coords && props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
 
     if (snappedCoords) {
       measurementManager.finishMeasurement();
