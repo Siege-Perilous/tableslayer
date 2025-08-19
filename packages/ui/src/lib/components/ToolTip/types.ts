@@ -9,5 +9,6 @@ export type ToolTipProps = {
   closeDelay?: number;
   closeOnPointerDown?: boolean;
   forceVisible?: boolean;
+  disableHoverableContent?: boolean;
   toolTipContent: Snippet;
 };

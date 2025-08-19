@@ -18,6 +18,9 @@
     . Use
     <span>mouse wheel</span>
     to adjust size.
+  {:else if activeLayer === 4}
+    Left-click and drag to measure distance. Use <span>T</span>
+    to toggle.
   {/if}
 </div>
 
@@ -34,7 +37,9 @@
     gap: 1rem;
     z-index: 100;
     color: var(--fgDanger);
-    text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+    text-shadow:
+      0 0 2px rgba(0, 0, 0, 0.8),
+      0 0 8px rgba(0, 0, 0, 0.5);
     white-space: nowrap;
   }
   .hints span {

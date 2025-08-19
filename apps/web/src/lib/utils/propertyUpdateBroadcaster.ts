@@ -37,7 +37,11 @@ const LOCAL_ONLY_PROPERTIES = new Set([
   'activeLayer', // Active layer should be local per editor (fog tools, etc.)
   'annotations.activeLayer', // Active annotation layer should be local per editor
   'annotations.lineWidth', // Annotation line width should be local per editor
-  'fogOfWar.tool.size' // Fog of war brush size should be local per editor
+  'fogOfWar.tool.size', // Fog of war brush size should be local per editor
+  'measurement', // Entire measurement object should be local (ephemeral tool)
+  'measurement.type', // Measurement type should be local per editor
+  'measurement.beamWidth', // Measurement beam width should be local per editor
+  'measurement.coneAngle' // Measurement cone angle should be local per editor
 ]);
 
 // Check if a property path should be local-only

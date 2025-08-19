@@ -205,7 +205,7 @@ Invisible mesh used for input detection.
 The plane geometry is larger than the map size to allow cursor
 events to be detected outside of the fog of war layer.
 -->
-<T.Mesh bind:ref={mesh} name="annotationInput" layer={SceneLayer.Input}>
+<T.Mesh bind:ref={mesh} name="annotationInput" layers={isActive ? [SceneLayer.Input] : undefined}>
   <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
 </T.Mesh>

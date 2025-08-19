@@ -91,6 +91,12 @@
           ...props.fogOfWar.tool
           // size is omitted to prevent syncing
         }
+      },
+      // Ensure grid props are fully included with worldGridUnits and worldGridSize
+      grid: {
+        ...props.grid,
+        worldGridUnits: props.grid.worldGridUnits || 'FT',
+        worldGridSize: props.grid.worldGridSize || 5
       }
     };
   };
@@ -474,7 +480,9 @@
                   return incomingLayer ? { ...incomingLayer, url: localLayer.url } : localLayer;
                 })
               : incomingStageProps.annotations.layers
-          }
+          },
+          // Preserve entire measurement object (it's local-only/ephemeral)
+          measurement: stageProps.measurement
         };
 
         // Only update if there are actual changes to avoid infinite loops
@@ -759,12 +767,21 @@
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
-      markersPane.expand();
+      if (markersPane) {
+        markersPane.expand();
+      }
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
       activeControl = 'annotation';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
-      markersPane.expand();
+      if (markersPane) {
+        markersPane.expand();
+      }
+    } else if (control === 'measurement') {
+      activeControl = 'measurement';
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
+      // Clear annotation active layer when switching away
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     } else {
       activeControl = control;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
@@ -1123,6 +1140,64 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  // Measurement callbacks for Y.js broadcasting
+  const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Broadcast measurement start to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
+      };
+      partyData.updateMeasurement(startPoint, startPoint, type, measurementProps);
+      devLog('measurement', 'Broadcasting measurement start:', { startPoint, type, measurementProps });
+    }
+  };
+
+  const onMeasurementUpdate = (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => {
+    // Broadcast measurement update to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
+      };
+      partyData.updateMeasurement(startPoint, endPoint, type, measurementProps);
+    }
+  };
+
+  const onMeasurementEnd = () => {
+    // Clear measurement when finished (it will fade out on its own in the playfield)
+    if (partyData) {
+      partyData.updateMeasurement(null, null, 0);
+      devLog('measurement', 'Clearing measurement broadcast');
     }
   };
 
@@ -2295,7 +2370,10 @@
               onMarkerAdded,
               onMarkerMoved,
               onMarkerSelected,
-              onMarkerContextMenu
+              onMarkerContextMenu,
+              onMeasurementStart,
+              onMeasurementUpdate,
+              onMeasurementEnd
             }}
           />
         </div>

@@ -9,9 +9,30 @@
   interface Props {
     props: StageProps;
     callbacks: Callbacks;
+    receivedMeasurement?: {
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      type: number;
+      beamWidth?: number;
+      coneAngle?: number;
+      // Visual properties
+      color?: string;
+      thickness?: number;
+      outlineColor?: string;
+      outlineThickness?: number;
+      opacity?: number;
+      markerSize?: number;
+      // Timing properties
+      autoHideDelay?: number;
+      fadeoutTime?: number;
+      // Distance properties
+      showDistance?: boolean;
+      snapToGrid?: boolean;
+      enableDMG252?: boolean;
+    } | null;
   }
 
-  let { props, callbacks }: Props = $props();
+  let { props, callbacks, receivedMeasurement = null }: Props = $props();
 
   let sceneRef: SceneExports;
 
@@ -57,6 +78,12 @@
       return sceneRef?.markers?.isDraggingMarker ?? false;
     }
   };
+
+  // Export measurement methods
+  export const measurement = {
+    getCurrentMeasurement: () => sceneRef?.measurement?.getCurrentMeasurement() ?? null,
+    isDrawing: () => sceneRef?.measurement?.isDrawing() ?? false
+  };
 </script>
 
 <div style="height: 100%; width: 100%;">
@@ -66,7 +93,7 @@
       <T.MeshBasicMaterial color={props.backgroundColor} />
     </T.Mesh>
 
-    <Scene bind:this={sceneRef} {props} />
+    <Scene bind:this={sceneRef} {props} {receivedMeasurement} />
     {#if props.debug.enableStats}
       <PerfMonitor logsPerSecond={props.debug.loggingRate} anchorX={'right'} anchorY={'bottom'} />
     {/if}
