@@ -54,7 +54,7 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
         (pane: any) =>
           typeof pane === 'object' &&
           typeof pane.size === 'number' &&
-          pane.size > 0 &&
+          pane.size >= 0 &&
           (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
       )
   },
@@ -71,7 +71,7 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
         (pane: any) =>
           typeof pane === 'object' &&
           typeof pane.size === 'number' &&
-          pane.size > 0 &&
+          pane.size >= 0 &&
           (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
       )
   }

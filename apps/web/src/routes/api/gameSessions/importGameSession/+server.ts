@@ -13,7 +13,7 @@ import { getParty, getPartyFromGameSessionId, isUserInParty } from '$lib/server/
 import { setActiveSceneForParty } from '$lib/server/scene';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const createIdMap = () => {
   const map = new Map<string, string>();

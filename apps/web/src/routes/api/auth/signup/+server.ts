@@ -1,7 +1,7 @@
 import { apiFactory } from '$lib/factories';
 import { createSession, createUserByEmailAndPassword, generateSessionToken, setSessionTokenCookie } from '$lib/server';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z
   .object({

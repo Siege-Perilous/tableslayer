@@ -1,7 +1,7 @@
 import { updateUserSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { EmailAlreadyInUseError, updateUser } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 // Use the extended schema with email validation
 const updateUserValidation = z.object({

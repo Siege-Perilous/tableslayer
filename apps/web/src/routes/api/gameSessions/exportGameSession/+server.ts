@@ -3,7 +3,7 @@ import { getMarkersForScene } from '$lib/server/marker';
 import { getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
 import { error, type RequestEvent } from '@sveltejs/kit';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import pkg from '../../../../../package.json';
 
 export const POST = async ({ request, locals }: RequestEvent) => {

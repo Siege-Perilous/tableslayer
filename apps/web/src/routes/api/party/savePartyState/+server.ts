@@ -9,7 +9,7 @@ import {
   updateMarker,
   updateScene
 } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 // Schema for marker operations
 const markerOperationSchema = z.object({

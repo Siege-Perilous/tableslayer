@@ -1,7 +1,7 @@
 import { apiFactory } from '$lib/factories';
 import { createSession, generateSessionToken, getUserByEmail, setSessionTokenCookie } from '$lib/server';
 import { verifyArgonHash } from '$lib/utils/hash';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z.object({
   email: z.email(),
