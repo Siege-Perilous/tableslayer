@@ -434,11 +434,25 @@
           devLog('yjs', 'Blocking Y.js update for drawing layer', { isDrawingFog, isDrawingAnnotation });
         }
 
+        // Log map URL changes for debugging
+        if (incomingStageProps.map?.url !== stageProps.map.url) {
+          devLog('yjs', '🗺️ Map URL change detected from Y.js:', {
+            old: stageProps.map.url,
+            new: incomingStageProps.map?.url
+          });
+        }
+
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
           ...incomingStageProps,
           // Preserve local activeLayer (fog tools, etc.)
           activeLayer: stageProps.activeLayer,
+          // Explicitly handle map to ensure URL updates are propagated
+          map: {
+            ...incomingStageProps.map,
+            // Map URL should always come from Y.js to ensure sync
+            url: incomingStageProps.map?.url || stageProps.map.url
+          },
           scene: {
             ...incomingStageProps.scene,
             // Override with local viewport state (must come after the spread)

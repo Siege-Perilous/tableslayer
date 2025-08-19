@@ -65,15 +65,16 @@ export class VideoDataSource implements IMapDataSource {
       // Preload the video to ensure it's ready
       this.videoElement.preload = 'auto';
 
-      // Set up event listeners
-      this.videoElement.addEventListener('loadedmetadata', () => {
-        if (this.videoElement) {
+      // Wait for enough data to be loaded before creating texture
+      // 'canplaythrough' ensures the video has enough data buffered
+      const handleCanPlay = () => {
+        if (this.videoElement && this.videoElement.readyState >= 2) {
           this.size = {
             width: this.videoElement.videoWidth,
             height: this.videoElement.videoHeight
           };
 
-          // Create video texture
+          // Create video texture only when video is ready
           this.texture = new THREE.VideoTexture(this.videoElement);
           this.texture.colorSpace = THREE.SRGBColorSpace;
           // Set texture parameters for better compatibility
@@ -82,20 +83,45 @@ export class VideoDataSource implements IMapDataSource {
           this.texture.format = THREE.RGBAFormat;
           // Disable mipmaps to prevent power-of-two issues
           this.texture.generateMipmaps = false;
+          // Force texture update on every frame for videos
+          this.texture.needsUpdate = true;
 
-          this.videoElement.play();
+          // Start playback
+          this.videoElement.play().catch((e) => {
+            console.warn('Video autoplay failed:', e);
+          });
 
           resolve();
         }
-      });
+      };
+
+      // Use canplaythrough for Chrome compatibility
+      this.videoElement.addEventListener('canplaythrough', handleCanPlay, { once: true });
+
+      // Fallback: also listen for loadeddata as some browsers may not fire canplaythrough
+      this.videoElement.addEventListener(
+        'loadeddata',
+        () => {
+          // Give it a small delay to ensure the first frame is ready
+          setTimeout(() => {
+            if (!this.texture && this.videoElement && this.videoElement.readyState >= 2) {
+              handleCanPlay();
+            }
+          }, 100);
+        },
+        { once: true }
+      );
 
       this.videoElement.addEventListener('error', (error) => {
         console.error('Failed to load video:', error);
         reject(error);
       });
 
-      // Set source and start loading
+      // Set source with cache busting
+      // Force reload by ensuring the URL is unique
       this.videoElement.src = url;
+      // Force the browser to reload the video
+      this.videoElement.load();
     });
   }
 

@@ -30,28 +30,68 @@
   // The size of the map image
   let mapSize: Size | null = $state(null);
 
+  // Track if the material needs a full update
+  let materialUpdateKey = $state(0);
+
   $effect(() => {
+    console.log('[MapLayer] Effect triggered with URL:', props.map.url);
+
     if (!props.map.url) {
       currentMapUrl = props.map.url;
+      // Dispose of data source when URL is null
+      if (dataSource) {
+        dataSource.dispose();
+        dataSource = null;
+      }
       return;
     }
 
-    // Check if the actual map URL is changing (ignoring timestamp)
+    // Check if the URL is changing (including query params for cache busting)
+    // For video files, we need to check the full URL including query params
     const newMapUrlWithoutParams = getUrlWithoutParams(props.map.url);
     const currentMapUrlWithoutParams = getUrlWithoutParams(currentMapUrl);
 
-    // Do not update if the URL has not changed
-    if (currentMapUrlWithoutParams === newMapUrlWithoutParams) {
-      return;
+    // Check if this is a video file
+    const isVideo = props.map.url.match(/\.(mp4|webm|mov|avi)/i);
+
+    console.log('[MapLayer] URL comparison:', {
+      new: newMapUrlWithoutParams,
+      current: currentMapUrlWithoutParams,
+      newFull: props.map.url,
+      currentFull: currentMapUrl,
+      isVideo,
+      willUpdate: isVideo ? currentMapUrl !== props.map.url : currentMapUrlWithoutParams !== newMapUrlWithoutParams
+    });
+
+    // For videos, compare full URLs (including query params) to ensure cache busting
+    // For images, compare without params to avoid unnecessary reloads
+    if (isVideo) {
+      if (currentMapUrl === props.map.url) {
+        return;
+      }
     } else {
-      currentMapUrl = props.map.url;
+      if (currentMapUrlWithoutParams === newMapUrlWithoutParams) {
+        return;
+      }
     }
+
+    // Update the current URL immediately
+    currentMapUrl = props.map.url;
+    console.log('[MapLayer] Loading new map:', props.map.url);
 
     onMapLoading();
 
     // Dispose of previous data source
     if (dataSource) {
       dataSource.dispose();
+      dataSource = null;
+    }
+
+    // Dispose of previous material map
+    if (mapImageMaterial.map) {
+      mapImageMaterial.map.dispose();
+      mapImageMaterial.map = null;
+      mapImageMaterial.needsUpdate = true;
     }
 
     // Create new data source based on file type
@@ -65,10 +105,11 @@
         const size = dataSource?.getSize();
 
         if (texture && size) {
-          mapImageMaterial.map?.dispose();
           mapImageMaterial.map = texture;
           mapImageMaterial.needsUpdate = true;
           mapSize = size;
+          // Force material key update to trigger re-render
+          materialUpdateKey++;
           onMapLoaded(props.map.url, mapSize);
         }
       })
@@ -136,10 +177,12 @@
   scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
 >
   <!-- Map image -->
-  <T.Mesh name="mapImage" layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Map} visible={true}>
-    <T.MeshBasicMaterial is={mapImageMaterial} />
-    <T.PlaneGeometry />
-  </T.Mesh>
+  {#key materialUpdateKey}
+    <T.Mesh name="mapImage" layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Map} visible={true}>
+      <T.MeshBasicMaterial is={mapImageMaterial} />
+      <T.PlaneGeometry />
+    </T.Mesh>
+  {/key}
 
   <FogLayer
     props={props.fog}
