@@ -1,5 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 type HandlerFn<BodyType> = (event: Parameters<RequestHandler>[0] & { body: BodyType }) => Promise<unknown>;
 

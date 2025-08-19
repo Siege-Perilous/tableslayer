@@ -1,7 +1,7 @@
 import { apiFactory } from '$lib/factories';
 import { getParty } from '$lib/server';
 import Stripe from 'stripe';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY!);
 

@@ -37,7 +37,7 @@
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import {
     GridControls,
     EffectsControls,
@@ -77,7 +77,7 @@
     activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    errors: $ZodIssue[] | undefined;
+    errors: ZodIssue[] | undefined;
     stage: StageExports;
     partyData: ReturnType<typeof usePartyData> | null;
   } = $props();

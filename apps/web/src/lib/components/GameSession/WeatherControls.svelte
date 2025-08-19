@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import {
     FormControl,
     ColorPicker,
@@ -20,7 +20,7 @@
     errors
   }: {
     stageProps: StageProps;
-    errors: $ZodIssue[] | undefined;
+    errors: ZodIssue[] | undefined;
   } = $props();
 
   let fogHex = $state(to8CharHex(stageProps.fog.color, stageProps.fog.opacity));

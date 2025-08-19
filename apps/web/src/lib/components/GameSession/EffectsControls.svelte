@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import { FormControl, type StageProps, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
   import { queuePropertyUpdate } from '$lib/utils';
   import { ToneMappingMode } from 'postprocessing';
@@ -13,7 +13,7 @@
     party
   }: {
     stageProps: StageProps;
-    errors: $ZodIssue[] | undefined;
+    errors: ZodIssue[] | undefined;
     party: SelectParty & Thumb;
   } = $props();
 
