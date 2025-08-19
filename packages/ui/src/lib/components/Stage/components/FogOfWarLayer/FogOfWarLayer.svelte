@@ -41,7 +41,8 @@
   // Initialize lazy brush for smooth drawing
   const lazyBrush = new LazyBrushManager({
     radius: 30, // Fixed radius for consistent smoothing
-    enabled: true
+    enabled: true,
+    friction: 0.3 // Lower friction for more responsive fog clearing
   });
 
   // Add outline material

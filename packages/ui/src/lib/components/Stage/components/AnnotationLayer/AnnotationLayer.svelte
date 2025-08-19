@@ -38,8 +38,9 @@
 
   // Initialize lazy brush for smooth drawing
   const lazyBrush = new LazyBrushManager({
-    radius: 50, // Fixed radius for consistent smoothing
-    enabled: true
+    radius: 50,
+    enabled: true,
+    friction: 0.1
   });
 
   // Reference to the child layers

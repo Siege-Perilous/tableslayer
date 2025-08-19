@@ -4,12 +4,14 @@ import * as THREE from 'three';
 export interface LazyBrushConfig {
   radius?: number;
   enabled?: boolean;
+  friction?: number;
   initialPoint?: { x: number; y: number };
 }
 
 export class LazyBrushManager {
   private lazyBrush: LazyBrush;
   private isEnabled: boolean;
+  private friction: number;
   private hasStarted: boolean = false;
   private currentStrokePoints: THREE.Vector2[] = [];
 
@@ -20,6 +22,7 @@ export class LazyBrushManager {
       initialPoint: config.initialPoint ?? { x: 0, y: 0 }
     });
     this.isEnabled = config.enabled ?? true;
+    this.friction = config.friction ?? 0.5; // Default friction for moderate smoothing
   }
 
   /**
@@ -32,6 +35,9 @@ export class LazyBrushManager {
     if (config.enabled !== undefined) {
       this.isEnabled = config.enabled;
       // LazyBrush doesn't have an enable property, we'll handle it internally
+    }
+    if (config.friction !== undefined) {
+      this.friction = config.friction;
     }
   }
 
@@ -67,7 +73,7 @@ export class LazyBrushManager {
     }
 
     // Update the lazy brush with the new pointer position
-    this.lazyBrush.update({ x: point.x, y: point.y }, { friction: 0.1 });
+    this.lazyBrush.update({ x: point.x, y: point.y }, { friction: this.friction });
 
     // Get the brush position (this is the smoothed position)
     const brushPoint = this.lazyBrush.getBrushCoordinates();
