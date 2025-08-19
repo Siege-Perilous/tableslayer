@@ -67,7 +67,7 @@ export class LazyBrushManager {
     }
 
     // Update the lazy brush with the new pointer position
-    this.lazyBrush.update({ x: point.x, y: point.y });
+    this.lazyBrush.update({ x: point.x, y: point.y }, { friction: 0.1 });
 
     // Get the brush position (this is the smoothed position)
     const brushPoint = this.lazyBrush.getBrushCoordinates();
