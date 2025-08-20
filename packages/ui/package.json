@@ -69,6 +69,7 @@
     "@tiptap/starter-kit": "^3.2.0",
     "chroma-js": "^3.1.2",
     "class-variance-authority": "^0.7.1",
+    "lazy-brush": "^2.0.2",
     "postprocessing": "6.37.7",
     "shiki": "^3.9.2",
     "three": "0.179.1",

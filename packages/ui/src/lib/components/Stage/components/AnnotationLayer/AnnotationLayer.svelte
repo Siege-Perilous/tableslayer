@@ -7,6 +7,7 @@
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import { SceneLayer } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
+  import { LazyBrushManager } from '../../helpers/lazyBrush';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: AnnotationsLayerProps;
@@ -35,6 +36,13 @@
   // Track if cursors are hidden to avoid redundant resets
   let cursorsHidden = false;
 
+  // Initialize lazy brush for smooth drawing
+  const lazyBrush = new LazyBrushManager({
+    radius: 50,
+    enabled: true,
+    friction: 0.1
+  });
+
   // Reference to the child layers
   let layers: AnnotationMaterial[] = $state([]);
 
@@ -51,6 +59,7 @@
     if (!isActive) {
       lastPos = null;
       drawing = false;
+      lazyBrush.reset();
       // Reset cursor for all layers to ensure no ghosting
       if (!cursorsHidden) {
         layers.forEach((layer) => {
@@ -91,6 +100,15 @@
     e.preventDefault();
     lastPos = p;
     drawing = true;
+
+    // Start a new stroke with lazy brush
+    if (p) {
+      // Need to adjust for display offset before starting stroke
+      const adjustedP = p.clone();
+      adjustedP.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+      lazyBrush.startStroke(adjustedP);
+    }
+
     draw(e, p);
   }
 
@@ -102,12 +120,14 @@
 
     // Reset the drawing state
     drawing = false;
+    lazyBrush.endStroke();
     // Don't reset lastPos here to prevent cursor jumping
   }
 
   function onMouseLeave() {
     lastPos = null;
     drawing = false;
+    lazyBrush.reset();
 
     // Revert changes and hide cursor
     if (activeLayer && !cursorsHidden) {
@@ -149,16 +169,38 @@
 
     p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
 
-    // If this is the first time the mouse has moved, set the last position to the current position
-    if (!lastPos) {
+    // Use lazy brush for smooth drawing when drawing is active
+    if (drawing && lazyBrush.enabled) {
+      // Update lazy brush and get smoothed points
+      const segments = lazyBrush.updateStroke(p);
+
+      // Draw each segment (segments come as pairs: [lastPoint, newPoint])
+      for (let i = 0; i < segments.length; i += 2) {
+        if (segments[i] && segments[i + 1]) {
+          // Draw from last point to new point
+          activeLayer.drawPath(segments[i + 1], segments[i], true);
+        }
+      }
+
+      // Update cursor to show brush position
+      const brushPos = lazyBrush.getBrushPosition();
+      if (brushPos) {
+        activeLayer.drawPath(brushPos, brushPos, false);
+      } else {
+        // Show cursor at actual position if no brush position
+        activeLayer.drawPath(p, p, false);
+      }
+    } else if (drawing && !lazyBrush.enabled) {
+      // Drawing but lazy brush is disabled
+      if (!lastPos) {
+        lastPos = p.clone();
+      }
+      activeLayer.drawPath(p, lastPos, true);
       lastPos = p.clone();
-      // On first entry, set both start and end to the same position to avoid zipping
-      activeLayer.drawPath(p, p, drawing);
     } else {
-      // Normal drawing
-      activeLayer.drawPath(p, lastPos, drawing);
+      // Just hovering, show cursor
+      activeLayer.drawPath(p, p, false);
     }
-    lastPos = p.clone();
   }
 
   function isVisible(layer: AnnotationLayerData) {
