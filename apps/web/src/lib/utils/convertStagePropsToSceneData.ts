@@ -72,6 +72,24 @@ export const convertPropsToSceneDetails = (
     url: 'edgeUrl'
   });
 
+  // Ensure edgeOpacity and edgeScale are proper numbers
+  if (details.edgeOpacity !== undefined) {
+    const opacity = typeof details.edgeOpacity === 'object' ? 0.3 : Number(details.edgeOpacity);
+    details.edgeOpacity = isNaN(opacity) ? 0.3 : opacity;
+  }
+
+  if (details.edgeScale !== undefined) {
+    const scale = typeof details.edgeScale === 'object' ? 2.0 : Number(details.edgeScale);
+    details.edgeScale = isNaN(scale) ? 2.0 : scale;
+  }
+
+  devLog('[convertPropsToSceneDetails] Edge properties after conversion:', {
+    edgeOpacity: details.edgeOpacity,
+    edgeScale: details.edgeScale,
+    edgeOpacityType: typeof details.edgeOpacity,
+    edgeScaleType: typeof details.edgeScale
+  });
+
   setNestedIfExists(stageProps, details, 'fog', {
     enabled: 'fogEnabled',
     color: 'fogColor',

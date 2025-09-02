@@ -83,7 +83,12 @@
             max={1}
             step={0.01}
             value={stageProps.edgeOverlay.opacity}
-            oninput={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'opacity'], value, 'control')}
+            oninput={(e) => {
+              const value = parseFloat(e.currentTarget.value);
+              if (!isNaN(value)) {
+                queuePropertyUpdate(stageProps, ['edgeOverlay', 'opacity'], value, 'control');
+              }
+            }}
           />
         {/snippet}
       </FormControl>
@@ -96,7 +101,12 @@
             max={50}
             step={1}
             value={stageProps.edgeOverlay.scale}
-            oninput={(value) => queuePropertyUpdate(stageProps, ['edgeOverlay', 'scale'], value, 'control')}
+            oninput={(e) => {
+              const value = parseInt(e.currentTarget.value);
+              if (!isNaN(value)) {
+                queuePropertyUpdate(stageProps, ['edgeOverlay', 'scale'], value, 'control');
+              }
+            }}
           />
         {/snippet}
       </FormControl>
