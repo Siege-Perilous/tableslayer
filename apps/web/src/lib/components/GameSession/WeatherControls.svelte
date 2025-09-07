@@ -65,7 +65,7 @@
         max={120}
         step={1}
         value={stageProps.weather.fov}
-        oninput={(e) => queuePropertyUpdate(stageProps, ['weather', 'fov'], Number(e.target.value), 'control')}
+        oninput={(e) => queuePropertyUpdate(stageProps, ['weather', 'fov'], Number(e.currentTarget.value), 'control')}
       />
     {/snippet}
   </FormControl>
@@ -81,7 +81,8 @@
         max={1}
         step={0.05}
         value={stageProps.weather.opacity}
-        oninput={(e) => queuePropertyUpdate(stageProps, ['weather', 'opacity'], Number(e.target.value), 'control')}
+        oninput={(e) =>
+          queuePropertyUpdate(stageProps, ['weather', 'opacity'], Number(e.currentTarget.value), 'control')}
       />
     {/snippet}
   </FormControl>
@@ -94,7 +95,8 @@
         max={1}
         step={0.05}
         value={stageProps.weather.intensity}
-        oninput={(e) => queuePropertyUpdate(stageProps, ['weather', 'intensity'], Number(e.target.value), 'control')}
+        oninput={(e) =>
+          queuePropertyUpdate(stageProps, ['weather', 'intensity'], Number(e.currentTarget.value), 'control')}
       />
     {/snippet}
   </FormControl>
