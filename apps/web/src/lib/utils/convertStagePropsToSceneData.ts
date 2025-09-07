@@ -121,6 +121,19 @@ export const convertPropsToSceneDetails = (
     opacity: 'weatherOpacity'
   });
 
+  // Ensure weather values are proper numbers
+  if (details.weatherFov !== undefined) {
+    details.weatherFov = Number(details.weatherFov);
+  }
+
+  if (details.weatherIntensity !== undefined) {
+    details.weatherIntensity = Number(details.weatherIntensity);
+  }
+
+  if (details.weatherOpacity !== undefined) {
+    details.weatherOpacity = Number(details.weatherOpacity);
+  }
+
   setNestedIfExists(stageProps, details, 'map', {
     rotation: 'mapRotation',
     'offset.x': 'mapOffsetX',
