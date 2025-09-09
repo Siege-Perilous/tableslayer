@@ -45,7 +45,7 @@
 
 <div class="promo">
   <Panel class="promo__panel {data.parties && data.parties.length > 0 && 'promo__panel--selection'}">
-    <img src="https://files.tableslayer.com/illustrations/promo/promo.png" alt="Promos" />
+    <img src="https://files.tableslayer.com/illustrations/promo/promo.png" alt="Promos" width="562" height="396" />
     <div class="promo__content">
       {#if data.error}
         <Title as="h1" size="sm">Promo claimed</Title>
@@ -63,7 +63,7 @@
         <Title as="h1" size="sm">Redeem promo code</Title>
         <Spacer />
         <Text>
-          This promotional code will upgrade {data.parties.length > 1 ? 'one of your parties' : 'your party'} to a lifetime
+          This promotional code will upgrade {data.parties.length > 1 ? 'the selected party' : 'your party'} to a lifetime
           plan. Thanks for being a friend of Table Slayer!
         </Text>
         <Spacer />
@@ -88,9 +88,8 @@
             {/each}
           </div>
 
+          <Spacer />
           {#if selectedPartyId}
-            <Spacer />
-
             <Button
               variant="special"
               size="lg"
@@ -100,6 +99,8 @@
             >
               Upgrade party to lifetime plan
             </Button>
+          {:else}
+            <Text weight={600} color="var(--fgDanger)">Please select a party to upgrade.</Text>
           {/if}
         </form>
 
@@ -138,6 +139,11 @@
     }
     .promo__panel--selection {
       align-items: start;
+    }
+    .promo__panel img {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-2);
     }
   }
 
@@ -182,7 +188,8 @@
   }
 
   .promo__party--selected {
-    border-color: var(--fgPrimary);
+    background-color: var(--contrastLow);
+    border-color: var(--fg);
   }
 
   .promo__party--selected:hover {
