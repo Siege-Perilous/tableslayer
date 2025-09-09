@@ -146,7 +146,7 @@
   .promo__party {
     display: flex;
     align-items: center;
-    padding: 0 0.5rem;
+    padding: 0 0.25rem;
     border: var(--borderThick);
     border-color: transparent;
     border-radius: 0.25rem;
@@ -156,6 +156,12 @@
   .promo__party:hover {
     border-color: var(--fgPrimary);
     background-color: var(--contrastLow);
+  }
+
+  .promo__parties:has(.promo__radio:focus-visible) {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
   }
   .promo__parties--single {
     .promo__party {
@@ -177,6 +183,11 @@
 
   .promo__radio {
     margin-right: 1rem;
+    cursor: pointer;
+  }
+
+  .promo__radio:focus-visible {
+    outline: none; /* We'll show focus on the parent label instead */
   }
 
   .promo__partyInfo {
