@@ -54,25 +54,6 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
   // Filter out parties that are already on lifetime plan
   const eligibleParties = parties.filter((party) => party.plan !== 'lifetime');
 
-  // If user has exactly one eligible party, auto-redeem
-  if (eligibleParties.length === 1) {
-    try {
-      await redeemPromo(validation.promo.id, locals.user.id, eligibleParties[0].id);
-      return {
-        success: true,
-        message: `${eligibleParties[0].name} has been upgraded to a lifetime plan!`,
-        promo: validation.promo,
-        parties: []
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Failed to redeem promo',
-        promo: validation.promo,
-        parties: []
-      };
-    }
-  }
-
   return {
     promo: validation.promo,
     parties: eligibleParties,
