@@ -1,6 +1,5 @@
 import { getPartiesForUser } from '$lib/server';
 import { hasPromoBeenUsed, hasUserRedeemedPromo, validatePromo } from '$lib/server/promo';
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {
@@ -26,7 +25,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
     };
   }
 
-  // If user is not logged in, store promo in cookie and redirect to signup
+  // If user is not logged in, store promo in cookie and show login/signup options
   if (!locals.user) {
     cookies.set('promo', key, {
       path: '/',
@@ -35,7 +34,22 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 // 24 hours
     });
-    throw redirect(302, '/signup');
+
+    // Store redirect URL for after login
+    cookies.set('redirect_after_login', `/promo/${key}`, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 // 1 hour
+    });
+
+    return {
+      promo: validation.promo,
+      parties: [],
+      requiresAuth: true,
+      params
+    };
   }
 
   // Check if user has already redeemed this promo (redundant but kept for clarity)

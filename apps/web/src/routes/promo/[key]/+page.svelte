@@ -9,6 +9,7 @@
   let selectedPartyId = $state('');
   let isSubmitting = $state(false);
   let redeemError = $state<FormMutationError | undefined>(undefined);
+  let redeemSuccess = $state(false);
 
   const redeemPromo = useRedeemPromoMutation();
 
@@ -33,6 +34,10 @@
         }),
       formLoadingState: (loading) => (isSubmitting = loading),
       onError: (error) => (redeemError = error),
+      onSuccess: () => {
+        // Set success state instead of letting invalidateAll run
+        redeemSuccess = true;
+      },
       toastMessages: {
         success: { title: 'Party upgraded to lifetime plan!' },
         error: { title: 'Error redeeming promo', body: (error) => error.message }
@@ -44,7 +49,7 @@
 <Head title="Redeem Promo" description="Redeem your promotional code for a lifetime party upgrade" />
 
 <div class="promo">
-  <Panel class="promo__panel {data.parties && data.parties.length > 0 && 'promo__panel--selection'}">
+  <Panel class="promo__panel {data.parties && data.parties.length > 0 ? 'promo__panel--selection' : ''}">
     <img src="https://files.tableslayer.com/illustrations/promo/promo.png" alt="Promos" width="562" height="396" />
     <div class="promo__content">
       {#if data.error}
@@ -55,6 +60,37 @@
             contact us
           </Link>.
         </Text>
+      {:else if redeemSuccess}
+        <Title as="h1" size="sm">Success!</Title>
+        <Spacer />
+        <Text>Your party has been successfully upgraded to a lifetime plan!</Text>
+        <Spacer size="2rem" />
+        <Button href="/" variant="special" size="lg">Go to dashboard</Button>
+      {:else if data.requiresAuth}
+        <Title as="h1" size="sm">You need an account to use this promo</Title>
+        <Spacer />
+        <Text>
+          This promotional code will upgrade one of your parties to a lifetime plan. To redeem this offer, please log in
+          or create a new account.
+        </Text>
+        <Spacer size="2rem" />
+        <Button href="/login/google" data-sveltekit-preload-data="tap">
+          {#snippet start()}
+            <img src="/google.svg" alt="Google logo" width="16" height="16" />
+          {/snippet}
+          Continue with Google
+        </Button>
+        <Spacer />
+        <div class="login__divider">
+          <span>or</span>
+        </div>
+        <Spacer />
+        <div class="promo__buttons">
+          <Button href="/signup">Sign up</Button>
+          <Text size="0.875rem" color="var(--fgMuted)">or</Text>
+          <Button href="/login">Log in</Button>
+          <Text size="0.875rem" color="var(--fgMuted)">with email</Text>
+        </div>
       {:else if data.allPartiesLifetime}
         <Title as="h1" size="sm">All set!</Title>
         <Spacer />
@@ -213,6 +249,12 @@
     padding: 1rem;
   }
 
+  .promo__buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
   .promo__parties {
     max-height: 200px;
     overflow-y: auto;
@@ -233,5 +275,27 @@
     :global(.promo__panel) {
       grid-template-columns: 1fr;
     }
+  }
+  .login__divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .login__divider::before,
+  .login__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--contrastMedium);
+  }
+
+  .login__divider span {
+    padding: 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 </style>

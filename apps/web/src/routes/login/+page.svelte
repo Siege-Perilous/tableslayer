@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useAuthLoginMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown, Head } from '$lib/components';
   import { page } from '$app/state';
@@ -35,8 +35,10 @@
       onError: (error) => {
         loginErrors = error;
       },
-      onSuccess: () => {
-        goto('/login');
+      onSuccess: async () => {
+        // Reload the current page to let the server handle the redirect
+        // Using invalidateAll to force the load function to re-run
+        await invalidateAll();
       },
       toastMessages: {
         success: { title: 'Welcome back!' },
