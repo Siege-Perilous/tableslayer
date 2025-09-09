@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useAuthLoginMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
-  import { goto, invalidateAll } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
   import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
   import { IllustrationTown, Head } from '$lib/components';
   import { page } from '$app/state';
