@@ -58,6 +58,16 @@ IMPORTANT: you SHOULD NOT refactor out a separate function unless there is a com
 1. Use BEM standard naming.
 2. Follow existing styles, using CSS variables
 
+## UI Text Guidelines
+
+- **UI-1 (MUST)** Use sentence case for all UI text including:
+  - Page titles and headings (e.g., "Verify your email" not "Verify Your Email")
+  - Button labels (e.g., "Create party" not "Create Party")
+  - Form labels (e.g., "Party name" not "Party Name")
+  - Navigation items (e.g., "Sign up" not "Sign Up")
+  - Error messages (e.g., "Email already in use" not "Email Already In Use")
+- **UI-2** Exception: Proper nouns and product names should retain their capitalization (e.g., "Table Slayer", "Google")
+
 ## Component Guidelines
 
 - **COMP-1** Use `.svelte` files for components

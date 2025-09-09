@@ -17,8 +17,9 @@
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
 
-  type PartyMember = SelectUser & {
+  type PartyMember = Omit<SelectUser, 'role'> & {
     role: PartyRole;
+    userRole?: SelectUser['role'];
     partyId: string;
     thumb: { url: string; resizedUrl: string };
   };

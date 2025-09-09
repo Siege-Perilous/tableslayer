@@ -32,8 +32,14 @@
       onError: (error) => {
         verifyEmailError = error;
       },
-      onSuccess: () => {
-        goto('/login');
+      onSuccess: (result) => {
+        // If a promo party was created, go directly to it
+        const response = result as { success: boolean; partySlug?: string };
+        if (response?.partySlug) {
+          goto(`/${response.partySlug}`);
+        } else {
+          goto('/login');
+        }
       },
       toastMessages: {
         success: { title: 'Email verified' },

@@ -9,6 +9,8 @@ import { protectedSlugs } from '../../constants';
 // USERS
 // USERS
 
+export const VALID_USER_ROLES = ['user', 'admin'] as const;
+
 export const usersTable = sqliteTable('users', {
   id: text('id')
     .primaryKey()
@@ -23,8 +25,11 @@ export const usersTable = sqliteTable('users', {
     .references(() => filesTable.id, { onDelete: 'cascade' })
     .notNull()
     .default(1),
-  favoriteParty: text('favorite_party').references(() => partyTable.id, { onDelete: 'set null' })
+  favoriteParty: text('favorite_party').references(() => partyTable.id, { onDelete: 'set null' }),
+  role: text('role', { enum: VALID_USER_ROLES }).notNull().default('user')
 });
+
+export type UserRole = (typeof VALID_USER_ROLES)[number];
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
@@ -482,3 +487,70 @@ export type SelectAnnotation = typeof annotationsTable.$inferSelect;
 export const insertAnnotationSchema = createInsertSchema(annotationsTable);
 export const selectAnnotationSchema = createSelectSchema(annotationsTable);
 export const updateAnnotationSchema = createUpdateSchema(annotationsTable);
+
+// PROMOS
+// PROMOS
+// PROMOS
+
+export const promosTable = sqliteTable(
+  'promos',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    key: text('key').unique().notNull(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true)
+  },
+  (table) => [index('idx_promos_key').on(table.key), index('idx_promos_created_by').on(table.createdBy)]
+);
+
+export type InsertPromo = typeof promosTable.$inferInsert;
+export type SelectPromo = typeof promosTable.$inferSelect;
+export const insertPromoSchema = createInsertSchema(promosTable);
+export const selectPromoSchema = createSelectSchema(promosTable);
+export const updatePromoSchema = createUpdateSchema(promosTable);
+
+// PROMO REDEMPTIONS
+// PROMO REDEMPTIONS
+// PROMO REDEMPTIONS
+
+export const promoRedemptionsTable = sqliteTable(
+  'promo_redemptions',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    promoId: text('promo_id')
+      .notNull()
+      .references(() => promosTable.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    partyId: text('party_id')
+      .notNull()
+      .references(() => partyTable.id, { onDelete: 'cascade' }),
+    redeemedAt: integer('redeemed_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+  },
+  (table) => [
+    uniqueIndex('unique_promo_user').on(table.promoId, table.userId),
+    index('idx_promo_redemptions_promo_id').on(table.promoId),
+    index('idx_promo_redemptions_user_id').on(table.userId),
+    index('idx_promo_redemptions_party_id').on(table.partyId)
+  ]
+);
+
+export type InsertPromoRedemption = typeof promoRedemptionsTable.$inferInsert;
+export type SelectPromoRedemption = typeof promoRedemptionsTable.$inferSelect;
+export const insertPromoRedemptionSchema = createInsertSchema(promoRedemptionsTable);
+export const selectPromoRedemptionSchema = createSelectSchema(promoRedemptionsTable);
+export const updatePromoRedemptionSchema = createUpdateSchema(promoRedemptionsTable);
