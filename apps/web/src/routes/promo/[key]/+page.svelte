@@ -12,10 +12,13 @@
 
   const redeemPromo = useRedeemPromoMutation();
 
-  // Pre-select the party if there's only one
+  // Pre-select the party if there's only one, otherwise clear selection
   $effect(() => {
     if (data.parties && data.parties.length === 1) {
       selectedPartyId = data.parties[0].id;
+    } else if (data.parties && data.parties.length > 1) {
+      // Explicitly clear selection for multiple parties to prevent browser persistence
+      selectedPartyId = '';
     }
   });
 
@@ -41,7 +44,7 @@
 <Head title="Redeem Promo" description="Redeem your promotional code for a lifetime party upgrade" />
 
 <div class="promo">
-  <Panel class="promo__panel">
+  <Panel class="promo__panel {data.parties && data.parties.length > 0 && 'promo__panel--selection'}">
     <img src="https://files.tableslayer.com/illustrations/promo/promo.png" alt="Promos" />
     <div class="promo__content">
       {#if data.error}
@@ -65,7 +68,7 @@
         </Text>
         <Spacer />
 
-        <form onsubmit={handleRedeemPromo}>
+        <form onsubmit={handleRedeemPromo} autocomplete="off">
           <div class="promo__parties {data.parties.length === 1 ? 'promo__parties--single' : ''}">
             {#each data.parties as party}
               <label class="promo__party {selectedPartyId == party.id ? 'promo__party--selected' : ''}">
@@ -126,11 +129,16 @@
     margin: auto;
   }
 
-  :global(.promo__panel) {
-    display: grid;
-    grid-template-columns: 562px 1fr;
-    align-items: center;
-    gap: 1rem;
+  :global {
+    .promo__panel {
+      display: grid;
+      grid-template-columns: 562px 1fr;
+      align-items: center;
+      gap: 1rem;
+    }
+    .promo__panel--selection {
+      align-items: start;
+    }
   }
 
   .promo__message {
@@ -155,7 +163,7 @@
 
   .promo__party:hover {
     border-color: var(--fgPrimary);
-    background-color: var(--contrastLow);
+    background-color: var(--btn-bgHover);
   }
 
   .promo__parties:has(.promo__radio:focus-visible) {
@@ -203,7 +211,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
     padding-right: 1rem;
     position: relative;
   }
