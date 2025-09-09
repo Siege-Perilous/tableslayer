@@ -88,6 +88,12 @@ export const redeemPromo = async (promoId: string, userId: string, partyId: stri
       throw new Error('You have already redeemed this promo code');
     }
 
+    // Get party details to check for Stripe subscription
+    const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+    if (!party) {
+      throw new Error('Party not found');
+    }
+
     // Start a transaction to update party and record redemption
     await db.transaction(async (tx) => {
       // Update party to lifetime plan
@@ -104,6 +110,32 @@ export const redeemPromo = async (promoId: string, userId: string, partyId: stri
         })
         .execute();
     });
+
+    // Cancel Stripe subscription if it exists (do this after the transaction succeeds)
+    if (party.stripeCustomerId && (party.plan === 'monthly' || party.plan === 'yearly')) {
+      try {
+        const Stripe = await import('stripe');
+        const stripe = new Stripe.default(process.env.STRIPE_API_KEY!);
+
+        // List all active subscriptions for this customer
+        const subscriptions = await stripe.subscriptions.list({
+          customer: party.stripeCustomerId,
+          status: 'active'
+        });
+
+        // Cancel each active subscription immediately
+        for (const subscription of subscriptions.data) {
+          await stripe.subscriptions.cancel(subscription.id, {
+            prorate: true // Give credit for unused time
+          });
+          console.log(`Cancelled Stripe subscription ${subscription.id} for party ${partyId} due to promo upgrade`);
+        }
+      } catch (stripeError) {
+        // Log the error but don't fail the promo redemption
+        console.error('Error cancelling Stripe subscription during promo redemption:', stripeError);
+        // You might want to notify admins about this issue
+      }
+    }
 
     return true;
   } catch (error) {
