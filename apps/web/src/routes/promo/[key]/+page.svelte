@@ -67,7 +67,7 @@
         <Spacer size="2rem" />
         <Button href="/" variant="special" size="lg">Go to dashboard</Button>
       {:else if data.requiresAuth}
-        <Title as="h1" size="sm">You need an account to use this promo</Title>
+        <Title as="h1" size="sm">Create an account to use this promo</Title>
         <Spacer />
         <Text>
           This promotional code will upgrade one of your parties to a lifetime plan. To redeem this offer, please log in
