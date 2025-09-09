@@ -1,5 +1,6 @@
 import { apiFactory } from '$lib/factories';
-import { hasUserRedeemedPromo, redeemPromo, validatePromo } from '$lib/server/promo';
+import { getPartiesForUser } from '$lib/server';
+import { hasPromoBeenUsed, hasUserRedeemedPromo, redeemPromo, validatePromo } from '$lib/server/promo';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -19,7 +20,13 @@ export const POST = apiFactory(
       throw new Error(validation.error || 'Invalid promo code');
     }
 
-    // Check if already redeemed
+    // Check if promo has already been used by anyone
+    const promoUsed = await hasPromoBeenUsed(validation.promo.id);
+    if (promoUsed) {
+      throw new Error('This promo code has already been used');
+    }
+
+    // Check if already redeemed by this user
     const alreadyRedeemed = await hasUserRedeemedPromo(validation.promo.id, locals.user.id);
     if (alreadyRedeemed) {
       throw new Error('You have already redeemed this promo code');
@@ -28,7 +35,14 @@ export const POST = apiFactory(
     // Redeem the promo
     await redeemPromo(validation.promo.id, locals.user.id, body.partyId);
 
-    return { success: true, message: 'Party upgraded to lifetime plan!' };
+    // Get party name for success message
+    const parties = await getPartiesForUser(locals.user.id);
+    const party = parties.find((p) => p.id === body.partyId);
+
+    return {
+      success: true,
+      message: `${party?.name || 'Party'} has been upgraded to a lifetime plan!`
+    };
   },
   {
     validationSchema,

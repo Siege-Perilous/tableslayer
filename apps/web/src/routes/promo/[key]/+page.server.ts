@@ -1,7 +1,7 @@
 import { getPartiesForUser } from '$lib/server';
-import { hasPromoBeenUsed, hasUserRedeemedPromo, redeemPromo, validatePromo } from '$lib/server/promo';
+import { hasPromoBeenUsed, hasUserRedeemedPromo, validatePromo } from '$lib/server/promo';
 import { redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {
   const { key } = params;
@@ -57,43 +57,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
   return {
     promo: validation.promo,
     parties: eligibleParties,
-    allPartiesLifetime: eligibleParties.length === 0 && parties.length > 0
+    allPartiesLifetime: eligibleParties.length === 0 && parties.length > 0,
+    params
   };
 };
-
-export const actions = {
-  redeem: async ({ request, locals, params }) => {
-    if (!locals.user) {
-      return { error: 'You must be logged in to redeem a promo' };
-    }
-
-    const formData = await request.formData();
-    const partyId = formData.get('partyId') as string;
-
-    if (!partyId) {
-      return { error: 'Please select a party to upgrade' };
-    }
-
-    const validation = await validatePromo(params.key);
-    if (!validation.valid || !validation.promo) {
-      return { error: validation.error || 'Invalid promo code' };
-    }
-
-    try {
-      await redeemPromo(validation.promo.id, locals.user.id, partyId);
-
-      // Get party name for success message
-      const parties = await getPartiesForUser(locals.user.id);
-      const party = parties.find((p) => p.id === partyId);
-
-      return {
-        success: true,
-        message: `${party?.name || 'Party'} has been upgraded to a lifetime plan!`
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Failed to redeem promo'
-      };
-    }
-  }
-} satisfies Actions;
