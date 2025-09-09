@@ -97,7 +97,7 @@
               disabled={!selectedPartyId || isSubmitting}
               isLoading={isSubmitting}
             >
-              Upgrade party to lifetime plan
+              Upgrade to a lifetime plan
             </Button>
           {:else}
             <Text weight={600} color="var(--fgDanger)">Please select a party to upgrade.</Text>
