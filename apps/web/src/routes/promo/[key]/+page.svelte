@@ -3,13 +3,13 @@
   import { Head } from '$lib/components';
   import { useRedeemPromoMutation } from '$lib/queries/admin';
   import { handleMutation, type FormMutationError } from '$lib/factories';
+  import { goto } from '$app/navigation';
 
   let { data } = $props();
 
   let selectedPartyId = $state('');
   let isSubmitting = $state(false);
   let redeemError = $state<FormMutationError | undefined>(undefined);
-  let redeemSuccess = $state(false);
 
   const redeemPromo = useRedeemPromoMutation();
 
@@ -26,7 +26,7 @@
   const handleRedeemPromo = async (e: Event) => {
     e.preventDefault();
 
-    await handleMutation({
+    const result = await handleMutation({
       mutation: () =>
         $redeemPromo.mutateAsync({
           key: data.params?.key || '',
@@ -35,14 +35,18 @@
       formLoadingState: (loading) => (isSubmitting = loading),
       onError: (error) => (redeemError = error),
       onSuccess: () => {
-        // Set success state instead of letting invalidateAll run
-        redeemSuccess = true;
+        // Don't call invalidateAll - we'll navigate instead
       },
       toastMessages: {
         success: { title: 'Party upgraded to lifetime plan!' },
         error: { title: 'Error redeeming promo', body: (error) => error.message }
       }
     });
+
+    if (result && 'partySlug' in result && result.partySlug) {
+      // Redirect to the upgraded party
+      goto(`/${result.partySlug}`);
+    }
   };
 </script>
 
@@ -60,12 +64,6 @@
             contact us
           </Link>.
         </Text>
-      {:else if redeemSuccess}
-        <Title as="h1" size="sm">Success!</Title>
-        <Spacer />
-        <Text>Your party has been successfully upgraded to a lifetime plan!</Text>
-        <Spacer size="2rem" />
-        <Button href="/" variant="special" size="lg">Go to dashboard</Button>
       {:else if data.requiresAuth}
         <Title as="h1" size="sm">Create an account to use this promo</Title>
         <Spacer />

@@ -41,7 +41,8 @@ export const POST = apiFactory(
 
     return {
       success: true,
-      message: `${party?.name || 'Party'} has been upgraded to a lifetime plan!`
+      message: `${party?.name || 'Party'} has been upgraded to a lifetime plan!`,
+      partySlug: party?.slug
     };
   },
   {
