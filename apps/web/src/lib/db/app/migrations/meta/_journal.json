@@ -218,6 +218,13 @@
       "when": 1757356477988,
       "tag": "0030_add-promos",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1757506503383,
+      "tag": "0031_max-promos",
+      "breakpoints": true
     }
   ]
 }

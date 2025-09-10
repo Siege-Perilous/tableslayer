@@ -1,5 +1,5 @@
 import { getPartiesForUser } from '$lib/server';
-import { hasPromoBeenUsed, hasUserRedeemedPromo, validatePromo } from '$lib/server/promo';
+import { getPromoUsageCount, hasUserRedeemedPromo, validatePromo } from '$lib/server/promo';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {
@@ -15,11 +15,11 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
     };
   }
 
-  // Check if promo has already been used by anyone
-  const promoUsed = await hasPromoBeenUsed(validation.promo.id);
-  if (promoUsed) {
+  // Check if promo has reached its maximum uses
+  const usageCount = await getPromoUsageCount(validation.promo.id);
+  if (usageCount >= validation.promo.maxUses) {
     return {
-      error: 'This promo code has already been used',
+      error: 'This promo code has reached its maximum uses',
       promo: validation.promo,
       parties: []
     };

@@ -66,26 +66,32 @@ export const hasUserRedeemedPromo = async (promoId: string, userId: string): Pro
   }
 };
 
-export const hasPromoBeenUsed = async (promoId: string): Promise<boolean> => {
+export const getPromoUsageCount = async (promoId: string): Promise<number> => {
   try {
-    const redemption = await db
-      .select()
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
       .from(promoRedemptionsTable)
       .where(eq(promoRedemptionsTable.promoId, promoId))
       .get();
 
-    return !!redemption;
+    return result?.count ?? 0;
   } catch (error) {
-    console.error('Error checking if promo has been used:', error);
-    return true; // Fail safe - treat as already used
+    console.error('Error getting promo usage count:', error);
+    return 0;
   }
+};
+
+export const isPromoFullyRedeemed = async (promoId: string, maxUses: number): Promise<boolean> => {
+  const usageCount = await getPromoUsageCount(promoId);
+  return usageCount >= maxUses;
 };
 
 export const redeemPromo = async (promoId: string, userId: string, partyId: string): Promise<boolean> => {
   try {
-    // Check if already redeemed
-    if (await hasUserRedeemedPromo(promoId, userId)) {
-      throw new Error('You have already redeemed this promo code');
+    // Get promo details first to check maxUses
+    const promo = await db.select().from(promosTable).where(eq(promosTable.id, promoId)).get();
+    if (!promo) {
+      throw new Error('Promo not found');
     }
 
     // Get party details to check for Stripe subscription
@@ -94,8 +100,33 @@ export const redeemPromo = async (promoId: string, userId: string, partyId: stri
       throw new Error('Party not found');
     }
 
-    // Start a transaction to update party and record redemption
+    // Start a transaction to atomically validate and update
     await db.transaction(async (tx) => {
+      // Check if user already redeemed this promo (within transaction)
+      const userRedemption = await tx
+        .select()
+        .from(promoRedemptionsTable)
+        .where(and(eq(promoRedemptionsTable.promoId, promoId), eq(promoRedemptionsTable.userId, userId)))
+        .get();
+
+      if (userRedemption) {
+        throw new Error('You have already redeemed this promo code');
+      }
+
+      // Count current redemptions (within transaction)
+      const result = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(promoRedemptionsTable)
+        .where(eq(promoRedemptionsTable.promoId, promoId))
+        .get();
+
+      const currentUsageCount = result?.count ?? 0;
+
+      // Check against maxUses (within transaction)
+      if (currentUsageCount >= promo.maxUses) {
+        throw new Error('This promo code has reached its maximum uses');
+      }
+
       // Update party to lifetime plan
       await tx.update(partyTable).set({ plan: 'lifetime' }).where(eq(partyTable.id, partyId)).execute();
 
@@ -156,14 +187,20 @@ export const getPromoByKey = async (key: string): Promise<SelectPromo | undefine
   }
 };
 
-export const createPromo = async (key: string, createdBy: string): Promise<SelectPromo> => {
+export const createPromo = async (key: string, createdBy: string, maxUses: number = 1): Promise<SelectPromo> => {
   try {
+    // Validate maxUses
+    if (maxUses < 1) {
+      throw new Error('Maximum uses must be at least 1');
+    }
+
     const promo = await db
       .insert(promosTable)
       .values({
         id: uuidv4(),
         key,
-        createdBy
+        createdBy,
+        maxUses
       })
       .returning()
       .get();

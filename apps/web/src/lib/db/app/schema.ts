@@ -500,6 +500,7 @@ export const promosTable = sqliteTable(
       .notNull()
       .$default(() => uuidv4()),
     key: text('key').unique().notNull(),
+    maxUses: integer('max_uses').notNull().default(1),
     createdBy: text('created_by')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -508,7 +509,11 @@ export const promosTable = sqliteTable(
       .$defaultFn(() => new Date()),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true)
   },
-  (table) => [index('idx_promos_key').on(table.key), index('idx_promos_created_by').on(table.createdBy)]
+  (table) => [
+    index('idx_promos_key').on(table.key),
+    index('idx_promos_created_by').on(table.createdBy),
+    check('valid_max_uses', sql`${table.maxUses} >= 1`)
+  ]
 );
 
 export type InsertPromo = typeof promosTable.$inferInsert;

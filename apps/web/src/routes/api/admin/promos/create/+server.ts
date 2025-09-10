@@ -8,7 +8,8 @@ const validationSchema = z.object({
     .string()
     .min(1, 'Promo key is required')
     .max(50, 'Promo key must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9-]+$/, 'Promo key can only contain letters, numbers, and hyphens')
+    .regex(/^[a-zA-Z0-9-]+$/, 'Promo key can only contain letters, numbers, and hyphens'),
+  maxUses: z.number().min(1, 'Maximum uses must be at least 1').default(1)
 });
 
 export const POST = apiFactory(
@@ -22,7 +23,7 @@ export const POST = apiFactory(
       throw new Error('Unauthorized');
     }
 
-    const promo = await createPromo(body.key, locals.user.id);
+    const promo = await createPromo(body.key, locals.user.id, body.maxUses);
 
     return { success: true, promo };
   },

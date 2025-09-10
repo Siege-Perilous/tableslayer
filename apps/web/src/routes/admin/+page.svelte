@@ -8,6 +8,7 @@
   let { data } = $props();
 
   let newPromoKey = $state('');
+  let newPromoMaxUses = $state(1);
   let formIsLoading = $state(false);
   let createError = $state<FormMutationError | undefined>(undefined);
 
@@ -17,13 +18,14 @@
   const handleCreatePromo = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $createPromo.mutateAsync({ key: newPromoKey }),
+      mutation: () => $createPromo.mutateAsync({ key: newPromoKey, maxUses: newPromoMaxUses }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         createError = error;
       },
       onSuccess: async () => {
         newPromoKey = '';
+        newPromoMaxUses = 1;
         createError = undefined;
         await invalidateAll();
       },
@@ -61,7 +63,9 @@
   const getStatusBadge = (promo: (typeof data.promos)[0]) => {
     if (!promo.isActive) return { text: 'Deleted', class: 'admin__status--deleted' };
     if (promo.isExpired) return { text: 'Expired', class: 'admin__status--expired' };
-    if (promo.isUsed) return { text: 'Used', class: 'admin__status--used' };
+    const usageCount = promo.redemptions.length;
+    if (usageCount >= promo.maxUses) return { text: 'Fully used', class: 'admin__status--used' };
+    if (usageCount > 0) return { text: `${usageCount} / ${promo.maxUses} used`, class: 'admin__status--partial' };
     return { text: 'Active', class: 'admin__status--active' };
   };
 </script>
@@ -85,6 +89,11 @@
           />
         {/snippet}
       </FormControl>
+      <FormControl label="Maximum uses" name="maxUses">
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="number" bind:value={newPromoMaxUses} min="1" disabled={formIsLoading} />
+        {/snippet}
+      </FormControl>
       <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading || !newPromoKey}>Create Promo</Button>
     </form>
   </div>
@@ -104,6 +113,7 @@
             <tr>
               <Th>Key</Th>
               <Th>Status</Th>
+              <Th>Usage</Th>
               <Th>Created</Th>
               <Th>Expires</Th>
               <Th>Redeemed By</Th>
@@ -123,22 +133,39 @@
                 <Td>
                   <span class="admin__status {status.class}">{status.text}</span>
                 </Td>
+                <Td>
+                  <span class="admin__usage">{promo.redemptions.length} / {promo.maxUses}</span>
+                </Td>
                 <Td>{formatDate(promo.createdAt)}</Td>
                 <Td>{formatDate(promo.expiryDate)}</Td>
                 <Td>
                   {#if promo.redemptions.length > 0}
-                    {promo.redemptions[0].user?.email || 'Unknown'}
-                  {/if}
-                </Td>
-                <Td>
-                  {#if promo.redemptions.length > 0}
-                    {promo.redemptions[0].party?.name || 'Unknown'}
+                    {#if promo.redemptions.length === 1}
+                      {promo.redemptions[0].user?.email || 'Unknown'}
+                    {:else}
+                      <span title={promo.redemptions.map((r) => r.user?.email || 'Unknown').join(', ')}>
+                        {promo.redemptions.length} users
+                      </span>
+                    {/if}
                   {:else}
                     <span class="admin__text--muted">-</span>
                   {/if}
                 </Td>
                 <Td>
-                  {#if promo.isActive && !promo.isUsed}
+                  {#if promo.redemptions.length > 0}
+                    {#if promo.redemptions.length === 1}
+                      {promo.redemptions[0].party?.name || 'Unknown'}
+                    {:else}
+                      <span title={promo.redemptions.map((r) => r.party?.name || 'Unknown').join(', ')}>
+                        {promo.redemptions.length} parties
+                      </span>
+                    {/if}
+                  {:else}
+                    <span class="admin__text--muted">-</span>
+                  {/if}
+                </Td>
+                <Td>
+                  {#if promo.isActive && promo.redemptions.length < promo.maxUses}
                     <Button size="sm" variant="danger" onclick={() => handleDeletePromo(promo.id)}>Delete</Button>
                   {/if}
                 </Td>
@@ -196,6 +223,14 @@
 
   .admin__status--used {
     color: var(--fgMuted);
+  }
+
+  .admin__status--partial {
+    color: var(--fgWarning);
+  }
+
+  .admin__usage {
+    font-weight: 500;
   }
 
   .admin__status--expired {

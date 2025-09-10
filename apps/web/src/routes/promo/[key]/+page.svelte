@@ -90,7 +90,7 @@
           <Text size="0.875rem" color="var(--fgMuted)">with email</Text>
         </div>
       {:else if data.allPartiesLifetime}
-        <Title as="h1" size="sm">All set!</Title>
+        <Title as="h1" size="sm">You don't need a promo</Title>
         <Spacer />
         <Text>All your parties are already on lifetime plans!</Text>
       {:else if data.parties && data.parties.length > 0}
