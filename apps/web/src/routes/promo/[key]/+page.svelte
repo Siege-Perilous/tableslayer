@@ -72,17 +72,19 @@
           or create a new account.
         </Text>
         <Spacer size="2rem" />
-        <Button href="/login/google" data-sveltekit-preload-data="tap">
-          {#snippet start()}
-            <img src="/google.svg" alt="Google logo" width="16" height="16" />
-          {/snippet}
-          Continue with Google
-        </Button>
-        <Spacer />
-        <div class="login__divider">
-          <span>or</span>
-        </div>
-        <Spacer />
+        {#if data.envName !== 'preview'}
+          <Button href="/login/google" data-sveltekit-preload-data="tap">
+            {#snippet start()}
+              <img src="/google.svg" alt="Google logo" width="16" height="16" />
+            {/snippet}
+            Continue with Google
+          </Button>
+          <Spacer />
+          <div class="login__divider">
+            <span>or</span>
+          </div>
+          <Spacer />
+        {/if}
         <div class="promo__buttons">
           <Button href="/signup">Sign up</Button>
           <Text size="0.875rem" color="var(--fgMuted)">or</Text>
