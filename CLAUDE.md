@@ -36,6 +36,12 @@ These rules ensure maintainability, safety, and developer velocity.
 - **G-1** `pnpm run check` passes
 - **G-2** `pnpm run format-check` passes
 
+### 5 - Important File References
+
+- **REF-1** CSS variables are defined in `packages/ui/src/lib/styles/globals.css`
+- **REF-2** Database schema is in `apps/web/src/lib/db/app/schema.ts`
+- **REF-3** UI components are in `/packages/ui/src/lib/components/`
+
 ## Writing functions best practices
 
 When evaluating whether a function you implemented is good or not, use this checklist:
@@ -55,8 +61,15 @@ IMPORTANT: you SHOULD NOT refactor out a separate function unless there is a com
 
 ## CSS best practices
 
-1. Use BEM standard naming.
-2. Follow existing styles, using CSS variables
+1. **CSS-1 (MUST)** Use BEM (Block Element Modifier) naming convention:
+   - Block: The main component name (e.g., `promo`, `admin`)
+   - Element: Sub-parts of the block with double underscores (e.g., `promo__panel`, `admin__section`)
+   - Modifier: Variations with double hyphens (e.g., `promo__party--selected`, `admin__status--active`)
+   - Example: `.block__element--modifier`
+2. **CSS-2 (MUST)** Use CSS variables from `packages/ui/src/lib/styles/globals.css` instead of hardcoded colors
+   - Use theme-aware variables like `var(--fg)`, `var(--bg)`, `var(--fgPrimary)`, `var(--fgMuted)`, `var(--fgDanger)`
+   - Avoid using specific color values directly
+3. **CSS-3 (SHOULD)** Follow existing component patterns and spacing conventions
 
 ## UI Text Guidelines
 
