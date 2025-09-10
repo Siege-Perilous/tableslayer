@@ -59,20 +59,20 @@
   };
 
   const getStatusBadge = (promo: (typeof data.promos)[0]) => {
-    if (!promo.isActive) return { text: 'Deleted', class: 'status--deleted' };
-    if (promo.isExpired) return { text: 'Expired', class: 'status--expired' };
-    if (promo.isUsed) return { text: 'Used', class: 'status--used' };
-    return { text: 'Active', class: 'status--active' };
+    if (!promo.isActive) return { text: 'Deleted', class: 'admin__status--deleted' };
+    if (promo.isExpired) return { text: 'Expired', class: 'admin__status--expired' };
+    if (promo.isUsed) return { text: 'Used', class: 'admin__status--used' };
+    return { text: 'Active', class: 'admin__status--active' };
   };
 </script>
 
 <Head title="Admin - Promo Management" description="Manage promotional codes" />
 
-<div class="admin-container">
-  <div class="create-section">
+<div class="admin">
+  <div class="admin__section">
     <Title as="h2" size="md">Create New Promo</Title>
     <Spacer />
-    <form onsubmit={handleCreatePromo} class="create-form">
+    <form onsubmit={handleCreatePromo} class="admin__form">
       <FormControl label="Promo Key" name="key" errors={createError?.errors}>
         {#snippet input({ inputProps })}
           <Input
@@ -91,14 +91,14 @@
 
   <Spacer size="3rem" />
 
-  <div class="promos-section">
+  <div class="admin__section">
     <Title as="h2" size="sm">Existing Promos</Title>
     <Spacer />
 
     {#if data.promos.length === 0}
       <Text>No promos created yet.</Text>
     {:else}
-      <div class="table-wrapper">
+      <div class="admin__table-wrapper">
         <Table>
           <thead>
             <tr>
@@ -116,12 +116,12 @@
               {@const status = getStatusBadge(promo)}
               <tr>
                 <Td>
-                  <Link href="/promo/{promo.key}" target="_blank" class="promo-link">
+                  <Link href="/promo/{promo.key}" target="_blank" class="admin__link">
                     {promo.key}
                   </Link>
                 </Td>
                 <Td>
-                  <span class="status-badge {status.class}">{status.text}</span>
+                  <span class="admin__status {status.class}">{status.text}</span>
                 </Td>
                 <Td>{formatDate(promo.createdAt)}</Td>
                 <Td>{formatDate(promo.expiryDate)}</Td>
@@ -134,7 +134,7 @@
                   {#if promo.redemptions.length > 0}
                     {promo.redemptions[0].party?.name || 'Unknown'}
                   {:else}
-                    <span class="text-muted">-</span>
+                    <span class="admin__text--muted">-</span>
                   {/if}
                 </Td>
                 <Td>
@@ -152,33 +152,37 @@
 </div>
 
 <style>
-  .admin-container {
+  .admin {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
   }
 
-  .create-form {
+  .admin__section {
+    margin-bottom: 2rem;
+  }
+
+  .admin__form {
     display: flex;
     gap: 1rem;
     align-items: flex-end;
     max-width: 500px;
   }
 
-  .create-form :global(.form-control) {
+  .admin__form :global(.form-control) {
     flex: 1;
   }
 
-  .table-wrapper {
+  .admin__table-wrapper {
     overflow-x: auto;
   }
 
-  .table-wrapper :global(table) {
+  .admin__table-wrapper :global(table) {
     width: 100%;
     min-width: 800px;
   }
 
-  .status-badge {
+  .admin__status {
     display: inline-block;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
@@ -186,41 +190,37 @@
     font-weight: 500;
   }
 
-  .status--active {
-    background-color: var(--color-success-bg);
-    color: var(--color-success);
+  .admin__status--active {
+    color: var(--fgSuccess);
   }
 
-  .status--used {
-    background-color: var(--color-info-bg);
-    color: var(--color-info);
+  .admin__status--used {
+    color: var(--fgMuted);
   }
 
-  .status--expired {
-    background-color: var(--color-warning-bg);
-    color: var(--color-warning);
+  .admin__status--expired {
+    color: var(--fgDanger);
   }
 
-  .status--deleted {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger);
+  .admin__status--deleted {
+    color: var(--fgDanger);
   }
 
-  .text-muted {
-    color: var(--color-text-muted);
+  .admin__text--muted {
+    color: var(--fgMuted);
   }
 
-  .promo-link {
+  .admin__link {
     font-weight: 500;
   }
 
   @media (max-width: 768px) {
-    .create-form {
+    .admin__form {
       flex-direction: column;
       align-items: stretch;
     }
 
-    .admin-container {
+    .admin {
       margin: 1rem auto;
     }
   }
