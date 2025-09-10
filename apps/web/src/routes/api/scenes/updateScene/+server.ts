@@ -1,7 +1,7 @@
 import { updateSceneSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { getScene, isUserInParty, updateScene } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z.object({
   sceneId: z.string(),

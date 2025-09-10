@@ -262,6 +262,9 @@
       // Always create a new instance for the playfield
       // Use the party slug from the URL params for the room name
       const partySlug = page.params.party;
+      if (!partySlug) {
+        throw new Error('Party slug is required');
+      }
       initializePartyDataManager(partySlug, user.id, activeGameSessionId, data.partykitHost);
       partyData = usePartyData();
 
@@ -433,6 +436,9 @@
 
       // Reinitialize with the new game session
       const partySlug = page.params.party;
+      if (!partySlug) {
+        throw new Error('Party slug is required');
+      }
       initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
       partyData = usePartyData();
 

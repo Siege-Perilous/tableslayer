@@ -1,0 +1,1 @@
+export { isAdmin } from './isAdmin';

@@ -5,7 +5,7 @@
   import type { Thumb } from '$lib/server';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { queuePropertyUpdate } from '$lib/utils';
 
@@ -26,7 +26,7 @@
     activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    errors: $ZodIssue[] | undefined;
+    errors: ZodIssue[] | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
   } = $props();
 

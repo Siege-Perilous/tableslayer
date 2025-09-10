@@ -36,7 +36,7 @@
     useUpsertAnnotationMutation,
     useDeleteAnnotationMutation
   } from '$lib/queries';
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
@@ -252,7 +252,7 @@
   let protectionCleanupTimer: ReturnType<typeof setInterval> | null = null; // Timer for cleaning up stuck protections
   let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null; // Timer for debouncing fog uploads
   let annotationUpdateTimers: Map<string, ReturnType<typeof setTimeout>> = new Map(); // Timers for debouncing annotation uploads per layer
-  let errors = $state<$ZodIssue[] | undefined>(undefined);
+  let errors = $state<ZodIssue[] | undefined>(undefined);
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
   let stage: StageExports = $state(null)!;
@@ -610,6 +610,9 @@
       devLog('scene', 'DEV: Initializing Y.js for scene list sync...');
       // Use the party slug from the URL params for the room name
       const partySlug = page.params.party;
+      if (!partySlug) {
+        throw new Error('Party slug is required');
+      }
 
       // Check if we need to reinitialize (different game session)
       const existingManager = getPartyDataManager();

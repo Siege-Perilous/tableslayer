@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type $ZodIssue } from 'zod/v4/core';
+  import { type ZodIssue } from 'zod';
   import { FormControl, type StageProps, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
   import { queuePropertyUpdate } from '$lib/utils';
   import { ToneMappingMode } from 'postprocessing';
@@ -13,7 +13,7 @@
     party
   }: {
     stageProps: StageProps;
-    errors: $ZodIssue[] | undefined;
+    errors: ZodIssue[] | undefined;
     party: SelectParty & Thumb;
   } = $props();
 
@@ -126,8 +126,13 @@
           max={0.02}
           step={0.001}
           value={stageProps.postProcessing.chromaticAberration.offset}
-          oninput={(value) =>
-            queuePropertyUpdate(stageProps, ['postProcessing', 'chromaticAberration', 'offset'], value, 'control')}
+          oninput={(e) =>
+            queuePropertyUpdate(
+              stageProps,
+              ['postProcessing', 'chromaticAberration', 'offset'],
+              parseFloat(e.currentTarget.value),
+              'control'
+            )}
         />
       {/snippet}
     </FormControl>
@@ -145,8 +150,13 @@
             max={10}
             step={0.05}
             value={stageProps.postProcessing.bloom.intensity}
-            oninput={(value) =>
-              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'intensity'], value, 'control')}
+            oninput={(e) =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'intensity'],
+                parseFloat(e.currentTarget.value),
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -158,8 +168,13 @@
             max={0.5}
             step={0.01}
             value={stageProps.postProcessing.bloom.radius}
-            oninput={(value) =>
-              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'radius'], value, 'control')}
+            oninput={(e) =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'radius'],
+                parseFloat(e.currentTarget.value),
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -174,8 +189,13 @@
             max={1}
             step={0.01}
             value={stageProps.postProcessing.bloom.threshold}
-            oninput={(value) =>
-              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'threshold'], value, 'control')}
+            oninput={(e) =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'threshold'],
+                parseFloat(e.currentTarget.value),
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -187,8 +207,13 @@
             max={1}
             step={0.01}
             value={stageProps.postProcessing.bloom.smoothing}
-            oninput={(value) =>
-              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'smoothing'], value, 'control')}
+            oninput={(e) =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'smoothing'],
+                parseFloat(e.currentTarget.value),
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>
@@ -203,8 +228,13 @@
             max={16}
             step={1}
             value={stageProps.postProcessing.bloom.levels}
-            oninput={(value) =>
-              queuePropertyUpdate(stageProps, ['postProcessing', 'bloom', 'levels'], value, 'control')}
+            oninput={(e) =>
+              queuePropertyUpdate(
+                stageProps,
+                ['postProcessing', 'bloom', 'levels'],
+                parseInt(e.currentTarget.value),
+                'control'
+              )}
           />
         {/snippet}
       </FormControl>

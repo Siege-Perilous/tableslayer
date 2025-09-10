@@ -1,6 +1,6 @@
 import { apiFactory } from '$lib/factories';
 import { deletePartyMember, isUserInParty } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z.object({
   userId: z.string(),

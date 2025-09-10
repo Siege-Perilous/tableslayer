@@ -60,11 +60,11 @@ export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty &
 
 export const getPartyMembers = async (
   partyId: string
-): Promise<Array<SelectUser & { role: PartyRole; partyId: string } & Thumb>> => {
+): Promise<Array<SelectUser & { partyRole: PartyRole; partyId: string } & Thumb>> => {
   const memberRelations = await db
     .select({
       id: partyMemberTable.userId,
-      role: partyMemberTable.role,
+      partyRole: partyMemberTable.role,
       partyId: partyMemberTable.partyId,
       name: usersTable.name,
       email: usersTable.email,
@@ -72,7 +72,8 @@ export const getPartyMembers = async (
       avatarFileId: usersTable.avatarFileId,
       passwordHash: usersTable.passwordHash,
       favoriteParty: usersTable.favoriteParty,
-      googleId: usersTable.googleId
+      googleId: usersTable.googleId,
+      role: usersTable.role
     })
     .from(partyMemberTable)
     .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))

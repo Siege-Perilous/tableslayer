@@ -1,7 +1,7 @@
 import { VALID_PARTY_ROLES } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { createPartyInvite, isUserInParty, UserAlreadyInPartyError, UserAlreadyInvitedError } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z.object({
   email: z.email(),

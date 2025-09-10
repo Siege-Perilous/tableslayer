@@ -3,7 +3,7 @@ import { insertMarkerSchema, markerTable } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { createMarker, isUserInParty, updateMarker, updateSceneTimestampForMarkerChange } from '$lib/server';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 // Schema for upsert - marker data without sceneId (provided separately)
 const markerDataWithoutSceneIdSchema = insertMarkerSchema.omit({ sceneId: true });

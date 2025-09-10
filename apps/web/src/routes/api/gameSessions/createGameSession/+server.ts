@@ -1,7 +1,7 @@
 import { insertGameSessionSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { createGameSession, isUserAdminInParty, SlugConflictError } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const validationSchema = z.object({
   partyId: z.string(),

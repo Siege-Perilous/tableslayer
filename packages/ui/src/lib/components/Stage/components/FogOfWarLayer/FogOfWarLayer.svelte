@@ -11,6 +11,7 @@
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
   import { SceneLayer } from '../Scene/types';
   import FogOfWarMaterial from './FogOfWarMaterial.svelte';
+  import { LazyBrushManager } from '../../helpers/lazyBrush';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: FogOfWarLayerProps;
@@ -37,6 +38,13 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
+  // Initialize lazy brush for smooth drawing
+  const lazyBrush = new LazyBrushManager({
+    radius: 30,
+    enabled: false,
+    friction: 0.3
+  });
+
   // Add outline material
   const outlineMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -62,6 +70,7 @@
       drawing = false;
       material?.revertChanges();
       outlineMaterial.visible = false;
+      lazyBrush.reset();
     }
   });
 
@@ -78,8 +87,12 @@
     outlineMaterial.uniforms.uBrushSize.value = props.tool.size;
 
     // When changing to a rectangle or ellipse, initially hide the outline
+    // Also disable lazy brush for shape tools
     if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {
       outlineMaterial.visible = false;
+      lazyBrush.enabled = false;
+    } else {
+      lazyBrush.enabled = true;
     }
   });
 
@@ -88,6 +101,12 @@
     lastPos = p;
     drawing = true;
     hasFinishedDrawing = false;
+
+    // Start a new stroke with lazy brush
+    if (p && lazyBrush.enabled) {
+      lazyBrush.startStroke(p);
+    }
+
     draw(e, p);
   }
 
@@ -109,6 +128,9 @@
     lastPos = null;
     drawing = false;
     hasFinishedDrawing = false;
+
+    // End the stroke with lazy brush
+    lazyBrush.endStroke();
   }
 
   function onMouseLeave() {
@@ -120,6 +142,9 @@
     // Hide cursor when mouse leaves
     outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
     outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
+
+    // Reset lazy brush
+    lazyBrush.reset();
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
@@ -131,26 +156,60 @@
       return;
     }
 
-    outlineMaterial.uniforms.uStart.value.copy(p);
-    outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? p);
-
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
+      // Shapes don't use lazy brush
+      outlineMaterial.uniforms.uStart.value.copy(p);
+      outlineMaterial.uniforms.uEnd.value.copy(lastPos ?? p);
+
       // When using shapes, draw the shape outline while the mouse button is held down
       if (drawing) {
         outlineMaterial.visible = true;
         material?.drawPath(p, lastPos);
       }
     } else {
-      // If this is the first time the mouse has moved, set the last position to the current position
-      if (!lastPos) {
-        lastPos = p.clone();
-      }
+      // For freehand tools, always show the cursor
       outlineMaterial.visible = true;
-      material?.drawPath(p, lastPos, drawing);
-      if (drawing) {
+
+      // Use lazy brush for freehand drawing
+      if (lazyBrush.enabled && drawing) {
+        // Update lazy brush and get smoothed points
+        const segments = lazyBrush.updateStroke(p);
+
+        // Draw each segment
+        for (let i = 0; i < segments.length; i += 2) {
+          if (segments[i] && segments[i + 1]) {
+            material?.drawPath(segments[i + 1], segments[i], true);
+            hasFinishedDrawing = true;
+          }
+        }
+
+        // Update outline to show lazy brush position
+        const brushPos = lazyBrush.getBrushPosition();
+        if (brushPos) {
+          outlineMaterial.uniforms.uStart.value.copy(brushPos);
+          outlineMaterial.uniforms.uEnd.value.copy(brushPos);
+        } else {
+          // If no brush position, use actual position for outline
+          outlineMaterial.uniforms.uStart.value.copy(p);
+          outlineMaterial.uniforms.uEnd.value.copy(p);
+        }
+      } else if (!lazyBrush.enabled && drawing) {
+        // Fallback to original behavior if lazy brush is disabled but drawing
+        if (!lastPos) {
+          lastPos = p.clone();
+        }
+        material?.drawPath(p, lastPos, true);
         hasFinishedDrawing = true;
+        lastPos = p.clone();
+
+        // Update cursor position
+        outlineMaterial.uniforms.uStart.value.copy(p);
+        outlineMaterial.uniforms.uEnd.value.copy(p);
+      } else {
+        // Just hovering, show cursor at current position
+        outlineMaterial.uniforms.uStart.value.copy(p);
+        outlineMaterial.uniforms.uEnd.value.copy(p);
       }
-      lastPos = p.clone();
     }
   }
 

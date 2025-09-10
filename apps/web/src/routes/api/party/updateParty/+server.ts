@@ -1,7 +1,7 @@
 import { updatePartySchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { isUserInParty, SlugConflictError, updateParty } from '$lib/server';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const updatePartyDetails = z.object({
   partyId: z.string(),

@@ -1,15 +1,16 @@
-import { updatePartyMemberSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import { isUserInParty, updatePartyMember } from '$lib/server';
+import { z } from 'zod';
+
+const updatePartyMemberSchema = z.object({
+  partyId: z.string(),
+  userId: z.string(),
+  role: z.enum(['admin', 'editor', 'viewer'])
+});
 
 export const POST = apiFactory(
   async ({ body, locals }) => {
-    const { partyId } = body;
-    if (!partyId) {
-      throw new Error('A partyId is required');
-    }
-
-    if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
+    if (!locals.user?.id || !isUserInParty(locals.user.id, body.partyId)) {
       throw new Error('Unauthorized');
     }
 
