@@ -62,6 +62,14 @@ export async function GET(event: RequestEvent): Promise<Response> {
     await createSession(token, user.id);
     setSessionTokenCookie(event, token);
 
+    // Check for redirect cookie
+    const redirectUrl = event.cookies.get('redirect_after_login');
+    if (redirectUrl) {
+      // Clear the redirect cookie
+      event.cookies.delete('redirect_after_login', { path: '/' });
+      return redirect(302, redirectUrl);
+    }
+
     // Redirect to home page
     return redirect(302, '/');
   } catch (e) {

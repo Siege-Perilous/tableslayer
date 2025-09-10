@@ -28,6 +28,10 @@
       Table Slayer may occassionally need to send you an email about a service disruption or major feature change.
     </li>
     <li>
+      Table Slayer makes use of cookies for functionality and session management. We do not use cookies for tracking or
+      advertising.
+    </li>
+    <li>
       Table Slayer does not have a crystal ball. We may add optional features that require payment beyond the liftime
       subscription.
     </li>

@@ -14,5 +14,6 @@ export const protectedSlugs = [
   'api',
   'healthcheck',
   'help',
-  'tos'
+  'tos',
+  'promo'
 ];

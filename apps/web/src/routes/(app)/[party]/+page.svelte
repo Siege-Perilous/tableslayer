@@ -13,7 +13,14 @@
   } from '$lib/components';
 
   let { data } = $props();
-  const { party, gameSessions, members, isPartyAdmin, invitedEmails, user } = $derived(data);
+  const { party, gameSessions, isPartyAdmin, invitedEmails, user } = $derived(data);
+  // Map partyRole to role for the PartyMember component
+  const members = $derived(
+    data.members.map((m) => {
+      const { partyRole, role: userRole, ...rest } = m;
+      return { ...rest, role: partyRole, userRole };
+    })
+  );
 
   const partyId = $derived(party.id as string);
   const needsToUpgrade = $derived(party.plan === 'free' && gameSessions.length >= 2);
