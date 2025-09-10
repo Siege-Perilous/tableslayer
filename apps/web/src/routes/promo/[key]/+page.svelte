@@ -268,6 +268,7 @@
       margin: 2rem auto;
       max-width: 562px;
       margin: auto;
+      align-items: start;
     }
 
     :global(.promo__panel) {
