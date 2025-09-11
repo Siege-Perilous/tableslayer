@@ -305,7 +305,19 @@
   const zoomSensitivity = 0.0005;
 
   // Use appropriate pane layout based on device type
-  const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
+  // Read from client-side cookies to get the most up-to-date values
+  let clientPaneLayoutDesktop = $state(paneLayoutDesktop);
+  let clientPaneLayoutMobile = $state(paneLayoutMobile);
+
+  // On client-side, always use the latest cookie values
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop');
+      clientPaneLayoutMobile = getPreference('paneLayoutMobile');
+    }
+  });
+
+  const paneLayout = $derived(isMobile ? clientPaneLayoutMobile : clientPaneLayoutDesktop);
 
   // Initialize collapse states from preferences
   $effect(() => {
@@ -434,11 +446,25 @@
           devLog('yjs', 'Blocking Y.js update for drawing layer', { isDrawingFog, isDrawingAnnotation });
         }
 
+        // Log map URL changes for debugging
+        if (incomingStageProps.map?.url !== stageProps.map.url) {
+          devLog('yjs', '🗺️ Map URL change detected from Y.js:', {
+            old: stageProps.map.url,
+            new: incomingStageProps.map?.url
+          });
+        }
+
         // Create a merged stageProps that preserves local-only properties
         const mergedStageProps = {
           ...incomingStageProps,
           // Preserve local activeLayer (fog tools, etc.)
           activeLayer: stageProps.activeLayer,
+          // Explicitly handle map to ensure URL updates are propagated
+          map: {
+            ...incomingStageProps.map,
+            // Map URL should always come from Y.js to ensure sync
+            url: incomingStageProps.map?.url || stageProps.map.url
+          },
           scene: {
             ...incomingStageProps.scene,
             // Override with local viewport state (must come after the spread)
@@ -733,6 +759,7 @@
   const saveCollapseState = () => {
     if (!paneLayout || !Array.isArray(paneLayout)) return;
 
+    // Use current pane sizes when saving collapse state
     const sizes = paneLayout.map((p) => p.size);
     onLayoutChange(sizes);
   };
@@ -2219,8 +2246,10 @@
 
     if (isMobile) {
       setPreference('paneLayoutMobile', newLayout);
+      clientPaneLayoutMobile = newLayout;
     } else {
       setPreference('paneLayoutDesktop', newLayout);
+      clientPaneLayoutDesktop = newLayout;
     }
   };
 </script>

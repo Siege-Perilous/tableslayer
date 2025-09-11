@@ -15,6 +15,15 @@ const R2_BASE_URL = 'https://files.tableslayer.com';
 const DEFAULT_MAP = 'map/example1080.png';
 
 /**
+ * Check if a file is a video based on its extension
+ */
+export function isVideoFile(location: string): boolean {
+  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
+  const lowerLocation = location.toLowerCase();
+  return videoExtensions.some((ext) => lowerLocation.includes(ext));
+}
+
+/**
  * Generates an R2 transformation URL from a file location
  * @param location - The file location (e.g., 'map/uuid.jpg')
  * @param options - Transformation options
@@ -24,8 +33,8 @@ export function generateR2Url(location: string | null | undefined, options: R2Tr
   // Return empty string if no location
   if (!location) return '';
 
-  // Don't transform the default map
-  if (location === DEFAULT_MAP) {
+  // Don't transform the default map or video files
+  if (location === DEFAULT_MAP || isVideoFile(location)) {
     return `${R2_BASE_URL}/${location}`;
   }
 
@@ -51,8 +60,14 @@ export function generateR2Url(location: string | null | undefined, options: R2Tr
 
 /**
  * Preset for large images (3000x3000 max) - used for Stage display
+ * For video files, returns the direct URL without transformations
  */
 export function generateLargeImageUrl(location: string | null | undefined): string {
+  // For video files, return direct URL without transformations
+  if (location && isVideoFile(location)) {
+    return generateR2Url(location, {});
+  }
+
   return generateR2Url(location, {
     width: 3000,
     height: 3000,
@@ -63,8 +78,14 @@ export function generateLargeImageUrl(location: string | null | undefined): stri
 
 /**
  * Preset for small thumbnails (400x225) - used for scene selector, etc.
+ * For video files, returns the direct URL without transformations
  */
 export function generateSmallThumbnailUrl(location: string | null | undefined): string {
+  // For video files, return direct URL without transformations
+  if (location && isVideoFile(location)) {
+    return generateR2Url(location, {});
+  }
+
   return generateR2Url(location, {
     width: 400,
     height: 225,

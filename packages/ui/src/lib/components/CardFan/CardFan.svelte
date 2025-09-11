@@ -6,7 +6,9 @@
 
 <div {...restProps} class={cardFanClasses} style="--cardFanHeight: {height}">
   {#each images as image}
-    <div class="cardFan__card" style="background-image: url({image});"></div>
+    <div class="cardFan__card">
+      <div class="cardFan__cardImage" style="background-image: url({image});"></div>
+    </div>
   {/each}
 </div>
 
@@ -19,7 +21,6 @@
 
   .cardFan__card {
     background: var(--bg);
-    background-size: cover;
     height: var(--cardFanHeight);
     width: calc(var(--cardFanHeight) * 0.6818);
     border-radius: 0.25rem;
@@ -33,7 +34,22 @@
     border: var(--borderThick);
     border-color: var(--fg);
     transition: transform 0.2s var(--ease-in-2);
+    overflow: hidden;
   }
+
+  .cardFan__cardImage {
+    position: absolute;
+    width: var(--cardFanHeight);
+    height: calc(var(--cardFanHeight) * 0.6818);
+    background-size: cover;
+    background-position: center center;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+  }
+
   .cardFan__card:before {
     content: '';
     position: absolute;
@@ -43,6 +59,7 @@
     bottom: 0;
     border-radius: var(--radius-2);
     border: solid var(--bg) 0.3rem;
+    z-index: 1;
   }
 
   .cardFan--count-1 .cardFan__card:nth-child(1) {

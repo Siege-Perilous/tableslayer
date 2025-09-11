@@ -28,7 +28,6 @@
   import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
   import type { MarkerLayerExports } from '../MarkerLayer/types';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
-  import type { Size } from '../../types';
 
   interface Props {
     props: StageProps;
@@ -76,7 +75,6 @@
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
   let measurementLayer: MeasurementLayerExports | null = $state(null);
-  let mapSize: Size = $state({ width: 0, height: 0 });
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
@@ -312,8 +310,20 @@
 
     const displayWidth = props.display.resolution.x;
     const displayHeight = props.display.resolution.y;
-    const imageWidth = texture.image.width;
-    const imageHeight = texture.image.height;
+
+    // Handle both image and video textures
+    let imageWidth: number;
+    let imageHeight: number;
+
+    if (texture.image instanceof HTMLVideoElement) {
+      // For video textures, use videoWidth and videoHeight
+      imageWidth = texture.image.videoWidth || displayWidth;
+      imageHeight = texture.image.videoHeight || displayHeight;
+    } else {
+      // For image textures, use width and height
+      imageWidth = texture.image.width;
+      imageHeight = texture.image.height;
+    }
 
     // Create a temporary scene and camera for rendering
     const tempScene = new THREE.Scene();
@@ -419,8 +429,7 @@
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
-    onMapLoaded={(mapUrl, s) => {
-      mapSize = s;
+    onMapLoaded={() => {
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
         setLoadingState(SceneLoadingState.Resizing);
@@ -431,7 +440,6 @@
   <WeatherLayer
     {props}
     size={props.display.resolution}
-    {mapSize}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Weather}
   />

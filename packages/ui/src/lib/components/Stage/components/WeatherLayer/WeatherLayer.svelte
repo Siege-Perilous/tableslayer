@@ -5,7 +5,6 @@
   import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import type { StageProps } from '../Stage/types';
-  import type { Size } from '../../types';
 
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
@@ -17,11 +16,9 @@
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
     size: { x: number; y: number };
-    // Need map size and props so we can clip the weather layer to the map
-    mapSize: Size | null;
   }
 
-  const { props, size, mapSize, ...meshProps }: Props = $props();
+  const { props, size, ...meshProps }: Props = $props();
 
   const { renderer, renderStage } = useThrelte();
   let weatherType: WeatherType | null = $state(null);
@@ -48,58 +45,6 @@
     map: renderTarget.texture,
     transparent: true,
     blending: THREE.NormalBlending
-  });
-
-  // Add clipping planes
-  const clippingPlanes = $state([
-    new THREE.Plane(new THREE.Vector3(1, 0, 0), 0), // right
-    new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0), // left
-    new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), // top
-    new THREE.Plane(new THREE.Vector3(0, -1, 0), 0) // bottom
-  ]);
-
-  // Add matrix for transforming clipping planes
-  const transformationMatrix = $state(new THREE.Matrix4());
-
-  $effect(() => {
-    if (!mapSize) return;
-
-    // Create transformation matrix based on map properties
-    transformationMatrix.identity();
-
-    // Apply transformations in order: scale (zoom) -> rotate -> translate
-    transformationMatrix.multiply(new THREE.Matrix4().makeTranslation(props.scene.offset.x, props.scene.offset.y, 0));
-    transformationMatrix.multiply(new THREE.Matrix4().makeScale(props.scene.zoom, props.scene.zoom, 1));
-    transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.scene.rotation / 180.0) * Math.PI));
-
-    // // Apply transformations in order: scale (zoom) -> rotate -> translate
-    // transformationMatrix.multiply(new THREE.Matrix4().makeTranslation(props.map.offset.x, props.map.offset.y, 0));
-    // transformationMatrix.multiply(new THREE.Matrix4().makeScale(props.map.zoom, props.map.zoom, 1));
-    // transformationMatrix.multiply(new THREE.Matrix4().makeRotationZ((props.map.rotation / 180.0) * Math.PI));
-
-    const halfWidth = mapSize.width / 2;
-    const halfHeight = mapSize.height / 2;
-
-    // Create base planes
-    const basePlanes = [
-      new THREE.Plane(new THREE.Vector3(1, 0, 0), halfWidth), // right
-      new THREE.Plane(new THREE.Vector3(-1, 0, 0), halfWidth), // left
-      new THREE.Plane(new THREE.Vector3(0, 1, 0), halfHeight), // top
-      new THREE.Plane(new THREE.Vector3(0, -1, 0), halfHeight) // bottom
-    ];
-
-    // Transform each plane using the transformation matrix
-    for (let i = 0; i < 4; i++) {
-      basePlanes[i].applyMatrix4(transformationMatrix);
-      clippingPlanes[i].copy(basePlanes[i]);
-    }
-
-    // Enable clipping planes on the particle system material
-    if (quadMaterial) {
-      quadMaterial.clippingPlanes = clippingPlanes;
-      quadMaterial.clipIntersection = false;
-      quadMaterial.needsUpdate = true;
-    }
   });
 
   // Enable stencil test in renderer
@@ -167,22 +112,7 @@
     // Add render pass
     const renderPass = new RenderPass(particleScene, particleCamera);
     composer.addPass(renderPass);
-
-    // Add depth of field pass
-    // if (weatherPreset.depthOfField.enabled) {
-    // TODO: Add depth of field effect
-    // const dofEffect = new DepthOfFieldEffect(particleCamera, {
-    //   focusDistance: weatherPreset.depthOfField.focus,
-    //   focalLength: weatherPreset.depthOfField.focalLength,
-    //   bokehScale: weatherPreset.depthOfField.bokehScale,
-    //   resolutionX: mapSize.width,
-    //   resolutionY: mapSize.height
-    // });
-    // dofEffect.blurPass.kernelSize = weatherPreset.depthOfField.kernelSize;
-    // composer.addPass(new EffectPass(particleCamera, dofEffect));
-    // } else {
     composer.addPass(new CopyPass(renderTarget));
-    // }
   });
 
   // Update the map size effect to use scaled resolution
