@@ -150,7 +150,7 @@
         {#snippet start()}
           <Icon Icon={IconPlus} size="1.25rem" />
         {/snippet}
-        Add new layer
+        Layer
       </Button>
     {/if}
     <div class="annotationManager__lineWidthControl">

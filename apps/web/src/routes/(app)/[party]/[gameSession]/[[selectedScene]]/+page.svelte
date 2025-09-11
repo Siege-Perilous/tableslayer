@@ -305,7 +305,19 @@
   const zoomSensitivity = 0.0005;
 
   // Use appropriate pane layout based on device type
-  const paneLayout = $derived(isMobile ? paneLayoutMobile : paneLayoutDesktop);
+  // Read from client-side cookies to get the most up-to-date values
+  let clientPaneLayoutDesktop = $state(paneLayoutDesktop);
+  let clientPaneLayoutMobile = $state(paneLayoutMobile);
+
+  // On client-side, always use the latest cookie values
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop');
+      clientPaneLayoutMobile = getPreference('paneLayoutMobile');
+    }
+  });
+
+  const paneLayout = $derived(isMobile ? clientPaneLayoutMobile : clientPaneLayoutDesktop);
 
   // Initialize collapse states from preferences
   $effect(() => {
@@ -747,6 +759,7 @@
   const saveCollapseState = () => {
     if (!paneLayout || !Array.isArray(paneLayout)) return;
 
+    // Use current pane sizes when saving collapse state
     const sizes = paneLayout.map((p) => p.size);
     onLayoutChange(sizes);
   };
@@ -2233,8 +2246,10 @@
 
     if (isMobile) {
       setPreference('paneLayoutMobile', newLayout);
+      clientPaneLayoutMobile = newLayout;
     } else {
       setPreference('paneLayoutDesktop', newLayout);
+      clientPaneLayoutDesktop = newLayout;
     }
   };
 </script>
