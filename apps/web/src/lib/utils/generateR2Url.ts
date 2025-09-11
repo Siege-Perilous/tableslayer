@@ -17,7 +17,7 @@ const DEFAULT_MAP = 'map/example1080.png';
 /**
  * Check if a file is a video based on its extension
  */
-function isVideoFile(location: string): boolean {
+export function isVideoFile(location: string): boolean {
   const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.gif'];
   const lowerLocation = location.toLowerCase();
   return videoExtensions.some((ext) => lowerLocation.includes(ext));

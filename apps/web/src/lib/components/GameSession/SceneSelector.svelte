@@ -12,7 +12,7 @@
   } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
-  import { hasThumb, generateSmallThumbnailUrl } from '$lib/utils';
+  import { hasThumb, generateSmallThumbnailUrl, isVideoFile } from '$lib/utils';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
@@ -506,9 +506,9 @@
         ]}
         style:background-image={scene.mapThumbLocation
           ? `url('${generateSmallThumbnailUrl(scene.mapThumbLocation)}')`
-          : scene.mapLocation
+          : scene.mapLocation && !isVideoFile(scene.mapLocation)
             ? `url('${generateSmallThumbnailUrl(scene.mapLocation)}')`
-            : 'inherit'}
+            : `url('https://files.tableslayer.com/illustrations/party/empty.png')`}
         oncontextmenu={(event) => handleContextMenu(event, scene.id)}
         data-drag-id={index.toString()}
         draggable={!isDragDisabled(scene.id)}
