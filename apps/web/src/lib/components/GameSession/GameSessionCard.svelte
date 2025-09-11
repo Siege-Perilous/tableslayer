@@ -24,7 +24,7 @@
   import type { Thumb } from '$lib/server';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
   import { invalidateAll } from '$app/navigation';
-  import { exportGameSession } from '$lib/utils';
+  import { exportGameSession, isVideoFile } from '$lib/utils';
 
   let {
     party,
@@ -42,11 +42,17 @@
   let exportIsLoading = $state(false);
 
   const images: string[] = [];
+  const emptyImage = 'https://files.tableslayer.com/illustrations/party/empty.png';
 
   for (const scene of session.scenes) {
     if (scene.thumb) {
       const thumb = scene.thumb.resizedUrl;
-      images.push(thumb);
+      // Check if the thumb is a video file and use empty image instead
+      if (isVideoFile(thumb)) {
+        images.push(emptyImage);
+      } else {
+        images.push(thumb);
+      }
     }
   }
 
@@ -127,7 +133,7 @@
     <div
       class="cardFan__image"
       style={`
-      background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url(${images[0]});`}
+      background-image: linear-gradient(rgba(0, 0, 0, 0), var(--contrastLowest) 50%), url(${images[0] || emptyImage});`}
     ></div>
     {#if isPartyAdmin}
       <div class="gameSessionCard__popover">
@@ -249,7 +255,7 @@
   }
   .cardFan__image {
     background-size: 100%;
-    background-position: top;
+    background-position: center center;
     filter: grayscale(0.5);
     opacity: 0.5;
     position: absolute;
