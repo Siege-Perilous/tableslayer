@@ -460,7 +460,13 @@
       return;
     }
 
-    orderedScenes = [...scenes];
+    // Ensure scenes is a valid array before updating
+    if (Array.isArray(scenes) && scenes.length > 0) {
+      orderedScenes = [...scenes];
+    } else if (!orderedScenes.length) {
+      // Only set to empty array if orderedScenes is not already populated
+      orderedScenes = [];
+    }
   });
 </script>
 
@@ -493,7 +499,7 @@
     {#each orderedScenes as scene, index (scene.id)}
       <div
         animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
-        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : index * 50, easing: sineOut }}
+        in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : Math.min(index * 50, 500), easing: sineOut }}
         role="presentation"
         id={`scene-${scene.order}`}
         class={[
