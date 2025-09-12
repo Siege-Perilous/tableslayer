@@ -4,6 +4,7 @@
   import { marked } from 'marked';
   import type { PageData } from './$types';
   import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
 
   export let data: PageData;
 
@@ -13,11 +14,15 @@
   });
 
   onMount(() => {
-    document.documentElement.style.scrollBehavior = 'smooth';
+    if (browser) {
+      document.documentElement.style.scrollBehavior = 'smooth';
+    }
   });
 
   onDestroy(() => {
-    document.documentElement.style.scrollBehavior = '';
+    if (browser) {
+      document.documentElement.style.scrollBehavior = '';
+    }
   });
 </script>
 
