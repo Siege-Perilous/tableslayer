@@ -141,6 +141,9 @@ importers:
       '@tursodatabase/api':
         specifier: ^1.9.0
         version: 1.9.0
+      '@types/marked':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -162,6 +165,9 @@ importers:
       lib0:
         specifier: ^0.2.114
         version: 0.2.114
+      marked:
+        specifier: ^16.2.1
+        version: 16.2.1
       mime:
         specifier: ^4.0.7
         version: 4.0.7
@@ -258,7 +264,7 @@ importers:
         version: 5.38.6
       svelte-check:
         specifier: ^4.3.1
-        version: 4.3.1(picomatch@4.0.2)(svelte@5.38.6)(typescript@5.9.2)
+        version: 4.3.1(picomatch@4.0.3)(svelte@5.38.6)(typescript@5.9.2)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -3939,6 +3945,7 @@ packages:
 
   libsql@0.5.20:
     resolution: {integrity: sha512-hkWCsiwTbNsrKeWqPh91ZZEcLDo0+WUnFv2QzITD33F7Er9KOlr7N2SGfNjAbnkciN+iPJ7g108Jkno1JFmzTw==}
+    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   liftoff@2.0.3:
@@ -10435,18 +10442,6 @@ snapshots:
       has-flag: 4.0.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
-
-  svelte-check@4.3.1(picomatch@4.0.2)(svelte@5.38.6)(typescript@5.9.2):
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.25
-      chokidar: 4.0.3
-      fdir: 6.4.6(picomatch@4.0.2)
-      picocolors: 1.1.1
-      sade: 1.8.1
-      svelte: 5.38.6
-      typescript: 5.9.2
-    transitivePeerDependencies:
-      - picomatch
 
   svelte-check@4.3.1(picomatch@4.0.3)(svelte@5.38.6)(typescript@5.9.2):
     dependencies:
