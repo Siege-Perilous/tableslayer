@@ -12,7 +12,7 @@
 
 <svelte:head>
   {#if data.envName === 'production' && data.fathomSiteId}
-    <script src="https://cdn.usefathom.com/script.js" data-site={data.fathomSiteId} defer></script>
+    <script src="https://cdn.usefathom.com/script.js" data-spa="auto" data-site={data.fathomSiteId} defer></script>
   {/if}
 </svelte:head>
 
