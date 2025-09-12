@@ -21,7 +21,8 @@
     IconBrandBluesky,
     IconBrandDiscord,
     IconBrandGithub,
-    IconFileDescription
+    IconFileDescription,
+    IconConfetti
   } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   import type { SelectGameSession } from '$lib/db/app/schema';
@@ -64,6 +65,7 @@
   };
 
   const links = [
+    { label: 'Product updates', href: '/changelog', icon: IconConfetti },
     { label: 'Help', href: '/help', icon: IconQuestionMark },
     { label: 'Bluesky', href: 'https://bsky.app/profile/davesnider.com', icon: IconBrandBluesky },
     {
