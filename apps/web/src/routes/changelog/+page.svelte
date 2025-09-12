@@ -3,12 +3,21 @@
   import { Head } from '$lib/components';
   import { marked } from 'marked';
   import type { PageData } from './$types';
+  import { onMount, onDestroy } from 'svelte';
 
   export let data: PageData;
 
   marked.setOptions({
     breaks: true,
     gfm: true
+  });
+
+  onMount(() => {
+    document.documentElement.style.scrollBehavior = 'smooth';
+  });
+
+  onDestroy(() => {
+    document.documentElement.style.scrollBehavior = '';
   });
 </script>
 
@@ -125,9 +134,12 @@
   }
 
   .changelog__entry {
-    scroll-margin-top: 2rem;
     display: grid;
     grid-template-columns: 150px 1fr;
+  }
+
+  :global(.changelog__entryDate) {
+    scroll-margin-top: 2rem;
   }
 
   .changelog__content {
