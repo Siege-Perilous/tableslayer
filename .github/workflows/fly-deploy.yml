@@ -46,6 +46,7 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
           PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
+          FATHOM_SITE_ID=${{ secrets.FATHOM_SITE_ID }}
           EOF
       - uses: ./.github/shared
       - name: Deploy PartyKit servers
