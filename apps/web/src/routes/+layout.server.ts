@@ -3,8 +3,9 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
   const envName = process.env.ENV_NAME || 'development';
+  const fathomSiteId = process.env.FATHOM_SITE_ID || '';
 
-  if (!event.locals.user) return { envName };
+  if (!event.locals.user) return { envName, fathomSiteId };
 
   const userId = event.locals.user.id;
   try {
@@ -13,7 +14,8 @@ export const load: LayoutServerLoad = async (event) => {
     return {
       user,
       parties,
-      envName
+      envName,
+      fathomSiteId
     };
   } catch (error) {
     console.error('Error fetching user and parties', error);
