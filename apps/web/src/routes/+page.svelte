@@ -105,7 +105,7 @@
   </div>
   <div>
     <Title size="sm" as="h3">Do I need an Internet connection?</Title>
-    <Text>Yes. Table Slayer requires and Internet connection and a web browser to run.</Text>
+    <Text>Yes. Table Slayer requires an Internet connection and a web browser to run.</Text>
   </div>
   <div>
     <Title size="sm" as="h3">How does it compare to other VTTs?</Title>
@@ -124,7 +124,7 @@
   <div>
     <Title size="sm" as="h3">Where do I get maps?</Title>
     <Text>
-      We do not provide maps. There are dozens of free battle maps available online. Table Slayer works best with
+      We do not provide maps. There are thousands of free battle maps available online. Table Slayer works best with
       ungridded map images or mp4 videos.
     </Text>
   </div>
