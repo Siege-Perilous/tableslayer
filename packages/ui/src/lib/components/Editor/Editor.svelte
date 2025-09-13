@@ -161,7 +161,10 @@
         StarterKit,
         Typography,
         Link.configure({
-          openOnClick: false // Prevent default link opening behavior
+          openOnClick: false,
+          HTMLAttributes: {
+            class: 'editor-link'
+          }
         })
       ],
       content: initialContent, // Pass content with fallback for null/undefined
@@ -186,9 +189,9 @@
       }
     });
 
-    // Add click handler to the editor content
     if (element) {
-      element.addEventListener('click', handleEditorClick);
+      element.addEventListener('click', handleEditorClick, true);
+      element.addEventListener('mousedown', handleEditorMouseDown, true);
     }
 
     editorReady = true;
@@ -200,9 +203,9 @@
       editor.destroy();
     }
 
-    // Clean up event listeners
     if (element) {
-      element.removeEventListener('click', handleEditorClick);
+      element.removeEventListener('click', handleEditorClick, true);
+      element.removeEventListener('mousedown', handleEditorMouseDown, true);
     }
 
     // Clean up floating UI positioning if active
@@ -227,15 +230,30 @@
     const target = e.target as HTMLElement;
     const linkElement = target.closest('a');
 
-    // Close any open popovers first
-    hideLinkPopover();
+    if (linkElement && linkElement.classList.contains('editor-link')) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
 
-    // If clicked on a link, show the popover
-    if (linkElement) {
-      e.preventDefault(); // Prevent default link behavior
+      hideLinkPopover();
+
       currentLinkElement = linkElement;
       currentLinkUrl = linkElement.getAttribute('href') || '';
       showLinkPopover(linkElement);
+      return false;
+    } else if (!linkElement) {
+      hideLinkPopover();
+    }
+  }
+
+  function handleEditorMouseDown(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    const linkElement = target.closest('a');
+
+    if (linkElement && linkElement.classList.contains('editor-link')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
     }
   }
 
@@ -310,14 +328,16 @@
     cleanupAutoUpdate = autoUpdate(anchorElement, linkPopoverElement, () => {
       computePosition(anchorElement, linkPopoverElement!, {
         placement: 'bottom',
-        middleware: [offset(8), shift(), flip()]
+        middleware: [offset(8), shift({ padding: 10 }), flip()],
+        strategy: 'fixed'
       }).then(({ x, y }) => {
         if (linkPopoverElement) {
           Object.assign(linkPopoverElement.style, {
             left: `${x}px`,
             top: `${y}px`,
-            position: 'absolute',
-            display: 'block'
+            position: 'fixed',
+            display: 'block',
+            transform: 'translateZ(0)'
           });
         }
       });
@@ -670,11 +690,11 @@
     border: var(--iconBtn-borderHover);
   }
 
-  /* Link Popover Styles */
   .linkPopover {
-    position: absolute;
+    position: fixed;
     z-index: 9999;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    will-change: transform;
   }
   .linkPopover__content {
     box-shadow: var(--shadow-1);
@@ -691,9 +711,11 @@
   }
 
   :global(#editorLinkPortal) {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
+    width: 0;
+    height: 0;
     z-index: 9999;
     pointer-events: none;
   }
