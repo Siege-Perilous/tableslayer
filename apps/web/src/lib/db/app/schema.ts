@@ -343,7 +343,8 @@ export const sceneTable = sqliteTable(
     displayResolutionY: integer('display_resolution_y').notNull().default(1080),
     fogOfWarUrl: text('fog_of_war_url'),
     fogOfWarColor: text('fog_of_war_color').notNull().default('#000'),
-    fogOfWarOpacity: real('fog_of_war_opacity').notNull().default(0.9),
+    fogOfWarOpacityDm: real('fog_of_war_opacity_dm').notNull().default(0.3),
+    fogOfWarOpacityPlayer: real('fog_of_war_opacity_player').notNull().default(0.9),
     mapLocation: text('map_location'),
     mapThumbLocation: text('map_thumb_location'),
     mapRotation: real('map_rotation').notNull().default(0),
@@ -394,7 +395,11 @@ export const sceneTable = sqliteTable(
   },
   (table) => [
     uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
-    check('protected_fog_of_war_opacity', sql`${table.fogOfWarOpacity} >= 0 AND ${table.fogOfWarOpacity} <= 1`),
+    check('protected_fog_of_war_opacity_dm', sql`${table.fogOfWarOpacityDm} >= 0 AND ${table.fogOfWarOpacityDm} <= 1`),
+    check(
+      'protected_fog_of_war_opacity_player',
+      sql`${table.fogOfWarOpacityPlayer} >= 0 AND ${table.fogOfWarOpacityPlayer} <= 1`
+    ),
     check('protected_grid_opacity', sql`${table.gridOpacity} >= 0 AND ${table.gridOpacity} <= 1`),
     check('protected_weather_intensity', sql`${table.weatherIntensity} >= 0 AND ${table.weatherIntensity} <= 1`),
     check('protected_weather_opacity', sql`${table.weatherOpacity} >= 0 AND ${table.weatherOpacity} <= 1`),

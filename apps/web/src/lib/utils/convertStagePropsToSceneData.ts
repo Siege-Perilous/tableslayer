@@ -99,7 +99,8 @@ export const convertPropsToSceneDetails = (
   setNestedIfExists(stageProps, details, 'fogOfWar', {
     url: 'fogOfWarUrl',
     'noise.baseColor': 'fogOfWarColor',
-    opacity: 'fogOfWarOpacity'
+    'opacity.dm': 'fogOfWarOpacityDm',
+    'opacity.player': 'fogOfWarOpacityPlayer'
   });
 
   setNestedIfExists(stageProps, details, 'grid', {

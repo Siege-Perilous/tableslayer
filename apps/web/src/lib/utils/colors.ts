@@ -55,7 +55,6 @@ export const generateGradientColors = (colorStart: string, colorEnd?: string): s
  * Converts a regular 6-digit hex color to an 8-digit hex with alpha channel.
  */
 export const to8CharHex = (hex: string, opacity: number) => {
-  const rgba = chroma(hex).alpha(opacity).rgba();
-  const [r, g, b, a] = rgba;
-  return chroma(r, g, b, a).hex('rgba');
+  // Create color with alpha and return as 8-char hex
+  return chroma(hex).alpha(opacity).hex();
 };

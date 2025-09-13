@@ -28,7 +28,8 @@
     disabled={props.fogOfWar.tool.type !== ToolType.Brush}
   />
 
-  <Slider bind:value={props.fogOfWar.opacity} label="Opacity" min={0} max={1} step={0.01} />
+  <Slider bind:value={props.fogOfWar.opacity.dm} label="DM Opacity" min={0} max={1} step={0.01} />
+  <Slider bind:value={props.fogOfWar.opacity.player} label="Player Opacity" min={0} max={1} step={0.01} />
 
   <Folder title="Outline" expanded={false}>
     <Color bind:value={props.fogOfWar.outline.color} label="Color" />

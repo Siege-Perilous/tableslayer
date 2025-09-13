@@ -33,7 +33,10 @@ export interface DrawingLayerProps {
   /**
    * The opacity of the drawing layer
    */
-  opacity: number;
+  opacity: {
+    dm: number;
+    player: number;
+  };
 
   /**
    * The tool settings
