@@ -225,6 +225,13 @@
       "when": 1757506503383,
       "tag": "0031_max-promos",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1757731407357,
+      "tag": "0032_player-fog",
+      "breakpoints": true
     }
   ]
 }

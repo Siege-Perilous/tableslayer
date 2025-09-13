@@ -1,11 +1,13 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
+  import { getContext } from 'svelte';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { InitialState } from '../DrawingLayer/types';
+  import { StageMode } from '../Stage/types';
   import fogVertexShader from '../../shaders/default.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
@@ -16,6 +18,7 @@
 
   const { props, mapSize }: Props = $props();
 
+  const stage = getContext<{ mode: StageMode }>('stage');
   let drawMaterial: DrawingMaterial;
 
   // Material used for rendering the fog of war
@@ -41,7 +44,7 @@
       uOffset: { value: props.noise.offset },
       uAmplitude: { value: props.noise.amplitude },
       uLevels: { value: props.noise.levels },
-      uOpacity: { value: props.opacity },
+      uOpacity: { value: stage.mode === StageMode.DM ? props.opacity.dm : props.opacity.player },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
       )
@@ -53,7 +56,7 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    fogMaterial.uniforms.uOpacity.value = props.opacity;
+    fogMaterial.uniforms.uOpacity.value = stage.mode === StageMode.DM ? props.opacity.dm : props.opacity.player;
 
     fogMaterial.uniforms.uBaseColor.value = new THREE.Color(props.noise.baseColor);
     fogMaterial.uniforms.uFogColor1.value = new THREE.Color(props.noise.fogColor1);

@@ -115,7 +115,10 @@ export const buildSceneProps = (
     },
     fogOfWar: {
       url: activeScene.fogOfWarUrl ?? '',
-      opacity: activeScene.fogOfWarOpacity ?? 1,
+      opacity: {
+        dm: activeScene.fogOfWarOpacityDm ?? 0.3,
+        player: activeScene.fogOfWarOpacityPlayer ?? 0.9
+      },
       outline: {
         color: '#FFFFFF',
         opacity: 1,

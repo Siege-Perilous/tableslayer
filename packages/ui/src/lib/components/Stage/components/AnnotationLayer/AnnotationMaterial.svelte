@@ -100,7 +100,10 @@
   bind:this={drawMaterial}
   props={{
     url: props.url,
-    opacity: props.opacity,
+    opacity: {
+      dm: props.opacity,
+      player: props.opacity
+    },
     tool: {
       mode: DrawMode.Draw,
       size: lineWidth,
