@@ -1817,12 +1817,13 @@
    */
   let isUpdatingFog = false;
   let pendingFogBlob: Blob | null = null;
+  let pendingFogUpdateId: string | null = null;
   let fogUploadAbortController: AbortController | null = null;
 
   const processFogUpdate = async () => {
     if (!pendingFogBlob || isSaving) return;
 
-    const updateId = pendingFogBlob['updateId'] || 'unknown';
+    const updateId = pendingFogUpdateId || 'unknown';
 
     // Check if user is still drawing
     if (stage?.fogOfWar?.isDrawing()) {
@@ -1833,6 +1834,7 @@
     }
 
     pendingFogBlob = null; // Clear pending blob
+    pendingFogUpdateId = null; // Clear update ID
 
     timingLog('FOG-RT', `${updateId} - 3. Starting RLE encoding at ${new Date().toISOString()}`);
     // Get RLE encoded data from the fog layer
@@ -1921,7 +1923,7 @@
     // Store a flag that we need to process fog update
     // We'll use RLE encoding instead of the blob
     pendingFogBlob = new Blob(); // Just use empty blob as a flag
-    pendingFogBlob['updateId'] = updateId; // Attach ID for tracking
+    pendingFogUpdateId = updateId; // Store ID separately
 
     // Clear any existing timer
     if (fogUpdateTimer) {
