@@ -53,7 +53,7 @@
     setUserChangeCallback
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
-  import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
+  import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -304,18 +304,26 @@
 
   // Use appropriate pane layout based on device type
   // Initialize with default values, will be updated in $effect
-  let clientPaneLayoutDesktop = $state('split');
-  let clientPaneLayoutMobile = $state('single');
+  let clientPaneLayoutDesktop = $state<PaneConfig[]>([
+    { size: 20, isCollapsed: false },
+    { size: 50 },
+    { size: 30, isCollapsed: true }
+  ]);
+  let clientPaneLayoutMobile = $state<PaneConfig[]>([
+    { size: 25, isCollapsed: false },
+    { size: 50 },
+    { size: 25, isCollapsed: true }
+  ]);
 
   // On client-side, use cookie values or fall back to SSR values
   $effect(() => {
     if (typeof window !== 'undefined') {
-      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop') || paneLayoutDesktop;
-      clientPaneLayoutMobile = getPreference('paneLayoutMobile') || paneLayoutMobile;
+      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop') || paneLayoutDesktop || clientPaneLayoutDesktop;
+      clientPaneLayoutMobile = getPreference('paneLayoutMobile') || paneLayoutMobile || clientPaneLayoutMobile;
     } else {
       // Use SSR values initially
-      clientPaneLayoutDesktop = paneLayoutDesktop;
-      clientPaneLayoutMobile = paneLayoutMobile;
+      if (paneLayoutDesktop) clientPaneLayoutDesktop = paneLayoutDesktop;
+      if (paneLayoutMobile) clientPaneLayoutMobile = paneLayoutMobile;
     }
   });
 
