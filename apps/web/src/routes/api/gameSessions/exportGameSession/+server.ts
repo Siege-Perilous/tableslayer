@@ -1,8 +1,12 @@
+import { db } from '$lib/db/app';
+import { sceneTable } from '$lib/db/app/schema';
+import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
 import { getGameSession } from '$lib/server/gameSession';
 import { getMarkersForScene } from '$lib/server/marker';
 import { getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
 import { error, type RequestEvent } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import pkg from '../../../../../package.json';
 
@@ -33,6 +37,25 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     const scenesWithMarkers = await Promise.all(
       scenes.map(async (scene) => {
         const markers = await getMarkersForScene(scene.id);
+        const annotations = await getAnnotationsForScene(scene.id);
+
+        // Get the fogOfWarMask from the database for this scene
+        const sceneWithMask = await db
+          .select({ fogOfWarMask: sceneTable.fogOfWarMask })
+          .from(sceneTable)
+          .where(eq(sceneTable.id, scene.id))
+          .get();
+
+        // Get annotation masks for each annotation
+        const annotationsWithMasks = await Promise.all(
+          annotations.map(async (annotation) => {
+            const maskData = await getAnnotationMaskData(annotation.id);
+            return {
+              ...annotation,
+              mask: maskData?.mask || null
+            };
+          })
+        );
 
         // Remove thumb property which is temporary and not needed for export
         const { thumb, ...sceneWithoutThumb } = scene as any;
@@ -42,11 +65,13 @@ export const POST = async ({ request, locals }: RequestEvent) => {
 
         return {
           ...sceneData,
+          fogOfWarMask: sceneWithMask?.fogOfWarMask || null,
           markers: markers.map((marker) => {
             // Remove thumb property from markers
             const { thumb, ...markerWithoutThumb } = marker as any;
             return markerWithoutThumb;
-          })
+          }),
+          annotations: annotationsWithMasks
         };
       })
     );

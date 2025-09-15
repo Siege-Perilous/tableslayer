@@ -1,9 +1,12 @@
 import { db } from '$lib/db/app';
 import {
+  annotationsTable,
+  insertAnnotationSchema,
   insertMarkerSchema,
   insertSceneSchema,
   markerTable,
   sceneTable,
+  type InsertAnnotation,
   type InsertMarker,
   type InsertScene
 } from '$lib/db/app/schema';
@@ -66,7 +69,9 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         name: z.string(),
         scenes: z.array(
           insertSceneSchema.omit({ gameSessionId: true }).extend({
-            markers: z.array(insertMarkerSchema.omit({ sceneId: true })).optional()
+            markers: z.array(insertMarkerSchema.omit({ sceneId: true })).optional(),
+            annotations: z.array(insertAnnotationSchema.omit({ sceneId: true })).optional(),
+            fogOfWarMask: z.string().nullable().optional()
           })
         )
       })
@@ -133,14 +138,26 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         order: sceneData.order,
         mapLocation: mapLocation || null,
         mapThumbLocation: mapThumbLocation || null,
-        fogOfWarUrl: null // Reset fog of war for imported scenes
+        fogOfWarUrl: null, // Reset fog of war URL for imported scenes
+        fogOfWarMask: sceneData.fogOfWarMask || null // Preserve the RLE mask data
       };
 
       const typedSceneToCreate = sceneToCreate as Partial<InsertScene> & Record<string, unknown>;
       Object.entries(sceneData).forEach(([key, value]) => {
         // Skip properties we handle separately or don't want to include
         // Also skip lastUpdated as it should be set by the database on creation
-        if (!['markers', 'fogOfWarUrl', 'id', 'mapLocation', 'mapThumbLocation', 'lastUpdated'].includes(key)) {
+        if (
+          ![
+            'markers',
+            'annotations',
+            'fogOfWarUrl',
+            'fogOfWarMask',
+            'id',
+            'mapLocation',
+            'mapThumbLocation',
+            'lastUpdated'
+          ].includes(key)
+        ) {
           typedSceneToCreate[key] = value;
         }
       });
@@ -176,6 +193,30 @@ export const POST = async ({ request, locals }: RequestEvent) => {
           await db
             .insert(markerTable)
             .values(markerToCreate as InsertMarker)
+            .execute();
+        }
+      }
+
+      // Create all annotations for this scene
+      if (sceneData.annotations && sceneData.annotations.length > 0) {
+        for (const annotationData of sceneData.annotations) {
+          const newAnnotationId = uuidv4();
+
+          const annotationToCreate: Partial<InsertAnnotation> & Record<string, unknown> = {
+            id: newAnnotationId,
+            sceneId: newSceneId,
+            name: annotationData.name,
+            opacity: annotationData.opacity,
+            color: annotationData.color,
+            url: annotationData.url || null,
+            mask: annotationData.mask || null, // Preserve the RLE mask data
+            visibility: annotationData.visibility,
+            order: annotationData.order
+          };
+
+          await db
+            .insert(annotationsTable)
+            .values(annotationToCreate as InsertAnnotation)
             .execute();
         }
       }
