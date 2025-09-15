@@ -55,8 +55,8 @@ export const buildSceneProps = (
   let annotationLayers: AnnotationLayerData[] = [];
   if (activeSceneAnnotations && Array.isArray(activeSceneAnnotations)) {
     annotationLayers = activeSceneAnnotations
-      // Filter out player-only annotations for client mode
-      .filter((annotation) => mode === 'editor' || annotation.visibility === 0) // 0 = StageMode.DM (visible to all)
+      // Filter out DM-only annotations for client mode
+      .filter((annotation) => mode === 'editor' || annotation.visibility === 1) // 1 = StageMode.Player (visible to players)
       .map((annotation) => ({
         id: annotation.id,
         name: annotation.name,

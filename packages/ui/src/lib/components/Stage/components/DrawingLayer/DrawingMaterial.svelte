@@ -323,14 +323,18 @@
     // Decode RLE to binary
     const binaryData = decodeRLE(actualRleData, actualWidth * actualHeight);
 
-    // Create texture from binary data
+    // Create texture from binary data - flip vertically to match WebGL coordinate system
     const rgba = new Uint8Array(actualWidth * actualHeight * 4);
-    for (let i = 0; i < binaryData.length; i++) {
-      const idx = i * 4;
-      rgba[idx] = 0; // R
-      rgba[idx + 1] = 0; // G
-      rgba[idx + 2] = 0; // B
-      rgba[idx + 3] = binaryData[i]; // A
+    for (let y = 0; y < actualHeight; y++) {
+      for (let x = 0; x < actualWidth; x++) {
+        const srcIndex = y * actualWidth + x;
+        const dstIndex = (actualHeight - 1 - y) * actualWidth + x; // Flip vertically
+        const idx = dstIndex * 4;
+        rgba[idx] = 0; // R
+        rgba[idx + 1] = 0; // G
+        rgba[idx + 2] = 0; // B
+        rgba[idx + 3] = binaryData[srcIndex]; // A
+      }
     }
 
     // Create texture

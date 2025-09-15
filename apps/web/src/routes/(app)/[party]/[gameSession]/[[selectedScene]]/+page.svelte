@@ -525,6 +525,28 @@
           isReceivingYjsUpdate = true;
           stageProps = mergedStageProps;
 
+          // Check for mask version changes and fetch updated masks
+          // Fog mask version changed
+          if (
+            !isDrawingFog &&
+            mergedStageProps.fogOfWar?.maskVersion &&
+            mergedStageProps.fogOfWar.maskVersion !== currentStagePropsSnapshot.fogOfWar?.maskVersion
+          ) {
+            devLog('yjs', 'Fog mask version changed, fetching new mask');
+            fetchFogMask(selectedScene.id);
+          }
+
+          // Annotation mask versions changed
+          if (!isDrawingAnnotation && mergedStageProps.annotations?.layers) {
+            for (const layer of mergedStageProps.annotations.layers) {
+              const oldLayer = currentStagePropsSnapshot.annotations?.layers?.find((l) => l.id === layer.id);
+              if (layer.maskVersion && layer.maskVersion !== oldLayer?.maskVersion) {
+                devLog('yjs', `Annotation mask version changed for layer ${layer.id}, fetching new mask`);
+                fetchAnnotationMask(layer.id);
+              }
+            }
+          }
+
           // Reset flag after the update - longer timeout to prevent auto-save loop
           setTimeout(() => {
             isReceivingYjsUpdate = false;
@@ -1592,6 +1614,64 @@
   };
 
   /**
+   * MASK FETCHING
+   * MASK FETCHING
+   * MASK FETCHING
+   *
+   * Fetch RLE mask data when maskVersion changes in Y.js
+   */
+
+  const fetchFogMask = async (sceneId: string) => {
+    try {
+      const response = await fetch(`/api/scenes/getFogMask?sceneId=${sceneId}`);
+      if (!response.ok) {
+        devError('mask', 'Failed to fetch fog mask');
+        return;
+      }
+
+      const data = (await response.json()) as { maskData?: string };
+      if (data.maskData && stage?.fogOfWar?.fromRLE) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+        devLog('mask', 'Applied updated fog mask from remote');
+      }
+    } catch (error) {
+      devError('mask', 'Error fetching fog mask:', error);
+    }
+  };
+
+  const fetchAnnotationMask = async (annotationId: string) => {
+    try {
+      const response = await fetch(`/api/annotations/getMask?annotationId=${annotationId}`);
+      if (!response.ok) {
+        devError('mask', 'Failed to fetch annotation mask');
+        return;
+      }
+
+      const data = (await response.json()) as { maskData?: string };
+      if (data.maskData && stage?.annotations?.loadMask) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the annotation layer
+        await stage.annotations.loadMask(annotationId, bytes);
+        devLog('mask', `Applied updated annotation mask for layer ${annotationId} from remote`);
+      }
+    } catch (error) {
+      devError('mask', 'Error fetching annotation mask:', error);
+    }
+  };
+
+  /**
    * ANNOTATION LAYER
    * ANNOTATION LAYER
    * ANNOTATION LAYER
@@ -1655,11 +1735,40 @@
           devLog('annotation', 'Annotation mask update completed but user is drawing - continuing');
         }
 
-        // Try to trigger a scene save now that annotation update is complete
-        saveScene();
+        // Update mask version for this annotation layer
+        const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
+        if (layerIndex !== -1) {
+          const newMaskVersion = Date.now();
+          stageProps.annotations.layers[layerIndex].maskVersion = newMaskVersion;
 
+          console.log('[Editor] Set annotation maskVersion:', {
+            layerId,
+            layerIndex,
+            newMaskVersion,
+            layer: stageProps.annotations.layers[layerIndex]
+          });
+
+          // Sync to Y.js for real-time updates
+          if (partyData && selectedScene?.id) {
+            lastOwnYjsUpdateTime = Date.now();
+            console.log('[Editor] Syncing annotation maskVersion to Y.js:', {
+              sceneId: selectedScene.id,
+              layerId,
+              maskVersion: newMaskVersion,
+              allLayers: stageProps.annotations.layers.map((l) => ({ id: l.id, maskVersion: l.maskVersion }))
+            });
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+          }
+        } else {
+          console.error('[Editor] Could not find layer to update maskVersion:', layerId);
+        }
+
+        // Clear flag before triggering save so saveScene() doesn't return early
         isUpdatingAnnotation = false;
         annotationUploadAbortControllers.delete(layerId);
+
+        // Try to trigger a scene save now that annotation update is complete
+        saveScene();
       },
       onError: () => {
         devError('save', 'Error updating annotation mask');
@@ -1753,12 +1862,16 @@
         // Clear the old URL since we're using RLE now
         stageProps.fogOfWar.url = null;
 
+        // Update mask version to signal other clients
+        stageProps.fogOfWar.maskVersion = Date.now();
+
         // Immediately sync to Y.js for real-time collaboration
         if (partyData && selectedScene?.id) {
           lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
           partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
         }
 
+        // Clear flag before triggering save so saveScene() doesn't return early
         isUpdatingFog = false;
         fogUploadAbortController = null;
 

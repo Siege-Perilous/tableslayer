@@ -1,29 +1,24 @@
-import { apiFactory } from '$lib/factories';
 import { getAnnotationMaskData } from '$lib/server/annotations';
-import { z } from 'zod';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
-const validationSchema = z.object({
-  annotationId: z.string()
-});
-
-export const GET = apiFactory(
-  async ({ url }) => {
+export const GET: RequestHandler = async ({ url }) => {
+  try {
     const annotationId = url.searchParams.get('annotationId');
 
     if (!annotationId) {
-      throw new Error('Annotation ID is required');
+      return json({ success: false, error: 'Annotation ID is required' }, { status: 400 });
     }
 
     const maskData = await getAnnotationMaskData(annotationId);
 
-    return {
+    // Return the base64 mask data
+    return json({
+      success: true,
       maskData: maskData?.mask || null
-    };
-  },
-  {
-    validationSchema: z.object({}), // No body validation for GET
-    validationErrorMessage: 'Invalid annotation mask request',
-    unauthorizedMessage: 'You are not authorized to access this annotation mask.',
-    unexpectedErrorMessage: 'An unexpected error occurred while fetching the annotation mask.'
+    });
+  } catch (error) {
+    console.error('Error fetching annotation mask:', error);
+    return json({ success: false, error: 'Failed to fetch annotation mask' }, { status: 500 });
   }
-);
+};

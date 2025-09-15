@@ -50,6 +50,11 @@ export interface AnnotationLayerData {
   url: string | null;
 
   /**
+   * Version timestamp for mask data changes (for real-time sync)
+   */
+  maskVersion?: number;
+
+  /**
    * Control who can see the layer
    */
   visibility: StageMode;
