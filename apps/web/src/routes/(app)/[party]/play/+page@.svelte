@@ -534,8 +534,45 @@
     stageIsLoading = true;
   }
 
-  function onStageInitialized() {
+  async function onStageInitialized() {
     stageIsLoading = false;
+
+    // Load fog mask if available
+    if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
+      try {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.activeSceneFogMask);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+      } catch (error) {
+        console.error('Error loading fog mask:', error);
+      }
+    }
+
+    // Load annotation masks if available
+    if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
+      try {
+        for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
+          if (maskData) {
+            // Convert base64 back to Uint8Array
+            const binaryString = atob(maskData);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            // Apply the mask to the annotation layer
+            await stage.annotations.loadMask(annotationId, bytes);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading annotation masks:', error);
+      }
+    }
+
     // Immediately fit when stage is ready
     if (stage?.scene?.fit) {
       stage.scene.fit();
