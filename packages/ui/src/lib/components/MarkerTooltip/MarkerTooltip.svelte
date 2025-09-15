@@ -30,6 +30,7 @@
   let tooltipElement = $state<HTMLDivElement>();
   let portalContainer: HTMLDivElement | undefined = $state();
   let cleanup: (() => void) | null = null;
+  let currentPlacement = $state<'top' | 'bottom' | 'left' | 'right'>('top');
 
   function handleTooltipMouseEnter() {
     console.log('[MarkerTooltip] Mouse entered tooltip');
@@ -165,13 +166,17 @@
       cleanup = autoUpdate(virtualEl, tooltipElement!, async () => {
         const markerRadius = markerDiameter / 2;
         const buffer = 20; // Increased from 10 to 20 for more spacing
-        const dynamicOffset = markerRadius + buffer;
+        const arrowSize = 8; // Size of the arrow
+        const dynamicOffset = markerRadius + buffer + arrowSize;
 
-        const { x, y } = await computePosition(virtualEl, tooltipElement!, {
+        const { x, y, placement } = await computePosition(virtualEl, tooltipElement!, {
           placement: 'top',
           middleware: [offset(dynamicOffset), flip(), shift({ padding: 10 })],
           strategy: 'fixed'
         });
+
+        // Update placement for arrow direction
+        currentPlacement = placement as 'top' | 'bottom' | 'left' | 'right';
 
         Object.assign(tooltipElement!.style, {
           position: 'fixed',
@@ -201,9 +206,11 @@
     class="marker-tooltip"
     style="display: none;"
     role="tooltip"
+    data-placement={currentPlacement}
     onmouseenter={handleTooltipMouseEnter}
     onmouseleave={handleTooltipMouseLeave}
   >
+    <div class="marker-tooltip__arrow" data-placement={currentPlacement}></div>
     {#if isDM && onPinToggle && marker}
       <button
         class="marker-tooltip__pin"
@@ -229,10 +236,8 @@
 <style>
   .marker-tooltip {
     max-width: 400px;
-    background: var(--bg);
+    background-color: var(--bg);
     padding: 1rem;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
     border: 1px solid var(--border);
     border-radius: 0.25rem;
     box-shadow: var(--shadow-3);
@@ -272,5 +277,54 @@
 
   .marker-tooltip__title:last-child {
     margin-bottom: 0;
+  }
+
+  /* Arrow indicator */
+  .marker-tooltip__arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    pointer-events: none;
+  }
+
+  /* Arrow when tooltip is above marker - simplified without pseudo-element */
+  .marker-tooltip__arrow[data-placement='top'] {
+    bottom: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0 8px;
+    border-color: var(--bg) transparent transparent transparent;
+    filter: drop-shadow(0 1px 0 var(--border));
+  }
+
+  /* Arrow when tooltip is below marker - simplified */
+  .marker-tooltip__arrow[data-placement='bottom'] {
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 8px 8px 8px;
+    border-color: transparent transparent var(--bg) transparent;
+    filter: drop-shadow(0 -1px 0 var(--border));
+  }
+
+  /* Arrow when tooltip is to the left of marker - simplified */
+  .marker-tooltip__arrow[data-placement='left'] {
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent var(--bg);
+    filter: drop-shadow(1px 0 0 var(--border));
+  }
+
+  /* Arrow when tooltip is to the right of marker - simplified */
+  .marker-tooltip__arrow[data-placement='right'] {
+    left: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--bg) transparent transparent;
+    filter: drop-shadow(-1px 0 0 var(--border));
   }
 </style>
