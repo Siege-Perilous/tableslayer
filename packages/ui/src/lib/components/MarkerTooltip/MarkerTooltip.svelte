@@ -9,13 +9,28 @@
     position: { x: number; y: number } | null;
     containerElement: HTMLElement | null;
     markerDiameter?: number;
+    onTooltipHover?: (isHovering: boolean) => void;
   }
 
-  let { marker, position, containerElement, markerDiameter = 40 }: Props = $props();
+  let { marker, position, containerElement, markerDiameter = 40, onTooltipHover }: Props = $props();
 
   let tooltipElement = $state<HTMLDivElement>();
   let portalContainer: HTMLDivElement | undefined = $state();
   let cleanup: (() => void) | null = null;
+
+  function handleTooltipMouseEnter() {
+    console.log('[MarkerTooltip] Mouse entered tooltip');
+    if (onTooltipHover) {
+      onTooltipHover(true);
+    }
+  }
+
+  function handleTooltipMouseLeave() {
+    console.log('[MarkerTooltip] Mouse left tooltip');
+    if (onTooltipHover) {
+      onTooltipHover(false);
+    }
+  }
 
   // Get the content whether it's from marker.note or marker.tooltip.content
   const getMarkerContent = (marker: any) => {
@@ -168,7 +183,13 @@
 </script>
 
 {#if (markerContent || markerTitle) && position}
-  <div bind:this={tooltipElement} class="marker-tooltip" style="display: none;">
+  <div
+    bind:this={tooltipElement}
+    class="marker-tooltip"
+    style="display: none;"
+    onmouseenter={handleTooltipMouseEnter}
+    onmouseleave={handleTooltipMouseLeave}
+  >
     {#if markerTitle}
       <div class="marker-tooltip__title">{markerTitle}</div>
     {/if}
@@ -183,7 +204,6 @@
     max-width: 400px;
     background: var(--bg);
     padding: 1rem;
-    pointer-events: none;
     border-radius: var(--radius);
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border);

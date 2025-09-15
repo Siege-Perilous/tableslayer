@@ -186,5 +186,11 @@
     position={tooltipPosition}
     {containerElement}
     markerDiameter={markerSizeInPixels}
+    onTooltipHover={(isHovering) => {
+      // When hovering tooltip in DM mode, maintain the hover state
+      if (props.mode === 0 && sceneRef?.markers?.maintainHover) {
+        sceneRef.markers.maintainHover(isHovering);
+      }
+    }}
   />
 </div>

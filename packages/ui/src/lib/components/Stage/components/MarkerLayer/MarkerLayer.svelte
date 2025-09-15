@@ -36,7 +36,9 @@
   let hoveredMarker: Marker | null = $state(null);
   let hoveredMarkerDelayed: Marker | null = $state(null); // Marker after hover delay
   let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  let hideTimer: ReturnType<typeof setTimeout> | null = null;
   const HOVER_DELAY_MS = 500; // Half second delay before showing tooltip
+  const HIDE_DELAY_MS = 300; // Delay before hiding tooltip to allow moving to it
 
   const ghostMarker: Marker = $state({
     id: uuidv4(),
@@ -159,6 +161,7 @@
 
           // Start timer for new hover if we have a marker
           if (newHoveredMarker) {
+            cancelHideTimer(); // Cancel any pending hide
             hoverTimer = setTimeout(() => {
               hoveredMarkerDelayed = newHoveredMarker;
             }, HOVER_DELAY_MS);
@@ -183,7 +186,20 @@
       clearTimeout(hoverTimer);
       hoverTimer = null;
     }
-    hoveredMarkerDelayed = null;
+    // Add delay before clearing the delayed hover state
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+    }
+    hideTimer = setTimeout(() => {
+      hoveredMarkerDelayed = null;
+    }, HIDE_DELAY_MS);
+  }
+
+  function cancelHideTimer() {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
   }
 
   function isTokenVisible(marker: Marker) {
@@ -230,6 +246,20 @@
       previousHoveredMarkerDelayed = hoveredMarkerDelayed;
     }
   });
+
+  // Function to keep tooltip visible when hovering over it
+  export function maintainHover(maintain: boolean) {
+    console.log('[MarkerLayer] maintainHover called:', maintain, 'mode:', stage.mode);
+    if (maintain && stage.mode === StageMode.DM) {
+      // Cancel any pending hide
+      cancelHideTimer();
+      console.log('[MarkerLayer] Cancelling hide timer');
+    } else if (!maintain && stage.mode === StageMode.DM && !hoveredMarker) {
+      // If not maintaining and not hovering a marker, start hide timer
+      clearHoverTimer();
+      console.log('[MarkerLayer] Starting hide timer');
+    }
+  }
 
   // Export reactive state for hover and drag
   export const markerState = {

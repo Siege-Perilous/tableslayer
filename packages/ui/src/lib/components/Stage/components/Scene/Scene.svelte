@@ -461,6 +461,12 @@
     },
     get hoveredMarker() {
       return markerLayer?.markerState?.hoveredMarker ?? null;
+    },
+    get selectedMarker() {
+      return markerLayer?.markerState?.selectedMarker ?? null;
+    },
+    maintainHover: (maintain: boolean) => {
+      markerLayer?.maintainHover?.(maintain);
     }
   };
 
