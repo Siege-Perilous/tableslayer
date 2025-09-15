@@ -5,7 +5,7 @@
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { RenderMode } from './types';
-  import { encodeRLE, decodeRLE, pngToRLE, rleToPng } from '../../../../utils/rle';
+  import { encodeRLE, decodeRLE } from '../../../../utils/rle';
 
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';

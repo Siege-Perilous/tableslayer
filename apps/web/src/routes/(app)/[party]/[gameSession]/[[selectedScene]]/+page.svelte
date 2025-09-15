@@ -29,7 +29,6 @@
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
-    useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
     useUpsertMarkerMutation,
     useUpsertAnnotationMutation,
@@ -343,7 +342,6 @@
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
-  const createFogMutation = useUploadFogFromBlobMutation();
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
@@ -1781,7 +1779,8 @@
     });
   };
 
-  const onAnnotationUpdate = async (layerId: string, blob: Promise<Blob>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onAnnotationUpdate = async (layerId: string, _blob: Promise<Blob>) => {
     // If there's an existing upload for this layer, abort it
     const existingController = annotationUploadAbortControllers.get(layerId);
     if (existingController) {
@@ -1896,7 +1895,8 @@
         // Try to trigger a scene save now that fog update is complete
         saveScene();
       },
-      onError: (error) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      onError: (_error) => {
         devError('save', 'Error updating fog mask');
         isUpdatingFog = false;
         fogUploadAbortController = null;
@@ -1907,7 +1907,8 @@
     });
   };
 
-  const onFogUpdate = async (blob: Promise<Blob>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onFogUpdate = async (_blob: Promise<Blob>) => {
     // If there's an existing upload, abort it
     if (fogUploadAbortController) {
       devLog('fog', 'Aborting previous fog upload - new drawing started');
