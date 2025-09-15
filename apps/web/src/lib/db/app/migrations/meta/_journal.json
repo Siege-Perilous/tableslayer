@@ -232,6 +232,13 @@
       "when": 1757731407357,
       "tag": "0032_player-fog",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1757908906480,
+      "tag": "0033_rle-mask",
+      "breakpoints": true
     }
   ]
 }

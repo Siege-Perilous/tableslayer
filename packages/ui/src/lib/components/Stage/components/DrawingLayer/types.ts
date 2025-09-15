@@ -31,6 +31,11 @@ export interface DrawingLayerProps {
   url: string | null;
 
   /**
+   * Version timestamp for mask data changes (for real-time sync)
+   */
+  maskVersion?: number;
+
+  /**
    * The opacity of the drawing layer
    */
   opacity: {

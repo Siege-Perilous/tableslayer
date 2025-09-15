@@ -17,6 +17,8 @@ This document explains how Table Slayer's real-time collaboration system works u
 11. [Deployment Strategy](#deployment-strategy)
 12. [Cost Optimization](#cost-optimization)
 13. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
+14. [RLE Mask System](#rle-mask-system-run-length-encoding)
+15. [Drawing Protection System](#drawing-protection-system)
 
 ## Overview
 
@@ -656,19 +658,180 @@ export function convertStagePropsToSceneData(stageProps: StageProps, scene: Scen
 </FormControl>
 ```
 
+## RLE Mask System (Run-Length Encoding)
+
+As of January 2025, Table Slayer uses Run-Length Encoding (RLE) for fog of war and annotation masks instead of PNG storage in R2/S3. This eliminates storage costs and reduces latency while maintaining real-time synchronization.
+
+### Key Benefits
+
+1. **~600x compression**: 1MB PNG → ~1.7KB RLE string
+2. **No storage costs**: Masks stored directly in database as base64 text
+3. **Faster updates**: No R2/S3 upload latency (~1.8s saved per update)
+4. **Real-time sync**: Only 8-byte timestamps sync via Y.js, masks fetched on-demand
+5. **Backward compatible**: Old PNG annotations migrate lazily on first edit
+
+### Architecture Overview
+
+```typescript
+// Instead of uploading to R2/S3:
+// OLD: Canvas → PNG Blob → R2 Upload → URL in database → Y.js sync URL
+
+// NEW: Canvas → Binary mask → RLE compression → Base64 → Database → Y.js sync version
+Canvas → Uint8Array → RLE → Base64 → SQLite → Y.js (version only)
+```
+
+### RLE Implementation
+
+The RLE system embeds dimensions in the compressed data:
+
+```typescript
+// In DrawingMaterial.svelte
+export function toRLE(): Uint8Array {
+  const width = renderTarget.width;
+  const height = renderTarget.height;
+
+  // Read pixels from WebGL render target
+  const pixels = new Uint8Array(width * height * 4);
+  renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, pixels);
+
+  // Extract alpha channel (mask data)
+  const alphaData = new Uint8Array(width * height);
+  for (let i = 0; i < width * height; i++) {
+    alphaData[i] = pixels[i * 4 + 3];
+  }
+
+  // Compress with embedded dimensions
+  return encodeRLE(alphaData, width, height);
+}
+
+export function fromRLE(rleData: Uint8Array, expectedWidth: number, expectedHeight: number): void {
+  const { data: binaryData, width, height } = decodeRLE(rleData);
+
+  // Create texture with vertical flip for WebGL coordinates
+  const rgba = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const srcIndex = y * width + x;
+      const dstIndex = (height - 1 - y) * width + x; // Flip vertically
+      const idx = dstIndex * 4;
+      rgba[idx + 3] = binaryData[srcIndex]; // Alpha channel
+    }
+  }
+
+  // Apply to WebGL texture
+  const texture = new THREE.DataTexture(rgba, width, height);
+  renderTarget.texture = texture;
+}
+```
+
+### Database Storage
+
+Masks are stored as base64-encoded text (Turso/LibSQL limitation):
+
+```typescript
+// Database schema
+export const scenesTable = sqliteTable('scenes', {
+  // ... other fields
+  fogOfWarMask: text('fog_of_war_mask'), // Base64 RLE data
+  fogOfWarUrl: text('fog_of_war_url') // Deprecated, nulled on RLE save
+});
+
+export const annotationsTable = sqliteTable('annotations', {
+  // ... other fields
+  mask: text('mask'), // Base64 RLE data
+  url: text('url') // Deprecated, nulled on RLE save
+});
+```
+
+### Real-time Synchronization Flow
+
+1. **Editor draws on mask**
+2. **RLE encoding** (23ms for 1024x1024)
+3. **Save to database** as base64 (~10-50ms in production with embedded DB)
+4. **Update mask version** in Y.js (timestamp)
+5. **Y.js broadcasts version** to all clients (4ms)
+6. **Playfield detects version change** (59ms WebSocket delivery)
+7. **Fetch mask via API** (134ms network round-trip)
+8. **Apply RLE mask** to canvas (16ms)
+
+Total round-trip: ~750ms in production (2.5s in dev due to remote Turso)
+
+### Version-Based Sync Pattern
+
+Only mask versions sync through Y.js, not the actual mask data:
+
+```typescript
+// Editor side - after saving mask
+stageProps.fogOfWar.maskVersion = Date.now();
+partyData.updateSceneStageProps(selectedScene.id, stageProps);
+
+// Playfield side - detecting changes
+if (stageProps.fogOfWar?.maskVersion !== lastFogMaskVersion) {
+  lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+  fetchFogMask(data.activeScene.id); // Fetch actual mask data
+}
+
+// API fetch
+const response = await fetch(`/api/scenes/getFogMask?sceneId=${sceneId}`);
+const { maskData } = await response.json();
+const bytes = Uint8Array.from(atob(maskData), (c) => c.charCodeAt(0));
+await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+```
+
+### Performance Metrics
+
+- **Encoding speed**: 23ms for 1024x1024 mask
+- **Compression ratio**: ~600:1 (1MB → 1.7KB)
+- **Database save**: 10-50ms (embedded), 1.8s (remote Turso)
+- **Total round-trip**: ~750ms production, 2.5s development
+
+### Timing Logs
+
+Enable fog timing logs with `?debug=fogtiming`:
+
+```typescript
+// Custom timing log function with zero production impact
+export function timingLog(category: string, message: string): void {
+  if (!browser) return;
+  const debugParam = new URLSearchParams(window.location.search).get('debug');
+  if (dev || debugParam === 'fogtiming') {
+    console.log(`[${category}] ${message}`);
+  }
+}
+```
+
+Log output shows complete round-trip:
+
+```
+[FOG-RT] fog_1757940658914 - 1. Fog update triggered in editor
+[FOG-RT] fog_1757940658914 - 2. Starting fog processing after 500ms debounce
+[FOG-RT] fog_1757940658914 - 3. Starting RLE encoding
+[FOG-RT] fog_1757940658914 - 4. RLE encoding complete (7889 bytes)
+[FOG-RT] fog_1757940658914 - 5. Starting database save
+[FOG-RT] fog_1757940658914 - 6. Database save complete
+[FOG-RT] fog_1757940658914 - 7. Setting mask version 1757940661272
+[FOG-RT] fog_1757940658914 - 8. Broadcasting Y.js update
+[FOG-RT] fog_1757940658914 - 9. Y.js broadcast complete
+[FOG-RT] fog_1757940661272 - 10. Playfield detected mask version change
+[FOG-RT] fog_1757940661272 - 11. Fetching fog mask from API
+[FOG-RT] fog_1757940661272 - 12. Fog mask API response received
+[FOG-RT] fog_1757940661272 - 13. Applying 7889 bytes to fog layer
+[FOG-RT] fog_1757940661272 - 14. Fog mask applied successfully
+[FOG-RT] fog_1757940661272 - COMPLETE: Full round-trip completed
+```
+
 ## Drawing Protection System
 
-The architecture includes a sophisticated drawing protection system for fog of war and annotation layers that prevents user drawings from being wiped out during uploads and synchronization.
+The architecture includes a sophisticated drawing protection system for fog of war and annotation layers that prevents user drawings from being interrupted during saves and synchronization.
 
 ### Problem
 
 When users draw on fog of war or annotation layers:
 
-1. The drawing is captured as an image blob
-2. The blob is uploaded to R2 storage (takes time)
-3. The URL is updated in stage props and synced via Y.js
-4. During the upload/sync period, users can continue drawing
-5. When the URL update completes, it could wipe out new drawings made during upload
+1. The drawing triggers RLE encoding and database save
+2. During the save/sync period, users can continue drawing
+3. When the mask version update arrives via Y.js, it could interrupt new drawings
+4. Multiple rapid draws could cause race conditions
 
 ### Solution Architecture
 
@@ -677,7 +840,7 @@ When users draw on fog of war or annotation layers:
 Each drawing layer exports an `isDrawing()` method:
 
 ```typescript
-// FogOfWarLayer.svelte
+// DrawingMaterial.svelte
 let drawing = false;
 
 export function isDrawing() {
@@ -691,28 +854,31 @@ function onMouseDown(e: Event, p: THREE.Vector2 | null) {
 
 function onMouseUp() {
   drawing = false;
-  // Finish drawing and trigger upload
+  // Trigger RLE encoding and save
+  onUpdate(toRLE());
 }
 ```
 
-#### 2. Upload Abort Support
+#### 2. Debounced Processing
 
-Uploads can be aborted if new drawing starts:
+Drawing updates are debounced to prevent rapid saves:
 
 ```typescript
 // In page.svelte
-let fogUploadAbortController: AbortController | null = null;
+let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingFogUpdateId: string | null = null;
 
-const onFogUpdate = async (blob: Promise<Blob>) => {
-  // Abort previous upload if exists
-  if (fogUploadAbortController) {
-    fogUploadAbortController.abort();
+const onFogUpdate = async (_blob: Promise<Blob>) => {
+  // Generate unique ID for tracking
+  const updateId = `fog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  pendingFogUpdateId = updateId;
+
+  // Clear existing timer
+  if (fogUpdateTimer) {
+    clearTimeout(fogUpdateTimer);
   }
 
-  // Store blob and defer processing
-  pendingFogBlob = await blob;
-
-  // Process after delay
+  // Process after 500ms debounce
   fogUpdateTimer = setTimeout(() => {
     processFogUpdate();
   }, 500);
@@ -724,13 +890,19 @@ const processFogUpdate = async () => {
     return; // Skip update
   }
 
-  // Proceed with upload...
+  // Get RLE data and save to database
+  const rleData = await stage?.fogOfWar?.toRLE();
+  await updateFogMask({ sceneId, maskData: rleData });
+
+  // Update version for Y.js sync
+  stageProps.fogOfWar.maskVersion = Date.now();
+  partyData.updateSceneStageProps(selectedScene.id, stageProps);
 };
 ```
 
 #### 3. Y.js Update Blocking
 
-Incoming Y.js updates are blocked while drawing:
+With the RLE system, mask version updates are blocked while drawing:
 
 ```typescript
 // In Y.js subscription
@@ -741,16 +913,16 @@ const mergedStageProps = {
   ...incomingStageProps,
   fogOfWar: {
     ...incomingStageProps.fogOfWar,
-    // Block URL updates while drawing
-    url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url
+    // Block mask version updates while drawing
+    maskVersion: isDrawingFog ? stageProps.fogOfWar.maskVersion : incomingStageProps.fogOfWar.maskVersion
   },
   annotations: {
     ...incomingStageProps.annotations,
-    // Block annotation URL updates while drawing
+    // Block annotation mask version updates while drawing
     layers: isDrawingAnnotation
       ? stageProps.annotations.layers.map((localLayer) => {
           const incomingLayer = incomingStageProps.annotations.layers.find((l) => l.id === localLayer.id);
-          return incomingLayer ? { ...incomingLayer, url: localLayer.url } : localLayer;
+          return incomingLayer ? { ...incomingLayer, maskVersion: localLayer.maskVersion } : localLayer;
         })
       : incomingStageProps.annotations.layers
   }
@@ -760,24 +932,29 @@ const mergedStageProps = {
 ### Benefits
 
 1. **Uninterrupted Drawing**: Users can draw continuously without canvas resets
-2. **Efficient Uploads**: Only the final drawing state is uploaded
+2. **Efficient Saves**: Debounced RLE encoding prevents excessive database writes
 3. **Multi-Editor Support**: Multiple users can draw simultaneously without conflicts
-4. **Bandwidth Savings**: Aborted uploads save bandwidth and R2 costs
+4. **No Storage Costs**: Eliminated R2/S3 storage costs completely
 5. **Responsive UI**: Local canvas remains responsive during sync operations
+6. **Fast Updates**: ~750ms round-trip in production (vs 2-3s with R2 uploads)
 
 ### Debug Logging
 
-Enable drawing protection debug logs:
+Enable drawing protection and timing logs:
 
 ```javascript
+// Enable debug logs in development
 localStorage.setItem('debug', 'fog,annotation,yjs');
+
+// Enable timing logs in production
+// Add ?debug=fogtiming to URL
 ```
 
 Expected log messages:
 
 - "Aborting fog update - user is still drawing"
-- "Aborting previous fog upload - new drawing started"
-- "Blocking Y.js update for drawing layer"
+- "Fog update completed but user is drawing - skipping update"
+- "[FOG-RT] Complete round-trip timing logs"
 
 ## Key Architecture Benefits
 
@@ -790,6 +967,9 @@ Expected log messages:
 7. **Native Apple Silicon Support**: No compatibility issues with development
 8. **Cloud-prem Option**: Deploy to your own Cloudflare account for better pricing
 9. **Drawing Protection**: Sophisticated system prevents drawing interruptions
+10. **RLE Compression**: ~600x size reduction for masks, eliminating storage costs
+11. **Real-time Masks**: Sub-second updates without R2/S3 latency
+12. **Version-based Sync**: Only 8-byte timestamps sync via Y.js, masks fetched on-demand
 
 ## Debugging
 

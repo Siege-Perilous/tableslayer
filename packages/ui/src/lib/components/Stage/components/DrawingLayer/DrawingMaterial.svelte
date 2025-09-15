@@ -5,6 +5,7 @@
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { RenderMode } from './types';
+  import { encodeRLE, decodeRLE } from '../../../../utils/rle';
 
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -255,6 +256,93 @@
     return new Promise((resolve) => {
       flippedCanvas.toBlob((blob) => resolve(blob!), 'image/png');
     });
+  }
+
+  /**
+   * Exports the current state as RLE-encoded data
+   * @returns RLE encoded Uint8Array with dimensions prepended
+   */
+  export async function toRLE(): Promise<Uint8Array> {
+    const width = persistedTarget.width;
+    const height = persistedTarget.height;
+
+    // Read pixels from WebGL render target
+    const pixels = new Uint8Array(4 * width * height);
+    renderer.readRenderTargetPixels(persistedTarget, 0, 0, width, height, pixels);
+
+    // Extract alpha channel and flip vertically
+    const binaryData = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const srcIndex = (y * width + x) * 4 + 3; // Alpha channel
+        const dstIndex = (height - 1 - y) * width + x; // Flip vertically
+        binaryData[dstIndex] = pixels[srcIndex] > 127 ? 255 : 0;
+      }
+    }
+
+    const rleData = encodeRLE(binaryData);
+
+    // Prepend dimensions to the RLE data (4 bytes for width, 4 bytes for height)
+    const result = new Uint8Array(8 + rleData.length);
+    const view = new DataView(result.buffer);
+    view.setUint32(0, width, true); // little-endian
+    view.setUint32(4, height, true); // little-endian
+    result.set(rleData, 8);
+
+    return result;
+  }
+
+  /**
+   * Loads RLE-encoded data into the drawing buffer
+   * @param rleData RLE encoded data (with dimensions prepended)
+   * @param width Image width (ignored if dimensions are in data)
+   * @param height Image height (ignored if dimensions are in data)
+   */
+  export async function fromRLE(rleData: Uint8Array, width?: number, height?: number) {
+    // Check if dimensions are prepended (new format)
+    let actualWidth = width || 1024;
+    let actualHeight = height || 1024;
+    let rleStart = 0;
+
+    if (rleData.length > 8) {
+      const view = new DataView(rleData.buffer, rleData.byteOffset, rleData.byteLength);
+      const possibleWidth = view.getUint32(0, true);
+      const possibleHeight = view.getUint32(4, true);
+
+      // Sanity check - dimensions should be reasonable
+      if (possibleWidth > 0 && possibleWidth <= 4096 && possibleHeight > 0 && possibleHeight <= 4096) {
+        actualWidth = possibleWidth;
+        actualHeight = possibleHeight;
+        rleStart = 8;
+      }
+    }
+
+    // Extract the actual RLE data
+    const actualRleData = rleStart > 0 ? rleData.slice(rleStart) : rleData;
+
+    // Decode RLE to binary
+    const binaryData = decodeRLE(actualRleData, actualWidth * actualHeight);
+
+    // Create texture from binary data - flip vertically to match WebGL coordinate system
+    const rgba = new Uint8Array(actualWidth * actualHeight * 4);
+    for (let y = 0; y < actualHeight; y++) {
+      for (let x = 0; x < actualWidth; x++) {
+        const srcIndex = y * actualWidth + x;
+        const dstIndex = (actualHeight - 1 - y) * actualWidth + x; // Flip vertically
+        const idx = dstIndex * 4;
+        rgba[idx] = 0; // R
+        rgba[idx + 1] = 0; // G
+        rgba[idx + 2] = 0; // B
+        rgba[idx + 3] = binaryData[srcIndex]; // A
+      }
+    }
+
+    // Create texture
+    const texture = new THREE.DataTexture(rgba, actualWidth, actualHeight, THREE.RGBAFormat);
+    texture.needsUpdate = true;
+
+    // Load into buffer
+    render(RenderMode.Revert, true, texture);
   }
 </script>
 

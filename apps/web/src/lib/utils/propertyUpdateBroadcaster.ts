@@ -179,7 +179,8 @@ function applyUpdate(obj: any, path: PropertyPath, value: any) {
 
   // Navigate to the parent object
   for (let i = 0; i < path.length - 1; i++) {
-    if (current[path[i]] === undefined) {
+    // If the value is undefined or not an object, create an object
+    if (current[path[i]] === undefined || typeof current[path[i]] !== 'object' || current[path[i]] === null) {
       current[path[i]] = {};
     }
     current = current[path[i]];

@@ -29,12 +29,12 @@
   import {
     useUpdateSceneMutation,
     useUpdateGameSessionMutation,
-    useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
-    useUploadAnnotationFromBlobMutation,
     useUpsertMarkerMutation,
     useUpsertAnnotationMutation,
-    useDeleteAnnotationMutation
+    useDeleteAnnotationMutation,
+    useUpdateFogMaskMutation,
+    useUpdateAnnotationMaskMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -54,7 +54,7 @@
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
-  import { devLog, devWarn, devError } from '$lib/utils/debug';
+  import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
@@ -342,11 +342,11 @@
 
   const updateSceneMutation = useUpdateSceneMutation();
   const updateGameSessionMutation = useUpdateGameSessionMutation();
-  const createFogMutation = useUploadFogFromBlobMutation();
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
-  const createAnnotationMutation = useUploadAnnotationFromBlobMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
+  const updateFogMaskMutation = useUpdateFogMaskMutation();
+  const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
 
   const getCollapseIcon = () => {
@@ -490,6 +490,14 @@
           },
           fogOfWar: {
             ...incomingStageProps.fogOfWar,
+            // Ensure opacity is always an object (migrate old single-value format)
+            opacity:
+              typeof incomingStageProps.fogOfWar?.opacity === 'object'
+                ? incomingStageProps.fogOfWar.opacity
+                : {
+                    dm: incomingStageProps.fogOfWar?.opacity ?? 0.3,
+                    player: incomingStageProps.fogOfWar?.opacity ?? 0.9
+                  },
             // Block fog URL updates while drawing
             url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
@@ -522,6 +530,28 @@
           // Set flag to prevent auto-save from triggering on Y.js updates
           isReceivingYjsUpdate = true;
           stageProps = mergedStageProps;
+
+          // Check for mask version changes and fetch updated masks
+          // Fog mask version changed
+          if (
+            !isDrawingFog &&
+            mergedStageProps.fogOfWar?.maskVersion &&
+            mergedStageProps.fogOfWar.maskVersion !== currentStagePropsSnapshot.fogOfWar?.maskVersion
+          ) {
+            devLog('yjs', 'Fog mask version changed, fetching new mask');
+            fetchFogMask(selectedScene.id);
+          }
+
+          // Annotation mask versions changed
+          if (!isDrawingAnnotation && mergedStageProps.annotations?.layers) {
+            for (const layer of mergedStageProps.annotations.layers) {
+              const oldLayer = currentStagePropsSnapshot.annotations?.layers?.find((l) => l.id === layer.id);
+              if (layer.maskVersion && layer.maskVersion !== oldLayer?.maskVersion) {
+                devLog('yjs', `Annotation mask version changed for layer ${layer.id}, fetching new mask`);
+                fetchAnnotationMask(layer.id);
+              }
+            }
+          }
 
           // Reset flag after the update - longer timeout to prevent auto-save loop
           setTimeout(() => {
@@ -1068,8 +1098,46 @@
     stageIsLoading = true;
   };
 
-  const onStageInitialized = () => {
+  const onStageInitialized = async () => {
     stageIsLoading = false;
+
+    // Load fog mask if available
+    if (data.selectedSceneFogMask && stage?.fogOfWar?.fromRLE) {
+      try {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.selectedSceneFogMask);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Apply the mask to the fog layer
+        // The dimensions are now embedded in the RLE data
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+      } catch (error) {
+        devError('fog', 'Error loading fog mask:', error);
+      }
+    }
+
+    // Load annotation masks if available
+    if (data.selectedSceneAnnotationMasks && stage?.annotations?.loadMask) {
+      try {
+        for (const [annotationId, maskData] of Object.entries(data.selectedSceneAnnotationMasks)) {
+          if (maskData) {
+            // Convert base64 back to Uint8Array
+            const binaryString = atob(maskData);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            // Apply the mask to the annotation layer
+            await stage.annotations.loadMask(annotationId, bytes);
+          }
+        }
+      } catch (error) {
+        devError('annotations', 'Error loading annotation masks:', error);
+      }
+    }
   };
 
   const onMarkerAdded = (marker: Marker) => {
@@ -1552,6 +1620,64 @@
   };
 
   /**
+   * MASK FETCHING
+   * MASK FETCHING
+   * MASK FETCHING
+   *
+   * Fetch RLE mask data when maskVersion changes in Y.js
+   */
+
+  const fetchFogMask = async (sceneId: string) => {
+    try {
+      const response = await fetch(`/api/scenes/getFogMask?sceneId=${sceneId}`);
+      if (!response.ok) {
+        devError('mask', 'Failed to fetch fog mask');
+        return;
+      }
+
+      const data = (await response.json()) as { maskData?: string };
+      if (data.maskData && stage?.fogOfWar?.fromRLE) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+        devLog('mask', 'Applied updated fog mask from remote');
+      }
+    } catch (error) {
+      devError('mask', 'Error fetching fog mask:', error);
+    }
+  };
+
+  const fetchAnnotationMask = async (annotationId: string) => {
+    try {
+      const response = await fetch(`/api/annotations/getMask?annotationId=${annotationId}`);
+      if (!response.ok) {
+        devError('mask', 'Failed to fetch annotation mask');
+        return;
+      }
+
+      const data = (await response.json()) as { maskData?: string };
+      if (data.maskData && stage?.annotations?.loadMask) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the annotation layer
+        await stage.annotations.loadMask(annotationId, bytes);
+        devLog('mask', `Applied updated annotation mask for layer ${annotationId} from remote`);
+      }
+    } catch (error) {
+      devError('mask', 'Error fetching annotation mask:', error);
+    }
+  };
+
+  /**
    * ANNOTATION LAYER
    * ANNOTATION LAYER
    * ANNOTATION LAYER
@@ -1560,12 +1686,10 @@
    * We upload it and sync via Y.js similar to fog of war.
    */
   let isUpdatingAnnotation = false;
-  let pendingAnnotationBlobs: Map<string, Blob> = new Map();
   let annotationUploadAbortControllers: Map<string, AbortController> = new Map();
 
   const processAnnotationUpdate = async (layerId: string) => {
-    const annotationBlob = pendingAnnotationBlobs.get(layerId);
-    if (!annotationBlob || isSaving) return;
+    if (isSaving) return;
 
     // Check if user is still drawing
     if (stage?.annotations?.isDrawing()) {
@@ -1574,89 +1698,97 @@
       return;
     }
 
-    pendingAnnotationBlobs.delete(layerId); // Clear pending blob for this layer
+    // Get RLE encoded data from the specific annotation layer
+    const activeLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+    if (!activeLayer) {
+      devError('annotation', 'Could not find annotation layer:', layerId);
+      isUpdatingAnnotation = false;
+      return;
+    }
+
+    // Set this layer as active temporarily to get its RLE data
+    const originalActiveLayer = stageProps.annotations.activeLayer;
+    stageProps.annotations.activeLayer = layerId;
+
+    let rleData: Uint8Array;
+    try {
+      rleData = await stage?.annotations?.toRLE();
+      if (!rleData) {
+        devError('annotation', 'Failed to get RLE data from annotation layer');
+        isUpdatingAnnotation = false;
+        return;
+      }
+    } finally {
+      // Restore original active layer
+      stageProps.annotations.activeLayer = originalActiveLayer;
+    }
 
     // Create new abort controller for this upload
     const abortController = new AbortController();
     annotationUploadAbortControllers.set(layerId, abortController);
 
-    // Find the current URL for this annotation layer
-    const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
-    const currentUrl = currentLayer?.url || null;
-
     await handleMutation({
       mutation: () =>
-        $createAnnotationMutation.mutateAsync({
-          blob: annotationBlob,
-          sceneId: selectedScene.id,
-          layerId: layerId,
-          currentUrl: currentUrl
+        $updateAnnotationMaskMutation.mutateAsync({
+          annotationId: layerId,
+          partyId: party.id,
+          maskData: rleData
         }),
       formLoadingState: () => {},
-      onSuccess: (result) => {
+      onSuccess: () => {
         // Check if user started drawing while upload was in progress
         if (stage?.annotations?.isDrawing()) {
-          devLog('annotation', 'Annotation update completed but user is drawing - skipping URL update');
-          isUpdatingAnnotation = false;
-          annotationUploadAbortControllers.delete(layerId);
-          return;
+          devLog('annotation', 'Annotation mask update completed but user is drawing - continuing');
         }
 
-        // Update the specific annotation layer URL
+        // Update mask version for this annotation layer
         const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
         if (layerIndex !== -1) {
-          stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
+          const newMaskVersion = Date.now();
+          stageProps.annotations.layers[layerIndex].maskVersion = newMaskVersion;
 
-          // Also update the annotation in the database immediately
-          const annotation = stageProps.annotations.layers[layerIndex];
-
-          // Fire and forget - save annotation to database
-          handleMutation({
-            mutation: () =>
-              $upsertAnnotationMutation.mutateAsync({
-                id: annotation.id,
-                sceneId: selectedScene.id,
-                name: annotation.name,
-                opacity: annotation.opacity,
-                color: annotation.color,
-                url: result.location, // Use the location directly, not the full URL
-                visibility: annotation.visibility,
-                order: layerIndex
-              }),
-            formLoadingState: () => {},
-            onSuccess: () => {},
-            onError: (error) => {
-              devError('annotation', 'Error saving annotation to database:', error);
-            },
-            toastMessages: {}
-          }).catch((error) => {
-            devError('annotation', 'Error in annotation save mutation:', error);
+          console.log('[Editor] Set annotation maskVersion:', {
+            layerId,
+            layerIndex,
+            newMaskVersion,
+            layer: stageProps.annotations.layers[layerIndex]
           });
+
+          // Sync to Y.js for real-time updates
+          if (partyData && selectedScene?.id) {
+            lastOwnYjsUpdateTime = Date.now();
+            console.log('[Editor] Syncing annotation maskVersion to Y.js:', {
+              sceneId: selectedScene.id,
+              layerId,
+              maskVersion: newMaskVersion,
+              allLayers: stageProps.annotations.layers.map((l) => ({ id: l.id, maskVersion: l.maskVersion }))
+            });
+            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+          }
+        } else {
+          console.error('[Editor] Could not find layer to update maskVersion:', layerId);
         }
 
-        // Immediately sync annotation layers to Y.js for real-time collaboration
-        if (partyData && selectedScene?.id) {
-          lastOwnYjsUpdateTime = Date.now();
-          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
-        }
-
-        // Queue for database save
-        queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
+        // Clear flag before triggering save so saveScene() doesn't return early
         isUpdatingAnnotation = false;
         annotationUploadAbortControllers.delete(layerId);
+
+        // Try to trigger a scene save now that annotation update is complete
+        saveScene();
       },
       onError: () => {
-        devError('save', 'Error uploading annotation');
+        devError('save', 'Error updating annotation mask');
         isUpdatingAnnotation = false;
         annotationUploadAbortControllers.delete(layerId);
       },
       toastMessages: {
-        error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
+        error: { title: 'Error updating annotation', body: (err) => err.message || 'Unknown error' }
       }
     });
   };
 
-  const onAnnotationUpdate = async (layerId: string, blob: Promise<Blob>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onAnnotationUpdate = async (layerId: string, _blob: Promise<Blob>) => {
     // If there's an existing upload for this layer, abort it
     const existingController = annotationUploadAbortControllers.get(layerId);
     if (existingController) {
@@ -1666,9 +1798,6 @@
     }
 
     isUpdatingAnnotation = true;
-
-    // Store the latest blob for this layer
-    pendingAnnotationBlobs.set(layerId, await blob);
 
     // Clear any existing timer for this layer
     const existingTimer = annotationUpdateTimers.get(layerId);
@@ -1695,67 +1824,99 @@
    */
   let isUpdatingFog = false;
   let pendingFogBlob: Blob | null = null;
+  let pendingFogUpdateId: string | null = null;
   let fogUploadAbortController: AbortController | null = null;
 
   const processFogUpdate = async () => {
     if (!pendingFogBlob || isSaving) return;
 
+    const updateId = pendingFogUpdateId || 'unknown';
+
     // Check if user is still drawing
     if (stage?.fogOfWar?.isDrawing()) {
       // User is still drawing, abort the update
+      timingLog('FOG-RT', `${updateId} - ABORTED: User still drawing at ${new Date().toISOString()}`);
       devLog('fog', 'Aborting fog update - user is still drawing');
       return;
     }
 
-    const fogBlob = pendingFogBlob;
     pendingFogBlob = null; // Clear pending blob
+    pendingFogUpdateId = null; // Clear update ID
+
+    timingLog('FOG-RT', `${updateId} - 3. Starting RLE encoding at ${new Date().toISOString()}`);
+    // Get RLE encoded data from the fog layer
+    const rleData = await stage?.fogOfWar?.toRLE();
+    if (!rleData) {
+      devError('fog', 'Failed to get RLE data from fog layer');
+      isUpdatingFog = false;
+      return;
+    }
+    timingLog(
+      'FOG-RT',
+      `${updateId} - 4. RLE encoding complete (${rleData.length} bytes) at ${new Date().toISOString()}`
+    );
 
     // Create new abort controller for this upload
     fogUploadAbortController = new AbortController();
 
+    timingLog('FOG-RT', `${updateId} - 5. Starting database save at ${new Date().toISOString()}`);
     await handleMutation({
       mutation: () =>
-        $createFogMutation.mutateAsync({
-          blob: fogBlob,
+        $updateFogMaskMutation.mutateAsync({
           sceneId: selectedScene.id,
-          currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
+          partyId: data.party.id,
+          maskData: rleData
         }),
       formLoadingState: () => {},
-      onSuccess: (fog) => {
+      onSuccess: () => {
+        timingLog('FOG-RT', `${updateId} - 6. Database save complete at ${new Date().toISOString()}`);
+
         // Check if user started drawing while upload was in progress
         if (stage?.fogOfWar?.isDrawing()) {
-          devLog('fog', 'Fog update completed but user is drawing - skipping URL update');
+          timingLog('FOG-RT', `${updateId} - ABORTED: User started drawing during save at ${new Date().toISOString()}`);
+          devLog('fog', 'Fog update completed but user is drawing - skipping update');
           isUpdatingFog = false;
           fogUploadAbortController = null;
           return;
         }
 
-        // Update local state immediately with versioned URL
-        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
+        // Clear the old URL since we're using RLE now
+        stageProps.fogOfWar.url = null;
 
-        // Immediately sync fog URL to Y.js for real-time collaboration
+        // Update mask version to signal other clients
+        const maskVersion = Date.now();
+        stageProps.fogOfWar.maskVersion = maskVersion;
+        timingLog('FOG-RT', `${updateId} - 7. Setting mask version ${maskVersion} at ${new Date().toISOString()}`);
+
+        // Immediately sync to Y.js for real-time collaboration
         if (partyData && selectedScene?.id) {
           lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+          timingLog('FOG-RT', `${updateId} - 8. Broadcasting Y.js update at ${new Date().toISOString()}`);
           partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+          timingLog('FOG-RT', `${updateId} - 9. Y.js broadcast complete at ${new Date().toISOString()}`);
         }
 
-        // Also queue for database save
-        queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
+        // Clear flag before triggering save so saveScene() doesn't return early
         isUpdatingFog = false;
         fogUploadAbortController = null;
+
+        // Try to trigger a scene save now that fog update is complete
+        saveScene();
       },
-      onError: () => {
-        devError('save', 'Error uploading fog');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      onError: (_error) => {
+        devError('save', 'Error updating fog mask');
         isUpdatingFog = false;
         fogUploadAbortController = null;
       },
       toastMessages: {
-        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+        error: { title: 'Error updating fog mask', body: (err) => err.message || 'Unknown error' }
       }
     });
   };
 
-  const onFogUpdate = async (blob: Promise<Blob>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onFogUpdate = async (_blob: Promise<Blob>) => {
     // If there's an existing upload, abort it
     if (fogUploadAbortController) {
       devLog('fog', 'Aborting previous fog upload - new drawing started');
@@ -1765,8 +1926,13 @@
 
     isUpdatingFog = true;
 
-    // Store the latest blob
-    pendingFogBlob = await blob;
+    const updateId = `fog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    timingLog('FOG-RT', `${updateId} - 1. Fog update triggered in editor at ${new Date().toISOString()}`);
+
+    // Store a flag that we need to process fog update
+    // We'll use RLE encoding instead of the blob
+    pendingFogBlob = new Blob(); // Just use empty blob as a flag
+    pendingFogUpdateId = updateId; // Store ID separately
 
     // Clear any existing timer
     if (fogUpdateTimer) {
@@ -1775,6 +1941,10 @@
 
     // Set a new timer to process the update after a delay
     fogUpdateTimer = setTimeout(() => {
+      timingLog(
+        'FOG-RT',
+        `${updateId} - 2. Starting fog processing after 500ms debounce at ${new Date().toISOString()}`
+      );
       processFogUpdate();
       fogUpdateTimer = null;
     }, 500); // 500ms delay

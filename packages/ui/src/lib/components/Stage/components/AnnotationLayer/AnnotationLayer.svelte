@@ -253,6 +253,36 @@
     // For now, return the active layer's PNG or an empty blob
     return (await activeLayer?.toPng()) ?? new Blob();
   }
+
+  /**
+   * Exports the active annotation layer state as RLE-encoded data
+   * @returns RLE encoded Uint8Array
+   */
+  export async function toRLE(): Promise<Uint8Array> {
+    return (await activeLayer?.toRLE()) ?? new Uint8Array();
+  }
+
+  /**
+   * Loads RLE-encoded data into the active annotation layer
+   * @param rleData RLE encoded data
+   * @param width Image width
+   * @param height Image height
+   */
+  export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
+    return activeLayer?.fromRLE(rleData, width, height);
+  }
+
+  /**
+   * Loads RLE-encoded data into a specific annotation layer by ID
+   * @param layerId The ID of the annotation layer
+   * @param rleData RLE encoded data
+   */
+  export async function loadMask(layerId: string, rleData: Uint8Array) {
+    const layer = layers.find((layer) => layer.getId() === layerId);
+    if (layer) {
+      return layer.fromRLE(rleData, 1024, 1024);
+    }
+  }
 </script>
 
 <LayerInput

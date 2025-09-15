@@ -3,8 +3,17 @@
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
   import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
-  import { devLog, devWarn, devError } from '$lib/utils/debug';
-  import { MapLayerType, Stage, Text, Title, type StageExports, type StageProps, type Marker } from '@tableslayer/ui';
+  import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
+  import {
+    MapLayerType,
+    Stage,
+    Text,
+    Title,
+    type StageExports,
+    type StageProps,
+    type Marker,
+    type AnnotationLayerData
+  } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
@@ -82,6 +91,67 @@
 
   // Track the last Y.js update to prevent loops
   let lastYjsUpdateTimestamp = 0;
+  let lastFogMaskVersion: number | undefined;
+  let lastAnnotationMaskVersions: Map<string, number> = new Map();
+
+  // Fetch mask functions for real-time updates
+  const fetchFogMask = async (sceneId: string) => {
+    const maskVersion = lastFogMaskVersion;
+    try {
+      const response = await fetch(`/api/scenes/getFogMask?sceneId=${sceneId}`);
+      timingLog('FOG-RT', `fog_${maskVersion} - 12. Fog mask API response received at ${new Date().toISOString()}`);
+      if (!response.ok) {
+        console.error('Failed to fetch fog mask');
+        return;
+      }
+
+      const data = (await response.json()) as { success: boolean; maskData?: string };
+      if (data.maskData && stage?.fogOfWar?.fromRLE) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        timingLog(
+          'FOG-RT',
+          `fog_${maskVersion} - 13. Applying ${bytes.length} bytes to fog layer at ${new Date().toISOString()}`
+        );
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+        timingLog('FOG-RT', `fog_${maskVersion} - 14. Fog mask applied successfully at ${new Date().toISOString()}`);
+        timingLog('FOG-RT', `fog_${maskVersion} - COMPLETE: Full round-trip completed`);
+      }
+    } catch (error) {
+      devError('fog-timing', `[FOG-RT] fog_${maskVersion} - ERROR:`, error);
+      console.error('Error fetching fog mask:', error);
+    }
+  };
+
+  const fetchAnnotationMask = async (annotationId: string) => {
+    try {
+      const response = await fetch(`/api/annotations/getMask?annotationId=${annotationId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch annotation mask:', response.status, response.statusText);
+        return;
+      }
+
+      const data = (await response.json()) as { success: boolean; maskData?: string | null };
+
+      if (data.maskData && stage?.annotations?.loadMask) {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the annotation layer
+        await stage.annotations.loadMask(annotationId, bytes);
+      }
+    } catch (error) {
+      console.error('Error fetching annotation mask:', error);
+    }
+  };
 
   // Update stage props from Y.js data when available
   $effect(() => {
@@ -122,11 +192,56 @@
         marker: {
           ...yjsSceneData.stageProps.marker,
           markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
-        }
+        },
+        // Filter annotations to remove DM-only ones and preserve maskVersion
+        annotations: yjsSceneData.stageProps.annotations
+          ? {
+              ...yjsSceneData.stageProps.annotations,
+              layers: (yjsSceneData.stageProps.annotations.layers || []).filter(
+                (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
+              ),
+              activeLayer: null // Players can't edit annotations
+            }
+          : { layers: [], activeLayer: null }
       };
 
       // Update the timestamp to prevent re-processing
       lastYjsUpdateTimestamp = currentTimestamp;
+
+      // Check for mask version changes and fetch updated masks
+      // Fog mask version changed
+      if (stageProps.fogOfWar?.maskVersion && stageProps.fogOfWar.maskVersion !== lastFogMaskVersion) {
+        timingLog(
+          'FOG-RT',
+          `fog_${stageProps.fogOfWar.maskVersion} - 10. Playfield detected mask version change at ${new Date().toISOString()}`
+        );
+        timingLog(
+          'FOG-RT',
+          `fog_${stageProps.fogOfWar.maskVersion} - Version: ${stageProps.fogOfWar.maskVersion}, Previous: ${lastFogMaskVersion}`
+        );
+        lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+        if (data.activeScene?.id) {
+          timingLog(
+            'FOG-RT',
+            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API at ${new Date().toISOString()}`
+          );
+          fetchFogMask(data.activeScene.id);
+        }
+      }
+
+      // Annotation mask versions changed
+      if (stageProps.annotations?.layers) {
+        for (const layer of stageProps.annotations.layers) {
+          const lastVersion = lastAnnotationMaskVersions.get(layer.id);
+          if (layer.maskVersion && layer.maskVersion !== lastVersion) {
+            lastAnnotationMaskVersions.set(layer.id, layer.maskVersion);
+            // Don't await - let it run in background, but catch errors
+            fetchAnnotationMask(layer.id).catch((error) => {
+              console.error(`Error in fetchAnnotationMask for layer ${layer.id}:`, error);
+            });
+          }
+        }
+      }
     }
     // Second priority: Use SSR data when Y.js doesn't have scene data or on initial load
     else if (data.activeScene && data.activeSceneMarkers && !isUnmounting && !isInvalidating) {
@@ -166,7 +281,29 @@
       !isInvalidating &&
       stage?.scene?.fit
     ) {
-      lastActiveSceneId = data.activeScene.id;
+      const newSceneId = data.activeScene.id;
+      lastActiveSceneId = newSceneId;
+
+      // Reset mask versions for the new scene to ensure fresh fetches
+      lastFogMaskVersion = undefined;
+      lastAnnotationMaskVersions.clear();
+
+      // Fetch fog mask for the new scene
+      devLog('playfield', 'Scene changed, fetching fog mask for:', newSceneId);
+      fetchFogMask(newSceneId);
+
+      // Also fetch annotation masks if there are any
+      if (stageProps.annotations?.layers) {
+        for (const layer of stageProps.annotations.layers) {
+          if (layer.maskVersion) {
+            // Store the version so we don't re-fetch on Y.js updates
+            lastAnnotationMaskVersions.set(layer.id, layer.maskVersion);
+            fetchAnnotationMask(layer.id).catch((error) => {
+              console.error(`Error fetching annotation mask for layer ${layer.id} on scene change:`, error);
+            });
+          }
+        }
+      }
 
       // Use requestAnimationFrame for smoother transition
       requestAnimationFrame(() => {
@@ -534,8 +671,45 @@
     stageIsLoading = true;
   }
 
-  function onStageInitialized() {
+  async function onStageInitialized() {
     stageIsLoading = false;
+
+    // Load fog mask if available
+    if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
+      try {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.activeSceneFogMask);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+      } catch (error) {
+        console.error('Error loading fog mask:', error);
+      }
+    }
+
+    // Load annotation masks if available
+    if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
+      try {
+        for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
+          if (maskData) {
+            // Convert base64 back to Uint8Array
+            const binaryString = atob(maskData);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            // Apply the mask to the annotation layer
+            await stage.annotations.loadMask(annotationId, bytes);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading annotation masks:', error);
+      }
+    }
+
     // Immediately fit when stage is ready
     if (stage?.scene?.fit) {
       stage.scene.fit();

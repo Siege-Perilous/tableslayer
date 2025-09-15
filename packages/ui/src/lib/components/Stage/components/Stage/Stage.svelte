@@ -52,6 +52,10 @@
 
   export const annotations = {
     clear: (layerId: string) => sceneRef.annotations.clear(layerId),
+    toRLE: () => sceneRef?.annotations?.toRLE(),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) =>
+      sceneRef?.annotations?.fromRLE(rleData, width, height),
+    loadMask: (layerId: string, rleData: Uint8Array) => sceneRef?.annotations?.loadMask(layerId, rleData),
     isDrawing: () => sceneRef?.annotations?.isDrawing() ?? false
   };
 
@@ -64,6 +68,8 @@
     clear: () => sceneRef?.fogOfWar.clear(),
     reset: () => sceneRef?.fogOfWar.reset(),
     toPng: () => sceneRef?.fogOfWar.toPng(),
+    toRLE: () => sceneRef?.fogOfWar.toRLE(),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => sceneRef?.fogOfWar.fromRLE(rleData, width, height),
     isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false
   };
 

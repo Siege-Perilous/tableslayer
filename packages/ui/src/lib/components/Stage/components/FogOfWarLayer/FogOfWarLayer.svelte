@@ -185,6 +185,24 @@
   export async function toPng(): Promise<Blob> {
     return (await material?.toPng()) ?? new Blob();
   }
+
+  /**
+   * Exports the fog of war state as RLE-encoded data
+   * @returns RLE encoded Uint8Array
+   */
+  export async function toRLE(): Promise<Uint8Array> {
+    return (await material?.toRLE()) ?? new Uint8Array();
+  }
+
+  /**
+   * Loads RLE-encoded data into the fog of war
+   * @param rleData RLE encoded data
+   * @param width Image width
+   * @param height Image height
+   */
+  export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
+    return material?.fromRLE(rleData, width, height);
+  }
 </script>
 
 <LayerInput

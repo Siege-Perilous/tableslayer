@@ -50,6 +50,11 @@ export interface AnnotationLayerData {
   url: string | null;
 
   /**
+   * Version timestamp for mask data changes (for real-time sync)
+   */
+  maskVersion?: number;
+
+  /**
    * Control who can see the layer
    */
   visibility: StageMode;
@@ -58,5 +63,8 @@ export interface AnnotationLayerData {
 export interface AnnotationExports {
   clear: (layerId: string) => void;
   toPng: () => Promise<Blob>;
+  toRLE: () => Promise<Uint8Array>;
+  fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
+  loadMask: (layerId: string, rleData: Uint8Array) => Promise<void>;
   isDrawing: () => boolean;
 }

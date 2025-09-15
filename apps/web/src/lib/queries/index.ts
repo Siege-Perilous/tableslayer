@@ -4,6 +4,7 @@ export * from './email';
 export * from './file';
 export * from './gameSessions';
 export * from './markers';
+export * from './masks';
 export * from './parties';
 export * from './partyInvites';
 export * from './partyMembers';
