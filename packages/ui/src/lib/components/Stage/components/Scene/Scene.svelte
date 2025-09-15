@@ -430,6 +430,7 @@
     clear: (layerId: string) => annotationsLayer.clear(layerId),
     toRLE: () => annotationsLayer?.toRLE(),
     fromRLE: (rleData: Uint8Array, width: number, height: number) => annotationsLayer?.fromRLE(rleData, width, height),
+    loadMask: (layerId: string, rleData: Uint8Array) => annotationsLayer?.loadMask(layerId, rleData),
     isDrawing: () => annotationsLayer?.isDrawing() ?? false
   };
 

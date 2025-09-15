@@ -31,7 +31,6 @@
     useUpdateGameSessionMutation,
     useUploadFogFromBlobMutation,
     useUploadSceneThumbnailMutation,
-    useUploadAnnotationFromBlobMutation,
     useUpsertMarkerMutation,
     useUpsertAnnotationMutation,
     useDeleteAnnotationMutation,
@@ -346,7 +345,6 @@
   const updateGameSessionMutation = useUpdateGameSessionMutation();
   const createFogMutation = useUploadFogFromBlobMutation();
   const createThumbnailMutation = useUploadSceneThumbnailMutation();
-  const createAnnotationMutation = useUploadAnnotationFromBlobMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
   const updateFogMaskMutation = useUpdateFogMaskMutation();
@@ -1092,6 +1090,26 @@
         devError('fog', 'Error loading fog mask:', error);
       }
     }
+
+    // Load annotation masks if available
+    if (data.selectedSceneAnnotationMasks && stage?.annotations?.loadMask) {
+      try {
+        for (const [annotationId, maskData] of Object.entries(data.selectedSceneAnnotationMasks)) {
+          if (maskData) {
+            // Convert base64 back to Uint8Array
+            const binaryString = atob(maskData);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            // Apply the mask to the annotation layer
+            await stage.annotations.loadMask(annotationId, bytes);
+          }
+        }
+      } catch (error) {
+        devError('annotations', 'Error loading annotation masks:', error);
+      }
+    }
   };
 
   const onMarkerAdded = (marker: Marker) => {
@@ -1582,12 +1600,10 @@
    * We upload it and sync via Y.js similar to fog of war.
    */
   let isUpdatingAnnotation = false;
-  let pendingAnnotationBlobs: Map<string, Blob> = new Map();
   let annotationUploadAbortControllers: Map<string, AbortController> = new Map();
 
   const processAnnotationUpdate = async (layerId: string) => {
-    const annotationBlob = pendingAnnotationBlobs.get(layerId);
-    if (!annotationBlob || isSaving) return;
+    if (isSaving) return;
 
     // Check if user is still drawing
     if (stage?.annotations?.isDrawing()) {
@@ -1596,84 +1612,62 @@
       return;
     }
 
-    pendingAnnotationBlobs.delete(layerId); // Clear pending blob for this layer
+    // Get RLE encoded data from the specific annotation layer
+    const activeLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
+    if (!activeLayer) {
+      devError('annotation', 'Could not find annotation layer:', layerId);
+      isUpdatingAnnotation = false;
+      return;
+    }
+
+    // Set this layer as active temporarily to get its RLE data
+    const originalActiveLayer = stageProps.annotations.activeLayer;
+    stageProps.annotations.activeLayer = layerId;
+
+    let rleData: Uint8Array;
+    try {
+      rleData = await stage?.annotations?.toRLE();
+      if (!rleData) {
+        devError('annotation', 'Failed to get RLE data from annotation layer');
+        isUpdatingAnnotation = false;
+        return;
+      }
+    } finally {
+      // Restore original active layer
+      stageProps.annotations.activeLayer = originalActiveLayer;
+    }
 
     // Create new abort controller for this upload
     const abortController = new AbortController();
     annotationUploadAbortControllers.set(layerId, abortController);
 
-    // Find the current URL for this annotation layer
-    const currentLayer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
-    const currentUrl = currentLayer?.url || null;
-
     await handleMutation({
       mutation: () =>
-        $createAnnotationMutation.mutateAsync({
-          blob: annotationBlob,
-          sceneId: selectedScene.id,
-          layerId: layerId,
-          currentUrl: currentUrl
+        $updateAnnotationMaskMutation.mutateAsync({
+          annotationId: layerId,
+          partyId: party.id,
+          maskData: rleData
         }),
       formLoadingState: () => {},
-      onSuccess: (result) => {
+      onSuccess: () => {
         // Check if user started drawing while upload was in progress
         if (stage?.annotations?.isDrawing()) {
-          devLog('annotation', 'Annotation update completed but user is drawing - skipping URL update');
-          isUpdatingAnnotation = false;
-          annotationUploadAbortControllers.delete(layerId);
-          return;
+          devLog('annotation', 'Annotation mask update completed but user is drawing - continuing');
         }
 
-        // Update the specific annotation layer URL
-        const layerIndex = stageProps.annotations.layers.findIndex((layer) => layer.id === layerId);
-        if (layerIndex !== -1) {
-          stageProps.annotations.layers[layerIndex].url = `https://files.tableslayer.com/${result.location}`;
+        // Try to trigger a scene save now that annotation update is complete
+        saveScene();
 
-          // Also update the annotation in the database immediately
-          const annotation = stageProps.annotations.layers[layerIndex];
-
-          // Fire and forget - save annotation to database
-          handleMutation({
-            mutation: () =>
-              $upsertAnnotationMutation.mutateAsync({
-                id: annotation.id,
-                sceneId: selectedScene.id,
-                name: annotation.name,
-                opacity: annotation.opacity,
-                color: annotation.color,
-                url: result.location, // Use the location directly, not the full URL
-                visibility: annotation.visibility,
-                order: layerIndex
-              }),
-            formLoadingState: () => {},
-            onSuccess: () => {},
-            onError: (error) => {
-              devError('annotation', 'Error saving annotation to database:', error);
-            },
-            toastMessages: {}
-          }).catch((error) => {
-            devError('annotation', 'Error in annotation save mutation:', error);
-          });
-        }
-
-        // Immediately sync annotation layers to Y.js for real-time collaboration
-        if (partyData && selectedScene?.id) {
-          lastOwnYjsUpdateTime = Date.now();
-          partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
-        }
-
-        // Queue for database save
-        queuePropertyUpdate(stageProps, ['annotations', 'layers'], stageProps.annotations.layers, 'control');
         isUpdatingAnnotation = false;
         annotationUploadAbortControllers.delete(layerId);
       },
       onError: () => {
-        devError('save', 'Error uploading annotation');
+        devError('save', 'Error updating annotation mask');
         isUpdatingAnnotation = false;
         annotationUploadAbortControllers.delete(layerId);
       },
       toastMessages: {
-        error: { title: 'Error uploading annotation', body: (err) => err.message || 'Unknown error' }
+        error: { title: 'Error updating annotation', body: (err) => err.message || 'Unknown error' }
       }
     });
   };
@@ -1688,9 +1682,6 @@
     }
 
     isUpdatingAnnotation = true;
-
-    // Store the latest blob for this layer
-    pendingAnnotationBlobs.set(layerId, await blob);
 
     // Clear any existing timer for this layer
     const existingTimer = annotationUpdateTimers.get(layerId);

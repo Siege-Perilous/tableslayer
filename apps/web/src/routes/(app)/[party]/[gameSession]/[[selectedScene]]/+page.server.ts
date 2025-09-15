@@ -1,6 +1,6 @@
 import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
-import { getAnnotationsForScene } from '$lib/server/annotations';
+import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
 import { createScene, getSceneFromOrder, getSceneMaskData, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
 import { redirect } from '@sveltejs/kit';
@@ -50,6 +50,17 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   } catch (error) {
     // Silently ignore - scene might not have mask data yet
   }
+
+  // Get annotation mask data for all annotations
+  const selectedSceneAnnotationMasks: Record<string, string | null> = {};
+  try {
+    for (const annotation of selectedSceneAnnotations) {
+      const maskData = await getAnnotationMaskData(annotation.id);
+      selectedSceneAnnotationMasks[annotation.id] = maskData?.mask || null;
+    }
+  } catch (error) {
+    // Silently ignore - annotations might not have mask data yet
+  }
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {
@@ -68,6 +79,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     selectedScene,
     selectedSceneMarkers,
     selectedSceneAnnotations,
+    selectedSceneAnnotationMasks,
     selectedSceneFogMask,
     activeScene,
     activeSceneMarkers,

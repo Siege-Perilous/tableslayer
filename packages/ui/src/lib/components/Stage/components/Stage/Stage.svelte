@@ -55,6 +55,7 @@
     toRLE: () => sceneRef?.annotations?.toRLE(),
     fromRLE: (rleData: Uint8Array, width: number, height: number) =>
       sceneRef?.annotations?.fromRLE(rleData, width, height),
+    loadMask: (layerId: string, rleData: Uint8Array) => sceneRef?.annotations?.loadMask(layerId, rleData),
     isDrawing: () => sceneRef?.annotations?.isDrawing() ?? false
   };
 

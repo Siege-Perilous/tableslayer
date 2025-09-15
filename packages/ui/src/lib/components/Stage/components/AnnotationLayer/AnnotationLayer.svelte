@@ -271,6 +271,18 @@
   export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
     return activeLayer?.fromRLE(rleData, width, height);
   }
+
+  /**
+   * Loads RLE-encoded data into a specific annotation layer by ID
+   * @param layerId The ID of the annotation layer
+   * @param rleData RLE encoded data
+   */
+  export async function loadMask(layerId: string, rleData: Uint8Array) {
+    const layer = layers.find((layer) => layer.getId() === layerId);
+    if (layer) {
+      return layer.fromRLE(rleData, 1024, 1024);
+    }
+  }
 </script>
 
 <LayerInput

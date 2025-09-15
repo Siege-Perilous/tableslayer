@@ -72,7 +72,7 @@ export const useFogMaskQuery = (sceneId: string | undefined) => {
         throw new Error('Failed to fetch fog mask');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { maskData?: string };
 
       // Convert base64 back to Uint8Array if mask data exists
       if (data.maskData) {
@@ -87,5 +87,38 @@ export const useFogMaskQuery = (sceneId: string | undefined) => {
       return null;
     },
     enabled: !!sceneId
+  });
+};
+
+/**
+ * Fetches the annotation mask data for an annotation
+ */
+export const useAnnotationMaskQuery = (annotationId: string | undefined) => {
+  return createQuery({
+    queryKey: ['annotationMask', annotationId],
+    queryFn: async () => {
+      if (!annotationId) return null;
+
+      const response = await fetch(`/api/annotations/getMask?annotationId=${annotationId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch annotation mask');
+      }
+
+      const data = (await response.json()) as { maskData?: string };
+
+      // Convert base64 back to Uint8Array if mask data exists
+      if (data.maskData) {
+        const binaryString = atob(data.maskData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+      }
+
+      return null;
+    },
+    enabled: !!annotationId
   });
 };

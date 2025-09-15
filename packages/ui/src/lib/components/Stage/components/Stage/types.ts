@@ -87,6 +87,7 @@ export interface StageExports {
     clear: (layerId: string) => void;
     toRLE: () => Promise<Uint8Array>;
     fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
+    loadMask: (layerId: string, rleData: Uint8Array) => Promise<void>;
     isDrawing: () => boolean;
   };
 
