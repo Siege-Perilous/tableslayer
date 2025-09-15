@@ -281,7 +281,29 @@
       !isInvalidating &&
       stage?.scene?.fit
     ) {
-      lastActiveSceneId = data.activeScene.id;
+      const newSceneId = data.activeScene.id;
+      lastActiveSceneId = newSceneId;
+
+      // Reset mask versions for the new scene to ensure fresh fetches
+      lastFogMaskVersion = undefined;
+      lastAnnotationMaskVersions.clear();
+
+      // Fetch fog mask for the new scene
+      devLog('playfield', 'Scene changed, fetching fog mask for:', newSceneId);
+      fetchFogMask(newSceneId);
+
+      // Also fetch annotation masks if there are any
+      if (stageProps.annotations?.layers) {
+        for (const layer of stageProps.annotations.layers) {
+          if (layer.maskVersion) {
+            // Store the version so we don't re-fetch on Y.js updates
+            lastAnnotationMaskVersions.set(layer.id, layer.maskVersion);
+            fetchAnnotationMask(layer.id).catch((error) => {
+              console.error(`Error fetching annotation mask for layer ${layer.id} on scene change:`, error);
+            });
+          }
+        }
+      }
 
       // Use requestAnimationFrame for smoother transition
       requestAnimationFrame(() => {

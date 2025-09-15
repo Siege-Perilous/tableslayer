@@ -490,6 +490,14 @@
           },
           fogOfWar: {
             ...incomingStageProps.fogOfWar,
+            // Ensure opacity is always an object (migrate old single-value format)
+            opacity:
+              typeof incomingStageProps.fogOfWar?.opacity === 'object'
+                ? incomingStageProps.fogOfWar.opacity
+                : {
+                    dm: incomingStageProps.fogOfWar?.opacity ?? 0.3,
+                    player: incomingStageProps.fogOfWar?.opacity ?? 0.9
+                  },
             // Block fog URL updates while drawing
             url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
