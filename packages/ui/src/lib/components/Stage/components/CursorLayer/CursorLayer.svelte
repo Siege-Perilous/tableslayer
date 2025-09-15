@@ -1,14 +1,16 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
   import type { CursorData, CursorLayerProps } from './types';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
+  import { onMount } from 'svelte';
 
   interface Props {
     props: CursorLayerProps;
   }
 
   const { props }: Props = $props();
+  const { invalidate } = useThrelte();
 
   // Track current time for fade calculations
   let currentTime = $state(Date.now());
@@ -50,48 +52,95 @@
   };
 
   const targetDiameter = $derived(calculateCursorSize());
-  const outerRadius = $derived(targetDiameter / 2);
-  const borderWidth = $derived(outerRadius * 0.2);
-  const innerRadius = $derived(outerRadius - borderWidth);
 
-  const cursorGeometry = $derived(new THREE.CircleGeometry(innerRadius, 128));
-  const cursorOutlineGeometry = $derived(new THREE.RingGeometry(innerRadius, outerRadius, 128));
+  // Create plane geometry for the cursor
+  const planeGeometry = new THREE.PlaneGeometry(1, 1);
 
-  const shadowOuterRadius = $derived(outerRadius * 1.25);
-  const shadowInnerRadius = $derived(outerRadius * 1.05);
-  const shadowGeometry = $derived(new THREE.RingGeometry(shadowInnerRadius, shadowOuterRadius, 128));
+  // Load and create textures for each cursor color
+  const textureCache = new Map<string, THREE.Texture>();
+
+  const createCursorTexture = (color: string): THREE.Texture => {
+    // Check cache first
+    if (textureCache.has(color)) {
+      return textureCache.get(color)!;
+    }
+
+    // Create SVG with the specified color
+    const svg = `
+      <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+            <feOffset dx="0" dy="1" result="offsetblur"/>
+            <feFlood flood-color="#000000" flood-opacity="0.2"/>
+            <feComposite in2="offsetblur" operator="in"/>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <circle 
+          cx="32" 
+          cy="32" 
+          r="20" 
+          fill="${color}" 
+          stroke="white" 
+          stroke-width="4"
+          filter="url(#shadow)"
+        />
+      </svg>
+    `;
+
+    // Convert SVG to data URL
+    const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svg);
+
+    // Create texture from SVG
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load(svgDataUrl, () => {
+      invalidate();
+    });
+
+    // Configure texture for best quality
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+
+    // Cache the texture
+    textureCache.set(color, texture);
+
+    return texture;
+  };
+
+  // Cleanup textures on unmount
+  onMount(() => {
+    return () => {
+      textureCache.forEach((texture) => texture.dispose());
+      textureCache.clear();
+    };
+  });
 </script>
 
-{#each props.cursors as cursor (cursor.id)}
+{#each props.cursors as cursor, index (cursor.id)}
   {@const opacity = getCursorOpacity(cursor)}
+  {@const cursorColor = index === 0 ? '#000000' : cursor.color}
 
   {#if opacity > 0}
+    {@const texture = createCursorTexture(cursorColor)}
+
     <T.Group
       position={[cursor.worldPosition.x, cursor.worldPosition.y, cursor.worldPosition.z + 0.1]}
       layers={[SceneLayer.Overlay]}
     >
-      <T.Mesh geometry={shadowGeometry} position={[0, 0, -0.01]} renderOrder={SceneLayerOrder.Cursor}>
+      <T.Mesh geometry={planeGeometry} scale={[targetDiameter, targetDiameter, 1]} renderOrder={SceneLayerOrder.Cursor}>
         <T.MeshBasicMaterial
-          color="#000000"
+          map={texture}
           transparent={true}
-          opacity={opacity * 0.25}
+          {opacity}
           depthTest={false}
           depthWrite={false}
-          side={2}
-        />
-      </T.Mesh>
-
-      <T.Mesh geometry={cursorOutlineGeometry} renderOrder={SceneLayerOrder.Cursor}>
-        <T.MeshBasicMaterial color="#ffffff" transparent={true} {opacity} depthTest={false} depthWrite={false} />
-      </T.Mesh>
-
-      <T.Mesh geometry={cursorGeometry} renderOrder={SceneLayerOrder.Cursor}>
-        <T.MeshBasicMaterial
-          color={cursor.color}
-          transparent={true}
-          opacity={opacity * 0.9}
-          depthTest={false}
-          depthWrite={false}
+          alphaTest={0.01}
         />
       </T.Mesh>
     </T.Group>
