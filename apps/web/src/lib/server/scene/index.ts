@@ -96,6 +96,11 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
     throw new Error('Scene not found');
   }
 
+  // Remove fogOfWarMask if present to avoid serialization issues
+  if ('fogOfWarMask' in scene) {
+    delete (scene as any).fogOfWarMask;
+  }
+
   if (!scene?.mapLocation) {
     return scene;
   }
@@ -110,6 +115,21 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
   const thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
   const sceneWithThumb = { ...scene, thumb };
   return sceneWithThumb;
+};
+
+// New function to get only mask data for a scene
+export const getSceneMaskData = async (sceneId: string): Promise<{ fogOfWarMask: string | null }> => {
+  const result = await db
+    .select({ fogOfWarMask: sceneTable.fogOfWarMask })
+    .from(sceneTable)
+    .where(eq(sceneTable.id, sceneId))
+    .get();
+
+  if (!result) {
+    throw new Error('Scene not found');
+  }
+
+  return result;
 };
 
 export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
@@ -141,6 +161,11 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
   const scenesWithThumbs: (SelectScene | (SelectScene & Thumb))[] = [];
 
   for (const scene of scenes) {
+    // Remove fogOfWarMask if present to avoid serialization issues
+    if ('fogOfWarMask' in scene) {
+      delete (scene as any).fogOfWarMask;
+    }
+
     // Use mapThumbLocation if available, otherwise fall back to mapLocation
     const imageLocation = scene.mapThumbLocation || scene.mapLocation;
 
@@ -253,6 +278,11 @@ export const getSceneFromOrder = async (
     .get();
   if (!scene) {
     throw new Error('Scene not found');
+  }
+
+  // Remove fogOfWarMask if present to avoid serialization issues
+  if ('fogOfWarMask' in scene) {
+    delete (scene as any).fogOfWarMask;
   }
 
   let thumb = null;

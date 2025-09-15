@@ -1,7 +1,7 @@
 import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
 import { getAnnotationsForScene } from '$lib/server/annotations';
-import { createScene, getSceneFromOrder, getScenes } from '$lib/server/scene';
+import { createScene, getSceneFromOrder, getSceneMaskData, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -41,6 +41,15 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
   const selectedSceneMarkers = await getMarkersForScene(selectedScene.id);
   const selectedSceneAnnotations = await getAnnotationsForScene(selectedScene.id);
+
+  // Get fog mask data separately
+  let selectedSceneFogMask: string | null = null;
+  try {
+    const maskData = await getSceneMaskData(selectedScene.id);
+    selectedSceneFogMask = maskData.fogOfWarMask;
+  } catch (error) {
+    // Silently ignore - scene might not have mask data yet
+  }
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {
@@ -59,6 +68,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     selectedScene,
     selectedSceneMarkers,
     selectedSceneAnnotations,
+    selectedSceneFogMask,
     activeScene,
     activeSceneMarkers,
     activeSceneAnnotations,

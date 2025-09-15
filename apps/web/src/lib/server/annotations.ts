@@ -14,10 +14,35 @@ export const getAnnotationsForScene = async (sceneId: string): Promise<SelectAnn
       .where(eq(annotationsTable.sceneId, sceneId))
       .orderBy(annotationsTable.order);
 
+    // Remove mask field from each annotation to avoid serialization issues
+    for (const annotation of annotations) {
+      if ('mask' in annotation) {
+        delete (annotation as any).mask;
+      }
+    }
+
     return annotations;
   } catch (error) {
     devError('annotations', 'Error fetching annotations for scene:', error);
     return [];
+  }
+};
+
+/**
+ * Get mask data for a specific annotation
+ */
+export const getAnnotationMaskData = async (annotationId: string): Promise<{ mask: string | null } | null> => {
+  try {
+    const result = await db
+      .select({ mask: annotationsTable.mask })
+      .from(annotationsTable)
+      .where(eq(annotationsTable.id, annotationId))
+      .get();
+
+    return result || null;
+  } catch (error) {
+    devError('annotations', 'Error fetching annotation mask:', error);
+    return null;
   }
 };
 
@@ -36,11 +61,17 @@ export const upsertAnnotation = async (annotation: InsertAnnotation): Promise<Se
           opacity: annotation.opacity,
           color: annotation.color,
           url: annotation.url,
+          mask: annotation.mask,
           visibility: annotation.visibility,
           order: annotation.order
         }
       })
       .returning();
+
+    // Remove mask field to avoid serialization issues
+    if ('mask' in result) {
+      delete (result as any).mask;
+    }
 
     return result;
   } catch (error) {

@@ -85,6 +85,8 @@ export type StageProps = {
 export interface StageExports {
   annotations: {
     clear: (layerId: string) => void;
+    toRLE: () => Promise<Uint8Array>;
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
     isDrawing: () => boolean;
   };
 
@@ -92,6 +94,8 @@ export interface StageExports {
     clear: () => void;
     reset: () => void;
     toPng: () => Promise<Blob>;
+    toRLE: () => Promise<Uint8Array>;
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
     isDrawing: () => boolean;
   };
   map: {

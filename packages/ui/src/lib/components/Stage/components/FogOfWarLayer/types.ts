@@ -110,5 +110,7 @@ export interface FogOfWarExports {
   clearFog: () => void;
   resetFog: () => void;
   toPng: () => Promise<Blob>;
+  toRLE: () => Promise<Uint8Array>;
+  fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
   isDrawing: () => boolean;
 }

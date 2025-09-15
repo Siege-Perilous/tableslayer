@@ -94,6 +94,24 @@
   export async function toPng(): Promise<Blob> {
     return drawMaterial.toPng();
   }
+
+  /**
+   * Exports the annotation layer state as RLE-encoded data
+   * @returns RLE encoded Uint8Array
+   */
+  export async function toRLE(): Promise<Uint8Array> {
+    return drawMaterial.toRLE();
+  }
+
+  /**
+   * Loads RLE-encoded data into the annotation layer
+   * @param rleData RLE encoded data
+   * @param width Image width
+   * @param height Image height
+   */
+  export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
+    return drawMaterial.fromRLE(rleData, width, height);
+  }
 </script>
 
 <DrawingMaterial

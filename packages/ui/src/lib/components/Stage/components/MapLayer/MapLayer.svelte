@@ -165,6 +165,8 @@
     clear: () => fogOfWarLayer.clearFog(),
     reset: () => fogOfWarLayer.resetFog(),
     toPng: () => fogOfWarLayer.toPng(),
+    toRLE: () => fogOfWarLayer.toRLE(),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => fogOfWarLayer.fromRLE(rleData, width, height),
     isDrawing: () => fogOfWarLayer?.isDrawing() ?? false
   };
 </script>

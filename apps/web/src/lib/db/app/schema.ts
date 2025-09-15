@@ -342,6 +342,7 @@ export const sceneTable = sqliteTable(
     displayResolutionX: integer('display_resolution_x').notNull().default(1920),
     displayResolutionY: integer('display_resolution_y').notNull().default(1080),
     fogOfWarUrl: text('fog_of_war_url'),
+    fogOfWarMask: text('fog_of_war_mask'), // Base64-encoded RLE mask data
     fogOfWarColor: text('fog_of_war_color').notNull().default('#000'),
     fogOfWarOpacityDm: real('fog_of_war_opacity_dm').notNull().default(0.3),
     fogOfWarOpacityPlayer: real('fog_of_war_opacity_player').notNull().default(0.9),
@@ -476,6 +477,7 @@ export const annotationsTable = sqliteTable(
     opacity: real('opacity').notNull().default(1.0),
     color: text('color').notNull().default('#FF0000'),
     url: text('url'), // S3/R2 storage for the drawn texture
+    mask: text('mask'), // Base64-encoded RLE mask data
     visibility: integer('visibility').notNull().default(1), // StageMode enum (0=DM, 1=Player)
     order: integer('order').notNull().default(0) // For layer ordering
   },

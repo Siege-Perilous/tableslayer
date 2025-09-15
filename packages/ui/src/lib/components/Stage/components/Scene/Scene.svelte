@@ -428,6 +428,8 @@
 
   export const annotations = {
     clear: (layerId: string) => annotationsLayer.clear(layerId),
+    toRLE: () => annotationsLayer?.toRLE(),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => annotationsLayer?.fromRLE(rleData, width, height),
     isDrawing: () => annotationsLayer?.isDrawing() ?? false
   };
 
@@ -442,6 +444,8 @@
     clear: () => mapLayer.fogOfWar.clear(),
     reset: () => mapLayer.fogOfWar.reset(),
     toPng: () => mapLayer.fogOfWar.toPng(),
+    toRLE: () => mapLayer.fogOfWar.toRLE(),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) => mapLayer.fogOfWar.fromRLE(rleData, width, height),
     isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
   };
 

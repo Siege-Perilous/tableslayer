@@ -34,7 +34,9 @@
     useUploadAnnotationFromBlobMutation,
     useUpsertMarkerMutation,
     useUpsertAnnotationMutation,
-    useDeleteAnnotationMutation
+    useDeleteAnnotationMutation,
+    useUpdateFogMaskMutation,
+    useUpdateAnnotationMaskMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -347,6 +349,8 @@
   const createAnnotationMutation = useUploadAnnotationFromBlobMutation();
   const upsertMarkerMutation = useUpsertMarkerMutation();
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
+  const updateFogMaskMutation = useUpdateFogMaskMutation();
+  const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
 
   const getCollapseIcon = () => {
@@ -1068,8 +1072,26 @@
     stageIsLoading = true;
   };
 
-  const onStageInitialized = () => {
+  const onStageInitialized = async () => {
     stageIsLoading = false;
+
+    // Load fog mask if available
+    if (data.selectedSceneFogMask && stage?.fogOfWar?.fromRLE) {
+      try {
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.selectedSceneFogMask);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Apply the mask to the fog layer
+        // The dimensions are now embedded in the RLE data
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+      } catch (error) {
+        devError('fog', 'Error loading fog mask:', error);
+      }
+    }
   };
 
   const onMarkerAdded = (marker: Marker) => {
@@ -1707,50 +1729,58 @@
       return;
     }
 
-    const fogBlob = pendingFogBlob;
     pendingFogBlob = null; // Clear pending blob
+
+    // Get RLE encoded data from the fog layer
+    const rleData = await stage?.fogOfWar?.toRLE();
+    if (!rleData) {
+      devError('fog', 'Failed to get RLE data from fog layer');
+      isUpdatingFog = false;
+      return;
+    }
 
     // Create new abort controller for this upload
     fogUploadAbortController = new AbortController();
 
     await handleMutation({
       mutation: () =>
-        $createFogMutation.mutateAsync({
-          blob: fogBlob,
+        $updateFogMaskMutation.mutateAsync({
           sceneId: selectedScene.id,
-          currentUrl: stageProps.fogOfWar.url || selectedScene.fogOfWarUrl
+          partyId: data.party.id,
+          maskData: rleData
         }),
       formLoadingState: () => {},
-      onSuccess: (fog) => {
+      onSuccess: () => {
         // Check if user started drawing while upload was in progress
         if (stage?.fogOfWar?.isDrawing()) {
-          devLog('fog', 'Fog update completed but user is drawing - skipping URL update');
+          devLog('fog', 'Fog update completed but user is drawing - skipping update');
           isUpdatingFog = false;
           fogUploadAbortController = null;
           return;
         }
 
-        // Update local state immediately with versioned URL
-        stageProps.fogOfWar.url = `https://files.tableslayer.com/${fog.location}`;
+        // Clear the old URL since we're using RLE now
+        stageProps.fogOfWar.url = null;
 
-        // Immediately sync fog URL to Y.js for real-time collaboration
+        // Immediately sync to Y.js for real-time collaboration
         if (partyData && selectedScene?.id) {
           lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
           partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
         }
 
-        // Also queue for database save
-        queuePropertyUpdate(stageProps, ['fogOfWar', 'url'], stageProps.fogOfWar.url, 'control');
         isUpdatingFog = false;
         fogUploadAbortController = null;
+
+        // Try to trigger a scene save now that fog update is complete
+        saveScene();
       },
-      onError: () => {
-        devError('save', 'Error uploading fog');
+      onError: (error) => {
+        devError('save', 'Error updating fog mask');
         isUpdatingFog = false;
         fogUploadAbortController = null;
       },
       toastMessages: {
-        error: { title: 'Error uploading fog', body: (err) => err.message || 'Unknown error' }
+        error: { title: 'Error updating fog mask', body: (err) => err.message || 'Unknown error' }
       }
     });
   };
@@ -1765,8 +1795,9 @@
 
     isUpdatingFog = true;
 
-    // Store the latest blob
-    pendingFogBlob = await blob;
+    // Store a flag that we need to process fog update
+    // We'll use RLE encoding instead of the blob
+    pendingFogBlob = new Blob(); // Just use empty blob as a flag
 
     // Clear any existing timer
     if (fogUpdateTimer) {

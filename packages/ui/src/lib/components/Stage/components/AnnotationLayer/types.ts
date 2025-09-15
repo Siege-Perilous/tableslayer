@@ -58,5 +58,7 @@ export interface AnnotationLayerData {
 export interface AnnotationExports {
   clear: (layerId: string) => void;
   toPng: () => Promise<Blob>;
+  toRLE: () => Promise<Uint8Array>;
+  fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
   isDrawing: () => boolean;
 }
