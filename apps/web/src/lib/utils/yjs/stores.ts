@@ -83,6 +83,10 @@ export function usePartyData() {
     updateHoveredMarker: (marker: any) => partyDataManager!.updateHoveredMarker(marker),
     getHoveredMarker: () => partyDataManager!.getHoveredMarker(),
 
+    // Pinned markers management (DM pins markers for player view)
+    updatePinnedMarkers: (markerIds: string[]) => partyDataManager!.updatePinnedMarkers(markerIds),
+    getPinnedMarkers: () => partyDataManager!.getPinnedMarkers(),
+
     // Scenes list
     getScenesList: (): SceneMetadata[] => partyDataManager!.getScenesList(),
 

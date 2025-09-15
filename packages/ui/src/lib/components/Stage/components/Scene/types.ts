@@ -88,7 +88,11 @@ export interface SceneExports {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
     hoveredMarker: any | null;
+    selectedMarker: any | null;
+    maintainHover: (maintain: boolean) => void;
   };
+
+  getMarkerSizeInScreenSpace: (markerSize: number) => number;
 
   measurement: {
     getCurrentMeasurement: () => {

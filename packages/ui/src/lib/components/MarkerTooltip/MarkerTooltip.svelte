@@ -3,6 +3,7 @@
   import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
   import { Editor } from '../Editor';
   import { onMount, onDestroy } from 'svelte';
+  import { IconPin, IconPinFilled } from '@tabler/icons-svelte';
 
   interface Props {
     marker: any | null; // Can be either Marker or HoveredMarker
@@ -10,9 +11,21 @@
     containerElement: HTMLElement | null;
     markerDiameter?: number;
     onTooltipHover?: (isHovering: boolean) => void;
+    isDM?: boolean;
+    isPinned?: boolean;
+    onPinToggle?: (markerId: string, pinned: boolean) => void;
   }
 
-  let { marker, position, containerElement, markerDiameter = 40, onTooltipHover }: Props = $props();
+  let {
+    marker,
+    position,
+    containerElement,
+    markerDiameter = 40,
+    onTooltipHover,
+    isDM = false,
+    isPinned = false,
+    onPinToggle
+  }: Props = $props();
 
   let tooltipElement = $state<HTMLDivElement>();
   let portalContainer: HTMLDivElement | undefined = $state();
@@ -149,18 +162,18 @@
         }
       };
 
-      cleanup = autoUpdate(virtualEl, tooltipElement, async () => {
+      cleanup = autoUpdate(virtualEl, tooltipElement!, async () => {
         const markerRadius = markerDiameter / 2;
         const buffer = 10;
         const dynamicOffset = markerRadius + buffer;
 
-        const { x, y } = await computePosition(virtualEl, tooltipElement, {
+        const { x, y } = await computePosition(virtualEl, tooltipElement!, {
           placement: 'top',
           middleware: [offset(dynamicOffset), flip(), shift({ padding: 10 })],
           strategy: 'fixed'
         });
 
-        Object.assign(tooltipElement.style, {
+        Object.assign(tooltipElement!.style, {
           position: 'fixed',
           left: `${x}px`,
           top: `${y}px`,
@@ -187,9 +200,23 @@
     bind:this={tooltipElement}
     class="marker-tooltip"
     style="display: none;"
+    role="tooltip"
     onmouseenter={handleTooltipMouseEnter}
     onmouseleave={handleTooltipMouseLeave}
   >
+    {#if isDM && onPinToggle && marker}
+      <button
+        class="marker-tooltip__pin"
+        onclick={() => onPinToggle(marker.id, !isPinned)}
+        title={isPinned ? 'Unpin from player view' : 'Pin to player view'}
+      >
+        {#if isPinned}
+          <IconPinFilled size={16} />
+        {:else}
+          <IconPin size={16} />
+        {/if}
+      </button>
+    {/if}
     {#if markerTitle}
       <div class="marker-tooltip__title">{markerTitle}</div>
     {/if}
@@ -209,6 +236,30 @@
     border: 1px solid var(--border);
     border-radius: 0.25rem;
     box-shadow: var(--shadow-3);
+    position: relative;
+  }
+
+  .marker-tooltip__pin {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--fgMuted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    transition:
+      color 0.2s,
+      background 0.2s;
+  }
+
+  .marker-tooltip__pin:hover {
+    color: var(--fgPrimary);
+    background: var(--bgHover);
   }
 
   .marker-tooltip__title {
@@ -216,6 +267,7 @@
     font-size: var(--text-md);
     margin-bottom: 0.5rem;
     color: var(--fgPrimary);
+    padding-right: 2rem; /* Make room for pin button */
   }
 
   .marker-tooltip__title:last-child {

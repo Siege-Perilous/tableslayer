@@ -37,6 +37,8 @@
     cursors?: CursorData[];
     trackLocalCursor?: boolean;
     hoveredMarkerId?: string | null;
+    pinnedMarkerIds?: string[];
+    onPinToggle?: (markerId: string, pinned: boolean) => void;
   }
 
   let {
@@ -45,7 +47,9 @@
     receivedMeasurement = null,
     cursors = [],
     trackLocalCursor = false,
-    hoveredMarkerId = null
+    hoveredMarkerId = null,
+    pinnedMarkerIds = [],
+    onPinToggle
   }: Props = $props();
 
   let sceneRef: SceneExports;
@@ -124,35 +128,32 @@
 
   $effect(() => {
     // In DM mode (mode 0): Show tooltip for hovered marker
-    // In Player mode (mode 1): Show tooltip for DM's broadcast (from hoveredMarkerId) OR player's selected marker
+    // In Player mode (mode 1): Show tooltip for pinned markers, DM's broadcast, or player's selected marker
     let markerForTooltip = null;
 
     if (props.mode === 0) {
       // DM mode: use hovered marker
       markerForTooltip = sceneRef?.markers?.hoveredMarker;
     } else if (props.mode === 1) {
-      // Player mode: Check for DM's broadcast first (hoveredMarkerId from props)
-      // This is set when DM hovers or selects a Hover visibility marker
+      // Player mode: Check for pinned markers first, then DM's broadcast, then player's selection
+
+      // First check if there are any pinned markers
+      let pinnedMarker = null;
+      if (pinnedMarkerIds && pinnedMarkerIds.length > 0) {
+        // For now, show the first pinned marker (we could expand this to show multiple)
+        pinnedMarker = props.marker.markers.find((m) => pinnedMarkerIds.includes(m.id));
+      }
+
+      // Then check for DM's broadcast (hoveredMarkerId from props)
       let dmBroadcastMarker = null;
       if (hoveredMarkerId) {
-        // Find the marker that matches the DM's broadcast
         dmBroadcastMarker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
-        console.log('[Stage] Player mode - DM broadcast marker:', {
-          hoveredMarkerId,
-          foundMarker: dmBroadcastMarker?.id,
-          markerTitle: dmBroadcastMarker?.title
-        });
       }
 
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
-      console.log('[Stage] Player mode tooltip check:', {
-        dmBroadcast: dmBroadcastMarker?.id,
-        selectedByPlayer: selectedByPlayer?.id,
-        selectedTitle: selectedByPlayer?.title
-      });
 
-      // Prioritize DM's broadcast over player's selection
-      markerForTooltip = dmBroadcastMarker || selectedByPlayer;
+      // Prioritize: pinned > DM's broadcast > player's selection
+      markerForTooltip = pinnedMarker || dmBroadcastMarker || selectedByPlayer;
     }
 
     if (markerForTooltip && containerElement) {
@@ -186,6 +187,9 @@
     position={tooltipPosition}
     {containerElement}
     markerDiameter={markerSizeInPixels}
+    isDM={props.mode === 0}
+    isPinned={hoveredMarkerData && pinnedMarkerIds.includes(hoveredMarkerData.id)}
+    {onPinToggle}
     onTooltipHover={(isHovering) => {
       // When hovering tooltip in DM mode, maintain the hover state
       if (props.mode === 0 && sceneRef?.markers?.maintainHover) {

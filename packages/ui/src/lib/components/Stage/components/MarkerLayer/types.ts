@@ -117,5 +117,7 @@ export interface MarkerLayerExports {
     isHovering: boolean;
     isDragging: boolean;
     hoveredMarker: Marker | null;
+    selectedMarker: Marker | null;
   };
+  maintainHover: (maintain: boolean) => void;
 }

@@ -33,6 +33,7 @@
   let latestMeasurement: MeasurementData | null = $state(null);
   let hoveredMarkerId: string | null = $state(null);
   let hoveredMarkerData: any = $state(null);
+  let pinnedMarkerIds: string[] = $state([]);
 
   // Convert cursors to format expected by CursorLayer
   let cursorArray = $derived(
@@ -436,6 +437,9 @@
           });
         }
 
+        // Update pinned markers from Y.js awareness
+        pinnedMarkerIds = partyData!.getPinnedMarkers();
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           // If we don't have the game session ID, we need to find it
@@ -621,6 +625,9 @@
           });
         }
 
+        // Update pinned markers from Y.js awareness
+        pinnedMarkerIds = partyData!.getPinnedMarkers();
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           devLog('playfield', 'Attempting to get scene data:', {
@@ -689,7 +696,7 @@
   function onMarkerHover() {} // Players can't control hover, only receive it
 
   const onMarkerSelected = (marker: Marker | null) => {
-    selectedMarker = marker;
+    selectedMarker = marker ?? undefined;
   };
 
   function onStageLoading() {
@@ -889,6 +896,7 @@
     bind:this={stage}
     props={stageProps}
     {hoveredMarkerId}
+    {pinnedMarkerIds}
     receivedMeasurement={latestMeasurement
       ? {
           startPoint: latestMeasurement.startPoint,

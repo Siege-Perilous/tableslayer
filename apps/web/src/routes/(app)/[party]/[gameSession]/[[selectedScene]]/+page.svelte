@@ -162,6 +162,7 @@
   let isHydrated = $state(false); // Track hydration status
   let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
   let hoveredMarker: HoveredMarker | null = $state(null); // Track hovered marker from awareness
+  let pinnedMarkerIds = $state<string[]>([]); // Track pinned markers from DM
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -713,6 +714,7 @@
         // Update hovered marker for players to see what DM is hovering
         if (stageProps.mode === StageMode.Player) {
           hoveredMarker = partyData!.getHoveredMarker();
+          pinnedMarkerIds = partyData!.getPinnedMarkers();
         }
 
         // Update reactive state
@@ -1246,7 +1248,7 @@
   };
 
   const onMarkerSelected = (marker: Marker | null) => {
-    selectedMarkerId = marker?.id || null;
+    selectedMarkerId = marker?.id || undefined;
 
     // Broadcast Hover visibility markers when selected
     if (stageProps.mode === StageMode.DM) {
@@ -1292,6 +1294,22 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  const onPinToggle = (markerId: string, pinned: boolean) => {
+    if (stageProps.mode === StageMode.DM && partyData) {
+      let newPinnedIds: string[];
+      if (pinned) {
+        // Add to pinned markers
+        newPinnedIds = [...pinnedMarkerIds, markerId];
+      } else {
+        // Remove from pinned markers
+        newPinnedIds = pinnedMarkerIds.filter((id) => id !== markerId);
+      }
+      pinnedMarkerIds = newPinnedIds;
+      partyData.updatePinnedMarkers(newPinnedIds);
+      devLog('markers', `Marker ${pinned ? 'pinned' : 'unpinned'}:`, markerId);
     }
   };
 
@@ -2659,6 +2677,8 @@
             }}
             trackLocalCursor={true}
             hoveredMarkerId={hoveredMarker?.id || null}
+            {pinnedMarkerIds}
+            {onPinToggle}
           />
         </div>
         <SceneControls

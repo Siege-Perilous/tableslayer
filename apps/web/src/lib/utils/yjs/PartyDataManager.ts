@@ -350,6 +350,34 @@ export class PartyDataManager {
   }
 
   /**
+   * Update pinned markers (DM pins markers for player view)
+   * Uses awareness protocol for ephemeral state like cursors
+   */
+  updatePinnedMarkers(markerIds: string[]) {
+    if (this.isConnected && this.gameSessionProvider.awareness) {
+      this.gameSessionProvider.awareness.setLocalStateField('pinnedMarkers', markerIds);
+      devLog('yjs', `[${this.clientId}] Updated pinned markers:`, markerIds);
+    }
+  }
+
+  /**
+   * Get current pinned markers from DM
+   */
+  getPinnedMarkers(): string[] {
+    if (this.gameSessionProvider.awareness) {
+      // Look through all connected clients for pinned markers
+      // Only the DM should be broadcasting these
+      const states = this.gameSessionProvider.awareness.getStates();
+      for (const [, state] of states) {
+        if (state.pinnedMarkers && Array.isArray(state.pinnedMarkers)) {
+          return state.pinnedMarkers;
+        }
+      }
+    }
+    return [];
+  }
+
+  /**
    * Set up observers for Y.js data structures
    */
   private setupObservers() {
