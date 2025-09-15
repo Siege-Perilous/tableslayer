@@ -303,29 +303,24 @@
   const zoomSensitivity = 0.0005;
 
   // Use appropriate pane layout based on device type
-  // Initialize with default values, will be updated in $effect
-  let clientPaneLayoutDesktop = $state<PaneConfig[]>([
-    { size: 20, isCollapsed: false },
-    { size: 50 },
-    { size: 30, isCollapsed: true }
-  ]);
-  let clientPaneLayoutMobile = $state<PaneConfig[]>([
-    { size: 25, isCollapsed: false },
-    { size: 50 },
-    { size: 25, isCollapsed: true }
-  ]);
-
-  // On client-side, use cookie values or fall back to SSR values
-  $effect(() => {
+  // Initialize with values from cookies/SSR, or defaults
+  const getInitialLayout = (key: 'paneLayoutDesktop' | 'paneLayoutMobile', serverValue: PaneConfig[] | undefined) => {
     if (typeof window !== 'undefined') {
-      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop') || paneLayoutDesktop || clientPaneLayoutDesktop;
-      clientPaneLayoutMobile = getPreference('paneLayoutMobile') || paneLayoutMobile || clientPaneLayoutMobile;
-    } else {
-      // Use SSR values initially
-      if (paneLayoutDesktop) clientPaneLayoutDesktop = paneLayoutDesktop;
-      if (paneLayoutMobile) clientPaneLayoutMobile = paneLayoutMobile;
+      // Client-side: try to get from cookies first
+      const saved = getPreference(key);
+      if (saved) return saved;
     }
-  });
+    // Fall back to server value or defaults
+    return (
+      serverValue ||
+      (key === 'paneLayoutDesktop'
+        ? [{ size: 20, isCollapsed: false }, { size: 50 }, { size: 30, isCollapsed: true }]
+        : [{ size: 25, isCollapsed: false }, { size: 50 }, { size: 25, isCollapsed: true }])
+    );
+  };
+
+  let clientPaneLayoutDesktop = $state<PaneConfig[]>(getInitialLayout('paneLayoutDesktop', paneLayoutDesktop));
+  let clientPaneLayoutMobile = $state<PaneConfig[]>(getInitialLayout('paneLayoutMobile', paneLayoutMobile));
 
   const paneLayout = $derived(isMobile ? clientPaneLayoutMobile : clientPaneLayoutDesktop);
 
@@ -2228,7 +2223,7 @@
     const roundedSizes = sizes.map((size) => Math.round(size));
 
     // Save layout to cookie using the preferences system
-    const newLayout = [
+    const newLayout: PaneConfig[] = [
       { size: roundedSizes[0], isCollapsed: isScenesCollapsed },
       { size: roundedSizes[1] }, // center pane has no collapse state
       { size: roundedSizes[2], isCollapsed: isMarkersCollapsed }

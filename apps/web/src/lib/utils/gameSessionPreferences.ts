@@ -128,7 +128,7 @@ export function setPreference<K extends keyof GameSessionPreferences>(key: K, va
 
   const serialized = config.serialize ? config.serialize(value) : JSON.stringify(value);
 
-  document.cookie = `${config.cookieName}=${encodeURIComponent(serialized)}; path=/; max-age=${COOKIE_MAX_AGE}`;
+  document.cookie = `${config.cookieName}=${encodeURIComponent(serialized)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 /**
