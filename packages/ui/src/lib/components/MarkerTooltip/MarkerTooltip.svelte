@@ -271,7 +271,7 @@
     font-weight: 600;
     font-size: var(--text-md);
     margin-bottom: 0.5rem;
-    color: var(--fgPrimary);
+    color: var(--fg);
     padding-right: 2rem; /* Make room for pin button */
   }
 
