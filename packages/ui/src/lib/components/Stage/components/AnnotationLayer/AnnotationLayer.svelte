@@ -14,9 +14,10 @@
     mode: StageMode;
     isActive: boolean;
     display: DisplayProps;
+    sceneZoom: number;
   }
 
-  const { props, mode, isActive, display, ...meshProps }: Props = $props();
+  const { props, mode, isActive, display, sceneZoom, ...meshProps }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
@@ -37,10 +38,33 @@
   let cursorsHidden = false;
 
   // Initialize lazy brush for smooth drawing
+  // Base values for zoom level 1.0
+  const BASE_RADIUS = 20;
+  const BASE_FRICTION = 0.05;
+
   const lazyBrush = new LazyBrushManager({
-    radius: 50,
+    radius: BASE_RADIUS,
     enabled: true,
-    friction: 0.1
+    friction: BASE_FRICTION
+  });
+
+  // Adjust lazy brush settings based on zoom level
+  $effect(() => {
+    // Scale radius inversely with zoom - less smoothing when zoomed in
+    // At zoom 2x, radius is 25 (half)
+    // At zoom 0.5x, radius is 100 (double)
+    const adjustedRadius = BASE_RADIUS / sceneZoom;
+
+    // Adjust friction based on zoom - more responsive when zoomed in
+    // At high zoom (>2), reduce friction for more immediate response
+    // At low zoom (<0.5), increase friction for smoother lines
+    const adjustedFriction =
+      sceneZoom > 2 ? BASE_FRICTION * 0.5 : sceneZoom < 0.5 ? BASE_FRICTION * 1.5 : BASE_FRICTION;
+
+    lazyBrush.updateConfig({
+      radius: Math.max(5, Math.min(100, adjustedRadius)), // Clamp between 5 and 100
+      friction: adjustedFriction
+    });
   });
 
   // Reference to the child layers
