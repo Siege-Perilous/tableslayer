@@ -555,7 +555,11 @@
       cursors: cursors,
       showLabels: true,
       fadeOutDelay: 5000,
-      fadeOutDuration: 500
+      fadeOutDuration: 500,
+      gridSpacing: props.grid.spacing,
+      displaySize: props.display.size,
+      displayResolution: props.display.resolution,
+      sceneZoom: props.scene.zoom
     }}
   />
 </T.Object3D>

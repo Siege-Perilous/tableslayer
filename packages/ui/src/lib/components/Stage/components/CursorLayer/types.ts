@@ -16,4 +16,8 @@ export interface CursorLayerProps {
   showLabels: boolean;
   fadeOutDelay: number; // Time in ms before cursor starts fading
   fadeOutDuration: number; // Time in ms for fade animation
+  gridSpacing?: number; // Grid spacing in inches (for sizing cursor)
+  displaySize?: { x: number; y: number }; // Display size in inches
+  displayResolution?: { x: number; y: number }; // Display resolution in pixels
+  sceneZoom?: number; // Current scene zoom level (to compensate for scaling)
 }

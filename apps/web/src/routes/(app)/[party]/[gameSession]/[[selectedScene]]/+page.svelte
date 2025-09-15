@@ -635,12 +635,13 @@
       }
       partyData = usePartyData();
 
+      // Generate a consistent color for this user session
+      const userColor = `#${Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, '0')}`;
+
       // Create throttled cursor update function (30 FPS for smooth LCD TV display)
       throttledCursorUpdate = throttle((worldPosition: { x: number; y: number; z: number }) => {
-        // Generate a color for this user (could be stored in user data)
-        const userColor = `#${Math.floor(Math.random() * 16777215)
-          .toString(16)
-          .padStart(6, '0')}`;
         partyData!.updateCursor(worldPosition, userColor, user.email);
       }, 33); // 33ms = ~30 FPS
 
