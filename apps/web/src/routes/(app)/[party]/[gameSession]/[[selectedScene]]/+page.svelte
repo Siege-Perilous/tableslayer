@@ -53,7 +53,7 @@
     setUserChangeCallback
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
-  import { setPreference, getPreference } from '$lib/utils/gameSessionPreferences';
+  import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -158,9 +158,7 @@
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
-  let throttledCursorUpdate:
-    | ((position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => void)
-    | null = null;
+  let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -305,17 +303,24 @@
   const zoomSensitivity = 0.0005;
 
   // Use appropriate pane layout based on device type
-  // Read from client-side cookies to get the most up-to-date values
-  let clientPaneLayoutDesktop = $state(paneLayoutDesktop);
-  let clientPaneLayoutMobile = $state(paneLayoutMobile);
-
-  // On client-side, always use the latest cookie values
-  $effect(() => {
+  // Initialize with values from cookies/SSR, or defaults
+  const getInitialLayout = (key: 'paneLayoutDesktop' | 'paneLayoutMobile', serverValue: PaneConfig[] | undefined) => {
     if (typeof window !== 'undefined') {
-      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop');
-      clientPaneLayoutMobile = getPreference('paneLayoutMobile');
+      // Client-side: try to get from cookies first
+      const saved = getPreference(key);
+      if (saved) return saved;
     }
-  });
+    // Fall back to server value or defaults
+    return (
+      serverValue ||
+      (key === 'paneLayoutDesktop'
+        ? [{ size: 20, isCollapsed: false }, { size: 50 }, { size: 30, isCollapsed: true }]
+        : [{ size: 25, isCollapsed: false }, { size: 50 }, { size: 25, isCollapsed: true }])
+    );
+  };
+
+  let clientPaneLayoutDesktop = $state<PaneConfig[]>(getInitialLayout('paneLayoutDesktop', paneLayoutDesktop));
+  let clientPaneLayoutMobile = $state<PaneConfig[]>(getInitialLayout('paneLayoutMobile', paneLayoutMobile));
 
   const paneLayout = $derived(isMobile ? clientPaneLayoutMobile : clientPaneLayoutDesktop);
 
@@ -633,13 +638,15 @@
       }
       partyData = usePartyData();
 
+      // Generate a consistent color for this user session
+      const userColor = `#${Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, '0')}`;
+
       // Create throttled cursor update function (30 FPS for smooth LCD TV display)
-      throttledCursorUpdate = throttle(
-        (position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => {
-          partyData!.updateCursor(position, normalizedPosition);
-        },
-        33
-      ); // 33ms = ~30 FPS
+      throttledCursorUpdate = throttle((worldPosition: { x: number; y: number; z: number }) => {
+        partyData!.updateCursor(worldPosition, userColor, user.email);
+      }, 33); // 33ms = ~30 FPS
 
       // Initialize Y.js with SSR scene data
       const sceneMetadata = scenes.map((scene) => ({
@@ -1443,30 +1450,6 @@
     // Check if cursor is within the visible scene bounds
     isCursorInScene = relativeX >= 0 && relativeX <= rotatedWidth && relativeY >= 0 && relativeY <= rotatedHeight;
 
-    // Clamp to ensure cursor stays within visible bounds after rotation
-    const clampedX = Math.max(0, Math.min(relativeX, rotatedWidth));
-    const clampedY = Math.max(0, Math.min(relativeY, rotatedHeight));
-
-    // Normalize clamped coordinates to range [0, 1]
-    const normalizedX = clampedX / rotatedWidth;
-    const normalizedY = clampedY / rotatedHeight;
-
-    // Rotate the normalized coordinates to account for the scene's rotation
-    const rotatePoint = (x: number, y: number, angle: number): { x: number; y: number } => {
-      const radians = (Math.PI / 180) * angle;
-      return {
-        x: x * Math.cos(radians) - y * Math.sin(radians),
-        y: x * Math.sin(radians) + y * Math.cos(radians)
-      };
-    };
-
-    // Rotate around the center (0.5, 0.5) of the normalized coordinate space
-    const rotated = rotatePoint(normalizedX - 0.5, normalizedY - 0.5, -rotation);
-
-    // Adjust back to [0, 1] normalized space
-    const finalNormalizedX = rotated.x + 0.5;
-    const finalNormalizedY = rotated.y + 0.5;
-
     // Handle panning with rotation adjustment
     if (e.buttons === 1 || e.buttons === 2) {
       // Get rotation for both map and scene transformations
@@ -1495,14 +1478,7 @@
       // Y.js handles synchronization automatically
     }
 
-    // Emit the normalized and rotated position over the WebSocket
-    // Only emit cursor if we're editing the active scene
-    const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
-
-    if (shouldEmitCursor && throttledCursorUpdate) {
-      // Update cursor position using throttled Y.js awareness (30 FPS)
-      throttledCursorUpdate({ x: e.clientX, y: e.clientY }, { x: finalNormalizedX, y: finalNormalizedY });
-    }
+    // Cursor tracking is now handled by the Stage component's onCursorMove callback
   };
 
   function onMapPan(dx: number, dy: number) {
@@ -1531,6 +1507,15 @@
 
   function onSceneZoom(zoom: number) {
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
+  }
+
+  function handleCursorMove(worldPosition: { x: number; y: number; z: number }) {
+    // Only emit cursor if we're editing the active scene
+    const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
+
+    if (shouldEmitCursor && throttledCursorUpdate) {
+      throttledCursorUpdate(worldPosition);
+    }
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -2238,7 +2223,7 @@
     const roundedSizes = sizes.map((size) => Math.round(size));
 
     // Save layout to cookie using the preferences system
-    const newLayout = [
+    const newLayout: PaneConfig[] = [
       { size: roundedSizes[0], isCollapsed: isScenesCollapsed },
       { size: roundedSizes[1] }, // center pane has no collapse state
       { size: roundedSizes[2], isCollapsed: isMarkersCollapsed }
@@ -2405,8 +2390,10 @@
               onMarkerContextMenu,
               onMeasurementStart,
               onMeasurementUpdate,
-              onMeasurementEnd
+              onMeasurementEnd,
+              onCursorMove: handleCursorMove
             }}
+            trackLocalCursor={true}
           />
         </div>
         <SceneControls

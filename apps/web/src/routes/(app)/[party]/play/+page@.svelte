@@ -11,8 +11,10 @@
   import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
 
   type CursorData = {
-    position: { x: number; y: number };
-    user: { id: string; email: string };
+    worldPosition: { x: number; y: number; z: number };
+    userId: string;
+    color?: string;
+    label?: string;
     lastMoveTime: number;
     fadedOut: boolean;
   };
@@ -20,6 +22,18 @@
   let cursors: Record<string, CursorData> = $state({});
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
+
+  // Convert cursors to format expected by CursorLayer
+  let cursorArray = $derived(
+    Object.entries(cursors).map(([id, cursor]) => ({
+      id,
+      worldPosition: cursor.worldPosition || { x: 0, y: 0, z: 0 },
+      color: cursor.color || '#ffffff',
+      label: cursor.label || cursor.userId,
+      opacity: cursor.fadedOut ? 0 : 1,
+      lastUpdateTime: cursor.lastMoveTime
+    }))
+  );
 
   let { data } = $props();
   const { user, party } = $derived(data);
@@ -56,7 +70,6 @@
     (stageIsLoading || sceneIsChanging) && 'stage--loading',
     gameIsPaused && 'stage--hidden'
   ]);
-  const fadeOutDelay = 5000;
 
   // No debouncing needed - flashing was caused by image versioning, not Y.js updates
 
@@ -172,60 +185,7 @@
   // Track the current game session ID to detect changes
   let currentGameSessionId = $state<string | undefined>(data.activeGameSession?.id);
 
-  // Cursor update handler - moved to component scope so it can be reused
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleCursorUpdate = (payload: any) => {
-    const { normalizedPosition, user, zoom: editorZoom, cursorKey } = payload;
-
-    const stageBounds = stageElement?.getBoundingClientRect();
-    if (!stageBounds) return;
-
-    const stageWidth = stageBounds.width;
-    const stageHeight = stageBounds.height;
-
-    const clientZoom = stageProps.scene.zoom;
-
-    const displayWidthClient = stageProps.display.resolution.x * clientZoom;
-    const displayHeightClient = stageProps.display.resolution.y * clientZoom;
-
-    const displayWidthEditor = stageProps.display.resolution.x * editorZoom;
-    const displayHeightEditor = stageProps.display.resolution.y * editorZoom;
-
-    const horizontalMargin = (stageWidth - displayWidthClient) / 2;
-    const verticalMargin = (stageHeight - displayHeightClient) / 2;
-
-    const rectX = normalizedPosition.x * displayWidthEditor;
-    const rectY = normalizedPosition.y * displayHeightEditor;
-
-    const adjustedX = rectX * (displayWidthClient / displayWidthEditor);
-    const adjustedY = rectY * (displayHeightClient / displayHeightEditor);
-
-    const absoluteXClient = horizontalMargin + adjustedX;
-    const absoluteYClient = verticalMargin + adjustedY;
-
-    // Use cursorKey if provided, otherwise fall back to user.id
-    const key = cursorKey || user.id;
-
-    // Check if cursor exists and if position actually changed
-    const existingCursor = cursors[key];
-    const positionChanged =
-      !existingCursor || existingCursor.position.x !== absoluteXClient || existingCursor.position.y !== absoluteYClient;
-
-    // Only update lastMoveTime if position actually changed
-    const updateTime = positionChanged ? Date.now() : existingCursor?.lastMoveTime || Date.now();
-
-    // Position change logging removed - too noisy for regular use
-
-    cursors = {
-      ...cursors,
-      [key]: {
-        user,
-        position: { x: absoluteXClient, y: absoluteYClient },
-        lastMoveTime: updateTime,
-        fadedOut: positionChanged ? false : existingCursor?.fadedOut || false
-      }
-    };
-  };
+  // Cursor handling is now done through Three.js world coordinates
 
   onMount(() => {
     if (isMounted) {
@@ -306,12 +266,17 @@
         // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
           // Transform cursor data to match playfield format
-          handleCursorUpdate({
-            normalizedPosition: cursorData.normalizedPosition,
-            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
-            zoom: 1, // TODO: Get editor zoom from cursor data
-            cursorKey // Pass the unique key for tracking
-          });
+          cursors = {
+            ...cursors,
+            [cursorKey]: {
+              worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+              userId: cursorData.userId,
+              color: cursorData.color,
+              label: cursorData.label,
+              lastMoveTime: cursorData.lastMoveTime || Date.now(),
+              fadedOut: false
+            }
+          };
         });
 
         // Update measurements from Y.js awareness
@@ -475,12 +440,17 @@
         // Update or add cursors from Y.js
         Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
           // Transform cursor data to match playfield format
-          handleCursorUpdate({
-            normalizedPosition: cursorData.normalizedPosition,
-            user: { id: cursorData.userId, email: cursorData.userId }, // TODO: Get actual user data
-            zoom: 1, // TODO: Get editor zoom from cursor data
-            cursorKey // Pass the unique key for tracking
-          });
+          cursors = {
+            ...cursors,
+            [cursorKey]: {
+              worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+              userId: cursorData.userId,
+              color: cursorData.color,
+              label: cursorData.label,
+              lastMoveTime: cursorData.lastMoveTime || Date.now(),
+              fadedOut: false
+            }
+          };
         });
 
         // Update measurements from Y.js awareness
@@ -531,11 +501,7 @@
     }
   });
 
-  const getRandomColor = (): string => {
-    return `#${Math.floor(Math.random() * 16777215)
-      .toString(16)
-      .padStart(6, '0')}`;
-  };
+  // Color generation removed - now handled in cursor data
 
   function onSceneUpdate(offset: { x: number; y: number }, zoom: number) {
     devLog('playfield', '[Playfield] onSceneUpdate called:', { offset, zoom });
@@ -608,28 +574,7 @@
     }
   });
 
-  $effect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      let needsUpdate = false;
-      const updatedCursors = { ...cursors };
-
-      for (const [cursorKey, cursor] of Object.entries(updatedCursors)) {
-        if (!cursor.fadedOut && now - cursor.lastMoveTime > fadeOutDelay) {
-          // Mark the cursor as faded out after inactivity
-          updatedCursors[cursorKey] = { ...cursor, fadedOut: true };
-          needsUpdate = true;
-        }
-      }
-
-      // Only update if something changed
-      if (needsUpdate) {
-        cursors = updatedCursors;
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  });
+  // Fade-out logic is now handled in CursorLayer component via opacity calculation
 
   // Effect to handle active scene changes
   $effect(() => {
@@ -783,17 +728,11 @@
       onMeasurementUpdate: () => {},
       onMeasurementEnd: () => {}
     }}
+    cursors={cursorArray}
+    trackLocalCursor={false}
   />
 
-  {#each Object.values(cursors) as { user, position, fadedOut }}
-    <div
-      class="cursor"
-      style={`left: ${position.x}px; top: ${position.y}px; transform: translate(-0.75rem, -0.25rem); opacity: ${fadedOut ? 0 : 1}; transition: opacity 0.5s ease;`}
-    >
-      <div class="cursor__pointer"></div>
-      <span class="cursor__label" style={`background-color: ${getRandomColor()}`}>{user.email}</span>
-    </div>
-  {/each}
+  <!-- Cursors are now rendered in Three.js via the CursorLayer component -->
 </div>
 
 <style>
@@ -837,30 +776,5 @@
     display: none;
     visibility: hidden;
     opacity: 0;
-  }
-  .cursor {
-    position: fixed;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    pointer-events: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    z-index: 10;
-    font-size: 12px;
-  }
-
-  .cursor__pointer {
-    border-radius: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: solid 0.25rem white;
-    background-color: black;
-  }
-
-  .cursor__label {
-    font-size: 12px;
-    font-weight: 600;
-    color: black;
-    display: none;
   }
 </style>

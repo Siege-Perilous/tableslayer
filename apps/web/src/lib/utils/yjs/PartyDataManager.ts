@@ -18,8 +18,9 @@ export interface SceneMetadata {
 
 export interface CursorData {
   userId: string;
-  position: { x: number; y: number };
-  normalizedPosition: { x: number; y: number };
+  worldPosition: { x: number; y: number; z: number };
+  color?: string;
+  label?: string;
   lastMoveTime: number;
   clientId?: number;
 }
@@ -199,14 +200,15 @@ export class PartyDataManager {
   }
 
   /**
-   * Update cursor position using Y.js awareness
+   * Update cursor position using Y.js awareness with world coordinates
    */
-  updateCursor(position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) {
+  updateCursor(worldPosition: { x: number; y: number; z: number }, color?: string, label?: string) {
     if (this.isConnected && this.gameSessionProvider.awareness) {
       this.gameSessionProvider.awareness.setLocalStateField('cursor', {
         userId: this.userId,
-        position,
-        normalizedPosition,
+        worldPosition,
+        color: color || '#ffffff',
+        label: label || this.userId,
         lastMoveTime: Date.now()
       });
     }

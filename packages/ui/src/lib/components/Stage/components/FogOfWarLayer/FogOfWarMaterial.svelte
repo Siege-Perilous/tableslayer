@@ -54,10 +54,17 @@
     vertexShader: fogVertexShader
   });
 
+  // Track opacity separately to ensure it updates properly
+  let currentOpacity = $derived(stage.mode === StageMode.DM ? props.opacity.dm : props.opacity.player);
+
+  // Update opacity when it changes
+  $effect(() => {
+    fogMaterial.uniforms.uOpacity.value = currentOpacity;
+    fogMaterial.uniformsNeedUpdate = true;
+  });
+
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    fogMaterial.uniforms.uOpacity.value = stage.mode === StageMode.DM ? props.opacity.dm : props.opacity.player;
-
     fogMaterial.uniforms.uBaseColor.value = new THREE.Color(props.noise.baseColor);
     fogMaterial.uniforms.uFogColor1.value = new THREE.Color(props.noise.fogColor1);
     fogMaterial.uniforms.uFogColor2.value = new THREE.Color(props.noise.fogColor2);
@@ -81,6 +88,9 @@
     fogMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
+
+    // Force shader to update with new uniform values
+    fogMaterial.uniformsNeedUpdate = true;
   });
 
   useTask((delta) => {
