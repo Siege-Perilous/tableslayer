@@ -23,8 +23,9 @@
 
   const { props, isActive, display, grid }: Props = $props();
 
-  const stage = getContext<{ mode: StageMode }>('stage');
-  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu } = getContext<Callbacks>('callbacks');
+  const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null }>('stage');
+  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
+    getContext<Callbacks>('callbacks');
 
   // Quad used for raycasting / mouse input detection
   let inputMesh = $state(new THREE.Mesh());
@@ -33,6 +34,9 @@
   let selectedMarker: Marker | null = $state(null);
   let isDragging = $state(false);
   let hoveredMarker: Marker | null = $state(null);
+  let hoveredMarkerDelayed: Marker | null = $state(null); // Marker after hover delay
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  const HOVER_DELAY_MS = 500; // Half second delay before showing tooltip
 
   const ghostMarker: Marker = $state({
     id: uuidv4(),
@@ -84,11 +88,33 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
-      isDragging = true;
       selectedMarker = closestMarker;
+      console.log('[MarkerLayer] Marker clicked:', {
+        mode: stage.mode,
+        isDM: stage.mode === StageMode.DM,
+        isPlayer: stage.mode === StageMode.Player,
+        markerId: closestMarker.id,
+        markerTitle: closestMarker.title
+      });
+      // Only allow dragging in DM mode
+      if (stage.mode === StageMode.DM) {
+        isDragging = true;
+      }
       onMarkerSelected(selectedMarker);
     } else {
-      if (props.activeLayer === MapLayerType.None) return; // Ignore clicks when no layer is active)
+      // In player mode, clicking empty space clears selection
+      if (stage.mode === StageMode.Player) {
+        selectedMarker = null;
+        console.log('[MarkerLayer] Empty space clicked in player mode, clearing selection');
+        return;
+      }
+
+      // In DM mode, clicking empty space also clears selection (unless we're creating a new marker)
+      if (props.activeLayer === MapLayerType.None) {
+        selectedMarker = null;
+        onMarkerSelected(null); // Notify that selection is cleared
+        return;
+      }
       const newMarker: Marker = {
         id: uuidv4(),
         title: 'New Marker',
@@ -110,6 +136,7 @@
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) {
       hoveredMarker = null;
+      clearHoverTimer();
       return;
     }
 
@@ -123,12 +150,27 @@
       // Check if there are any visible markers
       const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
       if (hasVisibleMarkers) {
-        hoveredMarker = findClosestMarker(position) ?? null;
+        const newHoveredMarker = findClosestMarker(position) ?? null;
+
+        // If we're hovering over a different marker than before
+        if (newHoveredMarker?.id !== hoveredMarker?.id) {
+          hoveredMarker = newHoveredMarker;
+          clearHoverTimer();
+
+          // Start timer for new hover if we have a marker
+          if (newHoveredMarker) {
+            hoverTimer = setTimeout(() => {
+              hoveredMarkerDelayed = newHoveredMarker;
+            }, HOVER_DELAY_MS);
+          }
+        }
       } else {
         hoveredMarker = null;
+        clearHoverTimer();
       }
     } else {
       hoveredMarker = null;
+      clearHoverTimer();
     }
 
     if (isDragging && selectedMarker) {
@@ -136,10 +178,22 @@
     }
   }
 
+  function clearHoverTimer() {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+    hoveredMarkerDelayed = null;
+  }
+
   function isTokenVisible(marker: Marker) {
     return (
       marker.visibility === MarkerVisibility.Always ||
       (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) ||
+      (marker.visibility === MarkerVisibility.Hover && stage.mode === StageMode.DM) || // DM can always see Hover markers
+      (marker.visibility === MarkerVisibility.Hover &&
+        stage.mode === StageMode.Player &&
+        marker.id === stage.hoveredMarkerId) || // Players see Hover markers when DM hovers
       (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)
     );
   }
@@ -152,6 +206,7 @@
 
   function onMouseLeave() {
     hoveredMarker = null;
+    clearHoverTimer();
   }
 
   function onContextMenu(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
@@ -165,20 +220,51 @@
     }
   }
 
+  // Track previous hovered marker to detect changes
+  let previousHoveredMarkerDelayed: Marker | null = null;
+
+  // Notify about hover changes when in DM mode (only after delay)
+  $effect(() => {
+    if (stage.mode === StageMode.DM && hoveredMarkerDelayed !== previousHoveredMarkerDelayed) {
+      onMarkerHover?.(hoveredMarkerDelayed);
+      previousHoveredMarkerDelayed = hoveredMarkerDelayed;
+    }
+  });
+
   // Export reactive state for hover and drag
   export const markerState = {
     get isHovering() {
-      return hoveredMarker !== null && hoveredMarker !== undefined;
+      // In DM mode, use the delayed hover
+      if (stage.mode === StageMode.DM) {
+        return hoveredMarkerDelayed !== null && hoveredMarkerDelayed !== undefined;
+      }
+      // In Player mode, check if there's a hoveredMarkerId from the DM
+      return stage.hoveredMarkerId !== null && stage.hoveredMarkerId !== undefined;
     },
     get isDragging() {
       return isDragging;
+    },
+    get hoveredMarker() {
+      // In DM mode, use the delayed hover
+      if (stage.mode === StageMode.DM) {
+        return hoveredMarkerDelayed;
+      }
+      // In Player mode, find the marker that matches the DM's hoveredMarkerId
+      if (stage.hoveredMarkerId) {
+        const hoveredMarker = props.marker.markers.find((m) => m.id === stage.hoveredMarkerId);
+        return hoveredMarker || null;
+      }
+      return null;
+    },
+    get selectedMarker() {
+      return selectedMarker;
     }
   };
 </script>
 
 <LayerInput
   id="marker"
-  {isActive}
+  isActive={isActive || stage.mode === StageMode.Player}
   target={inputMesh}
   layerSize={{ width: display.resolution.x, height: display.resolution.y }}
   {onMouseDown}

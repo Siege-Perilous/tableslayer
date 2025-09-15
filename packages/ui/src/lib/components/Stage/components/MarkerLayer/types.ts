@@ -3,7 +3,8 @@ import type { JSONContent } from '@tiptap/core';
 export enum MarkerVisibility {
   Always = 0,
   DM = 1,
-  Player = 2
+  Player = 2,
+  Hover = 3 // Hidden from players, revealed on DM hover
 }
 
 export enum MarkerShape {
@@ -115,5 +116,6 @@ export interface MarkerLayerExports {
   markerState: {
     isHovering: boolean;
     isDragging: boolean;
+    hoveredMarker: Marker | null;
   };
 }

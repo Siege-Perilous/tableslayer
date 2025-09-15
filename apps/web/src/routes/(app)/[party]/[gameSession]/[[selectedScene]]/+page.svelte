@@ -12,7 +12,9 @@
     StageMode,
     PointerInputManager,
     addToast,
-    ToolType
+    ToolType,
+    type HoveredMarker,
+    MarkerVisibility
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -159,6 +161,7 @@
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
   let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
+  let hoveredMarker: HoveredMarker | null = $state(null); // Track hovered marker from awareness
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -254,6 +257,7 @@
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
   let stage: StageExports = $state(null)!;
+  let stageContainer: HTMLDivElement | undefined = $state();
 
   // Derive marker states reactively from stage
   let isHoveringMarker = $derived(stage?.markers?.isHoveringMarker ?? false);
@@ -705,6 +709,11 @@
       unsubscribeYjs = partyData.subscribe(() => {
         const updatedScenes = partyData!.getScenesList();
         const updatedPartyState = partyData!.getPartyState();
+
+        // Update hovered marker for players to see what DM is hovering
+        if (stageProps.mode === StageMode.Player) {
+          hoveredMarker = partyData!.getHoveredMarker();
+        }
 
         // Update reactive state
         yjsScenes = updatedScenes as typeof scenes;
@@ -1236,8 +1245,46 @@
     }
   };
 
-  const onMarkerSelected = (marker: Marker) => {
-    selectedMarkerId = marker.id;
+  const onMarkerSelected = (marker: Marker | null) => {
+    selectedMarkerId = marker?.id || null;
+
+    // Broadcast Hover visibility markers when selected
+    if (stageProps.mode === StageMode.DM) {
+      if (marker && marker.visibility === MarkerVisibility.Hover) {
+        const hoveredMarkerData = {
+          id: marker.id,
+          position: {
+            x: marker.position.x,
+            y: marker.position.y,
+            z: 0
+          },
+          tooltip: {
+            title: marker.title,
+            content: marker.note ? JSON.stringify(marker.note) : '',
+            imageUrl: marker.imageUrl || undefined
+          }
+        };
+
+        hoveredMarker = hoveredMarkerData;
+
+        if (partyData) {
+          partyData.updateHoveredMarker(hoveredMarkerData);
+          devLog('markers', 'Broadcasting selected hover marker:', hoveredMarkerData);
+        }
+      } else {
+        // Clear hover broadcast if no marker selected or selecting a non-Hover marker
+        hoveredMarker = null;
+        if (partyData) {
+          partyData.updateHoveredMarker(null);
+          devLog(
+            'markers',
+            marker
+              ? 'Clearing hover marker broadcast (non-hover marker selected)'
+              : 'Clearing hover marker broadcast (no selection)'
+          );
+        }
+      }
+    }
   };
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
@@ -1245,6 +1292,52 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  const onMarkerHover = (marker: Marker | null) => {
+    if (stageProps.mode === StageMode.DM) {
+      if (marker && marker.visibility === MarkerVisibility.Hover) {
+        // Create the hoveredMarker data
+        const hoveredMarkerData = {
+          id: marker.id,
+          position: {
+            x: marker.position.x,
+            y: marker.position.y,
+            z: 0 // Markers are on a 2D plane
+          },
+          tooltip: {
+            title: marker.title,
+            content: marker.note ? JSON.stringify(marker.note) : '',
+            imageUrl: marker.imageUrl || undefined
+          }
+        };
+
+        // Set local state for DM to see the tooltip
+        hoveredMarker = hoveredMarkerData;
+
+        // Broadcast to players if connected
+        if (partyData) {
+          partyData.updateHoveredMarker(hoveredMarkerData);
+          devLog('markers', 'Broadcasting hovered marker:', hoveredMarkerData);
+        }
+      } else {
+        // Only clear if the selected marker is not a Hover visibility marker
+        const selectedMarker = stageProps.marker.markers.find((m) => m.id === selectedMarkerId);
+        if (!selectedMarker || selectedMarker.visibility !== MarkerVisibility.Hover) {
+          // Clear both local and broadcast state
+          hoveredMarker = null;
+          if (partyData) {
+            partyData.updateHoveredMarker(null);
+          }
+          if (marker && marker.visibility !== MarkerVisibility.Hover) {
+            devLog('markers', 'Marker not set to Hover visibility, not broadcasting');
+          } else {
+            devLog('markers', 'Clearing hovered marker (no Hover marker selected)');
+          }
+        }
+        // If selected marker IS a Hover marker, keep the broadcast active
+      }
     }
   };
 
@@ -2558,12 +2651,14 @@
               onMarkerMoved,
               onMarkerSelected,
               onMarkerContextMenu,
+              onMarkerHover,
               onMeasurementStart,
               onMeasurementUpdate,
               onMeasurementEnd,
               onCursorMove: handleCursorMove
             }}
             trackLocalCursor={true}
+            hoveredMarkerId={hoveredMarker?.id || null}
           />
         </div>
         <SceneControls

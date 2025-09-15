@@ -60,6 +60,7 @@ export interface SceneExports {
   fill: () => void;
   fit: () => void;
   generateThumbnail: () => Promise<Blob>;
+  getMarkerScreenPosition: (marker: any) => { x: number; y: number } | null;
 
   annotations: {
     clear: (layerId: string) => void;
@@ -86,6 +87,7 @@ export interface SceneExports {
   markers: {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
+    hoveredMarker: any | null;
   };
 
   measurement: {

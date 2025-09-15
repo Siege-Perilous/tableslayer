@@ -232,8 +232,9 @@
                       {...inputProps}
                       selected={marker.visibility.toString()}
                       options={[
-                        { label: 'DM', value: MarkerVisibility.DM.toString() },
-                        { label: 'Everyone', value: MarkerVisibility.Always.toString() }
+                        { label: 'DM only', value: MarkerVisibility.DM.toString() },
+                        { label: 'Everyone', value: MarkerVisibility.Always.toString() },
+                        { label: 'Hover reveal', value: MarkerVisibility.Hover.toString() }
                       ]}
                       onSelectedChange={(value) => {
                         updateMarkerAndSave(marker.id, (m) => (m.visibility = Number(value)));
@@ -372,7 +373,10 @@
                 variant="ghost"
                 onclick={() => {
                   updateMarkerAndSave(marker.id, (m) => {
+                    // Cycle through: Always -> Hover -> DM -> Always
                     if (m.visibility === MarkerVisibility.Always) {
+                      m.visibility = MarkerVisibility.Hover;
+                    } else if (m.visibility === MarkerVisibility.Hover) {
                       m.visibility = MarkerVisibility.DM;
                     } else {
                       m.visibility = MarkerVisibility.Always;
@@ -380,11 +384,24 @@
                   });
                   socketUpdate();
                 }}
+                title={marker.visibility === MarkerVisibility.Always
+                  ? 'Visible to everyone'
+                  : marker.visibility === MarkerVisibility.Hover
+                    ? 'Hover reveal'
+                    : 'DM only'}
               >
                 <Icon
-                  Icon={marker.visibility === MarkerVisibility.Always ? IconEye : IconEyeOff}
+                  Icon={marker.visibility === MarkerVisibility.Always
+                    ? IconEye
+                    : marker.visibility === MarkerVisibility.Hover
+                      ? IconLocationPin
+                      : IconEyeOff}
                   size="1.25rem"
-                  color={marker.visibility === MarkerVisibility.Always ? 'var(--fg)' : 'var(--fgMuted)'}
+                  color={marker.visibility === MarkerVisibility.Always
+                    ? 'var(--fg)'
+                    : marker.visibility === MarkerVisibility.Hover
+                      ? 'var(--fgPrimary)'
+                      : 'var(--fgMuted)'}
                 />
               </IconButton>
               {@render imagePreview(marker)}

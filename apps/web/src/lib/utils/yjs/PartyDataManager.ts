@@ -1,4 +1,4 @@
-import type { Marker, StageProps } from '@tableslayer/ui';
+import type { HoveredMarker, Marker, StageProps } from '@tableslayer/ui';
 import YPartyKitProvider from 'y-partykit/provider';
 import * as Y from 'yjs';
 import { devLog, devWarn } from '../debug';
@@ -294,6 +294,37 @@ export class PartyDataManager {
         });
       }
     }
+  }
+
+  /**
+   * Update hovered marker state (DM only)
+   * This broadcasts which marker the DM is hovering over to all players
+   */
+  updateHoveredMarker(marker: HoveredMarker | null) {
+    if (this.isConnected && this.gameSessionProvider.awareness) {
+      this.gameSessionProvider.awareness.setLocalStateField('hoveredMarker', marker);
+    }
+  }
+
+  /**
+   * Get current hovered marker from awareness (for players to see what DM is hovering)
+   */
+  getHoveredMarker(): HoveredMarker | null {
+    if (this.gameSessionProvider.awareness) {
+      const states = this.gameSessionProvider.awareness.getStates();
+
+      // Look for any DM's hovered marker (last one wins if multiple DMs)
+      let hoveredMarker: HoveredMarker | null = null;
+      states.forEach((state) => {
+        if (state.hoveredMarker) {
+          hoveredMarker = state.hoveredMarker as HoveredMarker;
+        }
+      });
+
+      return hoveredMarker;
+    }
+
+    return null;
   }
 
   /**

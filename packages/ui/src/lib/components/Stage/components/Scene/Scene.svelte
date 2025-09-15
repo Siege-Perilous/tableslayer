@@ -18,6 +18,7 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
+  import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
@@ -457,6 +458,9 @@
     },
     get isDraggingMarker() {
       return markerLayer?.markerState?.isDragging ?? false;
+    },
+    get hoveredMarker() {
+      return markerLayer?.markerState?.hoveredMarker ?? null;
     }
   };
 
@@ -465,6 +469,29 @@
     getCurrentMeasurement: () => measurementLayer?.getCurrentMeasurement?.() ?? null,
     isDrawing: () => measurementLayer?.isCurrentlyDrawing?.() ?? false
   };
+
+  export function getMarkerSizeInScreenSpace(markerSize = 1) {
+    const worldGridSize = getGridCellSizeHelper(props.grid, props.display);
+    const worldMarkerDiameter = worldGridSize * markerSize * 0.9;
+    const zoomedMarkerDiameter = worldMarkerDiameter * props.scene.zoom;
+    const screenMarkerDiameter = (zoomedMarkerDiameter / props.display.resolution.x) * $size.width;
+
+    return screenMarkerDiameter;
+  }
+
+  export function getMarkerScreenPosition(marker: any) {
+    if (!marker?.position) return null;
+    const vector = new THREE.Vector3(marker.position.x, marker.position.y, 0);
+    vector.x += props.scene.offset.x;
+    vector.y += props.scene.offset.y;
+    vector.x *= props.scene.zoom;
+    vector.y *= props.scene.zoom;
+    vector.project(camera.current);
+    let x = (vector.x * 0.5 + 0.5) * $size.width;
+    let y = (-vector.y * 0.5 + 0.5) * $size.height;
+
+    return { x, y };
+  }
 </script>
 
 <T.OrthographicCamera

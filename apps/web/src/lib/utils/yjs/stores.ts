@@ -79,6 +79,10 @@ export function usePartyData() {
     ) => partyDataManager!.updateMeasurement(startPoint, endPoint, type, measurementProps),
     getMeasurements: () => partyDataManager!.getMeasurements(),
 
+    // Hovered marker management (DM hover to reveal markers to players)
+    updateHoveredMarker: (marker: any) => partyDataManager!.updateHoveredMarker(marker),
+    getHoveredMarker: () => partyDataManager!.getHoveredMarker(),
+
     // Scenes list
     getScenesList: (): SceneMetadata[] => partyDataManager!.getScenesList(),
 
