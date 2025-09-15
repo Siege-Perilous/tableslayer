@@ -83,7 +83,6 @@
   let loadingState = SceneLoadingState.LoadingMap;
 
   // Local cursor tracking
-  let localCursorWorldPos: { x: number; y: number; z: number } | null = $state(null);
   let raycaster = new THREE.Raycaster();
   raycaster.layers.enable(SceneLayer.Main);
 
@@ -126,7 +125,6 @@
             z: 0
           };
 
-          localCursorWorldPos = adjustedPos;
           callbacks.onCursorMove?.(adjustedPos);
         }
       };
