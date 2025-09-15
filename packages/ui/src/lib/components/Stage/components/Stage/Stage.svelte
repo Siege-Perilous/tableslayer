@@ -58,6 +58,9 @@
   let hoveredMarkerData = $state<any>(null);
   let markerSizeInPixels = $state<number>(40);
 
+  // For multiple pinned tooltips
+  let pinnedTooltips = $state<Array<{ marker: any; position: { x: number; y: number } }>>([]);
+
   // Store game mode, hovered marker, and pinned markers as reactive state which can be referenced by other components
   let stageContext = $state({ mode: props.mode, hoveredMarkerId, pinnedMarkerIds });
   setContext('stage', stageContext);
@@ -128,33 +131,50 @@
   });
 
   $effect(() => {
-    // In DM mode (mode 0): Show tooltip for hovered marker
-    // In Player mode (mode 1): Show tooltip for pinned markers, DM's broadcast, or player's selected marker
+    // Update pinned tooltips
+    if (pinnedMarkerIds && pinnedMarkerIds.length > 0 && containerElement && sceneRef?.getMarkerScreenPosition) {
+      const newPinnedTooltips = [];
+      for (const markerId of pinnedMarkerIds) {
+        const marker = props.marker.markers.find((m) => m.id === markerId);
+        if (marker) {
+          const screenPos = sceneRef.getMarkerScreenPosition(marker);
+          if (screenPos) {
+            newPinnedTooltips.push({ marker, position: screenPos });
+          }
+        }
+      }
+      pinnedTooltips = newPinnedTooltips;
+    } else {
+      pinnedTooltips = [];
+    }
+  });
+
+  $effect(() => {
+    // Show tooltip for current hover/selection (non-pinned)
     let markerForTooltip = null;
 
     if (props.mode === 0) {
       // DM mode: use hovered marker
       markerForTooltip = sceneRef?.markers?.hoveredMarker;
     } else if (props.mode === 1) {
-      // Player mode: Check for pinned markers first, then DM's broadcast, then player's selection
+      // Player mode: Check for DM's broadcast or player's selection (pinned are handled separately)
 
-      // First check if there are any pinned markers
-      let pinnedMarker = null;
-      if (pinnedMarkerIds && pinnedMarkerIds.length > 0) {
-        // For now, show the first pinned marker (we could expand this to show multiple)
-        pinnedMarker = props.marker.markers.find((m) => pinnedMarkerIds.includes(m.id));
-      }
-
-      // Then check for DM's broadcast (hoveredMarkerId from props)
+      // Check for DM's broadcast (hoveredMarkerId from props)
       let dmBroadcastMarker = null;
       if (hoveredMarkerId) {
-        dmBroadcastMarker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
+        // Only show if not already pinned
+        if (!pinnedMarkerIds.includes(hoveredMarkerId)) {
+          dmBroadcastMarker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
+        }
       }
 
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
+      // Only show selected if not already pinned
+      const selectedNotPinned =
+        selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) ? selectedByPlayer : null;
 
-      // Prioritize: pinned > DM's broadcast > player's selection
-      markerForTooltip = pinnedMarker || dmBroadcastMarker || selectedByPlayer;
+      // Prioritize: DM's broadcast > player's selection
+      markerForTooltip = dmBroadcastMarker || selectedNotPinned;
     }
 
     if (markerForTooltip && containerElement) {
@@ -183,19 +203,35 @@
     {/if}
   </Canvas>
 
-  <MarkerTooltip
-    marker={hoveredMarkerData}
-    position={tooltipPosition}
-    {containerElement}
-    markerDiameter={markerSizeInPixels}
-    isDM={props.mode === 0}
-    isPinned={hoveredMarkerData && pinnedMarkerIds.includes(hoveredMarkerData.id)}
-    {onPinToggle}
-    onTooltipHover={(isHovering) => {
-      // When hovering tooltip in DM mode, maintain the hover state
-      if (props.mode === 0 && sceneRef?.markers?.maintainHover) {
-        sceneRef.markers.maintainHover(isHovering);
-      }
-    }}
-  />
+  <!-- Render pinned tooltips -->
+  {#each pinnedTooltips as { marker, position }}
+    <MarkerTooltip
+      {marker}
+      {position}
+      {containerElement}
+      markerDiameter={markerSizeInPixels}
+      isDM={props.mode === 0}
+      isPinned={true}
+      {onPinToggle}
+    />
+  {/each}
+
+  <!-- Render hover/selected tooltip (if not pinned) -->
+  {#if hoveredMarkerData}
+    <MarkerTooltip
+      marker={hoveredMarkerData}
+      position={tooltipPosition}
+      {containerElement}
+      markerDiameter={markerSizeInPixels}
+      isDM={props.mode === 0}
+      isPinned={false}
+      {onPinToggle}
+      onTooltipHover={(isHovering) => {
+        // When hovering tooltip in DM mode, maintain the hover state
+        if (props.mode === 0 && sceneRef?.markers?.maintainHover) {
+          sceneRef.markers.maintainHover(isHovering);
+        }
+      }}
+    />
+  {/if}
 </div>
