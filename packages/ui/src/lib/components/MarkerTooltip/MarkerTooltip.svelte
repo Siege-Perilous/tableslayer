@@ -164,7 +164,7 @@
 
       cleanup = autoUpdate(virtualEl, tooltipElement!, async () => {
         const markerRadius = markerDiameter / 2;
-        const buffer = 10;
+        const buffer = 20; // Increased from 10 to 20 for more spacing
         const dynamicOffset = markerRadius + buffer;
 
         const { x, y } = await computePosition(virtualEl, tooltipElement!, {

@@ -23,7 +23,7 @@
 
   const { props, isActive, display, grid }: Props = $props();
 
-  const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null }>('stage');
+  const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
   const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
     getContext<Callbacks>('callbacks');
 
@@ -210,6 +210,9 @@
       (marker.visibility === MarkerVisibility.Hover &&
         stage.mode === StageMode.Player &&
         marker.id === stage.hoveredMarkerId) || // Players see Hover markers when DM hovers
+      (marker.visibility === MarkerVisibility.Hover &&
+        stage.mode === StageMode.Player &&
+        stage.pinnedMarkerIds?.includes(marker.id)) || // Players see Hover markers when pinned
       (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)
     );
   }
@@ -279,10 +282,15 @@
       if (stage.mode === StageMode.DM) {
         return hoveredMarkerDelayed;
       }
-      // In Player mode, find the marker that matches the DM's hoveredMarkerId
+      // In Player mode, find the marker that matches the DM's hoveredMarkerId or is pinned
       if (stage.hoveredMarkerId) {
         const hoveredMarker = props.marker.markers.find((m) => m.id === stage.hoveredMarkerId);
         return hoveredMarker || null;
+      }
+      // Check for pinned markers
+      if (stage.pinnedMarkerIds && stage.pinnedMarkerIds.length > 0) {
+        const pinnedMarker = props.marker.markers.find((m) => stage.pinnedMarkerIds.includes(m.id));
+        return pinnedMarker || null;
       }
       return null;
     },

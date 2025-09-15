@@ -58,13 +58,14 @@
   let hoveredMarkerData = $state<any>(null);
   let markerSizeInPixels = $state<number>(40);
 
-  // Store game mode and hovered marker as reactive state which can be referenced by other components
-  let stageContext = $state({ mode: props.mode, hoveredMarkerId });
+  // Store game mode, hovered marker, and pinned markers as reactive state which can be referenced by other components
+  let stageContext = $state({ mode: props.mode, hoveredMarkerId, pinnedMarkerIds });
   setContext('stage', stageContext);
 
   $effect(() => {
     stageContext.mode = props.mode;
     stageContext.hoveredMarkerId = hoveredMarkerId;
+    stageContext.pinnedMarkerIds = pinnedMarkerIds;
   });
 
   setContext('callbacks', callbacks);
