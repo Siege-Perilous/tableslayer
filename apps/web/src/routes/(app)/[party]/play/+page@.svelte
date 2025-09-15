@@ -70,7 +70,6 @@
     (stageIsLoading || sceneIsChanging) && 'stage--loading',
     gameIsPaused && 'stage--hidden'
   ]);
-  const fadeOutDelay = 5000;
 
   // No debouncing needed - flashing was caused by image versioning, not Y.js updates
 

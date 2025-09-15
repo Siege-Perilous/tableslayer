@@ -1447,30 +1447,6 @@
     // Check if cursor is within the visible scene bounds
     isCursorInScene = relativeX >= 0 && relativeX <= rotatedWidth && relativeY >= 0 && relativeY <= rotatedHeight;
 
-    // Clamp to ensure cursor stays within visible bounds after rotation
-    const clampedX = Math.max(0, Math.min(relativeX, rotatedWidth));
-    const clampedY = Math.max(0, Math.min(relativeY, rotatedHeight));
-
-    // Normalize clamped coordinates to range [0, 1]
-    const normalizedX = clampedX / rotatedWidth;
-    const normalizedY = clampedY / rotatedHeight;
-
-    // Rotate the normalized coordinates to account for the scene's rotation
-    const rotatePoint = (x: number, y: number, angle: number): { x: number; y: number } => {
-      const radians = (Math.PI / 180) * angle;
-      return {
-        x: x * Math.cos(radians) - y * Math.sin(radians),
-        y: x * Math.sin(radians) + y * Math.cos(radians)
-      };
-    };
-
-    // Rotate around the center (0.5, 0.5) of the normalized coordinate space
-    const rotated = rotatePoint(normalizedX - 0.5, normalizedY - 0.5, -rotation);
-
-    // Adjust back to [0, 1] normalized space
-    const finalNormalizedX = rotated.x + 0.5;
-    const finalNormalizedY = rotated.y + 0.5;
-
     // Handle panning with rotation adjustment
     if (e.buttons === 1 || e.buttons === 2) {
       // Get rotation for both map and scene transformations
