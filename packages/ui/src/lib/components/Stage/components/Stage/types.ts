@@ -8,6 +8,7 @@ import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
 import type { MeasurementLayerProps } from '../MeasurementLayer/types';
 import type { PostProcessingProps, SceneLayerProps } from '../Scene/types';
 import type { WeatherLayerProps } from '../WeatherLayer/types';
+export type { CursorData } from '../CursorLayer/types';
 
 export interface Callbacks {
   onAnnotationUpdate: (layerId: string, blob: Promise<Blob>) => void;
@@ -27,6 +28,7 @@ export interface Callbacks {
     type: number
   ) => void;
   onMeasurementEnd?: () => void;
+  onCursorMove?: (worldPosition: { x: number; y: number; z: number }) => void;
 }
 
 export enum StageMode {

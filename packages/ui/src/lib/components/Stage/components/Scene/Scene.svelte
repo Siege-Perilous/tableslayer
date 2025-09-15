@@ -21,6 +21,8 @@
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
+  import CursorLayer from '../CursorLayer/CursorLayer.svelte';
+  import type { CursorData } from '../CursorLayer/types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
   import MapLayer from '../MapLayer/MapLayer.svelte';
@@ -31,6 +33,8 @@
 
   interface Props {
     props: StageProps;
+    cursors?: CursorData[];
+    trackLocalCursor?: boolean;
     receivedMeasurement?: {
       startPoint: { x: number; y: number };
       endPoint: { x: number; y: number };
@@ -54,7 +58,7 @@
     } | null;
   }
 
-  let { props, receivedMeasurement = null }: Props = $props();
+  let { props, receivedMeasurement = null, cursors = [], trackLocalCursor = false }: Props = $props();
 
   const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte();
 
@@ -78,6 +82,11 @@
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
+  // Local cursor tracking
+  let localCursorWorldPos: { x: number; y: number; z: number } | null = $state(null);
+  let raycaster = new THREE.Raycaster();
+  raycaster.layers.enable(SceneLayer.Main);
+
   let composer = new EffectComposer(renderer);
 
   onMount(() => {
@@ -87,6 +96,49 @@
     renderer.setClearColor(0, 0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.localClippingEnabled = true;
+
+    // Add mouse tracking if enabled
+    if (trackLocalCursor && callbacks.onCursorMove) {
+      const handleMouseMove = (event: MouseEvent) => {
+        // Convert mouse position to normalized device coordinates
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        // Update raycaster with camera and mouse position
+        raycaster.setFromCamera(new THREE.Vector2(x, y), $camera);
+
+        // Create an invisible plane at z=0 to intersect with
+        const planeGeometry = new THREE.PlaneGeometry(10000, 10000);
+        const planeMesh = new THREE.Mesh(planeGeometry);
+        planeMesh.position.set(0, 0, 0);
+
+        // Find intersection with the plane
+        const intersects = raycaster.intersectObject(planeMesh);
+
+        if (intersects.length > 0) {
+          const worldPos = intersects[0].point;
+
+          // Account for scene transform (offset and zoom)
+          const adjustedPos = {
+            x: (worldPos.x - props.scene.offset.x) / props.scene.zoom,
+            y: (worldPos.y - props.scene.offset.y) / props.scene.zoom,
+            z: 0
+          };
+
+          localCursorWorldPos = adjustedPos;
+          callbacks.onCursorMove?.(adjustedPos);
+        }
+      };
+
+      renderer.domElement.addEventListener('mousemove', handleMouseMove);
+
+      return () => {
+        autoRender.set(before);
+        renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+
     return () => {
       autoRender.set(before);
     };
@@ -496,4 +548,14 @@
   {:else}
     <!-- MeasurementLayer skipped: props.measurement is undefined -->
   {/if}
+
+  <!-- Cursor Layer for rendering remote cursors -->
+  <CursorLayer
+    props={{
+      cursors: cursors,
+      showLabels: true,
+      fadeOutDelay: 5000,
+      fadeOutDuration: 500
+    }}
+  />
 </T.Object3D>

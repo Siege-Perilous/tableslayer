@@ -158,9 +158,7 @@
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
-  let throttledCursorUpdate:
-    | ((position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => void)
-    | null = null;
+  let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -305,15 +303,19 @@
   const zoomSensitivity = 0.0005;
 
   // Use appropriate pane layout based on device type
-  // Read from client-side cookies to get the most up-to-date values
-  let clientPaneLayoutDesktop = $state(paneLayoutDesktop);
-  let clientPaneLayoutMobile = $state(paneLayoutMobile);
+  // Initialize with default values, will be updated in $effect
+  let clientPaneLayoutDesktop = $state('split');
+  let clientPaneLayoutMobile = $state('single');
 
-  // On client-side, always use the latest cookie values
+  // On client-side, use cookie values or fall back to SSR values
   $effect(() => {
     if (typeof window !== 'undefined') {
-      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop');
-      clientPaneLayoutMobile = getPreference('paneLayoutMobile');
+      clientPaneLayoutDesktop = getPreference('paneLayoutDesktop') || paneLayoutDesktop;
+      clientPaneLayoutMobile = getPreference('paneLayoutMobile') || paneLayoutMobile;
+    } else {
+      // Use SSR values initially
+      clientPaneLayoutDesktop = paneLayoutDesktop;
+      clientPaneLayoutMobile = paneLayoutMobile;
     }
   });
 
@@ -634,12 +636,13 @@
       partyData = usePartyData();
 
       // Create throttled cursor update function (30 FPS for smooth LCD TV display)
-      throttledCursorUpdate = throttle(
-        (position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) => {
-          partyData!.updateCursor(position, normalizedPosition);
-        },
-        33
-      ); // 33ms = ~30 FPS
+      throttledCursorUpdate = throttle((worldPosition: { x: number; y: number; z: number }) => {
+        // Generate a color for this user (could be stored in user data)
+        const userColor = `#${Math.floor(Math.random() * 16777215)
+          .toString(16)
+          .padStart(6, '0')}`;
+        partyData!.updateCursor(worldPosition, userColor, user.email);
+      }, 33); // 33ms = ~30 FPS
 
       // Initialize Y.js with SSR scene data
       const sceneMetadata = scenes.map((scene) => ({
@@ -1495,14 +1498,7 @@
       // Y.js handles synchronization automatically
     }
 
-    // Emit the normalized and rotated position over the WebSocket
-    // Only emit cursor if we're editing the active scene
-    const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
-
-    if (shouldEmitCursor && throttledCursorUpdate) {
-      // Update cursor position using throttled Y.js awareness (30 FPS)
-      throttledCursorUpdate({ x: e.clientX, y: e.clientY }, { x: finalNormalizedX, y: finalNormalizedY });
-    }
+    // Cursor tracking is now handled by the Stage component's onCursorMove callback
   };
 
   function onMapPan(dx: number, dy: number) {
@@ -1531,6 +1527,15 @@
 
   function onSceneZoom(zoom: number) {
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
+  }
+
+  function handleCursorMove(worldPosition: { x: number; y: number; z: number }) {
+    // Only emit cursor if we're editing the active scene
+    const shouldEmitCursor = currentActiveScene && currentActiveScene.id === selectedScene.id;
+
+    if (shouldEmitCursor && throttledCursorUpdate) {
+      throttledCursorUpdate(worldPosition);
+    }
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -2405,8 +2410,10 @@
               onMarkerContextMenu,
               onMeasurementStart,
               onMeasurementUpdate,
-              onMeasurementEnd
+              onMeasurementEnd,
+              onCursorMove: handleCursorMove
             }}
+            trackLocalCursor={true}
           />
         </div>
         <SceneControls

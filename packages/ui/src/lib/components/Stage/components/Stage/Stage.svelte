@@ -6,6 +6,8 @@
   import { setContext } from 'svelte';
   import { PerfMonitor } from '@threlte/extras';
 
+  import type { CursorData } from './types';
+
   interface Props {
     props: StageProps;
     callbacks: Callbacks;
@@ -30,9 +32,11 @@
       snapToGrid?: boolean;
       enableDMG252?: boolean;
     } | null;
+    cursors?: CursorData[];
+    trackLocalCursor?: boolean;
   }
 
-  let { props, callbacks, receivedMeasurement = null }: Props = $props();
+  let { props, callbacks, receivedMeasurement = null, cursors = [], trackLocalCursor = false }: Props = $props();
 
   let sceneRef: SceneExports;
 
@@ -93,7 +97,7 @@
       <T.MeshBasicMaterial color={props.backgroundColor} />
     </T.Mesh>
 
-    <Scene bind:this={sceneRef} {props} {receivedMeasurement} />
+    <Scene bind:this={sceneRef} {props} {receivedMeasurement} {cursors} {trackLocalCursor} />
     {#if props.debug.enableStats}
       <PerfMonitor logsPerSecond={props.debug.loggingRate} anchorX={'right'} anchorY={'bottom'} />
     {/if}

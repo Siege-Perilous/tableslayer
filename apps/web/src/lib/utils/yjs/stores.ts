@@ -52,8 +52,8 @@ export function usePartyData() {
     subscribe: (callback: () => void) => partyDataManager!.subscribe(callback),
 
     // Cursor management
-    updateCursor: (position: { x: number; y: number }, normalizedPosition: { x: number; y: number }) =>
-      partyDataManager!.updateCursor(position, normalizedPosition),
+    updateCursor: (worldPosition: { x: number; y: number; z: number }, color?: string, label?: string) =>
+      partyDataManager!.updateCursor(worldPosition, color, label),
     getCursors: () => partyDataManager!.getCursors(),
 
     // Measurement management
