@@ -55,7 +55,7 @@
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
-  import { devLog, devWarn, devError } from '$lib/utils/debug';
+  import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
@@ -1822,15 +1822,19 @@
   const processFogUpdate = async () => {
     if (!pendingFogBlob || isSaving) return;
 
+    const updateId = pendingFogBlob['updateId'] || 'unknown';
+
     // Check if user is still drawing
     if (stage?.fogOfWar?.isDrawing()) {
       // User is still drawing, abort the update
+      timingLog('FOG-RT', `${updateId} - ABORTED: User still drawing at ${new Date().toISOString()}`);
       devLog('fog', 'Aborting fog update - user is still drawing');
       return;
     }
 
     pendingFogBlob = null; // Clear pending blob
 
+    timingLog('FOG-RT', `${updateId} - 3. Starting RLE encoding at ${new Date().toISOString()}`);
     // Get RLE encoded data from the fog layer
     const rleData = await stage?.fogOfWar?.toRLE();
     if (!rleData) {
@@ -1838,10 +1842,15 @@
       isUpdatingFog = false;
       return;
     }
+    timingLog(
+      'FOG-RT',
+      `${updateId} - 4. RLE encoding complete (${rleData.length} bytes) at ${new Date().toISOString()}`
+    );
 
     // Create new abort controller for this upload
     fogUploadAbortController = new AbortController();
 
+    timingLog('FOG-RT', `${updateId} - 5. Starting database save at ${new Date().toISOString()}`);
     await handleMutation({
       mutation: () =>
         $updateFogMaskMutation.mutateAsync({
@@ -1851,8 +1860,11 @@
         }),
       formLoadingState: () => {},
       onSuccess: () => {
+        timingLog('FOG-RT', `${updateId} - 6. Database save complete at ${new Date().toISOString()}`);
+
         // Check if user started drawing while upload was in progress
         if (stage?.fogOfWar?.isDrawing()) {
+          timingLog('FOG-RT', `${updateId} - ABORTED: User started drawing during save at ${new Date().toISOString()}`);
           devLog('fog', 'Fog update completed but user is drawing - skipping update');
           isUpdatingFog = false;
           fogUploadAbortController = null;
@@ -1863,12 +1875,16 @@
         stageProps.fogOfWar.url = null;
 
         // Update mask version to signal other clients
-        stageProps.fogOfWar.maskVersion = Date.now();
+        const maskVersion = Date.now();
+        stageProps.fogOfWar.maskVersion = maskVersion;
+        timingLog('FOG-RT', `${updateId} - 7. Setting mask version ${maskVersion} at ${new Date().toISOString()}`);
 
         // Immediately sync to Y.js for real-time collaboration
         if (partyData && selectedScene?.id) {
           lastOwnYjsUpdateTime = Date.now(); // Track that we just sent an update
+          timingLog('FOG-RT', `${updateId} - 8. Broadcasting Y.js update at ${new Date().toISOString()}`);
           partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+          timingLog('FOG-RT', `${updateId} - 9. Y.js broadcast complete at ${new Date().toISOString()}`);
         }
 
         // Clear flag before triggering save so saveScene() doesn't return early
@@ -1899,9 +1915,13 @@
 
     isUpdatingFog = true;
 
+    const updateId = `fog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    timingLog('FOG-RT', `${updateId} - 1. Fog update triggered in editor at ${new Date().toISOString()}`);
+
     // Store a flag that we need to process fog update
     // We'll use RLE encoding instead of the blob
     pendingFogBlob = new Blob(); // Just use empty blob as a flag
+    pendingFogBlob['updateId'] = updateId; // Attach ID for tracking
 
     // Clear any existing timer
     if (fogUpdateTimer) {
@@ -1910,6 +1930,10 @@
 
     // Set a new timer to process the update after a delay
     fogUpdateTimer = setTimeout(() => {
+      timingLog(
+        'FOG-RT',
+        `${updateId} - 2. Starting fog processing after 500ms debounce at ${new Date().toISOString()}`
+      );
       processFogUpdate();
       fogUpdateTimer = null;
     }, 500); // 500ms delay

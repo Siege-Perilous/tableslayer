@@ -3,7 +3,7 @@
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
   import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
-  import { devLog, devWarn, devError } from '$lib/utils/debug';
+  import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
   import {
     MapLayerType,
     Stage,
@@ -96,8 +96,10 @@
 
   // Fetch mask functions for real-time updates
   const fetchFogMask = async (sceneId: string) => {
+    const maskVersion = lastFogMaskVersion;
     try {
       const response = await fetch(`/api/scenes/getFogMask?sceneId=${sceneId}`);
+      timingLog('FOG-RT', `fog_${maskVersion} - 12. Fog mask API response received at ${new Date().toISOString()}`);
       if (!response.ok) {
         console.error('Failed to fetch fog mask');
         return;
@@ -111,33 +113,30 @@
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
+        timingLog(
+          'FOG-RT',
+          `fog_${maskVersion} - 13. Applying ${bytes.length} bytes to fog layer at ${new Date().toISOString()}`
+        );
         // Apply the mask to the fog layer
         await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
-        console.log('Applied updated fog mask from DM');
+        timingLog('FOG-RT', `fog_${maskVersion} - 14. Fog mask applied successfully at ${new Date().toISOString()}`);
+        timingLog('FOG-RT', `fog_${maskVersion} - COMPLETE: Full round-trip completed`);
       }
     } catch (error) {
+      devError('fog-timing', `[FOG-RT] fog_${maskVersion} - ERROR:`, error);
       console.error('Error fetching fog mask:', error);
     }
   };
 
   const fetchAnnotationMask = async (annotationId: string) => {
-    console.log(`[Playfield] fetchAnnotationMask called with ID: ${annotationId}`);
     try {
-      console.log(`[Playfield] Fetching annotation mask for layer ${annotationId}`);
       const response = await fetch(`/api/annotations/getMask?annotationId=${annotationId}`);
       if (!response.ok) {
-        console.error('[Playfield] Failed to fetch annotation mask:', response.status, response.statusText);
+        console.error('Failed to fetch annotation mask:', response.status, response.statusText);
         return;
       }
 
       const data = (await response.json()) as { success: boolean; maskData?: string | null };
-      console.log(`[Playfield] Received mask data:`, {
-        hasData: !!data.maskData,
-        dataLength: data.maskData?.length,
-        hasStage: !!stage,
-        hasAnnotations: !!stage?.annotations,
-        hasLoadMask: !!stage?.annotations?.loadMask
-      });
 
       if (data.maskData && stage?.annotations?.loadMask) {
         // Convert base64 back to Uint8Array
@@ -146,20 +145,11 @@
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        console.log(`[Playfield] Applying mask to annotation layer ${annotationId}, size: ${bytes.length} bytes`);
         // Apply the mask to the annotation layer
         await stage.annotations.loadMask(annotationId, bytes);
-        console.log(`[Playfield] Successfully applied updated annotation mask for layer ${annotationId}`);
-      } else {
-        console.warn(`[Playfield] Cannot apply mask - missing requirements:`, {
-          hasMaskData: !!data.maskData,
-          hasStage: !!stage,
-          hasAnnotations: !!stage?.annotations,
-          hasLoadMask: !!stage?.annotations?.loadMask
-        });
       }
     } catch (error) {
-      console.error('[Playfield] Error fetching annotation mask:', error);
+      console.error('Error fetching annotation mask:', error);
     }
   };
 
@@ -184,15 +174,6 @@
       });
 
       // Only update if we have scene data and an active scene
-
-      console.log('[Playfield] Y.js data received:', {
-        hasAnnotations: !!yjsSceneData.stageProps.annotations,
-        annotationLayers: yjsSceneData.stageProps.annotations?.layers?.map((l) => ({
-          id: l.id,
-          visibility: l.visibility,
-          maskVersion: l.maskVersion
-        }))
-      });
 
       stageProps = {
         ...yjsSceneData.stageProps,
@@ -230,38 +211,34 @@
       // Check for mask version changes and fetch updated masks
       // Fog mask version changed
       if (stageProps.fogOfWar?.maskVersion && stageProps.fogOfWar.maskVersion !== lastFogMaskVersion) {
-        console.log('Fog mask version changed, fetching new mask');
+        timingLog(
+          'FOG-RT',
+          `fog_${stageProps.fogOfWar.maskVersion} - 10. Playfield detected mask version change at ${new Date().toISOString()}`
+        );
+        timingLog(
+          'FOG-RT',
+          `fog_${stageProps.fogOfWar.maskVersion} - Version: ${stageProps.fogOfWar.maskVersion}, Previous: ${lastFogMaskVersion}`
+        );
         lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
         if (data.activeScene?.id) {
+          timingLog(
+            'FOG-RT',
+            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API at ${new Date().toISOString()}`
+          );
           fetchFogMask(data.activeScene.id);
         }
       }
 
       // Annotation mask versions changed
       if (stageProps.annotations?.layers) {
-        console.log('[Playfield] Checking annotation layers for mask updates:', {
-          layerCount: stageProps.annotations.layers.length,
-          layers: stageProps.annotations.layers.map((l) => ({
-            id: l.id,
-            maskVersion: l.maskVersion,
-            lastVersion: lastAnnotationMaskVersions.get(l.id)
-          }))
-        });
         for (const layer of stageProps.annotations.layers) {
           const lastVersion = lastAnnotationMaskVersions.get(layer.id);
           if (layer.maskVersion && layer.maskVersion !== lastVersion) {
-            console.log(`[Playfield] Annotation mask version changed for layer ${layer.id}:`, {
-              oldVersion: lastVersion,
-              newVersion: layer.maskVersion,
-              layerData: JSON.parse(JSON.stringify(layer))
-            });
             lastAnnotationMaskVersions.set(layer.id, layer.maskVersion);
-            console.log(`[Playfield] About to call fetchAnnotationMask with ID: ${layer.id}`);
             // Don't await - let it run in background, but catch errors
             fetchAnnotationMask(layer.id).catch((error) => {
-              console.error(`[Playfield] Error in fetchAnnotationMask for layer ${layer.id}:`, error);
+              console.error(`Error in fetchAnnotationMask for layer ${layer.id}:`, error);
             });
-            console.log(`[Playfield] fetchAnnotationMask call initiated`);
           }
         }
       }

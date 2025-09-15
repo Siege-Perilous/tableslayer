@@ -1,4 +1,4 @@
-import { dev } from '$app/environment';
+import { browser, dev } from '$app/environment';
 
 /**
  * Logs to console only in development mode
@@ -60,5 +60,23 @@ export function devError(...args: any[]) {
       }
     }
     console.error(...args);
+  }
+}
+
+/**
+ * Special timing log that can be enabled in production via query parameter
+ * Add ?debug=fogtiming to the URL to enable fog round-trip timing logs
+ * This has zero performance impact when not enabled
+ */
+export function timingLog(category: string, message: string): void {
+  if (!browser) return;
+
+  // Check if timing logs are enabled via query parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugParam = urlParams.get('debug');
+
+  // Only log if in dev mode OR if the specific debug flag is enabled
+  if (dev || debugParam === 'fogtiming') {
+    console.log(`[${category}] ${message}`);
   }
 }
