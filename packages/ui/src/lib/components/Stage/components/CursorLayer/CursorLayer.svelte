@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
   import type { CursorData, CursorLayerProps } from './types';
-  import { SceneLayer } from '../Scene/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
 
   interface Props {
     props: CursorLayerProps;
@@ -70,7 +70,7 @@
       position={[cursor.worldPosition.x, cursor.worldPosition.y, cursor.worldPosition.z + 0.1]}
       layers={[SceneLayer.Overlay]}
     >
-      <T.Mesh geometry={shadowGeometry} position={[0, 0, -0.01]}>
+      <T.Mesh geometry={shadowGeometry} position={[0, 0, -0.01]} renderOrder={SceneLayerOrder.Cursor}>
         <T.MeshBasicMaterial
           color="#000000"
           transparent={true}
@@ -81,11 +81,11 @@
         />
       </T.Mesh>
 
-      <T.Mesh geometry={cursorOutlineGeometry}>
+      <T.Mesh geometry={cursorOutlineGeometry} renderOrder={SceneLayerOrder.Cursor}>
         <T.MeshBasicMaterial color="#ffffff" transparent={true} {opacity} depthTest={false} depthWrite={false} />
       </T.Mesh>
 
-      <T.Mesh geometry={cursorGeometry}>
+      <T.Mesh geometry={cursorGeometry} renderOrder={SceneLayerOrder.Cursor}>
         <T.MeshBasicMaterial
           color={cursor.color}
           transparent={true}

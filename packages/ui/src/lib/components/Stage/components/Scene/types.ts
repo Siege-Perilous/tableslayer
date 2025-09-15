@@ -30,7 +30,8 @@ export enum SceneLayerOrder {
   Grid = 50,
   EdgeOverlay = 70,
   Annotation = 80,
-  Measurement = 90
+  Measurement = 90,
+  Cursor = 100
 }
 
 export interface SceneLayerProps {
