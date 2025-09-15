@@ -1249,44 +1249,6 @@
 
   const onMarkerSelected = (marker: Marker | null) => {
     selectedMarkerId = marker?.id || undefined;
-
-    // Broadcast Hover visibility markers when selected
-    if (stageProps.mode === StageMode.DM) {
-      if (marker && marker.visibility === MarkerVisibility.Hover) {
-        const hoveredMarkerData = {
-          id: marker.id,
-          position: {
-            x: marker.position.x,
-            y: marker.position.y,
-            z: 0
-          },
-          tooltip: {
-            title: marker.title,
-            content: marker.note ? JSON.stringify(marker.note) : '',
-            imageUrl: marker.imageUrl || undefined
-          }
-        };
-
-        hoveredMarker = hoveredMarkerData;
-
-        if (partyData) {
-          partyData.updateHoveredMarker(hoveredMarkerData);
-          devLog('markers', 'Broadcasting selected hover marker:', hoveredMarkerData);
-        }
-      } else {
-        // Clear hover broadcast if no marker selected or selecting a non-Hover marker
-        hoveredMarker = null;
-        if (partyData) {
-          partyData.updateHoveredMarker(null);
-          devLog(
-            'markers',
-            marker
-              ? 'Clearing hover marker broadcast (non-hover marker selected)'
-              : 'Clearing hover marker broadcast (no selection)'
-          );
-        }
-      }
-    }
   };
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
@@ -1340,21 +1302,16 @@
           devLog('markers', 'Broadcasting hovered marker:', hoveredMarkerData);
         }
       } else {
-        // Only clear if the selected marker is not a Hover visibility marker
-        const selectedMarker = stageProps.marker.markers.find((m) => m.id === selectedMarkerId);
-        if (!selectedMarker || selectedMarker.visibility !== MarkerVisibility.Hover) {
-          // Clear both local and broadcast state
-          hoveredMarker = null;
-          if (partyData) {
-            partyData.updateHoveredMarker(null);
-          }
-          if (marker && marker.visibility !== MarkerVisibility.Hover) {
-            devLog('markers', 'Marker not set to Hover visibility, not broadcasting');
-          } else {
-            devLog('markers', 'Clearing hovered marker (no Hover marker selected)');
-          }
+        // Clear hover broadcast when not hovering a Hover visibility marker
+        hoveredMarker = null;
+        if (partyData) {
+          partyData.updateHoveredMarker(null);
         }
-        // If selected marker IS a Hover marker, keep the broadcast active
+        if (marker && marker.visibility !== MarkerVisibility.Hover) {
+          devLog('markers', 'Marker not set to Hover visibility, not broadcasting');
+        } else {
+          devLog('markers', 'Clearing hovered marker');
+        }
       }
     }
   };
