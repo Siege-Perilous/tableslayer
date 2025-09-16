@@ -34,6 +34,7 @@
     IconEyeOff,
     IconX,
     IconPokerChip,
+    IconHandFinger,
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
@@ -47,7 +48,9 @@
     handleSelectActiveControl,
     socketUpdate,
     updateMarkerAndSave,
-    onMarkerDeleted
+    onMarkerDeleted,
+    pinnedMarkerIds = [],
+    onPinToggle
   }: {
     stageProps: StageProps;
     selectedMarkerId: string | undefined;
@@ -57,6 +60,8 @@
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateMarkerAndSave: (markerId: string, updateFn: (marker: any) => void) => void;
     onMarkerDeleted?: (markerId: string) => void;
+    pinnedMarkerIds?: string[];
+    onPinToggle?: (markerId: string, pinned: boolean) => void;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
@@ -226,15 +231,41 @@
                   {/snippet}
                 </FormControl>
 
-                <FormControl label="Visible to" name="visibility">
+                <div class="markerManager__colorPicker">
+                  <FormControl label="Background color" name="shapeColor">
+                    {#snippet start()}
+                      <Popover>
+                        {#snippet trigger()}
+                          <ColorPickerSwatch color={marker.shapeColor} />
+                        {/snippet}
+                        {#snippet content()}
+                          <ColorPicker
+                            showOpacity={false}
+                            hex={marker.shapeColor}
+                            onUpdate={(colorData) =>
+                              updateMarkerAndSave(marker.id, (m) => (m.shapeColor = colorData.hex))}
+                          />
+                        {/snippet}
+                      </Popover>
+                    {/snippet}
+                    {#snippet input(inputProps)}
+                      <Input
+                        {...inputProps}
+                        value={marker.shapeColor}
+                        oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.shapeColor = e.currentTarget.value))}
+                      />
+                    {/snippet}
+                  </FormControl>
+                </div>
+                <FormControl label="Visibility" name="visibility">
                   {#snippet input(inputProps)}
                     <RadioButton
                       {...inputProps}
                       selected={marker.visibility.toString()}
                       options={[
-                        { label: 'DM only', value: MarkerVisibility.DM.toString() },
+                        { label: 'DM', value: MarkerVisibility.DM.toString() },
                         { label: 'Everyone', value: MarkerVisibility.Always.toString() },
-                        { label: 'Hover reveal', value: MarkerVisibility.Hover.toString() }
+                        { label: 'On hover', value: MarkerVisibility.Hover.toString() }
                       ]}
                       onSelectedChange={(value) => {
                         updateMarkerAndSave(marker.id, (m) => (m.visibility = Number(value)));
@@ -243,6 +274,23 @@
                     />
                   {/snippet}
                 </FormControl>
+                {#if marker.visibility !== MarkerVisibility.DM && onPinToggle}
+                  <FormControl label="Pin tooltip for players?" name="pin">
+                    {#snippet input(inputProps)}
+                      <RadioButton
+                        {...inputProps}
+                        selected={pinnedMarkerIds.includes(marker.id) ? 'pinned' : 'unpinned'}
+                        options={[
+                          { label: 'Yes', value: 'pinned' },
+                          { label: 'No', value: 'unpinned' }
+                        ]}
+                        onSelectedChange={(value) => {
+                          onPinToggle(marker.id, value === 'pinned');
+                        }}
+                      />
+                    {/snippet}
+                  </FormControl>
+                {/if}
                 <FormControl label="Label" name="label">
                   {#snippet input(inputProps)}
                     <Input
@@ -265,33 +313,7 @@
                 </FormControl>
               </div>
               <Spacer />
-              <div class="markerManager__colorPicker">
-                <FormControl label="Background color" name="shapeColor">
-                  {#snippet start()}
-                    <Popover>
-                      {#snippet trigger()}
-                        <ColorPickerSwatch color={marker.shapeColor} />
-                      {/snippet}
-                      {#snippet content()}
-                        <ColorPicker
-                          showOpacity={false}
-                          hex={marker.shapeColor}
-                          onUpdate={(colorData) =>
-                            updateMarkerAndSave(marker.id, (m) => (m.shapeColor = colorData.hex))}
-                        />
-                      {/snippet}
-                    </Popover>
-                  {/snippet}
-                  {#snippet input(inputProps)}
-                    <Input
-                      {...inputProps}
-                      value={marker.shapeColor}
-                      oninput={(e) => updateMarkerAndSave(marker.id, (m) => (m.shapeColor = e.currentTarget.value))}
-                    />
-                  {/snippet}
-                </FormControl>
-              </div>
-              <Spacer />
+
               <div class="markerManager__formGrid">
                 <FormControl label="Shape" name="shape">
                   {#snippet input(inputProps)}
@@ -394,14 +416,10 @@
                   Icon={marker.visibility === MarkerVisibility.Always
                     ? IconEye
                     : marker.visibility === MarkerVisibility.Hover
-                      ? IconLocationPin
+                      ? IconHandFinger
                       : IconEyeOff}
                   size="1.25rem"
-                  color={marker.visibility === MarkerVisibility.Always
-                    ? 'var(--fg)'
-                    : marker.visibility === MarkerVisibility.Hover
-                      ? 'var(--fgPrimary)'
-                      : 'var(--fgMuted)'}
+                  color={marker.visibility === MarkerVisibility.Always ? 'var(--fg)' : 'var(--fgMuted)'}
                 />
               </IconButton>
               {@render imagePreview(marker)}
@@ -468,6 +486,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    container-type: inline-size;
   }
 
   .markerManager__content {
@@ -505,6 +524,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+
+  @container (max-width: 420px) {
+    .markerManager__formGrid {
+      grid-template-columns: 1fr;
+    }
   }
   .markerManager__header {
     display: flex;

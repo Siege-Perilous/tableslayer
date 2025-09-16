@@ -1,12 +1,24 @@
 <script lang="ts">
-  import { type Marker, MarkerVisibility } from '../Stage/components/MarkerLayer/types';
-  import { computePosition, flip, shift, offset, autoUpdate, autoPlacement } from '@floating-ui/dom';
+  import { MarkerVisibility } from '../Stage/components/MarkerLayer/types';
+  import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
   import { Editor } from '../Editor';
   import { onMount, onDestroy } from 'svelte';
   import { IconPin, IconPinFilled } from '@tabler/icons-svelte';
 
+  interface MarkerData {
+    id: string;
+    title?: string;
+    note?: unknown;
+    visibility?: MarkerVisibility;
+    size?: number;
+    tooltip?: {
+      title?: string;
+      content?: unknown;
+    };
+  }
+
   interface Props {
-    marker: any | null; // Can be either Marker or HoveredMarker
+    marker: MarkerData | null;
     position: { x: number; y: number } | null;
     containerElement: HTMLElement | null;
     markerDiameter?: number;
@@ -41,31 +53,25 @@
   let currentPlacement = $state<'top' | 'bottom' | 'left' | 'right'>('top');
 
   function handleTooltipMouseEnter() {
-    console.log('[MarkerTooltip] Mouse entered tooltip');
     if (onTooltipHover) {
       onTooltipHover(true);
     }
   }
 
   function handleTooltipMouseLeave() {
-    console.log('[MarkerTooltip] Mouse left tooltip');
     if (onTooltipHover) {
       onTooltipHover(false);
     }
   }
 
-  // Get the content whether it's from marker.note or marker.tooltip.content
-  const getMarkerContent = (marker: any) => {
+  const getMarkerContent = (marker: MarkerData | null) => {
     if (!marker) return null;
 
-    // Check for marker.note (Marker type)
     if (marker.note) {
       return marker.note;
     }
 
-    // Check for marker.tooltip.content (HoveredMarker type)
     if (marker.tooltip?.content) {
-      // Parse JSON string back to JSONContent if needed
       if (typeof marker.tooltip.content === 'string') {
         try {
           return JSON.parse(marker.tooltip.content);
@@ -79,16 +85,13 @@
     return null;
   };
 
-  // Get the title from either marker.title or marker.tooltip.title
-  const getMarkerTitle = (marker: any) => {
+  const getMarkerTitle = (marker: MarkerData | null) => {
     if (!marker) return null;
 
-    // Check for marker.title (Marker type)
     if (marker.title) {
       return marker.title;
     }
 
-    // Check for marker.tooltip.title (HoveredMarker type)
     if (marker.tooltip?.title) {
       return marker.tooltip.title;
     }
@@ -98,12 +101,26 @@
 
   let markerContent = $derived(getMarkerContent(marker));
   let markerTitle = $derived(getMarkerTitle(marker));
-  let markerSize = $derived(marker?.size || 1);
 
-  // Helper functions for overlap detection
-  function getEstimatedBounds(virtualEl: any, element: HTMLElement, placement: string, offset: number) {
+  function getEstimatedBounds(
+    virtualEl: {
+      getBoundingClientRect: () => {
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+      };
+    },
+    element: HTMLElement,
+    placement: string,
+    offset: number
+  ) {
     const rect = virtualEl.getBoundingClientRect();
-    const width = element.offsetWidth || 200; // Estimate if not rendered
+    const width = element.offsetWidth || 200;
     const height = element.offsetHeight || 100;
 
     let x = rect.left;
@@ -131,13 +148,19 @@
     return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
   }
 
-  function calculateOverlap(rect1: any, rect2: any) {
+  function calculateOverlap(
+    rect1: DOMRect | { left: number; right: number; top: number; bottom: number },
+    rect2: DOMRect | { left: number; right: number; top: number; bottom: number }
+  ) {
     const xOverlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
     const yOverlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
     return xOverlap * yOverlap;
   }
 
-  function calculateTotalOverlap(testBounds: any, existingTooltips: Array<{ bounds: DOMRect }>) {
+  function calculateTotalOverlap(
+    testBounds: DOMRect | { left: number; right: number; top: number; bottom: number },
+    existingTooltips: Array<{ bounds: DOMRect }>
+  ) {
     return existingTooltips.reduce((total, tooltip) => {
       return total + calculateOverlap(testBounds, tooltip.bounds);
     }, 0);
@@ -173,7 +196,6 @@
       cleanup = null;
     }
 
-    // Notify parent of unmounted tooltip
     if (onTooltipUnmount && tooltipElement) {
       onTooltipUnmount(tooltipElement);
     }
@@ -221,14 +243,12 @@
 
       cleanup = autoUpdate(virtualEl, tooltipElement!, async () => {
         const markerRadius = markerDiameter / 2;
-        const buffer = 20; // Increased from 10 to 20 for more spacing
-        const arrowSize = 8; // Size of the arrow
+        const buffer = 20;
+        const arrowSize = 8;
         const dynamicOffset = markerRadius + buffer + arrowSize;
 
-        // Determine best placement based on existing tooltips
         let bestPlacement = preferredPlacement;
 
-        // Only check for overlaps if we have existing tooltips and a valid tooltip element
         if (existingTooltips.length > 0 && tooltipElement && tooltipElement.offsetWidth > 0) {
           const placements: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
           let minOverlap = Infinity;
@@ -243,11 +263,9 @@
           }
         }
 
-        // Use smart positioning middleware
         const fallbackOptions: ('top' | 'bottom' | 'left' | 'right')[] = ['bottom', 'left', 'right', 'top'];
         const middleware = [
           offset(dynamicOffset),
-          // Use flip to avoid viewport edges
           flip({
             fallbackPlacements: fallbackOptions.filter((p) => p !== bestPlacement)
           }),
@@ -260,7 +278,6 @@
           strategy: 'fixed'
         });
 
-        // Update placement for arrow direction
         currentPlacement = placement.split('-')[0] as 'top' | 'bottom' | 'left' | 'right';
 
         Object.assign(tooltipElement!.style, {
@@ -270,7 +287,6 @@
           pointerEvents: 'auto'
         });
 
-        // Notify parent of mounted tooltip position after a delay to avoid loops
         if (onTooltipMount && tooltipElement) {
           setTimeout(() => {
             if (tooltipElement) {

@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { Canvas, T, useThrelte } from '@threlte/core';
+  import { Canvas, T } from '@threlte/core';
   import type { Callbacks, StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
   import { PerfMonitor } from '@threlte/extras';
   import { MarkerTooltip } from '../../../MarkerTooltip';
-  import * as THREE from 'three';
 
   import type { CursorData } from './types';
 
@@ -55,22 +54,31 @@
   let sceneRef: SceneExports;
   let containerElement = $state<HTMLDivElement>();
   let tooltipPosition = $state<{ x: number; y: number } | null>(null);
-  let hoveredMarkerData = $state<any>(null);
+  interface MarkerData {
+    id: string;
+    title?: string;
+    note?: unknown;
+    visibility?: number;
+    size?: number;
+    tooltip?: {
+      title?: string;
+      content?: unknown;
+    };
+  }
+
+  let hoveredMarkerData = $state<MarkerData | null>(null);
   let markerSizeInPixels = $state<number>(40);
 
-  // For multiple pinned tooltips
   let pinnedTooltips = $state<
     Array<{
-      marker: any;
+      marker: MarkerData;
       position: { x: number; y: number };
       preferredPlacement: 'top' | 'bottom' | 'left' | 'right';
     }>
   >([]);
 
-  // Track rendered tooltip positions for overlap detection (non-reactive to avoid loops)
   const renderedTooltips = new Map<string, { element: HTMLElement; bounds: DOMRect }>();
 
-  // Store game mode, hovered marker, and pinned markers as reactive state which can be referenced by other components
   let stageContext = $state({ mode: props.mode, hoveredMarkerId, pinnedMarkerIds });
   setContext('stage', stageContext);
 
@@ -111,7 +119,6 @@
     generateThumbnail: () => sceneRef?.generateThumbnail()
   };
 
-  // Export marker state getters
   export const markers = {
     get isHoveringMarker() {
       return sceneRef?.markers?.isHoveringMarker ?? false;
@@ -121,18 +128,12 @@
     }
   };
 
-  // Export measurement methods
   export const measurement = {
     getCurrentMeasurement: () => sceneRef?.measurement?.getCurrentMeasurement() ?? null,
     isDrawing: () => sceneRef?.measurement?.isDrawing() ?? false
   };
 
   $effect(() => {
-    const zoom = props.scene.zoom;
-    const gridSpacing = props.grid.spacing;
-    const displayRes = props.display.resolution;
-    const displaySize = props.display.size;
-
     if (sceneRef?.getMarkerSizeInScreenSpace) {
       const markerSize = hoveredMarkerData?.size || 1;
       markerSizeInPixels = sceneRef.getMarkerSizeInScreenSpace(markerSize);
@@ -140,11 +141,9 @@
   });
 
   $effect(() => {
-    // Update pinned tooltips with smart positioning
     if (pinnedMarkerIds && pinnedMarkerIds.length > 0 && containerElement && sceneRef?.getMarkerScreenPosition) {
       const newPinnedTooltips = [];
 
-      // Cycle through placement patterns to reduce overlap
       const placementPatterns = [
         ['top', 'bottom', 'left', 'right'],
         ['bottom', 'top', 'right', 'left'],
@@ -158,7 +157,6 @@
         if (marker) {
           const screenPos = sceneRef.getMarkerScreenPosition(marker);
           if (screenPos) {
-            // Use different placement pattern for each tooltip to reduce overlap
             const pattern = placementPatterns[i % placementPatterns.length];
             const preferredPlacement = pattern[0] as 'top' | 'bottom' | 'left' | 'right';
 
@@ -173,33 +171,25 @@
   });
 
   $effect(() => {
-    // Show tooltip for current hover/selection (non-pinned)
     let markerForTooltip = null;
 
     if (props.mode === 0) {
-      // DM mode: check if hovered marker is already pinned
       const hoveredMarker = sceneRef?.markers?.hoveredMarker;
       if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id)) {
         markerForTooltip = hoveredMarker;
       }
     } else if (props.mode === 1) {
-      // Player mode: Check for DM's broadcast or player's selection (pinned are handled separately)
-
-      // Check for DM's broadcast (hoveredMarkerId from props)
       let dmBroadcastMarker = null;
       if (hoveredMarkerId) {
-        // Only show if not already pinned
         if (!pinnedMarkerIds.includes(hoveredMarkerId)) {
           dmBroadcastMarker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
         }
       }
 
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
-      // Only show selected if not already pinned
       const selectedNotPinned =
         selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) ? selectedByPlayer : null;
 
-      // Prioritize: DM's broadcast > player's selection
       markerForTooltip = dmBroadcastMarker || selectedNotPinned;
     }
 
@@ -229,7 +219,6 @@
     {/if}
   </Canvas>
 
-  <!-- Render pinned tooltips -->
   {#each pinnedTooltips as { marker, position, preferredPlacement }, index}
     <MarkerTooltip
       {marker}
@@ -244,13 +233,12 @@
       onTooltipMount={(element, bounds) => {
         renderedTooltips.set(marker.id, { element, bounds });
       }}
-      onTooltipUnmount={(element) => {
+      onTooltipUnmount={() => {
         renderedTooltips.delete(marker.id);
       }}
     />
   {/each}
 
-  <!-- Render hover/selected tooltip (if not pinned) -->
   {#if hoveredMarkerData}
     <MarkerTooltip
       marker={hoveredMarkerData}
@@ -262,7 +250,6 @@
       {onPinToggle}
       existingTooltips={Array.from(renderedTooltips.values())}
       onTooltipHover={(isHovering) => {
-        // When hovering tooltip in DM mode, maintain the hover state
         if (props.mode === 0 && sceneRef?.markers?.maintainHover) {
           sceneRef.markers.maintainHover(isHovering);
         }

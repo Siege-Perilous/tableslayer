@@ -91,14 +91,6 @@
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
-      console.log('[MarkerLayer] Marker clicked:', {
-        mode: stage.mode,
-        isDM: stage.mode === StageMode.DM,
-        isPlayer: stage.mode === StageMode.Player,
-        markerId: closestMarker.id,
-        markerTitle: closestMarker.title
-      });
-      // Only allow dragging in DM mode
       if (stage.mode === StageMode.DM) {
         isDragging = true;
       }
@@ -107,7 +99,6 @@
       // In player mode, clicking empty space clears selection
       if (stage.mode === StageMode.Player) {
         selectedMarker = null;
-        console.log('[MarkerLayer] Empty space clicked in player mode, clearing selection');
         return;
       }
 
@@ -186,7 +177,6 @@
       clearTimeout(hoverTimer);
       hoverTimer = null;
     }
-    // Add delay before clearing the delayed hover state
     if (hideTimer) {
       clearTimeout(hideTimer);
     }
@@ -206,13 +196,13 @@
     return (
       marker.visibility === MarkerVisibility.Always ||
       (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) ||
-      (marker.visibility === MarkerVisibility.Hover && stage.mode === StageMode.DM) || // DM can always see Hover markers
+      (marker.visibility === MarkerVisibility.Hover && stage.mode === StageMode.DM) ||
       (marker.visibility === MarkerVisibility.Hover &&
         stage.mode === StageMode.Player &&
-        marker.id === stage.hoveredMarkerId) || // Players see Hover markers when DM hovers
+        marker.id === stage.hoveredMarkerId) ||
       (marker.visibility === MarkerVisibility.Hover &&
         stage.mode === StageMode.Player &&
-        stage.pinnedMarkerIds?.includes(marker.id)) || // Players see Hover markers when pinned
+        stage.pinnedMarkerIds?.includes(marker.id)) ||
       (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)
     );
   }
@@ -250,28 +240,20 @@
     }
   });
 
-  // Function to keep tooltip visible when hovering over it
   export function maintainHover(maintain: boolean) {
-    console.log('[MarkerLayer] maintainHover called:', maintain, 'mode:', stage.mode);
     if (maintain && stage.mode === StageMode.DM) {
-      // Cancel any pending hide
       cancelHideTimer();
-      console.log('[MarkerLayer] Cancelling hide timer');
     } else if (!maintain && stage.mode === StageMode.DM && !hoveredMarker) {
-      // If not maintaining and not hovering a marker, start hide timer
       clearHoverTimer();
-      console.log('[MarkerLayer] Starting hide timer');
     }
   }
 
   // Export reactive state for hover and drag
   export const markerState = {
     get isHovering() {
-      // In DM mode, use the delayed hover
       if (stage.mode === StageMode.DM) {
         return hoveredMarkerDelayed !== null && hoveredMarkerDelayed !== undefined;
       }
-      // In Player mode, check if there's a hoveredMarkerId from the DM
       return stage.hoveredMarkerId !== null && stage.hoveredMarkerId !== undefined;
     },
     get isDragging() {

@@ -2710,6 +2710,8 @@
             {handleSelectActiveControl}
             {updateMarkerAndSave}
             {onMarkerDeleted}
+            {pinnedMarkerIds}
+            {onPinToggle}
           />
         {/key}
       {/if}
