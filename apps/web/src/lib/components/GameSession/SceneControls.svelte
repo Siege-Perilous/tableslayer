@@ -65,10 +65,11 @@
     handleMapFill,
     handleMapFit,
     errors,
-    partyData
+    partyData,
+    keyboardPopoverId = null
   }: {
     socketUpdate: () => void;
-    handleSelectActiveControl: (control: string) => void;
+    handleSelectActiveControl: (control: string) => string | null;
     activeControl: string;
     stageProps: StageProps;
     party: SelectParty & Thumb;
@@ -80,6 +81,7 @@
     errors: ZodIssue[] | undefined;
     stage: StageExports;
     partyData: ReturnType<typeof usePartyData> | null;
+    keyboardPopoverId?: string | null;
   } = $props();
 
   type SceneControl = {
@@ -223,6 +225,26 @@
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], selectedOption.toolType, 'control');
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], selectedOption.drawMode, 'control');
   };
+
+  // Track which popover is currently open
+  let openPopoverId = $state<string | null>(null);
+
+  // React to keyboard-triggered popover changes
+  // When keyboard sets it to null, we should close any open popover
+  $effect(() => {
+    // Only update if keyboard explicitly set a value
+    if (keyboardPopoverId !== undefined) {
+      openPopoverId = keyboardPopoverId;
+    }
+  });
+
+  // Also react to activeControl changes to close popovers when tools are activated
+  $effect(() => {
+    // If a tool is active (not a scene control), close any open popover
+    if (['erase', 'marker', 'annotation', 'measurement'].includes(activeControl)) {
+      openPopoverId = null;
+    }
+  });
 </script>
 
 <ColorMode mode="dark">
@@ -233,7 +255,10 @@
           <button
             class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
               'sceneControls__layer--isActive'}"
-            onclick={() => handleSelectActiveControl('erase')}
+            onclick={() => {
+              const newPopoverId = handleSelectActiveControl('erase');
+              openPopoverId = newPopoverId;
+            }}
           >
             <Icon Icon={selectedFogTool.icon} size="1.5rem" />
           </button>
@@ -286,7 +311,10 @@
             <button
               class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Measurement &&
                 'sceneControls__layer--isActive'}"
-              onclick={() => handleSelectActiveControl('measurement')}
+              onclick={() => {
+                const newPopoverId = handleSelectActiveControl('measurement');
+                openPopoverId = newPopoverId;
+              }}
             >
               <Icon Icon={IconRuler} size="1.5rem" stroke={2} />
             </button>
@@ -317,7 +345,10 @@
           <button
             class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
               'sceneControls__layer--isActive'}"
-            onclick={() => handleSelectActiveControl('marker')}
+            onclick={() => {
+              const newPopoverId = handleSelectActiveControl('marker');
+              openPopoverId = newPopoverId;
+            }}
           >
             <Icon Icon={IconPokerChip} size="1.5rem" />
             <span class="sceneControls__layerText">Marker</span>
@@ -334,7 +365,10 @@
           <button
             class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
               'sceneControls__layer--isActive'}"
-            onclick={() => handleSelectActiveControl('annotation')}
+            onclick={() => {
+              const newPopoverId = handleSelectActiveControl('annotation');
+              openPopoverId = newPopoverId;
+            }}
           >
             <Icon Icon={IconPencil} size="1.5rem" />
             <span class="sceneControls__layerText">Draw</span>
@@ -348,19 +382,23 @@
     {#each sceneControlArray as scene}
       <!-- Regular popover controls for other tools -->
       <div class="sceneControls__item">
-        <Popover positioning={{ placement: 'bottom', gutter: 8 }}>
+        <Popover positioning={{ placement: 'bottom', gutter: 8 }} isOpen={openPopoverId === scene.id}>
           {#snippet trigger()}
             <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
               {#snippet children()}
                 <div class="sceneControls__trigger">
-                  <div
+                  <button
                     class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
+                    onclick={() => {
+                      const newPopoverId = handleSelectActiveControl(scene.id);
+                      openPopoverId = newPopoverId;
+                    }}
                   >
                     <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
                     <span class="sceneControls__layerText">
                       {scene.text}
                     </span>
-                  </div>
+                  </button>
                 </div>
               {/snippet}
               {#snippet toolTipContent()}

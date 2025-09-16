@@ -44,6 +44,12 @@
     return window.matchMedia('(any-pointer: coarse)').matches;
   }
 
+  // Track pending touch to detect multi-touch gestures
+  let touchStartTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingTouchEvent: TouchEvent | null = null;
+  let pendingTouchCoords: THREE.Vector2 | null = null;
+  let isDrawing = false;
+
   // Bind events to the renderer's canvas element
   onMount(() => {
     // Mouse events
@@ -63,6 +69,12 @@
   });
 
   onDestroy(() => {
+    // Clean up any pending timers
+    if (touchStartTimer) {
+      clearTimeout(touchStartTimer);
+      touchStartTimer = null;
+    }
+
     // Mouse events
     if (onMouseDown) renderer.domElement.removeEventListener('mousedown', handleMouseDown);
     if (onMouseMove) renderer.domElement.removeEventListener('mousemove', handleMouseMove);
@@ -128,22 +140,68 @@
 
   function handleTouchStart(event: TouchEvent) {
     if (onMouseDown && isActive) {
-      // Don't trigger drawing if multiple touches (pinch/zoom gesture)
+      // If multiple touches detected immediately, cancel any pending touch
       if (event.touches.length > 1) {
+        // Cancel pending touch if it exists
+        if (touchStartTimer) {
+          clearTimeout(touchStartTimer);
+          touchStartTimer = null;
+          pendingTouchEvent = null;
+          pendingTouchCoords = null;
+        }
+        // Stop any ongoing drawing
+        if (isDrawing && onMouseUp) {
+          onMouseUp(event, null);
+          isDrawing = false;
+        }
         return;
       }
+
       event.preventDefault(); // Prevent scrolling when interacting with the canvas
       const touch = event.touches[0];
-      onMouseDown(event, touchToCanvasCoords(touch));
+      const coords = touchToCanvasCoords(touch);
+
+      // Store the touch event and wait to see if another finger touches
+      pendingTouchEvent = event;
+      pendingTouchCoords = coords;
+
+      // Clear any existing timer
+      if (touchStartTimer) {
+        clearTimeout(touchStartTimer);
+      }
+
+      // Wait 50ms to see if this becomes a multi-touch gesture
+      touchStartTimer = setTimeout(() => {
+        // If we still only have one touch after the delay, start drawing
+        if (pendingTouchEvent && pendingTouchCoords && event.touches.length === 1) {
+          onMouseDown(pendingTouchEvent, pendingTouchCoords);
+          isDrawing = true;
+        }
+        touchStartTimer = null;
+        pendingTouchEvent = null;
+        pendingTouchCoords = null;
+      }, 50);
     }
   }
 
   function handleTouchEnd(event: TouchEvent) {
     if (onMouseUp && isActive && isTouchDevice()) {
       event.preventDefault();
-      // We may not have a touch point in touchend, so pass null if not available
-      const touch = event.changedTouches[0];
-      onMouseUp(event, touch ? touchToCanvasCoords(touch) : null);
+
+      // Cancel any pending touch start
+      if (touchStartTimer) {
+        clearTimeout(touchStartTimer);
+        touchStartTimer = null;
+        pendingTouchEvent = null;
+        pendingTouchCoords = null;
+      }
+
+      // Only trigger mouse up if we were actually drawing
+      if (isDrawing) {
+        const touch = event.changedTouches[0];
+        onMouseUp(event, touch ? touchToCanvasCoords(touch) : null);
+        isDrawing = false;
+      }
     }
   }
 
@@ -151,19 +209,43 @@
     if (onMouseMove && isActive && isTouchDevice()) {
       // Stop drawing if multiple touches detected (pinch/zoom gesture)
       if (event.touches.length > 1) {
-        // Trigger mouse up to stop any ongoing drawing
-        if (onMouseUp) {
+        // Cancel any pending touch
+        if (touchStartTimer) {
+          clearTimeout(touchStartTimer);
+          touchStartTimer = null;
+          pendingTouchEvent = null;
+          pendingTouchCoords = null;
+        }
+        // Stop any ongoing drawing
+        if (isDrawing && onMouseUp) {
           onMouseUp(event, null);
+          isDrawing = false;
         }
         return;
       }
-      event.preventDefault();
-      const touch = event.touches[0];
-      onMouseMove(event, touchToCanvasCoords(touch));
+
+      // Only process move if we're actually drawing
+      if (isDrawing) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        onMouseMove(event, touchToCanvasCoords(touch));
+      }
     }
   }
 
   function handleTouchCancel() {
+    // Clean up any pending or ongoing touch operations
+    if (touchStartTimer) {
+      clearTimeout(touchStartTimer);
+      touchStartTimer = null;
+      pendingTouchEvent = null;
+      pendingTouchCoords = null;
+    }
+
+    if (isDrawing) {
+      isDrawing = false;
+    }
+
     if (onMouseLeave && isActive) {
       onMouseLeave();
     }

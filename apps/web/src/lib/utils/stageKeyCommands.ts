@@ -6,9 +6,16 @@ export function handleKeyCommands(
   event: KeyboardEvent,
   stageProps: StageProps,
   activeControl: string,
-  stage: { fogOfWar: { clear: () => void; reset: () => void } }
+  stage: { fogOfWar: { clear: () => void; reset: () => void } },
+  handleSelectActiveControl: (control: string) => string | null
 ): string {
   const { activeLayer, fogOfWar } = stageProps;
+
+  // Skip single-key shortcuts if Ctrl/Alt/Meta is pressed (unless it's a capital letter with Shift)
+  // This prevents conflicts with browser shortcuts like Ctrl+R for refresh
+  if (event.ctrlKey || event.altKey || event.metaKey) {
+    return activeControl;
+  }
 
   switch (event.key) {
     case 'e':
@@ -17,11 +24,12 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Brush
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Erase;
-        fogOfWar.tool.type = ToolType.Brush;
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Brush, 'control');
+        handleSelectActiveControl('erase'); // Activate
         return 'erase';
       }
       break;
@@ -32,12 +40,13 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Brush
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Draw;
-        fogOfWar.tool.type = ToolType.Brush;
-        return 'draw';
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Brush, 'control');
+        handleSelectActiveControl('erase'); // Activate fog tool
+        return 'erase';
       }
       break;
 
@@ -55,11 +64,13 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Ellipse
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Erase;
-        fogOfWar.tool.type = ToolType.Ellipse;
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Ellipse, 'control');
+        handleSelectActiveControl('erase'); // Activate
+        return 'erase';
       }
       break;
 
@@ -69,35 +80,47 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Ellipse
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Draw;
-        fogOfWar.tool.type = ToolType.Ellipse;
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Ellipse, 'control');
+        handleSelectActiveControl('erase'); // Activate
+        return 'erase';
       }
       break;
 
     case 'm':
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
+      if (activeLayer === MapLayerType.Marker) {
+        handleSelectActiveControl('marker'); // Toggle off
+        return 'none';
+      } else {
+        handleSelectActiveControl('marker'); // Activate
+        return 'marker';
+      }
       break;
 
     case 'M':
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
-      break;
+      handleSelectActiveControl('none'); // Deactivate all
+      return 'none';
 
     case 'd':
       if (activeLayer === MapLayerType.Annotation) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('annotation'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
+        handleSelectActiveControl('annotation'); // Activate
+        return 'annotation';
       }
       break;
 
     case 't':
       if (activeLayer === MapLayerType.Measurement) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('measurement'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
+        handleSelectActiveControl('measurement'); // Activate
+        return 'measurement';
       }
       break;
 
@@ -107,11 +130,13 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Erase &&
         fogOfWar.tool.type === ToolType.Rectangle
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Erase;
-        fogOfWar.tool.type = ToolType.Rectangle;
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Rectangle, 'control');
+        handleSelectActiveControl('erase'); // Activate
+        return 'erase';
       }
       break;
 
@@ -121,27 +146,31 @@ export function handleKeyCommands(
         fogOfWar.tool.mode === DrawMode.Draw &&
         fogOfWar.tool.type === ToolType.Rectangle
       ) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
       } else {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
-        fogOfWar.tool.mode = DrawMode.Draw;
-        fogOfWar.tool.type = ToolType.Rectangle;
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Rectangle, 'control');
+        handleSelectActiveControl('erase'); // Activate
+        return 'erase';
       }
       break;
 
     case 'Shift':
       if (activeLayer === MapLayerType.FogOfWar) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('none');
+        return 'none';
       }
       break;
     case 'Ctrl':
       if (activeLayer === MapLayerType.FogOfWar) {
-        queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+        handleSelectActiveControl('none');
+        return 'none';
       }
       break;
     case 'Escape':
-      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
-      break;
+      handleSelectActiveControl('none');
+      return 'none';
   }
 
   return activeControl;
