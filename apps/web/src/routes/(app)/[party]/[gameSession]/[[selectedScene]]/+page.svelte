@@ -248,6 +248,7 @@
   let recentlySavedMarkerIds = $state<Set<string>>(new Set());
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
+  let keyboardPopoverId = $state<string | null>(null); // Track popover state from keyboard commands
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
@@ -637,7 +638,20 @@
       return; // Ignore key events while typing
     }
 
-    activeControl = handleKeyCommands(event, stageProps, activeControl, stage);
+    const previousControl = activeControl;
+    const newActiveControl = handleKeyCommands(event, stageProps, activeControl, stage, handleSelectActiveControl);
+    activeControl = newActiveControl;
+
+    // Update popover state based on keyboard command
+    // Close any open popovers when:
+    // 1. The active control changes
+    // 2. Or when any tool is activated (erase, marker, annotation, measurement)
+    if (
+      previousControl !== newActiveControl ||
+      ['erase', 'marker', 'annotation', 'measurement', 'none'].includes(newActiveControl)
+    ) {
+      keyboardPopoverId = null; // This will close any open popover
+    }
   };
 
   /**
@@ -830,7 +844,8 @@
     // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
-  const handleSelectActiveControl = (control: string) => {
+  const handleSelectActiveControl = (control: string, openPopover?: string | null): string | null => {
+    // If same control is clicked, toggle it off
     if (control === activeControl) {
       activeControl = 'none';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
@@ -838,9 +853,15 @@
       if (control === 'annotation') {
         queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
       }
-    } else if (control === 'marker') {
+      return null; // Close popover
+    }
+
+    // Switch to new control
+    activeControl = control;
+
+    // Handle specific control types
+    if (control === 'marker') {
       selectedMarkerId = undefined;
-      activeControl = 'marker';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Marker, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
@@ -849,22 +870,28 @@
       }
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
-      activeControl = 'annotation';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
       if (markersPane) {
         markersPane.expand();
       }
     } else if (control === 'measurement') {
-      activeControl = 'measurement';
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
-    } else {
-      activeControl = control;
+    } else if (control === 'erase') {
+      // Fog tool
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
       // Clear annotation active layer when switching to fog tool
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+    } else {
+      // Other scene controls (map, fog, weather, grid, edge, effects, play)
+      // These don't have an active layer, just popover controls
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     }
+
+    // Return the popover ID that should be open (or null if it's a non-popover control)
+    return openPopover !== undefined ? openPopover : control;
   };
 
   // We use these functions often in child components, so we define them here
@@ -2651,6 +2678,7 @@
           {gameSession}
           {errors}
           {partyData}
+          {keyboardPopoverId}
         />
         <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
