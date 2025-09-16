@@ -485,7 +485,7 @@
     return screenMarkerDiameter;
   }
 
-  export function getMarkerScreenPosition(marker: any) {
+  export function getMarkerScreenPosition(marker: { position?: { x: number; y: number } }) {
     if (!marker?.position) return null;
 
     // Create a vector at the marker's local position

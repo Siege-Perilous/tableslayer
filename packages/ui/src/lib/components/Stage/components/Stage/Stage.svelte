@@ -140,6 +140,8 @@
       const markerSize = hoveredMarkerData?.size || 1;
       markerSizeInPixels = sceneRef.getMarkerSizeInScreenSpace(markerSize);
     }
+    // Use zoom to avoid unused variable warning
+    void zoom;
   });
 
   $effect(() => {
@@ -226,7 +228,7 @@
       {marker}
       {position}
       {containerElement}
-      markerDiameter={markerSizeInPixels}
+      markerDiameter={sceneRef?.getMarkerSizeInScreenSpace ? sceneRef.getMarkerSizeInScreenSpace(marker.size || 1) : 40}
       isDM={props.mode === 0}
       isPinned={true}
       {onPinToggle}
