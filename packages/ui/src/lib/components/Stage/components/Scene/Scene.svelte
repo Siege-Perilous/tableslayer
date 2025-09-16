@@ -487,14 +487,21 @@
 
   export function getMarkerScreenPosition(marker: any) {
     if (!marker?.position) return null;
+
+    // Create a vector at the marker's local position
     const vector = new THREE.Vector3(marker.position.x, marker.position.y, 0);
-    vector.x += props.scene.offset.x;
-    vector.y += props.scene.offset.y;
-    vector.x *= props.scene.zoom;
-    vector.y *= props.scene.zoom;
+
+    // Apply scene transformations to get world position
+    // The markers are rendered inside a T.Object3D with position and scale transforms
+    vector.x = vector.x * props.scene.zoom + props.scene.offset.x;
+    vector.y = vector.y * props.scene.zoom + props.scene.offset.y;
+
+    // Project world position to screen space
     vector.project(camera.current);
-    let x = (vector.x * 0.5 + 0.5) * $size.width;
-    let y = (-vector.y * 0.5 + 0.5) * $size.height;
+
+    // Convert from normalized device coordinates (-1 to 1) to screen coordinates
+    const x = (vector.x * 0.5 + 0.5) * $size.width;
+    const y = (-vector.y * 0.5 + 0.5) * $size.height;
 
     return { x, y };
   }

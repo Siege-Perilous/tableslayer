@@ -181,7 +181,7 @@
     container.style.width = '0';
     container.style.height = '0';
     container.style.pointerEvents = 'none';
-    container.style.zIndex = '10000';
+    container.style.zIndex = '1';
     document.body.appendChild(container);
     portalContainer = container;
   }
