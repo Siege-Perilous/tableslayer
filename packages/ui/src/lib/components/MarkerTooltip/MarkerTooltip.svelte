@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Marker } from '../Stage/components/MarkerLayer/types';
+  import { type Marker, MarkerVisibility } from '../Stage/components/MarkerLayer/types';
   import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
   import { Editor } from '../Editor';
   import { onMount, onDestroy } from 'svelte';
@@ -203,17 +203,17 @@
 {#if (markerContent || markerTitle) && position}
   <div
     bind:this={tooltipElement}
-    class="marker-tooltip"
+    class="markerTooltip"
     style="display: none;"
     role="tooltip"
     data-placement={currentPlacement}
     onmouseenter={handleTooltipMouseEnter}
     onmouseleave={handleTooltipMouseLeave}
   >
-    <div class="marker-tooltip__arrow" data-placement={currentPlacement}></div>
-    {#if isDM && onPinToggle && marker}
+    <div class="markerTooltip__arrow markerTooltip__arrow--{currentPlacement}"></div>
+    {#if isDM && onPinToggle && marker && marker.visibility !== MarkerVisibility.DM}
       <button
-        class="marker-tooltip__pin"
+        class="markerTooltip__pin"
         onclick={() => onPinToggle(marker.id, !isPinned)}
         title={isPinned ? 'Unpin from player view' : 'Pin to player view'}
       >
@@ -225,7 +225,7 @@
       </button>
     {/if}
     {#if markerTitle}
-      <div class="marker-tooltip__title">{markerTitle}</div>
+      <div class="markerTooltip__title {isDM ? 'markerTooltip__title--dm' : ''}">{markerTitle}</div>
     {/if}
     {#if markerContent}
       <Editor content={markerContent} editable={false} />
@@ -234,7 +234,7 @@
 {/if}
 
 <style>
-  .marker-tooltip {
+  .markerTooltip {
     max-width: 400px;
     background-color: var(--bg);
     padding: 1rem;
@@ -244,7 +244,7 @@
     position: relative;
   }
 
-  .marker-tooltip__pin {
+  .markerTooltip__pin {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -262,25 +262,27 @@
       background 0.2s;
   }
 
-  .marker-tooltip__pin:hover {
+  .markerTooltip__pin:hover {
     color: var(--fgPrimary);
     background: var(--bgHover);
   }
 
-  .marker-tooltip__title {
+  .markerTooltip__title {
     font-weight: 600;
-    font-size: var(--text-md);
+    font-size: 1rem;
     margin-bottom: 0.5rem;
     color: var(--fg);
-    padding-right: 2rem; /* Make room for pin button */
+  }
+  .markerTooltip__title--dm {
+    padding-right: 2rem;
   }
 
-  .marker-tooltip__title:last-child {
+  .markerTooltip__title:last-child {
     margin-bottom: 0;
   }
 
   /* Arrow indicator */
-  .marker-tooltip__arrow {
+  .markerTooltip__arrow {
     position: absolute;
     width: 0;
     height: 0;
@@ -288,43 +290,36 @@
     pointer-events: none;
   }
 
-  /* Arrow when tooltip is above marker - simplified without pseudo-element */
-  .marker-tooltip__arrow[data-placement='top'] {
-    bottom: -7px;
+  /* Arrow modifiers for different placements */
+  .markerTooltip__arrow--top {
+    bottom: -8px;
     left: 50%;
     transform: translateX(-50%);
     border-width: 8px 8px 0 8px;
     border-color: var(--bg) transparent transparent transparent;
-    filter: drop-shadow(0 1px 0 var(--border));
   }
 
-  /* Arrow when tooltip is below marker - simplified */
-  .marker-tooltip__arrow[data-placement='bottom'] {
-    top: -7px;
+  .markerTooltip__arrow--bottom {
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
     border-width: 0 8px 8px 8px;
     border-color: transparent transparent var(--bg) transparent;
-    filter: drop-shadow(0 -1px 0 var(--border));
   }
 
-  /* Arrow when tooltip is to the left of marker - simplified */
-  .marker-tooltip__arrow[data-placement='left'] {
-    right: -7px;
+  .markerTooltip__arrow--left {
+    right: -8px;
     top: 50%;
     transform: translateY(-50%);
     border-width: 8px 0 8px 8px;
     border-color: transparent transparent transparent var(--bg);
-    filter: drop-shadow(1px 0 0 var(--border));
   }
 
-  /* Arrow when tooltip is to the right of marker - simplified */
-  .marker-tooltip__arrow[data-placement='right'] {
-    left: -7px;
+  .markerTooltip__arrow--right {
+    left: -8px;
     top: 50%;
     transform: translateY(-50%);
     border-width: 8px 8px 8px 0;
     border-color: transparent var(--bg) transparent transparent;
-    filter: drop-shadow(-1px 0 0 var(--border));
   }
 </style>

@@ -154,8 +154,11 @@
     let markerForTooltip = null;
 
     if (props.mode === 0) {
-      // DM mode: use hovered marker
-      markerForTooltip = sceneRef?.markers?.hoveredMarker;
+      // DM mode: check if hovered marker is already pinned
+      const hoveredMarker = sceneRef?.markers?.hoveredMarker;
+      if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id)) {
+        markerForTooltip = hoveredMarker;
+      }
     } else if (props.mode === 1) {
       // Player mode: Check for DM's broadcast or player's selection (pinned are handled separately)
 
