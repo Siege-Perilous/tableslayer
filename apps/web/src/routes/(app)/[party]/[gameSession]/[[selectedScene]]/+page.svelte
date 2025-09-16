@@ -12,7 +12,9 @@
     StageMode,
     PointerInputManager,
     addToast,
-    ToolType
+    ToolType,
+    type HoveredMarker,
+    MarkerVisibility
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -159,6 +161,8 @@
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
   let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
+  let hoveredMarker: HoveredMarker | null = $state(null); // Track hovered marker from awareness
+  let pinnedMarkerIds = $state<string[]>([]); // Track pinned markers from DM
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -706,6 +710,12 @@
         const updatedScenes = partyData!.getScenesList();
         const updatedPartyState = partyData!.getPartyState();
 
+        // Update hovered marker for players to see what DM is hovering
+        if (stageProps.mode === StageMode.Player) {
+          hoveredMarker = partyData!.getHoveredMarker();
+          pinnedMarkerIds = partyData!.getPinnedMarkers();
+        }
+
         // Update reactive state
         yjsScenes = updatedScenes as typeof scenes;
         yjsPartyState = {
@@ -1236,8 +1246,8 @@
     }
   };
 
-  const onMarkerSelected = (marker: Marker) => {
-    selectedMarkerId = marker.id;
+  const onMarkerSelected = (marker: Marker | null) => {
+    selectedMarkerId = marker?.id || undefined;
   };
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
@@ -1245,6 +1255,63 @@
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+    }
+  };
+
+  const onPinToggle = (markerId: string, pinned: boolean) => {
+    if (stageProps.mode === StageMode.DM && partyData) {
+      let newPinnedIds: string[];
+      if (pinned) {
+        // Add to pinned markers
+        newPinnedIds = [...pinnedMarkerIds, markerId];
+      } else {
+        // Remove from pinned markers
+        newPinnedIds = pinnedMarkerIds.filter((id) => id !== markerId);
+      }
+      pinnedMarkerIds = newPinnedIds;
+      partyData.updatePinnedMarkers(newPinnedIds);
+      devLog('markers', `Marker ${pinned ? 'pinned' : 'unpinned'}:`, markerId);
+    }
+  };
+
+  const onMarkerHover = (marker: Marker | null) => {
+    if (stageProps.mode === StageMode.DM) {
+      if (marker && marker.visibility === MarkerVisibility.Hover) {
+        // Create the hoveredMarker data
+        const hoveredMarkerData = {
+          id: marker.id,
+          position: {
+            x: marker.position.x,
+            y: marker.position.y,
+            z: 0 // Markers are on a 2D plane
+          },
+          tooltip: {
+            title: marker.title,
+            content: marker.note ? JSON.stringify(marker.note) : '',
+            imageUrl: marker.imageUrl || undefined
+          }
+        };
+
+        // Set local state for DM to see the tooltip
+        hoveredMarker = hoveredMarkerData;
+
+        // Broadcast to players if connected
+        if (partyData) {
+          partyData.updateHoveredMarker(hoveredMarkerData);
+          devLog('markers', 'Broadcasting hovered marker:', hoveredMarkerData);
+        }
+      } else {
+        // Clear hover broadcast when not hovering a Hover visibility marker
+        hoveredMarker = null;
+        if (partyData) {
+          partyData.updateHoveredMarker(null);
+        }
+        if (marker && marker.visibility !== MarkerVisibility.Hover) {
+          devLog('markers', 'Marker not set to Hover visibility, not broadcasting');
+        } else {
+          devLog('markers', 'Clearing hovered marker');
+        }
+      }
     }
   };
 
@@ -2558,12 +2625,16 @@
               onMarkerMoved,
               onMarkerSelected,
               onMarkerContextMenu,
+              onMarkerHover,
               onMeasurementStart,
               onMeasurementUpdate,
               onMeasurementEnd,
               onCursorMove: handleCursorMove
             }}
             trackLocalCursor={true}
+            hoveredMarkerId={hoveredMarker?.id || null}
+            {pinnedMarkerIds}
+            {onPinToggle}
           />
         </div>
         <SceneControls
@@ -2638,6 +2709,8 @@
             {handleSelectActiveControl}
             {updateMarkerAndSave}
             {onMarkerDeleted}
+            {pinnedMarkerIds}
+            {onPinToggle}
           />
         {/key}
       {/if}

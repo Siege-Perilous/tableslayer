@@ -285,6 +285,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    container-type: inline-size;
   }
 
   .annotationManager__content {
@@ -382,6 +383,17 @@
     width: 100%;
     background-color: var(--bgColorBlur);
     backdrop-filter: blur(10px);
+  }
+
+  @container (max-width: 360px) {
+    .annotationManager__header {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .annotationManager__header > :global(button:first-child) {
+      width: 100%;
+    }
   }
   .annotationManager__lineWidthControl {
     display: flex;

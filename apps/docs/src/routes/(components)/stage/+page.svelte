@@ -151,8 +151,8 @@
     }
   }
 
-  function onMarkerSelected(marker: Marker) {
-    selectedMarker = marker;
+  function onMarkerSelected(marker: Marker | null) {
+    selectedMarker = marker ?? undefined;
   }
 
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {

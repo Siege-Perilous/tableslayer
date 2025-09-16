@@ -23,8 +23,9 @@
 
   const { props, isActive, display, grid }: Props = $props();
 
-  const stage = getContext<{ mode: StageMode }>('stage');
-  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu } = getContext<Callbacks>('callbacks');
+  const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
+  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
+    getContext<Callbacks>('callbacks');
 
   // Quad used for raycasting / mouse input detection
   let inputMesh = $state(new THREE.Mesh());
@@ -33,6 +34,11 @@
   let selectedMarker: Marker | null = $state(null);
   let isDragging = $state(false);
   let hoveredMarker: Marker | null = $state(null);
+  let hoveredMarkerDelayed: Marker | null = $state(null); // Marker after hover delay
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  let hideTimer: ReturnType<typeof setTimeout> | null = null;
+  const HOVER_DELAY_MS = 500; // Half second delay before showing tooltip
+  const HIDE_DELAY_MS = 300; // Delay before hiding tooltip to allow moving to it
 
   const ghostMarker: Marker = $state({
     id: uuidv4(),
@@ -84,11 +90,24 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
-      isDragging = true;
       selectedMarker = closestMarker;
+      if (stage.mode === StageMode.DM) {
+        isDragging = true;
+      }
       onMarkerSelected(selectedMarker);
     } else {
-      if (props.activeLayer === MapLayerType.None) return; // Ignore clicks when no layer is active)
+      // In player mode, clicking empty space clears selection
+      if (stage.mode === StageMode.Player) {
+        selectedMarker = null;
+        return;
+      }
+
+      // In DM mode, clicking empty space also clears selection (unless we're creating a new marker)
+      if (props.activeLayer === MapLayerType.None) {
+        selectedMarker = null;
+        onMarkerSelected(null); // Notify that selection is cleared
+        return;
+      }
       const newMarker: Marker = {
         id: uuidv4(),
         title: 'New Marker',
@@ -110,6 +129,7 @@
   function onMouseMove(e: Event, coords: THREE.Vector2 | null) {
     if (!coords) {
       hoveredMarker = null;
+      clearHoverTimer();
       return;
     }
 
@@ -123,12 +143,28 @@
       // Check if there are any visible markers
       const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
       if (hasVisibleMarkers) {
-        hoveredMarker = findClosestMarker(position) ?? null;
+        const newHoveredMarker = findClosestMarker(position) ?? null;
+
+        // If we're hovering over a different marker than before
+        if (newHoveredMarker?.id !== hoveredMarker?.id) {
+          hoveredMarker = newHoveredMarker;
+          clearHoverTimer();
+
+          // Start timer for new hover if we have a marker
+          if (newHoveredMarker) {
+            cancelHideTimer(); // Cancel any pending hide
+            hoverTimer = setTimeout(() => {
+              hoveredMarkerDelayed = newHoveredMarker;
+            }, HOVER_DELAY_MS);
+          }
+        }
       } else {
         hoveredMarker = null;
+        clearHoverTimer();
       }
     } else {
       hoveredMarker = null;
+      clearHoverTimer();
     }
 
     if (isDragging && selectedMarker) {
@@ -136,10 +172,37 @@
     }
   }
 
+  function clearHoverTimer() {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+    }
+    hideTimer = setTimeout(() => {
+      hoveredMarkerDelayed = null;
+    }, HIDE_DELAY_MS);
+  }
+
+  function cancelHideTimer() {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+  }
+
   function isTokenVisible(marker: Marker) {
     return (
       marker.visibility === MarkerVisibility.Always ||
       (marker.visibility === MarkerVisibility.DM && stage.mode === StageMode.DM) ||
+      (marker.visibility === MarkerVisibility.Hover && stage.mode === StageMode.DM) ||
+      (marker.visibility === MarkerVisibility.Hover &&
+        stage.mode === StageMode.Player &&
+        marker.id === stage.hoveredMarkerId) ||
+      (marker.visibility === MarkerVisibility.Hover &&
+        stage.mode === StageMode.Player &&
+        stage.pinnedMarkerIds?.includes(marker.id)) ||
       (marker.visibility === MarkerVisibility.Player && stage.mode === StageMode.Player)
     );
   }
@@ -152,6 +215,7 @@
 
   function onMouseLeave() {
     hoveredMarker = null;
+    clearHoverTimer();
   }
 
   function onContextMenu(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
@@ -165,20 +229,62 @@
     }
   }
 
+  // Track previous hovered marker to detect changes
+  let previousHoveredMarkerDelayed: Marker | null = null;
+
+  // Notify about hover changes when in DM mode (only after delay)
+  $effect(() => {
+    if (stage.mode === StageMode.DM && hoveredMarkerDelayed !== previousHoveredMarkerDelayed) {
+      onMarkerHover?.(hoveredMarkerDelayed);
+      previousHoveredMarkerDelayed = hoveredMarkerDelayed;
+    }
+  });
+
+  export function maintainHover(maintain: boolean) {
+    if (maintain && stage.mode === StageMode.DM) {
+      cancelHideTimer();
+    } else if (!maintain && stage.mode === StageMode.DM && !hoveredMarker) {
+      clearHoverTimer();
+    }
+  }
+
   // Export reactive state for hover and drag
   export const markerState = {
     get isHovering() {
-      return hoveredMarker !== null && hoveredMarker !== undefined;
+      if (stage.mode === StageMode.DM) {
+        return hoveredMarkerDelayed !== null && hoveredMarkerDelayed !== undefined;
+      }
+      return stage.hoveredMarkerId !== null && stage.hoveredMarkerId !== undefined;
     },
     get isDragging() {
       return isDragging;
+    },
+    get hoveredMarker() {
+      // In DM mode, use the delayed hover
+      if (stage.mode === StageMode.DM) {
+        return hoveredMarkerDelayed;
+      }
+      // In Player mode, find the marker that matches the DM's hoveredMarkerId or is pinned
+      if (stage.hoveredMarkerId) {
+        const hoveredMarker = props.marker.markers.find((m) => m.id === stage.hoveredMarkerId);
+        return hoveredMarker || null;
+      }
+      // Check for pinned markers
+      if (stage.pinnedMarkerIds && stage.pinnedMarkerIds.length > 0) {
+        const pinnedMarker = props.marker.markers.find((m) => stage.pinnedMarkerIds.includes(m.id));
+        return pinnedMarker || null;
+      }
+      return null;
+    },
+    get selectedMarker() {
+      return selectedMarker;
     }
   };
 </script>
 
 <LayerInput
   id="marker"
-  {isActive}
+  isActive={isActive || stage.mode === StageMode.Player}
   target={inputMesh}
   layerSize={{ width: display.resolution.x, height: display.resolution.y }}
   {onMouseDown}

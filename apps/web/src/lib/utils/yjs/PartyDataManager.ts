@@ -1,4 +1,4 @@
-import type { Marker, StageProps } from '@tableslayer/ui';
+import type { HoveredMarker, Marker, StageProps } from '@tableslayer/ui';
 import YPartyKitProvider from 'y-partykit/provider';
 import * as Y from 'yjs';
 import { devLog, devWarn } from '../debug';
@@ -297,6 +297,37 @@ export class PartyDataManager {
   }
 
   /**
+   * Update hovered marker state (DM only)
+   * This broadcasts which marker the DM is hovering over to all players
+   */
+  updateHoveredMarker(marker: HoveredMarker | null) {
+    if (this.isConnected && this.gameSessionProvider.awareness) {
+      this.gameSessionProvider.awareness.setLocalStateField('hoveredMarker', marker);
+    }
+  }
+
+  /**
+   * Get current hovered marker from awareness (for players to see what DM is hovering)
+   */
+  getHoveredMarker(): HoveredMarker | null {
+    if (this.gameSessionProvider.awareness) {
+      const states = this.gameSessionProvider.awareness.getStates();
+
+      // Look for any DM's hovered marker (last one wins if multiple DMs)
+      let hoveredMarker: HoveredMarker | null = null;
+      states.forEach((state) => {
+        if (state.hoveredMarker) {
+          hoveredMarker = state.hoveredMarker as HoveredMarker;
+        }
+      });
+
+      return hoveredMarker;
+    }
+
+    return null;
+  }
+
+  /**
    * Get current measurements from all users via awareness
    */
   getMeasurements(): Record<string, MeasurementData> {
@@ -316,6 +347,34 @@ export class PartyDataManager {
     }
 
     return measurements;
+  }
+
+  /**
+   * Update pinned markers (DM pins markers for player view)
+   * Uses awareness protocol for ephemeral state like cursors
+   */
+  updatePinnedMarkers(markerIds: string[]) {
+    if (this.isConnected && this.gameSessionProvider.awareness) {
+      this.gameSessionProvider.awareness.setLocalStateField('pinnedMarkers', markerIds);
+      devLog('yjs', `[${this.clientId}] Updated pinned markers:`, markerIds);
+    }
+  }
+
+  /**
+   * Get current pinned markers from DM
+   */
+  getPinnedMarkers(): string[] {
+    if (this.gameSessionProvider.awareness) {
+      // Look through all connected clients for pinned markers
+      // Only the DM should be broadcasting these
+      const states = this.gameSessionProvider.awareness.getStates();
+      for (const [, state] of states) {
+        if (state.pinnedMarkers && Array.isArray(state.pinnedMarkers)) {
+          return state.pinnedMarkers;
+        }
+      }
+    }
+    return [];
   }
 
   /**

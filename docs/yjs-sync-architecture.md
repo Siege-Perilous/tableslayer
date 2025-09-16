@@ -10,15 +10,16 @@ This document explains how Table Slayer's real-time collaboration system works u
 4. [Data Loading Flow](#data-loading-flow)
 5. [Y.js Update Flow](#yjs-update-flow)
 6. [Cursor Handling](#cursor-handling)
-7. [Throttling and Batching System](#throttling-and-batching-system)
-8. [Local-Only Properties](#local-only-properties)
-9. [Stale Data Detection](#stale-data-detection)
-10. [Save System](#save-system)
-11. [Deployment Strategy](#deployment-strategy)
-12. [Cost Optimization](#cost-optimization)
-13. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
-14. [RLE Mask System](#rle-mask-system-run-length-encoding)
-15. [Drawing Protection System](#drawing-protection-system)
+7. [Marker Hover State](#marker-hover-state-dm-to-player-reveal)
+8. [Throttling and Batching System](#throttling-and-batching-system)
+9. [Local-Only Properties](#local-only-properties)
+10. [Stale Data Detection](#stale-data-detection)
+11. [Save System](#save-system)
+12. [Deployment Strategy](#deployment-strategy)
+13. [Cost Optimization](#cost-optimization)
+14. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
+15. [RLE Mask System](#rle-mask-system-run-length-encoding)
+16. [Drawing Protection System](#drawing-protection-system)
 
 ## Overview
 
@@ -331,6 +332,90 @@ Cursors use Y.js awareness, which means:
 - They are NOT persisted between sessions
 - They disappear when a user disconnects
 - They still count as PartyKit requests (hence throttling)
+
+## Marker Hover State (DM to Player Reveal)
+
+The marker hover system allows DMs to temporarily reveal individual markers to players by hovering over them. This uses the Y.js awareness protocol for real-time synchronization.
+
+### Hover State Structure
+
+```typescript
+interface HoveredMarker {
+  id: string;
+  position: { x: number; y: number; z: number };
+  tooltip: {
+    title: string;
+    content: string; // TipTap JSON content as string
+    imageUrl?: string;
+  };
+}
+```
+
+### DM Hover Broadcasting
+
+When a DM hovers over a marker, the state is broadcast via awareness:
+
+```typescript
+// In MarkerLayer component (DM mode only)
+onMarkerHover?.(hoveredMarker);
+
+// In scene page
+const onMarkerHover = (marker: Marker | null) => {
+  if (stageProps.mode === StageMode.DM && partyData) {
+    if (marker) {
+      const hoveredMarker = {
+        id: marker.id,
+        position: { x: marker.position.x, y: marker.position.y, z: 0 },
+        tooltip: {
+          title: marker.title,
+          content: marker.note ? JSON.stringify(marker.note) : '',
+          imageUrl: marker.imageUrl || undefined
+        }
+      };
+      partyData.updateHoveredMarker(hoveredMarker);
+    } else {
+      partyData.updateHoveredMarker(null);
+    }
+  }
+};
+```
+
+### Player Receiving Hover State
+
+Players receive hover state updates through Y.js subscriptions:
+
+```typescript
+// In Y.js subscription (Player mode only)
+if (stageProps.mode === StageMode.Player) {
+  hoveredMarker = partyData!.getHoveredMarker();
+}
+
+// MarkerHoverTooltip component renders the tooltip
+{#if hoveredMarker && stageProps.mode === StageMode.Player}
+  <MarkerHoverTooltip marker={hoveredMarker} containerElement={stageElement} />
+{/if}
+```
+
+### Key Features
+
+- **DM-Only Broadcasting**: Only DMs can trigger hover broadcasts
+- **Rich Tooltips**: Supports TipTap formatted content with images and links
+- **Floating UI Positioning**: Tooltips use floating-ui for intelligent positioning
+- **Debounced Hover**: Hover events are debounced (100ms) to prevent flickering
+- **Read-Only Display**: Players see read-only TipTap editor for rich content
+
+### Implementation Details
+
+1. **MarkerLayer**: Detects hover and calls `onMarkerHover` callback
+2. **Scene Page**: Converts marker to `HoveredMarker` format and broadcasts
+3. **PartyDataManager**: Sends hover state via awareness protocol
+4. **MarkerHoverTooltip**: Renders floating tooltip with TipTap content
+
+Important: Like cursors, hover state is ephemeral:
+
+- Not persisted in Y.js documents
+- Clears when DM moves cursor away
+- Disappears when DM disconnects
 
 ## Throttling and Batching System
 

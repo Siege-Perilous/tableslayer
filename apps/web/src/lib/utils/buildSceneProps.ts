@@ -34,7 +34,7 @@ export const buildSceneProps = (
   let markers: Marker[] = [];
   if (activeSceneMarkers && Array.isArray(activeSceneMarkers)) {
     markers = activeSceneMarkers
-      // Filter out DM-only markers for client mode
+      // Filter out DM-only markers for client mode, but keep Hover markers (they can be revealed by DM)
       .filter((marker) => mode === 'editor' || marker.visibility !== 1) // 1 = MarkerVisibility.DM
       .map((marker) => ({
         id: marker.id,

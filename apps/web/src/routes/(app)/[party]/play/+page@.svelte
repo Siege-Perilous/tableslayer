@@ -31,6 +31,8 @@
   let cursors: Record<string, CursorData> = $state({});
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
+  let hoveredMarkerId: string | null = $state(null);
+  let pinnedMarkerIds: string[] = $state([]);
 
   // Convert cursors to format expected by CursorLayer
   let cursorArray = $derived(
@@ -65,7 +67,7 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state({
     ...StageDefaultProps,
-    mode: 1,
+    mode: 1, // StageMode.Player = 1
     activeLayer: MapLayerType.None,
     scene: { ...StageDefaultProps.scene, autoFit: true, offset: { x: 0, y: 0 } }
   });
@@ -423,6 +425,20 @@
         }
         measurements = yjsMeasurements;
 
+        // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
+        const hoveredMarker = partyData!.getHoveredMarker();
+        hoveredMarkerId = hoveredMarker?.id ?? null;
+        if (hoveredMarker) {
+          console.log('[Play Route] Received hovered marker from Y.js:', {
+            id: hoveredMarker.id,
+            hoveredMarkerId,
+            hasTooltip: hoveredMarker.tooltip
+          });
+        }
+
+        // Update pinned markers from Y.js awareness
+        pinnedMarkerIds = partyData!.getPinnedMarkers();
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           // If we don't have the game session ID, we need to find it
@@ -597,6 +613,20 @@
         }
         measurements = yjsMeasurements;
 
+        // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
+        const hoveredMarker = partyData!.getHoveredMarker();
+        hoveredMarkerId = hoveredMarker?.id ?? null;
+        if (hoveredMarker) {
+          console.log('[Play Route] Received hovered marker from Y.js:', {
+            id: hoveredMarker.id,
+            hoveredMarkerId,
+            hasTooltip: hoveredMarker.tooltip
+          });
+        }
+
+        // Update pinned markers from Y.js awareness
+        pinnedMarkerIds = partyData!.getPinnedMarkers();
+
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
           devLog('playfield', 'Attempting to get scene data:', {
@@ -662,9 +692,10 @@
   // Don't allow marker movement in player view
   function onMarkerMoved() {}
   function onMarkerAdded() {}
+  function onMarkerHover() {} // Players can't control hover, only receive it
 
-  const onMarkerSelected = (marker: Marker) => {
-    selectedMarker = marker;
+  const onMarkerSelected = (marker: Marker | null) => {
+    selectedMarker = marker ?? undefined;
   };
 
   function onStageLoading() {
@@ -863,6 +894,8 @@
   <Stage
     bind:this={stage}
     props={stageProps}
+    {hoveredMarkerId}
+    {pinnedMarkerIds}
     receivedMeasurement={latestMeasurement
       ? {
           startPoint: latestMeasurement.startPoint,
@@ -897,6 +930,7 @@
       onMarkerMoved,
       onMarkerSelected,
       onMarkerContextMenu,
+      onMarkerHover,
       // Measurements are read-only in playfield, but we still need the callbacks
       onMeasurementStart: () => {},
       onMeasurementUpdate: () => {},

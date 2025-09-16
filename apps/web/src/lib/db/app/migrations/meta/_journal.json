@@ -239,6 +239,13 @@
       "when": 1757908906480,
       "tag": "0033_rle-mask",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1757959059295,
+      "tag": "0034_marker-hover",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
+  import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
@@ -457,6 +458,15 @@
     },
     get isDraggingMarker() {
       return markerLayer?.markerState?.isDragging ?? false;
+    },
+    get hoveredMarker() {
+      return markerLayer?.markerState?.hoveredMarker ?? null;
+    },
+    get selectedMarker() {
+      return markerLayer?.markerState?.selectedMarker ?? null;
+    },
+    maintainHover: (maintain: boolean) => {
+      markerLayer?.maintainHover?.(maintain);
     }
   };
 
@@ -465,6 +475,36 @@
     getCurrentMeasurement: () => measurementLayer?.getCurrentMeasurement?.() ?? null,
     isDrawing: () => measurementLayer?.isCurrentlyDrawing?.() ?? false
   };
+
+  export function getMarkerSizeInScreenSpace(markerSize = 1) {
+    const worldGridSize = getGridCellSizeHelper(props.grid, props.display);
+    const worldMarkerDiameter = worldGridSize * markerSize * 0.9;
+    const zoomedMarkerDiameter = worldMarkerDiameter * props.scene.zoom;
+    const screenMarkerDiameter = (zoomedMarkerDiameter / props.display.resolution.x) * $size.width;
+
+    return screenMarkerDiameter;
+  }
+
+  export function getMarkerScreenPosition(marker: { position?: { x: number; y: number } }) {
+    if (!marker?.position) return null;
+
+    // Create a vector at the marker's local position
+    const vector = new THREE.Vector3(marker.position.x, marker.position.y, 0);
+
+    // Apply scene transformations to get world position
+    // The markers are rendered inside a T.Object3D with position and scale transforms
+    vector.x = vector.x * props.scene.zoom + props.scene.offset.x;
+    vector.y = vector.y * props.scene.zoom + props.scene.offset.y;
+
+    // Project world position to screen space
+    vector.project(camera.current);
+
+    // Convert from normalized device coordinates (-1 to 1) to screen coordinates
+    const x = (vector.x * 0.5 + 0.5) * $size.width;
+    const y = (-vector.y * 0.5 + 0.5) * $size.height;
+
+    return { x, y };
+  }
 </script>
 
 <T.OrthographicCamera
