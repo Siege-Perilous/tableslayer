@@ -128,6 +128,10 @@
 
   function handleTouchStart(event: TouchEvent) {
     if (onMouseDown && isActive) {
+      // Don't trigger drawing if multiple touches (pinch/zoom gesture)
+      if (event.touches.length > 1) {
+        return;
+      }
       event.preventDefault(); // Prevent scrolling when interacting with the canvas
       const touch = event.touches[0];
       onMouseDown(event, touchToCanvasCoords(touch));
@@ -145,6 +149,14 @@
 
   function handleTouchMove(event: TouchEvent) {
     if (onMouseMove && isActive && isTouchDevice()) {
+      // Stop drawing if multiple touches detected (pinch/zoom gesture)
+      if (event.touches.length > 1) {
+        // Trigger mouse up to stop any ongoing drawing
+        if (onMouseUp) {
+          onMouseUp(event, null);
+        }
+        return;
+      }
       event.preventDefault();
       const touch = event.touches[0];
       onMouseMove(event, touchToCanvasCoords(touch));
