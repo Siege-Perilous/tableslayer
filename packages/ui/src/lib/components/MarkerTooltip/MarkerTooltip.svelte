@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type Marker, MarkerVisibility } from '../Stage/components/MarkerLayer/types';
-  import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
+  import { computePosition, flip, shift, offset, autoUpdate, autoPlacement } from '@floating-ui/dom';
   import { Editor } from '../Editor';
   import { onMount, onDestroy } from 'svelte';
   import { IconPin, IconPinFilled } from '@tabler/icons-svelte';
@@ -14,6 +14,10 @@
     isDM?: boolean;
     isPinned?: boolean;
     onPinToggle?: (markerId: string, pinned: boolean) => void;
+    existingTooltips?: Array<{ element: HTMLElement; bounds: DOMRect }>;
+    preferredPlacement?: 'top' | 'bottom' | 'left' | 'right';
+    onTooltipMount?: (element: HTMLElement, bounds: DOMRect) => void;
+    onTooltipUnmount?: (element: HTMLElement) => void;
   }
 
   let {
@@ -24,7 +28,11 @@
     onTooltipHover,
     isDM = false,
     isPinned = false,
-    onPinToggle
+    onPinToggle,
+    existingTooltips = [],
+    preferredPlacement = 'top',
+    onTooltipMount,
+    onTooltipUnmount
   }: Props = $props();
 
   let tooltipElement = $state<HTMLDivElement>();
@@ -92,6 +100,49 @@
   let markerTitle = $derived(getMarkerTitle(marker));
   let markerSize = $derived(marker?.size || 1);
 
+  // Helper functions for overlap detection
+  function getEstimatedBounds(virtualEl: any, element: HTMLElement, placement: string, offset: number) {
+    const rect = virtualEl.getBoundingClientRect();
+    const width = element.offsetWidth || 200; // Estimate if not rendered
+    const height = element.offsetHeight || 100;
+
+    let x = rect.left;
+    let y = rect.top;
+
+    switch (placement) {
+      case 'top':
+        x -= width / 2;
+        y -= height + offset;
+        break;
+      case 'bottom':
+        x -= width / 2;
+        y += offset;
+        break;
+      case 'left':
+        x -= width + offset;
+        y -= height / 2;
+        break;
+      case 'right':
+        x += offset;
+        y -= height / 2;
+        break;
+    }
+
+    return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
+  }
+
+  function calculateOverlap(rect1: any, rect2: any) {
+    const xOverlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
+    const yOverlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
+    return xOverlap * yOverlap;
+  }
+
+  function calculateTotalOverlap(testBounds: any, existingTooltips: Array<{ bounds: DOMRect }>) {
+    return existingTooltips.reduce((total, tooltip) => {
+      return total + calculateOverlap(testBounds, tooltip.bounds);
+    }, 0);
+  }
+
   function createPortalContainer() {
     const existingContainer = document.getElementById('markerTooltipPortal');
     if (existingContainer) {
@@ -120,6 +171,11 @@
     if (cleanup) {
       cleanup();
       cleanup = null;
+    }
+
+    // Notify parent of unmounted tooltip
+    if (onTooltipUnmount && tooltipElement) {
+      onTooltipUnmount(tooltipElement);
     }
 
     if (tooltipElement && portalContainer && portalContainer.contains(tooltipElement)) {
@@ -169,14 +225,43 @@
         const arrowSize = 8; // Size of the arrow
         const dynamicOffset = markerRadius + buffer + arrowSize;
 
+        // Determine best placement based on existing tooltips
+        let bestPlacement = preferredPlacement;
+
+        // Only check for overlaps if we have existing tooltips and a valid tooltip element
+        if (existingTooltips.length > 0 && tooltipElement && tooltipElement.offsetWidth > 0) {
+          const placements: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
+          let minOverlap = Infinity;
+
+          for (const placement of placements) {
+            const testBounds = getEstimatedBounds(virtualEl, tooltipElement!, placement, dynamicOffset);
+            const overlap = calculateTotalOverlap(testBounds, existingTooltips);
+            if (overlap < minOverlap) {
+              minOverlap = overlap;
+              bestPlacement = placement;
+            }
+          }
+        }
+
+        // Use smart positioning middleware
+        const fallbackOptions: ('top' | 'bottom' | 'left' | 'right')[] = ['bottom', 'left', 'right', 'top'];
+        const middleware = [
+          offset(dynamicOffset),
+          // Use flip to avoid viewport edges
+          flip({
+            fallbackPlacements: fallbackOptions.filter((p) => p !== bestPlacement)
+          }),
+          shift({ padding: 10 })
+        ];
+
         const { x, y, placement } = await computePosition(virtualEl, tooltipElement!, {
-          placement: 'top',
-          middleware: [offset(dynamicOffset), flip(), shift({ padding: 10 })],
+          placement: bestPlacement,
+          middleware,
           strategy: 'fixed'
         });
 
         // Update placement for arrow direction
-        currentPlacement = placement as 'top' | 'bottom' | 'left' | 'right';
+        currentPlacement = placement.split('-')[0] as 'top' | 'bottom' | 'left' | 'right';
 
         Object.assign(tooltipElement!.style, {
           position: 'fixed',
@@ -184,6 +269,16 @@
           top: `${y}px`,
           pointerEvents: 'auto'
         });
+
+        // Notify parent of mounted tooltip position after a delay to avoid loops
+        if (onTooltipMount && tooltipElement) {
+          setTimeout(() => {
+            if (tooltipElement) {
+              const bounds = tooltipElement.getBoundingClientRect();
+              onTooltipMount(tooltipElement, bounds);
+            }
+          }, 100);
+        }
       });
 
       tooltipElement.style.display = 'block';

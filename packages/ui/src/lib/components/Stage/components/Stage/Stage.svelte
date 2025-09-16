@@ -59,7 +59,16 @@
   let markerSizeInPixels = $state<number>(40);
 
   // For multiple pinned tooltips
-  let pinnedTooltips = $state<Array<{ marker: any; position: { x: number; y: number } }>>([]);
+  let pinnedTooltips = $state<
+    Array<{
+      marker: any;
+      position: { x: number; y: number };
+      preferredPlacement: 'top' | 'bottom' | 'left' | 'right';
+    }>
+  >([]);
+
+  // Track rendered tooltip positions for overlap detection (non-reactive to avoid loops)
+  const renderedTooltips = new Map<string, { element: HTMLElement; bounds: DOMRect }>();
 
   // Store game mode, hovered marker, and pinned markers as reactive state which can be referenced by other components
   let stageContext = $state({ mode: props.mode, hoveredMarkerId, pinnedMarkerIds });
@@ -131,15 +140,29 @@
   });
 
   $effect(() => {
-    // Update pinned tooltips
+    // Update pinned tooltips with smart positioning
     if (pinnedMarkerIds && pinnedMarkerIds.length > 0 && containerElement && sceneRef?.getMarkerScreenPosition) {
       const newPinnedTooltips = [];
-      for (const markerId of pinnedMarkerIds) {
+
+      // Cycle through placement patterns to reduce overlap
+      const placementPatterns = [
+        ['top', 'bottom', 'left', 'right'],
+        ['bottom', 'top', 'right', 'left'],
+        ['left', 'right', 'top', 'bottom'],
+        ['right', 'left', 'bottom', 'top']
+      ];
+
+      for (let i = 0; i < pinnedMarkerIds.length; i++) {
+        const markerId = pinnedMarkerIds[i];
         const marker = props.marker.markers.find((m) => m.id === markerId);
         if (marker) {
           const screenPos = sceneRef.getMarkerScreenPosition(marker);
           if (screenPos) {
-            newPinnedTooltips.push({ marker, position: screenPos });
+            // Use different placement pattern for each tooltip to reduce overlap
+            const pattern = placementPatterns[i % placementPatterns.length];
+            const preferredPlacement = pattern[0] as 'top' | 'bottom' | 'left' | 'right';
+
+            newPinnedTooltips.push({ marker, position: screenPos, preferredPlacement });
           }
         }
       }
@@ -207,7 +230,7 @@
   </Canvas>
 
   <!-- Render pinned tooltips -->
-  {#each pinnedTooltips as { marker, position }}
+  {#each pinnedTooltips as { marker, position, preferredPlacement }, index}
     <MarkerTooltip
       {marker}
       {position}
@@ -216,6 +239,14 @@
       isDM={props.mode === 0}
       isPinned={true}
       {onPinToggle}
+      {preferredPlacement}
+      existingTooltips={Array.from(renderedTooltips.values()).filter((t, i) => i < index)}
+      onTooltipMount={(element, bounds) => {
+        renderedTooltips.set(marker.id, { element, bounds });
+      }}
+      onTooltipUnmount={(element) => {
+        renderedTooltips.delete(marker.id);
+      }}
     />
   {/each}
 
@@ -229,6 +260,7 @@
       isDM={props.mode === 0}
       isPinned={false}
       {onPinToggle}
+      existingTooltips={Array.from(renderedTooltips.values())}
       onTooltipHover={(isHovering) => {
         // When hovering tooltip in DM mode, maintain the hover state
         if (props.mode === 0 && sceneRef?.markers?.maintainHover) {
