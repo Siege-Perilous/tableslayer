@@ -269,6 +269,10 @@
                       ]}
                       onSelectedChange={(value) => {
                         updateMarkerAndSave(marker.id, (m) => (m.visibility = Number(value)));
+                        // If changing to DM-only, automatically unpin the marker
+                        if (Number(value) === MarkerVisibility.DM && pinnedMarkerIds.includes(marker.id)) {
+                          onPinToggle(marker.id, false);
+                        }
                         socketUpdate();
                       }}
                     />
@@ -400,6 +404,10 @@
                       m.visibility = MarkerVisibility.Hover;
                     } else if (m.visibility === MarkerVisibility.Hover) {
                       m.visibility = MarkerVisibility.DM;
+                      // If changing to DM-only, automatically unpin the marker
+                      if (pinnedMarkerIds.includes(marker.id)) {
+                        onPinToggle(marker.id, false);
+                      }
                     } else {
                       m.visibility = MarkerVisibility.Always;
                     }

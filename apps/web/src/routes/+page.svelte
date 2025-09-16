@@ -45,7 +45,7 @@
     <Spacer />
     <Text color="var(--fgMuted)">
       Table Slayer's code is <Link href="https://github.com/Siege-Perilous/tableslayer">open source</Link> and free to host
-      for personal use.
+      for personal use. View the <Link href="/changelog">changelog</Link> to see what's new.
     </Text>
     <Spacer size="2rem" />
     <div class="home__buttonGroup">
@@ -142,7 +142,7 @@
 
 <div class="home__tos">
   <Text size="0.875rem" color="var(--fgMuted)">
-    Table Slayer does not collect any personal information or analytics. You can read the
+    Table Slayer does not collect any personal information. You can read the
     <Link href="/tos">Terms of Service</Link> for more details.
   </Text>
 </div>
