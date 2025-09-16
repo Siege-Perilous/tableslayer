@@ -347,7 +347,7 @@
   .markerTooltip {
     max-width: 400px;
     background-color: var(--bg);
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     border: 1px solid var(--border);
     border-radius: 0.25rem;
     box-shadow: var(--shadow-3);
@@ -356,8 +356,8 @@
 
   .markerTooltip__pin {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: 0.25rem;
+    right: 0.25rem;
     background: transparent;
     border: none;
     color: var(--fgMuted);
