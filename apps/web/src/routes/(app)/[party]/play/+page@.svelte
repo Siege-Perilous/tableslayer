@@ -32,7 +32,6 @@
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
   let hoveredMarkerId: string | null = $state(null);
-  let hoveredMarkerData: any = $state(null);
   let pinnedMarkerIds: string[] = $state([]);
 
   // Convert cursors to format expected by CursorLayer

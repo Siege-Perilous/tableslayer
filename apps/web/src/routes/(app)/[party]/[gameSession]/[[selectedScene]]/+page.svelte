@@ -258,7 +258,6 @@
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
   let stage: StageExports = $state(null)!;
-  let stageContainer: HTMLDivElement | undefined = $state();
 
   // Derive marker states reactively from stage
   let isHoveringMarker = $derived(stage?.markers?.isHoveringMarker ?? false);
