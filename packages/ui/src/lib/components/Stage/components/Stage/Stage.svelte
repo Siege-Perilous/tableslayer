@@ -134,6 +134,8 @@
   };
 
   $effect(() => {
+    // Update marker size when zoom changes or marker data changes
+    const zoom = props.scene.zoom;
     if (sceneRef?.getMarkerSizeInScreenSpace) {
       const markerSize = hoveredMarkerData?.size || 1;
       markerSizeInPixels = sceneRef.getMarkerSizeInScreenSpace(markerSize);

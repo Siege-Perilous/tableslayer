@@ -243,9 +243,8 @@
 
       cleanup = autoUpdate(virtualEl, tooltipElement!, async () => {
         const markerRadius = markerDiameter / 2;
-        const buffer = 10;
         const arrowSize = 8;
-        const dynamicOffset = markerRadius + buffer + arrowSize;
+        const dynamicOffset = markerRadius + arrowSize;
 
         let bestPlacement = preferredPlacement;
 
