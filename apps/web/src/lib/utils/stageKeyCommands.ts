@@ -171,6 +171,39 @@ export function handleKeyCommands(
     case 'Escape':
       handleSelectActiveControl('none');
       return 'none';
+
+    // Precise map movement with Shift+Arrow keys (1px increments)
+    case 'ArrowLeft':
+      if (event.shiftKey) {
+        event.preventDefault();
+        const currentX = stageProps.map.offset.x;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], currentX - 1, 'control');
+      }
+      break;
+
+    case 'ArrowRight':
+      if (event.shiftKey) {
+        event.preventDefault();
+        const currentX = stageProps.map.offset.x;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], currentX + 1, 'control');
+      }
+      break;
+
+    case 'ArrowUp':
+      if (event.shiftKey) {
+        event.preventDefault();
+        const currentY = stageProps.map.offset.y;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], currentY - 1, 'control');
+      }
+      break;
+
+    case 'ArrowDown':
+      if (event.shiftKey) {
+        event.preventDefault();
+        const currentY = stageProps.map.offset.y;
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], currentY + 1, 'control');
+      }
+      break;
   }
 
   return activeControl;

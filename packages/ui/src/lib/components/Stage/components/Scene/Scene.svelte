@@ -437,7 +437,8 @@
 
   export const map = {
     fill: () => mapLayer.fill(),
-    fit: () => mapLayer.fit()
+    fit: () => mapLayer.fit(),
+    getSize: () => mapLayer?.mapSize ?? null
   };
 
   // References to the layer doesn't exist until the component is mounted,

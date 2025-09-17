@@ -82,6 +82,7 @@ export interface SceneExports {
   map: {
     fit: () => void;
     fill: () => void;
+    getSize: () => { width: number; height: number } | null;
   };
 
   markers: {

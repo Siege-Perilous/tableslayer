@@ -51,7 +51,7 @@
     onPinToggle
   }: Props = $props();
 
-  let sceneRef: SceneExports;
+  let sceneRef = $state<SceneExports>();
   let containerElement = $state<HTMLDivElement>();
   let tooltipPosition = $state<{ x: number; y: number } | null>(null);
   interface MarkerData {
@@ -91,7 +91,7 @@
   setContext('callbacks', callbacks);
 
   export const annotations = {
-    clear: (layerId: string) => sceneRef.annotations.clear(layerId),
+    clear: (layerId: string) => sceneRef?.annotations.clear(layerId),
     toRLE: () => sceneRef?.annotations?.toRLE(),
     fromRLE: (rleData: Uint8Array, width: number, height: number) =>
       sceneRef?.annotations?.fromRLE(rleData, width, height),
@@ -100,8 +100,9 @@
   };
 
   export const map = {
-    fill: () => sceneRef.map.fill(),
-    fit: () => sceneRef.map.fit()
+    fill: () => sceneRef?.map.fill(),
+    fit: () => sceneRef?.map.fit(),
+    getSize: () => sceneRef?.map?.getSize?.() ?? null
   };
 
   export const fogOfWar = {

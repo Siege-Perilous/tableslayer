@@ -1,4 +1,5 @@
 uniform int uGridType;
+uniform int uGridMode;
 uniform float uSpacing_in;
 uniform float uOpacity;
 uniform vec2 uPadding_px;
@@ -11,6 +12,8 @@ uniform vec3 uShadowColor;
 uniform float uSceneScale;
 uniform vec2 uResolution_px;
 uniform vec2 uDisplaySize_in;
+uniform float uFixedGridCountX;
+uniform float uFixedGridCountY;
 
 varying vec2 vUv;
 
@@ -79,7 +82,7 @@ float hexGrid(vec2 coords, vec2 spacing, float thickness, float sharpness) {
 
 void main() {
   // NOTE: To make it easier to determine what units a variable is, the _px suffix is used
-  // for values measured in pixels and the _in suffix is for inches. 
+  // for values measured in pixels and the _in suffix is for inches.
 
   // Convert UV coordinates to pixels and get the coordinates of this fragment in pixels
   vec2 displayCoord_px = vUv * uResolution_px;
@@ -87,16 +90,42 @@ void main() {
   // Compute the pixel pitch
   vec2 pixelPitch_in = uDisplaySize_in / uResolution_px;
 
-  // Compute the nominal grid size in pixels and determine the maximum
-  // number of grid squares that can fit inside the safe zone
-  vec2 safeZoneSize_px = uResolution_px - uPadding_px * 2.0 - uLineThickness;
-  vec2 gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
-  vec2 gridCount = floor(safeZoneSize_px / gridSpacing_px);
+  vec2 gridSpacing_px;
+  vec2 gridCount;
+  vec2 gridSize_px;
+  vec2 gridOrigin_px;
 
-  // Compute the total grid size in pixels, then compute the position of the fragment
-  // relative to the origin (lower left)
-  vec2 gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
-  vec2 gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
+  if (uGridMode == 0) {
+    // AutoFit mode - use padding-based calculation
+    vec2 safeZoneSize_px = uResolution_px - uPadding_px * 2.0 - uLineThickness;
+    gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
+    gridCount = floor(safeZoneSize_px / gridSpacing_px);
+    gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
+    gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
+  } else {
+    // FixedCount mode - use exact grid dimensions
+    gridCount = vec2(uFixedGridCountX, uFixedGridCountY);
+
+    // Calculate grid spacing to maintain 1:1 inch squares
+    gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
+
+    // Calculate total grid size
+    gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
+
+    // Position grid based on overflow:
+    // - If grid fits horizontally, center it
+    // - If grid overflows horizontally, align left
+    float originX = gridSize_px.x <= uResolution_px.x ?
+      (uResolution_px.x - gridSize_px.x) / 2.0 : 0.0;
+
+    // - If grid fits vertically, center it
+    // - If grid overflows vertically, align top (which is bottom in screen coords)
+    float originY = gridSize_px.y <= uResolution_px.y ?
+      (uResolution_px.y - gridSize_px.y) / 2.0 : 0.0;
+
+    gridOrigin_px = vec2(originX, originY);
+  }
+
   vec2 gridCoords_px = displayCoord_px - gridOrigin_px;
 
   float grid = 0.0;

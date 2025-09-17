@@ -105,6 +105,9 @@ export const convertPropsToSceneDetails = (
 
   setNestedIfExists(stageProps, details, 'grid', {
     gridType: 'gridType',
+    gridMode: 'gridMode',
+    'fixedGridCount.x': 'gridFixedCountX',
+    'fixedGridCount.y': 'gridFixedCountY',
     spacing: 'gridSpacing',
     opacity: 'gridOpacity',
     lineColor: 'gridLineColor',

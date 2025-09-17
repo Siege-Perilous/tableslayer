@@ -3,11 +3,29 @@ export enum GridType {
   Hex = 1
 }
 
+export enum GridMode {
+  AutoFit = 0,
+  FixedCount = 1
+}
+
 export interface GridLayerProps {
   /**
    * The type of grid. 0 for square, 1 for hex
    */
   gridType: GridType;
+
+  /**
+   * The grid calculation mode. AutoFit uses padding, FixedCount uses exact grid dimensions
+   */
+  gridMode: GridMode;
+
+  /**
+   * Fixed grid dimensions when using FixedCount mode
+   */
+  fixedGridCount: {
+    x: number;
+    y: number;
+  };
 
   /**
    * The opacity of the grid lines (0 to 1)

@@ -19,6 +19,7 @@
     uniforms: {
       uOpacity: new THREE.Uniform(grid.opacity),
       uGridType: new THREE.Uniform(grid.gridType),
+      uGridMode: new THREE.Uniform(grid.gridMode || 0),
       uSpacing_in: new THREE.Uniform(grid.spacing),
       uPadding_px: new THREE.Uniform(display.padding),
       uLineThickness: new THREE.Uniform(grid.lineThickness),
@@ -29,7 +30,9 @@
       uShadowColor: new THREE.Uniform(new THREE.Color(grid.shadowColor)),
       uSceneScale: new THREE.Uniform(1),
       uResolution_px: new THREE.Uniform(new THREE.Vector2(0, 0)),
-      uDisplaySize_in: new THREE.Uniform(new THREE.Vector2(0, 0))
+      uDisplaySize_in: new THREE.Uniform(new THREE.Vector2(0, 0)),
+      uFixedGridCountX: new THREE.Uniform(grid.fixedGridCount?.x || 24),
+      uFixedGridCountY: new THREE.Uniform(grid.fixedGridCount?.y || 17)
     }
   });
 
@@ -37,6 +40,7 @@
     material.uniforms.uOpacity.value = grid.opacity;
     material.uniforms.uSceneScale.value = sceneZoom;
     material.uniforms.uGridType.value = grid.gridType;
+    material.uniforms.uGridMode.value = grid.gridMode || 0;
     material.uniforms.uSpacing_in.value = grid.spacing;
     material.uniforms.uPadding_px.value = display.padding;
     material.uniforms.uLineThickness.value = grid.lineThickness;
@@ -47,6 +51,8 @@
     material.uniforms.uShadowColor.value = new THREE.Color(grid.shadowColor);
     material.uniforms.uResolution_px.value = new THREE.Vector2(display.resolution.x, display.resolution.y);
     material.uniforms.uDisplaySize_in.value = new THREE.Vector2(display.size.x, display.size.y);
+    material.uniforms.uFixedGridCountX.value = grid.fixedGridCount?.x || 24;
+    material.uniforms.uFixedGridCountY.value = grid.fixedGridCount?.y || 17;
 
     invalidate();
   });
