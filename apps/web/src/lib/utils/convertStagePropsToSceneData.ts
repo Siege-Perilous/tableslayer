@@ -118,6 +118,11 @@ export const convertPropsToSceneDetails = (
     shadowSpread: 'gridShadowSpread'
   });
 
+  // Ensure grid spacing is an integer (database constraint)
+  if (details.gridSpacing !== undefined) {
+    details.gridSpacing = Math.round(Number(details.gridSpacing));
+  }
+
   setNestedIfExists(stageProps, details, 'weather', {
     type: 'weatherType',
     fov: 'weatherFov',
