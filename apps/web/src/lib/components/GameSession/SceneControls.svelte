@@ -93,7 +93,7 @@
     mapLayer: number;
   };
 
-  const sceneControlArray: SceneControl[] = $derived([
+  const sceneControlArray: SceneControl[] = [
     {
       id: 'map',
       icon: IconMap,
@@ -138,12 +138,12 @@
     },
     {
       id: 'play',
-      icon: party.gameSessionIsPaused ? IconScreenShareOff : IconScreenShare,
+      icon: IconScreenShare,
       text: 'Play',
       tooltip: "Open or pause the player's view",
       mapLayer: MapLayerType.None
     }
-  ]);
+  ];
 
   const eraseOptions = [
     {
@@ -230,9 +230,7 @@
   let openPopoverId = $state<string | null>(null);
 
   // React to keyboard-triggered popover changes
-  // When keyboard sets it to null, we should close any open popover
   $effect(() => {
-    // Only update if keyboard explicitly set a value
     if (keyboardPopoverId !== undefined) {
       openPopoverId = keyboardPopoverId;
     }
@@ -240,7 +238,6 @@
 
   // Also react to activeControl changes to close popovers when tools are activated
   $effect(() => {
-    // If a tool is active (not a scene control), close any open popover
     if (['erase', 'marker', 'annotation', 'measurement'].includes(activeControl)) {
       openPopoverId = null;
     }
@@ -387,18 +384,36 @@
             <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
               {#snippet children()}
                 <div class="sceneControls__trigger">
-                  <button
+                  <div
+                    role="button"
+                    tabindex="0"
                     class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
                     onclick={() => {
                       const newPopoverId = handleSelectActiveControl(scene.id);
                       openPopoverId = newPopoverId;
                     }}
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const newPopoverId = handleSelectActiveControl(scene.id);
+                        openPopoverId = newPopoverId;
+                      }
+                    }}
                   >
-                    <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                    <Icon
+                      Icon={scene.id === 'play'
+                        ? party.gameSessionIsPaused
+                          ? IconScreenShareOff
+                          : IconScreenShare
+                        : scene.icon}
+                      size="1.5rem"
+                      stroke={2}
+                      class="sceneControls__layerBtn"
+                    />
                     <span class="sceneControls__layerText">
                       {scene.text}
                     </span>
-                  </button>
+                  </div>
                 </div>
               {/snippet}
               {#snippet toolTipContent()}
