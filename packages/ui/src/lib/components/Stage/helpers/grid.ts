@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GridType, type GridLayerProps } from '../components/GridLayer/types';
+import { GridMode, GridType, type GridLayerProps } from '../components/GridLayer/types';
 import type { DisplayProps } from '../components/Stage/types';
 
 // Hexagonal grid offset factor
@@ -13,6 +13,60 @@ const s = { x: 1.0, y: 1.7320508 }; // sqrt(3)
  */
 export function getGridCellSize(grid: GridLayerProps, display: DisplayProps): number {
   return (grid.spacing * display.resolution.x) / display.size.x;
+}
+
+/**
+ * Calculates the grid origin for Map defined mode
+ * Matches the shader logic for grid positioning
+ * @param grid Grid configuration
+ * @param display Display properties
+ * @returns Grid origin in pixels (from top-left corner)
+ */
+export function getGridOrigin(grid: GridLayerProps, display: DisplayProps): THREE.Vector2 {
+  // In FillSpace mode, grid is centered with padding
+  if ((grid.gridMode || 0) === GridMode.FillSpace) {
+    // Grid starts at padding position
+    return new THREE.Vector2(display.padding.x, display.padding.y);
+  }
+
+  // In MapDefined mode, calculate based on grid size
+  if (!grid.fixedGridCount) {
+    // Fallback to padding if no fixed count
+    return new THREE.Vector2(display.padding.x, display.padding.y);
+  }
+
+  // Calculate pixel pitch (inches per pixel)
+  const pixelPitchX = display.size.x / display.resolution.x;
+  const pixelPitchY = display.size.y / display.resolution.y;
+
+  // Calculate grid spacing in pixels
+  const gridSpacingX = grid.spacing / pixelPitchX;
+  const gridSpacingY = grid.spacing / pixelPitchY;
+
+  // Calculate total grid size in pixels (must match shader calculation)
+  // This matches the shader: gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0
+  const gridWidthPx = gridSpacingX * grid.fixedGridCount.x + grid.lineThickness / 2.0;
+  const gridHeightPx = gridSpacingY * grid.fixedGridCount.y + grid.lineThickness / 2.0;
+
+  let originX: number;
+  let originY: number;
+
+  // If grid fits horizontally, center it; otherwise align left
+  if (gridWidthPx <= display.resolution.x) {
+    originX = (display.resolution.x - gridWidthPx) / 2.0;
+  } else {
+    originX = 0;
+  }
+
+  // If grid fits vertically, center it; otherwise align top
+  if (gridHeightPx <= display.resolution.y) {
+    originY = (display.resolution.y - gridHeightPx) / 2.0;
+  } else {
+    // Grid overflows - start at top (Y=0 in screen coordinates)
+    originY = 0;
+  }
+
+  return new THREE.Vector2(originX, originY);
 }
 
 /**
@@ -177,11 +231,11 @@ function distanceToHexCenter(position: THREE.Vector2, spacing: THREE.Vector2): T
 
 /**
  * Snaps a position to the nearest grid intersection based on the current grid configuration
- * @param position Position to snap (in normalized 0-1 coordinates)
+ * @param position Position to snap (in screen coordinates, relative to center)
  * @param grid Grid configuration
  * @param display Display properties
  * @param centerOnly For hex grids, whether to snap to centers only (used for measurements)
- * @returns Snapped position (in normalized 0-1 coordinates)
+ * @returns Snapped position (in screen coordinates, relative to center)
  */
 export function snapToGrid(
   position: THREE.Vector2,
@@ -195,7 +249,60 @@ export function snapToGrid(
   // Compute the grid spacing in pixels
   const gridSpacingPixels = new THREE.Vector2(grid.spacing * pixelsPerInch.x, grid.spacing * pixelsPerInch.y);
 
+  // In Map defined mode, we need to adjust for the grid origin and shader offset
+  if (grid.gridMode === GridMode.MapDefined && grid.fixedGridCount) {
+    // Get the grid origin in screen coordinates
+    const gridOrigin = getGridOrigin(grid, display);
+
+    // Convert position from center-relative to top-left relative (screen coords)
+    const screenPos = new THREE.Vector2(
+      position.x + display.resolution.x / 2,
+      display.resolution.y / 2 - position.y // Flip Y axis
+    );
+
+    // Convert to grid-relative coordinates
+    let gridRelativePos = new THREE.Vector2(screenPos.x - gridOrigin.x, screenPos.y - gridOrigin.y);
+
+    // Account for the shader offset (t / 4.0) that shifts the visual grid lines
+    const shaderOffset = grid.lineThickness / 4.0;
+    gridRelativePos.x -= shaderOffset;
+    gridRelativePos.y -= shaderOffset;
+
+    let snappedGridPos: THREE.Vector2;
+
+    if (grid.gridType === GridType.Square) {
+      // For square grids, snap to cell centers (half-spacing increments)
+      const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
+      snappedGridPos = snapToSquareGrid(gridRelativePos, halfSpacing);
+    } else {
+      // For hex grids, use center-only snapping if requested (e.g., for measurements)
+      if (centerOnly) {
+        snappedGridPos = snapToHexCenter(gridRelativePos, gridSpacingPixels);
+      } else {
+        // Otherwise allow snapping to vertices and edges too
+        snappedGridPos = distanceToHexCenter(gridRelativePos, gridSpacingPixels);
+      }
+    }
+
+    // Add back the shader offset
+    snappedGridPos.x += shaderOffset;
+    snappedGridPos.y += shaderOffset;
+
+    // Convert back to screen coordinates
+    const snappedScreenPos = new THREE.Vector2(snappedGridPos.x + gridOrigin.x, snappedGridPos.y + gridOrigin.y);
+
+    // Convert back to center-relative coordinates
+    const result = new THREE.Vector2(
+      snappedScreenPos.x - display.resolution.x / 2,
+      display.resolution.y / 2 - snappedScreenPos.y // Flip Y axis back
+    );
+
+    return result;
+  }
+
+  // Fill space mode - use the original simple logic
   if (grid.gridType === GridType.Square) {
+    // For square grids, snap to cell centers (half-spacing increments)
     const halfSpacing = new THREE.Vector2(gridSpacingPixels.x / 2.0, gridSpacingPixels.y / 2.0);
     return snapToSquareGrid(position, halfSpacing);
   } else {
