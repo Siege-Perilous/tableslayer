@@ -1,6 +1,50 @@
 import type { StageProps } from '@tableslayer/ui';
-import { DrawMode, MapLayerType, ToolType } from '@tableslayer/ui';
+import { DrawMode, GridMode, MapLayerType, ToolType } from '@tableslayer/ui';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
+
+// Calculate grid-snapped position for arrow key movement
+function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', direction: 1 | -1): number {
+  // In Fixed Count mode, move by one grid square
+  if ((stageProps.grid.gridMode || 0) === GridMode.FixedCount && stageProps.grid.fixedGridCount) {
+    // Get current offset
+    const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
+
+    // Calculate pixel pitch (inches per pixel)
+    const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
+
+    // Calculate grid spacing in pixels (this is how the grid is actually drawn)
+    const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
+
+    // The map offset is in screen space pixels. The grid is drawn at a fixed size on screen.
+    // To move the map by one visual grid square, we move by the grid spacing in pixels.
+    // We do NOT scale by zoom - the zoom affects how the map IMAGE is scaled, not the movement.
+    const mapMovementPerGrid = gridSpacingPx;
+
+    // Simply move by one grid unit from current position
+    // Don't snap first - just move by the exact grid increment
+    const newOffset = currentOffset + direction * mapMovementPerGrid;
+
+    console.log('[GRID-SNAP Arrow]', {
+      axis,
+      direction,
+      gridSpacing: stageProps.grid.spacing,
+      pixelPitch,
+      gridSpacingPx,
+      zoom: stageProps.map.zoom,
+      mapMovementPerGrid,
+      currentOffset,
+      newOffset,
+      moveDistance: direction * mapMovementPerGrid,
+      totalGridsMoved: (newOffset - currentOffset) / mapMovementPerGrid
+    });
+
+    return newOffset;
+  }
+
+  // Default to 1px movement in AutoFit mode
+  const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
+  return currentOffset + direction;
+}
 
 export function handleKeyCommands(
   event: KeyboardEvent,
@@ -172,36 +216,36 @@ export function handleKeyCommands(
       handleSelectActiveControl('none');
       return 'none';
 
-    // Precise map movement with Shift+Arrow keys (1px increments)
+    // Precise map movement with Shift+Arrow keys
     case 'ArrowLeft':
       if (event.shiftKey) {
         event.preventDefault();
-        const currentX = stageProps.map.offset.x;
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], currentX - 1, 'control');
+        const newX = calculateGridSnappedOffset(stageProps, 'x', -1);
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
       }
       break;
 
     case 'ArrowRight':
       if (event.shiftKey) {
         event.preventDefault();
-        const currentX = stageProps.map.offset.x;
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], currentX + 1, 'control');
+        const newX = calculateGridSnappedOffset(stageProps, 'x', 1);
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
       }
       break;
 
     case 'ArrowUp':
       if (event.shiftKey) {
         event.preventDefault();
-        const currentY = stageProps.map.offset.y;
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], currentY - 1, 'control');
+        const newY = calculateGridSnappedOffset(stageProps, 'y', 1); // Inverted: up is positive Y
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
       }
       break;
 
     case 'ArrowDown':
       if (event.shiftKey) {
         event.preventDefault();
-        const currentY = stageProps.map.offset.y;
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], currentY + 1, 'control');
+        const newY = calculateGridSnappedOffset(stageProps, 'y', -1); // Inverted: down is negative Y
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
       }
       break;
   }

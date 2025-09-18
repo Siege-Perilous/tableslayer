@@ -14,7 +14,8 @@
     addToast,
     ToolType,
     type HoveredMarker,
-    MarkerVisibility
+    MarkerVisibility,
+    GridMode
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -1644,10 +1645,58 @@
   };
 
   function onMapPan(dx: number, dy: number) {
-    const newOffsetX = stageProps.map.offset.x + dx;
-    const newOffsetY = stageProps.map.offset.y + dy;
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
+    // In Fixed Count mode, snap movement to grid increments
+    if ((stageProps.grid.gridMode || 0) === GridMode.FixedCount && stageProps.grid.fixedGridCount) {
+      // Calculate pixel pitch (inches per pixel)
+      const pixelPitchX = stageProps.display.size.x / stageProps.display.resolution.x;
+      const pixelPitchY = stageProps.display.size.y / stageProps.display.resolution.y;
+
+      // Calculate grid spacing in pixels
+      const gridSpacingX = stageProps.grid.spacing / pixelPitchX;
+      const gridSpacingY = stageProps.grid.spacing / pixelPitchY;
+
+      // Grid spacing is fixed on screen, not affected by map zoom
+      const scaledGridSpacingX = gridSpacingX;
+      const scaledGridSpacingY = gridSpacingY;
+
+      // Snap the current position to grid first
+      const currentSnappedX = Math.round(stageProps.map.offset.x / scaledGridSpacingX) * scaledGridSpacingX;
+      const currentSnappedY = Math.round(stageProps.map.offset.y / scaledGridSpacingY) * scaledGridSpacingY;
+
+      // Calculate how many grid units to move based on the drag distance
+      const gridUnitsX = Math.round(dx / scaledGridSpacingX);
+      const gridUnitsY = Math.round(dy / scaledGridSpacingY);
+
+      // Only move if we've dragged at least half a grid unit
+      if (gridUnitsX !== 0 || gridUnitsY !== 0) {
+        const newOffsetX = currentSnappedX + gridUnitsX * scaledGridSpacingX;
+        const newOffsetY = currentSnappedY + gridUnitsY * scaledGridSpacingY;
+
+        console.log('[GRID-SNAP Mouse]', {
+          dx,
+          dy,
+          gridSpacing: stageProps.grid.spacing,
+          pixelPitch: { x: pixelPitchX, y: pixelPitchY },
+          gridSpacingPx: { x: gridSpacingX, y: gridSpacingY },
+          zoom: stageProps.map.zoom,
+          scaledGridSpacing: { x: scaledGridSpacingX, y: scaledGridSpacingY },
+          currentOffset: { x: stageProps.map.offset.x, y: stageProps.map.offset.y },
+          currentSnapped: { x: currentSnappedX, y: currentSnappedY },
+          gridUnits: { x: gridUnitsX, y: gridUnitsY },
+          newOffset: { x: newOffsetX, y: newOffsetY },
+          gridUnitsFromOrigin: { x: newOffsetX / scaledGridSpacingX, y: newOffsetY / scaledGridSpacingY }
+        });
+
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
+      }
+    } else {
+      // Normal free movement in AutoFit mode
+      const newOffsetX = stageProps.map.offset.x + dx;
+      const newOffsetY = stageProps.map.offset.y + dy;
+      queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
+      queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
+    }
   }
 
   function onMapRotate(angle: number) {
