@@ -32,7 +32,8 @@
     stageProps,
     party,
     errors,
-    stage
+    stage,
+    selectedScene
   }: {
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
@@ -194,10 +195,12 @@
     }
 
     // If grid fits vertically, center it; otherwise align top
+    // In UV space: Y=0 is bottom, Y=resolution is top
+    // To start at top when overflowing: originY = resolution - gridSize
     if (gridHeightPx <= stageProps.display.resolution.y) {
       gridOriginY = (stageProps.display.resolution.y - gridHeightPx) / 2.0;
     } else {
-      gridOriginY = 0;
+      gridOriginY = stageProps.display.resolution.y - gridHeightPx;
     }
 
     // Calculate how many pixels per map grid square
@@ -228,6 +231,18 @@
 
     const gridTopWebGL = -(stageProps.display.resolution.y / 2) + gridOriginY;
     const offsetY = gridTopWebGL + scaledMapHeight / 2;
+
+    console.log('[CLIENT alignMapToGrid]', {
+      gridOrigin: { x: gridOriginX, y: gridOriginY },
+      gridSize: { widthPx: gridWidthPx, heightPx: gridHeightPx },
+      gridTopWebGL,
+      scaledMap: { width: scaledMapWidth, height: scaledMapHeight },
+      mapGridSquare: {
+        original: { width: mapGridSquareWidth, height: mapGridSquareHeight },
+        scaled: { width: mapGridSquareWidth * zoom, height: mapGridSquareHeight * zoom }
+      },
+      finalValues: { rotation, zoom, offsetX, offsetY }
+    });
 
     // Apply the calculated values
     queuePropertyUpdate(stageProps, ['map', 'rotation'], rotation, 'control');

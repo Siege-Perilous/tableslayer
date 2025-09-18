@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
+  import { IconButton, Icon, FormControl, Input, Popover, Button, ColorMode, GridMode } from '@tableslayer/ui';
+  import MapUploadPopover from '../MapUploadPopover.svelte';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
+  import { goto } from '$app/navigation';
   import {
     IconCheck,
     IconX,
@@ -8,11 +10,13 @@
     IconChevronDown,
     IconPlayerPlayFilled,
     IconPlayerPauseFilled,
-    IconGripVertical
+    IconGripVertical,
+    IconPlus,
+    IconRefresh
   } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
-  import { UpdateMapImage, openFileDialog } from './';
-  import { hasThumb, generateSmallThumbnailUrl, isVideoFile } from '$lib/utils';
+  import { UpdateMapImage } from './';
+  import { hasThumb, generateSmallThumbnailUrl, generateLargeImageUrl, isVideoFile } from '$lib/utils';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
@@ -51,7 +55,6 @@
     isLocallyReordering?: boolean;
   } = $props();
 
-  let file = $state<FileList | null>(null);
   let formIsLoading = $state(false);
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
@@ -100,7 +103,7 @@
     }
   });
 
-  const handleCreateScene = async (order: number) => {
+  const handleCreateScene = async (order: number, gridWidth?: number, gridHeight?: number) => {
     formIsLoading = true;
     let mapLocation: string | undefined = undefined;
 
@@ -118,16 +121,26 @@
       mapLocation = uploadedFile.location;
     }
 
+    // Prepare scene data with grid settings if provided
+    const sceneData: any = {
+      gameSessionId: gameSession.id,
+      name: 'New Scene',
+      order,
+      mapLocation
+    };
+
+    // If grid dimensions are provided, set Fixed Count mode
+    if (gridWidth !== undefined && gridHeight !== undefined) {
+      sceneData.gridMode = GridMode.FixedCount;
+      sceneData.gridFixedCountX = gridWidth;
+      sceneData.gridFixedCountY = gridHeight;
+    }
+
     await handleMutation({
       mutation: () =>
         $createNewScene.mutateAsync({
           partyId: party.id,
-          sceneData: {
-            gameSessionId: gameSession.id,
-            name: 'New Scene',
-            order,
-            mapLocation
-          }
+          sceneData
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
@@ -160,7 +173,6 @@
           );
         }
         isNewSceneAdded = true;
-        file = null;
         setTimeout(() => {
           isNewSceneAdded = false;
         }, 3000);
@@ -413,20 +425,6 @@
   }
 
   let contextSceneId = $state('');
-  const handleMapImageChange = (sceneId: string) => {
-    contextSceneId = sceneId;
-    // Use requestAnimationFrame to ensure the component re-renders with the new sceneId first
-    requestAnimationFrame(() => {
-      openFileDialog();
-    });
-  };
-
-  const handleFileChange = (event: Event) => {
-    event.preventDefault();
-    if (file && file.length) {
-      handleCreateScene(scenes.length + 1);
-    }
-  };
 
   const handleContextMenu = (event: MouseEvent, sceneId: string) => {
     // Prevent context menu from opening if we just finished dragging
@@ -475,24 +473,96 @@
     {#if needsToUpgrade}
       <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
     {:else}
-      <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
-        {#snippet input({ inputProps })}
-          <Button class="scene__inputBtn" isLoading={formIsLoading} disabled={formIsLoading}>
-            {#snippet start()}
-              <Icon Icon={IconPhoto} size="1.25rem" />
-            {/snippet}
-            Add scene
-            <FileInput
-              variant="transparent"
-              {...inputProps}
-              type="file"
-              accept="image/*,video/*,.gif,.mp4,.webm,.mov,.avi"
-              bind:files={file}
-              onchange={handleFileChange}
-            />
-          </Button>
-        {/snippet}
-      </FormControl>
+      <MapUploadPopover
+        buttonText="Add scene"
+        onSubmit={async (file, gridWidth, gridHeight) => {
+          formIsLoading = true;
+
+          // Upload the file
+          const uploadedFile = await handleMutation({
+            mutation: () => $uploadFile.mutateAsync({ file, folder: 'map' }),
+            formLoadingState: (loading) => (formIsLoading = loading),
+            toastMessages: {
+              success: { title: 'File uploaded' },
+              error: { title: 'Error uploading file', body: (error) => error.message }
+            }
+          });
+
+          if (!uploadedFile) {
+            formIsLoading = false;
+            return;
+          }
+
+          // Create the scene with the uploaded file and grid dimensions
+          const sceneData: any = {
+            gameSessionId: gameSession.id,
+            name: 'New Scene',
+            order: scenes.length + 1,
+            mapLocation: uploadedFile.location
+          };
+
+          // If grid dimensions are provided, set Fixed Count mode
+          if (gridWidth !== undefined && gridHeight !== undefined) {
+            sceneData.gridMode = GridMode.FixedCount;
+            sceneData.gridFixedCountX = gridWidth;
+            sceneData.gridFixedCountY = gridHeight;
+          }
+
+          await handleMutation({
+            mutation: () =>
+              $createNewScene.mutateAsync({
+                partyId: party.id,
+                sceneData
+              }),
+            formLoadingState: (loading) => (formIsLoading = loading),
+            onError: (error) => {
+              createSceneErrors = error;
+              devLog('scene', 'Error creating scene:', error);
+            },
+            onSuccess: (response) => {
+              if (partyData && response?.scene) {
+                const newScene = response.scene;
+                partyData.addScene({
+                  id: newScene.id,
+                  name: newScene.name,
+                  order: newScene.order,
+                  mapLocation: newScene.mapLocation || undefined,
+                  mapThumbLocation: newScene.mapThumbLocation || undefined,
+                  gameSessionId: newScene.gameSessionId,
+                  thumb: hasThumb(newScene)
+                    ? {
+                        resizedUrl: newScene.thumb.resizedUrl,
+                        originalUrl: newScene.thumb.url
+                      }
+                    : undefined
+                });
+              } else {
+                devWarn(
+                  'scene',
+                  'Cannot add scene to Y.js - partyData not available or response missing scene:',
+                  !!partyData,
+                  !!response?.scene
+                );
+              }
+              isNewSceneAdded = true;
+              setTimeout(() => {
+                isNewSceneAdded = false;
+              }, 3000);
+
+              // Navigate to the new scene
+              if (response?.scene) {
+                goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
+              }
+            },
+            toastMessages: {
+              success: { title: 'Scene created successfully' },
+              error: { title: 'Error creating scene' }
+            }
+          });
+        }}
+        isLoading={formIsLoading}
+        mode="create"
+      />
     {/if}
   </div>
   <div class="scene__list">
@@ -604,16 +674,101 @@
             </ColorMode>
           {/snippet}
           {#snippet content({ contentProps })}
-            <button
-              class={['scene__menuItem', needsToUpgrade && 'scene__menuItem--disabled']}
-              disabled={needsToUpgrade}
-              onclick={() => {
-                handleCreateScene(scene.order + 1);
-                contentProps.close();
-              }}
-            >
-              New scene
-            </button>
+            <div style="padding: var(--space-2) var(--space-3);">
+              <MapUploadPopover
+                buttonText="New scene"
+                buttonVariant="ghost"
+                buttonIcon={IconPlus}
+                onSubmit={async (file, gridWidth, gridHeight) => {
+                  contentProps.close();
+                  formIsLoading = true;
+
+                  // Upload the file
+                  const uploadedFile = await handleMutation({
+                    mutation: () => $uploadFile.mutateAsync({ file, folder: 'map' }),
+                    formLoadingState: (loading) => (formIsLoading = loading),
+                    toastMessages: {
+                      success: { title: 'File uploaded' },
+                      error: { title: 'Error uploading file', body: (error) => error.message }
+                    }
+                  });
+
+                  if (!uploadedFile) {
+                    formIsLoading = false;
+                    return;
+                  }
+
+                  // Create the scene with the uploaded file and grid dimensions
+                  const sceneData: any = {
+                    gameSessionId: gameSession.id,
+                    name: 'New Scene',
+                    order: scene.order + 1,
+                    mapLocation: uploadedFile.location
+                  };
+
+                  // If grid dimensions are provided, set Fixed Count mode
+                  if (gridWidth !== undefined && gridHeight !== undefined) {
+                    sceneData.gridMode = GridMode.FixedCount;
+                    sceneData.gridFixedCountX = gridWidth;
+                    sceneData.gridFixedCountY = gridHeight;
+                  }
+
+                  await handleMutation({
+                    mutation: () =>
+                      $createNewScene.mutateAsync({
+                        partyId: party.id,
+                        sceneData
+                      }),
+                    formLoadingState: (loading) => (formIsLoading = loading),
+                    onError: (error) => {
+                      createSceneErrors = error;
+                      devLog('scene', 'Error creating scene:', error);
+                    },
+                    onSuccess: (response) => {
+                      if (partyData && response?.scene) {
+                        const newScene = response.scene;
+                        partyData.addScene({
+                          id: newScene.id,
+                          name: newScene.name,
+                          order: newScene.order,
+                          mapLocation: newScene.mapLocation || undefined,
+                          mapThumbLocation: newScene.mapThumbLocation || undefined,
+                          gameSessionId: newScene.gameSessionId,
+                          thumb: hasThumb(newScene)
+                            ? {
+                                resizedUrl: newScene.thumb.resizedUrl,
+                                originalUrl: newScene.thumb.url
+                              }
+                            : undefined
+                        });
+                      } else {
+                        devWarn(
+                          'scene',
+                          'Cannot add scene to Y.js - partyData not available or response missing scene:',
+                          !!partyData,
+                          !!response?.scene
+                        );
+                      }
+                      isNewSceneAdded = true;
+                      setTimeout(() => {
+                        isNewSceneAdded = false;
+                      }, 3000);
+
+                      // Navigate to the new scene
+                      if (response?.scene) {
+                        goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
+                      }
+                    },
+                    toastMessages: {
+                      success: { title: 'Scene created successfully' },
+                      error: { title: 'Error creating scene' }
+                    }
+                  });
+                }}
+                isLoading={formIsLoading || needsToUpgrade}
+                mode="create"
+              />
+            </div>
             <button
               class="scene__menuItem"
               onclick={() => {
@@ -633,15 +788,117 @@
             >
               Duplicate scene
             </button>
-            <button
-              class="scene__menuItem"
-              onclick={() => {
-                handleMapImageChange(scene.id);
-                contentProps.close();
-              }}
-            >
-              Change map image
-            </button>
+            <div style="padding: var(--space-2) var(--space-3);">
+              <MapUploadPopover
+                buttonText="Change map image"
+                buttonVariant="ghost"
+                buttonIcon={IconRefresh}
+                onSubmit={async (file, gridWidth, gridHeight) => {
+                  contentProps.close();
+                  formIsLoading = true;
+
+                  // Get current map location
+                  const currentMapLocation =
+                    partyData?.getScenesList()?.find((s) => s.id === scene.id)?.mapLocation || null;
+
+                  // Upload the file
+                  const uploadedFile = await handleMutation({
+                    mutation: () =>
+                      $uploadFile.mutateAsync({
+                        file,
+                        folder: 'map',
+                        id: scene.id,
+                        currentUrl: currentMapLocation
+                      }),
+                    formLoadingState: (loading) => (formIsLoading = loading),
+                    toastMessages: {
+                      success: { title: 'File uploaded' },
+                      error: { title: 'Error uploading file', body: (err) => err.message || 'Unknown error' }
+                    }
+                  });
+
+                  if (!uploadedFile) {
+                    formIsLoading = false;
+                    return;
+                  }
+
+                  // Prepare scene update data
+                  const sceneData: any = {
+                    mapLocation: uploadedFile.location
+                  };
+
+                  // If grid dimensions are provided, set Fixed Count mode
+                  if (gridWidth !== undefined && gridHeight !== undefined) {
+                    sceneData.gridMode = GridMode.FixedCount;
+                    sceneData.gridFixedCountX = gridWidth;
+                    sceneData.gridFixedCountY = gridHeight;
+                  }
+
+                  await handleMutation({
+                    mutation: () =>
+                      $updateScene.mutateAsync({
+                        sceneId: scene.id,
+                        partyId: party.id,
+                        sceneData
+                      }),
+                    formLoadingState: (loading) => (formIsLoading = loading),
+                    onSuccess: (response) => {
+                      // Update Y.js with the updated scene data
+                      if (partyData && response?.scene) {
+                        const updatedScene = response.scene;
+                        partyData.updateScene(scene.id, {
+                          mapLocation: updatedScene.mapLocation || undefined,
+                          mapThumbLocation: updatedScene.mapThumbLocation || undefined,
+                          thumb: hasThumb(updatedScene)
+                            ? {
+                                resizedUrl: updatedScene.thumb.resizedUrl,
+                                originalUrl: updatedScene.thumb.url
+                              }
+                            : undefined
+                        });
+
+                        // Also update the stageProps with the new map URL and grid settings
+                        const currentSceneData = partyData.getSceneData(scene.id);
+                        if (currentSceneData && currentSceneData.stageProps && updatedScene.mapLocation) {
+                          const newMapUrl = generateLargeImageUrl(updatedScene.mapLocation);
+                          const updatedStageProps = {
+                            ...currentSceneData.stageProps,
+                            map: {
+                              ...currentSceneData.stageProps.map,
+                              url: newMapUrl
+                            }
+                          };
+
+                          // If grid dimensions were provided, update grid mode
+                          if (gridWidth !== undefined && gridHeight !== undefined) {
+                            updatedStageProps.grid = {
+                              ...updatedStageProps.grid,
+                              gridMode: GridMode.FixedCount,
+                              fixedGridCount: { x: gridWidth, y: gridHeight }
+                            };
+                          }
+
+                          partyData.updateSceneStageProps(scene.id, updatedStageProps);
+                        } else {
+                          devWarn('scene', 'Could not update stageProps with new map URL');
+                        }
+                      }
+
+                      // Navigate to the scene if not already there
+                      if (activeSceneId !== scene.id) {
+                        goto(`/${party.slug}/${gameSession.slug}/${scene.order}`);
+                      }
+                    },
+                    toastMessages: {
+                      success: { title: 'Map image updated' },
+                      error: { title: 'Error updating map image', body: (err) => err.message || 'Unknown error' }
+                    }
+                  });
+                }}
+                isLoading={formIsLoading}
+                mode="replace"
+              />
+            </div>
             <button
               class="scene__menuItem"
               onclick={() => {

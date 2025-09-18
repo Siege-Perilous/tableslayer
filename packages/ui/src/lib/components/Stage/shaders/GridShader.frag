@@ -119,9 +119,12 @@ void main() {
       (uResolution_px.x - gridSize_px.x) / 2.0 : 0.0;
 
     // - If grid fits vertically, center it
-    // - If grid overflows vertically, align top (which is bottom in screen coords)
+    // - If grid overflows vertically, align to top of screen (bleed goes down)
+    // In UV space: Y=0 is bottom, Y=uResolution_px.y is top
+    // To start at top when overflowing: originY = uResolution_px.y - gridSize_px.y
     float originY = gridSize_px.y <= uResolution_px.y ?
-      (uResolution_px.y - gridSize_px.y) / 2.0 : 0.0;
+      (uResolution_px.y - gridSize_px.y) / 2.0 :
+      uResolution_px.y - gridSize_px.y;
 
     gridOrigin_px = vec2(originX, originY);
   }

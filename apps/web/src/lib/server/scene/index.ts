@@ -235,6 +235,187 @@ export const createScene = async (
 
   const sceneId = data.id ?? uuidv4();
 
+  // Calculate map alignment if Fixed Count mode with dimensions
+  let mapRotation = data.mapRotation ?? 0;
+  let mapZoom = data.mapZoom ?? 1.0;
+  let mapOffsetX = data.mapOffsetX ?? 0;
+  let mapOffsetY = data.mapOffsetY ?? 0;
+
+  // If grid dimensions are provided and we're in Fixed Count mode, calculate alignment
+  if (data.gridMode === 1 && data.gridFixedCountX && data.gridFixedCountY && fileLocation) {
+    console.log('[createScene] Calculating map alignment for Fixed Count mode:', {
+      gridFixedCountX: data.gridFixedCountX,
+      gridFixedCountY: data.gridFixedCountY,
+      mapLocation: fileLocation
+    });
+
+    // Get map dimensions using the existing transformImage function
+    try {
+      const imageResult = await transformImage(fileLocation, 'format=json');
+      const originalWidth = imageResult.details.original.width || imageResult.details.width;
+      const originalHeight = imageResult.details.original.height || imageResult.details.height;
+
+      // The client will receive a scaled-down version (max 3000x3000)
+      // Calculate the actual dimensions the client will see
+      const maxDimension = 3000;
+      let mapWidth = originalWidth;
+      let mapHeight = originalHeight;
+
+      if (originalWidth > maxDimension || originalHeight > maxDimension) {
+        const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
+        mapWidth = Math.round(originalWidth * scale);
+        mapHeight = Math.round(originalHeight * scale);
+        console.log(
+          '[createScene] Image will be scaled from',
+          originalWidth + 'x' + originalHeight,
+          'to',
+          mapWidth + 'x' + mapHeight
+        );
+      }
+
+      if (mapWidth && mapHeight) {
+        const gridCountX = data.gridFixedCountX;
+        const gridCountY = data.gridFixedCountY;
+
+        // Display settings - Always use party defaults for TV size
+        const displayResolutionX = party.defaultDisplayResolutionX;
+        const displayResolutionY = party.defaultDisplayResolutionY;
+        const displaySizeX = party.defaultDisplaySizeX;
+        const displaySizeY = party.defaultDisplaySizeY;
+        const gridSpacing = data.gridSpacing ?? party.defaultGridSpacing;
+        const gridLineThickness = data.gridLineThickness ?? party.defaultLineThickness;
+
+        let effectiveMapWidth = mapWidth;
+        let effectiveMapHeight = mapHeight;
+
+        // Calculate grid square sizes for both orientations
+        const straightSquareWidth = mapWidth / gridCountX;
+        const straightSquareHeight = mapHeight / gridCountY;
+        const straightSquareDiff = Math.abs(straightSquareWidth - straightSquareHeight);
+
+        const rotatedSquareWidth = mapHeight / gridCountX;
+        const rotatedSquareHeight = mapWidth / gridCountY;
+        const rotatedSquareDiff = Math.abs(rotatedSquareWidth - rotatedSquareHeight);
+
+        console.log('[createScene] Rotation check:', {
+          map: { width: mapWidth, height: mapHeight },
+          grid: { countX: gridCountX, countY: gridCountY },
+          straight: {
+            squareWidth: straightSquareWidth,
+            squareHeight: straightSquareHeight,
+            diff: straightSquareDiff
+          },
+          rotated: {
+            squareWidth: rotatedSquareWidth,
+            squareHeight: rotatedSquareHeight,
+            diff: rotatedSquareDiff
+          }
+        });
+
+        // Choose orientation that gives most square grid cells
+        if (rotatedSquareDiff < straightSquareDiff) {
+          mapRotation = 90;
+          effectiveMapWidth = mapHeight;
+          effectiveMapHeight = mapWidth;
+          console.log('[createScene] Rotating map 90 degrees for better grid square match');
+        }
+
+        // Calculate pixel pitch (inches per pixel)
+        const pixelPitchX = displaySizeX / displayResolutionX;
+        const pixelPitchY = displaySizeY / displayResolutionY;
+
+        // Calculate grid spacing in pixels
+        const gridSpacingX = gridSpacing / pixelPitchX;
+        const gridSpacingY = gridSpacing / pixelPitchY;
+
+        // Calculate total grid size in pixels
+        const gridWidthPx = gridSpacingX * gridCountX + gridLineThickness / 2.0;
+        const gridHeightPx = gridSpacingY * gridCountY + gridLineThickness / 2.0;
+
+        // Calculate grid origin (matching shader logic)
+        let gridOriginX: number;
+        let gridOriginY: number;
+
+        // If grid fits horizontally, center it; otherwise align left
+        if (gridWidthPx <= displayResolutionX) {
+          gridOriginX = (displayResolutionX - gridWidthPx) / 2.0;
+        } else {
+          gridOriginX = 0;
+        }
+
+        // If grid fits vertically, center it; otherwise align top
+        // In UV space: Y=0 is bottom, Y=resolution is top
+        // To start at top when overflowing: originY = resolution - gridSize
+        if (gridHeightPx <= displayResolutionY) {
+          gridOriginY = (displayResolutionY - gridHeightPx) / 2.0;
+        } else {
+          gridOriginY = displayResolutionY - gridHeightPx;
+        }
+
+        // Calculate how many pixels per map grid square in the original image
+        const mapGridSquareWidth = effectiveMapWidth / gridCountX;
+        const mapGridSquareHeight = effectiveMapHeight / gridCountY;
+
+        // Calculate zoom so map grid squares match display grid squares
+        // We want: mapGridSquare * zoom = gridSpacing (in pixels)
+        const zoomX = gridSpacingX / mapGridSquareWidth;
+        const zoomY = gridSpacingY / mapGridSquareHeight;
+
+        // Use average for uniform scaling
+        mapZoom = (zoomX + zoomY) / 2;
+
+        console.log('[createScene] Zoom calculation:', {
+          mapDimensions: { width: effectiveMapWidth, height: effectiveMapHeight },
+          gridCount: { x: gridCountX, y: gridCountY },
+          mapGridSquare: { width: mapGridSquareWidth, height: mapGridSquareHeight },
+          gridSpacingPx: { x: gridSpacingX, y: gridSpacingY },
+          zoom: { x: zoomX, y: zoomY, final: mapZoom },
+          pixelPitch: { x: pixelPitchX, y: pixelPitchY },
+          display: {
+            resolution: { x: displayResolutionX, y: displayResolutionY },
+            size: { x: displaySizeX, y: displaySizeY }
+          }
+        });
+
+        // Calculate the scaled map dimensions
+        const scaledMapWidth = effectiveMapWidth * mapZoom;
+        const scaledMapHeight = effectiveMapHeight * mapZoom;
+
+        // Position map so its top-left aligns with grid's top-left
+        // For X: align map's left edge with grid's left edge
+        mapOffsetX = gridOriginX - displayResolutionX / 2 + scaledMapWidth / 2;
+
+        // For Y: Align map's top edge with grid's top edge
+        // In WebGL coordinate system: -Y is up (toward top of screen), +Y is down
+        // Screen top = -(resolution.y / 2), Screen bottom = +(resolution.y / 2)
+        // Grid top in screen coords: gridOriginY (0 when overflow, centered value when fits)
+        // Grid top in WebGL: -(resolution.y / 2) + gridOriginY
+        // Map center position for top alignment: gridTopWebGL + (scaledMapHeight / 2)
+
+        const gridTopWebGL = -(displayResolutionY / 2) + gridOriginY;
+        mapOffsetY = gridTopWebGL + scaledMapHeight / 2;
+
+        console.log('[createScene] Calculated alignment:', {
+          gridOrigin: { x: gridOriginX, y: gridOriginY },
+          gridSize: { widthPx: gridWidthPx, heightPx: gridHeightPx },
+          gridTopWebGL,
+          scaledMap: { width: scaledMapWidth, height: scaledMapHeight },
+          targetGridSquareSize: gridSpacing + ' inches = ' + gridSpacingX + ' pixels',
+          actualMapGridSquareSize: scaledMapWidth / gridCountX + ' x ' + scaledMapHeight / gridCountY + ' pixels',
+          finalValues: {
+            mapRotation,
+            mapZoom,
+            mapOffsetX,
+            mapOffsetY
+          }
+        });
+      }
+    } catch (error) {
+      console.error('[createScene] Error getting image dimensions:', error);
+      // Continue without auto-alignment if we can't get dimensions
+    }
+  }
+
   await db
     .insert(sceneTable)
     .values({
@@ -243,15 +424,22 @@ export const createScene = async (
       name,
       order,
       mapLocation: fileLocation,
-      gridType: party.defaultGridType,
+      mapRotation,
+      mapZoom,
+      mapOffsetX,
+      mapOffsetY,
+      gridType: data.gridType ?? party.defaultGridType,
+      gridMode: data.gridMode ?? 0,
+      gridFixedCountX: data.gridFixedCountX ?? null,
+      gridFixedCountY: data.gridFixedCountY ?? null,
       displaySizeX: party.defaultDisplaySizeX,
       displaySizeY: party.defaultDisplaySizeY,
       displayResolutionX: party.defaultDisplayResolutionX,
       displayResolutionY: party.defaultDisplayResolutionY,
-      displayPaddingX: party.defaultDisplayPaddingX,
-      displayPaddingY: party.defaultDisplayPaddingY,
-      gridSpacing: party.defaultGridSpacing,
-      gridLineThickness: party.defaultLineThickness
+      displayPaddingX: data.displayPaddingX ?? party.defaultDisplayPaddingX,
+      displayPaddingY: data.displayPaddingY ?? party.defaultDisplayPaddingY,
+      gridSpacing: data.gridSpacing ?? party.defaultGridSpacing,
+      gridLineThickness: data.gridLineThickness ?? party.defaultLineThickness
     })
     .execute();
 
