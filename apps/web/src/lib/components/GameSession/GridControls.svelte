@@ -302,7 +302,7 @@
     {/snippet}
   </FormControl>
 </div>
-<Spacer />
+<Spacer size="0.5rem" />
 <FormControl label="Grid mode" name="gridMode" {errors}>
   {#snippet input({ inputProps })}
     <RadioButton
@@ -321,9 +321,9 @@
 <Text size="0.875" color="var(--fgMuted)" class="gridControls__explanation">
   Pick map defined if you know the exact number of grid units in your map.
 </Text>
-<Spacer />
+<Spacer size="0.5rem" />
 <Hr />
-<Spacer />
+<Spacer size="0.5rem" />
 <div class="gridControls">
   {#if !isMapDefinedMode}
     <FormControl label="Grid type" name="gridType" {errors}>
@@ -353,9 +353,6 @@
       in.
     {/snippet}
   </FormControl>
-</div>
-<Spacer />
-<div class="gridControls">
   <FormControl label="Line thickness" name="gridLineThickness" {errors}>
     {#snippet end()}
       px
@@ -390,10 +387,7 @@
       {/snippet}
     </FormControl>
   {/if}
-</div>
-{#if isMapDefinedMode}
-  <Spacer />
-  <div class="gridControls">
+  {#if isMapDefinedMode}
     <FormControl label="Grid width" name="mapDefinedGridX" {errors}>
       {#snippet input({ inputProps })}
         <Input
@@ -424,12 +418,10 @@
         sq.
       {/snippet}
     </FormControl>
-  </div>
-  <Spacer />
-  <div class="gridControls">
-    <Button onclick={alignMapToGrid} style="width: 100%">Size and align map to grid</Button>
-  </div>
-{/if}
+  {/if}
+</div>
+<Spacer />
+<Button onclick={alignMapToGrid} style="width: 100%">Auto fit map to grid</Button>
 <Spacer />
 <FormControl label="Grid Color" name="gridLineColor" {errors}>
   {#snippet input({ inputProps })}
