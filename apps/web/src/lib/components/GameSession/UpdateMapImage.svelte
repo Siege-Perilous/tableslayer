@@ -21,6 +21,8 @@
   import { hasThumb, generateLargeImageUrl } from '$lib/utils';
   import type { usePartyData } from '$lib/utils/yjs/stores';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
+  import { updateSceneSchema } from '$lib/db/app/schema';
+  import type { z } from 'zod';
 
   let {
     sceneId,
@@ -73,7 +75,7 @@
     const dimensions = extractDimensionsFromFilename(pickedFile.name);
 
     // Prepare scene update data
-    const sceneUpdateData: any = {
+    const sceneUpdateData: Partial<z.infer<typeof updateSceneSchema>> = {
       mapLocation: uploadedFile.location
     };
 

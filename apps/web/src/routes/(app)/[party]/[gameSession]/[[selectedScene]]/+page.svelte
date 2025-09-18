@@ -14,8 +14,7 @@
     addToast,
     ToolType,
     type HoveredMarker,
-    MarkerVisibility,
-    GridMode
+    MarkerVisibility
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';

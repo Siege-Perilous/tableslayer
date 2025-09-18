@@ -37,8 +37,7 @@
     stageProps,
     party,
     errors,
-    stage,
-    selectedScene
+    stage
   }: {
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;

@@ -20,7 +20,7 @@
     IconPlayerPauseFilled,
     IconGripVertical
   } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectScene } from '$lib/db/app/schema';
+  import type { SelectParty, SelectScene, InsertScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb, generateSmallThumbnailUrl, isVideoFile } from '$lib/utils';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
@@ -131,7 +131,7 @@
     }
 
     // Prepare scene data with grid settings if provided
-    const sceneData: any = {
+    const sceneData: Partial<InsertScene> = {
       gameSessionId: gameSession.id,
       name: 'New Scene',
       order,
