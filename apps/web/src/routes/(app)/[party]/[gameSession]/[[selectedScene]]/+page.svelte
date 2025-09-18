@@ -1650,7 +1650,7 @@
     const newOffsetY = stageProps.map.offset.y + dy;
 
     // Log mouse movement for debugging
-    if ((stageProps.grid.gridMode || 0) === GridMode.FixedCount) {
+    if ((stageProps.grid.gridMode || 0) === GridMode.MapDefined) {
       const pixelPitchX = stageProps.display.size.x / stageProps.display.resolution.x;
       const pixelPitchY = stageProps.display.size.y / stageProps.display.resolution.y;
       const gridSpacingX = stageProps.grid.spacing / pixelPitchX;

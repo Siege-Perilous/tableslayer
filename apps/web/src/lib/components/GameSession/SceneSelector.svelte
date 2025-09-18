@@ -140,9 +140,9 @@
 
     // If grid dimensions are provided, set Fixed Count mode
     if (gridWidth !== undefined && gridHeight !== undefined) {
-      sceneData.gridMode = GridMode.FixedCount;
-      sceneData.gridFixedCountX = gridWidth;
-      sceneData.gridFixedCountY = gridHeight;
+      sceneData.gridMode = GridMode.MapDefined;
+      sceneData.gridMapDefinedX = gridWidth;
+      sceneData.gridMapDefinedY = gridHeight;
     }
 
     await handleMutation({

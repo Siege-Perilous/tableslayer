@@ -242,10 +242,10 @@ export const createScene = async (
   let mapOffsetY = data.mapOffsetY ?? 0;
 
   // If grid dimensions are provided and we're in Fixed Count mode, calculate alignment
-  if (data.gridMode === 1 && data.gridFixedCountX && data.gridFixedCountY && fileLocation) {
+  if (data.gridMode === 1 && data.gridMapDefinedX && data.gridMapDefinedY && fileLocation) {
     console.log('[createScene] Calculating map alignment for Fixed Count mode:', {
-      gridFixedCountX: data.gridFixedCountX,
-      gridFixedCountY: data.gridFixedCountY,
+      gridMapDefinedX: data.gridMapDefinedX,
+      gridMapDefinedY: data.gridMapDefinedY,
       mapLocation: fileLocation
     });
 
@@ -274,8 +274,8 @@ export const createScene = async (
       }
 
       if (mapWidth && mapHeight) {
-        const gridCountX = data.gridFixedCountX;
-        const gridCountY = data.gridFixedCountY;
+        const gridCountX = data.gridMapDefinedX;
+        const gridCountY = data.gridMapDefinedY;
 
         // Display settings - Always use party defaults for TV size
         const displayResolutionX = party.defaultDisplayResolutionX;
@@ -430,8 +430,8 @@ export const createScene = async (
       mapOffsetY,
       gridType: data.gridType ?? party.defaultGridType,
       gridMode: data.gridMode ?? 0,
-      gridFixedCountX: data.gridFixedCountX ?? null,
-      gridFixedCountY: data.gridFixedCountY ?? null,
+      gridMapDefinedX: data.gridMapDefinedX ?? null,
+      gridMapDefinedY: data.gridMapDefinedY ?? null,
       displaySizeX: party.defaultDisplaySizeX,
       displaySizeY: party.defaultDisplaySizeY,
       displayResolutionX: party.defaultDisplayResolutionX,

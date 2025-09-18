@@ -155,10 +155,10 @@ export const buildSceneProps = (
     },
     grid: {
       gridType: (activeScene.gridType as GridType) ?? GridType.Square,
-      gridMode: (activeScene.gridMode as GridMode) ?? GridMode.AutoFit,
+      gridMode: (activeScene.gridMode as GridMode) ?? GridMode.FillSpace,
       fixedGridCount: {
-        x: activeScene.gridFixedCountX ?? 24,
-        y: activeScene.gridFixedCountY ?? 17
+        x: activeScene.gridMapDefinedX ?? 24,
+        y: activeScene.gridMapDefinedY ?? 17
       },
       spacing: activeScene.gridSpacing ?? 50,
       opacity: activeScene.gridOpacity ?? 0.5,

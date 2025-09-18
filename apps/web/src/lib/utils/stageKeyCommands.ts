@@ -7,7 +7,7 @@ let gridOrigin: { x?: number; y?: number } = {};
 
 // Snap the other axis if it's misaligned
 function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
-  if ((stageProps.grid.gridMode || 0) !== GridMode.FixedCount || !stageProps.grid.fixedGridCount) {
+  if ((stageProps.grid.gridMode || 0) !== GridMode.MapDefined || !stageProps.grid.fixedGridCount) {
     return;
   }
 
@@ -41,8 +41,8 @@ function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
 
 // Calculate grid-snapped position for arrow key movement
 function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', direction: 1 | -1): number {
-  // In Fixed Count mode, move by one grid square
-  if ((stageProps.grid.gridMode || 0) === GridMode.FixedCount && stageProps.grid.fixedGridCount) {
+  // In MapDefined mode, move by one grid square
+  if ((stageProps.grid.gridMode || 0) === GridMode.MapDefined && stageProps.grid.fixedGridCount) {
     // Get current offset
     const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
 
@@ -99,7 +99,7 @@ function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', dir
     return newOffset;
   }
 
-  // Default to 1px movement in AutoFit mode
+  // Default to 1px movement in FillSpace mode
   const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
   return currentOffset + direction;
 }

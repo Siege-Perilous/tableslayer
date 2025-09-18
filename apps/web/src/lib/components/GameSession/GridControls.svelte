@@ -17,7 +17,9 @@
     Input,
     IconButton,
     GridMode,
-    Button
+    Button,
+    RadioButton,
+    Hr
   } from '@tableslayer/ui';
   import {
     tvResolutionOptions,
@@ -60,9 +62,9 @@
   ]);
 
   // Grid mode state
-  let isFixedCountMode = $state((stageProps.grid.gridMode || 0) === GridMode.FixedCount);
-  let fixedGridCountX = $state(stageProps.grid.fixedGridCount?.x || 24);
-  let fixedGridCountY = $state(stageProps.grid.fixedGridCount?.y || 17);
+  let isMapDefinedMode = $state((stageProps.grid.gridMode || 0) === GridMode.MapDefined);
+  let mapDefinedGridX = $state(stageProps.grid.fixedGridCount?.x || 24);
+  let mapDefinedGridY = $state(stageProps.grid.fixedGridCount?.y || 17);
 
   // Turn the local concept of TV size into the stageProps format
   const handleTvSizeChange = (diagonalSize: number) => {
@@ -107,27 +109,27 @@
     queuePropertyUpdate(stageProps, ['grid', 'opacity'], cd.rgba.a, 'control');
   };
 
-  // Handle grid mode toggle
-  const handleGridModeToggle = () => {
-    const newMode = isFixedCountMode ? GridMode.AutoFit : GridMode.FixedCount;
-    isFixedCountMode = !isFixedCountMode;
+  // Handle grid mode change
+  const handleGridModeChange = (value: string) => {
+    const newMode = value === 'map-defined' ? GridMode.MapDefined : GridMode.FillSpace;
+    isMapDefinedMode = newMode === GridMode.MapDefined;
     queuePropertyUpdate(stageProps, ['grid', 'gridMode'], newMode, 'control');
 
-    // When switching to FixedCount mode, set padding to 0
-    if (newMode === GridMode.FixedCount) {
+    // When switching to MapDefined mode, set padding to 0
+    if (newMode === GridMode.MapDefined) {
       localPadding = 0;
       handlePaddingChange();
     }
   };
 
-  // Handle fixed grid count changes
-  const handleFixedGridCountX = (value: number) => {
-    fixedGridCountX = value;
+  // Handle map-defined grid count changes
+  const handleMapDefinedGridX = (value: number) => {
+    mapDefinedGridX = value;
     queuePropertyUpdate(stageProps, ['grid', 'fixedGridCount', 'x'], value, 'control');
   };
 
-  const handleFixedGridCountY = (value: number) => {
-    fixedGridCountY = value;
+  const handleMapDefinedGridY = (value: number) => {
+    mapDefinedGridY = value;
     queuePropertyUpdate(stageProps, ['grid', 'fixedGridCount', 'y'], value, 'control');
   };
 
@@ -149,7 +151,7 @@
     const mapSize = stage.map.getSize();
     if (!mapSize) return;
 
-    // Get fixed grid count
+    // Get map-defined grid count
     const gridCountX = stageProps.grid.fixedGridCount?.x || 24;
     const gridCountY = stageProps.grid.fixedGridCount?.y || 17;
 
@@ -294,62 +296,22 @@
   </FormControl>
 </div>
 <Spacer />
-<div class="gridControls">
-  <FormControl label="Grid mode" name="gridMode" {errors}>
-    {#snippet input({ inputProps })}
-      <Select
-        selected={[isFixedCountMode ? 'fixed' : 'auto']}
-        onSelectedChange={(selected) => handleGridModeToggle()}
-        options={{
-          Mode: [
-            { value: 'auto', label: 'Auto-fit' },
-            { value: 'fixed', label: 'Fixed count' }
-          ]
-        }}
-        {...inputProps}
-      />
-    {/snippet}
-  </FormControl>
-</div>
-{#if isFixedCountMode}
-  <Spacer />
-  <div class="gridControls">
-    <FormControl label="Grid width" name="fixedGridCountX" {errors}>
-      {#snippet input({ inputProps })}
-        <Input
-          {...inputProps}
-          type="number"
-          min={1}
-          step={1}
-          value={fixedGridCountX}
-          oninput={(e) => handleFixedGridCountX(parseInt(e.currentTarget.value))}
-        />
-      {/snippet}
-      {#snippet end()}
-        squares
-      {/snippet}
-    </FormControl>
-    <FormControl label="Grid height" name="fixedGridCountY" {errors}>
-      {#snippet input({ inputProps })}
-        <Input
-          {...inputProps}
-          type="number"
-          min={1}
-          step={1}
-          value={fixedGridCountY}
-          oninput={(e) => handleFixedGridCountY(parseInt(e.currentTarget.value))}
-        />
-      {/snippet}
-      {#snippet end()}
-        squares
-      {/snippet}
-    </FormControl>
-  </div>
-  <Spacer />
-  <div class="gridControls">
-    <Button onclick={alignMapToGrid} variant="outline" style="width: 100%">Size and align map to grid</Button>
-  </div>
-{/if}
+<FormControl label="Grid mode" name="gridMode" {errors}>
+  {#snippet input({ inputProps })}
+    <RadioButton
+      selected={isMapDefinedMode ? 'map-defined' : 'fill-space'}
+      onSelectedChange={handleGridModeChange}
+      class="gridModeRadio"
+      options={[
+        { value: 'fill-space', label: 'Fill space' },
+        { value: 'map-defined', label: 'Map defined' }
+      ]}
+      {...inputProps}
+    />
+  {/snippet}
+</FormControl>
+<Spacer />
+<Hr />
 <Spacer />
 <div class="gridControls">
   <FormControl label="Grid type" name="gridType" {errors}>
@@ -398,7 +360,7 @@
       />
     {/snippet}
   </FormControl>
-  {#if !isFixedCountMode}
+  {#if !isMapDefinedMode}
     <FormControl label="Table padding" name="displayPaddingX" {errors}>
       {#snippet input({ inputProps })}
         <Input
@@ -416,6 +378,45 @@
     </FormControl>
   {/if}
 </div>
+{#if isMapDefinedMode}
+  <Spacer />
+  <div class="gridControls">
+    <FormControl label="Grid width" name="mapDefinedGridX" {errors}>
+      {#snippet input({ inputProps })}
+        <Input
+          {...inputProps}
+          type="number"
+          min={1}
+          step={1}
+          value={mapDefinedGridX}
+          oninput={(e) => handleMapDefinedGridX(parseInt(e.currentTarget.value))}
+        />
+      {/snippet}
+      {#snippet end()}
+        squares
+      {/snippet}
+    </FormControl>
+    <FormControl label="Grid height" name="mapDefinedGridY" {errors}>
+      {#snippet input({ inputProps })}
+        <Input
+          {...inputProps}
+          type="number"
+          min={1}
+          step={1}
+          value={mapDefinedGridY}
+          oninput={(e) => handleMapDefinedGridY(parseInt(e.currentTarget.value))}
+        />
+      {/snippet}
+      {#snippet end()}
+        squares
+      {/snippet}
+    </FormControl>
+  </div>
+  <Spacer />
+  <div class="gridControls">
+    <Button onclick={alignMapToGrid} style="width: 100%">Size and align map to grid</Button>
+  </div>
+{/if}
 <Spacer />
 <FormControl label="Grid Color" name="gridLineColor" {errors}>
   {#snippet input({ inputProps })}
@@ -430,5 +431,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+  }
+  :global(.gridModeRadio) {
+    width: 100%;
   }
 </style>

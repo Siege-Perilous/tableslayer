@@ -4,8 +4,8 @@ export enum GridType {
 }
 
 export enum GridMode {
-  AutoFit = 0,
-  FixedCount = 1
+  FillSpace = 0,
+  MapDefined = 1
 }
 
 export interface GridLayerProps {
@@ -15,12 +15,12 @@ export interface GridLayerProps {
   gridType: GridType;
 
   /**
-   * The grid calculation mode. AutoFit uses padding, FixedCount uses exact grid dimensions
+   * The grid calculation mode. FillSpace fills display with 1-inch squares, MapDefined uses exact grid dimensions
    */
   gridMode: GridMode;
 
   /**
-   * Fixed grid dimensions when using FixedCount mode
+   * Fixed grid dimensions when using MapDefined mode
    */
   fixedGridCount: {
     x: number;

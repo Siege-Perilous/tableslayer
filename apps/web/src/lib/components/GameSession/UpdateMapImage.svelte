@@ -79,9 +79,9 @@
 
     // If dimensions are found, set Fixed Count mode
     if (dimensions.width !== undefined && dimensions.height !== undefined) {
-      sceneUpdateData.gridMode = GridMode.FixedCount;
-      sceneUpdateData.gridFixedCountX = dimensions.width;
-      sceneUpdateData.gridFixedCountY = dimensions.height;
+      sceneUpdateData.gridMode = GridMode.MapDefined;
+      sceneUpdateData.gridMapDefinedX = dimensions.width;
+      sceneUpdateData.gridMapDefinedY = dimensions.height;
     }
 
     await handleMutation({

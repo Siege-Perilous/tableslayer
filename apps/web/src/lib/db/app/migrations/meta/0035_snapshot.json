@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "427e585c-6dbf-4398-9184-ec2a35783c5b",
+  "id": "28b1eb37-6102-4f89-8b02-58a900891a1a",
   "prevId": "0cb62ad9-6490-4135-bc27-fd792ca217c1",
   "tables": {
     "annotations": {
@@ -1228,15 +1228,15 @@
           "autoincrement": false,
           "default": 0
         },
-        "grid_fixed_count_x": {
-          "name": "grid_fixed_count_x",
+        "grid_map_defined_x": {
+          "name": "grid_map_defined_x",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "grid_fixed_count_y": {
-          "name": "grid_fixed_count_y",
+        "grid_map_defined_y": {
+          "name": "grid_map_defined_y",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

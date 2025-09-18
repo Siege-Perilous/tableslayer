@@ -90,7 +90,7 @@ export const StageDefaultProps: StageProps = {
   },
   grid: {
     gridType: GridType.Square,
-    gridMode: GridMode.AutoFit,
+    gridMode: GridMode.FillSpace,
     fixedGridCount: {
       x: 24,
       y: 17

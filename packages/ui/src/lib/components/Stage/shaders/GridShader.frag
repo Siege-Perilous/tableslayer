@@ -96,14 +96,14 @@ void main() {
   vec2 gridOrigin_px;
 
   if (uGridMode == 0) {
-    // AutoFit mode - use padding-based calculation
+    // FillSpace mode - use padding-based calculation
     vec2 safeZoneSize_px = uResolution_px - uPadding_px * 2.0 - uLineThickness;
     gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
     gridCount = floor(safeZoneSize_px / gridSpacing_px);
     gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
     gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
   } else {
-    // FixedCount mode - use exact grid dimensions
+    // MapDefined mode - use exact grid dimensions
     gridCount = vec2(uFixedGridCountX, uFixedGridCountY);
 
     // Calculate grid spacing to maintain 1:1 inch squares
