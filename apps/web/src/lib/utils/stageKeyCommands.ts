@@ -1,5 +1,6 @@
 import type { StageProps } from '@tableslayer/ui';
 import { DrawMode, GridMode, MapLayerType, ToolType } from '@tableslayer/ui';
+import { devLog } from './debug';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 // Track the grid origin (the initial aligned position when first used)
@@ -55,7 +56,7 @@ function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
 
   // If misaligned by more than 5%, snap to nearest grid line
   if (misalignment > gridSpacingPx * 0.05) {
-    console.log('[GRID-SNAP Other Axis]', {
+    devLog('grid', '[GRID-SNAP Other Axis]', {
       axis,
       currentOffset,
       alignedPosition,
@@ -135,7 +136,7 @@ function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', dir
       snapAction = 'snap-to-grid';
     }
 
-    console.log('[GRID-SNAP Arrow]', {
+    devLog('grid', '[GRID-SNAP Arrow]', {
       axis,
       direction,
       gridSpacingPx,

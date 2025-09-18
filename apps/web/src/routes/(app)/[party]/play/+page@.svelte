@@ -429,7 +429,7 @@
         const hoveredMarker = partyData!.getHoveredMarker();
         hoveredMarkerId = hoveredMarker?.id ?? null;
         if (hoveredMarker) {
-          console.log('[Play Route] Received hovered marker from Y.js:', {
+          devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
             id: hoveredMarker.id,
             hoveredMarkerId,
             hasTooltip: hoveredMarker.tooltip
@@ -617,7 +617,7 @@
         const hoveredMarker = partyData!.getHoveredMarker();
         hoveredMarkerId = hoveredMarker?.id ?? null;
         if (hoveredMarker) {
-          console.log('[Play Route] Received hovered marker from Y.js:', {
+          devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
             id: hoveredMarker.id,
             hoveredMarkerId,
             hasTooltip: hoveredMarker.tooltip

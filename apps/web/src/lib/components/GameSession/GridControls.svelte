@@ -29,7 +29,8 @@
     to8CharHex,
     getTvSizeFromPhysicalDimensions,
     queuePropertyUpdate,
-    resetGridOrigin
+    resetGridOrigin,
+    devLog
   } from '$lib/utils';
 
   let {
@@ -241,7 +242,7 @@
     const gridTopWebGL = -(stageProps.display.resolution.y / 2) + gridOriginY;
     const offsetY = gridTopWebGL + scaledMapHeight / 2;
 
-    console.log('[CLIENT alignMapToGrid]', {
+    devLog('grid', '[CLIENT alignMapToGrid]', {
       gridOrigin: { x: gridOriginX, y: gridOriginY },
       gridSize: { widthPx: gridWidthPx, heightPx: gridHeightPx },
       gridTopWebGL,

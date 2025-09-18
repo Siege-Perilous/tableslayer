@@ -1848,7 +1848,7 @@
           const newMaskVersion = Date.now();
           stageProps.annotations.layers[layerIndex].maskVersion = newMaskVersion;
 
-          console.log('[Editor] Set annotation maskVersion:', {
+          devLog('annotations', '[Editor] Set annotation maskVersion:', {
             layerId,
             layerIndex,
             newMaskVersion,
@@ -1858,7 +1858,7 @@
           // Sync to Y.js for real-time updates
           if (partyData && selectedScene?.id) {
             lastOwnYjsUpdateTime = Date.now();
-            console.log('[Editor] Syncing annotation maskVersion to Y.js:', {
+            devLog('annotations', '[Editor] Syncing annotation maskVersion to Y.js:', {
               sceneId: selectedScene.id,
               layerId,
               maskVersion: newMaskVersion,

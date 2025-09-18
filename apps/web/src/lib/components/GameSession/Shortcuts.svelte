@@ -29,7 +29,8 @@
     { label: 'Toggle drawing', shortcut: 'D' },
     { divider: true },
     { label: 'Scale map', shortcut: hasTouchSupport ? 'Three finger pinch' : 'Shift + Mouse wheel' },
-    { label: 'Pan map', shortcut: hasTouchSupport ? 'Three finger drag' : 'Shift + Mouse drag' },
+    { label: 'Pan map drag', shortcut: hasTouchSupport ? 'Three finger drag' : 'Shift + Mouse drag' },
+    { label: 'Pan map direction', shortcut: 'Shift + Arrow keys' },
     { divider: true },
     { label: 'Zoom scene', shortcut: hasTouchSupport ? 'Two finger pinch' : 'Ctrl + Mouse wheel' },
     { label: 'Pan scene', shortcut: hasTouchSupport ? 'Two finger drag' : 'Ctrl + Mouse drag' }
