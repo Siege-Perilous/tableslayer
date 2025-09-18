@@ -92,10 +92,11 @@
 
   export const annotations = {
     clear: (layerId: string) => sceneRef?.annotations.clear(layerId),
-    toRLE: () => sceneRef?.annotations?.toRLE(),
+    toRLE: () => sceneRef?.annotations?.toRLE() ?? Promise.resolve(new Uint8Array()),
     fromRLE: (rleData: Uint8Array, width: number, height: number) =>
-      sceneRef?.annotations?.fromRLE(rleData, width, height),
-    loadMask: (layerId: string, rleData: Uint8Array) => sceneRef?.annotations?.loadMask(layerId, rleData),
+      sceneRef?.annotations?.fromRLE(rleData, width, height) ?? Promise.resolve(),
+    loadMask: (layerId: string, rleData: Uint8Array) =>
+      sceneRef?.annotations?.loadMask(layerId, rleData) ?? Promise.resolve(),
     isDrawing: () => sceneRef?.annotations?.isDrawing() ?? false
   };
 
@@ -108,16 +109,17 @@
   export const fogOfWar = {
     clear: () => sceneRef?.fogOfWar.clear(),
     reset: () => sceneRef?.fogOfWar.reset(),
-    toPng: () => sceneRef?.fogOfWar.toPng(),
-    toRLE: () => sceneRef?.fogOfWar.toRLE(),
-    fromRLE: (rleData: Uint8Array, width: number, height: number) => sceneRef?.fogOfWar.fromRLE(rleData, width, height),
+    toPng: () => sceneRef?.fogOfWar.toPng() ?? Promise.resolve(new Blob()),
+    toRLE: () => sceneRef?.fogOfWar.toRLE() ?? Promise.resolve(new Uint8Array()),
+    fromRLE: (rleData: Uint8Array, width: number, height: number) =>
+      sceneRef?.fogOfWar.fromRLE(rleData, width, height) ?? Promise.resolve(),
     isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false
   };
 
   export const scene = {
     fill: () => sceneRef?.fill(),
     fit: () => sceneRef?.fit(),
-    generateThumbnail: () => sceneRef?.generateThumbnail()
+    generateThumbnail: () => sceneRef?.generateThumbnail() ?? Promise.resolve(new Blob())
   };
 
   export const markers = {
