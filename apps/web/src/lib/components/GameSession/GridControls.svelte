@@ -19,6 +19,7 @@
     GridMode,
     Button,
     RadioButton,
+    Text,
     Hr
   } from '@tableslayer/ui';
   import {
@@ -310,6 +311,10 @@
     />
   {/snippet}
 </FormControl>
+<Spacer size="0.5rem" />
+<Text size="0.875" color="var(--fgMuted)" class="gridControls__explanation">
+  Pick map defined if you know the exact number of grid units in your map.
+</Text>
 <Spacer />
 <Hr />
 <Spacer />
@@ -393,7 +398,7 @@
         />
       {/snippet}
       {#snippet end()}
-        squares
+        sq.
       {/snippet}
     </FormControl>
     <FormControl label="Grid height" name="mapDefinedGridY" {errors}>
@@ -408,7 +413,7 @@
         />
       {/snippet}
       {#snippet end()}
-        squares
+        sq.
       {/snippet}
     </FormControl>
   </div>
@@ -432,7 +437,16 @@
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
-  :global(.gridModeRadio) {
+  :global(.radioGroup.gridModeRadio) {
     width: 100%;
+    display: flex;
+  }
+
+  :global(.radioGroup.gridModeRadio .radioButton) {
+    flex: 1;
+    flex-basis: 0;
+  }
+  :global(.gridControls__explanation) {
+    max-width: 16rem;
   }
 </style>
