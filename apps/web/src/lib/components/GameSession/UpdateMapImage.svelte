@@ -17,8 +17,10 @@
 
 <script lang="ts">
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
+  import { GridMode } from '@tableslayer/ui';
   import { hasThumb, generateLargeImageUrl } from '$lib/utils';
   import type { usePartyData } from '$lib/utils/yjs/stores';
+  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
 
   let {
     sceneId,
@@ -67,14 +69,27 @@
 
     if (!uploadedFile) return;
 
+    // Extract dimensions from filename
+    const dimensions = extractDimensionsFromFilename(pickedFile.name);
+
+    // Prepare scene update data
+    const sceneUpdateData: any = {
+      mapLocation: uploadedFile.location
+    };
+
+    // If dimensions are found, set Fixed Count mode
+    if (dimensions.width !== undefined && dimensions.height !== undefined) {
+      sceneUpdateData.gridMode = GridMode.FixedCount;
+      sceneUpdateData.gridFixedCountX = dimensions.width;
+      sceneUpdateData.gridFixedCountY = dimensions.height;
+    }
+
     await handleMutation({
       mutation: () =>
         $updateScene.mutateAsync({
           sceneId,
           partyId,
-          sceneData: {
-            mapLocation: uploadedFile.location
-          }
+          sceneData: sceneUpdateData
         }),
       onSuccess: (response) => {
         input.value = '';
