@@ -28,7 +28,8 @@
     getTvDimensions,
     to8CharHex,
     getTvSizeFromPhysicalDimensions,
-    queuePropertyUpdate
+    queuePropertyUpdate,
+    resetGridOrigin
   } from '$lib/utils';
 
   let {
@@ -116,11 +117,16 @@
     isMapDefinedMode = newMode === GridMode.MapDefined;
     queuePropertyUpdate(stageProps, ['grid', 'gridMode'], newMode, 'control');
 
-    // When switching to MapDefined mode, set padding to 0
+    // When switching to MapDefined mode, set padding to 0 and force square grid
     if (newMode === GridMode.MapDefined) {
       localPadding = 0;
       handlePaddingChange();
+      // Map defined mode only supports square grids
+      queuePropertyUpdate(stageProps, ['grid', 'gridType'], 0, 'control');
     }
+
+    // Reset grid origin when switching modes
+    resetGridOrigin();
   };
 
   // Handle map-defined grid count changes
@@ -319,16 +325,18 @@
 <Hr />
 <Spacer />
 <div class="gridControls">
-  <FormControl label="Grid type" name="gridType" {errors}>
-    {#snippet input({ inputProps })}
-      <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(0)}>
-        <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
-      </IconButton>
-      <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(1)}>
-        <Icon Icon={IconHexagons} size="20px" stroke={2} />
-      </IconButton>
-    {/snippet}
-  </FormControl>
+  {#if !isMapDefinedMode}
+    <FormControl label="Grid type" name="gridType" {errors}>
+      {#snippet input({ inputProps })}
+        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(0)}>
+          <Icon Icon={IconLayoutGrid} size="20px" stroke={2} />
+        </IconButton>
+        <IconButton {...inputProps} variant="ghost" onclick={() => handleGridTypeChange(1)}>
+          <Icon Icon={IconHexagons} size="20px" stroke={2} />
+        </IconButton>
+      {/snippet}
+    </FormControl>
+  {/if}
   <FormControl label={gridTypeLabel} name="gridSpacing" {errors}>
     {#snippet input({ inputProps })}
       <Input

@@ -45,6 +45,7 @@
   import {
     buildSceneProps,
     handleKeyCommands,
+    resetGridOrigin,
     handleStageZoom,
     hasThumb,
     convertPropsToSceneDetails,
@@ -966,6 +967,9 @@
       }
       lastBuiltMapLocation = currentMapLocation;
 
+      // Reset grid origin when scene changes
+      resetGridOrigin();
+
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
       if (partyData && currentSceneId) {
         // Only initialize Y.js data if it doesn't exist at all for this scene
@@ -1648,22 +1652,6 @@
     // Always use free movement for mouse panning (no grid snapping)
     const newOffsetX = stageProps.map.offset.x + dx;
     const newOffsetY = stageProps.map.offset.y + dy;
-
-    // Log mouse movement for debugging
-    if ((stageProps.grid.gridMode || 0) === GridMode.MapDefined) {
-      const pixelPitchX = stageProps.display.size.x / stageProps.display.resolution.x;
-      const pixelPitchY = stageProps.display.size.y / stageProps.display.resolution.y;
-      const gridSpacingX = stageProps.grid.spacing / pixelPitchX;
-      const gridSpacingY = stageProps.grid.spacing / pixelPitchY;
-
-      console.log('[MOUSE-PAN]', {
-        dx,
-        dy,
-        currentOffset: { x: stageProps.map.offset.x, y: stageProps.map.offset.y },
-        newOffset: { x: newOffsetX, y: newOffsetY },
-        gridSpacing: { x: gridSpacingX, y: gridSpacingY }
-      });
-    }
 
     queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
     queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');

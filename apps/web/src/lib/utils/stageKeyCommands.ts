@@ -15,9 +15,36 @@ function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
   const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
   const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
 
-  // Initialize grid origin if not set
+  // Initialize grid origin if not set - calculate the aligned grid position
   if (gridOrigin[axis] === undefined) {
-    gridOrigin[axis] = currentOffset;
+    // Calculate where the grid should be positioned (matching GridControls alignment logic)
+    const gridCount = axis === 'x' ? stageProps.grid.fixedGridCount.x : stageProps.grid.fixedGridCount.y;
+    const gridSizePx = gridSpacingPx * gridCount + stageProps.grid.lineThickness / 2.0;
+
+    let gridOriginPx: number;
+    const resolution = stageProps.display.resolution[axis];
+
+    if (gridSizePx <= resolution) {
+      // Grid fits - center it
+      gridOriginPx = (resolution - gridSizePx) / 2.0;
+    } else {
+      // Grid overflows
+      if (axis === 'x') {
+        gridOriginPx = 0; // Align left
+      } else {
+        gridOriginPx = resolution - gridSizePx; // Align top
+      }
+    }
+
+    // Convert grid origin to map coordinates
+    // This should match the offset calculation from GridControls
+    if (axis === 'x') {
+      gridOrigin[axis] = gridOriginPx - resolution / 2 + gridSizePx / 2;
+    } else {
+      // Y axis: convert from UV space to WebGL coordinates
+      const gridTopWebGL = -(resolution / 2) + gridOriginPx;
+      gridOrigin[axis] = gridTopWebGL + gridSizePx / 2;
+    }
   }
 
   const origin = gridOrigin[axis]!;
@@ -52,9 +79,36 @@ function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', dir
     // Calculate grid spacing in pixels
     const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
 
-    // Initialize grid origin if not set
+    // Initialize grid origin if not set - calculate the aligned grid position
     if (gridOrigin[axis] === undefined) {
-      gridOrigin[axis] = currentOffset;
+      // Calculate where the grid should be positioned (matching GridControls alignment logic)
+      const gridCount = axis === 'x' ? stageProps.grid.fixedGridCount.x : stageProps.grid.fixedGridCount.y;
+      const gridSizePx = gridSpacingPx * gridCount + stageProps.grid.lineThickness / 2.0;
+
+      let gridOriginPx: number;
+      const resolution = stageProps.display.resolution[axis];
+
+      if (gridSizePx <= resolution) {
+        // Grid fits - center it
+        gridOriginPx = (resolution - gridSizePx) / 2.0;
+      } else {
+        // Grid overflows
+        if (axis === 'x') {
+          gridOriginPx = 0; // Align left
+        } else {
+          gridOriginPx = resolution - gridSizePx; // Align top
+        }
+      }
+
+      // Convert grid origin to map coordinates
+      // This should match the offset calculation from GridControls
+      if (axis === 'x') {
+        gridOrigin[axis] = gridOriginPx - resolution / 2 + gridSizePx / 2;
+      } else {
+        // Y axis: convert from UV space to WebGL coordinates
+        const gridTopWebGL = -(resolution / 2) + gridOriginPx;
+        gridOrigin[axis] = gridTopWebGL + gridSizePx / 2;
+      }
     }
 
     const origin = gridOrigin[axis]!;
@@ -317,4 +371,9 @@ export function handleKeyCommands(
   }
 
   return activeControl;
+}
+
+// Reset grid origin when scene changes or grid mode switches
+export function resetGridOrigin(): void {
+  gridOrigin = {};
 }
