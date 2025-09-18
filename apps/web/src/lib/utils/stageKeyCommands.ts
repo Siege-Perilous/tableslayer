@@ -2,6 +2,43 @@ import type { StageProps } from '@tableslayer/ui';
 import { DrawMode, GridMode, MapLayerType, ToolType } from '@tableslayer/ui';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
+// Track the grid origin (the initial aligned position when first used)
+let gridOrigin: { x?: number; y?: number } = {};
+
+// Snap the other axis if it's misaligned
+function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
+  if ((stageProps.grid.gridMode || 0) !== GridMode.FixedCount || !stageProps.grid.fixedGridCount) {
+    return;
+  }
+
+  const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
+  const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
+  const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
+
+  // Initialize grid origin if not set
+  if (gridOrigin[axis] === undefined) {
+    gridOrigin[axis] = currentOffset;
+  }
+
+  const origin = gridOrigin[axis]!;
+  const offsetFromOrigin = currentOffset - origin;
+  const gridSteps = Math.round(offsetFromOrigin / gridSpacingPx);
+  const alignedPosition = origin + gridSteps * gridSpacingPx;
+  const misalignment = Math.abs(currentOffset - alignedPosition);
+
+  // If misaligned by more than 5%, snap to nearest grid line
+  if (misalignment > gridSpacingPx * 0.05) {
+    console.log('[GRID-SNAP Other Axis]', {
+      axis,
+      currentOffset,
+      alignedPosition,
+      misalignment,
+      snapping: true
+    });
+    queuePropertyUpdate(stageProps, ['map', 'offset', axis], alignedPosition, 'control');
+  }
+}
+
 // Calculate grid-snapped position for arrow key movement
 function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', direction: 1 | -1): number {
   // In Fixed Count mode, move by one grid square
@@ -12,30 +49,51 @@ function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', dir
     // Calculate pixel pitch (inches per pixel)
     const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
 
-    // Calculate grid spacing in pixels (this is how the grid is actually drawn)
+    // Calculate grid spacing in pixels
     const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
 
-    // The map offset is in screen space pixels. The grid is drawn at a fixed size on screen.
-    // To move the map by one visual grid square, we move by the grid spacing in pixels.
-    // We do NOT scale by zoom - the zoom affects how the map IMAGE is scaled, not the movement.
-    const mapMovementPerGrid = gridSpacingPx;
+    // Initialize grid origin if not set
+    if (gridOrigin[axis] === undefined) {
+      gridOrigin[axis] = currentOffset;
+    }
 
-    // Simply move by one grid unit from current position
-    // Don't snap first - just move by the exact grid increment
-    const newOffset = currentOffset + direction * mapMovementPerGrid;
+    const origin = gridOrigin[axis]!;
+    let newOffset: number;
+    let snapAction = 'none';
+
+    // Calculate how far we are from the grid origin
+    const offsetFromOrigin = currentOffset - origin;
+    const gridSteps = Math.round(offsetFromOrigin / gridSpacingPx);
+    const alignedPosition = origin + gridSteps * gridSpacingPx;
+    const misalignment = Math.abs(currentOffset - alignedPosition);
+
+    // If we're close to aligned (within 5% of grid spacing), move from aligned position
+    // Otherwise, snap to the next grid line in the direction of movement
+    if (misalignment < gridSpacingPx * 0.05) {
+      // We're aligned, move by one grid unit
+      newOffset = alignedPosition + direction * gridSpacingPx;
+      snapAction = 'aligned-move';
+    } else {
+      // We're misaligned, snap to next grid line in movement direction
+      const nextGridStep =
+        direction > 0 ? Math.ceil(offsetFromOrigin / gridSpacingPx) : Math.floor(offsetFromOrigin / gridSpacingPx);
+      newOffset = origin + nextGridStep * gridSpacingPx;
+      snapAction = 'snap-to-grid';
+    }
 
     console.log('[GRID-SNAP Arrow]', {
       axis,
       direction,
-      gridSpacing: stageProps.grid.spacing,
-      pixelPitch,
       gridSpacingPx,
-      zoom: stageProps.map.zoom,
-      mapMovementPerGrid,
       currentOffset,
+      gridOrigin: origin,
+      offsetFromOrigin,
+      gridSteps,
+      alignedPosition,
+      misalignment,
       newOffset,
-      moveDistance: direction * mapMovementPerGrid,
-      totalGridsMoved: (newOffset - currentOffset) / mapMovementPerGrid
+      moveDistance: newOffset - currentOffset,
+      snapAction
     });
 
     return newOffset;
@@ -222,6 +280,8 @@ export function handleKeyCommands(
         event.preventDefault();
         const newX = calculateGridSnappedOffset(stageProps, 'x', -1);
         queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
+        // Also snap Y axis if misaligned
+        snapOtherAxisIfNeeded(stageProps, 'y');
       }
       break;
 
@@ -230,6 +290,8 @@ export function handleKeyCommands(
         event.preventDefault();
         const newX = calculateGridSnappedOffset(stageProps, 'x', 1);
         queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
+        // Also snap Y axis if misaligned
+        snapOtherAxisIfNeeded(stageProps, 'y');
       }
       break;
 
@@ -238,6 +300,8 @@ export function handleKeyCommands(
         event.preventDefault();
         const newY = calculateGridSnappedOffset(stageProps, 'y', 1); // Inverted: up is positive Y
         queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
+        // Also snap X axis if misaligned
+        snapOtherAxisIfNeeded(stageProps, 'x');
       }
       break;
 
@@ -246,6 +310,8 @@ export function handleKeyCommands(
         event.preventDefault();
         const newY = calculateGridSnappedOffset(stageProps, 'y', -1); // Inverted: down is negative Y
         queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
+        // Also snap X axis if misaligned
+        snapOtherAxisIfNeeded(stageProps, 'x');
       }
       break;
   }
