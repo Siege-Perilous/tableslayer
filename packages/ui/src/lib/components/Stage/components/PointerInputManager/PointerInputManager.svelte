@@ -120,8 +120,8 @@
     const { dx, dy } = calculateRotatedMovement(e, stageProps.scene.rotation);
 
     if (e.shiftKey) {
-      const movementFactor = 1 / stageProps.scene.zoom;
-      onMapPan(dx * movementFactor, dy * movementFactor);
+      // Direct 1:1 movement without zoom scaling for smoother panning
+      onMapPan(dx, dy);
     } else if (e.ctrlKey) {
       onScenePan(dx, dy);
     }
