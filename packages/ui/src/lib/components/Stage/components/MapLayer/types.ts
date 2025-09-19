@@ -46,6 +46,7 @@ export interface MapLayerExports {
   getCompositeMapTexture: () => THREE.Texture | null;
   fit: () => void;
   fill: () => void;
+  mapSize: { width: number; height: number } | null;
   fogOfWar: {
     clear: () => void;
     reset: () => void;

@@ -4,6 +4,7 @@ export * from './convertStagePropsToAnnotationData';
 export * from './convertStagePropsToMarkerData';
 export * from './convertStagePropsToSceneData';
 export * from './createRandomNames';
+export * from './debug';
 export * from './defaultMapState';
 export * from './extractLocationFromUrl';
 export * from './gameSessionExportImport';

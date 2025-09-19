@@ -1,5 +1,6 @@
 import {
   DrawMode,
+  GridMode,
   GridType,
   MapLayerType,
   MeasurementType,
@@ -89,6 +90,11 @@ export const StageDefaultProps: StageProps = {
   },
   grid: {
     gridType: GridType.Square,
+    gridMode: GridMode.FillSpace,
+    fixedGridCount: {
+      x: 24,
+      y: 17
+    },
     spacing: 1,
     opacity: 0.05,
     lineColor: '#E6E6E6',

@@ -6,6 +6,7 @@ import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from 
 import {
   type AnnotationLayerData,
   DrawMode,
+  GridMode,
   GridType,
   MapLayerType,
   type Marker,
@@ -154,6 +155,11 @@ export const buildSceneProps = (
     },
     grid: {
       gridType: (activeScene.gridType as GridType) ?? GridType.Square,
+      gridMode: (activeScene.gridMode as GridMode) ?? GridMode.FillSpace,
+      fixedGridCount: {
+        x: activeScene.gridMapDefinedX ?? 24,
+        y: activeScene.gridMapDefinedY ?? 17
+      },
       spacing: activeScene.gridSpacing ?? 50,
       opacity: activeScene.gridOpacity ?? 0.5,
       lineColor: activeScene.gridLineColor ?? '#ffffff',

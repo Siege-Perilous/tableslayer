@@ -244,6 +244,13 @@
   .changelog__content :global(a:hover) {
     opacity: 0.8;
   }
+  .changelog__content :global(code) {
+    background: var(--contrastLow);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
 
   @media (max-width: 768px) {
     .container {

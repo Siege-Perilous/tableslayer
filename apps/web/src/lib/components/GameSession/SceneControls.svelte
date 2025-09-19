@@ -429,6 +429,7 @@
                 {activeControl}
                 {party}
                 {gameSession}
+                {stage}
                 {selectedScene}
                 {activeSceneId}
                 {handleMapFill}

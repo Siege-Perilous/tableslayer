@@ -17,8 +17,12 @@
 
 <script lang="ts">
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  import { hasThumb, generateLargeImageUrl } from '$lib/utils';
+  import { GridMode } from '@tableslayer/ui';
+  import { hasThumb, generateLargeImageUrl, resetGridOrigin } from '$lib/utils';
   import type { usePartyData } from '$lib/utils/yjs/stores';
+  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
+  import { updateSceneSchema } from '$lib/db/app/schema';
+  import type { z } from 'zod';
 
   let {
     sceneId,
@@ -67,14 +71,27 @@
 
     if (!uploadedFile) return;
 
+    // Extract dimensions from filename
+    const dimensions = extractDimensionsFromFilename(pickedFile.name);
+
+    // Prepare scene update data
+    const sceneUpdateData: Partial<z.infer<typeof updateSceneSchema>> = {
+      mapLocation: uploadedFile.location
+    };
+
+    // If dimensions are found, set Fixed Count mode
+    if (dimensions.width !== undefined && dimensions.height !== undefined) {
+      sceneUpdateData.gridMode = GridMode.MapDefined;
+      sceneUpdateData.gridMapDefinedX = dimensions.width;
+      sceneUpdateData.gridMapDefinedY = dimensions.height;
+    }
+
     await handleMutation({
       mutation: () =>
         $updateScene.mutateAsync({
           sceneId,
           partyId,
-          sceneData: {
-            mapLocation: uploadedFile.location
-          }
+          sceneData: sceneUpdateData
         }),
       onSuccess: (response) => {
         input.value = '';
@@ -92,7 +109,7 @@
               : undefined
           });
 
-          // Also update the stageProps with the new map URL so Stage components re-render
+          // Also update the stageProps with the new map URL and grid settings so Stage components re-render
           const currentSceneData = partyData.getSceneData(sceneId);
           if (currentSceneData && currentSceneData.stageProps && updatedScene.mapLocation) {
             const newMapUrl = generateLargeImageUrl(updatedScene.mapLocation);
@@ -103,6 +120,21 @@
                 url: newMapUrl
               }
             };
+
+            // If dimensions were found, update grid settings in stageProps
+            if (dimensions.width !== undefined && dimensions.height !== undefined) {
+              updatedStageProps.grid = {
+                ...currentSceneData.stageProps.grid,
+                gridMode: GridMode.MapDefined,
+                fixedGridCount: {
+                  x: dimensions.width,
+                  y: dimensions.height
+                }
+              };
+              // Reset grid origin when switching to Map defined mode
+              resetGridOrigin();
+            }
+
             partyData.updateSceneStageProps(sceneId, updatedStageProps);
           }
         } else {

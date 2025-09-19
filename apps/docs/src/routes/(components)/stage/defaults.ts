@@ -92,6 +92,11 @@ export const StageDefaultProps: StageProps = {
   },
   grid: {
     gridType: GridType.Square,
+    gridMode: 0,
+    fixedGridCount: {
+      x: 24,
+      y: 17
+    },
     spacing: 1,
     worldGridSize: 5,
     worldGridUnits: 'FT',

@@ -159,6 +159,9 @@
     onMapUpdate({ x: 0, y: 0 }, newZoom);
   }
 
+  // Export the map size for external components
+  export { mapSize };
+
   // References to the layer doesn't exist until the component is mounted,
   // so we need create these wrapper functions
   export const fogOfWar = {

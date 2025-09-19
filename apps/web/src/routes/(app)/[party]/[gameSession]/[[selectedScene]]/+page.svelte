@@ -44,6 +44,7 @@
   import {
     buildSceneProps,
     handleKeyCommands,
+    resetGridOrigin,
     handleStageZoom,
     hasThumb,
     convertPropsToSceneDetails,
@@ -965,6 +966,9 @@
       }
       lastBuiltMapLocation = currentMapLocation;
 
+      // Reset grid origin when scene changes
+      resetGridOrigin();
+
       // Initialize Y.js with fresh SSR data after rebuilding stageProps
       if (partyData && currentSceneId) {
         // Only initialize Y.js data if it doesn't exist at all for this scene
@@ -1644,8 +1648,10 @@
   };
 
   function onMapPan(dx: number, dy: number) {
+    // Always use free movement for mouse panning (no grid snapping)
     const newOffsetX = stageProps.map.offset.x + dx;
     const newOffsetY = stageProps.map.offset.y + dy;
+
     queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newOffsetX, 'control');
     queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newOffsetY, 'control');
   }
@@ -1841,7 +1847,7 @@
           const newMaskVersion = Date.now();
           stageProps.annotations.layers[layerIndex].maskVersion = newMaskVersion;
 
-          console.log('[Editor] Set annotation maskVersion:', {
+          devLog('annotations', '[Editor] Set annotation maskVersion:', {
             layerId,
             layerIndex,
             newMaskVersion,
@@ -1851,7 +1857,7 @@
           // Sync to Y.js for real-time updates
           if (partyData && selectedScene?.id) {
             lastOwnYjsUpdateTime = Date.now();
-            console.log('[Editor] Syncing annotation maskVersion to Y.js:', {
+            devLog('annotations', '[Editor] Syncing annotation maskVersion to Y.js:', {
               sceneId: selectedScene.id,
               layerId,
               maskVersion: newMaskVersion,

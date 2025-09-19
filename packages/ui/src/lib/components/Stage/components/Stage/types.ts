@@ -103,6 +103,7 @@ export interface StageExports {
   map: {
     fit: () => void;
     fill: () => void;
+    getSize: () => { width: number; height: number } | null;
   };
   scene: {
     fit: () => void;

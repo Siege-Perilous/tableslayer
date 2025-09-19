@@ -25,7 +25,12 @@ export const useCreateSceneMutation = () => {
   >({
     mutationKey: ['insertScene'],
     endpoint: '/api/scenes/createScene',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation to avoid reactive loops
+      // Scene data is managed by Y.js
+      return;
+    }
   });
 };
 
@@ -36,7 +41,12 @@ export const useDeleteSceneMutation = () => {
   >({
     mutationKey: ['deleteScene'],
     endpoint: '/api/scenes/deleteScene',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation to avoid reactive loops
+      // Scene data is managed by Y.js
+      return;
+    }
   });
 };
 
@@ -53,7 +63,12 @@ export const useReorderScenesMutation = () => {
   >({
     mutationKey: ['reorderScenes'],
     endpoint: '/api/scenes/reorderScenes',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation to avoid reactive loops
+      // Scene data is managed by Y.js
+      return;
+    }
   });
 };
 
@@ -64,7 +79,12 @@ export const useDuplicateSceneMutation = () => {
   >({
     mutationKey: ['duplicateScene'],
     endpoint: '/api/scenes/duplicateScene',
-    method: 'POST'
+    method: 'POST',
+    onSuccess: async () => {
+      // Prevent invalidation to avoid reactive loops
+      // Scene data is managed by Y.js
+      return;
+    }
   });
 };
 

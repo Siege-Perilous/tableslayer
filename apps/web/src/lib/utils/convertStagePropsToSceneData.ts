@@ -105,6 +105,9 @@ export const convertPropsToSceneDetails = (
 
   setNestedIfExists(stageProps, details, 'grid', {
     gridType: 'gridType',
+    gridMode: 'gridMode',
+    'fixedGridCount.x': 'gridMapDefinedX',
+    'fixedGridCount.y': 'gridMapDefinedY',
     spacing: 'gridSpacing',
     opacity: 'gridOpacity',
     lineColor: 'gridLineColor',
@@ -114,6 +117,11 @@ export const convertPropsToSceneDetails = (
     shadowBlur: 'gridShadowBlur',
     shadowSpread: 'gridShadowSpread'
   });
+
+  // Ensure grid spacing is an integer (database constraint)
+  if (details.gridSpacing !== undefined) {
+    details.gridSpacing = Math.round(Number(details.gridSpacing));
+  }
 
   setNestedIfExists(stageProps, details, 'weather', {
     type: 'weatherType',

@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
+  import {
+    IconButton,
+    FileInput,
+    Icon,
+    FormControl,
+    Input,
+    Popover,
+    Button,
+    ColorMode,
+    GridMode
+  } from '@tableslayer/ui';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import {
     IconCheck,
@@ -10,9 +20,10 @@
     IconPlayerPauseFilled,
     IconGripVertical
   } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectScene } from '$lib/db/app/schema';
+  import type { SelectParty, SelectScene, InsertScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
   import { hasThumb, generateSmallThumbnailUrl, isVideoFile } from '$lib/utils';
+  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
   import {
@@ -32,6 +43,7 @@
   import { fly } from 'svelte/transition';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
+  import { goto } from '$app/navigation';
 
   let {
     scenes,
@@ -100,7 +112,7 @@
     }
   });
 
-  const handleCreateScene = async (order: number) => {
+  const handleCreateScene = async (order: number, gridWidth?: number, gridHeight?: number) => {
     formIsLoading = true;
     let mapLocation: string | undefined = undefined;
 
@@ -118,16 +130,26 @@
       mapLocation = uploadedFile.location;
     }
 
+    // Prepare scene data with grid settings if provided
+    const sceneData: Partial<InsertScene> = {
+      gameSessionId: gameSession.id,
+      name: 'New Scene',
+      order,
+      mapLocation
+    };
+
+    // If grid dimensions are provided, set Fixed Count mode
+    if (gridWidth !== undefined && gridHeight !== undefined) {
+      sceneData.gridMode = GridMode.MapDefined;
+      sceneData.gridMapDefinedX = gridWidth;
+      sceneData.gridMapDefinedY = gridHeight;
+    }
+
     await handleMutation({
       mutation: () =>
         $createNewScene.mutateAsync({
           partyId: party.id,
-          sceneData: {
-            gameSessionId: gameSession.id,
-            name: 'New Scene',
-            order,
-            mapLocation
-          }
+          sceneData
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
@@ -161,6 +183,12 @@
         }
         isNewSceneAdded = true;
         file = null;
+
+        // Navigate to the newly created scene
+        if (response?.scene) {
+          goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
+        }
+
         setTimeout(() => {
           isNewSceneAdded = false;
         }, 3000);
@@ -424,7 +452,9 @@
   const handleFileChange = (event: Event) => {
     event.preventDefault();
     if (file && file.length) {
-      handleCreateScene(scenes.length + 1);
+      // Extract grid dimensions from filename if present
+      const dimensions = extractDimensionsFromFilename(file[0].name);
+      handleCreateScene(scenes.length + 1, dimensions.width, dimensions.height);
     }
   };
 

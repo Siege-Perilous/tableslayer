@@ -10,6 +10,8 @@
 
   const radioClasses = (value: string) =>
     ['radioButton', `radioButton--${variant}`, value === selected ? 'radioButton--checked' : ''].join(' ');
+
+  let radioGroupClasses = $derived(['radioGroup', restProps.class ?? '']);
 </script>
 
 <!--
@@ -25,7 +27,7 @@
   - `onchange` - Callback when selection changes.
 -->
 
-<div class="radioGroup" {...restProps}>
+<div {...restProps} class={radioGroupClasses}>
   {#each options as { label, value }}
     <label class={radioClasses(value)}>
       <input
