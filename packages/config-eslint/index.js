@@ -5,6 +5,7 @@ import svelteParser from 'svelte-eslint-parser';
 
 // Base JavaScript/TypeScript configuration
 const baseConfig = {
+  files: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '**/*.svelte'],
   plugins: {
     '@typescript-eslint': tseslint
   },
