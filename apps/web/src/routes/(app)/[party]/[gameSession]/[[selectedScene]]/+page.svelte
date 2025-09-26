@@ -72,8 +72,6 @@
     party,
     activeScene,
     user,
-    paneLayoutDesktop,
-    paneLayoutMobile,
     brushSize
   } = $derived(data);
 
