@@ -17,7 +17,7 @@ export const getAnnotationsForScene = async (sceneId: string): Promise<SelectAnn
     // Remove mask field from each annotation to avoid serialization issues
     for (const annotation of annotations) {
       if ('mask' in annotation) {
-        delete (annotation as any).mask;
+        delete (annotation as Record<string, unknown>).mask;
       }
     }
 
@@ -70,7 +70,7 @@ export const upsertAnnotation = async (annotation: InsertAnnotation): Promise<Se
 
     // Remove mask field to avoid serialization issues
     if ('mask' in result) {
-      delete (result as any).mask;
+      delete (result as Record<string, unknown>).mask;
     }
 
     return result;

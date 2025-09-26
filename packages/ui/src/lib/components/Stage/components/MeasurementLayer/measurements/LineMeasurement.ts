@@ -1,5 +1,9 @@
+// prettier-ignore
 import * as THREE from 'three';
+// prettier-ignore
 import type { DisplayProps } from '../../Stage/types';
+// prettier-ignore
+import type { GridLayerProps } from '../../GridLayer/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
@@ -9,7 +13,7 @@ export class LineMeasurement extends BaseMeasurement {
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
     displayProps: DisplayProps,
-    gridProps: any
+    gridProps: GridLayerProps
   ) {
     super(MeasurementType.Line, startPoint, measurementProps, displayProps, gridProps);
   }

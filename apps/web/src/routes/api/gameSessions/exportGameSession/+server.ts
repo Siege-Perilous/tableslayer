@@ -58,9 +58,11 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         );
 
         // Remove thumb property which is temporary and not needed for export
-        const { thumb, ...sceneWithoutThumb } = scene as any;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { thumb, ...sceneWithoutThumb } = scene as Record<string, unknown>;
 
         // Remove fog of war URL and lastUpdated as per requirements
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { fogOfWarUrl, lastUpdated, ...sceneData } = sceneWithoutThumb;
 
         return {
@@ -68,7 +70,8 @@ export const POST = async ({ request, locals }: RequestEvent) => {
           fogOfWarMask: sceneWithMask?.fogOfWarMask || null,
           markers: markers.map((marker) => {
             // Remove thumb property from markers
-            const { thumb, ...markerWithoutThumb } = marker as any;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { thumb, ...markerWithoutThumb } = marker as Record<string, unknown>;
             return markerWithoutThumb;
           }),
           annotations: annotationsWithMasks

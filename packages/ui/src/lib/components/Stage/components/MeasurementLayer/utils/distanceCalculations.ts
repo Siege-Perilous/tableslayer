@@ -65,7 +65,8 @@ export function calculateLineDistance(
   snapToGrid: boolean = false,
   enableDMG252: boolean = false,
   worldGridSize: number = 5,
-  worldGridUnits: string = 'FT'
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _worldGridUnits: string = 'FT'
 ): number {
   // For hex grids with snapping enabled, use hex pathfinding
   if (gridType === GridType.Hex && snapToGrid) {

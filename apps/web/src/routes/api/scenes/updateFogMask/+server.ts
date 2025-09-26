@@ -26,7 +26,7 @@ export const POST = apiFactory(
 
     try {
       // Store as base64 text
-      const result = await db
+      await db
         .update(sceneTable)
         .set({
           fogOfWarMask: base64Data

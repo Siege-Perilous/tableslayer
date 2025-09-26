@@ -1,5 +1,9 @@
+// prettier-ignore
 import * as THREE from 'three';
+// prettier-ignore
 import type { DisplayProps } from '../../Stage/types';
+// prettier-ignore
+import type { GridLayerProps } from '../../GridLayer/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
@@ -11,7 +15,7 @@ export class BeamMeasurement extends BaseMeasurement {
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
     displayProps: DisplayProps,
-    gridProps: any
+    gridProps: GridLayerProps
   ) {
     super(MeasurementType.Beam, startPoint, measurementProps, displayProps, gridProps);
     this.beamWidth = measurementProps.beamWidth;

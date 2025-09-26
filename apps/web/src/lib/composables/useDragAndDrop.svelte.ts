@@ -22,7 +22,7 @@ interface DragPreviewStyles {
 }
 
 export function useDragAndDrop<T>(options: DragAndDropOptions<T>) {
-  const { onReorder, getItemId, isDisabled } = options;
+  const { onReorder, isDisabled } = options;
 
   // Drag and drop state
   let draggedItem = $state<string | null>(null);

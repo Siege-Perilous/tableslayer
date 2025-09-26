@@ -30,6 +30,7 @@ export interface PreferenceConfig<T> {
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 // Preference configurations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, PreferenceConfig<any>> = {
   brushSize: {
     cookieName: 'tableslayer:brushSize',
@@ -51,11 +52,13 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     validate: (value): value is PaneConfig[] =>
       Array.isArray(value) &&
       value.every(
-        (pane: any) =>
+        (pane: unknown) =>
           typeof pane === 'object' &&
-          typeof pane.size === 'number' &&
-          pane.size >= 0 &&
-          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+          pane !== null &&
+          'size' in pane &&
+          typeof (pane as PaneConfig).size === 'number' &&
+          (pane as PaneConfig).size >= 0 &&
+          ((pane as PaneConfig).isCollapsed === undefined || typeof (pane as PaneConfig).isCollapsed === 'boolean')
       )
   },
   paneLayoutMobile: {
@@ -68,11 +71,13 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     validate: (value): value is PaneConfig[] =>
       Array.isArray(value) &&
       value.every(
-        (pane: any) =>
+        (pane: unknown) =>
           typeof pane === 'object' &&
-          typeof pane.size === 'number' &&
-          pane.size >= 0 &&
-          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+          pane !== null &&
+          'size' in pane &&
+          typeof (pane as PaneConfig).size === 'number' &&
+          (pane as PaneConfig).size >= 0 &&
+          ((pane as PaneConfig).isCollapsed === undefined || typeof (pane as PaneConfig).isCollapsed === 'boolean')
       )
   }
 };
@@ -172,7 +177,7 @@ export function getAllPreferences(): GameSessionPreferences {
 
   for (const key in PREFERENCE_CONFIGS) {
     const typedKey = key as keyof GameSessionPreferences;
-    (preferences as any)[typedKey] = getPreference(typedKey);
+    (preferences as Record<string, unknown>)[typedKey] = getPreference(typedKey);
   }
 
   return preferences;
@@ -188,7 +193,7 @@ export function getAllPreferencesServer(cookies: {
 
   for (const key in PREFERENCE_CONFIGS) {
     const typedKey = key as keyof GameSessionPreferences;
-    (preferences as any)[typedKey] = getPreferenceServer(cookies, typedKey);
+    (preferences as Record<string, unknown>)[typedKey] = getPreferenceServer(cookies, typedKey);
   }
 
   return preferences;

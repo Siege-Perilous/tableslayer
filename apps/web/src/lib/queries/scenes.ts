@@ -1,4 +1,4 @@
-import type { SelectScene } from '$lib/db/app/schema';
+import type { SelectGameSession, SelectMarker, SelectScene } from '$lib/db/app/schema';
 import { mutationFactory } from '$lib/factories';
 import { createQuery } from '@tanstack/svelte-query';
 
@@ -100,7 +100,7 @@ export const useSavePartyStateMutation = () => {
       markerOperations?: Array<{
         operation: 'create' | 'update' | 'delete';
         id: string;
-        data?: any;
+        data?: Partial<SelectMarker>;
       }>;
       thumbnailLocation?: string;
     },
@@ -109,11 +109,11 @@ export const useSavePartyStateMutation = () => {
       results: {
         scene: SelectScene;
         markers: {
-          created: any[];
-          updated: any[];
+          created: SelectMarker[];
+          updated: SelectMarker[];
           deleted: string[];
         };
-        gameSession: any;
+        gameSession: SelectGameSession;
       };
     }
   >({

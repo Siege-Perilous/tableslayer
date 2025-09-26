@@ -5,8 +5,11 @@ import { browser, dev } from '$app/environment';
  * @param prefix - Optional system prefix like 'yjs', 'save', 'markers'
  * @param args - Arguments to log
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devLog(prefix?: string, ...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devLog(...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devLog(...args: any[]) {
   if (dev) {
     if (typeof args[0] === 'string' && args.length > 1) {
@@ -26,8 +29,11 @@ export function devLog(...args: any[]) {
  * @param prefix - Optional system prefix like 'yjs', 'save', 'markers'
  * @param args - Arguments to warn
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devWarn(prefix?: string, ...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devWarn(...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devWarn(...args: any[]) {
   if (dev) {
     if (typeof args[0] === 'string' && args.length > 1) {
@@ -47,8 +53,11 @@ export function devWarn(...args: any[]) {
  * @param prefix - Optional system prefix like 'yjs', 'save', 'markers'
  * @param args - Arguments to error
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devError(prefix?: string, ...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devError(...args: any[]): void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function devError(...args: any[]) {
   if (dev) {
     if (typeof args[0] === 'string' && args.length > 1) {

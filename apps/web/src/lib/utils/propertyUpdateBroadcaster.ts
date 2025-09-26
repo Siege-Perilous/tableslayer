@@ -3,12 +3,12 @@ import { devError, devLog, devWarn } from './debug';
 import { getPartyDataManager } from './yjs/stores';
 
 // Track pending updates for different property paths
-const pendingUpdates: Record<string, any> = {};
+const pendingUpdates: Record<string, unknown> = {};
 let updateScheduled = false;
 let currentSceneId: string | null = null;
 
 // Queue for updates that happen before Y.js is ready
-const preYjsUpdatesQueue: Array<{ sceneId: string; updates: Record<string, any> }> = [];
+const preYjsUpdatesQueue: Array<{ sceneId: string; updates: Record<string, unknown> }> = [];
 let yjsReadyCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Different throttle times for different property types
@@ -61,7 +61,7 @@ export function setUserChangeCallback(callback: () => void) {
 export function queuePropertyUpdate(
   stageProps: StageProps,
   propertyPath: PropertyPath,
-  value: any,
+  value: unknown,
   updateType: 'marker' | 'control' | 'scene' = 'control'
 ) {
   // Skip Y.js sync for local-only properties but still apply them locally
@@ -173,9 +173,9 @@ export function queuePropertyUpdate(
 }
 
 // Helper to apply update at specific path
-function applyUpdate(obj: any, path: PropertyPath, value: any) {
+function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: unknown) {
   const lastKey = path[path.length - 1];
-  let current = obj;
+  let current: Record<string, unknown> = obj;
 
   // Navigate to the parent object
   for (let i = 0; i < path.length - 1; i++) {
@@ -183,7 +183,7 @@ function applyUpdate(obj: any, path: PropertyPath, value: any) {
     if (current[path[i]] === undefined || typeof current[path[i]] !== 'object' || current[path[i]] === null) {
       current[path[i]] = {};
     }
-    current = current[path[i]];
+    current = current[path[i]] as Record<string, unknown>;
   }
 
   current[lastKey] = value;
@@ -231,7 +231,7 @@ export function flushQueuedPropertyUpdates() {
 }
 
 // Broadcast multiple property updates via Y.js
-function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: string) {
+function broadcastPropertyUpdatesViaYjs(updates: Record<string, unknown>, sceneId: string) {
   const partyDataManager = getPartyDataManager();
   if (!partyDataManager) {
     devWarn('broadcaster', 'PartyDataManager not available for property updates - Y.js sync will not work!');
@@ -260,7 +260,8 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
     devLog('broadcaster', 'Using Y.js stageProps as base for updates:', updatedStageProps);
 
     // Apply all pending updates to the copy
-    Object.values(updates).forEach(({ path, value }) => {
+    Object.values(updates).forEach((update) => {
+      const { path, value } = update as { path: PropertyPath; value: unknown };
       devLog('broadcaster', `Applying update: ${path.join('.')} = ${JSON.stringify(value)}`);
       applyUpdate(updatedStageProps, path, value);
     });
@@ -293,11 +294,11 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, any>, sceneId: s
 
 export type PropertyUpdate = {
   path: PropertyPath;
-  value: any;
+  value: unknown;
   sceneId: string;
 };
 
 export type PropertyUpdates = {
-  properties: Array<{ path: PropertyPath; value: any }>;
+  properties: Array<{ path: PropertyPath; value: unknown }>;
   sceneId: string;
 };

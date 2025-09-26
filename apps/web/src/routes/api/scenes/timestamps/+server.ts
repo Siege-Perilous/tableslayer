@@ -1,10 +1,11 @@
+import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '../../../../lib/db/app/index.js';
 import { gameSessionTable, sceneTable } from '../../../../lib/db/app/schema.js';
 import { isUserInParty } from '../../../../lib/server/party/index.js';
 
-export async function POST({ request, locals }: { request: Request; locals: any }) {
+export async function POST({ request, locals }: RequestEvent) {
   const user = locals.user;
   if (!user) {
     return json({ error: 'Unauthorized' }, { status: 401 });
