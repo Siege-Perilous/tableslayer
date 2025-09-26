@@ -1,6 +1,9 @@
+// prettier-ignore
 import * as THREE from 'three';
-import type { GridLayerProps } from '../../GridLayer/types';
+// prettier-ignore
 import type { DisplayProps } from '../../Stage/types';
+// prettier-ignore
+import type { GridLayerProps } from '../../GridLayer/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
 import { BaseMeasurement } from './BaseMeasurement';
