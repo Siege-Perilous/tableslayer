@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { GridLayerProps } from '../../GridLayer/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle } from '../utils/canvasDrawing';
@@ -9,7 +10,7 @@ export class CircleMeasurement extends BaseMeasurement {
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
     displayProps: DisplayProps,
-    gridProps: any
+    gridProps: GridLayerProps
   ) {
     super(MeasurementType.Circle, startPoint, measurementProps, displayProps, gridProps);
   }

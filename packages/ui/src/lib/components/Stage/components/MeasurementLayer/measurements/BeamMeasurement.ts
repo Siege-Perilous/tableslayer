@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { GridLayerProps } from '../../GridLayer/types';
 import type { DisplayProps } from '../../Stage/types';
 import { MeasurementType, type MeasurementLayerProps } from '../types';
 import { drawCircle, drawRectangle } from '../utils/canvasDrawing';
@@ -11,7 +12,7 @@ export class BeamMeasurement extends BaseMeasurement {
     startPoint: THREE.Vector2,
     measurementProps: MeasurementLayerProps,
     displayProps: DisplayProps,
-    gridProps: any
+    gridProps: GridLayerProps
   ) {
     super(MeasurementType.Beam, startPoint, measurementProps, displayProps, gridProps);
     this.beamWidth = measurementProps.beamWidth;

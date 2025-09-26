@@ -342,6 +342,7 @@ export interface CubeCoordinate {
  * @param hex Fractional hex coordinates
  * @returns Rounded hex coordinates
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function hexRound(hex: HexCoordinate): HexCoordinate {
   // Convert to cube coordinates for rounding
   const cube = axialToCube(hex);

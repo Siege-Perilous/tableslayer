@@ -266,7 +266,8 @@ export function createTextCanvas(
   fontSize: number,
   color: string,
   outlineColor: string = '#000000',
-  outlineThickness: number = 16,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _outlineThickness: number = 16,
   units?: string
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');

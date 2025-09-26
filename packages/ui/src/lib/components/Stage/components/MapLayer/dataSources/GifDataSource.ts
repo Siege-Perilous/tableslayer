@@ -3,6 +3,18 @@ import * as THREE from 'three';
 import type { Size } from '../../../types';
 import type { IMapDataSource } from './IMapDataSource';
 
+interface GifFrame {
+  dims: {
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  };
+  patch: Uint8ClampedArray;
+  delay: number;
+  disposalType?: number;
+}
+
 /**
  * Data source for loading and animating GIF images as textures in a 3D scene.
  *
@@ -24,7 +36,7 @@ export class GifDataSource implements IMapDataSource {
   /** Dimensions of the GIF image */
   private size: Size | null = null;
   /** Array of decompressed GIF frames */
-  private frames: any[] = [];
+  private frames: GifFrame[] = [];
   /** Index of the currently displayed frame */
   private currentFrameIndex = 0;
   /** Animation frame ID for canceling the animation loop */
@@ -192,7 +204,7 @@ export class GifDataSource implements IMapDataSource {
    *
    * @param frame - The frame object containing patch data and dimensions
    */
-  private drawPatch(frame: any): void {
+  private drawPatch(frame: GifFrame): void {
     const dims = frame.dims;
 
     // Resize temp canvas if needed

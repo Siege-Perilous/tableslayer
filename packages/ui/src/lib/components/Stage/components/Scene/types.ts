@@ -56,11 +56,13 @@ export interface SceneLayerProps {
   zoom: number;
 }
 
+import type { Marker } from '../MarkerLayer/types';
+
 export interface SceneExports {
   fill: () => void;
   fit: () => void;
   generateThumbnail: () => Promise<Blob>;
-  getMarkerScreenPosition: (marker: any) => { x: number; y: number } | null;
+  getMarkerScreenPosition: (marker: Marker) => { x: number; y: number } | null;
 
   annotations: {
     clear: (layerId: string) => void;
@@ -88,8 +90,8 @@ export interface SceneExports {
   markers: {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
-    hoveredMarker: any | null;
-    selectedMarker: any | null;
+    hoveredMarker: Marker | null;
+    selectedMarker: Marker | null;
     maintainHover: (maintain: boolean) => void;
   };
 
