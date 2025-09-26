@@ -54,9 +54,11 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
       value.every(
         (pane: unknown) =>
           typeof pane === 'object' &&
-          typeof pane.size === 'number' &&
-          pane.size >= 0 &&
-          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+          pane !== null &&
+          'size' in pane &&
+          typeof (pane as PaneConfig).size === 'number' &&
+          (pane as PaneConfig).size >= 0 &&
+          ((pane as PaneConfig).isCollapsed === undefined || typeof (pane as PaneConfig).isCollapsed === 'boolean')
       )
   },
   paneLayoutMobile: {
@@ -71,9 +73,11 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
       value.every(
         (pane: unknown) =>
           typeof pane === 'object' &&
-          typeof pane.size === 'number' &&
-          pane.size >= 0 &&
-          (pane.isCollapsed === undefined || typeof pane.isCollapsed === 'boolean')
+          pane !== null &&
+          'size' in pane &&
+          typeof (pane as PaneConfig).size === 'number' &&
+          (pane as PaneConfig).size >= 0 &&
+          ((pane as PaneConfig).isCollapsed === undefined || typeof (pane as PaneConfig).isCollapsed === 'boolean')
       )
   }
 };

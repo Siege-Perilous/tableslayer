@@ -325,8 +325,8 @@
     );
   };
 
-  let clientPaneLayoutDesktop = $state<PaneConfig[]>(getInitialLayout('paneLayoutDesktop', paneLayoutDesktop));
-  let clientPaneLayoutMobile = $state<PaneConfig[]>(getInitialLayout('paneLayoutMobile', paneLayoutMobile));
+  let clientPaneLayoutDesktop = $state<PaneConfig[]>(getInitialLayout('paneLayoutDesktop', data.paneLayoutDesktop));
+  let clientPaneLayoutMobile = $state<PaneConfig[]>(getInitialLayout('paneLayoutMobile', data.paneLayoutMobile));
 
   const paneLayout = $derived(isMobile ? clientPaneLayoutMobile : clientPaneLayoutDesktop);
 
@@ -1011,8 +1011,8 @@
             timestamp: Date.now()
           });
 
-          // Initialize Y.js with the current scene data
-          partyData.initializeSceneData(currentSceneId, sharedStageProps, currentSelectedSceneMarkers || []);
+          // Initialize Y.js with the current scene data - use converted markers from stageProps
+          partyData.initializeSceneData(currentSceneId, sharedStageProps, sharedStageProps.marker.markers || []);
         } else if (isSceneSwitch) {
           devLog('scene', 'Scene switch - Y.js data already exists, not reinitializing');
         } else {

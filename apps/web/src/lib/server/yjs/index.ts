@@ -1,6 +1,6 @@
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, type WebSocket as WSWebSocket } from 'ws';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as syncProtocol from 'y-protocols/sync';
 import * as Y from 'yjs';
@@ -52,7 +52,7 @@ export class YjsWebSocketServer {
   /**
    * Set up Y.js connection for a WebSocket
    */
-  private setupConnection(ws: WebSocket, docName: string) {
+  private setupConnection(ws: WSWebSocket, docName: string) {
     // Get or create document
     let doc = this.docs.get(docName);
     if (!doc) {
@@ -146,10 +146,10 @@ export class YjsWebSocketServer {
   /**
    * Broadcast message to all clients connected to a document (except sender)
    */
-  private broadcast(docName: string, message: Uint8Array, sender: WebSocket) {
+  private broadcast(docName: string, message: Uint8Array, sender: WSWebSocket) {
     if (!this.wss) return;
 
-    this.wss.clients.forEach((client: WebSocket) => {
+    this.wss.clients.forEach((client) => {
       if (client !== sender && client.readyState === 1) {
         // WebSocket.OPEN
         try {

@@ -175,7 +175,7 @@ export function queuePropertyUpdate(
 // Helper to apply update at specific path
 function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: unknown) {
   const lastKey = path[path.length - 1];
-  let current = obj;
+  let current: Record<string, unknown> = obj;
 
   // Navigate to the parent object
   for (let i = 0; i < path.length - 1; i++) {
@@ -183,7 +183,7 @@ function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: un
     if (current[path[i]] === undefined || typeof current[path[i]] !== 'object' || current[path[i]] === null) {
       current[path[i]] = {};
     }
-    current = current[path[i]];
+    current = current[path[i]] as Record<string, unknown>;
   }
 
   current[lastKey] = value;
@@ -260,7 +260,8 @@ function broadcastPropertyUpdatesViaYjs(updates: Record<string, unknown>, sceneI
     devLog('broadcaster', 'Using Y.js stageProps as base for updates:', updatedStageProps);
 
     // Apply all pending updates to the copy
-    Object.values(updates).forEach(({ path, value }) => {
+    Object.values(updates).forEach((update) => {
+      const { path, value } = update as { path: PropertyPath; value: unknown };
       devLog('broadcaster', `Applying update: ${path.join('.')} = ${JSON.stringify(value)}`);
       applyUpdate(updatedStageProps, path, value);
     });

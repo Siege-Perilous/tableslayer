@@ -494,8 +494,8 @@ export class PartyDataManager {
     const cursors = this.getCursors();
 
     return {
-      isPaused,
-      activeSceneId,
+      isPaused: isPaused as boolean,
+      activeSceneId: activeSceneId as string | undefined,
       cursors
     };
   }
@@ -524,12 +524,12 @@ export class PartyDataManager {
     }
 
     return {
-      stageProps: sceneMap.get('stageProps') || {},
-      markers: sceneMap.get('markers') || [],
-      localStates: sceneMap.get('localStates') || {},
-      lastUpdated: sceneMap.get('lastUpdated') || Date.now(),
-      saveInProgress: sceneMap.get('saveInProgress') || false,
-      activeSaver: sceneMap.get('activeSaver')
+      stageProps: (sceneMap.get('stageProps') || {}) as StageProps,
+      markers: (sceneMap.get('markers') || []) as Marker[],
+      localStates: (sceneMap.get('localStates') || {}) as Record<string, LocalViewportState>,
+      lastUpdated: (sceneMap.get('lastUpdated') || Date.now()) as number,
+      saveInProgress: (sceneMap.get('saveInProgress') || false) as boolean,
+      activeSaver: sceneMap.get('activeSaver') as string | undefined
     };
   }
 
@@ -628,7 +628,7 @@ export class PartyDataManager {
 
       // If already initialized recently (within 5 seconds), skip
       const lastInit = this.yGameSessionMeta.get('lastInitTimestamp');
-      if (initFlag && lastInit && Date.now() - lastInit < 5000) {
+      if (initFlag && lastInit && Date.now() - (lastInit as number) < 5000) {
         devLog('yjs', 'Y.js recently initialized, skipping');
         return;
       }
@@ -753,12 +753,12 @@ export class PartyDataManager {
 
   isSaveInProgress(sceneId: string): boolean {
     const sceneMap = this.yScenes.get(sceneId);
-    return sceneMap?.get('saveInProgress') || false;
+    return (sceneMap?.get('saveInProgress') as boolean) || false;
   }
 
   getActiveSaver(sceneId: string): string | null {
     const sceneMap = this.yScenes.get(sceneId);
-    return sceneMap?.get('activeSaver') || null;
+    return (sceneMap?.get('activeSaver') as string) || null;
   }
 
   // Debug utilities
@@ -784,7 +784,7 @@ export class PartyDataManager {
   // Drift detection
   getSceneLastUpdated(sceneId: string): number | null {
     const sceneMap = this.yScenes.get(sceneId);
-    return sceneMap?.get('lastUpdated') || null;
+    return (sceneMap?.get('lastUpdated') as number) || null;
   }
 
   checkSceneDrift(sceneId: string, dbTimestamp: number): boolean {
