@@ -1,3 +1,4 @@
+import type { HoveredMarker, Marker, StageProps } from '@tableslayer/ui';
 import { devLog } from '../debug';
 import { PartyDataManager, type PartyState, type SceneData, type SceneMetadata } from './PartyDataManager';
 
@@ -80,7 +81,7 @@ export function usePartyData() {
     getMeasurements: () => partyDataManager!.getMeasurements(),
 
     // Hovered marker management (DM hover to reveal markers to players)
-    updateHoveredMarker: (marker: any) => partyDataManager!.updateHoveredMarker(marker),
+    updateHoveredMarker: (marker: HoveredMarker | null) => partyDataManager!.updateHoveredMarker(marker),
     getHoveredMarker: () => partyDataManager!.getHoveredMarker(),
 
     // Pinned markers management (DM pins markers for player view)
@@ -92,15 +93,15 @@ export function usePartyData() {
 
     // Party state
     getPartyState: (): PartyState => partyDataManager!.getPartyState(),
-    updatePartyState: (key: keyof PartyState, value: any) => partyDataManager!.updatePartyState(key, value),
+    updatePartyState: (key: keyof PartyState, value: unknown) => partyDataManager!.updatePartyState(key, value),
 
     // Scene data
     getSceneData: (sceneId: string): SceneData | null => partyDataManager!.getSceneData(sceneId),
-    updateSceneStageProps: (sceneId: string, stageProps: any) =>
+    updateSceneStageProps: (sceneId: string, stageProps: StageProps) =>
       partyDataManager!.updateSceneStageProps(sceneId, stageProps),
 
     // Initialization helpers
-    initializeSceneData: (sceneId: string, stageProps: any, markers: any[]) =>
+    initializeSceneData: (sceneId: string, stageProps: StageProps, markers: Marker[]) =>
       partyDataManager!.initializeSceneData(sceneId, stageProps, markers),
     initializeScenesList: (scenes: SceneMetadata[]) => partyDataManager!.initializeScenesList(scenes),
     initializePartyState: (state: Partial<PartyState>) => partyDataManager!.initializePartyState(state),

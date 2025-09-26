@@ -86,13 +86,13 @@ export class PartyDataManager {
   public gameSessionId?: string;
 
   // Game session-specific Y.js shared data structures
-  private yScenes: Y.Map<any>;
+  private yScenes: Y.Map<Y.Map<unknown>>;
   private yScenesList: Y.Array<SceneMetadata>;
-  private yGameSessionMeta: Y.Map<any>; // For game session metadata like initialization flags
+  private yGameSessionMeta: Y.Map<unknown>; // For game session metadata like initialization flags
   private yCursors: Y.Map<CursorData>;
 
   // Party-level Y.js shared data structures
-  private yPartyState: Y.Map<any>;
+  private yPartyState: Y.Map<unknown>;
 
   // Reactive state
   private subscribers = new Set<() => void>();
@@ -221,8 +221,6 @@ export class PartyDataManager {
     const cursors: Record<string, CursorData> = {};
 
     if (this.gameSessionProvider.awareness) {
-      const allStates = this.gameSessionProvider.awareness.getStates();
-
       this.gameSessionProvider.awareness.getStates().forEach((state, clientId) => {
         if (state.cursor) {
           if (clientId !== this.gameSessionProvider.awareness.clientID) {
@@ -505,7 +503,7 @@ export class PartyDataManager {
   /**
    * Update party state
    */
-  updatePartyState(key: keyof PartyState, value: any) {
+  updatePartyState(key: keyof PartyState, value: unknown) {
     if (key === 'cursors') {
       devWarn('yjs', 'Cannot directly update cursors - use updateCursor instead');
       return;

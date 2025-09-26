@@ -3,6 +3,7 @@ import { YSocketIO } from 'y-socket.io/dist/server';
 
 // Global instance to prevent multiple initializations
 let wsServerInstance: Server | null = null;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let ysocketioInstance: YSocketIO | null = null;
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
@@ -13,10 +14,10 @@ export const initializeSocketIO = (server: any) => {
   }
 
   // Check if the server already has a Socket.IO instance attached
-  // @ts-ignore - accessing private property
+  // @ts-expect-error - accessing private property
   if (server._socketio) {
     console.log('Socket.IO already attached to server, reusing instance');
-    // @ts-ignore
+    // @ts-expect-error - accessing private property
     return server._socketio;
   }
 
@@ -34,13 +35,13 @@ export const initializeSocketIO = (server: any) => {
   // Store references
   wsServerInstance = wsServer;
   ysocketioInstance = ysocketio;
-  // @ts-ignore - storing reference on server
+  // @ts-expect-error - storing reference on server
   server._socketio = wsServer;
 
   // Hook into the Y.js server to add cursor tracking
   // Y.js creates namespaces dynamically, so we need to hook into the connection events
   const originalOf = wsServer.of.bind(wsServer);
-  wsServer.of = (name: any, fn?: any) => {
+  wsServer.of = (name: string | RegExp, fn?: (namespace: ReturnType<typeof originalOf>) => void) => {
     const namespace = originalOf(name, fn);
 
     // If this is a Y.js namespace, add our cursor handlers

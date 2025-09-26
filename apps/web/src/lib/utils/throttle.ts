@@ -4,6 +4,7 @@
  * @param wait The number of milliseconds to throttle invocations to
  * @returns A new, throttled function
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function throttle<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
   let lastCall = 0;
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -44,6 +45,7 @@ export function throttle<T extends (...args: any[]) => any>(func: T, wait: numbe
  * @param wait The number of milliseconds to delay
  * @returns A new, debounced function
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 

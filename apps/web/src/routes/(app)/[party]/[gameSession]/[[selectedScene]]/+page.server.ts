@@ -47,7 +47,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   try {
     const maskData = await getSceneMaskData(selectedScene.id);
     selectedSceneFogMask = maskData.fogOfWarMask;
-  } catch (error) {
+  } catch {
     // Silently ignore - scene might not have mask data yet
   }
 
@@ -58,7 +58,7 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
       const maskData = await getAnnotationMaskData(annotation.id);
       selectedSceneAnnotationMasks[annotation.id] = maskData?.mask || null;
     }
-  } catch (error) {
+  } catch {
     // Silently ignore - annotations might not have mask data yet
   }
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];

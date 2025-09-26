@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
     try {
       const maskData = await getSceneMaskData(activeScene.id);
       activeSceneFogMask = maskData.fogOfWarMask;
-    } catch (error) {
+    } catch {
       // Silently ignore - scene might not have mask data yet
     }
 
@@ -55,7 +55,7 @@ export const load: PageServerLoad = async (event) => {
         const maskData = await getAnnotationMaskData(annotation.id);
         activeSceneAnnotationMasks[annotation.id] = maskData?.mask || null;
       }
-    } catch (error) {
+    } catch {
       // Silently ignore - annotations might not have mask data yet
     }
   }

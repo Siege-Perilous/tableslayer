@@ -49,13 +49,13 @@ export const POST = apiFactory(
 
     // Track results for response
     const results = {
-      scene: null as any,
+      scene: null as unknown,
       markers: {
-        created: [] as any[],
-        updated: [] as any[],
+        created: [] as unknown[],
+        updated: [] as unknown[],
         deleted: [] as string[]
       },
-      gameSession: null as any
+      gameSession: null as unknown
     };
 
     try {

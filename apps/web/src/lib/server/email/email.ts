@@ -34,7 +34,7 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
 
 export const addEmailtoAudience = async (email: string) => {
   try {
-    const response = await resend.contacts.create({
+    await resend.contacts.create({
       email,
       audienceId: process.env.RESEND_AUDIENCE_ID!,
       unsubscribed: false

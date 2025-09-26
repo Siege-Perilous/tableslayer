@@ -6,6 +6,7 @@ import { extractLocationFromUrl } from './extractLocationFromUrl';
 /**
  * Converts a UI marker to a database marker format
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partial<InsertMarker> => {
   if (!marker) {
     devError('converter', 'Attempted to convert undefined marker to DB format');

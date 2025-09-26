@@ -52,7 +52,7 @@ export class YjsWebSocketServer {
   /**
    * Set up Y.js connection for a WebSocket
    */
-  private setupConnection(ws: any, docName: string) {
+  private setupConnection(ws: WebSocket, docName: string) {
     // Get or create document
     let doc = this.docs.get(docName);
     if (!doc) {
@@ -103,7 +103,8 @@ export class YjsWebSocketServer {
     // Handle awareness changes
     const awarenessChangeHandler = (
       { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
-      origin: any
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      origin: unknown
     ) => {
       const changedClients = added.concat(updated).concat(removed);
       const encoder = encoding.createEncoder();
@@ -118,7 +119,7 @@ export class YjsWebSocketServer {
     awareness.on('change', awarenessChangeHandler);
 
     // Handle document updates
-    const updateHandler = (update: Uint8Array, origin: any) => {
+    const updateHandler = (update: Uint8Array, origin: unknown) => {
       if (origin !== ws) {
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, MESSAGE_SYNC);
@@ -145,10 +146,10 @@ export class YjsWebSocketServer {
   /**
    * Broadcast message to all clients connected to a document (except sender)
    */
-  private broadcast(docName: string, message: Uint8Array, sender: any) {
+  private broadcast(docName: string, message: Uint8Array, sender: WebSocket) {
     if (!this.wss) return;
 
-    this.wss.clients.forEach((client: any) => {
+    this.wss.clients.forEach((client: WebSocket) => {
       if (client !== sender && client.readyState === 1) {
         // WebSocket.OPEN
         try {

@@ -98,7 +98,7 @@ export const getScene = async (sceneId: string): Promise<SelectScene | (SelectSc
 
   // Remove fogOfWarMask if present to avoid serialization issues
   if ('fogOfWarMask' in scene) {
-    delete (scene as any).fogOfWarMask;
+    delete (scene as Record<string, unknown>).fogOfWarMask;
   }
 
   if (!scene?.mapLocation) {
@@ -163,7 +163,7 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
   for (const scene of scenes) {
     // Remove fogOfWarMask if present to avoid serialization issues
     if ('fogOfWarMask' in scene) {
-      delete (scene as any).fogOfWarMask;
+      delete (scene as Record<string, unknown>).fogOfWarMask;
     }
 
     // Use mapThumbLocation if available, otherwise fall back to mapLocation
@@ -470,7 +470,7 @@ export const getSceneFromOrder = async (
 
   // Remove fogOfWarMask if present to avoid serialization issues
   if ('fogOfWarMask' in scene) {
-    delete (scene as any).fogOfWarMask;
+    delete (scene as Record<string, unknown>).fogOfWarMask;
   }
 
   let thumb = null;
@@ -720,6 +720,7 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
   const newOrder = targetOrder;
 
   // Copy all scene data except the fields we need to change
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _, name: __, order: ___, fogOfWarUrl: ____, lastUpdated: _____, ...sceneDataToCopy } = originalScene;
 
   // Insert the duplicated scene with all settings preserved
