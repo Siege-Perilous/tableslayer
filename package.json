@@ -10,7 +10,9 @@
     "format-check": "prettier --check .",
     "format-write": "prettier --write .",
     "prepare": "husky",
-    "deploy:party": "cd apps/web && pnpm deploy:party"
+    "deploy:party": "cd apps/web && pnpm deploy:party",
+    "assets:generate": "cd apps/web && pnpm assets:generate",
+    "assets:upload": "cd apps/web && pnpm assets:upload"
   },
   "devDependencies": {
     "husky": "^9.1.7",

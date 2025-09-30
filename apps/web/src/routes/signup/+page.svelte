@@ -51,7 +51,7 @@
 
 <Head title="Sign up" description="Sign up to Table Slayer" />
 
-<IllustrationOverlook />
+<IllustrationOverlook bucketUrl={data.bucketUrl} />
 
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>

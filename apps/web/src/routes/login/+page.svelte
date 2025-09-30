@@ -50,7 +50,7 @@
 
 <Head title="Sign in" description="Sign in to Table Slayer" />
 
-<IllustrationTown />
+<IllustrationTown bucketUrl={data.bucketUrl} />
 
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>

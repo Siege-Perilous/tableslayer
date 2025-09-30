@@ -6,6 +6,7 @@
   import { goto } from '$app/navigation';
   import { IllustrationParty } from '$lib/components';
 
+  let { data } = $props();
   let file = $state<FileList | null>(null);
   let partyName = $state('');
   let formIsLoading = $state(false);
@@ -57,7 +58,7 @@
 
 <Head title="Create Party" description="Create a new party Table Slayer" />
 
-<IllustrationParty />
+<IllustrationParty bucketUrl={data.bucketUrl} />
 
 <Panel class="createPartyPanel">
   <Title as="h1" size="md" data-testid="createParty">Create a new party</Title>

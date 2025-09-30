@@ -22,14 +22,13 @@ jobs:
           TURSO_APP_DB_URL=${{ secrets.TURSO_APP_DB_URL }}
           TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }}
           TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
-          TURSO_GS_PARENT_DB_URL=${{ secrets.TURSO_GS_PARENT_DB_URL }}
-          TURSO_GS_PARENT_DB_AUTH_TOKEN=${{ secrets.TURSO_GS_PARENT_DB_AUTH_TOKEN }}
           RESEND_TOKEN=${{ secrets.RESEND_TOKEN }}
           RESEND_AUDIENCE_ID=${{ secrets.RESEND_AUDIENCE_ID }}
           CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
           CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
           CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          CLOUDFLARE_R2_BUCKET_URL=${{ secrets.CLOUDFLARE_R2_BUCKET_URL }}
           SENTRY_DSN=${{ secrets.SENTRY_DSN }}
           BODY_SIZE_LIMIT=${{ secrets.BODY_SIZE_LIMIT }}
           ENV_NAME=production
@@ -46,7 +45,6 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
           PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
-          FATHOM_SITE_ID=${{ secrets.FATHOM_SITE_ID }}
           EOF
       - uses: ./.github/shared
       - name: Deploy PartyKit servers

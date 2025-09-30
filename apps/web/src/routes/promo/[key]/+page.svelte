@@ -54,7 +54,7 @@
 
 <div class="promo">
   <Panel class="promo__panel {data.parties && data.parties.length > 0 ? 'promo__panel--selection' : ''}">
-    <img src="https://files.tableslayer.com/illustrations/promo/promo.png" alt="Promos" width="562" height="396" />
+    <img src="{data.bucketUrl}/illustrations/promo/promo.png" alt="Promos" width="562" height="396" />
     <div class="promo__content">
       {#if data.error}
         <Title as="h1" size="sm">Promo claimed</Title>

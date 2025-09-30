@@ -111,14 +111,20 @@ export const createNamedPartyForUser = async (
   const partyId = uuidv4();
 
   try {
+    const partyValues: Partial<InsertParty> = {
+      id: partyId,
+      name: partyName,
+      slug
+    };
+
+    // Only include avatarFileId if it's provided, otherwise let database default handle it
+    if (avatarFileId !== undefined) {
+      partyValues.avatarFileId = avatarFileId;
+    }
+
     const party = await db
       .insert(partyTable)
-      .values({
-        id: partyId,
-        name: partyName,
-        slug,
-        avatarFileId: avatarFileId || 1
-      })
+      .values(partyValues as InsertParty)
       .returning()
       .get();
 

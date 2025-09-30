@@ -1,6 +1,9 @@
 <script lang="ts">
   import { Text, Spacer, Button, Link, Title } from '@tableslayer/ui';
   import { Head } from '$lib/components';
+
+  let { data } = $props();
+  const bucketUrl = data?.bucketUrl || 'https://files.tableslayer.com';
 </script>
 
 <Head
@@ -11,7 +14,7 @@
 <div class="home__demo">
   <div class="grid"></div>
   <img
-    srcset="https://files.tableslayer.com/illustrations/home/title.png 1x, https://files.tableslayer.com/illustrations/home/title-2x.png 2x"
+    srcset="{bucketUrl}/illustrations/home/title.png 1x, {bucketUrl}/illustrations/home/title-2x.png 2x"
     alt="Overlook illustration"
     class="home__wizard"
     height="440"
@@ -22,7 +25,7 @@
   <div>
     <div class="home__video">
       <video
-        src="https://files.tableslayer.com/illustrations/home/tsdemo.mp4"
+        src="{bucketUrl}/illustrations/home/tsdemo.mp4"
         autoplay
         loop
         muted
@@ -62,7 +65,7 @@
 <div class="home__features">
   <div>
     <img
-      srcset="https://files.tableslayer.com/illustrations/home/laptop.png 1x, https://files.tableslayer.com/illustrations/home/laptop-2x.png 2x"
+      srcset="{bucketUrl}/illustrations/home/laptop.png 1x, {bucketUrl}/illustrations/home/laptop-2x.png 2x"
       alt="Laptop illustration"
       class="home__featureImage"
       height="339"
@@ -75,7 +78,7 @@
   </div>
   <div>
     <img
-      srcset="https://files.tableslayer.com/illustrations/home/hand.png 1x, https://files.tableslayer.com/illustrations/home/hand-2x.png 2x"
+      srcset="{bucketUrl}/illustrations/home/hand.png 1x, {bucketUrl}/illustrations/home/hand-2x.png 2x"
       alt="Cloud illustration"
       class="home__featureImage"
       height="339"

@@ -23,13 +23,14 @@ export const buildSceneProps = (
   activeScene: SelectScene | (SelectScene & Thumb),
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   mode: 'client' | 'editor',
-  activeSceneAnnotations: SelectAnnotation[] = []
+  activeSceneAnnotations: SelectAnnotation[] = [],
+  bucketUrl?: string
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
 
   const thumbUrl =
     !isDefaultMap(activeScene.mapLocation) && activeScene.mapLocation
-      ? generateLargeImageUrl(activeScene.mapLocation)
+      ? generateLargeImageUrl(activeScene.mapLocation, bucketUrl)
       : StageDefaultProps.map.url;
 
   let markers: Marker[] = [];
@@ -45,7 +46,7 @@ export const buildSceneProps = (
         shape: marker.shape,
         shapeColor: marker.shapeColor,
         label: marker.label,
-        imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation) : null,
+        imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation, bucketUrl) : null,
         imageScale: 1,
         visibility: marker.visibility,
         note: marker.note || null

@@ -18,8 +18,6 @@ declare module '$env/static/private' {
   export const TURSO_API_TOKEN: string;
   export const TURSO_APP_DB_URL: string;
   export const TURSO_APP_DB_AUTH_TOKEN: string;
-  export const TURSO_GS_PARENT_DB_URL: string;
-  export const TURSO_GS_PARENT_DB_AUTH_TOKEN: string;
   export const RESEND_TOKEN: string;
   export const DEV_EMAIL: string;
   export const BASE_URL: string;

@@ -2,6 +2,8 @@
   let m = $state({ x: 0, y: 0 });
   import { fly } from 'svelte/transition';
 
+  let { bucketUrl }: { bucketUrl: string } = $props();
+
   const handleMousemove = (event: MouseEvent) => {
     m.x = event.clientX;
     m.y = event.clientY;
@@ -29,11 +31,21 @@
 
 <svelte:window onmousemove={handleMousemove} />
 {#if showBg}
-  <div class="party__bg" bind:this={bg} transition:fly={{ y: '20%', duration: 1000 }}></div>
+  <div
+    class="party__bg"
+    bind:this={bg}
+    style="--bg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/party/bg_light.png')"
+    transition:fly={{ y: '20%', duration: 1000 }}
+  ></div>
 {/if}
 
 {#if showFg}
-  <div class="party__fg" bind:this={fg} transition:fly={{ y: '20%', duration: 1000 }}></div>
+  <div
+    class="party__fg"
+    bind:this={fg}
+    style="--fg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/party/party.png')"
+    transition:fly={{ y: '20%', duration: 1000 }}
+  ></div>
 {/if}
 
 <style>
@@ -55,7 +67,7 @@
     height: 100%;
     z-index: 0;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/party/bg_light.png');
+    background-image: var(--bg-image);
     background-position: top 100px left 0px;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -69,7 +81,7 @@
     height: 100%;
     z-index: 3;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/party/party.png');
+    background-image: var(--fg-image);
     background-position: 120% 25%;
     background-size: 80%;
     background-repeat: no-repeat;
