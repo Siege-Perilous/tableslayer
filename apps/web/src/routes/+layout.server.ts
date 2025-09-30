@@ -3,10 +3,9 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
   const envName = process.env.ENV_NAME || 'development';
-  const fathomSiteId = process.env.FATHOM_SITE_ID || '';
   const bucketUrl = process.env.CLOUDFLARE_R2_BUCKET_URL || 'https://files.tableslayer.com';
 
-  if (!event.locals.user) return { envName, fathomSiteId, bucketUrl };
+  if (!event.locals.user) return { envName, bucketUrl };
 
   const userId = event.locals.user.id;
   try {
@@ -16,7 +15,6 @@ export const load: LayoutServerLoad = async (event) => {
       user,
       parties,
       envName,
-      fathomSiteId,
       bucketUrl
     };
   } catch (error) {
