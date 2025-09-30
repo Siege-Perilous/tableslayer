@@ -111,7 +111,7 @@ export const createNamedPartyForUser = async (
   const partyId = uuidv4();
 
   try {
-    const partyValues: any = {
+    const partyValues: Partial<InsertParty> = {
       id: partyId,
       name: partyName,
       slug
@@ -122,7 +122,11 @@ export const createNamedPartyForUser = async (
       partyValues.avatarFileId = avatarFileId;
     }
 
-    const party = await db.insert(partyTable).values(partyValues).returning().get();
+    const party = await db
+      .insert(partyTable)
+      .values(partyValues as InsertParty)
+      .returning()
+      .get();
 
     await db
       .insert(partyMemberTable)
