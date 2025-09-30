@@ -26,7 +26,7 @@ Table Slayer is built completely in the dark, ignoring modern design trends of a
 
 #### The less dependencies, the better
 
-Avoid large dependencies beyond the core framework choices. All design components should be hand crafted and use vanilla CSS.
+Avoid large dependencies beyond core framework choices. All design components should be hand crafted and use vanilla CSS.
 
 ## Development
 
