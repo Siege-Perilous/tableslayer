@@ -27,6 +27,8 @@
     "drop": "drizzle-kit drop --config ./src/lib/db/app/drizzle.config.app.ts",
     "pull": "drizzle-kit pull --config ./src/lib/db/app/drizzle.config.app.ts",
     "studio": "drizzle-kit studio --config ./src/lib/db/app/drizzle.config.app.ts",
+    "assets:generate": "node scripts/assets-generate.js",
+    "assets:upload": "node scripts/assets-upload.js",
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {

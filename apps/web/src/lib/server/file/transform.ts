@@ -1,3 +1,5 @@
+const BUCKET_URL = process.env.CLOUDFLARE_R2_BUCKET_URL || 'https://files.tableslayer.com';
+
 type ImageDetails = {
   width: number;
   height: number;
@@ -35,7 +37,7 @@ export const getImageDetails = async (url: string): Promise<ImageDetails> => {
 };
 
 export const getVideoUrl = (urlFragment: string): BuildImageResult => {
-  const url = `https://files.tableslayer.com/${urlFragment}`;
+  const url = `${BUCKET_URL}/${urlFragment}`;
   return {
     url,
     resizedUrl: url, // Use the same URL for videos (no resizing)
@@ -53,11 +55,11 @@ export const getVideoUrl = (urlFragment: string): BuildImageResult => {
 };
 
 export const transformImage = async (urlFragment: string, options: string): Promise<BuildImageResult> => {
-  const url = `https://files.tableslayer.com/${urlFragment}`;
-  const resizedUrl = `https://files.tableslayer.com/cdn-cgi/image/${options}/${urlFragment}`;
+  const url = `${BUCKET_URL}/${urlFragment}`;
+  const resizedUrl = `${BUCKET_URL}/cdn-cgi/image/${options}/${urlFragment}`;
 
   try {
-    const detailsUrl = `https://files.tableslayer.com/cdn-cgi/image/format=json,${options}/${urlFragment}`;
+    const detailsUrl = `${BUCKET_URL}/cdn-cgi/image/format=json,${options}/${urlFragment}`;
     const details = await getImageDetails(detailsUrl);
     return { url, resizedUrl, details };
   } catch (error) {

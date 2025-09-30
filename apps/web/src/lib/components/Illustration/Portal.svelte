@@ -1,5 +1,6 @@
 <script lang="ts">
-  let { showPortal }: { showPortal: boolean } = $props();
+  let { showPortal, bucketUrl = 'https://files.tableslayer.com' }: { showPortal: boolean; bucketUrl?: string } =
+    $props();
   let m = $state({ x: 0, y: 0 });
   import { fly, scale } from 'svelte/transition';
 
@@ -33,20 +34,40 @@
 
 <svelte:window onmousemove={handleMousemove} />
 {#if showPortal}
-  <div class="portal-frame" bind:this={portal} transition:scale={{ duration: 500, start: 0.1 }}>
+  <div
+    class="portal-frame"
+    bind:this={portal}
+    style="--portal-effect-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/portal/effect.png')"
+    transition:scale={{ duration: 500, start: 0.1 }}
+  >
     <div class="portal"></div>
   </div>
 {/if}
 {#if showBg}
-  <div class="portal__bg" bind:this={bg} transition:fly={{ y: '20%', duration: 1000 }}></div>
+  <div
+    class="portal__bg"
+    bind:this={bg}
+    style="--bg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/portal/bg.png')"
+    transition:fly={{ y: '20%', duration: 1000 }}
+  ></div>
 {/if}
 
 {#if showFg}
-  <div class="portal__fg" bind:this={fg} transition:fly={{ y: '20%', duration: 1000 }}></div>
+  <div
+    class="portal__fg"
+    bind:this={fg}
+    style="--portal-bg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/portal/portal.png')"
+    transition:fly={{ y: '20%', duration: 1000 }}
+  ></div>
 {/if}
 
 {#if showMage}
-  <div class="portal__mage" bind:this={mage} transition:fly={{ x: '-10%', duration: 500 }}></div>
+  <div
+    class="portal__mage"
+    bind:this={mage}
+    style="--mage-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/portal/mage.png')"
+    transition:fly={{ x: '-10%', duration: 500 }}
+  ></div>
 {/if}
 
 <style>
@@ -72,7 +93,7 @@
     height: 100%;
     z-index: 0;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/portal/bg.png');
+    background-image: var(--bg-image);
     background-position: bottom -50px left 0px;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -90,7 +111,7 @@
     height: 100%;
     z-index: 3;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/portal/portal.png');
+    background-image: var(--portal-bg-image);
     background-position: bottom 0px right 0px;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -104,7 +125,7 @@
     height: 100%;
     z-index: 5;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/portal/mage.png');
+    background-image: var(--mage-image);
     background-position: bottom -50px left 0px;
     background-size: 25%;
     background-repeat: no-repeat;
@@ -137,7 +158,7 @@
     animation: portal-spin 7s infinite linear;
   }
   .portal {
-    --portal-img: url(https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/portal/effect.png);
+    --portal-img: var(--portal-effect-image);
     --portal-mask: var(--portal-img) top left / 100% 100% no-repeat;
     -webkit-mask: var(--portal-mask);
     mask: var(--portal-mask);

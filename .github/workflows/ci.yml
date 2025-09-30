@@ -221,6 +221,7 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
           CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}
           CLOUDFLARE_R2_BUCKET_NAME=${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+          CLOUDFLARE_R2_BUCKET_URL=${{ secrets.CLOUDFLARE_R2_BUCKET_URL }}
           ENV_NAME=preview
           GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}
           BODY_SIZE_LIMIT=${{ secrets.BODY_SIZE_LIMIT }}

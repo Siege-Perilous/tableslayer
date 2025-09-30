@@ -86,7 +86,7 @@
 
 <Head title="Verify your email" />
 
-<IllustrationPortal {showPortal} />
+<IllustrationPortal {showPortal} bucketUrl={data.bucketUrl} />
 
 <Panel class="verify">
   <div>

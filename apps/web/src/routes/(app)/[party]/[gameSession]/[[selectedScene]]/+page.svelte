@@ -196,8 +196,8 @@
         // Create thumbnail object using the same format as server-side processing
         const options = 'w=400,h=225,fit=cover,gravity=center';
         const thumb = {
-          resizedUrl: `https://files.tableslayer.com/cdn-cgi/image/${options}/${imageLocation}`,
-          originalUrl: `https://files.tableslayer.com/${imageLocation}`
+          resizedUrl: `${data.bucketUrl}/cdn-cgi/image/${options}/${imageLocation}`,
+          originalUrl: `${data.bucketUrl}/${imageLocation}`
         };
         return { ...scene, thumb };
       }
@@ -236,7 +236,13 @@
   devLog('annoations', data.selectedSceneAnnotations);
   // Socket now managed by PartyDataManager for unified connection
   let stageProps: StageProps = $state(
-    buildSceneProps(data.selectedScene, data.selectedSceneMarkers, 'editor', data.selectedSceneAnnotations)
+    buildSceneProps(
+      data.selectedScene,
+      data.selectedSceneMarkers,
+      'editor',
+      data.selectedSceneAnnotations,
+      data.bucketUrl
+    )
   );
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
@@ -954,7 +960,7 @@
       // Always use database markers for buildSceneProps as it expects the database format
       const markersToUse = currentSelectedSceneMarkers;
 
-      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations);
+      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations, data.bucketUrl);
       // Preserve local annotation line width preference
       stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
 
@@ -1082,7 +1088,8 @@
             sceneToUse,
             currentSelectedSceneMarkers,
             'editor',
-            currentSelectedSceneAnnotations
+            currentSelectedSceneAnnotations,
+            data.bucketUrl
           );
           // Preserve local annotation line width preference
           stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
