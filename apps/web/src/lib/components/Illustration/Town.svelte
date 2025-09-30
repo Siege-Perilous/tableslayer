@@ -2,6 +2,8 @@
   let m = $state({ x: 0, y: 0 });
   import { fade } from 'svelte/transition';
 
+  let { bucketUrl = 'https://files.tableslayer.com' }: { bucketUrl?: string } = $props();
+
   const handleMousemove = (event: MouseEvent) => {
     m.x = event.clientX;
     m.y = event.clientY;
@@ -36,17 +38,27 @@
     <div
       class={`cloud cloud${i + 1}`}
       bind:this={cloudElements[i]}
-      style={`background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=300/illustrations/signup/c${i + 1}.png')`}
+      style={`background-image: url('${bucketUrl}/cdn-cgi/image/w=300/illustrations/signup/c${i + 1}.png')`}
       transition:fade={{ duration: 800 }}
     ></div>
   {/if}
 {/each}
 {#if showBg}
-  <div class="login__bg" bind:this={bg} transition:fade={{ duration: 1000 }}></div>
+  <div
+    class="login__bg"
+    bind:this={bg}
+    style="--bg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/login/bg-solid.png')"
+    transition:fade={{ duration: 1000 }}
+  ></div>
 {/if}
 
 {#if showFg}
-  <div class="login__fg" bind:this={fg} transition:fade={{ duration: 1000 }}></div>
+  <div
+    class="login__fg"
+    bind:this={fg}
+    style="--fg-image: url('{bucketUrl}/cdn-cgi/image/w=2000/illustrations/login/fg-solid.png')"
+    transition:fade={{ duration: 1000 }}
+  ></div>
 {/if}
 
 <style>
@@ -120,7 +132,7 @@
     z-index: 0;
     margin-left: -50px;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/bg-solid.png');
+    background-image: var(--bg-image);
     background-position: bottom -50px left 0px;
     background-size: 85%;
     background-repeat: no-repeat;
@@ -138,7 +150,7 @@
     height: 100%;
     z-index: 3;
     content: '';
-    background-image: url('https://files.tableslayer.com/cdn-cgi/image/w=2000/illustrations/login/fg-solid.png');
+    background-image: var(--fg-image);
     background-position: bottom 0px right -100px;
     background-size: 85%;
     background-repeat: no-repeat;

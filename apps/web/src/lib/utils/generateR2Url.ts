@@ -11,7 +11,7 @@ export type R2TransformOptions = {
   quality?: number;
 };
 
-const R2_BASE_URL = 'https://files.tableslayer.com';
+const DEFAULT_R2_BASE_URL = 'https://files.tableslayer.com';
 const DEFAULT_MAP = 'map/example1080.png';
 
 /**
@@ -29,13 +29,18 @@ export function isVideoFile(location: string): boolean {
  * @param options - Transformation options
  * @returns The full R2 URL with transformations
  */
-export function generateR2Url(location: string | null | undefined, options: R2TransformOptions = {}): string {
+export function generateR2Url(
+  location: string | null | undefined,
+  options: R2TransformOptions & { bucketUrl?: string } = {}
+): string {
   // Return empty string if no location
   if (!location) return '';
 
+  const baseUrl = options.bucketUrl || DEFAULT_R2_BASE_URL;
+
   // Don't transform the default map or video files
   if (location === DEFAULT_MAP || isVideoFile(location)) {
-    return `${R2_BASE_URL}/${location}`;
+    return `${baseUrl}/${location}`;
   }
 
   // Build transformation string
@@ -50,9 +55,9 @@ export function generateR2Url(location: string | null | undefined, options: R2Tr
   // Construct URL
   let url: string;
   if (transforms.length > 0) {
-    url = `${R2_BASE_URL}/cdn-cgi/image/${transforms.join(',')}/${location}`;
+    url = `${baseUrl}/cdn-cgi/image/${transforms.join(',')}/${location}`;
   } else {
-    url = `${R2_BASE_URL}/${location}`;
+    url = `${baseUrl}/${location}`;
   }
 
   return url;
@@ -62,17 +67,18 @@ export function generateR2Url(location: string | null | undefined, options: R2Tr
  * Preset for large images (3000x3000 max) - used for Stage display
  * For video files, returns the direct URL without transformations
  */
-export function generateLargeImageUrl(location: string | null | undefined): string {
+export function generateLargeImageUrl(location: string | null | undefined, bucketUrl?: string): string {
   // For video files, return direct URL without transformations
   if (location && isVideoFile(location)) {
-    return generateR2Url(location, {});
+    return generateR2Url(location, { bucketUrl });
   }
 
   return generateR2Url(location, {
     width: 3000,
     height: 3000,
     fit: 'scale-down',
-    gravity: 'center'
+    gravity: 'center',
+    bucketUrl
   });
 }
 
@@ -80,29 +86,31 @@ export function generateLargeImageUrl(location: string | null | undefined): stri
  * Preset for small thumbnails (400x225) - used for scene selector, etc.
  * For video files, returns the direct URL without transformations
  */
-export function generateSmallThumbnailUrl(location: string | null | undefined): string {
+export function generateSmallThumbnailUrl(location: string | null | undefined, bucketUrl?: string): string {
   // For video files, return direct URL without transformations
   if (location && isVideoFile(location)) {
-    return generateR2Url(location, {});
+    return generateR2Url(location, { bucketUrl });
   }
 
   return generateR2Url(location, {
     width: 400,
     height: 225,
     fit: 'cover',
-    gravity: 'center'
+    gravity: 'center',
+    bucketUrl
   });
 }
 
 /**
  * Preset for square thumbnails (300x300) - used for markers, avatars, etc.
  */
-export function generateSquareThumbnailUrl(location: string | null | undefined): string {
+export function generateSquareThumbnailUrl(location: string | null | undefined, bucketUrl?: string): string {
   return generateR2Url(location, {
     width: 300,
     height: 300,
     fit: 'cover',
-    gravity: 'center'
+    gravity: 'center',
+    bucketUrl
   });
 }
 
