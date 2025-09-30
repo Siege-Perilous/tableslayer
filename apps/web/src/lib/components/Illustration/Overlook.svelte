@@ -2,7 +2,7 @@
   let m = $state({ x: 0, y: 0 });
   import { fade } from 'svelte/transition';
 
-  let { bucketUrl = 'https://files.tableslayer.com' }: { bucketUrl?: string } = $props();
+  let { bucketUrl }: { bucketUrl: string } = $props();
 
   const handleMousemove = (event: MouseEvent) => {
     m.x = event.clientX;

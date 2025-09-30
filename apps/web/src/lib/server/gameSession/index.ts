@@ -119,7 +119,6 @@ export const createGameSession = async (partyId: string, gameSessionData?: Parti
 
     await checkForGameSessionSlugConflict(partyId, slug);
 
-    // Store the project and hashed token in the parent database
     const gameSession = await db
       .insert(gameSessionTable)
       .values({
@@ -198,7 +197,6 @@ export const createGameSessionForImport = async (partyId: string, gameSessionDat
 
     await checkForGameSessionSlugConflict(partyId, slug);
 
-    // Store the project and hashed token in the parent database
     const gameSession = await db
       .insert(gameSessionTable)
       .values({
