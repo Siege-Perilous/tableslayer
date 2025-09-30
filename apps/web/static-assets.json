@@ -1,10 +1,11 @@
 {
   "version": "1.0.0",
-  "generated": "2025-09-30T13:37:08.349Z",
+  "generated": "2025-09-30T14:50:12.543Z",
   "source": "https://files.tableslayer.com",
-  "totalFiles": 77,
+  "totalFiles": 78,
   "totalSize": null,
   "files": [
+    "avatar/default.png",
     "illustrations/home/desktop.png",
     "illustrations/home/hand-2x.png",
     "illustrations/home/hand.png",

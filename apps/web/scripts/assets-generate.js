@@ -25,7 +25,8 @@ const STATIC_DIRECTORIES = ['illustrations/', 'stage/luts/'];
 
 // Individual files to include
 const STATIC_FILES = [
-  'map/example1080.png' // Default map
+  'map/example1080.png', // Default map
+  'avatar/default.png' // Default avatar
 ];
 
 // Check required environment variables
