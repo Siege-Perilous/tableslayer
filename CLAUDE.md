@@ -30,6 +30,7 @@ These rules ensure maintainability, safety, and developer velocity.
 - **D-2 (SHOULD)** Creating typing and Zod types according to that file
 - **D-3 (DO NOT)** generate or run migrations. Prompt the user to perform these tasks instead, waiting for confirmation
 - **D-4 (DO NOT)** run `pnpm run push` or any direct database commands. Always ask the user to run these commands
+- **D-5 (IMPORTANT)** Timestamps in this database use `integer({ mode: 'timestamp' })` which stores **Unix timestamps in SECONDS** (not milliseconds). When user provides a timestamp from the database, use `date -d @<timestamp>` to convert it to a readable date. Do not attempt manual conversion as you frequently make errors with this.
 
 ### 4 - Tooling gates
 
