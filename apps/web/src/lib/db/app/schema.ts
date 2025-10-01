@@ -26,7 +26,10 @@ export const usersTable = sqliteTable('users', {
     .notNull()
     .default(1),
   favoriteParty: text('favorite_party').references(() => partyTable.id, { onDelete: 'set null' }),
-  role: text('role', { enum: VALID_USER_ROLES }).notNull().default('user')
+  role: text('role', { enum: VALID_USER_ROLES }).notNull().default('user'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date())
 });
 
 export type UserRole = (typeof VALID_USER_ROLES)[number];
@@ -200,7 +203,10 @@ export const partyTable = sqliteTable(
     planStatus: text('plan_status'),
     lemonSqueezyCustomerId: integer('lemon_squeezy_customer_id'),
     stripeCustomerId: text('stripe_customer_id'),
-    plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
+    plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
   },
   (table) => [
     check(
@@ -302,6 +308,9 @@ export const gameSessionTable = sqliteTable(
     partyId: text('party_id')
       .notNull()
       .references(() => partyTable.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     lastUpdated: integer('last_updated', { mode: 'timestamp' }).$defaultFn(() => new Date())
   },
   (table) => [
