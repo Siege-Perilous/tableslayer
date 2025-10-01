@@ -73,7 +73,8 @@ export const getPartyMembers = async (
       passwordHash: usersTable.passwordHash,
       favoriteParty: usersTable.favoriteParty,
       googleId: usersTable.googleId,
-      role: usersTable.role
+      role: usersTable.role,
+      createdAt: usersTable.createdAt
     })
     .from(partyMemberTable)
     .innerJoin(usersTable, eq(partyMemberTable.userId, usersTable.id))
