@@ -203,7 +203,10 @@ export const partyTable = sqliteTable(
     planStatus: text('plan_status'),
     lemonSqueezyCustomerId: integer('lemon_squeezy_customer_id'),
     stripeCustomerId: text('stripe_customer_id'),
-    plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free')
+    plan: text('plan', { enum: VALID_PARTY_PLANS }).notNull().default('free'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
   },
   (table) => [
     check(
