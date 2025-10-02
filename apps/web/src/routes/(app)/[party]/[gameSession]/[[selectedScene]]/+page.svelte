@@ -14,7 +14,8 @@
     addToast,
     ToolType,
     type HoveredMarker,
-    MarkerVisibility
+    MarkerVisibility,
+    DrawingSliders
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -246,6 +247,11 @@
   );
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
+
+  // Derive active annotation for drawing sliders
+  let activeAnnotation = $derived(
+    stageProps?.annotations.layers.find((layer) => layer.id === stageProps.annotations.activeLayer)
+  );
 
   // Track which markers were loaded from the database for Y.js sync
   let persistedMarkerIds = $state<Set<string>>(new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []));
@@ -1518,6 +1524,10 @@
     });
   };
 
+  // Drawing slider handlers - bound from AnnotationManager
+  let handleOpacityChange: ((value: number) => void) | undefined = $state();
+  let handleBrushSizeChange: ((value: number) => void) | undefined = $state();
+
   // Generate random high-contrast colors that complement #d73e2e
   const getRandomAnnotationColor = () => {
     const annotationColors = [
@@ -2635,6 +2645,14 @@
     </PaneResizer>
     <Pane defaultSize={paneLayout?.[1]?.size ?? 70}>
       <div class="stageWrapper" role="presentation">
+        {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange}
+          <DrawingSliders
+            opacity={activeAnnotation.opacity}
+            brushSize={stageProps.annotations.lineWidth || 50}
+            onOpacityChange={handleOpacityChange}
+            onBrushSizeChange={handleBrushSizeChange}
+          />
+        {/if}
         <div class={stageClasses} bind:this={stageElement}>
           <PointerInputManager
             {minZoom}
@@ -2736,6 +2754,8 @@
             {onAnnotationDeleted}
             {onAnnotationUpdated}
             {onAnnotationCreated}
+            bind:handleOpacityChange
+            bind:handleBrushSizeChange
           />
         {/key}
       {:else}

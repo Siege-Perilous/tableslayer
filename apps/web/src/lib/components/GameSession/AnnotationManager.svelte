@@ -28,13 +28,17 @@
     selectedAnnotationId = $bindable(),
     onAnnotationDeleted,
     onAnnotationUpdated,
-    onAnnotationCreated
+    onAnnotationCreated,
+    handleOpacityChange = $bindable(),
+    handleBrushSizeChange = $bindable()
   }: {
     stageProps: StageProps;
     selectedAnnotationId: string | undefined;
     onAnnotationDeleted?: (annotationId: string) => void;
     onAnnotationUpdated?: (annotation: AnnotationLayerData) => void;
     onAnnotationCreated?: () => void;
+    handleOpacityChange?: (value: number) => void;
+    handleBrushSizeChange?: (value: number) => void;
   } = $props();
 
   // Line width should be reactive to the global state
@@ -98,6 +102,23 @@
     // Save to preferences (debounced)
     setPreferenceDebounced('annotationLineWidth', value);
   };
+
+  // Export handlers for external use (e.g., DrawingSliders)
+  const handleOpacityChangeInternal = (annotationId: string, value: number) => {
+    updateAnnotation(annotationId, { opacity: value });
+  };
+
+  // Bind handlers for external components
+  $effect(() => {
+    const activeLayer = stageProps.annotations.activeLayer;
+    if (activeLayer) {
+      handleOpacityChange = (value: number) => handleOpacityChangeInternal(activeLayer, value);
+      handleBrushSizeChange = handleLineWidthChange;
+    } else {
+      handleOpacityChange = undefined;
+      handleBrushSizeChange = undefined;
+    }
+  });
 
   // Initialize drag and drop composable
   const dragAndDrop = useDragAndDrop<AnnotationLayerData>({
