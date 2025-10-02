@@ -3,29 +3,72 @@
   import { ColorPicker } from '../ColorPicker';
   import { Icon } from '../Icon';
   import { IconButton } from '../Button';
+  import {
+    IconBoxMultiple,
+    IconBoxMultiple1,
+    IconBoxMultiple2,
+    IconBoxMultiple3,
+    IconBoxMultiple4,
+    IconBoxMultiple5,
+    IconBoxMultiple6,
+    IconBoxMultiple7,
+    IconBoxMultiple8,
+    IconBoxMultiple9
+  } from '@tabler/icons-svelte';
   import type { ComponentType } from 'svelte';
 
   interface Props {
     opacity: number;
     brushSize: number;
     color: string;
+    activeLayerIndex: number;
     onOpacityChange: (value: number) => void;
     onBrushSizeChange: (value: number) => void;
     onColorChange: (color: string, opacity: number) => void;
     onLayersClick: () => void;
-    layersIcon: ComponentType;
   }
 
   let {
     opacity,
     brushSize,
     color,
+    activeLayerIndex,
     onOpacityChange,
     onBrushSizeChange,
     onColorChange,
-    onLayersClick,
-    layersIcon
+    onLayersClick
   }: Props = $props();
+
+  $effect(() => {
+    console.log(
+      '[DrawingSliders] Props updated - activeLayerIndex:',
+      activeLayerIndex,
+      'opacity:',
+      opacity,
+      'color:',
+      color
+    );
+  });
+
+  // Select the appropriate icon based on layer count
+  const layerIcons: ComponentType[] = [
+    IconBoxMultiple1,
+    IconBoxMultiple2,
+    IconBoxMultiple3,
+    IconBoxMultiple4,
+    IconBoxMultiple5,
+    IconBoxMultiple6,
+    IconBoxMultiple7,
+    IconBoxMultiple8,
+    IconBoxMultiple9
+  ];
+
+  const layerIcon = $derived.by(() => {
+    // activeLayerIndex is 1-based (1st layer, 2nd layer, etc.)
+    const icon = activeLayerIndex <= 9 && activeLayerIndex > 0 ? layerIcons[activeLayerIndex - 1] : IconBoxMultiple;
+    console.log('[DrawingSliders] Active layer index:', activeLayerIndex, 'Icon:', icon);
+    return icon;
+  });
 
   // Use quadratic curve for brush size to give more precision to lower values
   // At 50% slider we want size 50, so we use: size = 0.02 * slider^2
@@ -105,8 +148,13 @@
     <div class="drawingSliders__value">{brushSize}</div>
   </div>
 
-  <IconButton variant="ghost" onclick={onLayersClick} aria-label="Toggle annotation layers panel">
-    <Icon Icon={layersIcon} size="1.25rem" />
+  <IconButton
+    variant="ghost"
+    onclick={onLayersClick}
+    aria-label="Toggle annotation layers panel"
+    title="Manage drawing layers"
+  >
+    <Icon Icon={layerIcon} size="1.25rem" />
   </IconButton>
 </div>
 
@@ -161,9 +209,8 @@
   .drawingSliders__input::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
+    width: 32px;
     height: 14px;
-    margin: 2px;
     background: var(--contrastHigh);
     border: none;
     border-radius: var(--radius-1);
@@ -188,9 +235,8 @@
   }
 
   .drawingSliders__input::-moz-range-thumb {
-    width: 28px;
+    width: 32px;
     height: 14px;
-    margin: 2px;
     background: var(--contrastHigh);
     border: none;
     border-radius: var(--radius-2);

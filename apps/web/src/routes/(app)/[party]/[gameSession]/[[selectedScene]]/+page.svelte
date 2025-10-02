@@ -40,13 +40,7 @@
     useUpdateAnnotationMaskMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
-  import {
-    IconChevronDown,
-    IconChevronUp,
-    IconChevronLeft,
-    IconChevronRight,
-    IconBoxMultiple1
-  } from '@tabler/icons-svelte';
+  import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
     buildSceneProps,
@@ -2666,11 +2660,13 @@
             opacity={activeAnnotation.opacity}
             brushSize={stageProps.annotations.lineWidth || 50}
             color={activeAnnotation.color}
+            activeLayerIndex={stageProps.annotations.layers.findIndex(
+              (l) => l.id === stageProps.annotations.activeLayer
+            ) + 1}
             onOpacityChange={handleOpacityChange}
             onBrushSizeChange={handleBrushSizeChange}
             onColorChange={handleColorChange}
             onLayersClick={handleToggleAnnotationPanel}
-            layersIcon={IconBoxMultiple1}
           />
         {/if}
         <div class={stageClasses} bind:this={stageElement}>
