@@ -534,6 +534,7 @@
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
+    background-color: var(--contrastLowest);
   }
 
   .annotationManager__previewImage {
