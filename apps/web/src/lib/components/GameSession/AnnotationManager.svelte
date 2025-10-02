@@ -104,6 +104,8 @@
       const g = (rgb >> 8) & 255;
       const b = rgb & 255;
 
+      console.log('[Thumbnail] Generating for color:', color, '→ RGB:', { r, g, b });
+
       for (let i = 0; i < binaryMask.length; i++) {
         const idx = i * 4;
         pixels[idx] = r;
@@ -362,11 +364,12 @@
                   class="annotationManager__previewImage"
                 />
               {:else if annotation.url}
-                <img
-                  src={annotation.url}
-                  alt={annotation.name || 'Annotation layer preview'}
-                  class="annotationManager__previewImage"
-                />
+                <div
+                  class="annotationManager__previewLegacy"
+                  style:background-color={annotation.color}
+                  style:opacity={annotation.opacity}
+                  style:--mask-url="url({annotation.url})"
+                ></div>
               {:else}
                 <div
                   class="annotationManager__previewEmpty"
@@ -536,6 +539,19 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .annotationManager__previewLegacy {
+    width: 100%;
+    height: 100%;
+    -webkit-mask-image: var(--mask-url);
+    mask-image: var(--mask-url);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
 
   .annotationManager__previewEmpty {
