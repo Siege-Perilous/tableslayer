@@ -355,6 +355,7 @@
             <div
               class="annotationManager__preview"
               style:aspect-ratio={previewAspectRatio}
+              style:transform="rotate({stageProps.scene.rotation}deg)"
               title={annotation.name || 'Annotation layer'}
             >
               {#if thumbnailUrls[annotation.id]}
