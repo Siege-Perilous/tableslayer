@@ -39,17 +39,6 @@
     onLayersClick
   }: Props = $props();
 
-  $effect(() => {
-    console.log(
-      '[DrawingSliders] Props updated - activeLayerIndex:',
-      activeLayerIndex,
-      'opacity:',
-      opacity,
-      'color:',
-      color
-    );
-  });
-
   // Select the appropriate icon based on layer count
   const layerIcons: ComponentType[] = [
     IconBoxMultiple1,
@@ -65,9 +54,7 @@
 
   const layerIcon = $derived.by(() => {
     // activeLayerIndex is 1-based (1st layer, 2nd layer, etc.)
-    const icon = activeLayerIndex <= 9 && activeLayerIndex > 0 ? layerIcons[activeLayerIndex - 1] : IconBoxMultiple;
-    console.log('[DrawingSliders] Active layer index:', activeLayerIndex, 'Icon:', icon);
-    return icon;
+    return activeLayerIndex <= 9 && activeLayerIndex > 0 ? layerIcons[activeLayerIndex - 1] : IconBoxMultiple;
   });
 
   // Use quadratic curve for brush size to give more precision to lower values
@@ -91,6 +78,18 @@
   const handleBrushSliderChange = (value: number) => {
     const actualSize = sliderToBrushSize(value);
     onBrushSizeChange(actualSize);
+  };
+
+  // Touch event handlers for better mobile support
+  const handleTouchStart = (e: TouchEvent) => {
+    // Prevent default to avoid conflicts with other touch interactions
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    // Prevent scrolling while adjusting sliders
+    e.preventDefault();
+    e.stopPropagation();
   };
 </script>
 
@@ -128,7 +127,8 @@
       step="0.01"
       value={opacity}
       oninput={(e) => onOpacityChange(Number(e.currentTarget.value))}
-      orient="vertical"
+      ontouchstart={handleTouchStart}
+      ontouchmove={handleTouchMove}
     />
     <div class="drawingSliders__value">{Math.round(opacity * 100)}%</div>
   </div>
@@ -143,7 +143,8 @@
       step="0.1"
       value={brushSliderValue}
       oninput={(e) => handleBrushSliderChange(Number(e.currentTarget.value))}
-      orient="vertical"
+      ontouchstart={handleTouchStart}
+      ontouchmove={handleTouchMove}
     />
     <div class="drawingSliders__value">{brushSize}</div>
   </div>
@@ -192,6 +193,7 @@
     appearance: slider-vertical;
     background: transparent;
     cursor: pointer;
+    touch-action: none; /* Prevent default touch behaviors */
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */

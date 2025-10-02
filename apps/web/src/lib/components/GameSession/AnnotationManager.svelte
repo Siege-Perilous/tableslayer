@@ -43,9 +43,6 @@
     annotationMasks?: Record<string, string | null>;
   } = $props();
 
-  // Line width should be reactive to the global state
-  let lineWidth = $derived(stageProps.annotations.lineWidth || 50);
-
   // Store thumbnail blob URLs for annotations
   let thumbnailUrls = $state<Record<string, string>>({});
 
@@ -103,8 +100,6 @@
       const r = (rgb >> 16) & 255;
       const g = (rgb >> 8) & 255;
       const b = rgb & 255;
-
-      console.log('[Thumbnail] Generating for color:', color, '→ RGB:', { r, g, b });
 
       for (let i = 0; i < binaryMask.length; i++) {
         const idx = i * 4;

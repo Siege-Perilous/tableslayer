@@ -27,7 +27,6 @@
   // Use chroma-js to avoid Three.js color space conversions
   function hexToRGB(hex: string): THREE.Vector3 {
     const [r, g, b] = chroma(hex).gl();
-    console.log('[AnnotationMaterial] hexToRGB:', hex, '→', { r, g, b });
     return new THREE.Vector3(r, g, b);
   }
 
@@ -38,7 +37,7 @@
   let annotationMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
-      uColor: { value: colorUniform },
+      uColor: { value: hexToRGB(props.color) },
       uOpacity: { value: props.opacity },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
@@ -49,11 +48,8 @@
     vertexShader: annotationVertexShader
   });
 
-  console.log('[AnnotationMaterial] Material initialized with color:', props.color, colorUniform);
-
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    console.log('[AnnotationMaterial] Effect running - color:', props.color, 'uniform:', colorUniform);
     // Update the uniform value in-place rather than replacing the object
     annotationMaterial.uniforms.uColor.value.copy(colorUniform);
     annotationMaterial.uniforms.uOpacity.value = props.opacity;
@@ -148,7 +144,6 @@
   initialState={InitialState.Clear}
   {size}
   onRender={(texture) => {
-    console.log('[AnnotationMaterial] Texture rendered for color:', props.color);
     // Ensure color is correct when texture updates
     annotationMaterial.uniforms.uColor.value.copy(colorUniform);
     annotationMaterial.uniforms.uMaskTexture.value = texture;
