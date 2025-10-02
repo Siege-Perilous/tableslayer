@@ -4,17 +4,14 @@
     type StageProps,
     type AnnotationLayerData,
     Input,
-    ColorPicker,
-    Popover,
     Spacer,
     Button,
     ConfirmActionButton,
     IconButton,
     Text,
-    Label,
     MapLayerType,
     StageMode,
-    InputSlider
+    decodeRLE
   } from '@tableslayer/ui';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
@@ -22,6 +19,7 @@
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
+  import { onDestroy } from 'svelte';
 
   let {
     stageProps,
@@ -30,7 +28,9 @@
     onAnnotationUpdated,
     onAnnotationCreated,
     handleOpacityChange = $bindable(),
-    handleBrushSizeChange = $bindable()
+    handleBrushSizeChange = $bindable(),
+    handleColorChange = $bindable(),
+    annotationMasks = {}
   }: {
     stageProps: StageProps;
     selectedAnnotationId: string | undefined;
@@ -39,10 +39,131 @@
     onAnnotationCreated?: () => void;
     handleOpacityChange?: (value: number) => void;
     handleBrushSizeChange?: (value: number) => void;
+    handleColorChange?: (color: string, opacity: number) => void;
+    annotationMasks?: Record<string, string | null>;
   } = $props();
 
   // Line width should be reactive to the global state
   let lineWidth = $derived(stageProps.annotations.lineWidth || 50);
+
+  // Store thumbnail blob URLs for annotations
+  let thumbnailUrls = $state<Record<string, string>>({});
+
+  // Track mask data and color to detect changes
+  let thumbnailCache = $state<Record<string, { maskData: string; color: string }>>({});
+
+  // Generate thumbnails from RLE mask data
+  async function generateThumbnail(annotationId: string, maskBase64: string, color: string): Promise<void> {
+    try {
+      // Decode base64 to Uint8Array
+      const maskData = Uint8Array.from(atob(maskBase64), (c) => c.charCodeAt(0));
+
+      // Extract dimensions (first 8 bytes)
+      const view = new DataView(maskData.buffer, maskData.byteOffset, maskData.byteLength);
+      const width = view.getUint32(0, true);
+      const height = view.getUint32(4, true);
+
+      // Get RLE data (skip dimensions)
+      const rleData = maskData.slice(8);
+
+      // Decode RLE to binary mask
+      const binaryMask = decodeRLE(rleData, width * height);
+
+      // Calculate thumbnail dimensions based on scene aspect ratio
+      const sceneWidth = stageProps.display.resolution.x;
+      const sceneHeight = stageProps.display.resolution.y;
+      const aspectRatio = sceneWidth / sceneHeight;
+
+      // Use a max dimension and calculate the other based on aspect ratio
+      const maxDimension = 96;
+      let thumbWidth: number, thumbHeight: number;
+
+      if (aspectRatio >= 1) {
+        // Landscape or square
+        thumbWidth = maxDimension;
+        thumbHeight = Math.round(maxDimension / aspectRatio);
+      } else {
+        // Portrait
+        thumbHeight = maxDimension;
+        thumbWidth = Math.round(maxDimension * aspectRatio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = thumbWidth;
+      canvas.height = thumbHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Create image data for the mask
+      const imageData = ctx.createImageData(width, height);
+      const pixels = imageData.data;
+
+      // Convert binary mask to RGBA (use color with alpha from mask)
+      const rgb = parseInt(color.slice(1), 16);
+      const r = (rgb >> 16) & 255;
+      const g = (rgb >> 8) & 255;
+      const b = rgb & 255;
+
+      for (let i = 0; i < binaryMask.length; i++) {
+        const idx = i * 4;
+        pixels[idx] = r;
+        pixels[idx + 1] = g;
+        pixels[idx + 2] = b;
+        pixels[idx + 3] = binaryMask[i]; // Use mask value as alpha
+      }
+
+      // Create a temporary canvas for the full-size image
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (!tempCtx) return;
+      tempCtx.putImageData(imageData, 0, 0);
+
+      // Draw scaled down to thumbnail
+      ctx.clearRect(0, 0, thumbWidth, thumbHeight);
+      ctx.drawImage(tempCanvas, 0, 0, thumbWidth, thumbHeight);
+
+      // Convert to blob URL
+      canvas.toBlob((blob) => {
+        if (blob) {
+          // Revoke old URL if it exists to prevent memory leaks
+          if (thumbnailUrls[annotationId]) {
+            URL.revokeObjectURL(thumbnailUrls[annotationId]);
+          }
+          const url = URL.createObjectURL(blob);
+          thumbnailUrls[annotationId] = url;
+          thumbnailUrls = { ...thumbnailUrls }; // Trigger reactivity
+        }
+      });
+    } catch (error) {
+      console.error('Failed to generate thumbnail:', error);
+    }
+  }
+
+  // Generate thumbnails when masks or colors change
+  $effect(() => {
+    for (const annotation of stageProps.annotations.layers) {
+      const maskData = annotationMasks[annotation.id];
+      const color = annotation.color;
+
+      if (maskData && color) {
+        const cached = thumbnailCache[annotation.id];
+        // Only regenerate if mask or color changed
+        if (!cached || cached.maskData !== maskData || cached.color !== color) {
+          thumbnailCache[annotation.id] = { maskData, color };
+          generateThumbnail(annotation.id, maskData, color);
+        }
+      }
+    }
+  });
+
+  // Clean up blob URLs on destroy
+  onDestroy(() => {
+    for (const url of Object.values(thumbnailUrls)) {
+      URL.revokeObjectURL(url);
+    }
+  });
 
   const handleAnnotationDelete = async (annotationId: string) => {
     // Remove from local state
@@ -108,15 +229,21 @@
     updateAnnotation(annotationId, { opacity: value });
   };
 
+  const handleColorChangeInternal = (annotationId: string, color: string, opacity: number) => {
+    updateAnnotation(annotationId, { color, opacity });
+  };
+
   // Bind handlers for external components
   $effect(() => {
     const activeLayer = stageProps.annotations.activeLayer;
     if (activeLayer) {
       handleOpacityChange = (value: number) => handleOpacityChangeInternal(activeLayer, value);
       handleBrushSizeChange = handleLineWidthChange;
+      handleColorChange = (color: string, opacity: number) => handleColorChangeInternal(activeLayer, color, opacity);
     } else {
       handleOpacityChange = undefined;
       handleBrushSizeChange = undefined;
+      handleColorChange = undefined;
     }
   });
 
@@ -125,6 +252,9 @@
     onReorder: reorderAnnotations,
     getItemId: (item) => item.id
   });
+
+  // Calculate preview aspect ratio from scene dimensions
+  let previewAspectRatio = $derived(stageProps.display.resolution.x / stageProps.display.resolution.y);
 
   const setActiveAnnotation = (annotationId: string) => {
     // Don't activate if we're dragging
@@ -174,16 +304,6 @@
         Layer
       </Button>
     {/if}
-    <div class="annotationManager__lineWidthControl">
-      <Label>Line width</Label>
-      <InputSlider
-        value={lineWidth}
-        oninput={(e) => handleLineWidthChange(Number(e.currentTarget.value))}
-        min={1}
-        max={200}
-        step={1}
-      />
-    </div>
   </div>
   <div class="annotationManager__content">
     <div class="annotationManager__list">
@@ -230,32 +350,31 @@
                 color={annotation.visibility === StageMode.Player ? 'var(--fg)' : 'var(--fgMuted)'}
               />
             </IconButton>
-            <Popover portal="body">
-              {#snippet trigger()}
-                <button
-                  class="annotationManager__colorPreview"
+            <div
+              class="annotationManager__preview"
+              style:aspect-ratio={previewAspectRatio}
+              title={annotation.name || 'Annotation layer'}
+            >
+              {#if thumbnailUrls[annotation.id]}
+                <img
+                  src={thumbnailUrls[annotation.id]}
+                  alt={annotation.name || 'Annotation layer preview'}
+                  class="annotationManager__previewImage"
+                />
+              {:else if annotation.url}
+                <img
+                  src={annotation.url}
+                  alt={annotation.name || 'Annotation layer preview'}
+                  class="annotationManager__previewImage"
+                />
+              {:else}
+                <div
+                  class="annotationManager__previewEmpty"
                   style:background-color={annotation.color}
                   style:opacity={annotation.opacity}
-                  aria-label={`Change color and opacity for ${annotation.name || 'Untitled'}`}
-                ></button>
-              {/snippet}
-              {#snippet content()}
-                <div class="ColorPicker-container">
-                  <ColorPicker
-                    showOpacity={true}
-                    hex={annotation.color +
-                      Math.round(annotation.opacity * 255)
-                        .toString(16)
-                        .padStart(2, '0')}
-                    onUpdate={(colorData) =>
-                      updateAnnotation(annotation.id, {
-                        color: colorData.hex.slice(0, 7), // Keep only the 6-digit hex color
-                        opacity: colorData.rgba.a
-                      })}
-                  />
-                </div>
-              {/snippet}
-            </Popover>
+                ></div>
+              {/if}
+            </div>
             <Input
               value={annotation.name || ''}
               variant="transparent"
@@ -393,10 +512,9 @@
   }
 
   .annotationManager__header {
-    display: grid;
-    grid-template-columns: auto 1fr;
+    display: flex;
     align-items: center;
-    gap: 3rem;
+    gap: 1rem;
     padding: 1rem 2rem;
     border-bottom: var(--borderThin);
     position: sticky;
@@ -406,34 +524,23 @@
     backdrop-filter: blur(10px);
   }
 
-  @container (max-width: 360px) {
-    .annotationManager__header {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-
-    .annotationManager__header > :global(button:first-child) {
-      width: 100%;
-    }
-  }
-  .annotationManager__lineWidthControl {
-    display: flex;
-    gap: 1rem;
-    text-wrap: nowrap;
-    align-items: center;
+  .annotationManager__preview {
+    width: 3rem;
+    border-radius: var(--radius-2);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
   }
 
-  .annotationManager__colorPreview {
-    min-width: 1.5rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: border-color 0.2s;
+  .annotationManager__previewImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
-  .annotationManager__colorPreview:hover {
-    border-color: var(--fgPrimary);
+  .annotationManager__previewEmpty {
+    width: 100%;
+    height: 100%;
   }
 
   .annotationManager__deleteButton {

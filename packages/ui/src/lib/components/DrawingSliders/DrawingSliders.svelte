@@ -1,12 +1,31 @@
 <script lang="ts">
+  import { Popover } from '../Popover';
+  import { ColorPicker } from '../ColorPicker';
+  import { Icon } from '../Icon';
+  import { IconButton } from '../Button';
+  import type { ComponentType } from 'svelte';
+
   interface Props {
     opacity: number;
     brushSize: number;
+    color: string;
     onOpacityChange: (value: number) => void;
     onBrushSizeChange: (value: number) => void;
+    onColorChange: (color: string, opacity: number) => void;
+    onLayersClick: () => void;
+    layersIcon: ComponentType;
   }
 
-  let { opacity, brushSize, onOpacityChange, onBrushSizeChange }: Props = $props();
+  let {
+    opacity,
+    brushSize,
+    color,
+    onOpacityChange,
+    onBrushSizeChange,
+    onColorChange,
+    onLayersClick,
+    layersIcon
+  }: Props = $props();
 
   // Use quadratic curve for brush size to give more precision to lower values
   // At 50% slider we want size 50, so we use: size = 0.02 * slider^2
@@ -34,11 +53,33 @@
 
 <div class="drawingSliders">
   <div class="drawingSliders__slider">
-    <label class="drawingSliders__label" for="opacity-slider">Opacity</label>
+    <Popover portal="body">
+      {#snippet trigger()}
+        <button
+          class="drawingSliders__colorSwatch"
+          style:background-color={color}
+          style:opacity
+          aria-label="Change annotation color"
+        ></button>
+      {/snippet}
+      {#snippet content()}
+        <div class="ColorPicker-container">
+          <ColorPicker
+            showOpacity={false}
+            hex={color +
+              Math.round(opacity * 255)
+                .toString(16)
+                .padStart(2, '0')}
+            onUpdate={(colorData) => onColorChange(colorData.hex.slice(0, 7), colorData.rgba.a)}
+          />
+        </div>
+      {/snippet}
+    </Popover>
     <input
       id="opacity-slider"
       type="range"
-      class="drawingSliders__input"
+      class="drawingSliders__input drawingSliders__input--opacity"
+      style="--slider-color: {color}"
       min="0"
       max="1"
       step="0.01"
@@ -50,7 +91,6 @@
   </div>
 
   <div class="drawingSliders__slider">
-    <label class="drawingSliders__label" for="brush-size-slider">Size</label>
     <input
       id="brush-size-slider"
       type="range"
@@ -64,6 +104,10 @@
     />
     <div class="drawingSliders__value">{brushSize}</div>
   </div>
+
+  <IconButton variant="ghost" onclick={onLayersClick} aria-label="Toggle annotation layers panel">
+    <Icon Icon={layersIcon} size="1.25rem" />
+  </IconButton>
 </div>
 
 <style>
@@ -74,28 +118,21 @@
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     z-index: 10;
     pointer-events: auto;
+    background-color: var(--bg);
+    border: var(--borderThin);
+    border-radius: var(--radius-2);
+    padding: 0.5rem 0rem;
+    align-items: center;
   }
 
   .drawingSliders__slider {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    background-color: var(--bg);
-    border: var(--borderThin);
-    border-radius: var(--radius-2);
-    padding: 1rem 0.75rem;
-  }
-
-  .drawingSliders__label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--fgMuted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    gap: 1rem;
   }
 
   .drawingSliders__input {
@@ -111,58 +148,58 @@
 
   /* Webkit browsers (Chrome, Safari, Edge) */
   .drawingSliders__input::-webkit-slider-track {
-    width: 8px;
+    width: 32px;
+    height: 120px;
     background: var(--contrastMedium);
     border-radius: var(--radius-1);
+  }
+
+  .drawingSliders__input--opacity::-webkit-slider-track {
+    background: linear-gradient(to top, transparent, var(--slider-color));
   }
 
   .drawingSliders__input::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
-    background: var(--fgPrimary);
+    width: 28px;
+    height: 14px;
+    margin: 2px;
+    background: var(--fg);
     border: 2px solid var(--bg);
-    border-radius: 50%;
+    border-radius: var(--radius-1);
     cursor: grab;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: transform 0.1s ease;
-  }
-
-  .drawingSliders__input::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
   }
 
   .drawingSliders__input::-webkit-slider-thumb:active {
     cursor: grabbing;
-    transform: scale(1.05);
   }
 
   /* Firefox */
   .drawingSliders__input::-moz-range-track {
-    width: 8px;
+    width: 32px;
+    height: 120px;
     background: var(--contrastMedium);
-    border-radius: var(--radius-1);
+    border-radius: var(--radius-2);
+  }
+
+  .drawingSliders__input--opacity::-moz-range-track {
+    background: linear-gradient(to top, transparent, var(--slider-color));
   }
 
   .drawingSliders__input::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    background: var(--fgPrimary);
+    width: 28px;
+    height: 14px;
+    margin: 2px;
+    background: var(--fg);
     border: 2px solid var(--bg);
-    border-radius: 50%;
+    border-radius: var(--radius-2);
     cursor: grab;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: transform 0.1s ease;
-  }
-
-  .drawingSliders__input::-moz-range-thumb:hover {
-    transform: scale(1.1);
   }
 
   .drawingSliders__input::-moz-range-thumb:active {
     cursor: grabbing;
-    transform: scale(1.05);
   }
 
   .drawingSliders__value {
@@ -171,5 +208,23 @@
     color: var(--fg);
     min-width: 3rem;
     text-align: center;
+  }
+
+  .drawingSliders__colorSwatch {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-2);
+    border: 2px solid var(--contrastMedium);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-bottom: 0.5rem;
+  }
+
+  .drawingSliders__colorSwatch:hover {
+    border-color: var(--fgPrimary);
+  }
+
+  :global(.drawingSliders .ColorPicker-container) {
+    padding: 1rem;
   }
 </style>

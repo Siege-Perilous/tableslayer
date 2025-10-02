@@ -40,7 +40,13 @@
     useUpdateAnnotationMaskMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
-  import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
+  import {
+    IconChevronDown,
+    IconChevronUp,
+    IconChevronLeft,
+    IconChevronRight,
+    IconBoxMultiple1
+  } from '@tabler/icons-svelte';
   import { navigating } from '$app/state';
   import {
     buildSceneProps,
@@ -598,10 +604,9 @@
   // Handle annotation layer activation/deactivation
   $effect(() => {
     if (stageProps.activeLayer === MapLayerType.Annotation) {
-      // Ensure the annotation panel is open
+      // Set active control to annotation (but don't auto-expand panel)
       if (activeControl !== 'annotation') {
         activeControl = 'annotation';
-        markersPane.expand();
       }
 
       // Check if there are any annotation layers
@@ -855,6 +860,18 @@
     // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
+  const handleToggleAnnotationPanel = () => {
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+      // Set active control to annotation to show the annotation panel content
+      if (activeControl !== 'annotation') {
+        activeControl = 'annotation';
+      }
+    } else {
+      markersPane.collapse();
+    }
+  };
+
   const handleSelectActiveControl = (control: string, openPopover?: string | null): string | null => {
     // If same control is clicked, toggle it off
     if (control === activeControl) {
@@ -882,9 +899,7 @@
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
-      if (markersPane) {
-        markersPane.expand();
-      }
+      // Don't auto-expand panel - let user toggle it with the layers button in DrawingSliders
     } else if (control === 'measurement') {
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
       // Clear annotation active layer when switching away
@@ -1527,6 +1542,7 @@
   // Drawing slider handlers - bound from AnnotationManager
   let handleOpacityChange: ((value: number) => void) | undefined = $state();
   let handleBrushSizeChange: ((value: number) => void) | undefined = $state();
+  let handleColorChange: ((color: string, opacity: number) => void) | undefined = $state();
 
   // Generate random high-contrast colors that complement #d73e2e
   const getRandomAnnotationColor = () => {
@@ -2645,12 +2661,16 @@
     </PaneResizer>
     <Pane defaultSize={paneLayout?.[1]?.size ?? 70}>
       <div class="stageWrapper" role="presentation">
-        {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange}
+        {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange && handleColorChange}
           <DrawingSliders
             opacity={activeAnnotation.opacity}
             brushSize={stageProps.annotations.lineWidth || 50}
+            color={activeAnnotation.color}
             onOpacityChange={handleOpacityChange}
             onBrushSizeChange={handleBrushSizeChange}
+            onColorChange={handleColorChange}
+            onLayersClick={handleToggleAnnotationPanel}
+            layersIcon={IconBoxMultiple1}
           />
         {/if}
         <div class={stageClasses} bind:this={stageElement}>
@@ -2756,6 +2776,8 @@
             {onAnnotationCreated}
             bind:handleOpacityChange
             bind:handleBrushSizeChange
+            bind:handleColorChange
+            annotationMasks={data.selectedSceneAnnotationMasks}
           />
         {/key}
       {:else}
