@@ -107,7 +107,7 @@
       {#snippet content()}
         <div class="ColorPicker-container">
           <ColorPicker
-            showOpacity={false}
+            showOpacity={true}
             hex={color +
               Math.round(opacity * 255)
                 .toString(16)
@@ -187,13 +187,19 @@
   .drawingSliders__input {
     writing-mode: vertical-lr;
     direction: rtl;
-    width: 8px;
+    width: 32px;
     height: 120px;
-    -webkit-appearance: slider-vertical;
-    appearance: slider-vertical;
+    -webkit-appearance: none;
+    appearance: none;
     background: transparent;
     cursor: pointer;
     touch-action: none; /* Prevent default touch behaviors */
+    outline: none;
+  }
+
+  /* Remove iOS default styling */
+  .drawingSliders__input::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */
@@ -262,14 +268,9 @@
     width: 2rem;
     height: 2rem;
     border-radius: var(--radius-2);
-    border: 2px solid var(--contrastMedium);
     cursor: pointer;
     transition: border-color 0.2s;
     margin-bottom: 0.5rem;
-  }
-
-  .drawingSliders__colorSwatch:hover {
-    border-color: var(--fgPrimary);
   }
 
   :global(.drawingSliders .ColorPicker-container) {
