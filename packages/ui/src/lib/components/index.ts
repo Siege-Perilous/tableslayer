@@ -1,4 +1,5 @@
 export * from './Avatar';
+export * from './BrushSizeSlider';
 export * from './Button';
 export * from './CardFan';
 export * from './CodeBlock';
@@ -7,6 +8,7 @@ export * from './ColorPicker';
 export * from './ContextMenu';
 export * from './DrawingSliders';
 export * from './Editor';
+export * from './FogSliders';
 export * from './Hr';
 export * from './Icon';
 export * from './Input';

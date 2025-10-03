@@ -15,7 +15,8 @@
     ToolType,
     type HoveredMarker,
     MarkerVisibility,
-    DrawingSliders
+    DrawingSliders,
+    FogSliders
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -2667,6 +2668,14 @@
             onBrushSizeChange={handleBrushSizeChange}
             onColorChange={handleColorChange}
             onLayersClick={handleToggleAnnotationPanel}
+          />
+        {/if}
+        {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
+          <FogSliders
+            brushSize={stageProps.fogOfWar.tool.size || 50}
+            onBrushSizeChange={(size) => {
+              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
+            }}
           />
         {/if}
         <div class={stageClasses} bind:this={stageElement}>
