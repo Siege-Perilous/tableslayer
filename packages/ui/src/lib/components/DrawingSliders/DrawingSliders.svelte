@@ -191,27 +191,23 @@
     height: 120px;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent;
+    background: var(--contrastLow);
+    border-radius: var(--radius-1);
     cursor: pointer;
     touch-action: none; /* Prevent default touch behaviors */
     outline: none;
   }
 
-  /* Remove iOS default styling */
-  .drawingSliders__input::-webkit-slider-runnable-track {
-    -webkit-appearance: none;
+  .drawingSliders__input--opacity {
+    background: linear-gradient(to top, transparent, var(--slider-color));
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */
   .drawingSliders__input::-webkit-slider-track {
     width: 32px;
     height: 120px;
-    background: var(--contrastLow);
-    border-radius: var(--radius-1);
-  }
-
-  .drawingSliders__input--opacity::-webkit-slider-track {
-    background: linear-gradient(to top, transparent, var(--slider-color));
+    background: transparent;
+    border: none;
   }
 
   .drawingSliders__input::-webkit-slider-thumb {
@@ -270,7 +266,6 @@
     border-radius: var(--radius-2);
     cursor: pointer;
     transition: border-color 0.2s;
-    margin-bottom: 0.5rem;
   }
 
   :global(.drawingSliders .ColorPicker-container) {
