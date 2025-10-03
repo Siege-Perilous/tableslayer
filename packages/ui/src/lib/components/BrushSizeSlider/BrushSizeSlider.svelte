@@ -92,23 +92,19 @@
     height: 120px;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent;
+    background: var(--contrastLow);
+    border-radius: var(--radius-1);
     cursor: pointer;
     touch-action: none;
     outline: none;
-  }
-
-  /* Remove iOS default styling */
-  .brushSizeSlider__input::-webkit-slider-runnable-track {
-    -webkit-appearance: none;
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */
   .brushSizeSlider__input::-webkit-slider-track {
     width: 32px;
     height: 120px;
-    background: var(--contrastLow);
-    border-radius: var(--radius-1);
+    background: transparent;
+    border: none;
   }
 
   .brushSizeSlider__input::-webkit-slider-thumb {
