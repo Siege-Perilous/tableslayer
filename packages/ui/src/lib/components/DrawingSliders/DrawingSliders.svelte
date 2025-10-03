@@ -95,7 +95,7 @@
 
 <div class="drawingSliders">
   <div class="drawingSliders__slider">
-    <Popover portal="body">
+    <Popover portal="body" positioning={{ placement: 'left', gutter: 12 }}>
       {#snippet trigger()}
         <button
           class="drawingSliders__colorSwatch"
