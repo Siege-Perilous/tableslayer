@@ -14,7 +14,9 @@
     addToast,
     ToolType,
     type HoveredMarker,
-    MarkerVisibility
+    MarkerVisibility,
+    DrawingSliders,
+    FogSliders
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -246,6 +248,11 @@
   );
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
+
+  // Derive active annotation for drawing sliders
+  let activeAnnotation = $derived(
+    stageProps?.annotations.layers.find((layer) => layer.id === stageProps.annotations.activeLayer)
+  );
 
   // Track which markers were loaded from the database for Y.js sync
   let persistedMarkerIds = $state<Set<string>>(new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []));
@@ -592,10 +599,9 @@
   // Handle annotation layer activation/deactivation
   $effect(() => {
     if (stageProps.activeLayer === MapLayerType.Annotation) {
-      // Ensure the annotation panel is open
+      // Set active control to annotation (but don't auto-expand panel)
       if (activeControl !== 'annotation') {
         activeControl = 'annotation';
-        markersPane.expand();
       }
 
       // Check if there are any annotation layers
@@ -849,6 +855,18 @@
     // Save the collapse state will be handled by the pane onExpand/onCollapse handlers
   };
 
+  const handleToggleAnnotationPanel = () => {
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+      // Set active control to annotation to show the annotation panel content
+      if (activeControl !== 'annotation') {
+        activeControl = 'annotation';
+      }
+    } else {
+      markersPane.collapse();
+    }
+  };
+
   const handleSelectActiveControl = (control: string, openPopover?: string | null): string | null => {
     // If same control is clicked, toggle it off
     if (control === activeControl) {
@@ -876,9 +894,7 @@
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
-      if (markersPane) {
-        markersPane.expand();
-      }
+      // Don't auto-expand panel - let user toggle it with the layers button in DrawingSliders
     } else if (control === 'measurement') {
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
       // Clear annotation active layer when switching away
@@ -1517,6 +1533,11 @@
       }
     });
   };
+
+  // Drawing slider handlers - bound from AnnotationManager
+  let handleOpacityChange: ((value: number) => void) | undefined = $state();
+  let handleBrushSizeChange: ((value: number) => void) | undefined = $state();
+  let handleColorChange: ((color: string, opacity: number) => void) | undefined = $state();
 
   // Generate random high-contrast colors that complement #d73e2e
   const getRandomAnnotationColor = () => {
@@ -2635,6 +2656,28 @@
     </PaneResizer>
     <Pane defaultSize={paneLayout?.[1]?.size ?? 70}>
       <div class="stageWrapper" role="presentation">
+        {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange && handleColorChange}
+          <DrawingSliders
+            opacity={activeAnnotation.opacity}
+            brushSize={stageProps.annotations.lineWidth || 50}
+            color={activeAnnotation.color}
+            activeLayerIndex={stageProps.annotations.layers.findIndex(
+              (l) => l.id === stageProps.annotations.activeLayer
+            ) + 1}
+            onOpacityChange={handleOpacityChange}
+            onBrushSizeChange={handleBrushSizeChange}
+            onColorChange={handleColorChange}
+            onLayersClick={handleToggleAnnotationPanel}
+          />
+        {/if}
+        {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
+          <FogSliders
+            brushSize={stageProps.fogOfWar.tool.size || 50}
+            onBrushSizeChange={(size) => {
+              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
+            }}
+          />
+        {/if}
         <div class={stageClasses} bind:this={stageElement}>
           <PointerInputManager
             {minZoom}
@@ -2736,6 +2779,10 @@
             {onAnnotationDeleted}
             {onAnnotationUpdated}
             {onAnnotationCreated}
+            bind:handleOpacityChange
+            bind:handleBrushSizeChange
+            bind:handleColorChange
+            annotationMasks={data.selectedSceneAnnotationMasks}
           />
         {/key}
       {:else}

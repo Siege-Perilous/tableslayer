@@ -9,10 +9,6 @@
     MapLayerType,
     SelectorMenu,
     type StageExports,
-    InputSlider,
-    FormControl,
-    Hr,
-    Spacer,
     ToolTip
   } from '@tableslayer/ui';
   import {
@@ -50,7 +46,6 @@
   } from './';
   import { usePartyData } from '$lib/utils/yjs/stores';
   import { queuePropertyUpdate } from '$lib/utils';
-  import { setPreference } from '$lib/utils/gameSessionPreferences';
 
   let {
     socketUpdate,
@@ -271,30 +266,7 @@
             options={eraseOptions}
             positioning={{ placement: 'bottom', offset: 8 }}
             onSelectedChange={(selected) => handleSelectedFogTool(selected)}
-          >
-            {#snippet footer()}
-              <Spacer />
-              <Hr />
-              <div class="sceneControls__eraserFooter">
-                <FormControl label="Eraser brush size" name="brushSize">
-                  {#snippet input(inputProps)}
-                    <InputSlider
-                      {...inputProps}
-                      value={stageProps.fogOfWar.tool.size}
-                      oninput={(e) => {
-                        const value = Number(e.currentTarget.value);
-                        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], value, 'control');
-                        setPreference('brushSize', value);
-                      }}
-                      min={50}
-                      max={300}
-                      step={1}
-                    />
-                  {/snippet}
-                </FormControl>
-              </div>
-            {/snippet}
-          </SelectorMenu>
+          ></SelectorMenu>
         {/snippet}
         {#snippet toolTipContent()}
           Change the tool used to erase or add fog
@@ -517,9 +489,6 @@
     gap: 1rem;
   }
 
-  .sceneControls__eraserFooter {
-    padding: 1rem 1rem 0.5rem 1rem;
-  }
   .sceneControls__item {
     display: flex;
     align-items: center;

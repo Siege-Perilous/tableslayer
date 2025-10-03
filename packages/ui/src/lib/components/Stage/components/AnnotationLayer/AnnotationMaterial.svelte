@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T } from '@threlte/core';
+  import chroma from 'chroma-js';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayerData } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
@@ -22,11 +23,21 @@
 
   let drawMaterial: DrawingMaterial;
 
+  // Helper to parse hex color to RGB vector (in sRGB space, 0-1 range)
+  // Use chroma-js to avoid Three.js color space conversions
+  function hexToRGB(hex: string): THREE.Vector3 {
+    const [r, g, b] = chroma(hex).gl();
+    return new THREE.Vector3(r, g, b);
+  }
+
+  // Create reactive uniform values
+  let colorUniform = $derived(hexToRGB(props.color));
+
   // Material used for rendering the annotations
   let annotationMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
-      uColor: { value: new THREE.Color(props.color) },
+      uColor: { value: hexToRGB(props.color) },
       uOpacity: { value: props.opacity },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
@@ -39,11 +50,13 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    annotationMaterial.uniforms.uColor.value = new THREE.Color(props.color);
+    // Update the uniform value in-place rather than replacing the object
+    annotationMaterial.uniforms.uColor.value.copy(colorUniform);
     annotationMaterial.uniforms.uOpacity.value = props.opacity;
     annotationMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
+    annotationMaterial.uniformsNeedUpdate = true;
   });
 
   /**
@@ -131,8 +144,10 @@
   initialState={InitialState.Clear}
   {size}
   onRender={(texture) => {
+    // Ensure color is correct when texture updates
+    annotationMaterial.uniforms.uColor.value.copy(colorUniform);
     annotationMaterial.uniforms.uMaskTexture.value = texture;
-    annotationMaterial.needsUpdate = true;
+    annotationMaterial.uniformsNeedUpdate = true;
   }}
 />
 
