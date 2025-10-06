@@ -267,6 +267,13 @@
       "when": 1759319333483,
       "tag": "0037_create-dates-party",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1759772298206,
+      "tag": "0038_default-map",
+      "breakpoints": true
     }
   ]
 }
