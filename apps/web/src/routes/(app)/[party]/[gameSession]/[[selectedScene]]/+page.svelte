@@ -74,7 +74,8 @@
     party,
     activeScene,
     user,
-    brushSize
+    brushSize,
+    stripeEnabled
   } = $derived(data);
 
   // Helper function to clean stage props before sending to Y.js
@@ -2640,6 +2641,7 @@
         party={currentParty}
         {activeSceneId}
         {partyData}
+        {stripeEnabled}
         bind:isLocallyReordering
       />
     </Pane>

@@ -1,20 +1,36 @@
 import type { PartyPlan } from '$lib/db/app/schema';
-import { updateParty } from '$lib/server';
+import { isStripeEnabled, updateParty } from '$lib/server';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_API_KEY!);
+const stripe = process.env.STRIPE_API_KEY ? new Stripe(process.env.STRIPE_API_KEY) : null;
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_KEY!;
+const endpointSecret = process.env.STRIPE_WEBHOOK_KEY;
 
-const PRICE_PLAN_MAP: Record<string, PartyPlan> = {
-  [process.env.STRIPE_PRICE_ID_MONTHLY!]: 'monthly',
-  [process.env.STRIPE_PRICE_ID_YEARLY!]: 'yearly',
-  [process.env.STRIPE_PRICE_ID_LIFETIME!]: 'lifetime'
-};
+const PRICE_PLAN_MAP: Record<string, PartyPlan> = {};
+
+if (process.env.STRIPE_PRICE_ID_MONTHLY) {
+  PRICE_PLAN_MAP[process.env.STRIPE_PRICE_ID_MONTHLY] = 'monthly';
+}
+if (process.env.STRIPE_PRICE_ID_YEARLY) {
+  PRICE_PLAN_MAP[process.env.STRIPE_PRICE_ID_YEARLY] = 'yearly';
+}
+if (process.env.STRIPE_PRICE_ID_LIFETIME) {
+  PRICE_PLAN_MAP[process.env.STRIPE_PRICE_ID_LIFETIME] = 'lifetime';
+}
 
 export const POST: RequestHandler = async (event) => {
   try {
+    if (!isStripeEnabled()) {
+      console.error('Stripe webhook received but Stripe is not configured');
+      return json({ error: 'Stripe is not configured on this server' }, { status: 400 });
+    }
+
+    if (!stripe || !endpointSecret) {
+      console.error('Stripe webhook received but Stripe is not initialized');
+      return json({ error: 'Stripe is not initialized' }, { status: 400 });
+    }
+
     const rawBody = await event.request.text();
     const signature = event.request.headers.get('stripe-signature');
 

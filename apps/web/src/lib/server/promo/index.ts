@@ -143,10 +143,12 @@ export const redeemPromo = async (promoId: string, userId: string, partyId: stri
     });
 
     // Cancel Stripe subscription if it exists (do this after the transaction succeeds)
-    if (party.stripeCustomerId && (party.plan === 'monthly' || party.plan === 'yearly')) {
+    // Only attempt if Stripe is configured
+    const stripeApiKey = process.env.STRIPE_API_KEY;
+    if (stripeApiKey && party.stripeCustomerId && (party.plan === 'monthly' || party.plan === 'yearly')) {
       try {
         const Stripe = await import('stripe');
-        const stripe = new Stripe.default(process.env.STRIPE_API_KEY!);
+        const stripe = new Stripe.default(stripeApiKey);
 
         // List all active subscriptions for this customer
         const subscriptions = await stripe.subscriptions.list({

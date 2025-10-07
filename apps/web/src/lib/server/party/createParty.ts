@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
-import { SlugConflictError, deleteGameSession } from '$lib/server';
+import { SlugConflictError, deleteGameSession, getDefaultPartyPlan } from '$lib/server';
 import { createRandomName, generateSlug } from '$lib/utils';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,6 +22,7 @@ export const createParty = async (userId: string, partyData?: Partial<InsertPart
       const party = await db
         .insert(partyTable)
         .values({
+          plan: getDefaultPartyPlan(),
           ...partyData,
           id,
           name: partyName,
@@ -80,7 +81,8 @@ export const createRandomNamedParty = async (): Promise<SelectParty> => {
         .values({
           id: uuidv4(),
           name: partyName,
-          slug
+          slug,
+          plan: getDefaultPartyPlan()
         })
         .returning()
         .get();
@@ -114,7 +116,8 @@ export const createNamedPartyForUser = async (
     const partyValues: Partial<InsertParty> = {
       id: partyId,
       name: partyName,
-      slug
+      slug,
+      plan: getDefaultPartyPlan()
     };
 
     // Only include avatarFileId if it's provided, otherwise let database default handle it

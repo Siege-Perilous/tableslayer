@@ -1,16 +1,16 @@
 import { VALID_PARTY_PLANS } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { getParty, getUser, updateParty } from '$lib/server';
+import { getParty, getUser, isStripeEnabled, updateParty } from '$lib/server';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
-const stripe = new Stripe(process.env.STRIPE_API_KEY!);
+const stripe = process.env.STRIPE_API_KEY ? new Stripe(process.env.STRIPE_API_KEY) : null;
 
-const STRIPE_PRICE_YEARLY_ID = process.env.STRIPE_PRICE_ID_YEARLY!;
-const STRIPE_PRICE_LIFETIME_ID = process.env.STRIPE_PRICE_ID_LIFETIME!;
-const STRIPE_PRICE_MONTHLY_ID = process.env.STRIPE_PRICE_ID_MONTHLY!;
+const STRIPE_PRICE_YEARLY_ID = process.env.STRIPE_PRICE_ID_YEARLY;
+const STRIPE_PRICE_LIFETIME_ID = process.env.STRIPE_PRICE_ID_LIFETIME;
+const STRIPE_PRICE_MONTHLY_ID = process.env.STRIPE_PRICE_ID_MONTHLY;
 
-const PARTY_PLAN_PRICE_IDS: Record<string, string | null> = {
+const PARTY_PLAN_PRICE_IDS: Record<string, string | null | undefined> = {
   yearly: STRIPE_PRICE_YEARLY_ID,
   lifetime: STRIPE_PRICE_LIFETIME_ID,
   monthly: STRIPE_PRICE_MONTHLY_ID,
@@ -25,6 +25,14 @@ const validationSchema = z.object({
 export const POST = apiFactory(
   async (event) => {
     try {
+      if (!isStripeEnabled()) {
+        throw new Error('Stripe is not configured on this server');
+      }
+
+      if (!stripe) {
+        throw new Error('Stripe is not initialized');
+      }
+
       const { plan, partyId } = event.body;
 
       if (!plan || !partyId) {

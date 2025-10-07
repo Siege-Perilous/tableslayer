@@ -38,6 +38,10 @@
     </div>
   </div>
   <div>
+    {#if !data.stripeEnabled}
+      <Text size="1.5rem" color="var(--fgDanger)" weight={600}>Self hosted mode</Text>
+      <Spacer size="1rem" />
+    {/if}
     <Text size="1.25rem" class="home__contentText">
       Table Slayer helps game masters build and manage animated battle maps for <span class="home__highlight">
         in person
@@ -52,7 +56,9 @@
     </Text>
     <Spacer size="2rem" />
     <div class="home__buttonGroup">
-      <Button href="/signup" class="btn" variant="special" size="lg">Try it for free</Button>
+      <Button href="/signup" class="btn" variant="special" size="lg">
+        {data.stripeEnabled ? 'Try it for free' : 'Sign up'}
+      </Button>
       <Button href="/login" class="btn" size="lg">Log in</Button>
     </div>
   </div>

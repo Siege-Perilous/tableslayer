@@ -1,11 +1,12 @@
-import { getPartiesForUser, getUser } from '$lib/server';
+import { getPartiesForUser, getUser, isStripeEnabled } from '$lib/server';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
   const envName = process.env.ENV_NAME || 'development';
   const bucketUrl = process.env.CLOUDFLARE_R2_BUCKET_URL || 'https://files.tableslayer.com';
+  const stripeEnabled = isStripeEnabled();
 
-  if (!event.locals.user) return { envName, bucketUrl };
+  if (!event.locals.user) return { envName, bucketUrl, stripeEnabled };
 
   const userId = event.locals.user.id;
   try {
@@ -15,7 +16,8 @@ export const load: LayoutServerLoad = async (event) => {
       user,
       parties,
       envName,
-      bucketUrl
+      bucketUrl,
+      stripeEnabled
     };
   } catch (error) {
     console.error('Error fetching user and parties', error);
