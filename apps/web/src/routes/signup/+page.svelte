@@ -17,6 +17,7 @@
   import { goto } from '$app/navigation';
 
   let { data } = $props();
+  const { googleOAuthEnabled } = $derived(data);
 
   let email = $state('');
   let password = $state('');
@@ -56,7 +57,7 @@
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
   <Spacer />
-  {#if data.envName !== 'preview'}
+  {#if googleOAuthEnabled && data.envName !== 'preview'}
     <div>
       <Button href="/login/google" data-sveltekit-preload-data="tap">
         {#snippet start()}

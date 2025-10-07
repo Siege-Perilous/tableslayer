@@ -1,6 +1,6 @@
 /**
- * Stripe configuration utilities
- * Determines if Stripe is enabled based on environment variables
+ * Configuration utilities
+ * Determines if optional services are enabled based on environment variables
  */
 
 export const isStripeEnabled = (): boolean => {
@@ -15,4 +15,11 @@ export const isStripeEnabled = (): boolean => {
 
 export const getDefaultPartyPlan = (): 'free' | 'lifetime' => {
   return isStripeEnabled() ? 'free' : 'lifetime';
+};
+
+export const isGoogleOAuthEnabled = (): boolean => {
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  return !!(googleClientId && googleClientSecret);
 };

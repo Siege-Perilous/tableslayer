@@ -1,9 +1,13 @@
-import { google } from '$lib/server';
+import { google, isGoogleOAuthEnabled } from '$lib/server';
 import type { RequestEvent } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { generateCodeVerifier, generateState } from 'arctic';
 
 export async function GET(event: RequestEvent): Promise<Response> {
+  if (!isGoogleOAuthEnabled()) {
+    throw error(404, 'Google OAuth is not configured on this server');
+  }
+
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
 

@@ -3,13 +3,18 @@ import {
   createSession,
   generateSessionToken,
   google,
+  isGoogleOAuthEnabled,
   setSessionTokenCookie
 } from '$lib/server';
 import type { RequestEvent } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { OAuth2Tokens } from 'arctic';
 
 export async function GET(event: RequestEvent): Promise<Response> {
+  if (!isGoogleOAuthEnabled()) {
+    throw error(404, 'Google OAuth is not configured on this server');
+  }
+
   const code = event.url.searchParams.get('code');
   const state = event.url.searchParams.get('state');
   const storedState = event.cookies.get('google_oauth_state') ?? null;
