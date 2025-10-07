@@ -1,9 +1,9 @@
 import { apiFactory } from '$lib/factories';
-import { getParty } from '$lib/server';
+import { getParty, isStripeEnabled } from '$lib/server';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
-const stripe = new Stripe(process.env.STRIPE_API_KEY!);
+const stripe = process.env.STRIPE_API_KEY ? new Stripe(process.env.STRIPE_API_KEY) : null;
 
 const validationSchema = z.object({
   partyId: z.string()
@@ -12,6 +12,14 @@ const validationSchema = z.object({
 export const POST = apiFactory(
   async (event) => {
     try {
+      if (!isStripeEnabled()) {
+        throw new Error('Stripe is not configured on this server');
+      }
+
+      if (!stripe) {
+        throw new Error('Stripe is not initialized');
+      }
+
       const { partyId } = event.body;
 
       if (!partyId) {
