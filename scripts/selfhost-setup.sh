@@ -38,8 +38,8 @@ echo ""
 
 # Check for .env file
 if [ ! -f apps/web/.env ]; then
-    echo "Creating apps/web/.env file from .env-example..."
-    cp .env-example apps/web/.env
+    echo "Creating apps/web/.env file from apps/web/.env-example..."
+    cp apps/web/.env-example apps/web/.env
     echo "✅ Created apps/web/.env file"
     echo ""
     echo "⚠️  IMPORTANT: You must now configure your apps/web/.env file with:"

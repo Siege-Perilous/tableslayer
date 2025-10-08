@@ -104,7 +104,7 @@ cd tableslayer
 The setup script will:
 
 1. Check for required tools (Docker, pnpm)
-2. Create `.env` from `.env-example` if needed
+2. Create `apps/web/.env` from `apps/web/.env-example` if needed
 3. Validate your configuration
 4. Install dependencies and initialize the database
 5. Build the Docker image
@@ -123,10 +123,10 @@ cd tableslayer
 #### 2. Configure environment
 
 ```bash
-cp .env-example .env
+cp apps/web/.env-example apps/web/.env
 ```
 
-Edit `.env` and fill in your service credentials.
+Edit `apps/web/.env` and fill in your service credentials.
 
 #### 3. Initialize database
 
@@ -165,7 +165,7 @@ ports:
 
 ### Enable/disable optional features
 
-Set these in `.env`:
+Set these in `apps/web/.env`:
 
 ```bash
 # Disable email (leave empty)
