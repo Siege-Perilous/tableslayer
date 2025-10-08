@@ -8,7 +8,7 @@
   import { onMount } from 'svelte';
 
   let { data } = $props();
-  const { isGoogleOAuthEnabled } = $derived(data);
+  const { isGoogleOAuthEnabled, isEmailEnabled } = $derived(data);
 
   let email = $state('');
   let password = $state('');
@@ -89,9 +89,8 @@
   </form>
   <Spacer />
   <Text>
-    Need an account? <Link href="/signup">Sign up now</Link> or <Link href="/forgot-password">
-      recover your password
-    </Link>.
+    Need an account? <Link href="/signup">Sign up now</Link>{#if isEmailEnabled}
+      or <Link href="/forgot-password">recover your password</Link>{/if}.
   </Text>
 </Panel>
 
