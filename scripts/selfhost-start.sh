@@ -6,6 +6,18 @@ echo "Starting Table Slayer"
 echo "==================================="
 echo ""
 
+# Detect docker-compose variant
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
+    echo "   For Arch Linux: sudo pacman -S docker-compose"
+    echo "   Visit: https://docs.docker.com/compose/install/"
+    exit 1
+fi
+
 # Check if .env exists
 if [ ! -f apps/web/.env ]; then
     echo "❌ apps/web/.env file not found"
@@ -45,7 +57,7 @@ echo ""
 
 # Start Docker Compose
 echo "Starting Docker containers..."
-docker-compose -f docker-compose.selfhost.yml up -d
+$DOCKER_COMPOSE -f docker-compose.selfhost.yml up -d
 
 echo ""
 echo "==================================="
@@ -55,7 +67,7 @@ echo ""
 echo "Access your instance at: http://localhost:3000"
 echo ""
 echo "To view logs, run:"
-echo "  docker-compose -f docker-compose.selfhost.yml logs -f"
+echo "  $DOCKER_COMPOSE -f docker-compose.selfhost.yml logs -f"
 echo ""
 echo "To stop the server, run:"
 echo "  ./scripts/selfhost-stop.sh"

@@ -15,8 +15,14 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+# Detect docker-compose variant
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo "❌ Docker Compose is not installed. Please install Docker Compose first."
+    echo "   For Arch Linux: sudo pacman -S docker-compose"
     echo "   Visit: https://docs.docker.com/compose/install/"
     exit 1
 fi
@@ -100,7 +106,7 @@ echo ""
 
 # Build Docker image
 echo "Building Docker image..."
-docker-compose -f docker-compose.selfhost.yml build
+$DOCKER_COMPOSE -f docker-compose.selfhost.yml build
 echo "✅ Docker image built"
 echo ""
 
