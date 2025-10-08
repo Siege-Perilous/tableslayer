@@ -1,5 +1,6 @@
 export * from './annotations';
 export * from './auth';
+export * from './config';
 export * from './email';
 export * from './errors';
 export * from './file';
