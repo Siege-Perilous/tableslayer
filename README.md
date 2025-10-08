@@ -28,6 +28,23 @@ Table Slayer is built completely in the dark, ignoring modern design trends of a
 
 Avoid large dependencies beyond core framework choices. All design components should be hand crafted and use vanilla CSS.
 
+## Self-hosting
+
+Table Slayer can be self-hosted using Docker. See the [Self-hosting Guide](SELF_HOSTING.md) for detailed instructions.
+
+**Quick start:**
+
+```bash
+git clone https://github.com/Siege-Perilous/tableslayer.git
+cd tableslayer
+./scripts/selfhost-setup.sh
+./scripts/selfhost-start.sh
+```
+
+Required services: Turso (database), Cloudflare R2 (storage), Partykit (real-time)
+
+Optional services: Resend (email), Google OAuth, Stripe (payments)
+
 ## Development
 
 This repo requires certain Node and `pnpm` versions. These can be checked in `package.json`. If working in multiple Node based projects, you might want to use [nvm](https://github.com/nvm-sh/nvm) to manage your Node version and [corepack](https://nodejs.org/api/corepack.html#enabling-the-feature) (which comes with Node and needs to be enabled) to switch your package manager. If both are installed, it should auto-switch your versions as you enter the folder.
@@ -36,7 +53,7 @@ This repo requires certain Node and `pnpm` versions. These can be checked in `pa
 
 To get started, edit the `.env` file in each `app` and run `pnpm run dev` to load local development.
 
-A full guide for self-hosting is coming soon. Here's a quick list for anyone who wants to get up and running.
+### Local development setup
 
 1. Copy `.env-example` in the `apps/web` folder to `.env`
 2. Create a new database on Turso. Add the required keys to `.env`.

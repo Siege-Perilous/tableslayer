@@ -1,0 +1,66 @@
+# vim: filetype=dockerfile
+# syntax=docker/dockerfile:1
+# Dockerfile for self-hosting Table Slayer
+# This simplified version assumes you have:
+# - Turso database (or compatible libsql server)
+# - Cloudflare R2 (or S3-compatible storage)
+# - Partykit server for real-time collaboration
+#
+# Optional services (will work without them):
+# - Resend for email (can be disabled)
+# - Google OAuth (can be disabled)
+# - Stripe for payments (can be disabled)
+
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/ui/package.json ./packages/ui/
+
+# Install dependencies
+FROM base AS dependencies
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# Build the application
+FROM base AS build
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+# Build UI package first
+RUN pnpm --filter @tableslayer/ui build
+
+# Build web app
+RUN pnpm --filter web build
+
+# Production image
+FROM node:20-slim AS production
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+WORKDIR /app
+
+# Copy necessary files
+COPY --from=build /app/apps/web/build ./apps/web/build
+COPY --from=build /app/apps/web/package.json ./apps/web/
+COPY --from=build /app/package.json ./
+COPY --from=build /app/pnpm-lock.yaml ./
+COPY --from=build /app/pnpm-workspace.yaml ./
+
+# Install production dependencies only
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+
+# Expose the port
+EXPOSE 3000
+
+# Set the working directory to the web app
+WORKDIR /app/apps/web
+
+# Start the application
+CMD ["node", "build"]

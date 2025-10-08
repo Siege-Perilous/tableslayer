@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  tableslayer:
+    build:
+      context: .
+      dockerfile: DockerfileSelfHost
+    ports:
+      - '3000:3000'
+    env_file:
+      - apps/web/.env
+    restart: unless-stopped
+    environment:
+      # Server configuration
+      - NODE_ENV=production
+      - ORIGIN=${ORIGIN:-http://localhost:3000}
+      - BASE_URL=${BASE_URL:-http://localhost:3000}
+
+      # Database (Turso or compatible libsql)
+      - TURSO_URL=${TURSO_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
+
+      # Storage (Cloudflare R2 or S3-compatible)
+      - CLOUDFLARE_R2_ACCOUNT_ID=${CLOUDFLARE_R2_ACCOUNT_ID}
+      - CLOUDFLARE_R2_ACCESS_KEY_ID=${CLOUDFLARE_R2_ACCESS_KEY_ID}
+      - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
+      - CLOUDFLARE_R2_BUCKET_NAME=${CLOUDFLARE_R2_BUCKET_NAME}
+      - CLOUDFLARE_R2_BUCKET_URL=${CLOUDFLARE_R2_BUCKET_URL}
+
+      # Real-time collaboration (Partykit)
+      - PUBLIC_PARTYKIT_HOST=${PUBLIC_PARTYKIT_HOST}
+
+      # Optional: Email service (Resend)
+      # Leave empty to disable email features
+      - RESEND_TOKEN=${RESEND_TOKEN:-}
+
+      # Optional: Google OAuth
+      # Leave empty to disable Google sign-in
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+
+      # Optional: Stripe payments
+      # Leave empty to disable payments (users get lifetime access)
+      - STRIPE_API_KEY=${STRIPE_API_KEY:-}
+      - STRIPE_WEBHOOK_KEY=${STRIPE_WEBHOOK_KEY:-}
+      - STRIPE_PRICE_ID_LIFETIME=${STRIPE_PRICE_ID_LIFETIME:-}
+      - STRIPE_PRICE_ID_MONTHLY=${STRIPE_PRICE_ID_MONTHLY:-}
+      - STRIPE_PRICE_ID_YEARLY=${STRIPE_PRICE_ID_YEARLY:-}
+
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/healthcheck', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: tableslayer-network
