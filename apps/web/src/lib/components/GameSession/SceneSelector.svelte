@@ -53,7 +53,7 @@
     party,
     partyData,
     isLocallyReordering = $bindable(false),
-    stripeEnabled = true
+    isStripeEnabled = true
   }: {
     scenes: (SelectScene | (SelectScene & Thumb))[];
     gameSession: SelectGameSession;
@@ -62,7 +62,7 @@
     activeSceneId: string | undefined;
     partyData: ReturnType<typeof usePartyData> | null;
     isLocallyReordering?: boolean;
-    stripeEnabled?: boolean;
+    isStripeEnabled?: boolean;
   } = $props();
 
   let file = $state<FileList | null>(null);
@@ -72,7 +72,7 @@
   let renamingScenes = $state<Record<string, string | null>>({});
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
-  let needsToUpgrade = $derived(stripeEnabled && party.plan === 'free' && orderedScenes.length >= 3);
+  let needsToUpgrade = $derived(isStripeEnabled && party.plan === 'free' && orderedScenes.length >= 3);
   let isNewSceneAdded = $state(false);
 
   // Flag to prevent context menu after drag

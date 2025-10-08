@@ -255,3 +255,29 @@ export const resendPartyInvite = async (partyId: string, email: string): Promise
     throw error;
   }
 };
+
+export const refreshPartyInviteLink = async (partyId: string, email: string): Promise<{ inviteUrl: string }> => {
+  try {
+    const inviteCode = uuidv4();
+    const hashedInviteCode = await createSha256Hash(inviteCode);
+
+    const invite = await db
+      .update(partyInviteTable)
+      .set({ code: hashedInviteCode })
+      .where(and(eq(partyInviteTable.email, email), eq(partyInviteTable.partyId, partyId)))
+      .returning()
+      .get();
+
+    if (!invite) {
+      throw new Error('No party invite found');
+    }
+
+    const baseURL = process.env.BASE_URL || 'http://localhost:5174';
+    const inviteUrl = `${baseURL}/accept-invite/${inviteCode}`;
+
+    return { inviteUrl };
+  } catch (error) {
+    console.error('Error refreshing party invite link', error);
+    throw error;
+  }
+};

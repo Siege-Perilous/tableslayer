@@ -1,5 +1,5 @@
 import { getDatabaseMode } from '$lib/db/app/index';
-import { isGoogleOAuthEnabled, isStripeEnabled } from '$lib/server';
+import { isEmailEnabled, isGoogleOAuthEnabled, isStripeEnabled } from '$lib/server';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async () => {
@@ -12,8 +12,9 @@ export const GET: RequestHandler = async () => {
     alloc: process.env.FLY_ALLOC_ID || 'unknown',
     app: process.env.FLY_APP_NAME || 'unknown',
     timestamp: new Date().toISOString(),
-    stripeEnabled: isStripeEnabled(),
-    googleOAuthEnabled: isGoogleOAuthEnabled(),
+    isStripeEnabled: isStripeEnabled(),
+    isGoogleOAuthEnabled: isGoogleOAuthEnabled(),
+    isEmailEnabled: isEmailEnabled(),
     r2BucketUrl: process.env.CLOUDFLARE_R2_BUCKET_URL || 'Not configured',
     partykit: {
       host: partykitHost,

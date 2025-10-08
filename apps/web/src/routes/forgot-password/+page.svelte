@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { Input, Button, FormControl, Title, Spacer, Panel } from '@tableslayer/ui';
+  import { Input, Button, FormControl, Title, Spacer, Panel, Text, Link } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { useAuthForgotPasswordMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
+
+  let { data } = $props();
+  const { isEmailEnabled } = $derived(data);
+
   let email = $state('');
   let formIsLoading = $state(false);
   let forgotPasswordError = $state<FormMutationError | undefined>(undefined);
@@ -33,15 +37,23 @@
 <Panel class="panel--forgot">
   <Title as="h1" size="md">Forgot password?</Title>
   <Spacer size="2rem" />
-  <form onsubmit={handleForgotPassword}>
-    <FormControl label="Email" name="email" errors={forgotPasswordError && forgotPasswordError.errors}>
-      {#snippet input({ inputProps })}
-        <Input {...inputProps} type="text" bind:value={email} />
-      {/snippet}
-    </FormControl>
+  {#if !isEmailEnabled}
+    <Text>Password reset is not available on this server because email service is not configured.</Text>
     <Spacer />
-    <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
-  </form>
+    <Text>
+      Please contact your server administrator. Return to <Link href="/login">sign in</Link>.
+    </Text>
+  {:else}
+    <form onsubmit={handleForgotPassword}>
+      <FormControl label="Email" name="email" errors={forgotPasswordError && forgotPasswordError.errors}>
+        {#snippet input({ inputProps })}
+          <Input {...inputProps} type="text" bind:value={email} />
+        {/snippet}
+      </FormControl>
+      <Spacer />
+      <Button type="submit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
+    </form>
+  {/if}
 </Panel>
 
 <style>

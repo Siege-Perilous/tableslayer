@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
 import { emailVerificationCodesTable } from '$lib/db/app/schema';
-import { getUser } from '$lib/server';
+import { getUser, isEmailEnabled } from '$lib/server';
 import { isWithinExpirationDate } from '$lib/utils';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -14,6 +14,7 @@ export const load: PageServerLoad = async (event) => {
   const userId = event.locals.user.id;
   const user = await getUser(userId);
   const isVerified = user?.emailVerified ?? false;
+  const emailEnabled = isEmailEnabled();
 
   if (isVerified) {
     throw redirect(302, '/profile');
@@ -30,6 +31,7 @@ export const load: PageServerLoad = async (event) => {
   return {
     user,
     isWithinExpiration,
-    isVerified
+    isVerified,
+    emailEnabled
   };
 };

@@ -1,5 +1,6 @@
 export * from './annotations';
 export * from './auth';
+export * from './config';
 export * from './email';
 export * from './errors';
 export * from './file';
@@ -10,6 +11,5 @@ export * from './party';
 export * from './partyInvite';
 export * from './profile';
 export * from './scene';
-export * from './stripe/config';
 export * from './user';
 export * from './yjs';

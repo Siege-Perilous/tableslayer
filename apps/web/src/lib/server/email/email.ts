@@ -1,7 +1,17 @@
 import { dev } from '$app/environment';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_TOKEN!);
+let resend: Resend | null = null;
+
+const getResendClient = () => {
+  if (!process.env.RESEND_TOKEN) {
+    throw new Error('RESEND_TOKEN is not set');
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_TOKEN);
+  }
+  return resend;
+};
 
 interface EmailOptions {
   to: string;
@@ -21,7 +31,8 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
   }
   const recipient = dev ? process.env.DEV_EMAIL! : to;
   try {
-    await resend.emails.send({
+    const client = getResendClient();
+    await client.emails.send({
       from,
       to: recipient,
       subject,
@@ -33,8 +44,13 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
 };
 
 export const addEmailtoAudience = async (email: string) => {
+  if (!process.env.RESEND_TOKEN) {
+    console.error('RESEND_TOKEN is not set');
+    return;
+  }
   try {
-    await resend.contacts.create({
+    const client = getResendClient();
+    await client.contacts.create({
       email,
       audienceId: process.env.RESEND_AUDIENCE_ID!,
       unsubscribed: false

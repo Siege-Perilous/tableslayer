@@ -10,7 +10,7 @@
   import { goto } from '$app/navigation';
 
   let { data } = $props();
-  const { user } = data;
+  const { user, emailEnabled } = data;
 
   let isChangingEmail = $state(false);
   let formIsLoading = $state(false);
@@ -90,7 +90,15 @@
 
 <Panel class="verify">
   <div>
-    {#if !isChangingEmail}
+    {#if !emailEnabled}
+      <Title as="h1" size="md">Email verification disabled</Title>
+      <Spacer />
+      <Text>Email service is not configured on this server. Your account has been automatically verified.</Text>
+      <Spacer />
+      <Text>
+        Return to <Link href="/profile">your profile</Link>.
+      </Text>
+    {:else if !isChangingEmail}
       {#if data.isVerified}
         <Title as="h1" size="md">Your email is verified</Title>
       {:else if data.isWithinExpiration}
