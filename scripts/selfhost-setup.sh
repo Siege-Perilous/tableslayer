@@ -45,14 +45,26 @@ if [ ! -f apps/web/.env ]; then
     echo "⚠️  IMPORTANT: You must now configure your apps/web/.env file with:"
     echo ""
     echo "   Required services:"
-    echo "   - TURSO_URL and TURSO_AUTH_TOKEN (Database)"
-    echo "   - CLOUDFLARE_R2_* credentials (Storage)"
+    echo "   - TURSO_APP_DB_URL and TURSO_APP_DB_AUTH_TOKEN (Database)"
+    echo "     Sign up at: https://turso.tech"
+    echo ""
+    echo "   - CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_R2_ACCESS_KEY,"
+    echo "     CLOUDFLARE_R2_SECRET_KEY, CLOUDFLARE_R2_BUCKET_NAME,"
+    echo "     CLOUDFLARE_R2_BUCKET_URL (Storage)"
+    echo "     Sign up at: https://dash.cloudflare.com/"
+    echo ""
     echo "   - PUBLIC_PARTYKIT_HOST (Real-time collaboration)"
+    echo "     Sign up at: https://partykit.io"
     echo ""
     echo "   Optional services (leave empty to disable):"
     echo "   - RESEND_TOKEN (Email)"
+    echo "     Sign up at: https://resend.com"
+    echo ""
     echo "   - GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (OAuth)"
-    echo "   - STRIPE_* credentials (Payments)"
+    echo "     Sign up at: https://console.cloud.google.com/"
+    echo ""
+    echo "   - STRIPE_API_KEY, STRIPE_WEBHOOK_KEY, STRIPE_PRICE_ID_* (Payments)"
+    echo "     Sign up at: https://dashboard.stripe.com/"
     echo ""
     read -p "Press Enter after you've configured your apps/web/.env file..."
 else
@@ -68,11 +80,11 @@ source apps/web/.env
 MISSING_VARS=()
 
 # Check required variables
-if [ -z "$TURSO_URL" ]; then MISSING_VARS+=("TURSO_URL"); fi
-if [ -z "$TURSO_AUTH_TOKEN" ]; then MISSING_VARS+=("TURSO_AUTH_TOKEN"); fi
-if [ -z "$CLOUDFLARE_R2_ACCOUNT_ID" ]; then MISSING_VARS+=("CLOUDFLARE_R2_ACCOUNT_ID"); fi
-if [ -z "$CLOUDFLARE_R2_ACCESS_KEY_ID" ]; then MISSING_VARS+=("CLOUDFLARE_R2_ACCESS_KEY_ID"); fi
-if [ -z "$CLOUDFLARE_R2_SECRET_ACCESS_KEY" ]; then MISSING_VARS+=("CLOUDFLARE_R2_SECRET_ACCESS_KEY"); fi
+if [ -z "$TURSO_APP_DB_URL" ]; then MISSING_VARS+=("TURSO_APP_DB_URL"); fi
+if [ -z "$TURSO_APP_DB_AUTH_TOKEN" ]; then MISSING_VARS+=("TURSO_APP_DB_AUTH_TOKEN"); fi
+if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then MISSING_VARS+=("CLOUDFLARE_ACCOUNT_ID"); fi
+if [ -z "$CLOUDFLARE_R2_ACCESS_KEY" ]; then MISSING_VARS+=("CLOUDFLARE_R2_ACCESS_KEY"); fi
+if [ -z "$CLOUDFLARE_R2_SECRET_KEY" ]; then MISSING_VARS+=("CLOUDFLARE_R2_SECRET_KEY"); fi
 if [ -z "$CLOUDFLARE_R2_BUCKET_NAME" ]; then MISSING_VARS+=("CLOUDFLARE_R2_BUCKET_NAME"); fi
 if [ -z "$CLOUDFLARE_R2_BUCKET_URL" ]; then MISSING_VARS+=("CLOUDFLARE_R2_BUCKET_URL"); fi
 if [ -z "$PUBLIC_PARTYKIT_HOST" ]; then MISSING_VARS+=("PUBLIC_PARTYKIT_HOST"); fi
