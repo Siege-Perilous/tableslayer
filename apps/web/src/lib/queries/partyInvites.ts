@@ -32,3 +32,11 @@ export const useRespondToPartyInviteMutation = () => {
     method: 'POST'
   });
 };
+
+export const useRefreshPartyInviteLinkMutation = () => {
+  return mutationFactory<{ partyId: string; email: string }, { success: boolean; inviteUrl: string }>({
+    mutationKey: ['refreshPartyInviteLink'],
+    endpoint: '/api/partyInvite/refreshPartyInviteLink',
+    method: 'POST'
+  });
+};

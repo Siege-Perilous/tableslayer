@@ -13,7 +13,7 @@
   } from '$lib/components';
 
   let { data } = $props();
-  const { party, gameSessions, isPartyAdmin, invitedEmails, user, isStripeEnabled } = $derived(data);
+  const { party, gameSessions, isPartyAdmin, invitedEmails, user, isStripeEnabled, isEmailEnabled } = $derived(data);
   // Map partyRole to role for the PartyMember component
   const members = $derived(
     data.members.map((m) => {
@@ -74,7 +74,7 @@
           <Spacer size="0.5rem" />
           <div class="partyMembers">
             {#each invitedEmails as email (email)}
-              <ResendInvite {email} {partyId} {isPartyAdmin} />
+              <ResendInvite {email} {partyId} {isPartyAdmin} {isEmailEnabled} />
             {:else}
               <Text>No pending invites</Text>
             {/each}
