@@ -13,7 +13,7 @@
   } from '$lib/components';
 
   let { data } = $props();
-  const { party, gameSessions, isPartyAdmin, invitedEmails, user, stripeEnabled } = $derived(data);
+  const { party, gameSessions, isPartyAdmin, invitedEmails, user, isStripeEnabled } = $derived(data);
   // Map partyRole to role for the PartyMember component
   const members = $derived(
     data.members.map((m) => {
@@ -23,7 +23,7 @@
   );
 
   const partyId = $derived(party.id as string);
-  const needsToUpgrade = $derived(stripeEnabled && party.plan === 'free' && gameSessions.length >= 2);
+  const needsToUpgrade = $derived(isStripeEnabled && party.plan === 'free' && gameSessions.length >= 2);
 </script>
 
 <Head title={party.name} description={`${party.name} on Table Slayer`} />
@@ -51,7 +51,7 @@
       </div>
     </main>
     <aside>
-      {#if isPartyAdmin && stripeEnabled}
+      {#if isPartyAdmin && isStripeEnabled}
         <Title as="h2" size="sm">Patronage</Title>
         <Spacer />
         <PartyUpgrade {party} />

@@ -23,3 +23,9 @@ export const isGoogleOAuthEnabled = (): boolean => {
 
   return !!(googleClientId && googleClientSecret);
 };
+
+export const isEmailEnabled = (): boolean => {
+  const resendToken = process.env.RESEND_TOKEN;
+
+  return !!resendToken;
+};

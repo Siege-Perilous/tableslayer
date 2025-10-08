@@ -8,7 +8,7 @@
   import { onMount } from 'svelte';
 
   let { data } = $props();
-  const { googleOAuthEnabled } = $derived(data);
+  const { isGoogleOAuthEnabled } = $derived(data);
 
   let email = $state('');
   let password = $state('');
@@ -56,7 +56,7 @@
 <Panel class="login">
   <Title as="h1" size="md" data-testid="signInHeading">Sign in</Title>
   <Spacer />
-  {#if googleOAuthEnabled && data.envName !== 'preview'}
+  {#if isGoogleOAuthEnabled && data.envName !== 'preview'}
     <div>
       <Button href="/login/google" data-sveltekit-preload-data="tap">
         {#snippet start()}

@@ -15,6 +15,7 @@ import {
   getGravatarUrl,
   getPartiesForUser,
   getParty,
+  isEmailEnabled,
   sendSingleEmail,
   sendVerificationEmail,
   transformImage,
@@ -101,6 +102,7 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
   const passwordHash = await createArgonHash(password);
   const randomShortCode = createShortCode();
   const emailVerificationHash = await createSha256Hash(randomShortCode);
+  const emailEnabled = isEmailEnabled();
 
   try {
     if (await isEmailInUserTable(email)) {
@@ -111,7 +113,9 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
       id: userId,
       name,
       email: email,
-      passwordHash: passwordHash
+      passwordHash: passwordHash,
+      // Auto-verify email if email service is disabled
+      emailVerified: !emailEnabled
     });
     try {
       const gravatar = getGravatarUrl(email);
@@ -136,22 +140,25 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
     // Create a game session database
     await createGameSession(party.id);
 
-    // Create an email verification code
-    await db
-      .insert(emailVerificationCodesTable)
-      .values({
-        userId,
-        code: emailVerificationHash
-      })
-      .returning()
-      .get();
+    // Only send verification email if email service is enabled
+    if (emailEnabled) {
+      // Create an email verification code
+      await db
+        .insert(emailVerificationCodesTable)
+        .values({
+          userId,
+          code: emailVerificationHash
+        })
+        .returning()
+        .get();
 
-    // Send email
-    await sendSingleEmail({
-      to: email,
-      subject: 'Verify your email at Table Slayer',
-      html: `Your verification code is: ${randomShortCode}`
-    });
+      // Send email
+      await sendSingleEmail({
+        to: email,
+        subject: 'Verify your email at Table Slayer',
+        html: `Your verification code is: ${randomShortCode}`
+      });
+    }
   } catch (e) {
     console.error('Error creating user', e);
     throw e;
@@ -162,6 +169,10 @@ export const initiateResetPassword = async (email: string) => {
   const randomString = uuidv4();
   const resetPasswordHash = await createSha256Hash(randomString);
   try {
+    if (!isEmailEnabled()) {
+      throw new Error('Email service is not configured. Contact your administrator to reset your password.');
+    }
+
     const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email)).get();
     const existingResetCode = await db
       .select()
@@ -253,6 +264,9 @@ export const changeUserEmail = async (userId: string, newEmail: string) => {
 
 export const resendVerifyEmail = async (userId: string) => {
   try {
+    if (!isEmailEnabled()) {
+      throw new Error('Email service is not configured');
+    }
     const user = await getUser(userId);
     if (!user) {
       throw new Error('User not found');

@@ -17,7 +17,7 @@
   import { goto } from '$app/navigation';
 
   let { data } = $props();
-  const { googleOAuthEnabled } = $derived(data);
+  const { isGoogleOAuthEnabled, isEmailEnabled } = $derived(data);
 
   let email = $state('');
   let password = $state('');
@@ -40,7 +40,9 @@
         signupError = error;
       },
       onSuccess: () => {
-        goto('/verify-email');
+        // If email is disabled, users are auto-verified so go straight to their party
+        // Otherwise, send them to verify their email
+        goto(isEmailEnabled ? '/verify-email' : '/');
       },
       toastMessages: {
         success: { title: 'Welcome to Table Slayer!' },
@@ -57,7 +59,7 @@
 <Panel class="panel--signup">
   <Title as="h1" size="md">Create an account</Title>
   <Spacer />
-  {#if googleOAuthEnabled && data.envName !== 'preview'}
+  {#if isGoogleOAuthEnabled && data.envName !== 'preview'}
     <div>
       <Button href="/login/google" data-sveltekit-preload-data="tap">
         {#snippet start()}
