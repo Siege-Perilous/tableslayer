@@ -11,15 +11,16 @@ This document explains how Table Slayer's real-time collaboration system works u
 5. [Y.js Update Flow](#yjs-update-flow)
 6. [Cursor Handling](#cursor-handling)
 7. [Marker Hover State](#marker-hover-state-dm-to-player-reveal)
-8. [Throttling and Batching System](#throttling-and-batching-system)
-9. [Local-Only Properties](#local-only-properties)
-10. [Stale Data Detection](#stale-data-detection)
-11. [Save System](#save-system)
-12. [Deployment Strategy](#deployment-strategy)
-13. [Cost Optimization](#cost-optimization)
-14. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
-15. [RLE Mask System](#rle-mask-system-run-length-encoding)
-16. [Drawing Protection System](#drawing-protection-system)
+8. [Pinned Tooltips](#pinned-tooltips-database-backed-persistence)
+9. [Throttling and Batching System](#throttling-and-batching-system)
+10. [Local-Only Properties](#local-only-properties)
+11. [Stale Data Detection](#stale-data-detection)
+12. [Save System](#save-system)
+13. [Deployment Strategy](#deployment-strategy)
+14. [Cost Optimization](#cost-optimization)
+15. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
+16. [RLE Mask System](#rle-mask-system-run-length-encoding)
+17. [Drawing Protection System](#drawing-protection-system)
 
 ## Overview
 
@@ -416,6 +417,136 @@ Important: Like cursors, hover state is ephemeral:
 - Not persisted in Y.js documents
 - Clears when DM moves cursor away
 - Disappears when DM disconnects
+
+## Pinned Tooltips (Database-Backed Persistence)
+
+The pinned tooltips system allows DMs to permanently pin marker tooltips for players to see. Unlike hover state, pinned tooltips are **persisted in the database** and survive refreshes and disconnects.
+
+### Database Schema
+
+Pinned state is stored as a boolean field on each marker:
+
+```typescript
+// schema.ts
+export const markerTable = sqliteTable('marker', {
+  // ... other fields
+  pinnedTooltip: integer('pinned_tooltip', { mode: 'boolean' }).notNull().default(false)
+});
+```
+
+### Marker Interface
+
+The UI marker type includes the pinned state:
+
+```typescript
+// types.ts
+export interface Marker {
+  id: string;
+  title: string;
+  position: { x: number; y: number };
+  // ... other fields
+  pinnedTooltip?: boolean;
+}
+```
+
+### Data Flow
+
+Pinned tooltip state flows through the standard database → Y.js → UI pipeline:
+
+```typescript
+// 1. Load from database (buildSceneProps.ts)
+markers = activeSceneMarkers.map((marker) => ({
+  id: marker.id,
+  title: marker.title,
+  // ... other fields
+  pinnedTooltip: marker.pinnedTooltip ?? false
+}));
+
+// 2. Derive pinned marker IDs in both editor and play routes
+let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
+
+// 3. Pin toggle updates marker and triggers save
+const onPinToggle = (markerId: string, pinned: boolean) => {
+  if (stageProps.mode === StageMode.DM) {
+    const markerIndex = stageProps.marker.markers.findIndex((m) => m.id === markerId);
+    if (markerIndex !== -1) {
+      // Update the marker's pinnedTooltip property
+      stageProps.marker.markers[markerIndex].pinnedTooltip = pinned;
+
+      // Trigger database save through property update queue
+      queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+    }
+  }
+};
+
+// 4. Save to database (convertStagePropsToMarkerData.ts)
+return {
+  id: marker.id,
+  // ... other fields
+  pinnedTooltip: marker.pinnedTooltip ?? false
+};
+```
+
+### Key Differences from Hover State
+
+| Feature         | Hover State                | Pinned Tooltips          |
+| --------------- | -------------------------- | ------------------------ |
+| **Storage**     | Y.js awareness (ephemeral) | Database (persistent)    |
+| **Sync Method** | Awareness protocol         | Y.js document + database |
+| **Persistence** | Lost on disconnect         | Survives refreshes       |
+| **Control**     | DM hover action            | DM explicit pin/unpin    |
+| **Purpose**     | Temporary reveal           | Permanent display        |
+
+### Implementation Details
+
+1. **Editor Route** (`/[party]/[gameSession]/[[selectedScene]]/+page.svelte`):
+   - Derives `pinnedMarkerIds` from markers with `pinnedTooltip: true`
+   - `onPinToggle` updates marker property and triggers save
+   - No awareness-based state management
+
+2. **Play Route** (`/[party]/play/+page@.svelte`):
+   - Derives `pinnedMarkerIds` from markers with `pinnedTooltip: true`
+   - Automatically receives pinned state via Y.js marker sync
+   - No awareness-based state management
+
+3. **Stage Component** (`Stage.svelte`):
+   - Renders pinned tooltips based on `pinnedMarkerIds` array
+   - Respects `activeLayer` setting in DM mode (only shows when None or Marker layer active)
+   - Always shows pinned tooltips in Player mode
+
+### Benefits
+
+- **Database Persistence**: Pinned state survives page refreshes and disconnects
+- **Consistent State**: Editor and play routes derive from same source of truth
+- **Real-time Sync**: Changes propagate via Y.js to all connected clients
+- **Auto-save**: Integrated with existing marker save system
+- **No Awareness Overhead**: Reduces Y.js awareness protocol usage
+
+### Migration from Awareness-Based System
+
+The system was originally implemented using Y.js awareness (ephemeral), but was migrated to database persistence to ensure state survives refreshes:
+
+**Before (Awareness-based)**:
+
+```typescript
+// Ephemeral state
+let pinnedMarkerIds = $state<string[]>([]);
+
+// Update via awareness
+partyData.updatePinnedMarkers(newPinnedIds);
+pinnedMarkerIds = partyData.getPinnedMarkers();
+```
+
+**After (Database-backed)**:
+
+```typescript
+// Derived from database markers
+let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
+
+// Update via marker property + database save
+stageProps.marker.markers[markerIndex].pinnedTooltip = pinned;
+queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+```
 
 ## Throttling and Batching System
 

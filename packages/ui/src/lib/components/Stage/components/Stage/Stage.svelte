@@ -148,7 +148,17 @@
   });
 
   $effect(() => {
-    if (pinnedMarkerIds && pinnedMarkerIds.length > 0 && containerElement && sceneRef?.getMarkerScreenPosition) {
+    // Only show pinned tooltips in DM mode when activeLayer is None (0) or Marker (2)
+    // In player mode, always show pinned tooltips
+    const shouldShowPinnedTooltips = props.mode === 1 || props.activeLayer === 0 || props.activeLayer === 2;
+
+    if (
+      pinnedMarkerIds &&
+      pinnedMarkerIds.length > 0 &&
+      containerElement &&
+      sceneRef?.getMarkerScreenPosition &&
+      shouldShowPinnedTooltips
+    ) {
       const newPinnedTooltips = [];
 
       const placementPatterns = [
@@ -182,20 +192,41 @@
 
     if (props.mode === 0) {
       const hoveredMarker = sceneRef?.markers?.hoveredMarker;
-      if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id)) {
+      const isDragging = sceneRef?.markers?.isDraggingMarker;
+      // Only show tooltips when activeLayer is None (0) or Marker (2)
+      // MapLayerType: None = 0, FogOfWar = 1, Marker = 2, Annotation = 3, Measurement = 4
+      const isMarkerOrNoneLayer = props.activeLayer === 0 || props.activeLayer === 2;
+      if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id) && !isDragging && isMarkerOrNoneLayer) {
         markerForTooltip = hoveredMarker;
       }
     } else if (props.mode === 1) {
+      // Player mode - only show tooltips for markers where:
+      // 1. The marker is pinned (handled separately in pinnedTooltips)
+      // 2. The marker visibility is "On hover" (MarkerVisibility.Hover = 3) AND DM is hovering
+      // 3. The marker visibility is "Everyone" (MarkerVisibility.Always = 0) AND DM is hovering
       let dmBroadcastMarker = null;
       if (hoveredMarkerId) {
         if (!pinnedMarkerIds.includes(hoveredMarkerId)) {
-          dmBroadcastMarker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
+          const marker = props.marker.markers.find((m) => m.id === hoveredMarkerId);
+          // Only show if marker visibility is "On hover" or "Everyone"
+          // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
+          if (marker && (marker.visibility === 0 || marker.visibility === 3)) {
+            dmBroadcastMarker = marker;
+          }
         }
       }
 
+      // In player mode, also check if player has selected a marker
+      // But only show tooltip if it has appropriate visibility (not DM-only)
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
-      const selectedNotPinned =
-        selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) ? selectedByPlayer : null;
+      let selectedNotPinned = null;
+      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id)) {
+        // Only show if marker visibility is not DM-only (i.e., not visibility = 1)
+        // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
+        if (selectedByPlayer.visibility !== 1) {
+          selectedNotPinned = selectedByPlayer;
+        }
+      }
 
       markerForTooltip = dmBroadcastMarker || selectedNotPinned;
     }

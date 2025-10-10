@@ -35,6 +35,7 @@ export interface Marker {
   imageScale: number;
   visibility: MarkerVisibility;
   note: JSONContent | null;
+  pinnedTooltip?: boolean;
 }
 
 export interface MarkerLayerProps {
