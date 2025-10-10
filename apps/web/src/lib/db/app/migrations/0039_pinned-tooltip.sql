@@ -1,0 +1,1 @@
+ALTER TABLE `marker` ADD `pinned_tooltip` integer DEFAULT false NOT NULL;

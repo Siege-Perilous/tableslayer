@@ -455,7 +455,8 @@ export const markerTable = sqliteTable(
     shape: integer('shape').notNull().default(1),
     shapeColor: text('shape_color').notNull().default('#ffffff'),
     size: integer('size').notNull().default(1),
-    note: text('note', { mode: 'json' })
+    note: text('note', { mode: 'json' }),
+    pinnedTooltip: integer('pinned_tooltip', { mode: 'boolean' }).notNull().default(false)
   },
   (table) => [
     index('idx_marker_scene_id').on(table.sceneId),

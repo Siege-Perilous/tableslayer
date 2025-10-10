@@ -164,7 +164,6 @@
   let isHydrated = $state(false); // Track hydration status
   let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
   let hoveredMarker: HoveredMarker | null = $state(null); // Track hovered marker from awareness
-  let pinnedMarkerIds = $state<string[]>([]); // Track pinned markers from DM
 
   // SSR protection - prevent Y.js from overwriting fresh database data
   const pageLoadTime = Date.now();
@@ -247,6 +246,10 @@
       data.bucketUrl
     )
   );
+
+  // Derive pinned marker IDs from markers with pinnedTooltip set to true
+  let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
+
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
 
@@ -736,11 +739,12 @@
         const updatedScenes = partyData!.getScenesList();
         const updatedPartyState = partyData!.getPartyState();
 
-        // Update hovered marker for players to see what DM is hovering
+        // Update hovered marker based on mode
         if (stageProps.mode === StageMode.Player) {
+          // Players receive hovered marker from DM
           hoveredMarker = partyData!.getHoveredMarker();
-          pinnedMarkerIds = partyData!.getPinnedMarkers();
         }
+        // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
 
         // Update reactive state
         yjsScenes = updatedScenes as typeof scenes;
@@ -1312,18 +1316,19 @@
   };
 
   const onPinToggle = (markerId: string, pinned: boolean) => {
-    if (stageProps.mode === StageMode.DM && partyData) {
-      let newPinnedIds: string[];
-      if (pinned) {
-        // Add to pinned markers
-        newPinnedIds = [...pinnedMarkerIds, markerId];
-      } else {
-        // Remove from pinned markers
-        newPinnedIds = pinnedMarkerIds.filter((id) => id !== markerId);
+    if (stageProps.mode === StageMode.DM) {
+      // Find the marker in the markers array and update its pinnedTooltip property
+      const markerIndex = stageProps.marker.markers.findIndex((m) => m.id === markerId);
+      if (markerIndex !== -1) {
+        // Update the marker's pinnedTooltip property
+        stageProps.marker.markers[markerIndex].pinnedTooltip = pinned;
+
+        // Trigger database save through property update queue
+        // This will sync to Y.js and then to the database
+        queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');
+
+        devLog('markers', `Marker ${pinned ? 'pinned' : 'unpinned'}:`, markerId);
       }
-      pinnedMarkerIds = newPinnedIds;
-      partyData.updatePinnedMarkers(newPinnedIds);
-      devLog('markers', `Marker ${pinned ? 'pinned' : 'unpinned'}:`, markerId);
     }
   };
 

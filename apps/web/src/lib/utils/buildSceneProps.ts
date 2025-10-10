@@ -49,7 +49,8 @@ export const buildSceneProps = (
         imageUrl: marker.imageLocation ? generateSquareThumbnailUrl(marker.imageLocation, bucketUrl) : null,
         imageScale: 1,
         visibility: marker.visibility,
-        note: marker.note || null
+        note: marker.note || null,
+        pinnedTooltip: marker.pinnedTooltip ?? false
       }));
   }
 

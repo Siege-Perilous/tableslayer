@@ -138,8 +138,9 @@
 
     ghostMarker.position = snapPosition;
 
-    // Only check for hover when we're not dragging and when we're not in a drawing mode
-    if (!isDragging && props.activeLayer !== MapLayerType.Annotation && props.activeLayer !== MapLayerType.FogOfWar) {
+    // Only check for hover when we're not dragging and when activeLayer is None or Marker
+    // This prevents hover during fog/drawing/annotation/measurement modes
+    if (!isDragging && (props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Marker)) {
       // Check if there are any visible markers
       const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
       if (hasVisibleMarkers) {

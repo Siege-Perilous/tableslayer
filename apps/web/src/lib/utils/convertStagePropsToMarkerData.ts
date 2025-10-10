@@ -32,7 +32,8 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
     imageLocation: imageLocation,
     imageScale: marker.size || 1.0,
     shapeColor: marker.shapeColor || '#FFFFFF',
-    note: marker.note
+    note: marker.note,
+    pinnedTooltip: marker.pinnedTooltip ?? false
   };
 };
 

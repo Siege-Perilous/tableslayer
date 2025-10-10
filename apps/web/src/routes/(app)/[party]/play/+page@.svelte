@@ -32,7 +32,6 @@
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
   let hoveredMarkerId: string | null = $state(null);
-  let pinnedMarkerIds: string[] = $state([]);
 
   // Convert cursors to format expected by CursorLayer
   let cursorArray = $derived(
@@ -71,6 +70,10 @@
     activeLayer: MapLayerType.None,
     scene: { ...StageDefaultProps.scene, autoFit: true, offset: { x: 0, y: 0 } }
   });
+
+  // Derive pinned marker IDs from markers with pinnedTooltip set to true
+  let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
+
   let selectedMarker: Marker | undefined = $state();
   let stageIsLoading: boolean = $state(true);
   let sceneIsChanging: boolean = $state(false);
@@ -448,8 +451,7 @@
           });
         }
 
-        // Update pinned markers from Y.js awareness
-        pinnedMarkerIds = partyData!.getPinnedMarkers();
+        // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
 
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
@@ -636,8 +638,7 @@
           });
         }
 
-        // Update pinned markers from Y.js awareness
-        pinnedMarkerIds = partyData!.getPinnedMarkers();
+        // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
 
         // Also get scene data if we have an active scene
         if (updatedPartyState.activeSceneId) {
