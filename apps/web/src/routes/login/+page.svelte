@@ -31,7 +31,7 @@
   const handleLogin = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $login.mutateAsync({ email, password }),
+      mutation: () => login.mutateAsync({ email, password }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         loginErrors = error;
@@ -90,7 +90,7 @@
   <Spacer />
   <Text>
     Need an account? <Link href="/signup">Sign up now</Link>{#if isEmailEnabled}
-      or <Link href="/forgot-password">recover your password</Link>{/if}.
+      {' '}or <Link href="/forgot-password">recover your password</Link>{/if}.
   </Text>
 </Panel>
 

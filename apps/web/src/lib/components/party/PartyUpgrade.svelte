@@ -13,7 +13,7 @@
     if (party.stripeCustomerId === null) return;
 
     await handleMutation({
-      mutation: () => $portal.mutateAsync({ partyId: party.id as string }),
+      mutation: () => portal.mutateAsync({ partyId: party.id as string }),
       toastMessages: {
         error: { title: 'Error', body: (error) => error.message }
       },

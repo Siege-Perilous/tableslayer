@@ -24,7 +24,7 @@
 
     await handleMutation({
       mutation: () =>
-        $updateParty.mutateAsync({
+        updateParty.mutateAsync({
           partyId: party.id,
           partyData: { activeSceneId: selectedScene.id }
         }),
@@ -47,7 +47,7 @@
   const handleToggleGamePause = async () => {
     await handleMutation({
       mutation: () =>
-        $updateParty.mutateAsync({
+        updateParty.mutateAsync({
           partyId: party.id,
           partyData: { gameSessionIsPaused: !party.gameSessionIsPaused }
         }),

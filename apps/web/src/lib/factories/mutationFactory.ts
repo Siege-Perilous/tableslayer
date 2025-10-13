@@ -40,7 +40,7 @@ export function mutationFactory<
   SuccessType = FormMutationSuccess,
   FailureType = FormMutationError
 >(config: MutationFactoryConfig<VariablesType, SuccessType>) {
-  return createMutation<SuccessType, FailureType, VariablesType>({
+  return createMutation<SuccessType, FailureType, VariablesType>(() => ({
     mutationKey: config.mutationKey,
     mutationFn: async (variables: VariablesType) => {
       if ('mutationFn' in config) {
@@ -70,7 +70,7 @@ export function mutationFactory<
         await invalidateAll();
       }
     }
-  });
+  }));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

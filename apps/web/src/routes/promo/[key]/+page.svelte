@@ -28,7 +28,7 @@
 
     const result = await handleMutation({
       mutation: () =>
-        $redeemPromo.mutateAsync({
+        redeemPromo.mutateAsync({
           key: data.params?.key || '',
           partyId: selectedPartyId
         }),

@@ -120,7 +120,7 @@
 
     if (file && file.length) {
       const uploadedFile = await handleMutation({
-        mutation: () => $uploadFile.mutateAsync({ file: file![0], folder: 'map' }),
+        mutation: () => uploadFile.mutateAsync({ file: file![0], folder: 'map' }),
         formLoadingState: (loading) => (formIsLoading = loading),
         toastMessages: {
           success: { title: 'File uploaded' },
@@ -149,7 +149,7 @@
 
     await handleMutation({
       mutation: () =>
-        $createNewScene.mutateAsync({
+        createNewScene.mutateAsync({
           partyId: party.id,
           sceneData
         }),
@@ -205,7 +205,7 @@
   const handleSetActiveScene = async (sceneId: string) => {
     await handleMutation({
       mutation: () =>
-        $updateParty.mutateAsync({
+        updateParty.mutateAsync({
           partyId: party.id,
           partyData: { activeSceneId: sceneId }
         }),
@@ -227,7 +227,7 @@
 
     await handleMutation({
       mutation: () =>
-        $deleteScene.mutateAsync({
+        deleteScene.mutateAsync({
           gameSessionId: gameSession.id,
           partyId: party.id,
           sceneId
@@ -277,7 +277,7 @@
 
     await handleMutation({
       mutation: () =>
-        $updateScene.mutateAsync({
+        updateScene.mutateAsync({
           partyId: party.id,
           sceneId,
           sceneData: { name }
@@ -300,7 +300,7 @@
   const handleDuplicateScene = async (sceneId: string) => {
     await handleMutation({
       mutation: () =>
-        $duplicateScene.mutateAsync({
+        duplicateScene.mutateAsync({
           partyId: party.id,
           sceneId
         }),
@@ -385,7 +385,7 @@
     try {
       await handleMutation({
         mutation: () =>
-          $reorderScenes.mutateAsync({
+          reorderScenes.mutateAsync({
             partyId: party.id,
             gameSessionId: gameSession.id,
             sceneId: draggedScene.id,

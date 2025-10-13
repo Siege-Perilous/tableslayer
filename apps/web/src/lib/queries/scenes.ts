@@ -133,7 +133,7 @@ type SceneTimestampsResponse = {
 };
 
 export const useGetSceneTimestampsQuery = ({ gameSessionId, partyId }: SceneTimestampsParams) => {
-  return createQuery<SceneTimestampsResponse, Error>({
+  return createQuery<SceneTimestampsResponse, Error>(() => ({
     queryKey: ['sceneTimestamps', gameSessionId],
     queryFn: async () => {
       const response = await fetch('/api/scenes/timestamps', {
@@ -154,5 +154,5 @@ export const useGetSceneTimestampsQuery = ({ gameSessionId, partyId }: SceneTime
     enabled: !!gameSessionId && !!partyId,
     staleTime: 30000, // Consider data fresh for 30 seconds
     refetchOnWindowFocus: true
-  });
+  }));
 };

@@ -60,7 +60,7 @@
   const handleDeleteParty = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $deleteParty.mutateAsync({ partyId: party.id }),
+      mutation: () => deleteParty.mutateAsync({ partyId: party.id }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => goto('/profile'),
       toastMessages: {
@@ -74,7 +74,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $updateParty.mutateAsync({
+        updateParty.mutateAsync({
           partyId: party.id,
           partyData: { name: partyName }
         }),
@@ -95,7 +95,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $updateUser.mutateAsync({
+        updateUser.mutateAsync({
           userData: { favoriteParty: user.favoriteParty === party.id ? null : party.id }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),
@@ -111,7 +111,7 @@
     if (avatarFiles && avatarFiles.length) {
       const uploadedFile = await handleMutation({
         mutation: () =>
-          $uploadFile.mutateAsync({
+          uploadFile.mutateAsync({
             file: avatarFiles![0],
             folder: 'avatar',
             currentUrl: getCurrentAvatarLocation()
@@ -127,7 +127,7 @@
 
       await handleMutation({
         mutation: () =>
-          $updateParty.mutateAsync({
+          updateParty.mutateAsync({
             partyId: party.id,
             partyData: { avatarFileId: uploadedFile.fileId }
           }),

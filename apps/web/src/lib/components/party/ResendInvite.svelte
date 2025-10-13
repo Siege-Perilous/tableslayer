@@ -27,7 +27,7 @@
     e.preventDefault();
 
     await handleMutation({
-      mutation: () => $deletePartyInvite.mutateAsync({ partyId, email }),
+      mutation: () => deletePartyInvite.mutateAsync({ partyId, email }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: { title: 'Invite cancelled', body: `Invite for ${email} has been cancelled` },
@@ -43,7 +43,7 @@
     e.preventDefault();
 
     await handleMutation({
-      mutation: () => $resendPartyInvite.mutateAsync({ partyId, email }),
+      mutation: () => resendPartyInvite.mutateAsync({ partyId, email }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: { title: 'Invite resent', body: `Invite for ${email} has been resent` },
@@ -56,7 +56,7 @@
     e.preventDefault();
 
     await handleMutation({
-      mutation: () => $refreshInviteLink.mutateAsync({ partyId, email }),
+      mutation: () => refreshInviteLink.mutateAsync({ partyId, email }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: async (result) => {
         if (result?.inviteUrl) {

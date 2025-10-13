@@ -16,7 +16,7 @@
   const handleForgotPassword = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $forgotPassword.mutateAsync({ email }),
+      mutation: () => forgotPassword.mutateAsync({ email }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         forgotPasswordError = error;
