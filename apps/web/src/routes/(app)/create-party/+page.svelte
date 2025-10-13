@@ -21,7 +21,7 @@
     if (file && file.length) {
       const uploadedFile = await handleMutation({
         mutation: () =>
-          $uploadFile.mutateAsync({
+          uploadFile.mutateAsync({
             file: file![0],
             folder: 'avatar',
             currentUrl: undefined // No versioning needed for new party creation
@@ -39,7 +39,7 @@
 
     const response = await handleMutation({
       mutation: () =>
-        $createParty.mutateAsync({
+        createParty.mutateAsync({
           partyData: { name: partyName, avatarFileId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),

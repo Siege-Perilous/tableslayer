@@ -62,7 +62,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $renameGameSession.mutateAsync({
+        renameGameSession.mutateAsync({
           partyId: party.id,
           gameSessionId: session.id,
           gameSessionData: { name: gameSessionName }
@@ -88,7 +88,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $deleteGameSession.mutateAsync({
+        deleteGameSession.mutateAsync({
           partyId: party.id,
           gameSessionId: session.id
         }),

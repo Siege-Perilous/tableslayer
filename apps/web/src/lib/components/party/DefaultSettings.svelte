@@ -75,7 +75,7 @@
 
   const save = async () => {
     await handleMutation({
-      mutation: () => $updateParty.mutateAsync({ partyId: party.id, partyData }),
+      mutation: () => updateParty.mutateAsync({ partyId: party.id, partyData }),
       formLoadingState: () => {},
       toastMessages: {
         success: { title: 'Default settings updated' },

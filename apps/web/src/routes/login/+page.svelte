@@ -31,7 +31,7 @@
   const handleLogin = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $login.mutateAsync({ email, password }),
+      mutation: () => login.mutateAsync({ email, password }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         loginErrors = error;

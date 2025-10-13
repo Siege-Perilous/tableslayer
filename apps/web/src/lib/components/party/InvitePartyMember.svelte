@@ -15,7 +15,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $createPartyInvite.mutateAsync({
+        createPartyInvite.mutateAsync({
           email,
           partyId: party.id,
           role: 'viewer'

@@ -18,7 +18,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $resetPassword.mutateAsync({
+        resetPassword.mutateAsync({
           email: userDesiringReset.email,
           password,
           confirmPassword,

@@ -56,7 +56,7 @@
 
     const uploadedFile = await handleMutation({
       mutation: () =>
-        $uploadFile.mutateAsync({
+        uploadFile.mutateAsync({
           file: pickedFile,
           folder: 'map',
           id: sceneId,
@@ -88,7 +88,7 @@
 
     await handleMutation({
       mutation: () =>
-        $updateScene.mutateAsync({
+        updateScene.mutateAsync({
           sceneId,
           partyId,
           sceneData: sceneUpdateData

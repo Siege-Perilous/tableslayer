@@ -64,7 +64,7 @@
     }
     await handleMutation({
       mutation: () =>
-        $updateUser.mutateAsync({
+        updateUser.mutateAsync({
           userData: {
             name,
             email,
@@ -90,7 +90,7 @@
   const unlinkGoogle = async () => {
     await handleMutation({
       mutation: () =>
-        $updateUser.mutateAsync({
+        updateUser.mutateAsync({
           userData: {
             googleId: null
           }
@@ -112,7 +112,7 @@
     if (files && files.length) {
       const uploadedFile = await handleMutation({
         mutation: () =>
-          $uploadFile.mutateAsync({
+          uploadFile.mutateAsync({
             file: files![0],
             folder: 'avatar',
             currentUrl: getCurrentAvatarLocation()
@@ -130,7 +130,7 @@
 
     await handleMutation({
       mutation: () =>
-        $updateUser.mutateAsync({
+        updateUser.mutateAsync({
           userData: { avatarFileId }
         }),
       formLoadingState: (loading) => (formIsLoading = loading),

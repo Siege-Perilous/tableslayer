@@ -11,7 +11,7 @@
   const checkout = useStripeCheckout();
   const handleUpgrade = async (plan: PartyPlan) => {
     await handleMutation({
-      mutation: () => $checkout.mutateAsync({ partyId: party.id, plan }),
+      mutation: () => checkout.mutateAsync({ partyId: party.id, plan }),
       toastMessages: {
         error: { title: 'Error', body: (error: FormMutationError) => error.message }
       },

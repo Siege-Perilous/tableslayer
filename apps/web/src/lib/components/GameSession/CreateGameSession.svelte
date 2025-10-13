@@ -38,7 +38,7 @@
     e.preventDefault();
     await handleMutation({
       mutation: () =>
-        $createGameSession.mutateAsync({
+        createGameSession.mutateAsync({
           partyId,
           gameSessionData: { name: gameSessionName }
         }),

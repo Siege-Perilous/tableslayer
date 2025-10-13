@@ -34,7 +34,7 @@
       return;
     }
     await handleMutation({
-      mutation: () => $signup.mutateAsync({ email, password, confirmPassword }),
+      mutation: () => signup.mutateAsync({ email, password, confirmPassword }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         signupError = error;

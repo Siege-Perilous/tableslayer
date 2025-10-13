@@ -61,7 +61,7 @@ export const useUpdateAnnotationMaskMutation = () => {
  * Fetches the fog mask data for a scene
  */
 export const useFogMaskQuery = (sceneId: string | undefined) => {
-  return createQuery({
+  return createQuery(() => ({
     queryKey: ['fogMask', sceneId],
     queryFn: async () => {
       if (!sceneId) return null;
@@ -87,14 +87,14 @@ export const useFogMaskQuery = (sceneId: string | undefined) => {
       return null;
     },
     enabled: !!sceneId
-  });
+  }));
 };
 
 /**
  * Fetches the annotation mask data for an annotation
  */
 export const useAnnotationMaskQuery = (annotationId: string | undefined) => {
-  return createQuery({
+  return createQuery(() => ({
     queryKey: ['annotationMask', annotationId],
     queryFn: async () => {
       if (!annotationId) return null;
@@ -120,5 +120,5 @@ export const useAnnotationMaskQuery = (annotationId: string | undefined) => {
       return null;
     },
     enabled: !!annotationId
-  });
+  }));
 };

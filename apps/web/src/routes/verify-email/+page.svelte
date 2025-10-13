@@ -27,7 +27,7 @@
   const handleVerifyEmail = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $verifyEmail.mutateAsync({ code: verifyCode }),
+      mutation: () => verifyEmail.mutateAsync({ code: verifyCode }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         verifyEmailError = error;
@@ -51,7 +51,7 @@
   const handleResendEmail = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $resendEmail.mutateAsync({ userId: user.id }),
+      mutation: () => resendEmail.mutateAsync({ userId: user.id }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: { title: 'Verification email resent' },
@@ -63,7 +63,7 @@
   const handleChangeEmail = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $changeEmail.mutateAsync({ newEmail }),
+      mutation: () => changeEmail.mutateAsync({ newEmail }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         changeEmailError = error;

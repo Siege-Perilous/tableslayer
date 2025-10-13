@@ -1492,7 +1492,7 @@
   const onAnnotationDeleted = async (annotationId: string) => {
     // Delete annotation from database
     await handleMutation({
-      mutation: () => $deleteAnnotationMutation.mutateAsync({ annotationId }),
+      mutation: () => deleteAnnotationMutation.mutateAsync({ annotationId }),
       formLoadingState: () => {},
       onSuccess: async () => {
         // After deletion, update the orders of remaining annotations to remove gaps
@@ -1501,7 +1501,7 @@
         // Save all remaining annotations with their new sequential orders
         const updatePromises = remainingLayers.map(async (layer, index) => {
           const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
-          return $upsertAnnotationMutation.mutateAsync(annotationData);
+          return upsertAnnotationMutation.mutateAsync(annotationData);
         });
 
         // Wait for all updates to complete
@@ -1536,7 +1536,7 @@
     );
 
     await handleMutation({
-      mutation: () => $upsertAnnotationMutation.mutateAsync(annotationData),
+      mutation: () => upsertAnnotationMutation.mutateAsync(annotationData),
       formLoadingState: () => {},
       onSuccess: () => {
         // Remove from in-progress after successful save
@@ -1614,7 +1614,7 @@
     // This prevents race conditions when adding multiple annotations quickly
     const savePromises = updatedLayers.map(async (layer, index) => {
       const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
-      return $upsertAnnotationMutation.mutateAsync(annotationData);
+      return upsertAnnotationMutation.mutateAsync(annotationData);
     });
 
     await handleMutation({
@@ -1922,7 +1922,7 @@
 
     await handleMutation({
       mutation: () =>
-        $updateAnnotationMaskMutation.mutateAsync({
+        updateAnnotationMaskMutation.mutateAsync({
           annotationId: layerId,
           partyId: party.id,
           maskData: rleData
@@ -2055,7 +2055,7 @@
     timingLog('FOG-RT', `${updateId} - 5. Starting database save at ${new Date().toISOString()}`);
     await handleMutation({
       mutation: () =>
-        $updateFogMaskMutation.mutateAsync({
+        updateFogMaskMutation.mutateAsync({
           sceneId: selectedScene.id,
           partyId: data.party.id,
           maskData: rleData
@@ -2164,7 +2164,7 @@
           // Upload thumbnail in background - don't block save if this fails
           handleMutation({
             mutation: () =>
-              $createThumbnailMutation.mutateAsync({
+              createThumbnailMutation.mutateAsync({
                 blob: thumbnailBlob,
                 sceneId: selectedScene.id,
                 currentUrl: selectedScene.mapThumbLocation
@@ -2199,7 +2199,7 @@
       // Save scene settings
       await handleMutation({
         mutation: () =>
-          $updateSceneMutation.mutateAsync({
+          updateSceneMutation.mutateAsync({
             sceneId: selectedScene.id,
             partyId: party.id,
             sceneData: convertPropsToSceneDetails(stageProps, mapThumbLocation)
@@ -2229,7 +2229,7 @@
 
           await handleMutation({
             mutation: () =>
-              $upsertMarkerMutation.mutateAsync({
+              upsertMarkerMutation.mutateAsync({
                 partyId: party.id,
                 sceneId: selectedScene.id,
                 markerData: markerData
@@ -2308,7 +2308,7 @@
             if (location) {
               await handleMutation({
                 mutation: () =>
-                  $upsertAnnotationMutation.mutateAsync({
+                  upsertAnnotationMutation.mutateAsync({
                     id: annotation.id,
                     sceneId: selectedScene.id,
                     name: annotation.name,
@@ -2335,7 +2335,7 @@
       // Empty game session update will update the lastUpdated field through Drizzle
       await handleMutation({
         mutation: () =>
-          $updateGameSessionMutation.mutateAsync({
+          updateGameSessionMutation.mutateAsync({
             gameSessionId: gameSession.id,
             partyId: party.id,
             gameSessionData: {
@@ -2469,9 +2469,9 @@
       if (!partyData) return;
 
       // Refetch timestamps
-      await $timestampsQuery.refetch();
+      await timestampsQuery.refetch();
 
-      const timestamps = $timestampsQuery.data?.timestamps || {};
+      const timestamps = timestampsQuery.data?.timestamps || {};
       const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
       if (driftedScenes.length > 0) {
@@ -2625,9 +2625,9 @@
         // Check for Y.js drift and refresh if needed
         try {
           // Refetch timestamps
-          await $timestampsQuery.refetch();
+          await timestampsQuery.refetch();
 
-          const timestamps = $timestampsQuery.data?.timestamps || {};
+          const timestamps = timestampsQuery.data?.timestamps || {};
           const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
           if (driftedScenes.length > 0) {

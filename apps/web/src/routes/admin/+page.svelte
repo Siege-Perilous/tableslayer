@@ -18,7 +18,7 @@
   const handleCreatePromo = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $createPromo.mutateAsync({ key: newPromoKey, maxUses: newPromoMaxUses }),
+      mutation: () => createPromo.mutateAsync({ key: newPromoKey, maxUses: newPromoMaxUses }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         createError = error;
@@ -40,7 +40,7 @@
     if (!confirm('Are you sure you want to delete this promo?')) return;
 
     await handleMutation({
-      mutation: () => $deletePromo.mutateAsync({ id: promoId }),
+      mutation: () => deletePromo.mutateAsync({ id: promoId }),
       formLoadingState: () => {},
       onSuccess: async () => {
         await invalidateAll();

@@ -106,7 +106,7 @@
     // Upload the file
     const uploadedFile = await handleMutation({
       mutation: () =>
-        $uploadFile.mutateAsync({
+        uploadFile.mutateAsync({
           file: pickedFile,
           folder: 'marker',
           id: markerId,
@@ -132,7 +132,7 @@
 
   const handleMarkerDelete = async (markerId: string) => {
     await handleMutation({
-      mutation: () => $deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
+      mutation: () => deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         // Call the deletion callback if provided (for Y.js sync)

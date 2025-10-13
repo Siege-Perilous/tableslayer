@@ -45,7 +45,7 @@
   const handleDeletePartyMember = async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id }),
+      mutation: () => deletePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         if (member.id === user.id) {
@@ -65,8 +65,7 @@
     selectedRole = selected;
 
     await handleMutation({
-      mutation: () =>
-        $updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role: selectedRole }),
+      mutation: () => updatePartyMember.mutateAsync({ partyId: member.partyId, userId: member.id, role: selectedRole }),
       formLoadingState: (loading) => (formIsLoading = loading),
       toastMessages: {
         success: {

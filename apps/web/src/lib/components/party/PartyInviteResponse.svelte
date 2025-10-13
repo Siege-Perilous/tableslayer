@@ -17,7 +17,7 @@
   const handleRespondToInvite = (accepted: boolean) => async (e: Event) => {
     e.preventDefault();
     await handleMutation({
-      mutation: () => $respondToPartyInvite.mutateAsync({ code, accepted }),
+      mutation: () => respondToPartyInvite.mutateAsync({ code, accepted }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         goto(accepted ? `/${invite.party?.slug}` : '/profile');
