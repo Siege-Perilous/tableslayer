@@ -90,7 +90,7 @@
   <Spacer />
   <Text>
     Need an account? <Link href="/signup">Sign up now</Link>{#if isEmailEnabled}
-      or <Link href="/forgot-password">recover your password</Link>{/if}.
+      {' '}or <Link href="/forgot-password">recover your password</Link>{/if}.
   </Text>
 </Panel>
 
