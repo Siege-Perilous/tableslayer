@@ -163,6 +163,11 @@
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
   let throttledCursorUpdate: ((worldPosition: { x: number; y: number; z: number }) => void) | null = null;
+  let throttledZoomHandler: ((e: WheelEvent, props: StageProps) => void) | null = null;
+  let isZooming = $state(false); // Track if user is actively zooming
+  let zoomCooldownTimer: ReturnType<typeof setTimeout> | null = null;
+  let isPanning = $state(false); // Track if user is actively panning the map
+  let panCooldownTimer: ReturnType<typeof setTimeout> | null = null;
   let hoveredMarker: HoveredMarker | null = $state(null); // Track hovered marker from awareness
 
   // SSR protection - prevent Y.js from overwriting fresh database data
@@ -489,7 +494,11 @@
           map: {
             ...incomingStageProps.map,
             // Map URL should always come from Y.js to ensure sync
-            url: incomingStageProps.map?.url || stageProps.map.url
+            url: incomingStageProps.map?.url || stageProps.map.url,
+            // Block map zoom updates while user is actively zooming (prevent rubber banding)
+            zoom: isZooming ? stageProps.map.zoom : incomingStageProps.map.zoom,
+            // Block map offset updates while user is actively panning (prevent rubber banding)
+            offset: isPanning ? stageProps.map.offset : incomingStageProps.map.offset
           },
           scene: {
             ...incomingStageProps.scene,
@@ -710,6 +719,11 @@
       throttledCursorUpdate = throttle((worldPosition: { x: number; y: number; z: number }) => {
         partyData!.updateCursor(worldPosition, userColor, user.email);
       }, 33); // 33ms = ~30 FPS
+
+      // Create throttled zoom handler to prevent rubber banding during fast wheel scrolling
+      throttledZoomHandler = throttle((e: WheelEvent, props: StageProps) => {
+        handleStageZoom(e, props);
+      }, 50); // 50ms throttle for smooth zoom without overwhelming Y.js sync
 
       // Initialize Y.js with SSR scene data
       const sceneMetadata = scenes.map((scene) => ({
@@ -1659,6 +1673,20 @@
       const rotatedMovementY = -e.movementX * Math.sin(radians) + e.movementY * Math.cos(radians);
 
       if (e.shiftKey) {
+        // Set panning flag to block Y.js updates during active pan
+        isPanning = true;
+
+        // Clear existing cooldown timer
+        if (panCooldownTimer) {
+          clearTimeout(panCooldownTimer);
+        }
+
+        // Reset panning flag after user stops panning (300ms cooldown)
+        panCooldownTimer = setTimeout(() => {
+          isPanning = false;
+          panCooldownTimer = null;
+        }, 300);
+
         // Apply rotation to movement for map offset
         const movementFactor = 1 / stageProps.scene.zoom;
         const newOffsetX = stageProps.map.offset.x + rotatedMovementX * movementFactor;
@@ -1680,6 +1708,20 @@
   };
 
   function onMapPan(dx: number, dy: number) {
+    // Set panning flag to block Y.js updates during active pan
+    isPanning = true;
+
+    // Clear existing cooldown timer
+    if (panCooldownTimer) {
+      clearTimeout(panCooldownTimer);
+    }
+
+    // Reset panning flag after user stops panning (300ms cooldown)
+    panCooldownTimer = setTimeout(() => {
+      isPanning = false;
+      panCooldownTimer = null;
+    }, 300);
+
     // Always use free movement for mouse panning (no grid snapping)
     const newOffsetX = stageProps.map.offset.x + dx;
     const newOffsetY = stageProps.map.offset.y + dy;
@@ -1746,8 +1788,27 @@
       return;
     }
 
-    // Handle other zoom operations
-    handleStageZoom(e, stageProps);
+    // Handle other zoom operations (throttled to prevent rubber banding)
+    // Set zooming flag to block Y.js updates during active zoom
+    isZooming = true;
+
+    // Clear existing cooldown timer
+    if (zoomCooldownTimer) {
+      clearTimeout(zoomCooldownTimer);
+    }
+
+    // Reset zooming flag after user stops scrolling (300ms cooldown)
+    zoomCooldownTimer = setTimeout(() => {
+      isZooming = false;
+      zoomCooldownTimer = null;
+    }, 300);
+
+    if (throttledZoomHandler) {
+      throttledZoomHandler(e, stageProps);
+    } else {
+      // Fallback for SSR or before throttled handler is initialized
+      handleStageZoom(e, stageProps);
+    }
     // Y.js handles synchronization automatically via queuePropertyUpdate
   };
 
