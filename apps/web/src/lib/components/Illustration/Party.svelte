@@ -60,7 +60,6 @@
   }
   .party__bg {
     left: 0%;
-    top: -100px !important;
     position: fixed;
     width: calc(100dvw + 50px);
     margin-left: -50px;
