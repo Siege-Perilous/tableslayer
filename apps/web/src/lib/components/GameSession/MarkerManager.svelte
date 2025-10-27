@@ -38,6 +38,7 @@
     IconLocationPin
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
+  import type { Snippet } from 'svelte';
   import { queuePropertyUpdate, extractLocationFromUrl, throttle } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
@@ -329,9 +330,9 @@
                       {...inputProps}
                       selected={marker.shape.toString()}
                       options={[
-                        { label: circle, value: MarkerShape.Circle.toString() },
-                        { label: square, value: MarkerShape.Square.toString() },
-                        { label: triangle, value: MarkerShape.Triangle.toString() }
+                        { label: circle as Snippet, value: MarkerShape.Circle.toString() },
+                        { label: square as Snippet, value: MarkerShape.Square.toString() },
+                        { label: triangle as Snippet, value: MarkerShape.Triangle.toString() }
                       ]}
                       onSelectedChange={(value) => {
                         updateMarkerAndSave(marker.id, (m) => (m.shape = Number(value)));

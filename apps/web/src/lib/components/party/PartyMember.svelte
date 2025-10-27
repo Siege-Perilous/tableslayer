@@ -16,6 +16,7 @@
   import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '$lib/queries';
   import { handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
+  import type { Snippet } from 'svelte';
 
   type PartyMember = Omit<SelectUser, 'role'> & {
     role: PartyRole;
@@ -117,7 +118,7 @@
                 options={roleOptions}
                 name="role"
                 selected={[selectedRole as string]}
-                selectedPrefix={selectionPrefix}
+                selectedPrefix={selectionPrefix as Snippet}
                 onSelectedChange={(selected) => handleSelectedRole(selected[0] as PartyRole)}
               />
             {/snippet}
