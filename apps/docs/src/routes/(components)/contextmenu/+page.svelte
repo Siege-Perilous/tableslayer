@@ -2,12 +2,13 @@
   import { ContextMenu, Icon, type ContextMenuItem } from '@tableslayer/ui';
   import { Example } from '$lib/components';
   import { IconBell } from '@tabler/icons-svelte';
+  import type { Snippet } from 'svelte';
 
   const items: ContextMenuItem[] = [
     { label: 'Link', href: '/link' },
     { type: 'divider' },
-    { label: 'Alert', onclick: () => alert('Alert'), end: alertEnd },
-    { label: 'Quit', href: '#', end: quitEnd }
+    { label: 'Alert', onclick: () => alert('Alert'), end: alertEnd as Snippet },
+    { label: 'Quit', href: '#', end: quitEnd as Snippet }
   ];
 </script>
 

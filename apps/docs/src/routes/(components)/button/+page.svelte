@@ -2,6 +2,7 @@
   import { Button, RadioButton, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
   import { IconCheck, IconX, IconGhost3, IconSun, IconCloud, IconSnowflake } from '@tabler/icons-svelte';
   import { Example } from '$lib/components';
+  import type { Snippet } from 'svelte';
   const example = `import { Button, Icon } from '@tableslayer/ui';
 import { IconCheck } from '@tabler/icons-svelte';
 
@@ -80,9 +81,9 @@ import { IconCheck } from '@tabler/icons-svelte';
   <RadioButton
     selected="opt1"
     options={[
-      { label: sun, value: 'opt1' },
-      { label: cloud, value: 'opt2' },
-      { label: snow, value: 'opt3' }
+      { label: sun as Snippet, value: 'opt1' },
+      { label: cloud as Snippet, value: 'opt2' },
+      { label: snow as Snippet, value: 'opt3' }
     ]}
   />
 </Example>

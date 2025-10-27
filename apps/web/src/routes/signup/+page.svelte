@@ -15,6 +15,7 @@
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
+  import type { Snippet } from 'svelte';
 
   let { data } = $props();
   const { isGoogleOAuthEnabled, isEmailEnabled } = $derived(data);
@@ -94,7 +95,7 @@
       {/snippet}
     </FormControl>
     <Spacer />
-    <InputCheckbox bind:checked={isChecked} {label} />
+    <InputCheckbox bind:checked={isChecked} label={label as Snippet} />
     <Spacer />
     <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
     <FormError error={signupError} />
