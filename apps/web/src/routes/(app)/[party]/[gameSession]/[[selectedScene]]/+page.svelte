@@ -1761,6 +1761,11 @@
   }
 
   const onWheel = (e: WheelEvent) => {
+    // Prevent browser zoom for Ctrl+wheel events (must happen before throttling)
+    if (e.ctrlKey) {
+      e.preventDefault();
+    }
+
     // Handle annotation line width adjustment
     if (stageProps.activeLayer === MapLayerType.Annotation && !e.shiftKey && !e.ctrlKey) {
       e.preventDefault();
