@@ -178,7 +178,7 @@
       createShape(centerX, centerY, canvasSize);
 
       // Draw image if available
-      if (imageTexture) {
+      if (imageTexture && imageTexture.image) {
         // Save the current canvas state
         ctx.save();
 
@@ -195,7 +195,7 @@
 
         // Draw the image (will only appear inside the clipped shape)
         ctx.drawImage(
-          imageTexture.image,
+          imageTexture.image as CanvasImageSource,
           centerX - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
           centerY - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
           sizeMultiplier * canvasSize * marker.imageScale,
