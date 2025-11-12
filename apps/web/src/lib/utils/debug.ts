@@ -73,41 +73,75 @@ export function devError(...args: any[]) {
 }
 
 /**
- * Special timing log that can be enabled in production via query parameter
+ * Special timing log that can be enabled in production via query parameter or sessionStorage
  * Add ?debug=fogtiming to the URL to enable fog round-trip timing logs
+ * The debug mode persists across navigation within the same browser tab
  * This has zero performance impact when not enabled
  */
 export function timingLog(category: string, message: string): void {
   if (!browser) return;
 
-  // Check if timing logs are enabled via query parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  const debugParam = urlParams.get('debug');
+  const debugMode = getDebugMode();
 
   // Only log if in dev mode OR if the specific debug flag is enabled
-  if (dev || debugParam === 'fogtiming') {
+  if (dev || debugMode === 'fogtiming') {
     console.log(`[${category}] ${message}`);
   }
 }
 
 /**
- * Production-safe debug log that can be enabled via query parameter
+ * Get the debug mode from URL parameter or sessionStorage
+ * If URL has ?debug=X, save it to sessionStorage so it persists across navigation
+ */
+function getDebugMode(): string | null {
+  if (!browser) return null;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugParam = urlParams.get('debug');
+
+  // If URL has debug param, save to sessionStorage for persistence
+  if (debugParam) {
+    sessionStorage.setItem('debug', debugParam);
+    return debugParam;
+  }
+
+  // Otherwise check sessionStorage
+  return sessionStorage.getItem('debug');
+}
+
+/**
+ * Clear the debug mode from sessionStorage
+ * Call this from browser console to disable debug logs: clearDebugMode()
+ */
+export function clearDebugMode(): void {
+  if (browser) {
+    sessionStorage.removeItem('debug');
+    console.log('[debug] Debug mode cleared. Refresh the page to apply.');
+  }
+}
+
+/**
+ * Production-safe debug log that can be enabled via query parameter or sessionStorage
  * Add ?debug=all or ?debug=scene to the URL to enable specific debug logs in production
+ * The debug mode persists across navigation within the same browser tab
+ *
  * Examples:
  *   ?debug=all - Enable all production debug logs
  *   ?debug=scene - Enable only scene-related logs
  *   ?debug=query - Enable only query-related logs
+ *
+ * To disable, run in browser console: clearDebugMode()
+ *
  * This has zero performance impact when not enabled
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function prodLog(category: string, message: string, data?: any): void {
   if (!browser) return;
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const debugParam = urlParams.get('debug');
+  const debugMode = getDebugMode();
 
   // Log if in dev mode OR if debug=all OR if debug matches the category
-  if (dev || debugParam === 'all' || debugParam === category) {
+  if (dev || debugMode === 'all' || debugMode === category) {
     if (data !== undefined) {
       console.log(`[${category}] ${message}`, data);
     } else {

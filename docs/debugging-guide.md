@@ -162,7 +162,7 @@ timingLog('FOG-RT', `fog_${updateId} - 3. RLE encoding complete (${bytes.length}
 
 ### Enabling Debug Logs in Production
 
-Debug logs are enabled by adding query parameters to the URL. This allows debugging production issues without redeploying or affecting other users.
+Debug logs are enabled by adding query parameters to the URL. The debug mode **persists across navigation** using sessionStorage, so you don't lose it when switching scenes.
 
 **Examples:**
 
@@ -178,6 +178,22 @@ https://tableslayer.com/my-party/session/1?debug=query
 
 # Enable fog timing logs
 https://tableslayer.com/my-party/session/1?debug=fogtiming
+```
+
+**How it works:**
+
+1. Add `?debug=X` to any URL in your app
+2. The debug mode is saved to sessionStorage
+3. Navigate to other pages/scenes - logs continue working
+4. Close the tab - debug mode is cleared
+5. Open a new tab - debug mode is not active (isolated per-tab)
+
+**To disable debug mode:**
+
+```javascript
+// In browser console
+clearDebugMode();
+// Then refresh the page
 ```
 
 ### What Gets Logged

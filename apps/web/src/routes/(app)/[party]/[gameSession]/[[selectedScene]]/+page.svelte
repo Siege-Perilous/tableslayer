@@ -78,6 +78,18 @@
     isStripeEnabled
   } = $derived(data);
 
+  // Track page params changes
+  $effect(() => {
+    prodLog('scene', 'Page params changed', {
+      party: page.params.party,
+      gameSession: page.params.gameSession,
+      selectedScene: page.params.selectedScene,
+      selectedSceneNumber,
+      selectedSceneId: ssrSelectedScene?.id,
+      timestamp: Date.now()
+    });
+  });
+
   // Helper function to clean stage props before sending to Y.js
   // Removes local-only properties that should not be synchronized
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2534,6 +2546,18 @@
 
   // Monitor scene order changes and navigate if needed
   $effect(() => {
+    prodLog('scene', 'Navigation effect triggered', {
+      isHydrated,
+      hasSelectedScene: !!selectedScene,
+      selectedSceneId: selectedScene?.id,
+      navigatingTo: navigating.to,
+      hasInitialLoad,
+      isLocallyReordering,
+      hasSceneNumber: page.params.selectedScene !== undefined,
+      yjsScenesCount: yjsScenes?.length || 0,
+      timestamp: Date.now()
+    });
+
     // Skip if not hydrated, no selected scene, or currently navigating
     if (!isHydrated || !selectedScene || navigating.to) return;
 
@@ -2559,6 +2583,15 @@
 
     // Find the current scene's new order in Y.js scenes
     const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
+
+    prodLog('scene', 'Y.js scene lookup', {
+      selectedSceneId: selectedScene.id,
+      selectedSceneNumber,
+      foundInYjs: !!currentSceneInYjs,
+      yjsOrder: currentSceneInYjs?.order,
+      yjsScenesCount: yjsScenes.length,
+      timestamp: Date.now()
+    });
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
