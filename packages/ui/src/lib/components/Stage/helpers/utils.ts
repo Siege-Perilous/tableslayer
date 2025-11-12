@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 
 export function textureToBase64(texture: THREE.DataTexture): string {
+  if (!texture.image.data) {
+    throw new Error('Texture image data is null');
+  }
   return texture.image.data.toString();
 }
 
