@@ -89,3 +89,29 @@ export function timingLog(category: string, message: string): void {
     console.log(`[${category}] ${message}`);
   }
 }
+
+/**
+ * Production-safe debug log that can be enabled via query parameter
+ * Add ?debug=all or ?debug=scene to the URL to enable specific debug logs in production
+ * Examples:
+ *   ?debug=all - Enable all production debug logs
+ *   ?debug=scene - Enable only scene-related logs
+ *   ?debug=query - Enable only query-related logs
+ * This has zero performance impact when not enabled
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function prodLog(category: string, message: string, data?: any): void {
+  if (!browser) return;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugParam = urlParams.get('debug');
+
+  // Log if in dev mode OR if debug=all OR if debug matches the category
+  if (dev || debugParam === 'all' || debugParam === category) {
+    if (data !== undefined) {
+      console.log(`[${category}] ${message}`, data);
+    } else {
+      console.log(`[${category}] ${message}`);
+    }
+  }
+}

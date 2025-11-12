@@ -132,30 +132,30 @@ type SceneTimestampsResponse = {
   timestamps: Record<string, number>;
 };
 
-export const useGetSceneTimestampsQuery = (params: () => SceneTimestampsParams) => {
-  return createQuery<SceneTimestampsResponse, Error>(() => {
-    const { gameSessionId, partyId } = params();
-    return {
-      queryKey: ['sceneTimestamps', gameSessionId],
-      queryFn: async () => {
-        const response = await fetch('/api/scenes/timestamps', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ gameSessionId, partyId })
-        });
+export const useGetSceneTimestampsQuery = (options: { gameSessionId: string; partyId: string }) => {
+  return createQuery<SceneTimestampsResponse, Error>(() => ({
+    queryKey: ['sceneTimestamps', options.gameSessionId],
+    queryFn: async () => {
+      const response = await fetch('/api/scenes/timestamps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          gameSessionId: options.gameSessionId,
+          partyId: options.partyId
+        })
+      });
 
-        if (!response.ok) {
-          const error = (await response.json()) as { error?: string };
-          throw new Error(error.error || 'Failed to fetch scene timestamps');
-        }
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to fetch scene timestamps');
+      }
 
-        return response.json();
-      },
-      enabled: !!gameSessionId && !!partyId,
-      staleTime: 30000, // Consider data fresh for 30 seconds
-      refetchOnWindowFocus: true
-    };
-  });
+      return response.json();
+    },
+    enabled: !!options.gameSessionId && !!options.partyId,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true
+  }));
 };
