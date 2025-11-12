@@ -2584,14 +2584,59 @@
     // Find the current scene's new order in Y.js scenes
     const currentSceneInYjs = yjsScenes.find((s) => s.id === selectedScene.id);
 
+    // CRITICAL: Also find what scene the URL is pointing to
+    // This helps us detect if selectedScene is lagging behind the URL during navigation
+    const targetSceneFromUrl = yjsScenes.find((s) => s.order === selectedSceneNumber);
+
     prodLog('scene', 'Y.js scene lookup', {
-      selectedSceneId: selectedScene.id,
       selectedSceneNumber,
-      foundInYjs: !!currentSceneInYjs,
-      yjsOrder: currentSceneInYjs?.order,
+      selectedSceneId: selectedScene.id,
+      currentSceneYjsOrder: currentSceneInYjs?.order,
+      targetSceneFromUrlId: targetSceneFromUrl?.id,
+      idsMatch: targetSceneFromUrl?.id === selectedScene.id,
+      foundCurrentInYjs: !!currentSceneInYjs,
       yjsScenesCount: yjsScenes.length,
       timestamp: Date.now()
     });
+
+    // CRITICAL: Skip navigation check if selectedScene is lagging behind URL during user-initiated navigation
+    // This happens when:
+    // 1. User clicks to navigate to a different scene
+    // 2. URL updates immediately (selectedSceneNumber changes)
+    // 3. But selectedScene from $derived(data) hasn't updated yet
+    //
+    // We detect this by checking if BOTH scenes are in their expected positions:
+    // - The URL points to a valid scene at that position (targetSceneFromUrl exists at selectedSceneNumber)
+    // - The current selectedScene still exists in Y.js at its OLD position
+    // - The current scene's Y.js order matches its own scene number (not the URL's)
+    // - They are different scenes (IDs don't match)
+    //
+    // This is safe because if there was a real reorder/deletion, at least one scene wouldn't be
+    // at its expected position anymore.
+    //
+    // To find the "expected" position for currentScene, we need to look it up by ID in the
+    // SSR scenes list (data.scenes) which represents the state selectedScene thinks it's in.
+    const ssrCurrentScene = scenes.find((s) => s.id === selectedScene.id);
+
+    if (
+      targetSceneFromUrl &&
+      currentSceneInYjs &&
+      ssrCurrentScene &&
+      targetSceneFromUrl.id !== selectedScene.id &&
+      currentSceneInYjs.order === ssrCurrentScene.order &&
+      targetSceneFromUrl.order === selectedSceneNumber
+    ) {
+      prodLog('scene', 'Skipping navigation check - selectedScene lagging behind URL during navigation', {
+        urlSceneNumber: selectedSceneNumber,
+        urlSceneId: targetSceneFromUrl.id,
+        currentSelectedSceneId: selectedScene.id,
+        currentSceneExpectedOrder: ssrCurrentScene.order,
+        currentSceneActualYjsOrder: currentSceneInYjs.order,
+        targetSceneAtCorrectPosition: true,
+        timestamp: Date.now()
+      });
+      return;
+    }
 
     if (!currentSceneInYjs) {
       // Scene was deleted - navigate to scene 1
