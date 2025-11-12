@@ -123,11 +123,6 @@ export const useSavePartyStateMutation = () => {
   });
 };
 
-type SceneTimestampsParams = {
-  gameSessionId: string;
-  partyId: string;
-};
-
 type SceneTimestampsResponse = {
   timestamps: Record<string, number>;
 };
