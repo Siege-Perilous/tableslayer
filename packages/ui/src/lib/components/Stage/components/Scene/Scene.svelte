@@ -366,14 +366,15 @@
     let imageWidth: number;
     let imageHeight: number;
 
-    if (texture.image instanceof HTMLVideoElement) {
+    const textureImage = texture.image as HTMLVideoElement | HTMLImageElement;
+    if (textureImage instanceof HTMLVideoElement) {
       // For video textures, use videoWidth and videoHeight
-      imageWidth = texture.image.videoWidth || displayWidth;
-      imageHeight = texture.image.videoHeight || displayHeight;
+      imageWidth = textureImage.videoWidth || displayWidth;
+      imageHeight = textureImage.videoHeight || displayHeight;
     } else {
       // For image textures, use width and height
-      imageWidth = texture.image.width;
-      imageHeight = texture.image.height;
+      imageWidth = textureImage.width;
+      imageHeight = textureImage.height;
     }
 
     // Create a temporary scene and camera for rendering
