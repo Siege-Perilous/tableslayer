@@ -59,7 +59,7 @@
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
-  import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
+  import { devLog, devWarn, devError, timingLog, prodLog } from '$lib/utils/debug';
   import { onMount, untrack } from 'svelte';
   import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
@@ -182,11 +182,19 @@
   });
 
   // Query for scene timestamps
-  // Pass a function so the query can reactively access gameSession.id and party.id
-  const timestampsQuery = useGetSceneTimestampsQuery(() => ({
-    gameSessionId: gameSession.id,
-    partyId: party.id
-  }));
+  // Use untrack to capture IDs without creating reactive dependencies
+  // gameSession and party are stable for the page lifecycle (only change on navigation)
+  const timestampsQuery = untrack(() => {
+    prodLog('query', 'Creating timestampsQuery', {
+      gameSessionId: gameSession.id,
+      partyId: party.id,
+      timestamp: Date.now()
+    });
+    return useGetSceneTimestampsQuery({
+      gameSessionId: gameSession.id,
+      partyId: party.id
+    });
+  });
 
   // Helper function to add thumbnails to Y.js scenes
   const processScenesThumbnails = (rawScenes: typeof scenes) => {
@@ -984,6 +992,12 @@
         isInitialLoad: !previousSceneId,
         mapLocationChanged,
         gameSessionId: gameSession.id,
+        timestamp: Date.now()
+      });
+      prodLog('scene', 'Scene switch', {
+        from: previousSceneId,
+        to: currentSceneId,
+        isInitialLoad: !previousSceneId,
         timestamp: Date.now()
       });
     }
@@ -2568,6 +2582,16 @@
 
     // Check if order changed
     if (currentSceneInYjs.order !== selectedSceneNumber) {
+      devLog('scene', 'Scene order mismatch detected:', {
+        yjsOrder: currentSceneInYjs.order,
+        selectedSceneNumber,
+        sceneId: selectedScene.id,
+        yjsSceneId: currentSceneInYjs.id,
+        navigatingTo: navigating.to,
+        hasInitialLoad,
+        isLocallyReordering
+      });
+
       const targetPath = `/${page.params.party}/${page.params.gameSession}/${currentSceneInYjs.order}`;
 
       // Prevent navigation loops
@@ -2581,6 +2605,19 @@
         navigationAttempts = 0;
         lastNavigationTarget = targetPath;
       }
+
+      devLog('scene', 'Triggering navigation from order mismatch:', {
+        from: selectedSceneNumber,
+        to: currentSceneInYjs.order,
+        targetPath
+      });
+
+      prodLog('scene', 'AUTO-NAVIGATION from order mismatch', {
+        from: selectedSceneNumber,
+        to: currentSceneInYjs.order,
+        targetPath,
+        timestamp: Date.now()
+      });
 
       goto(targetPath);
     }
