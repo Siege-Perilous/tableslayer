@@ -60,7 +60,7 @@
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
   import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { page } from '$app/state';
   import { initializePartyDataManager, usePartyData, getPartyDataManager } from '$lib/utils/yjs/stores';
   import { useGetSceneTimestampsQuery } from '$lib/queries';
@@ -182,12 +182,11 @@
   });
 
   // Query for scene timestamps
-  const timestampsQuery = $derived(
-    useGetSceneTimestampsQuery({
-      gameSessionId: gameSession.id,
-      partyId: party.id
-    })
-  );
+  // Pass a function so the query can reactively access gameSession.id and party.id
+  const timestampsQuery = useGetSceneTimestampsQuery(() => ({
+    gameSessionId: gameSession.id,
+    partyId: party.id
+  }));
 
   // Helper function to add thumbnails to Y.js scenes
   const processScenesThumbnails = (rawScenes: typeof scenes) => {
@@ -947,8 +946,8 @@
     stage.map.fit();
   };
 
-  // Track previous scene ID to detect scene switches
-  let previousSceneId = $state<string | undefined>(undefined);
+  // Track previous scene ID to detect scene switches (regular let - not reactive)
+  let previousSceneId: string | undefined = undefined;
 
   // Extract reactive dependencies to avoid unnecessary re-runs
   let currentSelectedScene = $derived(data.selectedScene);
@@ -958,8 +957,8 @@
   // Get the Y.js version of the selected scene if available (has the latest mapLocation)
   let yjsSelectedScene = $derived(yjsScenes.find((s) => s.id === selectedScene?.id) || currentSelectedScene);
 
-  // Track the last mapLocation we built props for
-  let lastBuiltMapLocation = $state<string | null | undefined>(undefined);
+  // Track the last mapLocation we built props for (regular let - not reactive)
+  let lastBuiltMapLocation: string | null | undefined = undefined;
 
   $effect(() => {
     const currentSceneId = currentSelectedScene?.id;
@@ -2473,10 +2472,10 @@
     try {
       if (!partyData) return;
 
-      // Refetch timestamps
-      await timestampsQuery.refetch();
+      // Refetch timestamps - use untrack to avoid state mutation errors
+      await untrack(() => timestampsQuery.refetch());
 
-      const timestamps = timestampsQuery.data?.timestamps || {};
+      const timestamps = untrack(() => timestampsQuery.data?.timestamps || {});
       const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
       if (driftedScenes.length > 0) {
@@ -2498,24 +2497,26 @@
 
   // Make sure the selectedMarkerId is reset when the selectedScene changes
   // Also update persistedMarkerIds to reflect what might change in state
-  let previousEffectSceneId = $state<string | undefined>(undefined);
+  let previousEffectSceneId: string | undefined = undefined;
   $effect(() => {
     const currentSceneId = selectedScene?.id;
     if (currentSceneId && currentSceneId !== previousEffectSceneId) {
       // Only run this when scene actually changes
-      selectedMarkerId = undefined;
-      selectedAnnotationId = undefined;
-      persistedMarkerIds = new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
-      // Clear marker protection sets when switching scenes
-      markersBeingEdited.clear();
-      markersBeingMoved.clear();
-      previousEffectSceneId = currentSceneId;
+      untrack(() => {
+        selectedMarkerId = undefined;
+        selectedAnnotationId = undefined;
+        persistedMarkerIds = new Set(data.selectedSceneMarkers?.map((marker) => marker.id) || []);
+        // Clear marker protection sets when switching scenes
+        markersBeingEdited.clear();
+        markersBeingMoved.clear();
+        previousEffectSceneId = currentSceneId;
+      });
     }
   });
 
-  // Track last navigation to prevent loops
-  let lastNavigationTarget = $state<string | null>(null);
-  let navigationAttempts = $state(0);
+  // Track last navigation to prevent loops (regular let - not reactive)
+  let lastNavigationTarget: string | null = null;
+  let navigationAttempts = 0;
 
   // Monitor scene order changes and navigate if needed
   $effect(() => {
@@ -2629,10 +2630,10 @@
 
         // Check for Y.js drift and refresh if needed
         try {
-          // Refetch timestamps
-          await timestampsQuery.refetch();
+          // Refetch timestamps - use untrack to avoid state mutation errors
+          await untrack(() => timestampsQuery.refetch());
 
-          const timestamps = timestampsQuery.data?.timestamps || {};
+          const timestamps = untrack(() => timestampsQuery.data?.timestamps || {});
           const driftedScenes = await partyData.detectDrift(async () => timestamps);
 
           if (driftedScenes.length > 0) {
