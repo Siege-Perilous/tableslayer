@@ -959,7 +959,7 @@
   };
 
   const handleMapFill = () => {
-    stage.map.fill();
+    stage.map.fit();
   };
 
   const handleMapFit = () => {
