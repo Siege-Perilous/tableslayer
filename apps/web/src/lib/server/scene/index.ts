@@ -241,7 +241,7 @@ export const createScene = async (
   let mapOffsetX = data.mapOffsetX ?? 0;
   let mapOffsetY = data.mapOffsetY ?? 0;
 
-  // If grid dimensions are provided and we're in Fixed Count mode, calculate alignment
+  // If grid dimensions are provided and we're in MapDefined mode, calculate alignment
   if (data.gridMode === 1 && data.gridMapDefinedX && data.gridMapDefinedY && fileLocation) {
     console.log('[createScene] Calculating map alignment for Fixed Count mode:', {
       gridMapDefinedX: data.gridMapDefinedX,
@@ -413,6 +413,110 @@ export const createScene = async (
     } catch (error) {
       console.error('[createScene] Error getting image dimensions:', error);
       // Continue without auto-alignment if we can't get dimensions
+    }
+  } else if (fileLocation && fileLocation !== 'map/example1080.png' && data.gridMode !== 1) {
+    // For maps without grid dimensions (FillSpace mode), autofit the map to the scene
+    // This matches the old client-side fit() behavior and only runs at scene creation
+    console.log('[createScene] Autofitting map without grid dimensions:', {
+      mapLocation: fileLocation
+    });
+
+    try {
+      const imageResult = await transformImage(fileLocation, 'format=json');
+      const originalWidth = imageResult.details.original.width || imageResult.details.width;
+      const originalHeight = imageResult.details.original.height || imageResult.details.height;
+
+      // The client will receive a scaled-down version (max 3000x3000)
+      const maxDimension = 3000;
+      let mapWidth = originalWidth;
+      let mapHeight = originalHeight;
+
+      if (originalWidth > maxDimension || originalHeight > maxDimension) {
+        const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
+        mapWidth = Math.round(originalWidth * scale);
+        mapHeight = Math.round(originalHeight * scale);
+        console.log(
+          '[createScene] Image will be scaled from',
+          originalWidth + 'x' + originalHeight,
+          'to',
+          mapWidth + 'x' + mapHeight
+        );
+      }
+
+      if (mapWidth && mapHeight) {
+        const displayResolutionX = party.defaultDisplayResolutionX;
+        const displayResolutionY = party.defaultDisplayResolutionY;
+
+        // Check if we should rotate the map to better fit the scene
+        // Calculate the zoom we'd get in both orientations and choose the larger one
+        let effectiveMapWidth = mapWidth;
+        let effectiveMapHeight = mapHeight;
+
+        // Calculate zoom for straight orientation
+        const straightImageAspectRatio = mapWidth / mapHeight;
+        const sceneAspectRatio = displayResolutionX / displayResolutionY;
+
+        let straightZoom: number;
+        if (straightImageAspectRatio > sceneAspectRatio) {
+          // Image is wider relative to scene, so width constrains us
+          straightZoom = displayResolutionX / mapWidth;
+        } else {
+          // Image is taller relative to scene, so height constrains us
+          straightZoom = displayResolutionY / mapHeight;
+        }
+
+        // Calculate zoom for rotated orientation (swap width and height)
+        const rotatedImageAspectRatio = mapHeight / mapWidth;
+        let rotatedZoom: number;
+        if (rotatedImageAspectRatio > sceneAspectRatio) {
+          // Rotated image is wider relative to scene, so width constrains us
+          rotatedZoom = displayResolutionX / mapHeight;
+        } else {
+          // Rotated image is taller relative to scene, so height constrains us
+          rotatedZoom = displayResolutionY / mapWidth;
+        }
+
+        console.log('[createScene] Rotation check:', {
+          map: { width: mapWidth, height: mapHeight },
+          display: { width: displayResolutionX, height: displayResolutionY },
+          straightImageAspectRatio,
+          rotatedImageAspectRatio,
+          sceneAspectRatio,
+          zoom: {
+            straight: straightZoom,
+            rotated: rotatedZoom
+          }
+        });
+
+        // Choose orientation that gives larger zoom (better fit / larger image)
+        if (rotatedZoom > straightZoom) {
+          mapRotation = 90;
+          effectiveMapWidth = mapHeight;
+          effectiveMapHeight = mapWidth;
+          mapZoom = rotatedZoom;
+          console.log('[createScene] Rotating map 90 degrees for better fit');
+        } else {
+          mapZoom = straightZoom;
+        }
+
+        // Keep map centered
+        mapOffsetX = 0;
+        mapOffsetY = 0;
+
+        console.log('[createScene] Autofit calculation:', {
+          mapDimensions: { width: effectiveMapWidth, height: effectiveMapHeight },
+          displayResolution: { x: displayResolutionX, y: displayResolutionY },
+          finalValues: {
+            mapRotation,
+            mapZoom,
+            mapOffsetX,
+            mapOffsetY
+          }
+        });
+      }
+    } catch (error) {
+      console.error('[createScene] Error autofitting map:', error);
+      // Continue with default values if we can't get dimensions
     }
   }
 
