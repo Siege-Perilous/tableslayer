@@ -51,7 +51,7 @@
     "@types/marked": "^6.0.0",
     "@types/three": "0.181.0",
     "marked": "^17.0.0",
-    "svelte": "5.43.8",
+    "svelte": "5.43.14",
     "svelte-check": "^4.3.4",
     "typedoc": "^0.28.14",
     "typescript": "^5.9.3",
