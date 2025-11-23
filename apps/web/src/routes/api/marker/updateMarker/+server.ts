@@ -21,7 +21,10 @@ export const POST = apiFactory(
         throw new Error('Unauthorized');
       }
 
-      const marker = await updateMarker(markerId, markerData);
+      // Exclude id from markerData to prevent attempting to update the primary key
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...updateData } = markerData;
+      const marker = await updateMarker(markerId, updateData);
 
       // Update scene timestamp when marker is updated
       if (marker.sceneId) {

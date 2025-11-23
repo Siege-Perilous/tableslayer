@@ -2393,22 +2393,10 @@
       }
       isSaving = false;
 
-      // Clear actively editing flag and timer after save completes
+      // Clear actively editing flag after save completes
       isActivelyEditing = false;
-      // Only clear protection for markers that were actually saved
-      if (saveSuccess && stageProps.marker.markers && stageProps.marker.markers.length > 0) {
-        // Clear protection only for markers that were saved
-        for (const marker of stageProps.marker.markers) {
-          if (persistedMarkerIds.has(marker.id)) {
-            markersBeingEdited.delete(marker.id);
-            markersBeingMoved.delete(marker.id);
-          }
-        }
-      }
-      if (editingTimer) {
-        clearTimeout(editingTimer);
-        editingTimer = null;
-      }
+      // Don't clear marker protection or timer - they're managed by the editing timeout
+      // This prevents clearing protection if user is still actively editing during/after save
     }
   };
 
@@ -2442,12 +2430,13 @@
       // Set actively editing flag briefly to prevent feedback loops
       isActivelyEditing = true;
 
-      // Clear any existing editing timer and set new one (shorter timeout)
+      // Clear any existing editing timer and set new one
+      // Protection should last longer than the auto-save timer (3s) to prevent overwrites
       if (editingTimer) clearTimeout(editingTimer);
       editingTimer = setTimeout(() => {
         isActivelyEditing = false;
         markersBeingEdited.delete(markerId);
-      }, 1000); // Clear after 1 second if no save occurs
+      }, 5000); // Clear after 5 seconds to cover auto-save (3s) + save operation time
 
       // Trigger database save through property update queue
       queuePropertyUpdate(stageProps, ['marker', 'markers'], stageProps.marker.markers, 'marker');

@@ -74,7 +74,7 @@
   </IconButton>
   {#if zoomType === 'map'}
     <IconButton
-      title="Fill map within scene"
+      title="Fit map within scene"
       class="zoomControls__button"
       aria-label="Fit scene"
       variant="ghost"
