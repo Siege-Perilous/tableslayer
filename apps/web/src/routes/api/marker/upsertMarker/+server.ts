@@ -31,8 +31,9 @@ export const POST = apiFactory(
     let operation: 'created' | 'updated';
 
     if (existingMarker && markerData.id) {
-      // Update existing marker
-      marker = await updateMarker(markerData.id, markerData);
+      // Update existing marker - exclude id from markerData to prevent setting it in the update
+      const { id, ...updateData } = markerData;
+      marker = await updateMarker(id, updateData);
       operation = 'updated';
     } else {
       // Create new marker with the provided ID
