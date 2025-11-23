@@ -22,6 +22,7 @@ export const POST = apiFactory(
       }
 
       // Exclude id from markerData to prevent attempting to update the primary key
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...updateData } = markerData;
       const marker = await updateMarker(markerId, updateData);
 
