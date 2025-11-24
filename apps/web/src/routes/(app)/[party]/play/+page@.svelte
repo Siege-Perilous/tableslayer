@@ -12,12 +12,15 @@
     type StageExports,
     type StageProps,
     type Marker,
-    type AnnotationLayerData
+    type AnnotationLayerData,
+    RadialMenu,
+    type RadialMenuItemType
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
   import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
+  import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
 
   type CursorData = {
     worldPosition: { x: number; y: number; z: number };
@@ -32,6 +35,10 @@
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
   let hoveredMarkerId: string | null = $state(null);
+
+  // Radial menu state
+  let menuVisible = $state(false);
+  let menuPosition = $state({ x: 0, y: 0 });
 
   // Convert cursors to format expected by CursorLayer
   let cursorArray = $derived(
@@ -84,6 +91,91 @@
     (stageIsLoading || sceneIsChanging) && 'stage--loading',
     gameIsPaused && 'stage--hidden'
   ]);
+
+  // Radial menu items
+  const menuItems: RadialMenuItemType[] = [
+    {
+      id: 'scene',
+      label: 'Scene',
+      submenu: [] // Will be populated from data.scenes in future phase
+    },
+    {
+      id: 'fog',
+      label: 'Fog',
+      submenu: [
+        { id: 'fog-remove', label: 'Remove fog' },
+        { id: 'fog-add', label: 'Add fog' },
+        { id: 'fog-reset', label: 'Reset fog' },
+        { id: 'fog-clear', label: 'Clear fog' }
+      ]
+    },
+    {
+      id: 'draw',
+      label: 'Draw'
+    },
+    {
+      id: 'measure',
+      label: 'Measure',
+      submenu: [
+        { id: 'measure-line', label: 'Line' },
+        { id: 'measure-circle', label: 'Circle' },
+        { id: 'measure-square', label: 'Square' },
+        { id: 'measure-cone', label: 'Cone' },
+        { id: 'measure-beam', label: 'Beam' }
+      ]
+    },
+    {
+      id: 'markers',
+      label: 'Move markers'
+    }
+  ];
+
+  function handleMenuItemSelect(itemId: string) {
+    devLog('playfield', 'Menu item selected:', itemId);
+
+    // Handle menu selections
+    switch (itemId) {
+      case 'fog-remove':
+      case 'fog-add':
+      case 'fog-reset':
+      case 'fog-clear':
+        devLog('playfield', 'Fog action:', itemId);
+        // TODO: Implement fog actions in Phase 7
+        break;
+
+      case 'draw':
+        devLog('playfield', 'Draw action');
+        // TODO: Implement drawing in Phase 8
+        break;
+
+      case 'measure-line':
+      case 'measure-circle':
+      case 'measure-square':
+      case 'measure-cone':
+      case 'measure-beam':
+        devLog('playfield', 'Measurement type:', itemId);
+        // TODO: Implement measurement in Phase 9
+        break;
+
+      case 'markers':
+        devLog('playfield', 'Enable marker movement');
+        // TODO: Implement marker movement in Phase 10
+        break;
+
+      default:
+        // Check if it's a scene selection
+        if (itemId.startsWith('scene-')) {
+          const sceneId = itemId.replace('scene-', '');
+          devLog('playfield', 'Scene selected:', sceneId);
+          // TODO: Implement scene switching in Phase 6
+        }
+        break;
+    }
+  }
+
+  function handleMenuClose() {
+    menuVisible = false;
+  }
 
   // No debouncing needed - flashing was caused by image versioning, not Y.js updates
 
@@ -522,6 +614,15 @@
     // Add mousemove event listener
     window.addEventListener('mousemove', handleMouseMove);
 
+    // Set up gesture detector for radial menu (two-finger long-press or right-click)
+    let gestureDetector: ReturnType<typeof createUnifiedGestureDetector> | null = null;
+    if (stageElement) {
+      gestureDetector = createUnifiedGestureDetector((position) => {
+        menuVisible = true;
+        menuPosition = position;
+      }, stageElement);
+    }
+
     return () => {
       isUnmounting = true;
       isMounted = false;
@@ -530,6 +631,11 @@
 
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
+
+      // Clean up gesture detector
+      if (gestureDetector) {
+        gestureDetector.destroy();
+      }
 
       // Cursor cleanup is handled by Y.js awareness automatically
 
@@ -955,6 +1061,15 @@
 
   <!-- Cursors are now rendered in Three.js via the CursorLayer component -->
 </div>
+
+<!-- Radial menu for player interactions -->
+<RadialMenu
+  visible={menuVisible}
+  position={menuPosition}
+  items={menuItems}
+  onItemSelect={handleMenuItemSelect}
+  onClose={handleMenuClose}
+/>
 
 <style>
   .paused {

@@ -461,7 +461,7 @@ export const markerTable = sqliteTable(
   (table) => [
     index('idx_marker_scene_id').on(table.sceneId),
     check('protected_marker_visibility', sql`${table.visibility} >= 0 AND ${table.visibility} <= 3`),
-    check('protected_marker_shape', sql`${table.shape} >= 0 AND ${table.shape} <= 3`),
+    check('protected_marker_shape', sql`${table.shape} >= 0 AND ${table.shape} <= 4`),
     check('protected_marker_size', sql`${table.size} >= 1 AND ${table.size} <= 3`)
   ]
 );

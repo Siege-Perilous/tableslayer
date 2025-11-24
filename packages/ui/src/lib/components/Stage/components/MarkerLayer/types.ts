@@ -11,7 +11,8 @@ export enum MarkerShape {
   None = 0,
   Circle = 1,
   Square = 2,
-  Triangle = 3
+  Triangle = 3,
+  Pin = 4
 }
 
 export enum MarkerSize {

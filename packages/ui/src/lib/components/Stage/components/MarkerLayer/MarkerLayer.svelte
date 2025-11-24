@@ -91,7 +91,8 @@
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
-      if (stage.mode === StageMode.DM) {
+      // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
+      if (closestMarker.shape !== MarkerShape.Pin) {
         isDragging = true;
       }
       onMarkerSelected(selectedMarker);
