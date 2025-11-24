@@ -18,9 +18,15 @@
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
+  import {
+    initializePartyDataManager,
+    usePartyData,
+    destroyPartyDataManager,
+    getPartyDataManager
+  } from '$lib/utils/yjs/stores';
   import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
   import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
+  import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
 
   type CursorData = {
     worldPosition: { x: number; y: number; z: number };
@@ -68,6 +74,7 @@
   let hasActiveScene = $state(!!data.activeScene);
   let isInvalidating = $state(false);
   let isProcessingSceneChange = $state(false);
+  let lastProcessedSceneId = $state<string | undefined>(data.activeScene?.id);
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
@@ -92,12 +99,15 @@
     gameIsPaused && 'stage--hidden'
   ]);
 
-  // Radial menu items
-  const menuItems: RadialMenuItemType[] = [
+  // Radial menu items - dynamically populate scene submenu from data
+  const menuItems: RadialMenuItemType[] = $derived([
     {
       id: 'scene',
       label: 'Scene',
-      submenu: [] // Will be populated from data.scenes in future phase
+      submenu: data.scenes.map((scene) => ({
+        id: `scene-${scene.id}`,
+        label: scene.name
+      }))
     },
     {
       id: 'fog',
@@ -128,7 +138,7 @@
       id: 'markers',
       label: 'Move markers'
     }
-  ];
+  ]);
 
   function handleMenuItemSelect(itemId: string) {
     devLog('playfield', 'Menu item selected:', itemId);
@@ -166,8 +176,11 @@
         // Check if it's a scene selection
         if (itemId.startsWith('scene-')) {
           const sceneId = itemId.replace('scene-', '');
-          devLog('playfield', 'Scene selected:', sceneId);
-          // TODO: Implement scene switching in Phase 6
+          devLog('playfield', 'Switching to scene:', sceneId);
+          const manager = getPartyDataManager();
+          if (manager) {
+            switchActiveScene(manager, sceneId);
+          }
         }
         break;
     }
@@ -910,11 +923,16 @@
         currentActiveSceneId
       });
 
-      // Check if active scene changed
-      if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
+      // Check if active scene changed (and we haven't already processed this change)
+      if (
+        yjsPartyState.activeSceneId &&
+        yjsPartyState.activeSceneId !== currentActiveSceneId &&
+        yjsPartyState.activeSceneId !== lastProcessedSceneId
+      ) {
         devLog('playfield', 'Active scene change detected:', {
           from: currentActiveSceneId,
           to: yjsPartyState.activeSceneId,
+          lastProcessedSceneId,
           currentGameSessionId: data.activeGameSession?.id,
           timestamp: Date.now()
         });
@@ -927,9 +945,10 @@
         // Trigger loading fade immediately when scene change is detected
         sceneIsChanging = true;
 
-        // Set flags to prevent race conditions
+        // Set flags to prevent race conditions and track the scene we're switching to
         isProcessingSceneChange = true;
         isInvalidating = true;
+        lastProcessedSceneId = yjsPartyState.activeSceneId;
 
         // Clear the current scene data to show loading state
         yjsSceneData = null;
