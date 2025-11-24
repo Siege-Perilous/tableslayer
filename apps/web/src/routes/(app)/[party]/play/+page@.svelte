@@ -14,7 +14,8 @@
     type Marker,
     type AnnotationLayerData,
     RadialMenu,
-    type RadialMenuItemType
+    type RadialMenuItemType,
+    DrawMode
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -27,6 +28,8 @@
   import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
   import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
+  import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
+  import { useUpdateFogMaskMutation } from '$lib/queries/masks';
 
   type CursorData = {
     worldPosition: { x: number; y: number; z: number };
@@ -45,6 +48,9 @@
   // Radial menu state
   let menuVisible = $state(false);
   let menuPosition = $state({ x: 0, y: 0 });
+
+  // Activity timer for fog/drawing interactions
+  let activityTimer: ReturnType<typeof createConditionalActivityTimer> | null = null;
 
   // Convert cursors to format expected by CursorLayer
   let cursorArray = $derived(
@@ -75,6 +81,12 @@
   let isInvalidating = $state(false);
   let isProcessingSceneChange = $state(false);
   let lastProcessedSceneId = $state<string | undefined>(data.activeScene?.id);
+
+  // Fog update state
+  let pendingFogBlob: Blob | null = null;
+  let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  let isUpdatingFog = false;
+  const updateFogMaskMutation = useUpdateFogMaskMutation();
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
@@ -140,17 +152,60 @@
     }
   ]);
 
+  // Helper to clean stage props for Y.js sync (removes local-only fields)
+  const cleanStagePropsForYjs = (props: StageProps): any => {
+    return {
+      ...props,
+      annotations: {
+        ...props.annotations,
+        activeLayer: null,
+        lineWidth: undefined
+      },
+      fogOfWar: {
+        ...props.fogOfWar,
+        tool: {
+          ...props.fogOfWar.tool
+        }
+      },
+      grid: {
+        ...props.grid,
+        worldGridUnits: props.grid.worldGridUnits || 'FT',
+        worldGridSize: props.grid.worldGridSize || 5
+      }
+    };
+  };
+
   function handleMenuItemSelect(itemId: string) {
     devLog('playfield', 'Menu item selected:', itemId);
 
     // Handle menu selections
     switch (itemId) {
       case 'fog-remove':
+        devLog('playfield', 'Fog action: Remove fog');
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.tool.mode = DrawMode.Erase;
+        break;
+
       case 'fog-add':
+        devLog('playfield', 'Fog action: Add fog');
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.tool.mode = DrawMode.Draw;
+        break;
+
       case 'fog-reset':
+        devLog('playfield', 'Fog action: Reset fog');
+        if (stage?.fogOfWar) {
+          stage.fogOfWar.reset();
+        }
+        stageProps.activeLayer = MapLayerType.None;
+        break;
+
       case 'fog-clear':
-        devLog('playfield', 'Fog action:', itemId);
-        // TODO: Implement fog actions in Phase 7
+        devLog('playfield', 'Fog action: Clear fog');
+        if (stage?.fogOfWar) {
+          stage.fogOfWar.clear();
+        }
+        stageProps.activeLayer = MapLayerType.None;
         break;
 
       case 'draw':
@@ -216,6 +271,14 @@
       }
 
       const data = (await response.json()) as { success: boolean; maskData?: string };
+      devLog('playfield', `Fog mask fetch result for scene ${sceneId}:`, {
+        hasMaskData: !!data.maskData,
+        maskDataLength: data.maskData?.length,
+        hasStage: !!stage,
+        hasFogOfWar: !!stage?.fogOfWar,
+        hasFromRLE: !!stage?.fogOfWar?.fromRLE
+      });
+
       if (data.maskData && stage?.fogOfWar?.fromRLE) {
         // Convert base64 back to Uint8Array
         const binaryString = atob(data.maskData);
@@ -227,10 +290,14 @@
           'FOG-RT',
           `fog_${maskVersion} - 13. Applying ${bytes.length} bytes to fog layer at ${new Date().toISOString()}`
         );
+        devLog('playfield', `Applying fog mask: ${bytes.length} bytes`);
         // Apply the mask to the fog layer
         await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
         timingLog('FOG-RT', `fog_${maskVersion} - 14. Fog mask applied successfully at ${new Date().toISOString()}`);
         timingLog('FOG-RT', `fog_${maskVersion} - COMPLETE: Full round-trip completed`);
+        devLog('playfield', 'Fog mask applied successfully');
+      } else {
+        devLog('playfield', 'Skipping fog mask application - conditions not met');
       }
     } catch (error) {
       devError('fog-timing', `[FOG-RT] fog_${maskVersion} - ERROR:`, error);
@@ -330,12 +397,14 @@
           `fog_${stageProps.fogOfWar.maskVersion} - Version: ${stageProps.fogOfWar.maskVersion}, Previous: ${lastFogMaskVersion}`
         );
         lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
-        if (data.activeScene?.id) {
+        // Use Y.js active scene ID (source of truth) instead of SSR data which may be stale
+        const sceneIdToFetch = yjsPartyState.activeSceneId || data.activeScene?.id;
+        if (sceneIdToFetch) {
           timingLog(
             'FOG-RT',
-            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API at ${new Date().toISOString()}`
+            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API for scene ${sceneIdToFetch} at ${new Date().toISOString()}`
           );
-          fetchFogMask(data.activeScene.id);
+          fetchFogMask(sceneIdToFetch);
         }
       }
 
@@ -404,9 +473,10 @@
       lastFogMaskVersion = undefined;
       lastAnnotationMaskVersions.clear();
 
-      // Fetch fog mask for the new scene
-      devLog('playfield', 'Scene changed, fetching fog mask for:', newSceneId);
-      fetchFogMask(newSceneId);
+      // Fetch fog mask for the new scene - use Y.js scene ID if available (source of truth)
+      const sceneIdToFetch = yjsPartyState.activeSceneId || newSceneId;
+      devLog('playfield', 'Scene changed, fetching fog mask for:', sceneIdToFetch);
+      fetchFogMask(sceneIdToFetch);
 
       // Also fetch annotation masks if there are any
       if (stageProps.annotations?.layers) {
@@ -636,11 +706,24 @@
       }, stageElement);
     }
 
+    // Set up activity timer for fog/drawing interactions (5 second timeout)
+    if (stageElement) {
+      activityTimer = createConditionalActivityTimer(
+        5000,
+        () => {
+          // On timeout, reset active layer to None
+          devLog('playfield', 'Activity timeout - resetting active layer to None');
+          stageProps.activeLayer = MapLayerType.None;
+        },
+        () => stageProps.activeLayer !== MapLayerType.None,
+        ['mousedown', 'mousemove', 'touchstart', 'touchmove'],
+        stageElement
+      );
+    }
+
     return () => {
       isUnmounting = true;
       isMounted = false;
-
-      // No timers to clear - we removed debouncing
 
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
@@ -648,6 +731,11 @@
       // Clean up gesture detector
       if (gestureDetector) {
         gestureDetector.destroy();
+      }
+
+      // Clean up activity timer
+      if (activityTimer) {
+        activityTimer.destroy();
       }
 
       // Cursor cleanup is handled by Y.js awareness automatically
@@ -811,10 +899,86 @@
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function onFogUpdate(_blob: Promise<Blob>) {
-    return;
-  }
+  // Process fog update - encode RLE, save to DB, sync to Y.js
+  const processFogUpdate = async () => {
+    // Use Y.js active scene ID as source of truth
+    const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
+    if (!pendingFogBlob || !activeSceneId) return;
+
+    // Check if user is still drawing
+    if (stage?.fogOfWar?.isDrawing()) {
+      devLog('playfield', 'Aborting fog update - user is still drawing');
+      return;
+    }
+
+    pendingFogBlob = null;
+
+    devLog('playfield', 'Processing fog update - encoding RLE');
+    const rleData = await stage?.fogOfWar?.toRLE();
+    if (!rleData) {
+      devError('playfield', 'Failed to get RLE data from fog layer');
+      isUpdatingFog = false;
+      return;
+    }
+
+    devLog(
+      'playfield',
+      `Fog RLE encoding complete (${rleData.length} bytes), saving to database for scene ${activeSceneId}`
+    );
+
+    try {
+      await updateFogMaskMutation.mutateAsync({
+        sceneId: activeSceneId,
+        partyId: party.id,
+        maskData: rleData
+      });
+
+      devLog('playfield', 'Fog database save complete');
+
+      // Check if user started drawing while upload was in progress
+      if (stage?.fogOfWar?.isDrawing()) {
+        devLog('playfield', 'Fog update completed but user is drawing - skipping Y.js sync');
+        isUpdatingFog = false;
+        return;
+      }
+
+      // Update mask version to signal other clients
+      const maskVersion = Date.now();
+      stageProps.fogOfWar.maskVersion = maskVersion;
+      devLog('playfield', `Setting fog mask version ${maskVersion}`);
+
+      // Sync to Y.js for real-time collaboration
+      const manager = getPartyDataManager();
+      if (manager && activeSceneId) {
+        devLog('playfield', 'Broadcasting fog update to Y.js');
+        manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
+      }
+
+      isUpdatingFog = false;
+    } catch (error) {
+      devError('playfield', 'Error updating fog mask:', error);
+      isUpdatingFog = false;
+    }
+  };
+
+  const onFogUpdate = async (_blob: Promise<Blob>) => {
+    isUpdatingFog = true;
+
+    // Store a flag that we need to process fog update
+    pendingFogBlob = new Blob();
+
+    // Clear any existing timer
+    if (fogUpdateTimer) {
+      clearTimeout(fogUpdateTimer);
+    }
+
+    // Set a new timer to process the update after a delay (500ms debounce)
+    fogUpdateTimer = setTimeout(() => {
+      devLog('playfield', 'Fog update debounce timer fired');
+      processFogUpdate();
+      fogUpdateTimer = null;
+    }, 500);
+  };
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     devLog('playfield', 'Updating map', offset, zoom);
@@ -830,6 +994,45 @@
     selectedMarker = marker ?? undefined;
   };
 
+  async function loadFogMask() {
+    // Load fog mask if available
+    if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
+      try {
+        devLog('playfield', 'Loading fog mask from server data');
+        // Convert base64 back to Uint8Array
+        const binaryString = atob(data.activeSceneFogMask);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        devLog('playfield', `Applying fog mask (${bytes.length} bytes) to fog layer`);
+        // Apply the mask to the fog layer
+        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+        devLog('playfield', 'Fog mask applied successfully');
+
+        // Store the mask version if present in stageProps
+        if (stageProps.fogOfWar?.maskVersion) {
+          lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+        }
+      } catch (error) {
+        devError('playfield', 'Error loading fog mask:', error);
+      }
+    } else {
+      devLog('playfield', 'No fog mask data in SSR, checking if we need to fetch from Y.js state', {
+        hasMaskData: !!data.activeSceneFogMask,
+        hasFogLayer: !!stage?.fogOfWar?.fromRLE,
+        hasMaskVersion: !!stageProps.fogOfWar?.maskVersion
+      });
+
+      // If there's a maskVersion in stageProps but no SSR data, fetch the mask
+      if (stageProps.fogOfWar?.maskVersion && data.activeScene?.id) {
+        devLog('playfield', `Fetching fog mask for version ${stageProps.fogOfWar.maskVersion} on initial load`);
+        lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+        fetchFogMask(data.activeScene.id);
+      }
+    }
+  }
+
   function onStageLoading() {
     stageIsLoading = true;
   }
@@ -837,27 +1040,21 @@
   async function onStageInitialized() {
     stageIsLoading = false;
 
-    // Load fog mask if available
-    if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
-      try {
-        // Convert base64 back to Uint8Array
-        const binaryString = atob(data.activeSceneFogMask);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        // Apply the mask to the fog layer
-        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
-      } catch (error) {
-        console.error('Error loading fog mask:', error);
-      }
-    }
+    // Load fog mask from SSR data if available
+    await loadFogMask();
 
     // Load annotation masks if available
     if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
       try {
         for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
           if (maskData) {
+            // Check if the annotation layer exists in stageProps
+            const layerExists = stageProps.annotations.layers.some((layer) => layer.id === annotationId);
+            if (!layerExists) {
+              devLog('playfield', `Skipping mask load for annotation ${annotationId} - layer not found in stageProps`);
+              continue;
+            }
+
             // Convert base64 back to Uint8Array
             const binaryString = atob(maskData);
             const bytes = new Uint8Array(binaryString.length);
