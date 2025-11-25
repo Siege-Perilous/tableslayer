@@ -16,7 +16,8 @@
     RadialMenu,
     type RadialMenuItemType,
     DrawMode,
-    StageMode
+    StageMode,
+    MeasurementType
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -257,12 +258,33 @@
         break;
 
       case 'measure-line':
+        devLog('playfield', 'Starting line measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Line;
+        break;
+
       case 'measure-circle':
+        devLog('playfield', 'Starting circle measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Circle;
+        break;
+
       case 'measure-square':
+        devLog('playfield', 'Starting square measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Square;
+        break;
+
       case 'measure-cone':
+        devLog('playfield', 'Starting cone measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Cone;
+        break;
+
       case 'measure-beam':
-        devLog('playfield', 'Measurement type:', itemId);
-        // TODO: Implement measurement in Phase 9
+        devLog('playfield', 'Starting beam measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Beam;
         break;
 
       case 'markers':
@@ -1097,6 +1119,66 @@
     selectedMarker = marker ?? undefined;
   };
 
+  // Measurement callbacks for Y.js broadcasting (playfield → editor)
+  const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Broadcast measurement start to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
+      };
+      partyData.updateMeasurement(startPoint, startPoint, type, measurementProps);
+      devLog('playfield', 'Broadcasting measurement start:', { startPoint, type, measurementProps });
+    }
+  };
+
+  const onMeasurementUpdate = (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => {
+    // Broadcast measurement update to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = {
+        color: stageProps.measurement.color,
+        thickness: stageProps.measurement.thickness,
+        outlineColor: stageProps.measurement.outlineColor,
+        outlineThickness: stageProps.measurement.outlineThickness,
+        opacity: stageProps.measurement.opacity,
+        markerSize: stageProps.measurement.markerSize,
+        autoHideDelay: stageProps.measurement.autoHideDelay,
+        fadeoutTime: stageProps.measurement.fadeoutTime,
+        showDistance: stageProps.measurement.showDistance,
+        snapToGrid: stageProps.measurement.snapToGrid,
+        enableDMG252: stageProps.measurement.enableDMG252,
+        beamWidth: stageProps.measurement.beamWidth,
+        coneAngle: stageProps.measurement.coneAngle
+      };
+      partyData.updateMeasurement(startPoint, endPoint, type, measurementProps);
+    }
+  };
+
+  const onMeasurementEnd = () => {
+    // Clear measurement when finished (it will fade out on its own)
+    if (partyData) {
+      partyData.updateMeasurement(null, null, 0);
+      devLog('playfield', 'Clearing measurement broadcast');
+    }
+    // Reset activeLayer back to None after measurement is finished
+    stageProps.activeLayer = MapLayerType.None;
+  };
+
   async function loadFogMask() {
     // Load fog mask if available
     if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
@@ -1459,10 +1541,10 @@
       onMarkerSelected,
       onMarkerContextMenu,
       onMarkerHover,
-      // Measurements are read-only in playfield, but we still need the callbacks
-      onMeasurementStart: () => {},
-      onMeasurementUpdate: () => {},
-      onMeasurementEnd: () => {}
+      // Measurement callbacks for playfield → editor sync
+      onMeasurementStart,
+      onMeasurementUpdate,
+      onMeasurementEnd
     }}
     cursors={cursorArray}
     trackLocalCursor={false}
