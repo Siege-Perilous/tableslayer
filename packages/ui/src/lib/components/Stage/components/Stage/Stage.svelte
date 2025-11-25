@@ -197,7 +197,10 @@
       // MapLayerType: None = 0, FogOfWar = 1, Marker = 2, Annotation = 3, Measurement = 4
       const isMarkerOrNoneLayer = props.activeLayer === 0 || props.activeLayer === 2;
       if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id) && !isDragging && isMarkerOrNoneLayer) {
-        markerForTooltip = hoveredMarker;
+        // Look up the current marker from the markers array by ID to handle Y.js updates
+        // This prevents stale marker references from breaking tooltips after sync
+        const currentMarker = props.marker.markers.find((m) => m.id === hoveredMarker.id);
+        markerForTooltip = currentMarker || hoveredMarker;
       }
     } else if (props.mode === 1) {
       // Player mode - only show tooltips for markers where:

@@ -74,6 +74,7 @@
   }
 
   function onMouseDown(e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) {
+    console.log('[MarkerLayer] onMouseDown called', { coords, mode: stage.mode, isActive });
     if (!coords) return;
 
     // Check if TouchEvent is defined in the browser before using it
@@ -87,12 +88,15 @@
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
     const closestMarker = findClosestMarker(gridCoords);
+    console.log('[MarkerLayer] closestMarker:', closestMarker?.id, 'shape:', closestMarker?.shape);
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
-      if (stage.mode === StageMode.DM) {
+      // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
+      if (closestMarker.shape !== MarkerShape.Pin) {
         isDragging = true;
+        console.log('[MarkerLayer] Starting drag for marker:', closestMarker.id);
         // Clear tooltip when drag starts
         hoveredMarkerDelayed = null;
         clearHoverTimer();
@@ -140,6 +144,10 @@
     const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
 
     ghostMarker.position = snapPosition;
+
+    if (isDragging && selectedMarker) {
+      console.log('[MarkerLayer] Dragging marker to:', snapPosition);
+    }
 
     // Only check for hover when we're not dragging and when activeLayer is None or Marker
     // This prevents hover during fog/drawing/annotation/measurement modes

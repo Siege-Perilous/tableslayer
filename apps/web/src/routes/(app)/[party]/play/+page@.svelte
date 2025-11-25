@@ -108,7 +108,7 @@
   let stageProps: StageProps = $state({
     ...StageDefaultProps,
     mode: 1, // StageMode.Player = 1
-    activeLayer: MapLayerType.None,
+    activeLayer: MapLayerType.None, // Allow marker dragging (None allows marker interaction)
     scene: { ...StageDefaultProps.scene, autoFit: true, offset: { x: 0, y: 0 } }
   });
 
@@ -116,6 +116,7 @@
   let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
 
   let selectedMarker: Marker | undefined = $state();
+  let markersBeingMoved = new Set<string>(); // Track markers being dragged to prevent Y.js overwrites
   let stageIsLoading: boolean = $state(true);
   let sceneIsChanging: boolean = $state(false);
   let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
@@ -322,7 +323,8 @@
 
       case 'markers':
         devLog('playfield', 'Enable marker movement');
-        // TODO: Implement marker movement in Phase 10
+        stageProps.activeLayer = MapLayerType.Marker;
+        console.log('[Play] Marker movement enabled, activeLayer:', stageProps.activeLayer);
         break;
 
       default:
@@ -463,10 +465,21 @@
         },
         // Don't allow active layer (fog tools, etc)
         activeLayer: MapLayerType.None,
-        // Filter markers to remove DM-only ones
+        // Filter markers to remove DM-only ones, and protect markers being moved
         marker: {
           ...yjsSceneData.stageProps.marker,
-          markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
+          markers: (yjsSceneData.stageProps.marker?.markers || [])
+            .filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
+            .map((incomingMarker: Marker) => {
+              // If this marker is being moved, preserve its local position
+              if (markersBeingMoved.has(incomingMarker.id)) {
+                const localMarker = stageProps.marker.markers.find((m) => m.id === incomingMarker.id);
+                if (localMarker) {
+                  return { ...incomingMarker, position: localMarker.position };
+                }
+              }
+              return incomingMarker;
+            })
         },
         // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
         annotations: yjsSceneData.stageProps.annotations
@@ -1152,21 +1165,30 @@
 
     const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
     if (index !== -1) {
+      // Mark marker as being moved to protect from Y.js overwrites
+      markersBeingMoved.add(marker.id);
+
       // Update marker position immediately in local state
       stageProps.marker.markers[index] = {
         ...marker,
         position: { x: position.x, y: position.y }
       };
 
-      // Broadcast to Y.js - editor will receive and save to database
+      // Broadcast only the marker position update to Y.js - editor will receive and save to database
+      // This prevents overwriting other stageProps state that should only be managed by the editor
       const manager = getPartyDataManager();
       if (manager) {
-        manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
+        manager.updateMarkerPosition(activeSceneId, marker.id, position);
         devLog('playfield', 'Broadcasting marker position update:', {
           markerId: marker.id,
           position
         });
       }
+
+      // Remove protection after a short delay to allow Y.js sync to complete
+      setTimeout(() => {
+        markersBeingMoved.delete(marker.id);
+      }, 2000);
     }
   }
 

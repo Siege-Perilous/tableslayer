@@ -553,6 +553,31 @@ export class PartyDataManager {
   }
 
   /**
+   * Update a single marker's position (for playfield → editor sync)
+   * This only updates the marker position without broadcasting full stageProps
+   */
+  updateMarkerPosition(sceneId: string, markerId: string, position: { x: number; y: number }) {
+    this.doc.transact(() => {
+      const sceneMap = this.yScenes.get(sceneId);
+      if (!sceneMap) return;
+
+      const markers = sceneMap.get('markers') as Marker[] | undefined;
+      if (!markers) return;
+
+      const index = markers.findIndex((m) => m.id === markerId);
+      if (index !== -1) {
+        const updatedMarkers = [...markers];
+        updatedMarkers[index] = {
+          ...updatedMarkers[index],
+          position: { x: position.x, y: position.y }
+        };
+        sceneMap.set('markers', updatedMarkers);
+        sceneMap.set('lastUpdated', Date.now());
+      }
+    });
+  }
+
+  /**
    * Initialize scene data from SSR
    */
   initializeSceneData(sceneId: string, stageProps: StageProps, markers: Marker[]) {
