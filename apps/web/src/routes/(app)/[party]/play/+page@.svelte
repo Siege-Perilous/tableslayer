@@ -1145,9 +1145,32 @@
     return;
   }
 
-  // Don't allow marker movement in player view
-  function onMarkerMoved() {}
-  function onMarkerAdded() {}
+  // Players can move markers - broadcast position updates via Y.js
+  function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
+    const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
+    if (!activeSceneId) return;
+
+    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
+    if (index !== -1) {
+      // Update marker position immediately in local state
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
+
+      // Broadcast to Y.js - editor will receive and save to database
+      const manager = getPartyDataManager();
+      if (manager) {
+        manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
+        devLog('playfield', 'Broadcasting marker position update:', {
+          markerId: marker.id,
+          position
+        });
+      }
+    }
+  }
+
+  function onMarkerAdded() {} // Players can't add markers
   function onMarkerHover() {} // Players can't control hover, only receive it
 
   const onMarkerSelected = (marker: Marker | null) => {
