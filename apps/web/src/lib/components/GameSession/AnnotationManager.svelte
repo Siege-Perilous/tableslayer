@@ -215,10 +215,10 @@
   };
 
   const handleLineWidthChange = (value: number) => {
-    // Update the global state
+    // Update the global state (value is now a percentage)
     queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], value, 'control');
     // Save to preferences (debounced)
-    setPreferenceDebounced('annotationLineWidth', value);
+    setPreferenceDebounced('annotationLineWidthPercent', value);
   };
 
   // Export handlers for external use (e.g., DrawingSliders)

@@ -13,7 +13,9 @@ export interface PaneConfig {
 
 export interface GameSessionPreferences {
   brushSize?: number;
+  brushSizePercent?: number;
   annotationLineWidth?: number;
+  annotationLineWidthPercent?: number;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
 }
@@ -34,13 +36,23 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, PreferenceConfig<any>> = {
   brushSize: {
     cookieName: 'tableslayer:brushSize',
-    defaultValue: 75, // Match the default in buildSceneProps
+    defaultValue: 75, // Old pixel-based default (deprecated)
     validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
+  },
+  brushSizePercent: {
+    cookieName: 'tableslayer:brushSizePercent',
+    defaultValue: 10.0, // New percentage-based default (5-20% range)
+    validate: (value): value is number => typeof value === 'number' && value >= 5 && value <= 20
   },
   annotationLineWidth: {
     cookieName: 'tableslayer:annotationLineWidth',
     defaultValue: 50,
     validate: (value): value is number => typeof value === 'number' && value >= 1 && value <= 200
+  },
+  annotationLineWidthPercent: {
+    cookieName: 'tableslayer:annotationLineWidthPercent',
+    defaultValue: 2.0,
+    validate: (value): value is number => typeof value === 'number' && value >= 0.01 && value <= 5.0
   },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',

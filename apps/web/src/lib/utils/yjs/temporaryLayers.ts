@@ -26,8 +26,14 @@ export function broadcastTemporaryLayer(partyData: PartyDataManager, layer: Temp
     return;
   }
 
-  // Get current temporary layers
-  const currentLayers = getTemporaryLayers(partyData);
+  const awareness = (partyData as any).gameSessionProvider?.awareness;
+  if (!awareness) {
+    return;
+  }
+
+  // Get only the local client's temporary layers (not all clients)
+  const localState = awareness.getLocalState();
+  const currentLayers: TemporaryLayer[] = localState?.temporaryLayers || [];
 
   // Add or update the layer
   const layerIndex = currentLayers.findIndex((l) => l.id === layer.id);
@@ -38,11 +44,11 @@ export function broadcastTemporaryLayer(partyData: PartyDataManager, layer: Temp
   }
 
   // Broadcast via awareness
-  const awareness = (partyData as any).gameSessionProvider?.awareness;
-  if (awareness) {
-    awareness.setLocalStateField('temporaryLayers', currentLayers);
-    devLog('yjs', `Broadcast temporary layer: ${layer.id}, expires at ${new Date(layer.expiresAt).toISOString()}`);
-  }
+  awareness.setLocalStateField('temporaryLayers', currentLayers);
+  devLog(
+    'yjs',
+    `Broadcast temporary layer: ${layer.id}, expires at ${new Date(layer.expiresAt).toISOString()}, total local layers: ${currentLayers.length}`
+  );
 }
 
 /**

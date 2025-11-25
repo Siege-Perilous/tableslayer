@@ -15,7 +15,8 @@
     type AnnotationLayerData,
     RadialMenu,
     type RadialMenuItemType,
-    DrawMode
+    DrawMode,
+    StageMode
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -30,6 +31,14 @@
   import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
   import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
   import { useUpdateFogMaskMutation } from '$lib/queries/masks';
+  import {
+    type TemporaryLayer,
+    getTemporaryLayers,
+    broadcastTemporaryLayer,
+    createTemporaryLayer,
+    cleanupExpiredLayers
+  } from '$lib/utils/yjs/temporaryLayers';
+  import { v4 as uuidv4 } from 'uuid';
 
   type CursorData = {
     worldPosition: { x: number; y: number; z: number };
@@ -87,6 +96,11 @@
   let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
   let isUpdatingFog = false;
   const updateFogMaskMutation = useUpdateFogMaskMutation();
+
+  // Temporary drawing state
+  let temporaryLayers = $state<TemporaryLayer[]>([]);
+  let currentTemporaryLayerId: string | null = null;
+  let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
@@ -184,12 +198,14 @@
         devLog('playfield', 'Fog action: Remove fog');
         stageProps.activeLayer = MapLayerType.FogOfWar;
         stageProps.fogOfWar.tool.mode = DrawMode.Erase;
+        stageProps.fogOfWar.tool.size = 7.0; // 7% - smaller default for playfield
         break;
 
       case 'fog-add':
         devLog('playfield', 'Fog action: Add fog');
         stageProps.activeLayer = MapLayerType.FogOfWar;
         stageProps.fogOfWar.tool.mode = DrawMode.Draw;
+        stageProps.fogOfWar.tool.size = 7.0; // 7% - smaller default for playfield
         break;
 
       case 'fog-reset':
@@ -209,8 +225,35 @@
         break;
 
       case 'draw':
-        devLog('playfield', 'Draw action');
-        // TODO: Implement drawing in Phase 8
+        // Create a new temporary layer for drawing
+        currentTemporaryLayerId = uuidv4();
+
+        const tempLayer: AnnotationLayerData = {
+          id: currentTemporaryLayerId,
+          name: 'Temporary drawing',
+          color: '#ff0000',
+          opacity: 1.0,
+          url: null,
+          visibility: StageMode.Player
+        };
+
+        stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+        stageProps.annotations.activeLayer = currentTemporaryLayerId;
+        stageProps.activeLayer = MapLayerType.Annotation;
+
+        // Set line width as percentage (1% of texture resolution)
+        // AnnotationMaterial will convert this to texture pixels
+        stageProps.annotations.lineWidth = 1.0;
+
+        // Immediately broadcast to Y.js awareness with empty mask
+        {
+          const manager = getPartyDataManager();
+          if (manager && currentTemporaryLayerId) {
+            const tempYjsLayer = createTemporaryLayer(currentTemporaryLayerId, user.id, tempLayer.color, '', 10000);
+            broadcastTemporaryLayer(manager, tempYjsLayer);
+            temporaryLayers = getTemporaryLayers(manager);
+          }
+        }
         break;
 
       case 'measure-line':
@@ -370,14 +413,28 @@
           ...yjsSceneData.stageProps.marker,
           markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
         },
-        // Filter annotations to remove DM-only ones and preserve maskVersion
+        // Filter annotations to remove DM-only ones and preserve temporary layers
         annotations: yjsSceneData.stageProps.annotations
           ? {
               ...yjsSceneData.stageProps.annotations,
-              layers: (yjsSceneData.stageProps.annotations.layers || []).filter(
-                (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
-              ),
-              activeLayer: null // Players can't edit annotations
+              layers: [
+                // Include Y.js annotation layers (filter out DM-only)
+                ...(yjsSceneData.stageProps.annotations.layers || []).filter(
+                  (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
+                ),
+                // Preserve any existing temporary layers that are currently active and not expired
+                ...(stageProps.annotations?.layers || []).filter((layer: AnnotationLayerData) => {
+                  if (!layer.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                    return false;
+                  }
+                  if (layer.id === currentTemporaryLayerId) {
+                    return true;
+                  }
+                  const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
+                  return tempLayer && tempLayer.expiresAt > Date.now();
+                })
+              ],
+              activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer
             }
           : { layers: [], activeLayer: null }
       };
@@ -615,6 +672,16 @@
         }
         measurements = yjsMeasurements;
 
+        // Update temporary layers from Y.js awareness
+        const manager = getPartyDataManager();
+        if (manager) {
+          const yjsTemporaryLayers = getTemporaryLayers(manager);
+          if (yjsTemporaryLayers.length > 0) {
+            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          }
+          temporaryLayers = yjsTemporaryLayers;
+        }
+
         // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
         const hoveredMarker = partyData!.getHoveredMarker();
         hoveredMarkerId = hoveredMarker?.id ?? null;
@@ -711,15 +778,36 @@
       activityTimer = createConditionalActivityTimer(
         5000,
         () => {
-          // On timeout, reset active layer to None
-          devLog('playfield', 'Activity timeout - resetting active layer to None');
+          // On timeout, reset active layer to None and clear temporary drawing ID
+          // The layer itself will persist in Y.js until it expires (10 seconds)
+          devLog(
+            'playfield',
+            'Activity timeout - resetting active layer to None, currentTemporaryLayerId:',
+            currentTemporaryLayerId
+          );
           stageProps.activeLayer = MapLayerType.None;
+          stageProps.annotations.activeLayer = null;
+          currentTemporaryLayerId = null;
         },
         () => stageProps.activeLayer !== MapLayerType.None,
         ['mousedown', 'mousemove', 'touchstart', 'touchmove'],
         stageElement
       );
     }
+
+    // Set up cleanup timer for expired temporary layers (check every 1000ms)
+    temporaryDrawingTimer = setInterval(() => {
+      const manager = getPartyDataManager();
+      if (manager) {
+        cleanupExpiredLayers(manager);
+        temporaryLayers = getTemporaryLayers(manager);
+
+        // Clear currentTemporaryLayerId if it no longer exists in Y.js awareness
+        if (currentTemporaryLayerId && !temporaryLayers.find((l) => l.id === currentTemporaryLayerId)) {
+          currentTemporaryLayerId = null;
+        }
+      }
+    }, 1000);
 
     return () => {
       isUnmounting = true;
@@ -736,6 +824,11 @@
       // Clean up activity timer
       if (activityTimer) {
         activityTimer.destroy();
+      }
+
+      // Clean up temporary drawing timer
+      if (temporaryDrawingTimer) {
+        clearInterval(temporaryDrawingTimer);
       }
 
       // Cursor cleanup is handled by Y.js awareness automatically
@@ -833,6 +926,16 @@
           devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
         }
         measurements = yjsMeasurements;
+
+        // Update temporary layers from Y.js awareness
+        const manager = getPartyDataManager();
+        if (manager) {
+          const yjsTemporaryLayers = getTemporaryLayers(manager);
+          if (yjsTemporaryLayers.length > 0) {
+            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          }
+          temporaryLayers = yjsTemporaryLayers;
+        }
 
         // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
         const hoveredMarker = partyData!.getHoveredMarker();
@@ -1077,10 +1180,39 @@
   }
 
   async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
-    blob.then((blob) => {
+    blob.then(async (blob) => {
       const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
       if (layer) {
         layer.url = URL.createObjectURL(blob);
+      }
+
+      // If this is a temporary drawing, broadcast it via Y.js awareness
+      if (currentTemporaryLayerId && stage?.annotations) {
+        try {
+          const tempLayerData = stageProps.annotations.layers.find((l) => l.id === currentTemporaryLayerId);
+          if (tempLayerData) {
+            const rleData = await stage.annotations.toRLE();
+            if (rleData && rleData.length > 0) {
+              const base64 = btoa(String.fromCharCode(...rleData));
+
+              const tempLayer = createTemporaryLayer(
+                currentTemporaryLayerId,
+                user.id,
+                tempLayerData.color,
+                base64,
+                10000 // 10 second expiration
+              );
+
+              const manager = getPartyDataManager();
+              if (manager) {
+                broadcastTemporaryLayer(manager, tempLayer);
+                temporaryLayers = getTemporaryLayers(manager);
+              }
+            }
+          }
+        } catch (error) {
+          devError('playfield', 'Error broadcasting temporary layer:', error);
+        }
       }
     });
   }
@@ -1109,6 +1241,67 @@
   });
 
   // Fade-out logic is now handled in CursorLayer component via opacity calculation
+
+  // Effect to convert temporary layers to annotation layers for display
+  $effect(() => {
+    if (stage?.annotations) {
+      // Convert temporary layers to annotation layer data
+      const tempAnnotationLayers: AnnotationLayerData[] = temporaryLayers.map((tempLayer) => ({
+        id: tempLayer.id,
+        name: tempLayer.name,
+        color: tempLayer.color,
+        opacity: tempLayer.opacity,
+        url: null,
+        maskVersion: undefined,
+        visibility: StageMode.Player
+      }));
+
+      // Add temporary layers to annotations (without replacing existing ones)
+      const existingLayerIds = new Set(stageProps.annotations.layers.map((l) => l.id));
+      const newLayers = tempAnnotationLayers.filter((l) => !existingLayerIds.has(l.id));
+
+      if (newLayers.length > 0) {
+        stageProps.annotations.layers = [...stageProps.annotations.layers, ...newLayers];
+
+        // Load RLE data for each new temporary layer
+        newLayers.forEach(async (layer) => {
+          const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
+          if (tempLayer && tempLayer.maskData && stage?.annotations?.loadMask) {
+            try {
+              const binaryString = atob(tempLayer.maskData);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              await stage.annotations.loadMask(layer.id, bytes);
+            } catch (error) {
+              devError('playfield', `Error loading temporary layer ${layer.id}:`, error);
+            }
+          }
+        });
+      }
+
+      // Remove expired temporary layers from annotations
+      const now = Date.now();
+      const filteredLayers = stageProps.annotations.layers.filter((l) => {
+        // Keep non-UUID layers (permanent annotations)
+        if (!l.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          return true;
+        }
+        // Keep current temporary layer being drawn
+        if (l.id === currentTemporaryLayerId) {
+          return true;
+        }
+        // Keep layers that are in Y.js awareness and not expired
+        const tempLayer = temporaryLayers.find((t) => t.id === l.id);
+        return tempLayer && tempLayer.expiresAt > now;
+      });
+
+      if (filteredLayers.length !== stageProps.annotations.layers.length) {
+        stageProps.annotations.layers = filteredLayers;
+      }
+    }
+  });
 
   // Effect to handle active scene changes
   $effect(() => {

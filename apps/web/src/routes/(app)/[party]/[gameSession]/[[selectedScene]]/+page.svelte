@@ -261,15 +261,36 @@
 
   devLog('annoations', data.selectedSceneAnnotations);
   // Socket now managed by PartyDataManager for unified connection
-  let stageProps: StageProps = $state(
-    buildSceneProps(
-      data.selectedScene,
-      data.selectedSceneMarkers,
-      'editor',
-      data.selectedSceneAnnotations,
-      data.bucketUrl
-    )
+
+  // Build initial stage props and apply user preferences
+  const initialStageProps = buildSceneProps(
+    data.selectedScene,
+    data.selectedSceneMarkers,
+    'editor',
+    data.selectedSceneAnnotations,
+    data.bucketUrl
   );
+
+  // Apply fog brush size preference (percentage-based, 5-20% range)
+  // Clamp to valid range in case of old/invalid values
+  const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+  const clampedFogBrush = Math.max(5, Math.min(20, fogBrushPref));
+  console.log('[Init] Fog brush size:', { fogBrushPref, clampedFogBrush });
+
+  // If preference was invalid, clear it and save the clamped value
+  if (fogBrushPref !== clampedFogBrush) {
+    console.log('[Init] Clearing invalid fog brush preference and saving clamped value');
+    setPreference('brushSizePercent', clampedFogBrush);
+  }
+
+  initialStageProps.fogOfWar.tool.size = clampedFogBrush;
+
+  // Apply annotation line width preference (percentage-based, 0.01-5.0% range)
+  // Clamp to valid range in case of old/invalid values
+  const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
+  initialStageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
+
+  let stageProps: StageProps = $state(initialStageProps);
 
   // Derive pinned marker IDs from markers with pinnedTooltip set to true
   let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
@@ -430,13 +451,6 @@
     }
   });
 
-  // Initialize annotation line width from preferences on client side
-  $effect(() => {
-    if (typeof window !== 'undefined' && stageProps) {
-      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
-    }
-  });
-
   // Subscribe to Y.js StageProps changes for the current scene
   $effect(() => {
     const sceneId = selectedScene?.id;
@@ -551,16 +565,30 @@
             url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
               ...incomingStageProps.fogOfWar.tool,
-              // Preserve local brush size or use default from preferences
-              size: stageProps.fogOfWar.tool.size || getPreference('brushSize') || 75
+              // Preserve local brush size or use default from preferences (stored as percentage, clamped to 5-20 range)
+              size: (() => {
+                const localSize = stageProps.fogOfWar.tool.size;
+                const prefSize = getPreference('brushSizePercent');
+                const incomingSize = incomingStageProps.fogOfWar.tool.size;
+                const rawValue = localSize || prefSize || 10.0;
+                const clampedValue = Math.max(5, Math.min(20, rawValue));
+                console.log('[Y.js Sync] Fog tool size:', {
+                  localSize,
+                  prefSize,
+                  incomingSize,
+                  rawValue,
+                  clampedValue
+                });
+                return clampedValue;
+              })()
             }
           },
           annotations: {
             ...incomingStageProps.annotations,
             // Preserve local activeLayer for annotations (should not be shared)
             activeLayer: stageProps.annotations.activeLayer,
-            // Preserve local lineWidth (global setting)
-            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidth') || 50,
+            // Preserve local lineWidth (global setting, stored as percentage)
+            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidthPercent') || 2.0,
             // Block annotation URL updates while drawing
             layers: isDrawingAnnotation
               ? stageProps.annotations.layers.map((localLayer) => {
@@ -1021,13 +1049,13 @@
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations, data.bucketUrl);
-      // Preserve local annotation line width preference
-      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
+      // Preserve local annotation line width preference (stored as percentage)
+      const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
+      stageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
 
-      // Apply brush size from cookie if available
-      if (brushSize) {
-        stageProps.fogOfWar.tool.size = brushSize;
-      }
+      // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+      const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+      stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
       lastBuiltMapLocation = currentMapLocation;
 
       // Reset grid origin when scene changes
@@ -1151,8 +1179,8 @@
             currentSelectedSceneAnnotations,
             data.bucketUrl
           );
-          // Preserve local annotation line width preference
-          stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
+          // Preserve local annotation line width preference (stored as percentage)
+          stageProps.annotations.lineWidth = getPreference('annotationLineWidthPercent') || 2.0;
 
           // Restore viewport state
           stageProps.map.offset = currentMapState.offset;
@@ -1162,10 +1190,9 @@
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
 
-          // Apply brush size from cookie if available
-          if (brushSize) {
-            stageProps.fogOfWar.tool.size = brushSize;
-          }
+          // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+          const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+          stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
         }
       } else if (markersChanged) {
         devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
@@ -1802,18 +1829,48 @@
         scrollDelta = e.deltaY * 0.05; // Very granular adjustment
       }
 
-      // Get current line width from global setting
-      const currentLineWidth = stageProps.annotations.lineWidth || 50;
+      // Get current line width from global setting (stored as percentage)
+      const currentLineWidth = stageProps.annotations.lineWidth || 2.0;
 
-      // Calculate new line width (clamped between 1 and 200)
-      const rawLineWidth = currentLineWidth - scrollDelta;
-      const newLineWidth = Math.round(Math.max(1, Math.min(rawLineWidth, 200)));
+      // Calculate new line width (clamped between 0.01% and 5%)
+      // Scale scroll delta appropriately for percentage range
+      const rawLineWidth = currentLineWidth - scrollDelta * 0.01;
+      const newLineWidth = Math.max(0.01, Math.min(rawLineWidth, 5.0));
 
       // Update the global annotation line width
       stageProps.annotations.lineWidth = newLineWidth;
 
       // Save preference
-      setPreference('annotationLineWidth', newLineWidth);
+      setPreference('annotationLineWidthPercent', newLineWidth);
+
+      return;
+    }
+
+    // Handle fog brush size adjustment
+    if (stageProps.activeLayer === MapLayerType.FogOfWar && !e.shiftKey && !e.ctrlKey) {
+      e.preventDefault();
+
+      let scrollDelta;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        scrollDelta = e.deltaX * 0.1; // Granular adjustment for 5-20% range
+      } else {
+        scrollDelta = e.deltaY * 0.1; // Granular adjustment for 5-20% range
+      }
+
+      // Get current fog brush size (stored as percentage, 5-20% range)
+      const currentSize = stageProps.fogOfWar.tool.size || 10.0;
+      console.log('[Wheel] Current fog size:', currentSize);
+
+      // Calculate new size (clamped between 5% and 20%)
+      const rawSize = currentSize - scrollDelta * 0.1;
+      const newSize = Math.max(5, Math.min(20, rawSize));
+      console.log('[Wheel] New fog size:', { currentSize, scrollDelta, rawSize, newSize });
+
+      // Update the fog brush size
+      stageProps.fogOfWar.tool.size = newSize;
+
+      // Save preference
+      setPreference('brushSizePercent', newSize);
 
       return;
     }
@@ -2837,7 +2894,7 @@
         {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange && handleColorChange}
           <DrawingSliders
             opacity={activeAnnotation.opacity}
-            brushSize={stageProps.annotations.lineWidth || 50}
+            brushSize={stageProps.annotations.lineWidth || 2.0}
             color={activeAnnotation.color}
             activeLayerIndex={stageProps.annotations.layers.findIndex(
               (l) => l.id === stageProps.annotations.activeLayer
@@ -2850,9 +2907,17 @@
         {/if}
         {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
           <FogSliders
-            brushSize={stageProps.fogOfWar.tool.size || 50}
+            brushSize={Math.max(5, Math.min(20, stageProps.fogOfWar.tool.size || 10.0))}
             onBrushSizeChange={(size) => {
-              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
+              console.log('[Editor] FogSliders brushSize change:', {
+                incomingSize: size,
+                currentSize: stageProps.fogOfWar.tool.size
+              });
+              // Clamp size to valid range (5-20%)
+              const clampedSize = Math.max(5, Math.min(20, size));
+              console.log('[Editor] Setting fog brush size to:', clampedSize);
+              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], clampedSize, 'control');
+              setPreference('brushSizePercent', clampedSize);
             }}
           />
         {/if}
