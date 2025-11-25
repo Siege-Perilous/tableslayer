@@ -219,8 +219,9 @@
       // In player mode, also check if player has selected a marker
       // But only show tooltip if it has appropriate visibility (not DM-only)
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
+      const isDragging = sceneRef?.markers?.isDraggingMarker;
       let selectedNotPinned = null;
-      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id)) {
+      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) && !isDragging) {
         // Only show if marker visibility is not DM-only (i.e., not visibility = 1)
         // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
         if (selectedByPlayer.visibility !== 1) {

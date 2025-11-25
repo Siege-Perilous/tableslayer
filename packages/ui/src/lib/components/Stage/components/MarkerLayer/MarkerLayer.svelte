@@ -91,9 +91,11 @@
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
-      // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
-      if (closestMarker.shape !== MarkerShape.Pin) {
+      if (stage.mode === StageMode.DM) {
         isDragging = true;
+        // Clear tooltip when drag starts
+        hoveredMarkerDelayed = null;
+        clearHoverTimer();
       }
       onMarkerSelected(selectedMarker);
     } else {
