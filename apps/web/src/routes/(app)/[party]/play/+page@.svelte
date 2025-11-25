@@ -435,24 +435,25 @@
           ...yjsSceneData.stageProps.marker,
           markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
         },
-        // Merge Y.js annotations with existing permanent and temporary layers
+        // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
         annotations: yjsSceneData.stageProps.annotations
           ? {
               ...yjsSceneData.stageProps.annotations,
               layers: [
-                // Include Y.js annotation layers (filter out DM-only)
+                // Include Y.js annotation layers (filter out DM-only permanent annotations)
                 ...(yjsSceneData.stageProps.annotations.layers || []).filter(
                   (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
                 ),
-                // Preserve existing temporary layers that are currently active and not expired
+                // Add temporary layers from Y.js awareness (already converted to AnnotationLayerData in effect below)
                 ...(stageProps.annotations?.layers || []).filter((layer: AnnotationLayerData) => {
-                  // Keep temporary layers (UUIDs) if they're active or not expired
-                  if (layer.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                  // Check if this layer exists in temporaryLayers array (these are the temp drawings from playfield)
+                  const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
+                  if (isTemporary) {
+                    // Keep if it's the current one being drawn or not expired
                     if (layer.id === currentTemporaryLayerId) {
                       return true;
                     }
-                    const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
-                    return tempLayer && tempLayer.expiresAt > Date.now();
+                    return isTemporary.expiresAt > Date.now();
                   }
                   return false; // Don't include permanent layers here, they come from Y.js
                 })
@@ -1366,18 +1367,28 @@
 
       // Remove expired temporary layers from annotations
       const now = Date.now();
+      const tempLayerIds = new Set(temporaryLayers.map((t) => t.id));
+
       const filteredLayers = stageProps.annotations.layers.filter((l) => {
-        // Keep non-UUID layers (permanent annotations)
-        if (!l.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-          return true;
+        // Check if this layer ID exists in the current temporaryLayers array
+        if (tempLayerIds.has(l.id)) {
+          // It's a temporary layer that still exists - keep if not expired or currently being drawn
+          const tempLayer = temporaryLayers.find((t) => t.id === l.id);
+          if (l.id === currentTemporaryLayerId) {
+            return true;
+          }
+          return tempLayer && tempLayer.expiresAt > now;
         }
-        // Keep current temporary layer being drawn
-        if (l.id === currentTemporaryLayerId) {
-          return true;
+
+        // Check if this was a temporary layer that expired (was in temporaryLayers before but isn't now)
+        // We can identify these because they won't have a maskVersion (temporary layers don't persist to DB)
+        if (!l.maskVersion) {
+          // This was likely a temporary layer that expired - remove it
+          return false;
         }
-        // Keep layers that are in Y.js awareness and not expired
-        const tempLayer = temporaryLayers.find((t) => t.id === l.id);
-        return tempLayer && tempLayer.expiresAt > now;
+
+        // It's a permanent annotation (has maskVersion) - always keep
+        return true;
       });
 
       if (filteredLayers.length !== stageProps.annotations.layers.length) {
