@@ -8,6 +8,8 @@
 
   let activeSubmenu: RadialMenuItemType[] | null = $state(null);
   let submenuParentId: string | null = $state(null);
+  let menuContainer: HTMLDivElement | null = $state(null);
+  let adjustedPosition = $state({ x: position.x, y: position.y });
 
   // Calculate angle for each item in the radial menu
   function getItemAngle(index: number, total: number): number {
@@ -62,6 +64,40 @@
     }
   });
 
+  // Update position to keep radial menu items within viewport bounds
+  $effect(() => {
+    if (visible) {
+      // Account for the radial menu items extending in all directions
+      // Items can extend menuRadius + some padding for the item size
+      const itemPadding = 80; // Approximate max item width/height
+      const totalRadius = menuRadius + itemPadding;
+      const padding = 10; // Additional screen edge padding
+
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Start with the click position
+      let x = position.x;
+      let y = position.y;
+
+      // Clamp X position to keep items in viewport
+      const minX = totalRadius + padding;
+      const maxX = viewportWidth - totalRadius - padding;
+      x = Math.max(minX, Math.min(maxX, x));
+
+      // Clamp Y position to keep items in viewport
+      const minY = totalRadius + padding;
+      const maxY = viewportHeight - totalRadius - padding;
+      y = Math.max(minY, Math.min(maxY, y));
+
+      adjustedPosition = { x, y };
+    } else {
+      // Reset to original position when hidden
+      adjustedPosition = { x: position.x, y: position.y };
+    }
+  });
+
   const currentItems = $derived(activeSubmenu || items);
   const menuRadius = 120; // Distance from center to items
 </script>
@@ -72,7 +108,11 @@
     <button class="radialMenuBackdrop" onclick={handleBackdropClick} type="button" aria-label="Close menu"></button>
 
     <!-- Menu container positioned at touch point -->
-    <div class="radialMenuContainer" style="left: {position.x}px; top: {position.y}px;">
+    <div
+      bind:this={menuContainer}
+      class="radialMenuContainer"
+      style="left: {adjustedPosition.x}px; top: {adjustedPosition.y}px;"
+    >
       {#if activeSubmenu}
         <!-- Back button in center for submenu -->
         <button
