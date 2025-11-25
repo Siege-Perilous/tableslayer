@@ -435,7 +435,7 @@
           ...yjsSceneData.stageProps.marker,
           markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
         },
-        // Filter annotations to remove DM-only ones and preserve temporary layers
+        // Merge Y.js annotations with existing permanent and temporary layers
         annotations: yjsSceneData.stageProps.annotations
           ? {
               ...yjsSceneData.stageProps.annotations,
@@ -444,16 +444,17 @@
                 ...(yjsSceneData.stageProps.annotations.layers || []).filter(
                   (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
                 ),
-                // Preserve any existing temporary layers that are currently active and not expired
+                // Preserve existing temporary layers that are currently active and not expired
                 ...(stageProps.annotations?.layers || []).filter((layer: AnnotationLayerData) => {
-                  if (!layer.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-                    return false;
+                  // Keep temporary layers (UUIDs) if they're active or not expired
+                  if (layer.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                    if (layer.id === currentTemporaryLayerId) {
+                      return true;
+                    }
+                    const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
+                    return tempLayer && tempLayer.expiresAt > Date.now();
                   }
-                  if (layer.id === currentTemporaryLayerId) {
-                    return true;
-                  }
-                  const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
-                  return tempLayer && tempLayer.expiresAt > Date.now();
+                  return false; // Don't include permanent layers here, they come from Y.js
                 })
               ],
               activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer

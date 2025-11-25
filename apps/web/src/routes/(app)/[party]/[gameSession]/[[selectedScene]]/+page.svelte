@@ -682,6 +682,11 @@
     }
   });
 
+  // TODO: Temporary layer display in editor is disabled to prevent infinite loops
+  // The editor doesn't need to show playfield temporary drawings - they're ephemeral
+  // and only meant for the playfield view. If we want to enable this in the future,
+  // we need to find a way that doesn't trigger effect loops.
+
   // Track when initial load is complete to prevent auto-save on hydration
   const currentSceneId = $derived(selectedScene?.id);
   $effect(() => {
@@ -694,26 +699,46 @@
   });
 
   // Handle annotation layer activation/deactivation
-  $effect(() => {
-    if (stageProps.activeLayer === MapLayerType.Annotation) {
-      // Set active control to annotation (but don't auto-expand panel)
-      if (activeControl !== 'annotation') {
-        activeControl = 'annotation';
-      }
+  // Track the last values to prevent infinite loops
+  let lastActiveLayer = $state<MapLayerType | null>(null);
+  let lastActiveAnnotationLayer = $state<string | null>(null);
 
-      // Check if there are any annotation layers
-      if (stageProps.annotations.layers.length === 0) {
-        // No annotations exist, create one
-        onAnnotationCreated();
-      } else if (!stageProps.annotations.activeLayer) {
-        // Annotations exist but none are selected, select the first one
-        const firstAnnotation = stageProps.annotations.layers[0];
-        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
-      }
-    } else if (stageProps.annotations.activeLayer) {
-      // Annotation tool was deactivated, clear the active annotation to prevent drawing
-      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+  $effect(() => {
+    const activeLayerValue = stageProps.activeLayer;
+    const activeAnnotationLayer = stageProps.annotations.activeLayer;
+
+    // Only run logic if values actually changed
+    if (activeLayerValue === lastActiveLayer && activeAnnotationLayer === lastActiveAnnotationLayer) {
+      return;
     }
+
+    lastActiveLayer = activeLayerValue;
+    lastActiveAnnotationLayer = activeAnnotationLayer;
+
+    untrack(() => {
+      if (activeLayerValue === MapLayerType.Annotation) {
+        // Set active control to annotation (but don't auto-expand panel)
+        if (activeControl !== 'annotation') {
+          activeControl = 'annotation';
+        }
+
+        // Only auto-select a layer if none is currently active
+        if (!activeAnnotationLayer) {
+          // Check if there are any annotation layers
+          if (stageProps.annotations.layers.length === 0) {
+            // No annotations exist, create one
+            onAnnotationCreated();
+          } else {
+            // Annotations exist, select the first one
+            const firstAnnotation = stageProps.annotations.layers[0];
+            queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
+          }
+        }
+      } else if (activeAnnotationLayer) {
+        // Annotation tool was deactivated, clear the active annotation to prevent drawing
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      }
+    });
   });
 
   // Handle marker layer activation/deactivation

@@ -49,6 +49,10 @@
   // Track mask data and color to detect changes
   let thumbnailCache = $state<Record<string, { maskData: string; color: string }>>({});
 
+  // All layers in stageProps.annotations.layers are permanent annotations
+  // (Temporary layers from playfield are no longer added to editor)
+  const permanentAnnotations = $derived(stageProps.annotations.layers);
+
   // Generate thumbnails from RLE mask data
   async function generateThumbnail(annotationId: string, maskBase64: string, color: string): Promise<void> {
     try {
@@ -138,9 +142,9 @@
     }
   }
 
-  // Generate thumbnails when masks or colors change
+  // Generate thumbnails when masks or colors change (only for permanent annotations)
   $effect(() => {
-    for (const annotation of stageProps.annotations.layers) {
+    for (const annotation of permanentAnnotations) {
       const maskData = annotationMasks[annotation.id];
       const color = annotation.color;
 
@@ -293,7 +297,7 @@
 
 <div class="annotationManager">
   <div class="annotationManager__header">
-    {#if stageProps.annotations.layers.length > 0}
+    {#if permanentAnnotations.length > 0}
       <Button onclick={createNewAnnotation}>
         {#snippet start()}
           <Icon Icon={IconPlus} size="1.25rem" />
@@ -304,7 +308,7 @@
   </div>
   <div class="annotationManager__content">
     <div class="annotationManager__list">
-      {#each stageProps.annotations.layers as annotation (annotation.id)}
+      {#each permanentAnnotations as annotation (annotation.id)}
         <button
           animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
           class="annotationManager__listItem"
