@@ -148,7 +148,17 @@
     },
     {
       id: 'draw',
-      label: 'Draw'
+      label: 'Draw',
+      submenu: [
+        { id: 'draw-red', label: 'Red' },
+        { id: 'draw-orange', label: 'Orange' },
+        { id: 'draw-yellow', label: 'Yellow' },
+        { id: 'draw-green', label: 'Green' },
+        { id: 'draw-blue', label: 'Blue' },
+        { id: 'draw-purple', label: 'Purple' },
+        { id: 'draw-pink', label: 'Pink' },
+        { id: 'draw-turquoise', label: 'Turquoise' }
+      ]
     },
     {
       id: 'measure',
@@ -225,14 +235,36 @@
         stageProps.activeLayer = MapLayerType.None;
         break;
 
-      case 'draw':
+      case 'draw-red':
+      case 'draw-orange':
+      case 'draw-yellow':
+      case 'draw-green':
+      case 'draw-blue':
+      case 'draw-purple':
+      case 'draw-pink':
+      case 'draw-turquoise': {
+        // Map action IDs to colors (same as editor)
+        const colorMap: Record<string, string> = {
+          'draw-red': '#d73e2e',
+          'draw-orange': '#ffa500',
+          'draw-yellow': '#ffd93d',
+          'draw-green': '#6bcf7f',
+          'draw-blue': '#2e86ab',
+          'draw-purple': '#b197fc',
+          'draw-pink': '#f06595',
+          'draw-turquoise': '#20c997'
+        };
+
+        const selectedColor = colorMap[itemId] || '#d73e2e';
+        devLog('playfield', `Starting draw with color: ${selectedColor}`);
+
         // Create a new temporary layer for drawing
         currentTemporaryLayerId = uuidv4();
 
         const tempLayer: AnnotationLayerData = {
           id: currentTemporaryLayerId,
           name: 'Temporary drawing',
-          color: '#ff0000',
+          color: selectedColor,
           opacity: 1.0,
           url: null,
           visibility: StageMode.Player
@@ -256,6 +288,7 @@
           }
         }
         break;
+      }
 
       case 'measure-line':
         devLog('playfield', 'Starting line measurement');
@@ -1297,6 +1330,12 @@
         } catch (error) {
           devError('playfield', 'Error broadcasting temporary layer:', error);
         }
+
+        // Exit drawing mode after the drawing is complete
+        devLog('playfield', 'Drawing complete, exiting annotation mode');
+        stageProps.activeLayer = MapLayerType.None;
+        stageProps.annotations.activeLayer = null;
+        currentTemporaryLayerId = null;
       }
     });
   }
