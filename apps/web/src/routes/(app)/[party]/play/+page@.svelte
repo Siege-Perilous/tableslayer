@@ -150,14 +150,14 @@
       id: 'draw',
       label: 'Draw',
       submenu: [
-        { id: 'draw-red', label: 'Red' },
-        { id: 'draw-orange', label: 'Orange' },
-        { id: 'draw-yellow', label: 'Yellow' },
-        { id: 'draw-green', label: 'Green' },
-        { id: 'draw-blue', label: 'Blue' },
-        { id: 'draw-purple', label: 'Purple' },
-        { id: 'draw-pink', label: 'Pink' },
-        { id: 'draw-turquoise', label: 'Turquoise' }
+        { id: 'draw-red', label: '', color: '#d73e2e' },
+        { id: 'draw-orange', label: '', color: '#ffa500' },
+        { id: 'draw-yellow', label: '', color: '#ffd93d' },
+        { id: 'draw-green', label: '', color: '#6bcf7f' },
+        { id: 'draw-blue', label: '', color: '#2e86ab' },
+        { id: 'draw-purple', label: '', color: '#b197fc' },
+        { id: 'draw-pink', label: '', color: '#f06595' },
+        { id: 'draw-turquoise', label: '', color: '#20c997' }
       ]
     },
     {

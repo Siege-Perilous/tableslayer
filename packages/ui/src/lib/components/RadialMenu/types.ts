@@ -2,6 +2,7 @@ export interface RadialMenuItem {
   id: string;
   label: string;
   icon?: string;
+  color?: string; // Hex color for rendering a color swatch
   submenu?: RadialMenuItem[];
   disabled?: boolean;
 }

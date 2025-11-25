@@ -24,14 +24,19 @@
 <button
   class="radialMenuItem"
   class:radialMenuItem--disabled={item.disabled}
+  class:radialMenuItem--colorOnly={item.color && !item.label}
   style="transform: translate({x}px, {y}px);"
   onclick={handleClick}
   type="button"
 >
-  {#if item.icon}
+  {#if item.color}
+    <span class="radialMenuItemSwatch" style="background-color: {item.color};"></span>
+  {:else if item.icon}
     <span class="radialMenuItemIcon">{item.icon}</span>
   {/if}
-  <span class="radialMenuItemLabel">{item.label}</span>
+  {#if item.label}
+    <span class="radialMenuItemLabel">{item.label}</span>
+  {/if}
 </button>
 
 <style>
@@ -79,5 +84,25 @@
 
   .radialMenuItemLabel {
     font-family: inherit;
+  }
+
+  .radialMenuItemSwatch {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--fgMuted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radialMenuItem--colorOnly {
+    padding: 0.5rem;
+  }
+
+  .radialMenuItem--colorOnly .radialMenuItemSwatch {
+    width: 2rem;
+    height: 2rem;
   }
 </style>
