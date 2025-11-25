@@ -298,6 +298,10 @@
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
 
+  // Track measurements from Y.js awareness (playfield → editor)
+  let measurements: Record<string, import('$lib/utils/yjs/PartyDataManager').MeasurementData> = $state({});
+  let latestMeasurement: import('$lib/utils/yjs/PartyDataManager').MeasurementData | null = $state(null);
+
   // Derive active annotation for drawing sliders
   let activeAnnotation = $derived(
     stageProps?.annotations.layers.find((layer) => layer.id === stageProps.annotations.activeLayer)
@@ -643,6 +647,39 @@
     return () => {
       unsubscribe();
     };
+  });
+
+  // Receive measurements from Y.js awareness (playfield → editor)
+  $effect(() => {
+    if (!partyData) return;
+
+    const unsubscribe = partyData.subscribe(() => {
+      // Update measurements from Y.js awareness
+      const yjsMeasurements = partyData!.getMeasurements();
+      if (Object.keys(yjsMeasurements).length > 0) {
+        devLog('measurement', 'Received measurements from Y.js:', yjsMeasurements);
+      }
+      measurements = yjsMeasurements;
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  });
+
+  // Track the latest measurement to pass to Stage
+  $effect(() => {
+    const measurementValues = Object.values(measurements);
+    if (measurementValues.length > 0) {
+      // Find the most recent measurement
+      const newest = measurementValues.reduce((latest, current) =>
+        current.timestamp > latest.timestamp ? current : latest
+      );
+      devLog('measurement', 'Latest measurement to pass to Stage:', newest);
+      latestMeasurement = newest;
+    } else {
+      latestMeasurement = null;
+    }
   });
 
   // Track when initial load is complete to prevent auto-save on hydration
@@ -2959,6 +2996,26 @@
             hoveredMarkerId={hoveredMarker?.id || null}
             {pinnedMarkerIds}
             {onPinToggle}
+            receivedMeasurement={latestMeasurement
+              ? {
+                  startPoint: latestMeasurement.startPoint,
+                  endPoint: latestMeasurement.endPoint,
+                  type: latestMeasurement.type,
+                  beamWidth: latestMeasurement.beamWidth,
+                  coneAngle: latestMeasurement.coneAngle,
+                  color: latestMeasurement.color,
+                  thickness: latestMeasurement.thickness,
+                  outlineColor: latestMeasurement.outlineColor,
+                  outlineThickness: latestMeasurement.outlineThickness,
+                  opacity: latestMeasurement.opacity,
+                  markerSize: latestMeasurement.markerSize,
+                  autoHideDelay: latestMeasurement.autoHideDelay,
+                  fadeoutTime: latestMeasurement.fadeoutTime,
+                  showDistance: latestMeasurement.showDistance,
+                  snapToGrid: latestMeasurement.snapToGrid,
+                  enableDMG252: latestMeasurement.enableDMG252
+                }
+              : null}
           />
         </div>
         <SceneControls
