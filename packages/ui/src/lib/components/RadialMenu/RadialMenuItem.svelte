@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { RadialMenuItem } from './types';
+  import type { RadialMenuItemProps } from './types';
 
   interface Props {
-    item: RadialMenuItem;
+    item: RadialMenuItemProps;
     angle: number;
     radius: number;
     onSelect: (itemId: string) => void;

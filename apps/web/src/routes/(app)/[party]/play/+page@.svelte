@@ -14,7 +14,7 @@
     type Marker,
     type AnnotationLayerData,
     RadialMenu,
-    type RadialMenuItemType,
+    type RadialMenuItemProps,
     DrawMode,
     StageMode,
     MeasurementType
@@ -116,7 +116,7 @@
   ]);
 
   // Radial menu items - dynamically populate scene submenu from data
-  const menuItems: RadialMenuItemType[] = $derived([
+  const menuItems: RadialMenuItemProps[] = $derived([
     {
       id: 'scene',
       label: 'Scene',

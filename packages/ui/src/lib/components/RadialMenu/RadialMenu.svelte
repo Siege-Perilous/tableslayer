@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { RadialMenuProps, RadialMenuItem } from './types';
-  import Item from './RadialMenuItem.svelte';
+  import type { RadialMenuProps, RadialMenuItemProps } from './types';
+  import RadialMenuItem from './RadialMenuItem.svelte';
 
   const { visible = false, position, items, onItemSelect, onClose }: RadialMenuProps = $props();
 
-  let activeSubmenu: RadialMenuItem[] | null = $state(null);
+  let activeSubmenu: RadialMenuItemProps[] | null = $state(null);
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
 
@@ -121,7 +121,12 @@
 
       <!-- Render menu items in a circle -->
       {#each currentItems as item, index (item.id)}
-        <Item {item} angle={getItemAngle(index, currentItems.length)} radius={menuRadius} onSelect={handleItemSelect} />
+        <RadialMenuItem
+          {item}
+          angle={getItemAngle(index, currentItems.length)}
+          radius={menuRadius}
+          onSelect={handleItemSelect}
+        />
       {/each}
     </div>
   </div>
