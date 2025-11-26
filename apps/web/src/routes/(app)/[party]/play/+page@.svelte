@@ -32,6 +32,7 @@
   import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
   import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
   import { useUpdateFogMaskMutation } from '$lib/queries/masks';
+  import { useUpdatePartyMutation } from '$lib/queries/parties';
   import {
     type TemporaryLayer,
     getTemporaryLayers,
@@ -82,6 +83,7 @@
   let pendingFogBlob: Blob | null = null;
   let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
   const updateFogMaskMutation = useUpdateFogMaskMutation();
+  const updatePartyMutation = useUpdatePartyMutation();
 
   // Temporary drawing state
   let temporaryLayers = $state<TemporaryLayer[]>([]);
@@ -305,19 +307,29 @@
           devLog('playfield', 'Player initiated scene switch to:', sceneId);
           const manager = getPartyDataManager();
           if (manager) {
-            // Update Y.js first to notify other clients
-            switchActiveScene(manager, sceneId);
+            // Update database first to ensure persistence across hard refreshes
+            updatePartyMutation
+              .mutateAsync({
+                partyId: party.id,
+                partyData: { activeSceneId: sceneId }
+              })
+              .then(() => {
+                devLog('playfield', 'Database updated with new active scene');
 
-            // Manually trigger page reload for the local client
-            // This is necessary because in production, the Y.js update happens so fast
-            // that the reactive effect misses the state transition
-            devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
-            lastProcessedSceneId = sceneId;
-            isProcessingSceneChange = true;
-            isInvalidating = true;
-            sceneIsChanging = true;
+                // Update Y.js to notify other clients
+                switchActiveScene(manager, sceneId);
 
-            invalidateAll()
+                // Manually trigger page reload for the local client
+                // This is necessary because in production, the Y.js update happens so fast
+                // that the reactive effect misses the state transition
+                devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
+                lastProcessedSceneId = sceneId;
+                isProcessingSceneChange = true;
+                isInvalidating = true;
+                sceneIsChanging = true;
+
+                return invalidateAll();
+              })
               .then(() => {
                 devLog('playfield', 'Page reload complete after locally-initiated scene change');
                 isInvalidating = false;
@@ -325,7 +337,7 @@
                 sceneIsChanging = false;
               })
               .catch((error) => {
-                devError('playfield', 'Error reloading page after scene change:', error);
+                devError('playfield', 'Error updating scene:', error);
                 isInvalidating = false;
                 isProcessingSceneChange = false;
                 sceneIsChanging = false;
