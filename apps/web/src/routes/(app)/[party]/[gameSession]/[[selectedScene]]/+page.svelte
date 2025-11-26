@@ -93,6 +93,7 @@
   // Helper function to clean stage props before sending to Y.js
   import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
   import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
+  import { getLatestMeasurement } from '$lib/utils/measurements';
 
   // Y.js integration
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
@@ -604,17 +605,11 @@
 
   // Track the latest measurement to pass to Stage
   $effect(() => {
-    const measurementValues = Object.values(measurements);
-    if (measurementValues.length > 0) {
-      // Find the most recent measurement
-      const newest = measurementValues.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
-      );
+    const newest = getLatestMeasurement(measurements);
+    if (newest) {
       devLog('measurement', 'Latest measurement to pass to Stage:', newest);
-      latestMeasurement = newest;
-    } else {
-      latestMeasurement = null;
     }
+    latestMeasurement = newest;
   });
 
   // TODO: Temporary layer display in editor is disabled to prevent infinite loops

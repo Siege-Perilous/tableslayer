@@ -41,15 +41,9 @@
   } from '$lib/utils/yjs/temporaryLayers';
   import { v4 as uuidv4 } from 'uuid';
   import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
-
-  type CursorData = {
-    worldPosition: { x: number; y: number; z: number };
-    userId: string;
-    color?: string;
-    label?: string;
-    lastMoveTime: number;
-    fadedOut: boolean;
-  };
+  import { transformCursorsToArray, type CursorData } from '$lib/utils/cursors';
+  import { uint8ArrayToBase64 } from '$lib/utils/encoding';
+  import { getLatestMeasurement, extractMeasurementProps } from '$lib/utils/measurements';
 
   let cursors: Record<string, CursorData> = $state({});
   let measurements: Record<string, MeasurementData> = $state({});
@@ -64,16 +58,7 @@
   let activityTimer: ReturnType<typeof createConditionalActivityTimer> | null = null;
 
   // Convert cursors to format expected by CursorLayer
-  let cursorArray = $derived(
-    Object.entries(cursors).map(([id, cursor]) => ({
-      id,
-      worldPosition: cursor.worldPosition || { x: 0, y: 0, z: 0 },
-      color: cursor.color || '#ffffff',
-      label: cursor.label || cursor.userId,
-      opacity: cursor.fadedOut ? 0 : 1,
-      lastUpdateTime: cursor.lastMoveTime
-    }))
-  );
+  let cursorArray = $derived(transformCursorsToArray(cursors));
 
   let { data } = $props();
   const { user, party } = $derived(data);
@@ -1176,21 +1161,7 @@
   const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
     // Broadcast measurement start to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
-      const measurementProps = {
-        color: stageProps.measurement.color,
-        thickness: stageProps.measurement.thickness,
-        outlineColor: stageProps.measurement.outlineColor,
-        outlineThickness: stageProps.measurement.outlineThickness,
-        opacity: stageProps.measurement.opacity,
-        markerSize: stageProps.measurement.markerSize,
-        autoHideDelay: stageProps.measurement.autoHideDelay,
-        fadeoutTime: stageProps.measurement.fadeoutTime,
-        showDistance: stageProps.measurement.showDistance,
-        snapToGrid: stageProps.measurement.snapToGrid,
-        enableDMG252: stageProps.measurement.enableDMG252,
-        beamWidth: stageProps.measurement.beamWidth,
-        coneAngle: stageProps.measurement.coneAngle
-      };
+      const measurementProps = extractMeasurementProps(stageProps.measurement);
       partyData.updateMeasurement(startPoint, startPoint, type, measurementProps);
       devLog('playfield', 'Broadcasting measurement start:', { startPoint, type, measurementProps });
     }
@@ -1203,21 +1174,7 @@
   ) => {
     // Broadcast measurement update to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
-      const measurementProps = {
-        color: stageProps.measurement.color,
-        thickness: stageProps.measurement.thickness,
-        outlineColor: stageProps.measurement.outlineColor,
-        outlineThickness: stageProps.measurement.outlineThickness,
-        opacity: stageProps.measurement.opacity,
-        markerSize: stageProps.measurement.markerSize,
-        autoHideDelay: stageProps.measurement.autoHideDelay,
-        fadeoutTime: stageProps.measurement.fadeoutTime,
-        showDistance: stageProps.measurement.showDistance,
-        snapToGrid: stageProps.measurement.snapToGrid,
-        enableDMG252: stageProps.measurement.enableDMG252,
-        beamWidth: stageProps.measurement.beamWidth,
-        coneAngle: stageProps.measurement.coneAngle
-      };
+      const measurementProps = extractMeasurementProps(stageProps.measurement);
       partyData.updateMeasurement(startPoint, endPoint, type, measurementProps);
     }
   };
@@ -1328,7 +1285,7 @@
           if (tempLayerData) {
             const rleData = await stage.annotations.toRLE();
             if (rleData && rleData.length > 0) {
-              const base64 = btoa(String.fromCharCode(...rleData));
+              const base64 = uint8ArrayToBase64(rleData);
 
               const tempLayer = createTemporaryLayer(
                 currentTemporaryLayerId,
@@ -1368,17 +1325,11 @@
 
   // Track the latest measurement to pass to Stage
   $effect(() => {
-    const measurementValues = Object.values(measurements);
-    if (measurementValues.length > 0) {
-      // Find the most recent measurement
-      const newest = measurementValues.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
-      );
+    const newest = getLatestMeasurement(measurements);
+    if (newest) {
       devLog('playfield', 'Latest measurement to pass to Stage:', newest);
-      latestMeasurement = newest;
-    } else {
-      latestMeasurement = null;
     }
+    latestMeasurement = newest;
   });
 
   // Fade-out logic is now handled in CursorLayer component via opacity calculation
