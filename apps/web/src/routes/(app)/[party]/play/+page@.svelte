@@ -324,7 +324,6 @@
       case 'markers':
         devLog('playfield', 'Enable marker movement');
         stageProps.activeLayer = MapLayerType.Marker;
-        console.log('[Play] Marker movement enabled, activeLayer:', stageProps.activeLayer);
         break;
 
       default:
