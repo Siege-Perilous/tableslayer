@@ -92,59 +92,7 @@
 
   // Helper function to clean stage props before sending to Y.js
   import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
-
-  // Helper function to merge markers while protecting ones being moved or edited
-  const mergeMarkersWithProtection = (
-    localMarkers: Marker[],
-    incomingMarkers: Marker[],
-    beingMoved: Set<string>,
-    beingEdited: Set<string>,
-    recentlyDeleted: Set<string>
-  ) => {
-    const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
-
-    devLog('markers', '🔄 Merging markers:', {
-      localCount: localMarkers.length,
-      incomingCount: incomingMarkers.length,
-      protectedCount: protectedMarkers.size
-    });
-
-    // Start with incoming markers as base, but exclude recently deleted ones
-    const resultMap = new Map();
-    incomingMarkers.forEach((marker) => {
-      // Skip markers that were recently deleted in this editor
-      if (!recentlyDeleted.has(marker.id)) {
-        resultMap.set(marker.id, marker);
-      }
-    });
-
-    // Apply protections and add new markers
-    for (const localMarker of localMarkers) {
-      if (protectedMarkers.has(localMarker.id)) {
-        if (resultMap.has(localMarker.id)) {
-          // Marker exists in incoming - apply protection
-          const incomingMarker = resultMap.get(localMarker.id);
-          if (beingMoved.has(localMarker.id)) {
-            // For moved markers, only preserve position from local state
-            // This protects the marker being actively dragged in THIS editor
-            resultMap.set(localMarker.id, {
-              ...incomingMarker,
-              position: localMarker.position
-            });
-          } else if (beingEdited.has(localMarker.id)) {
-            // For edited markers, preserve entire local marker
-            resultMap.set(localMarker.id, localMarker);
-          }
-        } else {
-          // New marker not in incoming yet - add it
-          resultMap.set(localMarker.id, localMarker);
-        }
-      }
-    }
-
-    const result = Array.from(resultMap.values());
-    return result;
-  };
+  import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
 
   // Y.js integration
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
@@ -523,13 +471,24 @@
           marker: {
             ...incomingStageProps.marker,
             // Protect markers being moved or edited from Y.js overwrites
-            markers: mergeMarkersWithProtection(
-              stageProps.marker?.markers || [],
-              incomingStageProps.marker?.markers || sceneData.markers || [],
-              markersBeingMoved,
-              markersBeingEdited,
-              recentlyDeletedMarkers
-            )
+            markers: (() => {
+              const localMarkers = stageProps.marker?.markers || [];
+              const incomingMarkers = incomingStageProps.marker?.markers || sceneData.markers || [];
+
+              devLog('markers', '🔄 Merging markers:', {
+                localCount: localMarkers.length,
+                incomingCount: incomingMarkers.length,
+                protectedCount: markersBeingMoved.size + markersBeingEdited.size
+              });
+
+              return mergeMarkersWithProtection(
+                localMarkers,
+                incomingMarkers,
+                markersBeingMoved,
+                markersBeingEdited,
+                recentlyDeletedMarkers
+              );
+            })()
           },
           fogOfWar: {
             ...incomingStageProps.fogOfWar,

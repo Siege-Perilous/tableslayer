@@ -40,6 +40,7 @@
     cleanupExpiredLayers
   } from '$lib/utils/yjs/temporaryLayers';
   import { v4 as uuidv4 } from 'uuid';
+  import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
 
   type CursorData = {
     worldPosition: { x: number; y: number; z: number };
@@ -171,10 +172,6 @@
         { id: 'measure-cone', label: 'Cone' },
         { id: 'measure-beam', label: 'Beam' }
       ]
-    },
-    {
-      id: 'markers',
-      label: 'Move markers'
     }
   ]);
 
@@ -298,11 +295,6 @@
         devLog('playfield', 'Starting beam measurement');
         stageProps.activeLayer = MapLayerType.Measurement;
         stageProps.measurement.type = MeasurementType.Beam;
-        break;
-
-      case 'markers':
-        devLog('playfield', 'Enable marker movement');
-        stageProps.activeLayer = MapLayerType.Marker;
         break;
 
       default:
@@ -446,18 +438,21 @@
         // Filter markers to remove DM-only ones, and protect markers being moved
         marker: {
           ...yjsSceneData.stageProps.marker,
-          markers: (yjsSceneData.stageProps.marker?.markers || [])
-            .filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
-            .map((incomingMarker: Marker) => {
-              // If this marker is being moved, preserve its local position
-              if (markersBeingMoved.has(incomingMarker.id)) {
-                const localMarker = stageProps.marker.markers.find((m) => m.id === incomingMarker.id);
-                if (localMarker) {
-                  return { ...incomingMarker, position: localMarker.position };
-                }
-              }
-              return incomingMarker;
-            })
+          markers: (() => {
+            // First filter out DM-only markers
+            const incomingMarkers = (yjsSceneData.stageProps.marker?.markers || []).filter(
+              (m: Marker) => m.visibility !== 1
+            ); // 1 = MarkerVisibility.DM
+
+            // Then apply protection logic using the utility
+            return mergeMarkersWithProtection(
+              stageProps.marker.markers,
+              incomingMarkers,
+              markersBeingMoved,
+              new Set<string>(), // No edited markers in play route
+              new Set<string>() // No deleted markers tracking in play route
+            );
+          })()
         },
         // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
         annotations: yjsSceneData.stageProps.annotations
