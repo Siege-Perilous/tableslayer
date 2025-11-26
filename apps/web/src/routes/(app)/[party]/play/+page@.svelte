@@ -87,6 +87,7 @@
   let temporaryLayers = $state<TemporaryLayer[]>([]);
   let currentTemporaryLayerId: string | null = null;
   let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
+  let resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Store SSR annotation layers separately to preserve them during Y.js merging
   let ssrAnnotationLayers: AnnotationLayerData[] = [];
@@ -164,6 +165,19 @@
 
   import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
 
+  // Reset active layer to None after a delay (3 seconds)
+  function resetToNoneAfterDelay() {
+    if (resetLayerTimer) {
+      clearTimeout(resetLayerTimer);
+    }
+    resetLayerTimer = setTimeout(() => {
+      devLog('playfield', 'Resetting active layer to None after timeout');
+      stageProps.activeLayer = MapLayerType.None;
+      stageProps.annotations.activeLayer = null;
+      resetLayerTimer = null;
+    }, 3000);
+  }
+
   function handleMenuItemSelect(itemId: string) {
     devLog('playfield', 'Menu item selected:', itemId);
 
@@ -188,7 +202,7 @@
         if (stage?.fogOfWar) {
           stage.fogOfWar.reset();
         }
-        stageProps.activeLayer = MapLayerType.None;
+        resetToNoneAfterDelay();
         break;
 
       case 'fog-clear':
@@ -196,7 +210,7 @@
         if (stage?.fogOfWar) {
           stage.fogOfWar.clear();
         }
-        stageProps.activeLayer = MapLayerType.None;
+        resetToNoneAfterDelay();
         break;
 
       case 'draw-red':
@@ -288,10 +302,34 @@
         // Check if it's a scene selection
         if (itemId.startsWith('scene-')) {
           const sceneId = itemId.replace('scene-', '');
-          devLog('playfield', 'Switching to scene:', sceneId);
+          devLog('playfield', 'Player initiated scene switch to:', sceneId);
           const manager = getPartyDataManager();
           if (manager) {
+            // Update Y.js first to notify other clients
             switchActiveScene(manager, sceneId);
+
+            // Manually trigger page reload for the local client
+            // This is necessary because in production, the Y.js update happens so fast
+            // that the reactive effect misses the state transition
+            devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
+            lastProcessedSceneId = sceneId;
+            isProcessingSceneChange = true;
+            isInvalidating = true;
+            sceneIsChanging = true;
+
+            invalidateAll()
+              .then(() => {
+                devLog('playfield', 'Page reload complete after locally-initiated scene change');
+                isInvalidating = false;
+                isProcessingSceneChange = false;
+                sceneIsChanging = false;
+              })
+              .catch((error) => {
+                devError('playfield', 'Error reloading page after scene change:', error);
+                isInvalidating = false;
+                isProcessingSceneChange = false;
+                sceneIsChanging = false;
+              });
           }
         }
         break;
@@ -1129,6 +1167,9 @@
     // Store a flag that we need to process fog update
     pendingFogBlob = new Blob();
 
+    // Reset the layer timeout since user is actively drawing
+    resetToNoneAfterDelay();
+
     // Clear any existing timer
     if (fogUpdateTimer) {
       clearTimeout(fogUpdateTimer);
@@ -1330,6 +1371,9 @@
   }
 
   async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+    // Reset the layer timeout since user is actively drawing
+    resetToNoneAfterDelay();
+
     blob.then(async (blob) => {
       const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
       if (layer) {
@@ -1364,10 +1408,9 @@
           devError('playfield', 'Error broadcasting temporary layer:', error);
         }
 
-        // Exit drawing mode after the drawing is complete
-        devLog('playfield', 'Drawing complete, exiting annotation mode');
-        stageProps.activeLayer = MapLayerType.None;
-        stageProps.annotations.activeLayer = null;
+        // Exit drawing mode after the drawing is complete with a delay
+        devLog('playfield', 'Drawing complete, will exit annotation mode after 3 seconds');
+        resetToNoneAfterDelay();
         currentTemporaryLayerId = null;
       }
     });
