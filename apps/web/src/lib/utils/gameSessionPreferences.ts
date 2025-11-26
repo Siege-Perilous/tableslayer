@@ -103,6 +103,11 @@ export function getPreference<K extends keyof GameSessionPreferences>(key: K): G
     throw new Error(`Unknown preference key: ${key}`);
   }
 
+  // Return default value during SSR
+  if (typeof document === 'undefined') {
+    return config.defaultValue;
+  }
+
   try {
     const cookieValue = document.cookie
       .split('; ')
