@@ -178,28 +178,7 @@
     }
   ]);
 
-  // Helper to clean stage props for Y.js sync (removes local-only fields)
-  const cleanStagePropsForYjs = (props: StageProps): any => {
-    return {
-      ...props,
-      annotations: {
-        ...props.annotations,
-        activeLayer: null,
-        lineWidth: undefined
-      },
-      fogOfWar: {
-        ...props.fogOfWar,
-        tool: {
-          ...props.fogOfWar.tool
-        }
-      },
-      grid: {
-        ...props.grid,
-        worldGridUnits: props.grid.worldGridUnits || 'FT',
-        worldGridSize: props.grid.worldGridSize || 5
-      }
-    };
-  };
+  import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
 
   function handleMenuItemSelect(itemId: string) {
     devLog('playfield', 'Menu item selected:', itemId);

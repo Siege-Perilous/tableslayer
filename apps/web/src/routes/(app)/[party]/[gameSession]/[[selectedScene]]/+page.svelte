@@ -91,31 +91,7 @@
   });
 
   // Helper function to clean stage props before sending to Y.js
-  // Removes local-only properties that should not be synchronized
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cleanStagePropsForYjs = (props: StageProps): any => {
-    return {
-      ...props,
-      annotations: {
-        ...props.annotations,
-        activeLayer: null, // activeLayer is local-only, not synchronized
-        lineWidth: undefined // lineWidth is local-only, not synchronized
-      },
-      fogOfWar: {
-        ...props.fogOfWar,
-        tool: {
-          ...props.fogOfWar.tool
-          // size is omitted to prevent syncing
-        }
-      },
-      // Ensure grid props are fully included with worldGridUnits and worldGridSize
-      grid: {
-        ...props.grid,
-        worldGridUnits: props.grid.worldGridUnits || 'FT',
-        worldGridSize: props.grid.worldGridSize || 5
-      }
-    };
-  };
+  import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
 
   // Helper function to merge markers while protecting ones being moved or edited
   const mergeMarkersWithProtection = (
@@ -1503,6 +1479,15 @@
 
   // Measurement callbacks for Y.js broadcasting
   const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Only broadcast measurements if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      devLog('measurement', 'Skipping measurement broadcast - not active scene:', {
+        selectedSceneId: selectedScene?.id,
+        activeSceneId: yjsPartyState.activeSceneId
+      });
+      return;
+    }
+
     // Broadcast measurement start to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
       const measurementProps = {
@@ -1530,6 +1515,11 @@
     endPoint: { x: number; y: number },
     type: number
   ) => {
+    // Only broadcast measurements if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      return;
+    }
+
     // Broadcast measurement update to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
       const measurementProps = {
@@ -1552,6 +1542,11 @@
   };
 
   const onMeasurementEnd = () => {
+    // Only broadcast measurement end if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      return;
+    }
+
     // Clear measurement when finished (it will fade out on its own in the playfield)
     if (partyData) {
       partyData.updateMeasurement(null, null, 0);
