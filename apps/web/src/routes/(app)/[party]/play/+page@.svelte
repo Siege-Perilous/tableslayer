@@ -42,7 +42,7 @@
   import { v4 as uuidv4 } from 'uuid';
   import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
   import { transformCursorsToArray, type CursorData } from '$lib/utils/cursors';
-  import { uint8ArrayToBase64 } from '$lib/utils/encoding';
+  import { uint8ArrayToBase64, base64ToUint8Array } from '$lib/utils/encoding';
   import { getLatestMeasurement, extractMeasurementProps } from '$lib/utils/measurements';
 
   let cursors: Record<string, CursorData> = $state({});
@@ -88,6 +88,9 @@
   let temporaryLayers = $state<TemporaryLayer[]>([]);
   let currentTemporaryLayerId: string | null = null;
   let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Store SSR annotation layers separately to preserve them during Y.js merging
+  let ssrAnnotationLayers: AnnotationLayerData[] = [];
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
@@ -371,13 +374,8 @@
       const data = (await response.json()) as { success: boolean; maskData?: string | null };
 
       if (data.maskData && stage?.annotations?.loadMask) {
-        // Convert base64 back to Uint8Array
-        const binaryString = atob(data.maskData);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        // Apply the mask to the annotation layer
+        // Convert base64 to Uint8Array and apply to the annotation layer
+        const bytes = base64ToUint8Array(data.maskData);
         await stage.annotations.loadMask(annotationId, bytes);
       }
     } catch (error) {
@@ -440,31 +438,57 @@
           })()
         },
         // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
-        annotations: yjsSceneData.stageProps.annotations
-          ? {
-              ...yjsSceneData.stageProps.annotations,
-              layers: [
-                // Include Y.js annotation layers (filter out DM-only permanent annotations)
-                ...(yjsSceneData.stageProps.annotations.layers || []).filter(
-                  (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
-                ),
-                // Add temporary layers from Y.js awareness (already converted to AnnotationLayerData in effect below)
-                ...(stageProps.annotations?.layers || []).filter((layer: AnnotationLayerData) => {
-                  // Check if this layer exists in temporaryLayers array (these are the temp drawings from playfield)
-                  const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
-                  if (isTemporary) {
-                    // Keep if it's the current one being drawn or not expired
-                    if (layer.id === currentTemporaryLayerId) {
-                      return true;
-                    }
-                    return isTemporary.expiresAt > Date.now();
-                  }
-                  return false; // Don't include permanent layers here, they come from Y.js
-                })
-              ],
-              activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer
-            }
-          : { layers: [], activeLayer: null }
+        annotations: (() => {
+          const yjsLayers = yjsSceneData.stageProps.annotations?.layers || [];
+          const localLayers = stageProps.annotations?.layers || [];
+
+          // Create a map of Y.js layer IDs for quick lookup
+          const yjsLayerIds = new Set(yjsLayers.map((l: AnnotationLayerData) => l.id));
+
+          const mergedLayers = [
+            // Include Y.js annotation layers (filter out DM-only permanent annotations)
+            ...yjsLayers.filter((layer: AnnotationLayerData) => layer.visibility === 1), // 1 = StageMode.Player
+
+            // Add SSR annotation layers that aren't in Y.js yet (preserves layers not yet synced to Y.js)
+            ...ssrAnnotationLayers.filter((layer: AnnotationLayerData) => {
+              // If this layer is already in Y.js, skip it (Y.js is source of truth)
+              if (yjsLayerIds.has(layer.id)) {
+                return false;
+              }
+              // Keep if it's player-visible
+              return layer.visibility === 1;
+            }),
+
+            // Add temporary layers from playfield drawing
+            ...localLayers.filter((layer: AnnotationLayerData) => {
+              // Skip if already in Y.js or SSR
+              if (yjsLayerIds.has(layer.id)) {
+                return false;
+              }
+              if (ssrAnnotationLayers.find((l) => l.id === layer.id)) {
+                return false;
+              }
+
+              // Check if this is a temporary layer from playfield drawing
+              const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
+              if (isTemporary) {
+                // Keep temporary layers if current or not expired
+                if (layer.id === currentTemporaryLayerId) {
+                  return true;
+                }
+                return isTemporary.expiresAt > Date.now();
+              }
+
+              return false;
+            })
+          ];
+
+          return {
+            ...(yjsSceneData.stageProps.annotations || {}),
+            layers: mergedLayers,
+            activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer
+          };
+        })()
       };
 
       // Update the timestamp to prevent re-processing
@@ -526,13 +550,20 @@
           timestamp: Date.now()
         });
         devLog('playfield', 'Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
-        stageProps = buildSceneProps(
+        const builtProps = buildSceneProps(
           data.activeScene,
           data.activeSceneMarkers,
           'client',
           data.activeSceneAnnotations,
           data.bucketUrl
         );
+        stageProps = builtProps;
+        // Store SSR annotation layers to preserve them during Y.js merging
+        ssrAnnotationLayers = builtProps.annotations?.layers || [];
+        devLog('playfield', 'Stored SSR annotation layers:', {
+          count: ssrAnnotationLayers.length,
+          ids: ssrAnnotationLayers.map((l) => l.id)
+        });
         initialDataApplied = true;
       }
     }
@@ -563,7 +594,15 @@
       devLog('playfield', 'Scene changed, fetching fog mask for:', sceneIdToFetch);
       fetchFogMask(sceneIdToFetch);
 
-      // Also fetch annotation masks if there are any
+      // Load annotation masks from SSR data if available (after invalidateAll completes)
+      // This ensures masks are loaded when switching to a scene that already has annotations
+      devLog('playfield', 'Scene changed, loading annotation masks from SSR data');
+      loadAnnotationMasksFromSsr().catch((error) => {
+        console.error('Error loading annotation masks from SSR after scene change:', error);
+      });
+
+      // Also fetch annotation masks for any layers that have a maskVersion
+      // This handles cases where Y.js has newer versions than SSR
       if (stageProps.annotations?.layers) {
         for (const layer of stageProps.annotations.layers) {
           if (layer.maskVersion) {
@@ -1232,13 +1271,20 @@
     stageIsLoading = true;
   }
 
-  async function onStageInitialized() {
-    stageIsLoading = false;
+  /**
+   * Load annotation masks from SSR data
+   * Called on initial stage load and when active scene changes
+   */
+  async function loadAnnotationMasksFromSsr() {
+    devLog('playfield', 'loadAnnotationMasksFromSsr called:', {
+      hasMaskData: !!data.activeSceneAnnotationMasks,
+      hasStage: !!stage,
+      hasLoadMask: !!stage?.annotations?.loadMask,
+      maskCount: data.activeSceneAnnotationMasks ? Object.keys(data.activeSceneAnnotationMasks).length : 0,
+      layerCount: stageProps.annotations?.layers?.length || 0,
+      layerIds: stageProps.annotations?.layers?.map((l) => l.id) || []
+    });
 
-    // Load fog mask from SSR data if available
-    await loadFogMask();
-
-    // Load annotation masks if available
     if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
       try {
         for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
@@ -1246,24 +1292,44 @@
             // Check if the annotation layer exists in stageProps
             const layerExists = stageProps.annotations.layers.some((layer) => layer.id === annotationId);
             if (!layerExists) {
-              devLog('playfield', `Skipping mask load for annotation ${annotationId} - layer not found in stageProps`);
+              devLog(
+                'playfield',
+                `Skipping mask load for annotation ${annotationId} - layer not found in stageProps. Available layers:`,
+                {
+                  availableLayerIds: stageProps.annotations.layers.map((l) => l.id),
+                  searchingFor: annotationId
+                }
+              );
               continue;
             }
 
-            // Convert base64 back to Uint8Array
-            const binaryString = atob(maskData);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
-            }
-            // Apply the mask to the annotation layer
+            devLog('playfield', `Loading annotation mask from SSR data for layer ${annotationId}`);
+            // Convert base64 to Uint8Array and apply to the annotation layer
+            const bytes = base64ToUint8Array(maskData);
             await stage.annotations.loadMask(annotationId, bytes);
+            devLog('playfield', `Successfully loaded annotation mask for layer ${annotationId}`);
           }
         }
       } catch (error) {
         console.error('Error loading annotation masks:', error);
       }
+    } else {
+      devLog('playfield', 'Skipping annotation mask loading - requirements not met:', {
+        hasMaskData: !!data.activeSceneAnnotationMasks,
+        hasStage: !!stage,
+        hasLoadMask: !!stage?.annotations?.loadMask
+      });
     }
+  }
+
+  async function onStageInitialized() {
+    stageIsLoading = false;
+
+    // Load fog mask from SSR data if available
+    await loadFogMask();
+
+    // Load annotation masks from SSR data if available
+    await loadAnnotationMasksFromSsr();
 
     // Immediately fit when stage is ready
     if (stage?.scene?.fit) {
