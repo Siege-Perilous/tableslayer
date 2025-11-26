@@ -2,12 +2,9 @@
   import type { RadialMenuProps, RadialMenuItem as RadialMenuItemType } from './types';
   import RadialMenuItem from './RadialMenuItem.svelte';
 
-  interface Props extends RadialMenuProps {}
-
-  const { visible = false, position, items, onItemSelect, onClose }: Props = $props();
+  const { visible = false, position, items, onItemSelect, onClose }: RadialMenuProps = $props();
 
   let activeSubmenu: RadialMenuItemType[] | null = $state(null);
-  let submenuParentId: string | null = $state(null);
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
 
@@ -27,7 +24,6 @@
     if (selectedItem?.submenu && selectedItem.submenu.length > 0) {
       // Show submenu
       activeSubmenu = selectedItem.submenu;
-      submenuParentId = selectedItem.id;
     } else {
       // No submenu, trigger selection and close
       if (onItemSelect) {
@@ -39,7 +35,6 @@
 
   function handleClose() {
     activeSubmenu = null;
-    submenuParentId = null;
     if (onClose) {
       onClose();
     }
@@ -49,7 +44,6 @@
     if (activeSubmenu) {
       // If submenu is open, go back to main menu
       activeSubmenu = null;
-      submenuParentId = null;
     } else {
       // Otherwise close the menu
       handleClose();
@@ -60,7 +54,6 @@
   $effect(() => {
     if (!visible) {
       activeSubmenu = null;
-      submenuParentId = null;
     }
   });
 
@@ -119,7 +112,6 @@
           class="radialMenuCenterBtn"
           onclick={() => {
             activeSubmenu = null;
-            submenuParentId = null;
           }}
           type="button"
         >

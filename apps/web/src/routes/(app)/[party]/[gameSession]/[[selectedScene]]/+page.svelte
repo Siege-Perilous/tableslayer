@@ -74,7 +74,6 @@
     party,
     activeScene,
     user,
-    brushSize,
     isStripeEnabled
   } = $derived(data);
 

@@ -26,7 +26,7 @@ export function broadcastTemporaryLayer(partyData: PartyDataManager, layer: Temp
     return;
   }
 
-  const awareness = (partyData as any).gameSessionProvider?.awareness;
+  const awareness = partyData.getGameSessionProvider()?.awareness;
   if (!awareness) {
     return;
   }
@@ -62,7 +62,7 @@ export function removeTemporaryLayer(partyData: PartyDataManager, layerId: strin
   const currentLayers = getTemporaryLayers(partyData);
   const filteredLayers = currentLayers.filter((l) => l.id !== layerId);
 
-  const awareness = (partyData as any).gameSessionProvider?.awareness;
+  const awareness = partyData.getGameSessionProvider()?.awareness;
   if (awareness) {
     awareness.setLocalStateField('temporaryLayers', filteredLayers);
     devLog('yjs', `Removed temporary layer: ${layerId}`);
@@ -77,7 +77,7 @@ export function getTemporaryLayers(partyData: PartyDataManager): TemporaryLayer[
     return [];
   }
 
-  const awareness = (partyData as any).gameSessionProvider?.awareness;
+  const awareness = partyData.getGameSessionProvider()?.awareness;
   if (!awareness) {
     return [];
   }
@@ -85,9 +85,10 @@ export function getTemporaryLayers(partyData: PartyDataManager): TemporaryLayer[
   const allLayers: TemporaryLayer[] = [];
   const states = awareness.getStates();
 
-  states.forEach((state: any) => {
-    if (state.temporaryLayers && Array.isArray(state.temporaryLayers)) {
-      allLayers.push(...state.temporaryLayers);
+  states.forEach((state: Record<string, unknown>) => {
+    const temporaryLayers = state.temporaryLayers;
+    if (temporaryLayers && Array.isArray(temporaryLayers)) {
+      allLayers.push(...temporaryLayers);
     }
   });
 
@@ -103,7 +104,7 @@ export function cleanupExpiredLayers(partyData: PartyDataManager): void {
     return;
   }
 
-  const awareness = (partyData as any).gameSessionProvider?.awareness;
+  const awareness = partyData.getGameSessionProvider()?.awareness;
   if (!awareness) {
     return;
   }

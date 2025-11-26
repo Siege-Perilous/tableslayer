@@ -81,7 +81,6 @@
   // Fog update state
   let pendingFogBlob: Blob | null = null;
   let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
-  let isUpdatingFog = false;
   const updateFogMaskMutation = useUpdateFogMaskMutation();
 
   // Temporary drawing state
@@ -1087,7 +1086,6 @@
     const rleData = await stage?.fogOfWar?.toRLE();
     if (!rleData) {
       devError('playfield', 'Failed to get RLE data from fog layer');
-      isUpdatingFog = false;
       return;
     }
 
@@ -1108,7 +1106,6 @@
       // Check if user started drawing while upload was in progress
       if (stage?.fogOfWar?.isDrawing()) {
         devLog('playfield', 'Fog update completed but user is drawing - skipping Y.js sync');
-        isUpdatingFog = false;
         return;
       }
 
@@ -1123,17 +1120,12 @@
         devLog('playfield', 'Broadcasting fog update to Y.js');
         manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
       }
-
-      isUpdatingFog = false;
     } catch (error) {
       devError('playfield', 'Error updating fog mask:', error);
-      isUpdatingFog = false;
     }
   };
 
-  const onFogUpdate = async (_blob: Promise<Blob>) => {
-    isUpdatingFog = true;
-
+  const onFogUpdate = async () => {
     // Store a flag that we need to process fog update
     pendingFogBlob = new Blob();
 

@@ -7,7 +7,7 @@ import type { StageProps } from '@tableslayer/ui';
  * @param props - The stage props to clean
  * @returns Cleaned props suitable for Y.js
  */
-export function cleanStagePropsForYjs(props: StageProps): any {
+export function cleanStagePropsForYjs(props: StageProps): StageProps {
   return {
     ...props,
     annotations: {

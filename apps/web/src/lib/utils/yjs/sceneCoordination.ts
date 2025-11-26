@@ -12,7 +12,7 @@ export function switchActiveScene(partyData: PartyDataManager, sceneId: string):
   }
 
   // Update party state with new active scene ID
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (partyState) {
     partyState.set('activeSceneId', sceneId);
     devLog('yjs', `Switched active scene to: ${sceneId}`);
@@ -27,7 +27,7 @@ export function getActiveSceneId(partyData: PartyDataManager): string | undefine
     return undefined;
   }
 
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (!partyState) {
     return undefined;
   }
@@ -47,7 +47,7 @@ export function subscribeToSceneChanges(
     return () => {}; // No-op unsubscribe
   }
 
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (!partyState) {
     return () => {};
   }
@@ -74,7 +74,7 @@ export function getIsPaused(partyData: PartyDataManager): boolean {
     return false;
   }
 
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (!partyState) {
     return false;
   }
@@ -90,7 +90,7 @@ export function setIsPaused(partyData: PartyDataManager, isPaused: boolean): voi
     return;
   }
 
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (partyState) {
     partyState.set('isPaused', isPaused);
     devLog('yjs', `Set isPaused to: ${isPaused}`);
@@ -109,7 +109,7 @@ export function subscribeToPauseChanges(
     return () => {};
   }
 
-  const partyState = (partyData as any).yPartyState;
+  const partyState = partyData.getYPartyState();
   if (!partyState) {
     return () => {};
   }

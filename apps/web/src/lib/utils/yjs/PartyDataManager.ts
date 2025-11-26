@@ -534,6 +534,20 @@ export class PartyDataManager {
   }
 
   /**
+   * Get the party state Y.Map for external coordination functions
+   */
+  getYPartyState(): Y.Map<unknown> {
+    return this.yPartyState;
+  }
+
+  /**
+   * Get the game session provider for awareness access
+   */
+  getGameSessionProvider(): YPartyKitProvider {
+    return this.gameSessionProvider;
+  }
+
+  /**
    * Update scene stage props
    */
   updateSceneStageProps(sceneId: string, stageProps: StageProps) {
