@@ -5,10 +5,11 @@
     item: RadialMenuItemProps;
     angle: number;
     radius: number;
+    counterRotation: number;
     onSelect: (itemId: string) => void;
   }
 
-  const { item, angle, radius, onSelect }: Props = $props();
+  const { item, angle, radius, counterRotation, onSelect }: Props = $props();
 
   // Calculate position using polar to cartesian conversion
   const x = $derived(Math.cos(angle) * radius);
@@ -25,7 +26,7 @@
   class="radialMenuItem"
   class:radialMenuItem--disabled={item.disabled}
   class:radialMenuItem--colorOnly={item.color && !item.label}
-  style="transform: translate({x}px, {y}px);"
+  style="transform: translate({x}px, {y}px) rotate({-counterRotation}deg);"
   onclick={handleClick}
   type="button"
 >
@@ -65,8 +66,8 @@
   .radialMenuItem:hover {
     background: var(--fgPrimary);
     color: var(--bg);
-    transform: translate(var(--x), var(--y)) scale(1.05);
     border-color: var(--fgPrimary);
+    scale: 1.05;
   }
 
   .radialMenuItem--disabled {

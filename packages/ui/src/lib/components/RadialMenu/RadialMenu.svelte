@@ -7,13 +7,36 @@
   let activeSubmenu: RadialMenuItemProps[] | null = $state(null);
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
+  let menuRotation = $state(0); // 0, 90, 180, or 270 degrees
+
+  // Calculate which edge is closest and determine rotation
+  // The menu should rotate so items face the nearest edge (where the player is viewing from)
+  function calculateRotationFromEdge(x: number, y: number, viewportWidth: number, viewportHeight: number): number {
+    const distanceToTop = y;
+    const distanceToBottom = viewportHeight - y;
+    const distanceToLeft = x;
+    const distanceToRight = viewportWidth - x;
+
+    const minDistance = Math.min(distanceToTop, distanceToBottom, distanceToLeft, distanceToRight);
+
+    // Determine which edge is closest and return corresponding rotation
+    // Default orientation is items starting at top (facing down toward bottom edge)
+    if (minDistance === distanceToBottom) return 0; // Bottom edge - default orientation (items face up)
+    if (minDistance === distanceToRight) return 90; // Right edge - rotate 90° clockwise (items face left)
+    if (minDistance === distanceToTop) return 180; // Top edge - rotate 180° (items face down)
+    return 270; // Left edge - rotate 270° clockwise (items face right)
+  }
 
   // Calculate angle for each item in the radial menu
-  function getItemAngle(index: number, total: number): number {
+  function getItemAngle(index: number, total: number, rotationDegrees: number): number {
     // Start from top (270 degrees / -90 degrees)
     // Distribute items evenly around the circle
     const angleStep = (2 * Math.PI) / total;
-    return -Math.PI / 2 + angleStep * index;
+    const baseAngle = -Math.PI / 2 + angleStep * index;
+
+    // Apply rotation offset (convert degrees to radians)
+    const rotationRadians = (rotationDegrees * Math.PI) / 180;
+    return baseAngle + rotationRadians;
   }
 
   function handleItemSelect(itemId: string) {
@@ -57,7 +80,7 @@
     }
   });
 
-  // Update position to keep radial menu items within viewport bounds
+  // Update position and rotation to orient menu toward nearest edge
   $effect(() => {
     if (visible) {
       // Account for the radial menu items extending in all directions
@@ -85,14 +108,29 @@
       y = Math.max(minY, Math.min(maxY, y));
 
       adjustedPosition = { x, y };
+
+      // Calculate rotation based on nearest edge
+      const rotation = calculateRotationFromEdge(position.x, position.y, viewportWidth, viewportHeight);
+      console.log('RadialMenu rotation calculation:', {
+        position: { x: position.x, y: position.y },
+        viewport: { width: viewportWidth, height: viewportHeight },
+        rotation
+      });
+      menuRotation = rotation;
     } else {
       // Reset to original position when hidden
       adjustedPosition = { x: position.x, y: position.y };
+      menuRotation = 0;
     }
   });
 
   const currentItems = $derived(activeSubmenu || items);
   const menuRadius = 120; // Distance from center to items
+
+  // Debug: Log rotation changes
+  $effect(() => {
+    console.log('Menu rotation state changed to:', menuRotation);
+  });
 </script>
 
 {#if visible}
@@ -104,7 +142,8 @@
     <div
       bind:this={menuContainer}
       class="radialMenuContainer"
-      style="left: {adjustedPosition.x}px; top: {adjustedPosition.y}px;"
+      style:left="{adjustedPosition.x}px"
+      style:top="{adjustedPosition.y}px"
     >
       {#if activeSubmenu}
         <!-- Back button in center for submenu -->
@@ -123,8 +162,9 @@
       {#each currentItems as item, index (item.id)}
         <RadialMenuItem
           {item}
-          angle={getItemAngle(index, currentItems.length)}
+          angle={getItemAngle(index, currentItems.length, menuRotation)}
           radius={menuRadius}
+          counterRotation={menuRotation}
           onSelect={handleItemSelect}
         />
       {/each}
