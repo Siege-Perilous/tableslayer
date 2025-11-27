@@ -84,6 +84,12 @@
     if (isMouseEvent && e.button !== 0) return;
     if (isTouchEvent && (e as TouchEvent).touches.length !== 1) return;
 
+    // Only allow marker interaction when activeLayer is None or Marker
+    // This prevents marker dragging during fog, drawing, annotation, and measurement modes
+    if (props.activeLayer !== MapLayerType.None && props.activeLayer !== MapLayerType.Marker) {
+      return;
+    }
+
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
     const closestMarker = findClosestMarker(gridCoords);
