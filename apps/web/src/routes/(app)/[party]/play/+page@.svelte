@@ -12,38 +12,54 @@
     type StageExports,
     type StageProps,
     type Marker,
-    type AnnotationLayerData
+    type AnnotationLayerData,
+    RadialMenu,
+    type RadialMenuItemProps,
+    DrawMode,
+    StageMode,
+    MeasurementType
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { initializePartyDataManager, usePartyData, destroyPartyDataManager } from '$lib/utils/yjs/stores';
+  import {
+    initializePartyDataManager,
+    usePartyData,
+    destroyPartyDataManager,
+    getPartyDataManager
+  } from '$lib/utils/yjs/stores';
   import { type SceneData, type MeasurementData } from '$lib/utils/yjs/PartyDataManager';
-
-  type CursorData = {
-    worldPosition: { x: number; y: number; z: number };
-    userId: string;
-    color?: string;
-    label?: string;
-    lastMoveTime: number;
-    fadedOut: boolean;
-  };
+  import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
+  import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
+  import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
+  import { useUpdateFogMaskMutation } from '$lib/queries/masks';
+  import { useUpdatePartyMutation } from '$lib/queries/parties';
+  import {
+    type TemporaryLayer,
+    getTemporaryLayers,
+    broadcastTemporaryLayer,
+    createTemporaryLayer,
+    cleanupExpiredLayers
+  } from '$lib/utils/yjs/temporaryLayers';
+  import { v4 as uuidv4 } from 'uuid';
+  import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
+  import { transformCursorsToArray, type CursorData } from '$lib/utils/cursors';
+  import { uint8ArrayToBase64, base64ToUint8Array } from '$lib/utils/encoding';
+  import { getLatestMeasurement, extractMeasurementProps } from '$lib/utils/measurements';
 
   let cursors: Record<string, CursorData> = $state({});
   let measurements: Record<string, MeasurementData> = $state({});
   let latestMeasurement: MeasurementData | null = $state(null);
   let hoveredMarkerId: string | null = $state(null);
 
+  // Radial menu state
+  let menuVisible = $state(false);
+  let menuPosition = $state({ x: 0, y: 0 });
+
+  // Activity timer for fog/drawing interactions
+  let activityTimer: ReturnType<typeof createConditionalActivityTimer> | null = null;
+
   // Convert cursors to format expected by CursorLayer
-  let cursorArray = $derived(
-    Object.entries(cursors).map(([id, cursor]) => ({
-      id,
-      worldPosition: cursor.worldPosition || { x: 0, y: 0, z: 0 },
-      color: cursor.color || '#ffffff',
-      label: cursor.label || cursor.userId,
-      opacity: cursor.fadedOut ? 0 : 1,
-      lastUpdateTime: cursor.lastMoveTime
-    }))
-  );
+  let cursorArray = $derived(transformCursorsToArray(cursors));
 
   let { data } = $props();
   const { user, party } = $derived(data);
@@ -61,13 +77,29 @@
   let hasActiveScene = $state(!!data.activeScene);
   let isInvalidating = $state(false);
   let isProcessingSceneChange = $state(false);
+  let lastProcessedSceneId = $state<string | undefined>(data.activeScene?.id);
+
+  // Fog update state
+  let pendingFogBlob: Blob | null = null;
+  let fogUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  const updateFogMaskMutation = useUpdateFogMaskMutation();
+  const updatePartyMutation = useUpdatePartyMutation();
+
+  // Temporary drawing state
+  let temporaryLayers = $state<TemporaryLayer[]>([]);
+  let currentTemporaryLayerId: string | null = null;
+  let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
+  let resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Store SSR annotation layers separately to preserve them during Y.js merging
+  let ssrAnnotationLayers: AnnotationLayerData[] = [];
 
   let stage: StageExports;
   let stageElement: HTMLDivElement | undefined = $state();
   let stageProps: StageProps = $state({
     ...StageDefaultProps,
     mode: 1, // StageMode.Player = 1
-    activeLayer: MapLayerType.None,
+    activeLayer: MapLayerType.None, // Allow marker dragging (None allows marker interaction)
     scene: { ...StageDefaultProps.scene, autoFit: true, offset: { x: 0, y: 0 } }
   });
 
@@ -75,6 +107,7 @@
   let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
 
   let selectedMarker: Marker | undefined = $state();
+  let markersBeingMoved = new Set<string>(); // Track markers being dragged to prevent Y.js overwrites
   let stageIsLoading: boolean = $state(true);
   let sceneIsChanging: boolean = $state(false);
   let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
@@ -84,6 +117,240 @@
     (stageIsLoading || sceneIsChanging) && 'stage--loading',
     gameIsPaused && 'stage--hidden'
   ]);
+
+  // Radial menu items - dynamically populate scene submenu from data
+  const menuItems: RadialMenuItemProps[] = $derived([
+    {
+      id: 'scene',
+      label: 'Scene',
+      submenu: data.scenes.map((scene) => ({
+        id: `scene-${scene.id}`,
+        label: scene.name
+      }))
+    },
+    {
+      id: 'fog',
+      label: 'Fog',
+      submenu: [
+        { id: 'fog-remove', label: 'Remove fog' },
+        { id: 'fog-add', label: 'Add fog' },
+        { id: 'fog-reset', label: 'Reset fog' },
+        { id: 'fog-clear', label: 'Clear fog' }
+      ]
+    },
+    {
+      id: 'draw',
+      label: 'Draw',
+      submenu: [
+        { id: 'draw-red', label: '', color: '#d73e2e' },
+        { id: 'draw-orange', label: '', color: '#ffa500' },
+        { id: 'draw-yellow', label: '', color: '#ffd93d' },
+        { id: 'draw-green', label: '', color: '#6bcf7f' },
+        { id: 'draw-blue', label: '', color: '#2e86ab' },
+        { id: 'draw-purple', label: '', color: '#b197fc' },
+        { id: 'draw-pink', label: '', color: '#f06595' },
+        { id: 'draw-turquoise', label: '', color: '#20c997' }
+      ]
+    },
+    {
+      id: 'measure',
+      label: 'Measure',
+      submenu: [
+        { id: 'measure-line', label: 'Line' },
+        { id: 'measure-circle', label: 'Circle' },
+        { id: 'measure-square', label: 'Square' },
+        { id: 'measure-cone', label: 'Cone' },
+        { id: 'measure-beam', label: 'Beam' }
+      ]
+    }
+  ]);
+
+  import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
+
+  // Reset active layer to None after a delay (3 seconds)
+  function resetToNoneAfterDelay() {
+    if (resetLayerTimer) {
+      clearTimeout(resetLayerTimer);
+    }
+    resetLayerTimer = setTimeout(() => {
+      devLog('playfield', 'Resetting active layer to None after timeout');
+      stageProps.activeLayer = MapLayerType.None;
+      stageProps.annotations.activeLayer = null;
+      resetLayerTimer = null;
+    }, 3000);
+  }
+
+  function handleMenuItemSelect(itemId: string) {
+    devLog('playfield', 'Menu item selected:', itemId);
+
+    // Handle menu selections
+    switch (itemId) {
+      case 'fog-remove':
+        devLog('playfield', 'Fog action: Remove fog');
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.tool.mode = DrawMode.Erase;
+        stageProps.fogOfWar.tool.size = 7.0; // 7% - smaller default for playfield
+        break;
+
+      case 'fog-add':
+        devLog('playfield', 'Fog action: Add fog');
+        stageProps.activeLayer = MapLayerType.FogOfWar;
+        stageProps.fogOfWar.tool.mode = DrawMode.Draw;
+        stageProps.fogOfWar.tool.size = 7.0; // 7% - smaller default for playfield
+        break;
+
+      case 'fog-reset':
+        devLog('playfield', 'Fog action: Reset fog');
+        if (stage?.fogOfWar) {
+          stage.fogOfWar.reset();
+        }
+        resetToNoneAfterDelay();
+        break;
+
+      case 'fog-clear':
+        devLog('playfield', 'Fog action: Clear fog');
+        if (stage?.fogOfWar) {
+          stage.fogOfWar.clear();
+        }
+        resetToNoneAfterDelay();
+        break;
+
+      case 'draw-red':
+      case 'draw-orange':
+      case 'draw-yellow':
+      case 'draw-green':
+      case 'draw-blue':
+      case 'draw-purple':
+      case 'draw-pink':
+      case 'draw-turquoise': {
+        // Map action IDs to colors (same as editor)
+        const colorMap: Record<string, string> = {
+          'draw-red': '#d73e2e',
+          'draw-orange': '#ffa500',
+          'draw-yellow': '#ffd93d',
+          'draw-green': '#6bcf7f',
+          'draw-blue': '#2e86ab',
+          'draw-purple': '#b197fc',
+          'draw-pink': '#f06595',
+          'draw-turquoise': '#20c997'
+        };
+
+        const selectedColor = colorMap[itemId] || '#d73e2e';
+        devLog('playfield', `Starting draw with color: ${selectedColor}`);
+
+        // Create a new temporary layer for drawing
+        currentTemporaryLayerId = uuidv4();
+
+        const tempLayer: AnnotationLayerData = {
+          id: currentTemporaryLayerId,
+          name: 'Temporary drawing',
+          color: selectedColor,
+          opacity: 1.0,
+          url: null,
+          visibility: StageMode.Player
+        };
+
+        stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+        stageProps.annotations.activeLayer = currentTemporaryLayerId;
+        stageProps.activeLayer = MapLayerType.Annotation;
+
+        // Set line width as percentage (1% of texture resolution)
+        // AnnotationMaterial will convert this to texture pixels
+        stageProps.annotations.lineWidth = 1.0;
+
+        // Immediately broadcast to Y.js awareness with empty mask
+        {
+          const manager = getPartyDataManager();
+          if (manager && currentTemporaryLayerId) {
+            const tempYjsLayer = createTemporaryLayer(currentTemporaryLayerId, user.id, tempLayer.color, '', 10000);
+            broadcastTemporaryLayer(manager, tempYjsLayer);
+            temporaryLayers = getTemporaryLayers(manager);
+          }
+        }
+        break;
+      }
+
+      case 'measure-line':
+        devLog('playfield', 'Starting line measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Line;
+        break;
+
+      case 'measure-circle':
+        devLog('playfield', 'Starting circle measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Circle;
+        break;
+
+      case 'measure-square':
+        devLog('playfield', 'Starting square measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Square;
+        break;
+
+      case 'measure-cone':
+        devLog('playfield', 'Starting cone measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Cone;
+        break;
+
+      case 'measure-beam':
+        devLog('playfield', 'Starting beam measurement');
+        stageProps.activeLayer = MapLayerType.Measurement;
+        stageProps.measurement.type = MeasurementType.Beam;
+        break;
+
+      default:
+        // Check if it's a scene selection
+        if (itemId.startsWith('scene-')) {
+          const sceneId = itemId.replace('scene-', '');
+          devLog('playfield', 'Player initiated scene switch to:', sceneId);
+          const manager = getPartyDataManager();
+          if (manager) {
+            // Update database first to ensure persistence across hard refreshes
+            updatePartyMutation
+              .mutateAsync({
+                partyId: party.id,
+                partyData: { activeSceneId: sceneId }
+              })
+              .then(() => {
+                devLog('playfield', 'Database updated with new active scene');
+
+                // Update Y.js to notify other clients
+                switchActiveScene(manager, sceneId);
+
+                // Manually trigger page reload for the local client
+                // This is necessary because in production, the Y.js update happens so fast
+                // that the reactive effect misses the state transition
+                devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
+                lastProcessedSceneId = sceneId;
+                isProcessingSceneChange = true;
+                isInvalidating = true;
+                sceneIsChanging = true;
+
+                return invalidateAll();
+              })
+              .then(() => {
+                devLog('playfield', 'Page reload complete after locally-initiated scene change');
+                isInvalidating = false;
+                isProcessingSceneChange = false;
+                sceneIsChanging = false;
+              })
+              .catch((error) => {
+                devError('playfield', 'Error updating scene:', error);
+                isInvalidating = false;
+                isProcessingSceneChange = false;
+                sceneIsChanging = false;
+              });
+          }
+        }
+        break;
+    }
+  }
+
+  function handleMenuClose() {
+    menuVisible = false;
+  }
 
   // No debouncing needed - flashing was caused by image versioning, not Y.js updates
 
@@ -111,6 +378,14 @@
       }
 
       const data = (await response.json()) as { success: boolean; maskData?: string };
+      devLog('playfield', `Fog mask fetch result for scene ${sceneId}:`, {
+        hasMaskData: !!data.maskData,
+        maskDataLength: data.maskData?.length,
+        hasStage: !!stage,
+        hasFogOfWar: !!stage?.fogOfWar,
+        hasFromRLE: !!stage?.fogOfWar?.fromRLE
+      });
+
       if (data.maskData && stage?.fogOfWar?.fromRLE) {
         // Convert base64 back to Uint8Array
         const binaryString = atob(data.maskData);
@@ -122,10 +397,14 @@
           'FOG-RT',
           `fog_${maskVersion} - 13. Applying ${bytes.length} bytes to fog layer at ${new Date().toISOString()}`
         );
+        devLog('playfield', `Applying fog mask: ${bytes.length} bytes`);
         // Apply the mask to the fog layer
         await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
         timingLog('FOG-RT', `fog_${maskVersion} - 14. Fog mask applied successfully at ${new Date().toISOString()}`);
         timingLog('FOG-RT', `fog_${maskVersion} - COMPLETE: Full round-trip completed`);
+        devLog('playfield', 'Fog mask applied successfully');
+      } else {
+        devLog('playfield', 'Skipping fog mask application - conditions not met');
       }
     } catch (error) {
       devError('fog-timing', `[FOG-RT] fog_${maskVersion} - ERROR:`, error);
@@ -144,13 +423,8 @@
       const data = (await response.json()) as { success: boolean; maskData?: string | null };
 
       if (data.maskData && stage?.annotations?.loadMask) {
-        // Convert base64 back to Uint8Array
-        const binaryString = atob(data.maskData);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        // Apply the mask to the annotation layer
+        // Convert base64 to Uint8Array and apply to the annotation layer
+        const bytes = base64ToUint8Array(data.maskData);
         await stage.annotations.loadMask(annotationId, bytes);
       }
     } catch (error) {
@@ -193,21 +467,77 @@
         },
         // Don't allow active layer (fog tools, etc)
         activeLayer: MapLayerType.None,
-        // Filter markers to remove DM-only ones
+        // Filter markers to remove DM-only ones, and protect markers being moved
         marker: {
           ...yjsSceneData.stageProps.marker,
-          markers: (yjsSceneData.stageProps.marker?.markers || []).filter((m: Marker) => m.visibility !== 1) // 1 = MarkerVisibility.DM
+          markers: (() => {
+            // First filter out DM-only markers
+            const incomingMarkers = (yjsSceneData.stageProps.marker?.markers || []).filter(
+              (m: Marker) => m.visibility !== 1
+            ); // 1 = MarkerVisibility.DM
+
+            // Then apply protection logic using the utility
+            return mergeMarkersWithProtection(
+              stageProps.marker.markers,
+              incomingMarkers,
+              markersBeingMoved,
+              new Set<string>(), // No edited markers in play route
+              new Set<string>() // No deleted markers tracking in play route
+            );
+          })()
         },
-        // Filter annotations to remove DM-only ones and preserve maskVersion
-        annotations: yjsSceneData.stageProps.annotations
-          ? {
-              ...yjsSceneData.stageProps.annotations,
-              layers: (yjsSceneData.stageProps.annotations.layers || []).filter(
-                (layer: AnnotationLayerData) => layer.visibility === 1 // 1 = StageMode.Player (visible to players)
-              ),
-              activeLayer: null // Players can't edit annotations
-            }
-          : { layers: [], activeLayer: null }
+        // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
+        annotations: (() => {
+          const yjsLayers = yjsSceneData.stageProps.annotations?.layers || [];
+          const localLayers = stageProps.annotations?.layers || [];
+
+          // Create a map of Y.js layer IDs for quick lookup
+          const yjsLayerIds = new Set(yjsLayers.map((l: AnnotationLayerData) => l.id));
+
+          const mergedLayers = [
+            // Include Y.js annotation layers (filter out DM-only permanent annotations)
+            ...yjsLayers.filter((layer: AnnotationLayerData) => layer.visibility === 1), // 1 = StageMode.Player
+
+            // Add SSR annotation layers that aren't in Y.js yet (preserves layers not yet synced to Y.js)
+            ...ssrAnnotationLayers.filter((layer: AnnotationLayerData) => {
+              // If this layer is already in Y.js, skip it (Y.js is source of truth)
+              if (yjsLayerIds.has(layer.id)) {
+                return false;
+              }
+              // Keep if it's player-visible
+              return layer.visibility === 1;
+            }),
+
+            // Add temporary layers from playfield drawing
+            ...localLayers.filter((layer: AnnotationLayerData) => {
+              // Skip if already in Y.js or SSR
+              if (yjsLayerIds.has(layer.id)) {
+                return false;
+              }
+              if (ssrAnnotationLayers.find((l) => l.id === layer.id)) {
+                return false;
+              }
+
+              // Check if this is a temporary layer from playfield drawing
+              const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
+              if (isTemporary) {
+                // Keep temporary layers if current or not expired
+                if (layer.id === currentTemporaryLayerId) {
+                  return true;
+                }
+                return isTemporary.expiresAt > Date.now();
+              }
+
+              return false;
+            })
+          ];
+
+          return {
+            ...(yjsSceneData.stageProps.annotations || {}),
+            layers: mergedLayers,
+            activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer
+          };
+        })()
       };
 
       // Update the timestamp to prevent re-processing
@@ -225,12 +555,14 @@
           `fog_${stageProps.fogOfWar.maskVersion} - Version: ${stageProps.fogOfWar.maskVersion}, Previous: ${lastFogMaskVersion}`
         );
         lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
-        if (data.activeScene?.id) {
+        // Use Y.js active scene ID (source of truth) instead of SSR data which may be stale
+        const sceneIdToFetch = yjsPartyState.activeSceneId || data.activeScene?.id;
+        if (sceneIdToFetch) {
           timingLog(
             'FOG-RT',
-            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API at ${new Date().toISOString()}`
+            `fog_${stageProps.fogOfWar.maskVersion} - 11. Fetching fog mask from API for scene ${sceneIdToFetch} at ${new Date().toISOString()}`
           );
-          fetchFogMask(data.activeScene.id);
+          fetchFogMask(sceneIdToFetch);
         }
       }
 
@@ -267,13 +599,20 @@
           timestamp: Date.now()
         });
         devLog('playfield', 'Using SSR data:', !initialDataApplied ? 'initial render' : 'Y.js missing scene data');
-        stageProps = buildSceneProps(
+        const builtProps = buildSceneProps(
           data.activeScene,
           data.activeSceneMarkers,
           'client',
           data.activeSceneAnnotations,
           data.bucketUrl
         );
+        stageProps = builtProps;
+        // Store SSR annotation layers to preserve them during Y.js merging
+        ssrAnnotationLayers = builtProps.annotations?.layers || [];
+        devLog('playfield', 'Stored SSR annotation layers:', {
+          count: ssrAnnotationLayers.length,
+          ids: ssrAnnotationLayers.map((l) => l.id)
+        });
         initialDataApplied = true;
       }
     }
@@ -299,11 +638,20 @@
       lastFogMaskVersion = undefined;
       lastAnnotationMaskVersions.clear();
 
-      // Fetch fog mask for the new scene
-      devLog('playfield', 'Scene changed, fetching fog mask for:', newSceneId);
-      fetchFogMask(newSceneId);
+      // Fetch fog mask for the new scene - use Y.js scene ID if available (source of truth)
+      const sceneIdToFetch = yjsPartyState.activeSceneId || newSceneId;
+      devLog('playfield', 'Scene changed, fetching fog mask for:', sceneIdToFetch);
+      fetchFogMask(sceneIdToFetch);
 
-      // Also fetch annotation masks if there are any
+      // Load annotation masks from SSR data if available (after invalidateAll completes)
+      // This ensures masks are loaded when switching to a scene that already has annotations
+      devLog('playfield', 'Scene changed, loading annotation masks from SSR data');
+      loadAnnotationMasksFromSsr().catch((error) => {
+        console.error('Error loading annotation masks from SSR after scene change:', error);
+      });
+
+      // Also fetch annotation masks for any layers that have a maskVersion
+      // This handles cases where Y.js has newer versions than SSR
       if (stageProps.annotations?.layers) {
         for (const layer of stageProps.annotations.layers) {
           if (layer.maskVersion) {
@@ -440,6 +788,16 @@
         }
         measurements = yjsMeasurements;
 
+        // Update temporary layers from Y.js awareness
+        const manager = getPartyDataManager();
+        if (manager) {
+          const yjsTemporaryLayers = getTemporaryLayers(manager);
+          if (yjsTemporaryLayers.length > 0) {
+            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          }
+          temporaryLayers = yjsTemporaryLayers;
+        }
+
         // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
         const hoveredMarker = partyData!.getHoveredMarker();
         hoveredMarkerId = hoveredMarker?.id ?? null;
@@ -522,14 +880,72 @@
     // Add mousemove event listener
     window.addEventListener('mousemove', handleMouseMove);
 
+    // Set up gesture detector for radial menu (two-finger long-press or right-click)
+    let gestureDetector: ReturnType<typeof createUnifiedGestureDetector> | null = null;
+    if (stageElement) {
+      gestureDetector = createUnifiedGestureDetector((position) => {
+        menuVisible = true;
+        menuPosition = position;
+      }, stageElement);
+    }
+
+    // Set up activity timer for fog/drawing interactions (5 second timeout)
+    if (stageElement) {
+      activityTimer = createConditionalActivityTimer(
+        5000,
+        () => {
+          // On timeout, reset active layer to None and clear temporary drawing ID
+          // The layer itself will persist in Y.js until it expires (10 seconds)
+          devLog(
+            'playfield',
+            'Activity timeout - resetting active layer to None, currentTemporaryLayerId:',
+            currentTemporaryLayerId
+          );
+          stageProps.activeLayer = MapLayerType.None;
+          stageProps.annotations.activeLayer = null;
+          currentTemporaryLayerId = null;
+        },
+        () => stageProps.activeLayer !== MapLayerType.None,
+        ['mousedown', 'mousemove', 'touchstart', 'touchmove'],
+        stageElement
+      );
+    }
+
+    // Set up cleanup timer for expired temporary layers (check every 1000ms)
+    temporaryDrawingTimer = setInterval(() => {
+      const manager = getPartyDataManager();
+      if (manager) {
+        cleanupExpiredLayers(manager);
+        temporaryLayers = getTemporaryLayers(manager);
+
+        // Clear currentTemporaryLayerId if it no longer exists in Y.js awareness
+        if (currentTemporaryLayerId && !temporaryLayers.find((l) => l.id === currentTemporaryLayerId)) {
+          currentTemporaryLayerId = null;
+        }
+      }
+    }, 1000);
+
     return () => {
       isUnmounting = true;
       isMounted = false;
 
-      // No timers to clear - we removed debouncing
-
       // Remove event listeners
       window.removeEventListener('mousemove', handleMouseMove);
+
+      // Clean up gesture detector
+      if (gestureDetector) {
+        gestureDetector.destroy();
+      }
+
+      // Clean up activity timer
+      if (activityTimer) {
+        activityTimer.destroy();
+      }
+
+      // Clean up temporary drawing timer
+      if (temporaryDrawingTimer) {
+        clearInterval(temporaryDrawingTimer);
+      }
 
       // Cursor cleanup is handled by Y.js awareness automatically
 
@@ -627,6 +1043,16 @@
         }
         measurements = yjsMeasurements;
 
+        // Update temporary layers from Y.js awareness
+        const manager = getPartyDataManager();
+        if (manager) {
+          const yjsTemporaryLayers = getTemporaryLayers(manager);
+          if (yjsTemporaryLayers.length > 0) {
+            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          }
+          temporaryLayers = yjsTemporaryLayers;
+        }
+
         // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
         const hoveredMarker = partyData!.getHoveredMarker();
         hoveredMarkerId = hoveredMarker?.id ?? null;
@@ -692,67 +1118,263 @@
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function onFogUpdate(_blob: Promise<Blob>) {
-    return;
-  }
+  // Process fog update - encode RLE, save to DB, sync to Y.js
+  const processFogUpdate = async () => {
+    // Use Y.js active scene ID as source of truth
+    const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
+    if (!pendingFogBlob || !activeSceneId) return;
+
+    // Check if user is still drawing
+    if (stage?.fogOfWar?.isDrawing()) {
+      devLog('playfield', 'Aborting fog update - user is still drawing');
+      return;
+    }
+
+    pendingFogBlob = null;
+
+    devLog('playfield', 'Processing fog update - encoding RLE');
+    const rleData = await stage?.fogOfWar?.toRLE();
+    if (!rleData) {
+      devError('playfield', 'Failed to get RLE data from fog layer');
+      return;
+    }
+
+    devLog(
+      'playfield',
+      `Fog RLE encoding complete (${rleData.length} bytes), saving to database for scene ${activeSceneId}`
+    );
+
+    try {
+      await updateFogMaskMutation.mutateAsync({
+        sceneId: activeSceneId,
+        partyId: party.id,
+        maskData: rleData
+      });
+
+      devLog('playfield', 'Fog database save complete');
+
+      // Check if user started drawing while upload was in progress
+      if (stage?.fogOfWar?.isDrawing()) {
+        devLog('playfield', 'Fog update completed but user is drawing - skipping Y.js sync');
+        return;
+      }
+
+      // Update mask version to signal other clients
+      const maskVersion = Date.now();
+      stageProps.fogOfWar.maskVersion = maskVersion;
+      devLog('playfield', `Setting fog mask version ${maskVersion}`);
+
+      // Sync to Y.js for real-time collaboration
+      const manager = getPartyDataManager();
+      if (manager && activeSceneId) {
+        devLog('playfield', 'Broadcasting fog update to Y.js');
+        manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
+      }
+    } catch (error) {
+      devError('playfield', 'Error updating fog mask:', error);
+    }
+  };
+
+  const onFogUpdate = async () => {
+    // Store a flag that we need to process fog update
+    pendingFogBlob = new Blob();
+
+    // Reset the layer timeout since user is actively drawing
+    resetToNoneAfterDelay();
+
+    // Clear any existing timer
+    if (fogUpdateTimer) {
+      clearTimeout(fogUpdateTimer);
+    }
+
+    // Set a new timer to process the update after a delay (500ms debounce)
+    fogUpdateTimer = setTimeout(() => {
+      devLog('playfield', 'Fog update debounce timer fired');
+      processFogUpdate();
+      fogUpdateTimer = null;
+    }, 500);
+  };
 
   function onMapUpdate(offset: { x: number; y: number }, zoom: number) {
     devLog('playfield', 'Updating map', offset, zoom);
     return;
   }
 
-  // Don't allow marker movement in player view
-  function onMarkerMoved() {}
-  function onMarkerAdded() {}
+  // Players can move markers - broadcast position updates via Y.js
+  function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
+    const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
+    if (!activeSceneId) return;
+
+    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
+    if (index !== -1) {
+      // Mark marker as being moved to protect from Y.js overwrites
+      markersBeingMoved.add(marker.id);
+
+      // Update marker position immediately in local state
+      stageProps.marker.markers[index] = {
+        ...marker,
+        position: { x: position.x, y: position.y }
+      };
+
+      // Broadcast only the marker position update to Y.js - editor will receive and save to database
+      // This prevents overwriting other stageProps state that should only be managed by the editor
+      const manager = getPartyDataManager();
+      if (manager) {
+        manager.updateMarkerPosition(activeSceneId, marker.id, position);
+        devLog('playfield', 'Broadcasting marker position update:', {
+          markerId: marker.id,
+          position
+        });
+      }
+
+      // Remove protection after a short delay to allow Y.js sync to complete
+      setTimeout(() => {
+        markersBeingMoved.delete(marker.id);
+      }, 2000);
+    }
+  }
+
+  function onMarkerAdded() {} // Players can't add markers
   function onMarkerHover() {} // Players can't control hover, only receive it
 
   const onMarkerSelected = (marker: Marker | null) => {
     selectedMarker = marker ?? undefined;
   };
 
-  function onStageLoading() {
-    stageIsLoading = true;
-  }
+  // Measurement callbacks for Y.js broadcasting (playfield → editor)
+  const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Broadcast measurement start to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = extractMeasurementProps(stageProps.measurement);
+      partyData.updateMeasurement(startPoint, startPoint, type, measurementProps);
+      devLog('playfield', 'Broadcasting measurement start:', { startPoint, type, measurementProps });
+    }
+  };
 
-  async function onStageInitialized() {
-    stageIsLoading = false;
+  const onMeasurementUpdate = (
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number },
+    type: number
+  ) => {
+    // Broadcast measurement update to all clients via Y.js awareness
+    if (partyData && stageProps.measurement) {
+      const measurementProps = extractMeasurementProps(stageProps.measurement);
+      partyData.updateMeasurement(startPoint, endPoint, type, measurementProps);
+    }
+  };
 
+  const onMeasurementEnd = () => {
+    // Clear measurement when finished (it will fade out on its own)
+    if (partyData) {
+      partyData.updateMeasurement(null, null, 0);
+      devLog('playfield', 'Clearing measurement broadcast');
+    }
+    // Reset activeLayer back to None after measurement is finished
+    stageProps.activeLayer = MapLayerType.None;
+  };
+
+  async function loadFogMask() {
     // Load fog mask if available
     if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
       try {
+        devLog('playfield', 'Loading fog mask from server data');
         // Convert base64 back to Uint8Array
         const binaryString = atob(data.activeSceneFogMask);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
+        devLog('playfield', `Applying fog mask (${bytes.length} bytes) to fog layer`);
         // Apply the mask to the fog layer
         await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+        devLog('playfield', 'Fog mask applied successfully');
+
+        // Store the mask version if present in stageProps
+        if (stageProps.fogOfWar?.maskVersion) {
+          lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+        }
       } catch (error) {
-        console.error('Error loading fog mask:', error);
+        devError('playfield', 'Error loading fog mask:', error);
+      }
+    } else {
+      devLog('playfield', 'No fog mask data in SSR, checking if we need to fetch from Y.js state', {
+        hasMaskData: !!data.activeSceneFogMask,
+        hasFogLayer: !!stage?.fogOfWar?.fromRLE,
+        hasMaskVersion: !!stageProps.fogOfWar?.maskVersion
+      });
+
+      // If there's a maskVersion in stageProps but no SSR data, fetch the mask
+      if (stageProps.fogOfWar?.maskVersion && data.activeScene?.id) {
+        devLog('playfield', `Fetching fog mask for version ${stageProps.fogOfWar.maskVersion} on initial load`);
+        lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+        fetchFogMask(data.activeScene.id);
       }
     }
+  }
 
-    // Load annotation masks if available
+  function onStageLoading() {
+    stageIsLoading = true;
+  }
+
+  /**
+   * Load annotation masks from SSR data
+   * Called on initial stage load and when active scene changes
+   */
+  async function loadAnnotationMasksFromSsr() {
+    devLog('playfield', 'loadAnnotationMasksFromSsr called:', {
+      hasMaskData: !!data.activeSceneAnnotationMasks,
+      hasStage: !!stage,
+      hasLoadMask: !!stage?.annotations?.loadMask,
+      maskCount: data.activeSceneAnnotationMasks ? Object.keys(data.activeSceneAnnotationMasks).length : 0,
+      layerCount: stageProps.annotations?.layers?.length || 0,
+      layerIds: stageProps.annotations?.layers?.map((l) => l.id) || []
+    });
+
     if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
       try {
         for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
           if (maskData) {
-            // Convert base64 back to Uint8Array
-            const binaryString = atob(maskData);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
+            // Check if the annotation layer exists in stageProps
+            const layerExists = stageProps.annotations.layers.some((layer) => layer.id === annotationId);
+            if (!layerExists) {
+              devLog(
+                'playfield',
+                `Skipping mask load for annotation ${annotationId} - layer not found in stageProps. Available layers:`,
+                {
+                  availableLayerIds: stageProps.annotations.layers.map((l) => l.id),
+                  searchingFor: annotationId
+                }
+              );
+              continue;
             }
-            // Apply the mask to the annotation layer
+
+            devLog('playfield', `Loading annotation mask from SSR data for layer ${annotationId}`);
+            // Convert base64 to Uint8Array and apply to the annotation layer
+            const bytes = base64ToUint8Array(maskData);
             await stage.annotations.loadMask(annotationId, bytes);
+            devLog('playfield', `Successfully loaded annotation mask for layer ${annotationId}`);
           }
         }
       } catch (error) {
         console.error('Error loading annotation masks:', error);
       }
+    } else {
+      devLog('playfield', 'Skipping annotation mask loading - requirements not met:', {
+        hasMaskData: !!data.activeSceneAnnotationMasks,
+        hasStage: !!stage,
+        hasLoadMask: !!stage?.annotations?.loadMask
+      });
     }
+  }
+
+  async function onStageInitialized() {
+    stageIsLoading = false;
+
+    // Load fog mask from SSR data if available
+    await loadFogMask();
+
+    // Load annotation masks from SSR data if available
+    await loadAnnotationMasksFromSsr();
 
     // Immediately fit when stage is ready
     if (stage?.scene?.fit) {
@@ -761,10 +1383,47 @@
   }
 
   async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
-    blob.then((blob) => {
+    // Reset the layer timeout since user is actively drawing
+    resetToNoneAfterDelay();
+
+    blob.then(async (blob) => {
       const layer = stageProps.annotations.layers.find((layer) => layer.id === layerId);
       if (layer) {
         layer.url = URL.createObjectURL(blob);
+      }
+
+      // If this is a temporary drawing, broadcast it via Y.js awareness
+      if (currentTemporaryLayerId && stage?.annotations) {
+        try {
+          const tempLayerData = stageProps.annotations.layers.find((l) => l.id === currentTemporaryLayerId);
+          if (tempLayerData) {
+            const rleData = await stage.annotations.toRLE();
+            if (rleData && rleData.length > 0) {
+              const base64 = uint8ArrayToBase64(rleData);
+
+              const tempLayer = createTemporaryLayer(
+                currentTemporaryLayerId,
+                user.id,
+                tempLayerData.color,
+                base64,
+                10000 // 10 second expiration
+              );
+
+              const manager = getPartyDataManager();
+              if (manager) {
+                broadcastTemporaryLayer(manager, tempLayer);
+                temporaryLayers = getTemporaryLayers(manager);
+              }
+            }
+          }
+        } catch (error) {
+          devError('playfield', 'Error broadcasting temporary layer:', error);
+        }
+
+        // Exit drawing mode after the drawing is complete with a delay
+        devLog('playfield', 'Drawing complete, will exit annotation mode after 3 seconds');
+        resetToNoneAfterDelay();
+        currentTemporaryLayerId = null;
       }
     });
   }
@@ -779,20 +1438,85 @@
 
   // Track the latest measurement to pass to Stage
   $effect(() => {
-    const measurementValues = Object.values(measurements);
-    if (measurementValues.length > 0) {
-      // Find the most recent measurement
-      const newest = measurementValues.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
-      );
+    const newest = getLatestMeasurement(measurements);
+    if (newest) {
       devLog('playfield', 'Latest measurement to pass to Stage:', newest);
-      latestMeasurement = newest;
-    } else {
-      latestMeasurement = null;
     }
+    latestMeasurement = newest;
   });
 
   // Fade-out logic is now handled in CursorLayer component via opacity calculation
+
+  // Effect to convert temporary layers to annotation layers for display
+  $effect(() => {
+    if (stage?.annotations) {
+      // Convert temporary layers to annotation layer data
+      const tempAnnotationLayers: AnnotationLayerData[] = temporaryLayers.map((tempLayer) => ({
+        id: tempLayer.id,
+        name: tempLayer.name,
+        color: tempLayer.color,
+        opacity: tempLayer.opacity,
+        url: null,
+        maskVersion: undefined,
+        visibility: StageMode.Player
+      }));
+
+      // Add temporary layers to annotations (without replacing existing ones)
+      const existingLayerIds = new Set(stageProps.annotations.layers.map((l) => l.id));
+      const newLayers = tempAnnotationLayers.filter((l) => !existingLayerIds.has(l.id));
+
+      if (newLayers.length > 0) {
+        stageProps.annotations.layers = [...stageProps.annotations.layers, ...newLayers];
+
+        // Load RLE data for each new temporary layer
+        newLayers.forEach(async (layer) => {
+          const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
+          if (tempLayer && tempLayer.maskData && stage?.annotations?.loadMask) {
+            try {
+              const binaryString = atob(tempLayer.maskData);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              await stage.annotations.loadMask(layer.id, bytes);
+            } catch (error) {
+              devError('playfield', `Error loading temporary layer ${layer.id}:`, error);
+            }
+          }
+        });
+      }
+
+      // Remove expired temporary layers from annotations
+      const now = Date.now();
+      const tempLayerIds = new Set(temporaryLayers.map((t) => t.id));
+
+      const filteredLayers = stageProps.annotations.layers.filter((l) => {
+        // Check if this layer ID exists in the current temporaryLayers array
+        if (tempLayerIds.has(l.id)) {
+          // It's a temporary layer that still exists - keep if not expired or currently being drawn
+          const tempLayer = temporaryLayers.find((t) => t.id === l.id);
+          if (l.id === currentTemporaryLayerId) {
+            return true;
+          }
+          return tempLayer && tempLayer.expiresAt > now;
+        }
+
+        // Check if this was a temporary layer that expired (was in temporaryLayers before but isn't now)
+        // We can identify these because they won't have a maskVersion (temporary layers don't persist to DB)
+        if (!l.maskVersion) {
+          // This was likely a temporary layer that expired - remove it
+          return false;
+        }
+
+        // It's a permanent annotation (has maskVersion) - always keep
+        return true;
+      });
+
+      if (filteredLayers.length !== stageProps.annotations.layers.length) {
+        stageProps.annotations.layers = filteredLayers;
+      }
+    }
+  });
 
   // Effect to handle active scene changes
   $effect(() => {
@@ -804,11 +1528,16 @@
         currentActiveSceneId
       });
 
-      // Check if active scene changed
-      if (yjsPartyState.activeSceneId && yjsPartyState.activeSceneId !== currentActiveSceneId) {
+      // Check if active scene changed (and we haven't already processed this change)
+      if (
+        yjsPartyState.activeSceneId &&
+        yjsPartyState.activeSceneId !== currentActiveSceneId &&
+        yjsPartyState.activeSceneId !== lastProcessedSceneId
+      ) {
         devLog('playfield', 'Active scene change detected:', {
           from: currentActiveSceneId,
           to: yjsPartyState.activeSceneId,
+          lastProcessedSceneId,
           currentGameSessionId: data.activeGameSession?.id,
           timestamp: Date.now()
         });
@@ -821,9 +1550,10 @@
         // Trigger loading fade immediately when scene change is detected
         sceneIsChanging = true;
 
-        // Set flags to prevent race conditions
+        // Set flags to prevent race conditions and track the scene we're switching to
         isProcessingSceneChange = true;
         isInvalidating = true;
+        lastProcessedSceneId = yjsPartyState.activeSceneId;
 
         // Clear the current scene data to show loading state
         yjsSceneData = null;
@@ -944,10 +1674,10 @@
       onMarkerSelected,
       onMarkerContextMenu,
       onMarkerHover,
-      // Measurements are read-only in playfield, but we still need the callbacks
-      onMeasurementStart: () => {},
-      onMeasurementUpdate: () => {},
-      onMeasurementEnd: () => {}
+      // Measurement callbacks for playfield → editor sync
+      onMeasurementStart,
+      onMeasurementUpdate,
+      onMeasurementEnd
     }}
     cursors={cursorArray}
     trackLocalCursor={false}
@@ -955,6 +1685,15 @@
 
   <!-- Cursors are now rendered in Three.js via the CursorLayer component -->
 </div>
+
+<!-- Radial menu for player interactions -->
+<RadialMenu
+  visible={menuVisible}
+  position={menuPosition}
+  items={menuItems}
+  onItemSelect={handleMenuItemSelect}
+  onClose={handleMenuClose}
+/>
 
 <style>
   .paused {

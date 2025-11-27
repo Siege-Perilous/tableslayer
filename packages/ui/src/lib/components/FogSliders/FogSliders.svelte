@@ -10,7 +10,7 @@
 </script>
 
 <div class="fogSliders">
-  <BrushSizeSlider {brushSize} {onBrushSizeChange} min={40} max={200} curve="linear" />
+  <BrushSizeSlider {brushSize} {onBrushSizeChange} min={5} max={20} curve="linear" displayAsPercentage={true} />
 </div>
 
 <style>

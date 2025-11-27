@@ -281,6 +281,13 @@
       "when": 1760097015850,
       "tag": "0039_pinned-tooltip",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1763995272090,
+      "tag": "0040_pin-marker",
+      "breakpoints": true
     }
   ]
 }

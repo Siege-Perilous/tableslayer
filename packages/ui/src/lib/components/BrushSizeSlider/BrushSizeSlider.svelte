@@ -5,9 +5,17 @@
     min?: number;
     max?: number;
     curve?: 'linear' | 'quadratic';
+    displayAsPercentage?: boolean;
   }
 
-  let { brushSize, onBrushSizeChange, min = 1, max = 200, curve = 'quadratic' }: Props = $props();
+  let {
+    brushSize,
+    onBrushSizeChange,
+    min = 1,
+    max = 200,
+    curve = 'quadratic',
+    displayAsPercentage = false
+  }: Props = $props();
 
   // For quadratic curve: size = coefficient * slider^2
   // We want: at slider=50%, size should be at the midpoint between min and max
@@ -33,11 +41,15 @@
     if (curve === 'linear') {
       // Linear mapping from slider (0-100) to size range (min-max)
       const size = min + (slider / 100) * (max - min);
-      return Math.max(min, Math.min(max, Math.round(size)));
+      // For linear curve (used by fog), keep decimal precision
+      // Round to 1 decimal place
+      return Math.max(min, Math.min(max, Math.round(size * 10) / 10));
     } else {
-      // Quadratic curve
+      // Quadratic curve (used by annotations)
       const size = coefficient * slider * slider;
-      return Math.max(min, Math.min(max, Math.round(size)));
+      // For quadratic, we can round to integers as the range is small decimals (0.01-5.0)
+      // but we need to preserve decimal precision, so round to 2 decimal places
+      return Math.max(min, Math.min(max, Math.round(size * 100) / 100));
     }
   };
 
@@ -45,6 +57,13 @@
 
   const handleBrushSliderChange = (value: number) => {
     const actualSize = sliderToBrushSize(value);
+    console.log('[BrushSizeSlider] Slider change:', {
+      sliderValue: value,
+      actualSize,
+      min,
+      max,
+      curve
+    });
     onBrushSizeChange(actualSize);
   };
 
@@ -74,7 +93,7 @@
     ontouchstart={handleTouchStart}
     ontouchmove={handleTouchMove}
   />
-  <div class="brushSizeSlider__value">{brushSize}</div>
+  <div class="brushSizeSlider__value">{displayAsPercentage ? `${brushSize.toFixed(1)}%` : brushSize}</div>
 </div>
 
 <style>

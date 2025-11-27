@@ -21,6 +21,30 @@
   const stage = getContext<{ mode: StageMode }>('stage');
   let drawMaterial: DrawingMaterial;
 
+  // Convert percentage-based tool.size to texture pixels
+  // tool.size is a percentage (5-20), mapSize gives texture dimensions
+  const toolSizePixels = $derived.by(() => {
+    if (!mapSize) return props.tool.size;
+    const textureSize = Math.min(mapSize.width, mapSize.height);
+    const pixels = Math.round(textureSize * (props.tool.size / 100));
+    console.log('[FogOfWarMaterial] Conversion:', {
+      toolSizePercent: props.tool.size,
+      textureSize,
+      toolSizePixels: pixels,
+      calculation: `${textureSize} * (${props.tool.size} / 100) = ${pixels}`
+    });
+    return pixels;
+  });
+
+  // Create derived props with converted tool size
+  const drawingProps = $derived({
+    ...props,
+    tool: {
+      ...props.tool,
+      size: toolSizePixels
+    }
+  });
+
   // Material used for rendering the fog of war
   let fogMaterial = new THREE.ShaderMaterial({
     uniforms: {
@@ -157,7 +181,7 @@
 
 <DrawingMaterial
   bind:this={drawMaterial}
-  {props}
+  props={drawingProps}
   size={mapSize}
   initialState={InitialState.Fill}
   onRender={(texture) => {

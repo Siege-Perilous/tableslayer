@@ -22,6 +22,14 @@
 
   const onFogUpdate = getContext<Callbacks>('callbacks').onFogUpdate;
 
+  // Convert percentage-based tool.size to texture pixels for outline
+  // This must match the conversion in FogOfWarMaterial
+  const toolSizePixels = $derived.by(() => {
+    if (!mapSize) return props.tool.size;
+    const textureSize = Math.min(mapSize.width, mapSize.height);
+    return Math.round(textureSize * (props.tool.size / 100));
+  });
+
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
@@ -38,11 +46,12 @@
   let lastPos: THREE.Vector2 | null = null;
 
   // Add outline material
+  // Initial value will be updated by $effect below
   const outlineMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uStart: { value: new THREE.Vector2(Infinity, Infinity) },
       uEnd: { value: new THREE.Vector2(Infinity, Infinity) },
-      uBrushSize: { value: props.tool.size },
+      uBrushSize: { value: props.tool.size }, // Will be updated to pixels in $effect
       uTextureSize: { value: new THREE.Vector2(0, 0) },
       uShapeType: { value: props.tool.type },
       uOutlineColor: { value: new THREE.Color(props.outline.color) },
@@ -69,13 +78,20 @@
   $effect(() => {
     if (!mapSize) return;
 
+    console.log('[FogOfWarLayer] Outline update:', {
+      toolSizePercent: props.tool.size,
+      toolSizePixels,
+      mapSize,
+      textureSize: new THREE.Vector2(mapSize.width, mapSize.height)
+    });
+
     outlineMaterial.visible = isActive;
     outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
     outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
     outlineMaterial.uniforms.uOutlineOpacity.value = props.outline.opacity;
     outlineMaterial.uniforms.uShapeType.value = props.tool.type;
-    outlineMaterial.uniforms.uBrushSize.value = props.tool.size;
+    outlineMaterial.uniforms.uBrushSize.value = toolSizePixels; // Use converted pixel value
 
     // When changing to a rectangle or ellipse, initially hide the outline
     if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {

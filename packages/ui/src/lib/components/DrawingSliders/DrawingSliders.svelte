@@ -57,27 +57,29 @@
     return activeLayerIndex <= 9 && activeLayerIndex > 0 ? layerIcons[activeLayerIndex - 1] : IconBoxMultiple;
   });
 
-  // Use quadratic curve for brush size to give more precision to lower values
-  // At 50% slider we want size 50, so we use: size = 0.02 * slider^2
-  // This gives: 0% → 1, 50% → 50, 100% → 200
-  const brushSizeToSlider = (size: number): number => {
-    // Inverse: slider = sqrt(size / 0.02)
-    // Clamp to minimum of 1
-    const clampedSize = Math.max(1, size);
-    return Math.sqrt(clampedSize / 0.02);
+  // Brush size is now stored as a percentage (0.01% to 5%)
+  // Use quadratic curve for slider to give more precision to lower values
+  // Slider range: 0-100, maps to percentage range: 0.01-5.0
+  // At 50% slider we want 2%, so we use: percentage = 0.0008 * slider^2
+  // This gives: 10% → 0.08%, 50% → 2%, 100% → 8% (capped at 5%)
+  const percentageToSlider = (percentage: number): number => {
+    // Inverse: slider = sqrt(percentage / 0.0008)
+    // Clamp to minimum of 0.01
+    const clampedPercentage = Math.max(0.01, percentage);
+    return Math.sqrt(clampedPercentage / 0.0008);
   };
 
-  const sliderToBrushSize = (slider: number): number => {
-    // Quadratic curve: size = 0.02 * slider^2
-    const size = 0.02 * slider * slider;
-    return Math.max(1, Math.round(size));
+  const sliderToPercentage = (slider: number): number => {
+    // Quadratic curve: percentage = 0.0008 * slider^2
+    const percentage = 0.0008 * slider * slider;
+    return Math.max(0.01, Math.min(5.0, percentage));
   };
 
-  let brushSliderValue = $derived(brushSizeToSlider(brushSize));
+  let brushSliderValue = $derived(percentageToSlider(brushSize));
 
   const handleBrushSliderChange = (value: number) => {
-    const actualSize = sliderToBrushSize(value);
-    onBrushSizeChange(actualSize);
+    const actualPercentage = sliderToPercentage(value);
+    onBrushSizeChange(actualPercentage);
   };
 
   // Touch event handlers for better mobile support
@@ -146,7 +148,7 @@
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
     />
-    <div class="drawingSliders__value">{brushSize}</div>
+    <div class="drawingSliders__value">{brushSize.toFixed(2)}%</div>
   </div>
 
   <IconButton
