@@ -2,7 +2,7 @@
   import type { RadialMenuProps, RadialMenuItemProps, SubmenuLayout } from './types';
   import RadialMenuItem from './RadialMenuItem.svelte';
 
-  const { visible = false, position, items, onItemSelect, onClose }: RadialMenuProps = $props();
+  const { visible = false, position, items, backIcon, onItemSelect, onClose, onReposition }: RadialMenuProps = $props();
 
   let activeSubmenu: RadialMenuItemProps[] | null = $state(null);
   let activeSubmenuLayout: SubmenuLayout = $state('radial');
@@ -75,6 +75,55 @@
     } else {
       // Otherwise close the menu
       handleClose();
+    }
+  }
+
+  function handleBackdropContextMenu(e: MouseEvent) {
+    e.preventDefault();
+    if (onReposition) {
+      // Reset to main menu when repositioning
+      activeSubmenu = null;
+      activeSubmenuLayout = 'radial';
+      onReposition({ x: e.clientX, y: e.clientY });
+    }
+  }
+
+  // Two-finger touch tracking for repositioning
+  let twoFingerTouchStart: { x: number; y: number } | null = null;
+  let twoFingerHoldTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function handleBackdropTouchStart(e: TouchEvent) {
+    if (e.touches.length === 2 && onReposition) {
+      // Calculate center point of two fingers
+      const x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      twoFingerTouchStart = { x, y };
+
+      // Start hold timer (500ms like the original gesture detector)
+      twoFingerHoldTimer = setTimeout(() => {
+        if (twoFingerTouchStart && onReposition) {
+          // Reset to main menu when repositioning
+          activeSubmenu = null;
+          activeSubmenuLayout = 'radial';
+          onReposition(twoFingerTouchStart);
+        }
+        twoFingerTouchStart = null;
+      }, 500);
+    }
+  }
+
+  function handleBackdropTouchEnd() {
+    twoFingerTouchStart = null;
+    if (twoFingerHoldTimer) {
+      clearTimeout(twoFingerHoldTimer);
+      twoFingerHoldTimer = null;
+    }
+  }
+
+  function handleBackdropTouchMove(e: TouchEvent) {
+    // Cancel if fingers moved too much or finger count changed
+    if (twoFingerTouchStart && e.touches.length !== 2) {
+      handleBackdropTouchEnd();
     }
   }
 
@@ -157,46 +206,65 @@
 </script>
 
 {#if visible}
-  <div class="radialMenu" class:radialMenu--visible={visible}>
+  <div class="radialMenu">
     <!-- Backdrop to catch clicks outside menu -->
-    <button class="radialMenuBackdrop" onclick={handleBackdropClick} type="button" aria-label="Close menu"></button>
+    <button
+      class="radialMenu__backdrop"
+      onclick={handleBackdropClick}
+      oncontextmenu={handleBackdropContextMenu}
+      ontouchstart={handleBackdropTouchStart}
+      ontouchend={handleBackdropTouchEnd}
+      ontouchmove={handleBackdropTouchMove}
+      ontouchcancel={handleBackdropTouchEnd}
+      type="button"
+      aria-label="Close menu"
+    ></button>
 
     <!-- Menu container positioned at touch point -->
     <div
       bind:this={menuContainer}
-      class="radialMenuContainer"
-      class:radialMenuContainer--table={activeSubmenuLayout === 'table'}
+      class="radialMenu__container"
+      class:radialMenu__container--table={activeSubmenuLayout === 'table'}
       style:left="{adjustedPosition.x}px"
       style:top="{adjustedPosition.y}px"
     >
       {#if activeSubmenu && activeSubmenuLayout === 'table'}
         <!-- Table layout for submenus like scene lists -->
-        <div class="radialMenuTable" style="transform: rotate({tableRotation}deg);">
+        <div class="radialMenu__table" style="transform: rotate({tableRotation}deg);">
           <button
-            class="radialMenuTableBack"
+            class="radialMenu__tableBack"
             onclick={() => {
               activeSubmenu = null;
               activeSubmenuLayout = 'radial';
             }}
             type="button"
           >
-            ← Back
+            {#if backIcon}
+              {@const BackIcon = backIcon}
+              <BackIcon size={18} stroke={2} />
+            {:else}
+              ←
+            {/if}
+            Back
           </button>
-          <div class="radialMenuTableColumns">
+          <div class="radialMenu__tableColumns">
             {#each tableColumns as column, colIndex (colIndex)}
-              <div class="radialMenuTableColumn">
+              <div class="radialMenu__tableColumn">
                 {#each column as item (item.id)}
                   <button
-                    class="radialMenuTableItem"
-                    class:radialMenuTableItem--disabled={item.disabled}
+                    class="radialMenu__tableItem"
+                    class:radialMenu__tableItem--disabled={item.disabled}
                     onclick={() => handleItemSelect(item.id)}
                     type="button"
                     disabled={item.disabled}
                   >
                     {#if item.icon}
-                      <span class="radialMenuTableItemIcon">{item.icon}</span>
+                      {@const ItemIcon = item.icon}
+                      <span class="radialMenu__tableItemIcon">
+                        <ItemIcon size={18} stroke={2} />
+                      </span>
                     {/if}
-                    <span class="radialMenuTableItemLabel">{item.label}</span>
+                    <span class="radialMenu__tableItemLabel">{item.label}</span>
                   </button>
                 {/each}
               </div>
@@ -207,14 +275,19 @@
         {#if activeSubmenu}
           <!-- Back button in center for radial submenu -->
           <button
-            class="radialMenuCenterBtn"
+            class="radialMenu__centerBtn"
             onclick={() => {
               activeSubmenu = null;
               activeSubmenuLayout = 'radial';
             }}
             type="button"
           >
-            Back
+            {#if backIcon}
+              {@const BackIcon = backIcon}
+              <BackIcon size={20} stroke={2} />
+            {:else}
+              Back
+            {/if}
           </button>
         {/if}
 
@@ -237,18 +310,11 @@
   .radialMenu {
     position: fixed;
     inset: 0;
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-  }
-
-  .radialMenu--visible {
-    opacity: 1;
     pointer-events: auto;
+    z-index: 1000;
   }
 
-  .radialMenuBackdrop {
+  .radialMenu__backdrop {
     position: absolute;
     inset: 0;
     background: transparent;
@@ -257,42 +323,43 @@
     padding: 0;
   }
 
-  .radialMenuContainer {
+  .radialMenu__container {
     position: absolute;
     transform: translate(-50%, -50%);
     pointer-events: none;
   }
 
-  .radialMenuCenterBtn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
+  .radialMenu__container--table {
     transform: translate(-50%, -50%);
-    padding: 1rem 1.5rem;
+  }
+
+  .radialMenu__centerBtn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
     background: var(--bg);
-    border: 2px solid var(--fgPrimary);
+    border: 1px solid var(--fgMuted);
     border-radius: 50%;
     color: var(--fg);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     pointer-events: auto;
-    transition: all 0.15s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
-  .radialMenuCenterBtn:hover {
+  .radialMenu__centerBtn:hover {
     background: var(--fgPrimary);
     color: var(--bg);
-    transform: translate(-50%, -50%) scale(1.1);
   }
 
-  /* Table layout styles */
-  .radialMenuContainer--table {
-    transform: translate(-50%, -50%);
-  }
-
-  .radialMenuTable {
+  .radialMenu__table {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -304,7 +371,7 @@
     pointer-events: auto;
   }
 
-  .radialMenuTableBack {
+  .radialMenu__tableBack {
     padding: 0.5rem 1rem;
     background: transparent;
     border: none;
@@ -314,25 +381,24 @@
     font-weight: 500;
     cursor: pointer;
     text-align: left;
-    transition: color 0.15s ease-in-out;
   }
 
-  .radialMenuTableBack:hover {
+  .radialMenu__tableBack:hover {
     color: var(--fg);
   }
 
-  .radialMenuTableColumns {
+  .radialMenu__tableColumns {
     display: flex;
     gap: 0.25rem;
   }
 
-  .radialMenuTableColumn {
+  .radialMenu__tableColumn {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
   }
 
-  .radialMenuTableItem {
+  .radialMenu__tableItem {
     padding: 0.5rem 1rem;
     background: transparent;
     border: none;
@@ -346,32 +412,31 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: background 0.15s ease-in-out;
   }
 
-  .radialMenuTableItem:hover {
+  .radialMenu__tableItem:hover {
     background: var(--fgPrimary);
     color: var(--bg);
   }
 
-  .radialMenuTableItem--disabled {
+  .radialMenu__tableItem--disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .radialMenuTableItem--disabled:hover {
+  .radialMenu__tableItem--disabled:hover {
     background: transparent;
     color: var(--fg);
   }
 
-  .radialMenuTableItemIcon {
+  .radialMenu__tableItemIcon {
     font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .radialMenuTableItemLabel {
+  .radialMenu__tableItemLabel {
     font-family: inherit;
   }
 </style>

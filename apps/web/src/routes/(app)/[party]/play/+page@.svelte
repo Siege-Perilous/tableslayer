@@ -34,6 +34,22 @@
   import { useUpdateFogMaskMutation } from '$lib/queries/masks';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import {
+    IconMap,
+    IconShadow,
+    IconPencil,
+    IconRuler,
+    IconPaint,
+    IconPaintFilled,
+    IconRestore,
+    IconTrash,
+    IconLine,
+    IconCircle,
+    IconSquare,
+    IconCone2,
+    IconRectangleVertical,
+    IconArrowBackUp
+  } from '@tabler/icons-svelte';
+  import {
     type TemporaryLayer,
     getTemporaryLayers,
     broadcastTemporaryLayer,
@@ -122,7 +138,8 @@
   const menuItems: RadialMenuItemProps[] = $derived([
     {
       id: 'scene',
-      label: 'Scene',
+      label: '',
+      icon: IconMap,
       submenuLayout: 'table',
       submenu: data.scenes.map((scene) => ({
         id: `scene-${scene.id}`,
@@ -131,17 +148,19 @@
     },
     {
       id: 'fog',
-      label: 'Fog',
+      label: '',
+      icon: IconShadow,
       submenu: [
-        { id: 'fog-remove', label: 'Remove fog' },
-        { id: 'fog-add', label: 'Add fog' },
-        { id: 'fog-reset', label: 'Reset fog' },
-        { id: 'fog-clear', label: 'Clear fog' }
+        { id: 'fog-remove', label: '', icon: IconPaint },
+        { id: 'fog-add', label: '', icon: IconPaintFilled },
+        { id: 'fog-reset', label: '', icon: IconRestore },
+        { id: 'fog-clear', label: '', icon: IconTrash }
       ]
     },
     {
       id: 'draw',
-      label: 'Draw',
+      label: '',
+      icon: IconPencil,
       submenu: [
         { id: 'draw-red', label: '', color: '#d73e2e' },
         { id: 'draw-orange', label: '', color: '#ffa500' },
@@ -155,13 +174,14 @@
     },
     {
       id: 'measure',
-      label: 'Measure',
+      label: '',
+      icon: IconRuler,
       submenu: [
-        { id: 'measure-line', label: 'Line' },
-        { id: 'measure-circle', label: 'Circle' },
-        { id: 'measure-square', label: 'Square' },
-        { id: 'measure-cone', label: 'Cone' },
-        { id: 'measure-beam', label: 'Beam' }
+        { id: 'measure-line', label: '', icon: IconLine },
+        { id: 'measure-circle', label: '', icon: IconCircle },
+        { id: 'measure-square', label: '', icon: IconSquare },
+        { id: 'measure-cone', label: '', icon: IconCone2 },
+        { id: 'measure-beam', label: '', icon: IconRectangleVertical }
       ]
     }
   ]);
@@ -1692,8 +1712,12 @@
   visible={menuVisible}
   position={menuPosition}
   items={menuItems}
+  backIcon={IconArrowBackUp}
   onItemSelect={handleMenuItemSelect}
   onClose={handleMenuClose}
+  onReposition={(pos) => {
+    menuPosition = pos;
+  }}
 />
 
 <style>
