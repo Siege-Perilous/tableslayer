@@ -71,6 +71,10 @@
   let menuVisible = $state(false);
   let menuPosition = $state({ x: 0, y: 0 });
 
+  // Touch hint state
+  let showTouchHint = $state(false);
+  let isTouchDevice = $state(false);
+
   // Activity timer for fog/drawing interactions
   let activityTimer: ReturnType<typeof createConditionalActivityTimer> | null = null;
 
@@ -1420,6 +1424,15 @@
     if (stage?.scene?.fit) {
       stage.scene.fit();
     }
+
+    // Show touch hint on first load for touch devices
+    if (typeof window !== 'undefined' && 'ontouchstart' in window) {
+      isTouchDevice = true;
+      showTouchHint = true;
+      setTimeout(() => {
+        showTouchHint = false;
+      }, 3000);
+    }
   }
 
   async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
@@ -1726,6 +1739,13 @@
   <!-- Cursors are now rendered in Three.js via the CursorLayer component -->
 </div>
 
+<!-- Touch hint overlay -->
+{#if isTouchDevice && showTouchHint && !gameIsPaused}
+  <div class="touchHint" class:touchHint--hidden={!showTouchHint}>
+    <span>Press and hold with two fingers to bring up menu</span>
+  </div>
+{/if}
+
 <!-- Radial menu for player interactions -->
 <RadialMenu
   visible={menuVisible}
@@ -1779,6 +1799,26 @@
   .stage.stage--hidden {
     display: none;
     visibility: hidden;
+    opacity: 0;
+  }
+
+  .touchHint {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: var(--fg);
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+  }
+
+  .touchHint--hidden {
     opacity: 0;
   }
 </style>
