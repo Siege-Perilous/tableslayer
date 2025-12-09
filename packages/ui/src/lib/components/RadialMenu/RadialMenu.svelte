@@ -9,13 +9,11 @@
   let activeSubmenuLayout: SubmenuLayout = $state('radial');
   let activeSubmenuFilterOptions: TableFilterOption[] | undefined = $state(undefined);
   let activeSubmenuFilterKey: string | undefined = $state(undefined);
-  let activeSubmenuFilterDefault: string | undefined = $state(undefined);
   let selectedFilter: string[] = $state([]);
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
   let menuRotation = $state(0); // 0, 90, 180, or 270 degrees
   const TABLE_COLUMN_COUNT = 3; // Fixed number of columns in table layout
-  const TABLE_MAX_VISIBLE_ROWS = 8; // Max visible rows before scrolling
 
   // Calculate which edge is closest and determine rotation
   // The menu should rotate so items face the nearest edge (where the player is viewing from)
@@ -58,7 +56,6 @@
       activeSubmenuLayout = selectedItem.submenuLayout || 'radial';
       activeSubmenuFilterOptions = selectedItem.submenuFilterOptions;
       activeSubmenuFilterKey = selectedItem.submenuFilterKey;
-      activeSubmenuFilterDefault = selectedItem.submenuFilterDefault;
       // Set initial filter selection
       if (selectedItem.submenuFilterDefault) {
         selectedFilter = [selectedItem.submenuFilterDefault];
@@ -81,7 +78,6 @@
     activeSubmenuLayout = 'radial';
     activeSubmenuFilterOptions = undefined;
     activeSubmenuFilterKey = undefined;
-    activeSubmenuFilterDefault = undefined;
     selectedFilter = [];
   }
 
