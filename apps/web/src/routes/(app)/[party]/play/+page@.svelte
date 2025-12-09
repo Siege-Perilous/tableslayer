@@ -123,6 +123,7 @@
     {
       id: 'scene',
       label: 'Scene',
+      submenuLayout: 'table',
       submenu: data.scenes.map((scene) => ({
         id: `scene-${scene.id}`,
         label: scene.name

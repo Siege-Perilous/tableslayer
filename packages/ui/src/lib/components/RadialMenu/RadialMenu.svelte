@@ -1,13 +1,15 @@
 <script lang="ts">
-  import type { RadialMenuProps, RadialMenuItemProps } from './types';
+  import type { RadialMenuProps, RadialMenuItemProps, SubmenuLayout } from './types';
   import RadialMenuItem from './RadialMenuItem.svelte';
 
   const { visible = false, position, items, onItemSelect, onClose }: RadialMenuProps = $props();
 
   let activeSubmenu: RadialMenuItemProps[] | null = $state(null);
+  let activeSubmenuLayout: SubmenuLayout = $state('radial');
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
   let menuRotation = $state(0); // 0, 90, 180, or 270 degrees
+  const TABLE_COLUMN_SIZE = 8; // Max items per column in table layout
 
   // Calculate which edge is closest and determine rotation
   // The menu should rotate so items face the nearest edge (where the player is viewing from)
@@ -45,8 +47,9 @@
     const selectedItem = currentItems.find((item) => item.id === itemId);
 
     if (selectedItem?.submenu && selectedItem.submenu.length > 0) {
-      // Show submenu
+      // Show submenu with its layout type
       activeSubmenu = selectedItem.submenu;
+      activeSubmenuLayout = selectedItem.submenuLayout || 'radial';
     } else {
       // No submenu, trigger selection and close
       if (onItemSelect) {
@@ -58,6 +61,7 @@
 
   function handleClose() {
     activeSubmenu = null;
+    activeSubmenuLayout = 'radial';
     if (onClose) {
       onClose();
     }
@@ -67,6 +71,7 @@
     if (activeSubmenu) {
       // If submenu is open, go back to main menu
       activeSubmenu = null;
+      activeSubmenuLayout = 'radial';
     } else {
       // Otherwise close the menu
       handleClose();
@@ -77,7 +82,25 @@
   $effect(() => {
     if (!visible) {
       activeSubmenu = null;
+      activeSubmenuLayout = 'radial';
     }
+  });
+
+  // Helper to organize table items into columns
+  const tableColumns = $derived.by(() => {
+    if (!activeSubmenu || activeSubmenuLayout !== 'table') return [];
+    const columns: RadialMenuItemProps[][] = [];
+    for (let i = 0; i < activeSubmenu.length; i += TABLE_COLUMN_SIZE) {
+      columns.push(activeSubmenu.slice(i, i + TABLE_COLUMN_SIZE));
+    }
+    return columns;
+  });
+
+  // Table rotation needs left/right swapped compared to radial menu
+  const tableRotation = $derived.by(() => {
+    if (menuRotation === 90) return 270; // Right edge: swap to -90
+    if (menuRotation === 270) return 90; // Left edge: swap to 90
+    return menuRotation; // Top (180) and bottom (0) stay the same
   });
 
   // Update position and rotation to orient menu toward nearest edge
@@ -142,32 +165,70 @@
     <div
       bind:this={menuContainer}
       class="radialMenuContainer"
+      class:radialMenuContainer--table={activeSubmenuLayout === 'table'}
       style:left="{adjustedPosition.x}px"
       style:top="{adjustedPosition.y}px"
     >
-      {#if activeSubmenu}
-        <!-- Back button in center for submenu -->
-        <button
-          class="radialMenuCenterBtn"
-          onclick={() => {
-            activeSubmenu = null;
-          }}
-          type="button"
-        >
-          Back
-        </button>
-      {/if}
+      {#if activeSubmenu && activeSubmenuLayout === 'table'}
+        <!-- Table layout for submenus like scene lists -->
+        <div class="radialMenuTable" style="transform: rotate({tableRotation}deg);">
+          <button
+            class="radialMenuTableBack"
+            onclick={() => {
+              activeSubmenu = null;
+              activeSubmenuLayout = 'radial';
+            }}
+            type="button"
+          >
+            ← Back
+          </button>
+          <div class="radialMenuTableColumns">
+            {#each tableColumns as column, colIndex (colIndex)}
+              <div class="radialMenuTableColumn">
+                {#each column as item (item.id)}
+                  <button
+                    class="radialMenuTableItem"
+                    class:radialMenuTableItem--disabled={item.disabled}
+                    onclick={() => handleItemSelect(item.id)}
+                    type="button"
+                    disabled={item.disabled}
+                  >
+                    {#if item.icon}
+                      <span class="radialMenuTableItemIcon">{item.icon}</span>
+                    {/if}
+                    <span class="radialMenuTableItemLabel">{item.label}</span>
+                  </button>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {:else}
+        {#if activeSubmenu}
+          <!-- Back button in center for radial submenu -->
+          <button
+            class="radialMenuCenterBtn"
+            onclick={() => {
+              activeSubmenu = null;
+              activeSubmenuLayout = 'radial';
+            }}
+            type="button"
+          >
+            Back
+          </button>
+        {/if}
 
-      <!-- Render menu items in a circle -->
-      {#each currentItems as item, index (item.id)}
-        <RadialMenuItem
-          {item}
-          angle={getItemAngle(index, currentItems.length, menuRotation)}
-          radius={menuRadius}
-          counterRotation={menuRotation}
-          onSelect={handleItemSelect}
-        />
-      {/each}
+        <!-- Render menu items in a circle -->
+        {#each currentItems as item, index (item.id)}
+          <RadialMenuItem
+            {item}
+            angle={getItemAngle(index, currentItems.length, menuRotation)}
+            radius={menuRadius}
+            counterRotation={menuRotation}
+            onSelect={handleItemSelect}
+          />
+        {/each}
+      {/if}
     </div>
   </div>
 {/if}
@@ -224,5 +285,93 @@
     background: var(--fgPrimary);
     color: var(--bg);
     transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  /* Table layout styles */
+  .radialMenuContainer--table {
+    transform: translate(-50%, -50%);
+  }
+
+  .radialMenuTable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--fgMuted);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    pointer-events: auto;
+  }
+
+  .radialMenuTableBack {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--fgMuted);
+    color: var(--fgMuted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.15s ease-in-out;
+  }
+
+  .radialMenuTableBack:hover {
+    color: var(--fg);
+  }
+
+  .radialMenuTableColumns {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .radialMenuTableColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .radialMenuTableItem {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    color: var(--fg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.15s ease-in-out;
+  }
+
+  .radialMenuTableItem:hover {
+    background: var(--fgPrimary);
+    color: var(--bg);
+  }
+
+  .radialMenuTableItem--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .radialMenuTableItem--disabled:hover {
+    background: transparent;
+    color: var(--fg);
+  }
+
+  .radialMenuTableItemIcon {
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radialMenuTableItemLabel {
+    font-family: inherit;
   }
 </style>
