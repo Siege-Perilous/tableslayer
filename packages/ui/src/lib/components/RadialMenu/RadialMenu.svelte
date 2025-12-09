@@ -182,8 +182,24 @@
     return menuRotation; // Top (180) and bottom (0) stay the same
   });
 
+  // Track last calculated position to avoid redundant calculations
+  let lastCalculatedPosition = { x: 0, y: 0 };
+  let lastVisibleState = false;
+
   // Update position and rotation to orient menu toward nearest edge
   $effect(() => {
+    // Skip if nothing changed
+    if (
+      visible === lastVisibleState &&
+      position.x === lastCalculatedPosition.x &&
+      position.y === lastCalculatedPosition.y
+    ) {
+      return;
+    }
+
+    lastVisibleState = visible;
+    lastCalculatedPosition = { x: position.x, y: position.y };
+
     if (visible) {
       // Account for the radial menu items extending in all directions
       // Items can extend menuRadius + some padding for the item size
@@ -213,11 +229,6 @@
 
       // Calculate rotation based on nearest edge
       const rotation = calculateRotationFromEdge(position.x, position.y, viewportWidth, viewportHeight);
-      console.log('RadialMenu rotation calculation:', {
-        position: { x: position.x, y: position.y },
-        viewport: { width: viewportWidth, height: viewportHeight },
-        rotation
-      });
       menuRotation = rotation;
     } else {
       // Reset to original position when hidden
@@ -228,11 +239,6 @@
 
   const currentItems = $derived(activeSubmenu || items);
   const menuRadius = 120; // Distance from center to items
-
-  // Debug: Log rotation changes
-  $effect(() => {
-    console.log('Menu rotation state changed to:', menuRotation);
-  });
 </script>
 
 {#if visible}

@@ -372,6 +372,10 @@
                 isInvalidating = true;
                 sceneIsChanging = true;
 
+                // Clear Y.js scene data to allow SSR data to be used for new scene
+                yjsSceneData = null;
+                lastYjsUpdateTimestamp = 0;
+
                 return invalidateAll();
               })
               .then(() => {
@@ -498,6 +502,10 @@
 
       // Only update if we have scene data and an active scene
 
+      // Preserve local state that shouldn't be overwritten by Y.js
+      const currentActiveLayer = stageProps.activeLayer;
+      const currentAnnotationsActiveLayer = stageProps.annotations?.activeLayer;
+
       stageProps = {
         ...yjsSceneData.stageProps,
         // Force player mode
@@ -509,8 +517,8 @@
           rotation: 0,
           zoom: stageProps.scene?.zoom || 1
         },
-        // Don't allow active layer (fog tools, etc)
-        activeLayer: MapLayerType.None,
+        // Preserve active layer if playfield has set one (e.g., for drawing/fog)
+        activeLayer: currentActiveLayer,
         // Filter markers to remove DM-only ones, and protect markers being moved
         marker: {
           ...yjsSceneData.stageProps.marker,
@@ -579,7 +587,7 @@
           return {
             ...(yjsSceneData.stageProps.annotations || {}),
             layers: mergedLayers,
-            activeLayer: stageProps.annotations?.activeLayer || null // Preserve active layer
+            activeLayer: currentAnnotationsActiveLayer || null // Preserve active layer
           };
         })()
       };

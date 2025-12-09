@@ -71,8 +71,6 @@ export function createActivityTimer(
         onTimeout();
       }
     }, timeoutMs);
-
-    devLog('activity', `Activity timer reset, will expire in ${timeoutMs}ms`);
   };
 
   const handleEvent = () => {
