@@ -134,6 +134,25 @@
     gameIsPaused && 'stage--hidden'
   ]);
 
+  // Build scene submenu items from all game sessions
+  const allSceneItems = $derived(
+    data.gameSessionsWithScenes.flatMap((gs) =>
+      gs.scenes.map((scene) => ({
+        id: `scene-${scene.id}`,
+        label: scene.name,
+        gameSessionId: gs.id
+      }))
+    )
+  );
+
+  // Build filter options from game sessions
+  const gameSessionFilterOptions = $derived(
+    data.gameSessionsWithScenes.map((gs) => ({
+      value: gs.id,
+      label: gs.name
+    }))
+  );
+
   // Radial menu items - dynamically populate scene submenu from data
   const menuItems: RadialMenuItemProps[] = $derived([
     {
@@ -141,10 +160,10 @@
       label: '',
       icon: IconMap,
       submenuLayout: 'table',
-      submenu: data.scenes.map((scene) => ({
-        id: `scene-${scene.id}`,
-        label: scene.name
-      }))
+      submenu: allSceneItems,
+      submenuFilterOptions: gameSessionFilterOptions,
+      submenuFilterDefault: data.activeGameSession?.id,
+      submenuFilterKey: 'gameSessionId'
     },
     {
       id: 'fog',

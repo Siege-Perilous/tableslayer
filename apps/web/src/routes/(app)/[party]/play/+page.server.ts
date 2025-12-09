@@ -4,6 +4,7 @@ import {
   getActiveSceneForParty,
   getMarkersForScene,
   getPartyFromSlug,
+  getPartyGameSessions,
   getUser
 } from '$lib/server';
 import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
@@ -29,7 +30,16 @@ export const load: PageServerLoad = async (event) => {
   // Get the active game session for this party
   const activeGameSession = await getActiveGameSessionForParty(party.id);
 
-  // Get all scenes for the game session
+  // Get all game sessions for this party with their scenes
+  const allGameSessions = await getPartyGameSessions(party.id);
+  const gameSessionsWithScenes = await Promise.all(
+    allGameSessions.map(async (gs) => ({
+      ...gs,
+      scenes: await getScenes(gs.id)
+    }))
+  );
+
+  // Get all scenes for the active game session (for backwards compatibility)
   const scenes = activeGameSession ? await getScenes(activeGameSession.id) : [];
 
   // Get the active scene for the party (now at party level, not game session level)
@@ -67,6 +77,7 @@ export const load: PageServerLoad = async (event) => {
     user,
     party,
     activeGameSession,
+    gameSessionsWithScenes,
     scenes,
     activeScene,
     activeSceneMarkers,

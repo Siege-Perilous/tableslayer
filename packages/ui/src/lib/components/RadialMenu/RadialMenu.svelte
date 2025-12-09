@@ -1,15 +1,21 @@
 <script lang="ts">
-  import type { RadialMenuProps, RadialMenuItemProps, SubmenuLayout } from './types';
+  import type { RadialMenuProps, RadialMenuItemProps, SubmenuLayout, TableFilterOption } from './types';
   import RadialMenuItem from './RadialMenuItem.svelte';
+  import { Select } from '../Select';
 
   const { visible = false, position, items, backIcon, onItemSelect, onClose, onReposition }: RadialMenuProps = $props();
 
   let activeSubmenu: RadialMenuItemProps[] | null = $state(null);
   let activeSubmenuLayout: SubmenuLayout = $state('radial');
+  let activeSubmenuFilterOptions: TableFilterOption[] | undefined = $state(undefined);
+  let activeSubmenuFilterKey: string | undefined = $state(undefined);
+  let activeSubmenuFilterDefault: string | undefined = $state(undefined);
+  let selectedFilter: string[] = $state([]);
   let menuContainer: HTMLDivElement | null = $state(null);
   let adjustedPosition = $state({ x: position.x, y: position.y });
   let menuRotation = $state(0); // 0, 90, 180, or 270 degrees
-  const TABLE_COLUMN_SIZE = 8; // Max items per column in table layout
+  const TABLE_COLUMN_COUNT = 3; // Fixed number of columns in table layout
+  const TABLE_MAX_VISIBLE_ROWS = 8; // Max visible rows before scrolling
 
   // Calculate which edge is closest and determine rotation
   // The menu should rotate so items face the nearest edge (where the player is viewing from)
@@ -50,6 +56,17 @@
       // Show submenu with its layout type
       activeSubmenu = selectedItem.submenu;
       activeSubmenuLayout = selectedItem.submenuLayout || 'radial';
+      activeSubmenuFilterOptions = selectedItem.submenuFilterOptions;
+      activeSubmenuFilterKey = selectedItem.submenuFilterKey;
+      activeSubmenuFilterDefault = selectedItem.submenuFilterDefault;
+      // Set initial filter selection
+      if (selectedItem.submenuFilterDefault) {
+        selectedFilter = [selectedItem.submenuFilterDefault];
+      } else if (selectedItem.submenuFilterOptions && selectedItem.submenuFilterOptions.length > 0) {
+        selectedFilter = [selectedItem.submenuFilterOptions[0].value];
+      } else {
+        selectedFilter = [];
+      }
     } else {
       // No submenu, trigger selection and close
       if (onItemSelect) {
@@ -59,9 +76,17 @@
     }
   }
 
-  function handleClose() {
+  function resetSubmenuState() {
     activeSubmenu = null;
     activeSubmenuLayout = 'radial';
+    activeSubmenuFilterOptions = undefined;
+    activeSubmenuFilterKey = undefined;
+    activeSubmenuFilterDefault = undefined;
+    selectedFilter = [];
+  }
+
+  function handleClose() {
+    resetSubmenuState();
     if (onClose) {
       onClose();
     }
@@ -70,8 +95,7 @@
   function handleBackdropClick() {
     if (activeSubmenu) {
       // If submenu is open, go back to main menu
-      activeSubmenu = null;
-      activeSubmenuLayout = 'radial';
+      resetSubmenuState();
     } else {
       // Otherwise close the menu
       handleClose();
@@ -82,8 +106,7 @@
     e.preventDefault();
     if (onReposition) {
       // Reset to main menu when repositioning
-      activeSubmenu = null;
-      activeSubmenuLayout = 'radial';
+      resetSubmenuState();
       onReposition({ x: e.clientX, y: e.clientY });
     }
   }
@@ -103,8 +126,7 @@
       twoFingerHoldTimer = setTimeout(() => {
         if (twoFingerTouchStart && onReposition) {
           // Reset to main menu when repositioning
-          activeSubmenu = null;
-          activeSubmenuLayout = 'radial';
+          resetSubmenuState();
           onReposition(twoFingerTouchStart);
         }
         twoFingerTouchStart = null;
@@ -130,18 +152,30 @@
   // Reset submenu when menu visibility changes
   $effect(() => {
     if (!visible) {
-      activeSubmenu = null;
-      activeSubmenuLayout = 'radial';
+      resetSubmenuState();
     }
   });
 
-  // Helper to organize table items into columns
+  // Filter submenu items based on selected filter
+  const filteredSubmenu = $derived.by(() => {
+    if (!activeSubmenu) return [];
+    if (!activeSubmenuFilterKey || selectedFilter.length === 0) return activeSubmenu;
+    const filterValue = selectedFilter[0];
+    return activeSubmenu.filter((item) => {
+      const itemValue = (item as Record<string, unknown>)[activeSubmenuFilterKey as string];
+      return itemValue === filterValue;
+    });
+  });
+
+  // Helper to organize table items into fixed 3 columns, distributed evenly
   const tableColumns = $derived.by(() => {
-    if (!activeSubmenu || activeSubmenuLayout !== 'table') return [];
-    const columns: RadialMenuItemProps[][] = [];
-    for (let i = 0; i < activeSubmenu.length; i += TABLE_COLUMN_SIZE) {
-      columns.push(activeSubmenu.slice(i, i + TABLE_COLUMN_SIZE));
-    }
+    if (!filteredSubmenu.length || activeSubmenuLayout !== 'table') return [];
+
+    // Always create exactly 3 columns, distributing items evenly
+    const columns: RadialMenuItemProps[][] = [[], [], []];
+    filteredSubmenu.forEach((item, index) => {
+      columns[index % TABLE_COLUMN_COUNT].push(item);
+    });
     return columns;
   });
 
@@ -231,22 +265,25 @@
       {#if activeSubmenu && activeSubmenuLayout === 'table'}
         <!-- Table layout for submenus like scene lists -->
         <div class="radialMenu__table" style="transform: rotate({tableRotation}deg);">
-          <button
-            class="radialMenu__tableBack"
-            onclick={() => {
-              activeSubmenu = null;
-              activeSubmenuLayout = 'radial';
-            }}
-            type="button"
-          >
-            {#if backIcon}
-              {@const BackIcon = backIcon}
-              <BackIcon size={18} stroke={2} />
-            {:else}
-              ←
+          <div class="radialMenu__tableHeader">
+            <button class="radialMenu__tableBack" onclick={() => resetSubmenuState()} type="button">
+              {#if backIcon}
+                {@const BackIcon = backIcon}
+                <BackIcon size={18} stroke={2} />
+              {:else}
+                ←
+              {/if}
+            </button>
+            {#if activeSubmenuFilterOptions && activeSubmenuFilterOptions.length > 0}
+              <div class="radialMenu__tableFilter">
+                <Select
+                  options={activeSubmenuFilterOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  bind:selected={selectedFilter}
+                  variant="transparent"
+                />
+              </div>
             {/if}
-            Back
-          </button>
+          </div>
           <div class="radialMenu__tableColumns">
             {#each tableColumns as column, colIndex (colIndex)}
               <div class="radialMenu__tableColumn">
@@ -371,31 +408,53 @@
     pointer-events: auto;
   }
 
-  .radialMenu__tableBack {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    border: none;
+  .radialMenu__tableHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     border-bottom: 1px solid var(--fgMuted);
+    padding-bottom: 0.5rem;
+  }
+
+  .radialMenu__tableBack {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--fgMuted);
+    border-radius: 50%;
     color: var(--fgMuted);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .radialMenu__tableBack:hover {
     color: var(--fg);
+    border-color: var(--fg);
+  }
+
+  .radialMenu__tableFilter {
+    flex: 1;
+    min-width: 0;
   }
 
   .radialMenu__tableColumns {
     display: flex;
     gap: 0.25rem;
+    max-height: 20rem;
+    overflow-y: auto;
   }
 
   .radialMenu__tableColumn {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+    min-width: 8rem;
   }
 
   .radialMenu__tableItem {
