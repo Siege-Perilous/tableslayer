@@ -18,6 +18,7 @@ export * from './Logo';
 export * from './Menu';
 export { default as MyCounterButton } from './MyCounterButton.svelte';
 export * from './Panel';
+export * from './PersistButton';
 export * from './Popover';
 export { default as PropsTable } from './PropsTable/PropsTable.svelte';
 export * from './RadialMenu';

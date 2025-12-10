@@ -569,10 +569,11 @@
             }
           }
 
-          // Reset flag after the update - longer timeout to prevent auto-save loop
+          // Reset flag after the update - timeout must be longer than auto-save delay (3s)
+          // to prevent auto-save from triggering after receiving Y.js updates
           setTimeout(() => {
             isReceivingYjsUpdate = false;
-          }, 1000);
+          }, 4000);
 
           // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
         }
@@ -1950,10 +1951,10 @@
         return;
       }
 
-      const data = (await response.json()) as { maskData?: string };
-      if (data.maskData && stage?.annotations?.loadMask) {
+      const maskResponse = (await response.json()) as { maskData?: string };
+      if (maskResponse.maskData && stage?.annotations?.loadMask) {
         // Convert base64 back to Uint8Array
-        const binaryString = atob(data.maskData);
+        const binaryString = atob(maskResponse.maskData);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
@@ -1961,6 +1962,13 @@
         // Apply the mask to the annotation layer
         await stage.annotations.loadMask(annotationId, bytes);
         devLog('mask', `Applied updated annotation mask for layer ${annotationId} from remote`);
+
+        // Update the SSR data so AnnotationManager can generate thumbnails
+        // Use object spread to trigger Svelte reactivity
+        data.selectedSceneAnnotationMasks = {
+          ...data.selectedSceneAnnotationMasks,
+          [annotationId]: maskResponse.maskData
+        };
       }
     } catch (error) {
       devError('mask', 'Error fetching annotation mask:', error);
@@ -2243,6 +2251,12 @@
   let isSaving = false;
   const saveScene = async () => {
     if (isSaving || isUpdatingFog || isUpdatingAnnotation) return;
+
+    // Don't save if we just received a Y.js update - prevents sync loops
+    if (isReceivingYjsUpdate) {
+      devLog('save', 'Skipping saveScene - currently receiving Y.js update');
+      return;
+    }
 
     // Try to become the active saver for this scene
     if (!partyData || !partyData.becomeActiveSaver(selectedScene.id)) {

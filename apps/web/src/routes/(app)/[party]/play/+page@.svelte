@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
   import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
@@ -17,7 +17,8 @@
     type RadialMenuItemProps,
     DrawMode,
     StageMode,
-    MeasurementType
+    MeasurementType,
+    PersistButton
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -31,7 +32,8 @@
   import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
   import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
-  import { useUpdateFogMaskMutation } from '$lib/queries/masks';
+  import { useUpdateFogMaskMutation, useUpdateAnnotationMaskMutation } from '$lib/queries/masks';
+  import { useUpsertAnnotationMutation } from '$lib/queries/annotations';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import {
     IconMap,
@@ -54,7 +56,8 @@
     getTemporaryLayers,
     broadcastTemporaryLayer,
     createTemporaryLayer,
-    cleanupExpiredLayers
+    cleanupExpiredLayers,
+    removeTemporaryLayer
   } from '$lib/utils/yjs/temporaryLayers';
   import { v4 as uuidv4 } from 'uuid';
   import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
@@ -105,11 +108,24 @@
   const updateFogMaskMutation = useUpdateFogMaskMutation();
   const updatePartyMutation = useUpdatePartyMutation();
 
+  // Annotation persistence mutations
+  const upsertAnnotationMutation = useUpsertAnnotationMutation();
+  const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
+
   // Temporary drawing state
   let temporaryLayers = $state<TemporaryLayer[]>([]);
   let currentTemporaryLayerId: string | null = null;
   let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
   let resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Persist button state
+  let showPersistButton = $state(false);
+  let persistButtonPosition = $state({ x: 0, y: 0 });
+  let persistButtonLayerId: string | null = $state(null);
+  let persistButtonTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Track IDs of layers we've created as temporary (so we can clean them up when they expire)
+  let knownTemporaryLayerIds = new Set<string>();
 
   // Store SSR annotation layers separately to preserve them during Y.js merging
   let ssrAnnotationLayers: AnnotationLayerData[] = [];
@@ -546,43 +562,60 @@
           // Create a map of Y.js layer IDs for quick lookup
           const yjsLayerIds = new Set(yjsLayers.map((l: AnnotationLayerData) => l.id));
 
-          const mergedLayers = [
-            // Include Y.js annotation layers (filter out DM-only permanent annotations)
-            ...yjsLayers.filter((layer: AnnotationLayerData) => layer.visibility === 1), // 1 = StageMode.Player
+          // Y.js is the source of truth for permanent annotations.
+          // Only use SSR layers if Y.js has NO annotation data at all (initial sync not complete).
+          // Once Y.js has any data, trust it completely (even if it has fewer layers than SSR).
+          const yjsHasAnnotationData = yjsSceneData.stageProps.annotations !== undefined;
 
-            // Add SSR annotation layers that aren't in Y.js yet (preserves layers not yet synced to Y.js)
-            ...ssrAnnotationLayers.filter((layer: AnnotationLayerData) => {
-              // If this layer is already in Y.js, skip it (Y.js is source of truth)
-              if (yjsLayerIds.has(layer.id)) {
-                return false;
-              }
-              // Keep if it's player-visible
-              return layer.visibility === 1;
-            }),
+          // Update ssrAnnotationLayers to match Y.js (remove any that Y.js doesn't have)
+          // This prevents re-adding deleted annotations when we sync back to Y.js
+          if (yjsHasAnnotationData && yjsLayers.length > 0) {
+            ssrAnnotationLayers = ssrAnnotationLayers.filter((layer) => yjsLayerIds.has(layer.id));
+          }
 
-            // Add temporary layers from playfield drawing
-            ...localLayers.filter((layer: AnnotationLayerData) => {
-              // Skip if already in Y.js or SSR
-              if (yjsLayerIds.has(layer.id)) {
-                return false;
-              }
-              if (ssrAnnotationLayers.find((l) => l.id === layer.id)) {
-                return false;
-              }
+          // Build merged layers with deduplication using Map
+          const layersMap = new Map<string, AnnotationLayerData>();
 
-              // Check if this is a temporary layer from playfield drawing
-              const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
-              if (isTemporary) {
-                // Keep temporary layers if current or not expired
-                if (layer.id === currentTemporaryLayerId) {
-                  return true;
-                }
-                return isTemporary.expiresAt > Date.now();
-              }
+          // First, add Y.js annotation layers (filter out DM-only permanent annotations)
+          for (const layer of yjsLayers) {
+            if ((layer as AnnotationLayerData).visibility === 1) {
+              // 1 = StageMode.Player
+              layersMap.set(layer.id, layer as AnnotationLayerData);
+            }
+          }
 
-              return false;
-            })
-          ];
+          // Only add SSR layers if Y.js hasn't synced annotation data yet
+          if (!yjsHasAnnotationData) {
+            for (const layer of ssrAnnotationLayers) {
+              // Keep if it's player-visible and not already in Y.js
+              if (layer.visibility === 1 && !layersMap.has(layer.id)) {
+                layersMap.set(layer.id, layer);
+              }
+            }
+          }
+
+          // Add temporary layers from playfield drawing
+          for (const layer of localLayers) {
+            // Skip if already added
+            if (layersMap.has(layer.id)) {
+              continue;
+            }
+            // Skip if in SSR layers
+            if (ssrAnnotationLayers.find((l) => l.id === layer.id)) {
+              continue;
+            }
+
+            // Check if this is a temporary layer from playfield drawing
+            const isTemporary = temporaryLayers.find((t) => t.id === layer.id);
+            if (isTemporary) {
+              // Keep temporary layers if current or not expired
+              if (layer.id === currentTemporaryLayerId || isTemporary.expiresAt > Date.now()) {
+                layersMap.set(layer.id, layer);
+              }
+            }
+          }
+
+          const mergedLayers = Array.from(layersMap.values());
 
           return {
             ...(yjsSceneData.stageProps.annotations || {}),
@@ -747,13 +780,20 @@
 
     // Set initial stage props from SSR data
     if (data.activeScene && !initialDataApplied) {
-      stageProps = buildSceneProps(
+      const builtProps = buildSceneProps(
         data.activeScene,
         data.activeSceneMarkers,
         'client',
         data.activeSceneAnnotations,
         data.bucketUrl
       );
+      stageProps = builtProps;
+      // Store SSR annotation layers to preserve them during Y.js merging
+      ssrAnnotationLayers = builtProps.annotations?.layers || [];
+      devLog('playfield', 'Initial SSR annotation layers stored:', {
+        count: ssrAnnotationLayers.length,
+        ids: ssrAnnotationLayers.map((l) => l.id)
+      });
       initialDataApplied = true;
     }
 
@@ -1443,7 +1483,7 @@
     }
   }
 
-  async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>) {
+  async function onAnnotationUpdate(layerId: string, blob: Promise<Blob>, endPosition?: { x: number; y: number }) {
     // Reset the layer timeout since user is actively drawing
     resetToNoneAfterDelay();
 
@@ -1475,6 +1515,24 @@
                 broadcastTemporaryLayer(manager, tempLayer);
                 temporaryLayers = getTemporaryLayers(manager);
               }
+
+              // Show persist button if we have an end position
+              if (endPosition) {
+                // Clear any existing timer
+                if (persistButtonTimer) {
+                  clearTimeout(persistButtonTimer);
+                }
+
+                persistButtonLayerId = currentTemporaryLayerId;
+                persistButtonPosition = endPosition;
+                showPersistButton = true;
+
+                // Auto-hide after 3 seconds
+                persistButtonTimer = setTimeout(() => {
+                  showPersistButton = false;
+                  persistButtonLayerId = null;
+                }, 3000);
+              }
             }
           }
         } catch (error) {
@@ -1497,6 +1555,129 @@
     }
   }
 
+  // Handle persist button click - save temporary drawing to database
+  async function handlePersistDrawing() {
+    // Capture the layer ID immediately before any async operations
+    // (the timeout might clear persistButtonLayerId during awaits)
+    const layerIdToSave = persistButtonLayerId;
+
+    if (!layerIdToSave || !data.activeScene) {
+      devWarn('playfield', 'Cannot persist drawing: missing layer ID or active scene');
+      handleDismissPersistButton();
+      return;
+    }
+
+    const manager = getPartyDataManager();
+    if (!manager) {
+      devWarn('playfield', 'Cannot persist drawing: no party data manager');
+      handleDismissPersistButton();
+      return;
+    }
+
+    // Find the temporary layer data using the captured ID
+    const tempLayer = temporaryLayers.find((l) => l.id === layerIdToSave);
+    if (!tempLayer) {
+      devWarn('playfield', 'Cannot persist drawing: temporary layer not found');
+      handleDismissPersistButton();
+      return;
+    }
+
+    // Dismiss the button immediately to prevent double-clicks
+    handleDismissPersistButton();
+
+    try {
+      devLog('playfield', 'Persisting temporary drawing:', layerIdToSave);
+
+      // Create the annotation in the database
+      const newAnnotation = await upsertAnnotationMutation.mutateAsync({
+        sceneId: data.activeScene.id,
+        name: 'Player drawing',
+        color: tempLayer.color,
+        opacity: 1.0,
+        visibility: StageMode.Player
+      });
+
+      if (!newAnnotation) {
+        throw new Error('Failed to create annotation');
+      }
+
+      // Convert base64 mask data to Uint8Array and save it
+      const binaryString = atob(tempLayer.maskData);
+      const maskData = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        maskData[i] = binaryString.charCodeAt(i);
+      }
+
+      await updateAnnotationMaskMutation.mutateAsync({
+        annotationId: newAnnotation.id,
+        partyId: party.id,
+        maskData
+      });
+
+      devLog('playfield', 'Drawing persisted successfully:', newAnnotation.id);
+
+      // Create the new annotation layer data for Y.js sync
+      const newAnnotationLayer: AnnotationLayerData = {
+        id: newAnnotation.id,
+        name: newAnnotation.name,
+        color: newAnnotation.color,
+        opacity: newAnnotation.opacity,
+        visibility: StageMode.Player,
+        url: null,
+        maskVersion: Date.now() // Set mask version to signal other clients
+      };
+
+      // Remove the temporary layer AND any layer that might have the same ID as the new annotation
+      // (deduplication to prevent any race conditions)
+      const filteredLayers = stageProps.annotations.layers.filter(
+        (l) => l.id !== layerIdToSave && l.id !== newAnnotation.id
+      );
+
+      // Create deduplicated layers array with new annotation at the front
+      // Use a Map to ensure uniqueness by ID
+      const layersMap = new Map<string, AnnotationLayerData>();
+      layersMap.set(newAnnotationLayer.id, newAnnotationLayer);
+      for (const layer of filteredLayers) {
+        if (!layersMap.has(layer.id)) {
+          layersMap.set(layer.id, layer);
+        }
+      }
+      const deduplicatedLayers = Array.from(layersMap.values());
+
+      // Add the new permanent annotation layer
+      stageProps.annotations.layers = deduplicatedLayers;
+
+      // Sync to Y.js for real-time collaboration with editors
+      const activeSceneId = yjsPartyState.activeSceneId || data.activeScene.id;
+      manager.updateSceneStageProps(activeSceneId, cleanStagePropsForYjs(stageProps));
+
+      // Remove the temporary layer from awareness and tracking
+      removeTemporaryLayer(manager, layerIdToSave);
+      temporaryLayers = getTemporaryLayers(manager);
+      knownTemporaryLayerIds.delete(layerIdToSave);
+
+      // Also add to SSR layers so it survives Y.js merging
+      ssrAnnotationLayers = [newAnnotationLayer, ...ssrAnnotationLayers.filter((l) => l.id !== layerIdToSave)];
+
+      // Note: We intentionally DON'T call invalidateAll() here.
+      // The Y.js sync is the source of truth, and invalidateAll() can cause race conditions
+      // where SSR data merges with Y.js data and creates duplicates.
+    } catch (error) {
+      devError('playfield', 'Error persisting drawing:', error);
+    }
+    // Button was already dismissed at the start of the function
+  }
+
+  // Handle persist button dismiss
+  function handleDismissPersistButton() {
+    if (persistButtonTimer) {
+      clearTimeout(persistButtonTimer);
+      persistButtonTimer = null;
+    }
+    showPersistButton = false;
+    persistButtonLayerId = null;
+  }
+
   // Track the latest measurement to pass to Stage
   $effect(() => {
     const newest = getLatestMeasurement(measurements);
@@ -1508,11 +1689,48 @@
 
   // Fade-out logic is now handled in CursorLayer component via opacity calculation
 
+  // Track which temporary layer masks have been loaded to prevent repeated attempts
+  const loadedTemporaryMasks = new Set<string>();
+
+  // Helper function to load mask with retry
+  const loadTemporaryMaskWithRetry = async (layerId: string, maskData: string, retries = 3, delay = 100) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+      }
+      try {
+        if (stage?.annotations?.loadMask) {
+          const binaryString = atob(maskData);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          await stage.annotations.loadMask(layerId, bytes);
+          loadedTemporaryMasks.add(layerId);
+          return true;
+        }
+      } catch {
+        // Silently retry - component may not be ready yet
+        if (attempt === retries - 1) {
+          devWarn('playfield', `Failed to load temporary layer ${layerId} after ${retries} attempts`);
+        }
+      }
+    }
+    return false;
+  };
+
   // Effect to convert temporary layers to annotation layers for display
+  // This effect reacts to temporaryLayers changes and updates stageProps
   $effect(() => {
-    if (stage?.annotations) {
+    if (!stage?.annotations) return;
+
+    // Only react to temporaryLayers changes - use untrack for stageProps reads
+    // to prevent infinite loop (we read and write stageProps.annotations.layers)
+    const tempLayersCopy = [...temporaryLayers]; // Create dependency on temporaryLayers
+
+    untrack(() => {
       // Convert temporary layers to annotation layer data
-      const tempAnnotationLayers: AnnotationLayerData[] = temporaryLayers.map((tempLayer) => ({
+      const tempAnnotationLayers: AnnotationLayerData[] = tempLayersCopy.map((tempLayer) => ({
         id: tempLayer.id,
         name: tempLayer.name,
         color: tempLayer.color,
@@ -1522,6 +1740,9 @@
         visibility: StageMode.Player
       }));
 
+      // Track which IDs are temporary
+      tempLayersCopy.forEach((t) => knownTemporaryLayerIds.add(t.id));
+
       // Add temporary layers to annotations (without replacing existing ones)
       const existingLayerIds = new Set(stageProps.annotations.layers.map((l) => l.id));
       const newLayers = tempAnnotationLayers.filter((l) => !existingLayerIds.has(l.id));
@@ -1529,54 +1750,51 @@
       if (newLayers.length > 0) {
         stageProps.annotations.layers = [...stageProps.annotations.layers, ...newLayers];
 
-        // Load RLE data for each new temporary layer
-        newLayers.forEach(async (layer) => {
-          const tempLayer = temporaryLayers.find((t) => t.id === layer.id);
-          if (tempLayer && tempLayer.maskData && stage?.annotations?.loadMask) {
-            try {
-              const binaryString = atob(tempLayer.maskData);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              await stage.annotations.loadMask(layer.id, bytes);
-            } catch (error) {
-              devError('playfield', `Error loading temporary layer ${layer.id}:`, error);
+        // Load RLE data for each new temporary layer after components render
+        // Use setTimeout to give Three.js/Threlte time to create components
+        setTimeout(() => {
+          newLayers.forEach((layer) => {
+            // Skip if already loaded
+            if (loadedTemporaryMasks.has(layer.id)) return;
+
+            const tempLayer = tempLayersCopy.find((t) => t.id === layer.id);
+            if (tempLayer && tempLayer.maskData) {
+              loadTemporaryMaskWithRetry(layer.id, tempLayer.maskData);
             }
-          }
-        });
+          });
+        }, 50);
       }
 
       // Remove expired temporary layers from annotations
       const now = Date.now();
-      const tempLayerIds = new Set(temporaryLayers.map((t) => t.id));
+      const activeTemporaryIds = new Set(tempLayersCopy.map((t) => t.id));
 
       const filteredLayers = stageProps.annotations.layers.filter((l) => {
-        // Check if this layer ID exists in the current temporaryLayers array
-        if (tempLayerIds.has(l.id)) {
-          // It's a temporary layer that still exists - keep if not expired or currently being drawn
-          const tempLayer = temporaryLayers.find((t) => t.id === l.id);
-          if (l.id === currentTemporaryLayerId) {
-            return true;
+        // If this is a known temporary layer ID
+        if (knownTemporaryLayerIds.has(l.id)) {
+          // Check if it's still in the active temporary layers
+          if (activeTemporaryIds.has(l.id)) {
+            // Keep if currently being drawn or not expired
+            const tempLayer = tempLayersCopy.find((t) => t.id === l.id);
+            if (l.id === currentTemporaryLayerId) {
+              return true;
+            }
+            return tempLayer && tempLayer.expiresAt > now;
           }
-          return tempLayer && tempLayer.expiresAt > now;
-        }
-
-        // Check if this was a temporary layer that expired (was in temporaryLayers before but isn't now)
-        // We can identify these because they won't have a maskVersion (temporary layers don't persist to DB)
-        if (!l.maskVersion) {
-          // This was likely a temporary layer that expired - remove it
+          // It was temporary but is no longer in the list - remove it
+          // Also clean up the loaded masks tracking
+          loadedTemporaryMasks.delete(l.id);
           return false;
         }
 
-        // It's a permanent annotation (has maskVersion) - always keep
+        // Not a temporary layer - always keep (it's a permanent annotation)
         return true;
       });
 
       if (filteredLayers.length !== stageProps.annotations.layers.length) {
         stageProps.annotations.layers = filteredLayers;
       }
-    }
+    });
   });
 
   // Effect to handle active scene changes
@@ -1765,6 +1983,14 @@
   onReposition={(pos) => {
     menuPosition = pos;
   }}
+/>
+
+<!-- Persist button for saving temporary drawings -->
+<PersistButton
+  visible={showPersistButton}
+  position={persistButtonPosition}
+  onPersist={handlePersistDrawing}
+  onDismiss={handleDismissPersistButton}
 />
 
 <style>
