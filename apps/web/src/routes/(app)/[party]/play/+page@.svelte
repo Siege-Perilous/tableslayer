@@ -219,8 +219,27 @@
         { id: 'measure-line', label: '', icon: IconLine },
         { id: 'measure-circle', label: '', icon: IconCircle },
         { id: 'measure-square', label: '', icon: IconSquare },
-        { id: 'measure-cone', label: '', icon: IconCone2 },
-        { id: 'measure-beam', label: '', icon: IconRectangleVertical }
+        {
+          id: 'measure-cone',
+          label: '',
+          icon: IconCone2,
+          submenu: [
+            { id: 'measure-cone-30', label: '30°' },
+            { id: 'measure-cone-60', label: '60°' },
+            { id: 'measure-cone-90', label: '90°' }
+          ]
+        },
+        {
+          id: 'measure-beam',
+          label: '',
+          icon: IconRectangleVertical,
+          submenu: [
+            { id: 'measure-beam-5', label: '5 ft' },
+            { id: 'measure-beam-10', label: '10 ft' },
+            { id: 'measure-beam-15', label: '15 ft' },
+            { id: 'measure-beam-20', label: '20 ft' }
+          ]
+        }
       ]
     }
   ]);
@@ -348,17 +367,28 @@
         stageProps.measurement.type = MeasurementType.Square;
         break;
 
-      case 'measure-cone':
-        devLog('playfield', 'Starting cone measurement');
+      case 'measure-cone-30':
+      case 'measure-cone-60':
+      case 'measure-cone-90': {
+        const coneAngle = parseInt(itemId.replace('measure-cone-', ''), 10);
+        devLog('playfield', `Starting cone measurement with angle: ${coneAngle}°`);
         stageProps.activeLayer = MapLayerType.Measurement;
         stageProps.measurement.type = MeasurementType.Cone;
+        stageProps.measurement.coneAngle = coneAngle;
         break;
+      }
 
-      case 'measure-beam':
-        devLog('playfield', 'Starting beam measurement');
+      case 'measure-beam-5':
+      case 'measure-beam-10':
+      case 'measure-beam-15':
+      case 'measure-beam-20': {
+        const beamWidth = parseInt(itemId.replace('measure-beam-', ''), 10);
+        devLog('playfield', `Starting beam measurement with width: ${beamWidth} ft`);
         stageProps.activeLayer = MapLayerType.Measurement;
         stageProps.measurement.type = MeasurementType.Beam;
+        stageProps.measurement.beamWidth = beamWidth;
         break;
+      }
 
       default:
         // Check if it's a scene selection
@@ -1388,20 +1418,10 @@
       } catch (error) {
         devError('playfield', 'Error loading fog mask:', error);
       }
-    } else {
-      devLog('playfield', 'No fog mask data in SSR, checking if we need to fetch from Y.js state', {
-        hasMaskData: !!data.activeSceneFogMask,
-        hasFogLayer: !!stage?.fogOfWar?.fromRLE,
-        hasMaskVersion: !!stageProps.fogOfWar?.maskVersion
-      });
-
-      // If there's a maskVersion in stageProps but no SSR data, fetch the mask
-      if (stageProps.fogOfWar?.maskVersion && data.activeScene?.id) {
-        devLog('playfield', `Fetching fog mask for version ${stageProps.fogOfWar.maskVersion} on initial load`);
-        lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
-        fetchFogMask(data.activeScene.id);
-      }
     }
+    // Note: If no SSR data, the Y.js sync effect at line ~663 will handle
+    // fetching the mask when Y.js provides a maskVersion. We intentionally
+    // don't set lastFogMaskVersion here to ensure the effect triggers.
   }
 
   function onStageLoading() {
