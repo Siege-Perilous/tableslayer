@@ -1,6 +1,6 @@
 import { db } from '$lib/db/app';
-import { partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
-import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
+import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { and, asc, desc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
@@ -735,23 +735,71 @@ export const updateSceneMap = async (sceneId: string, userId: string, file: File
     .execute();
 };
 
-// New party-level active scene function
+// Helper to get the first available scene for a party (from most recently updated game session)
+export const getFirstAvailableSceneForParty = async (partyId: string): Promise<SelectScene | null> => {
+  // Get game sessions ordered by lastUpdated (most recent first)
+  const gameSessions = await db
+    .select()
+    .from(gameSessionTable)
+    .where(eq(gameSessionTable.partyId, partyId))
+    .orderBy(desc(gameSessionTable.lastUpdated))
+    .all();
+
+  // Find the first game session that has scenes
+  for (const gameSession of gameSessions) {
+    const firstScene = await db
+      .select()
+      .from(sceneTable)
+      .where(eq(sceneTable.gameSessionId, gameSession.id))
+      .orderBy(asc(sceneTable.order))
+      .limit(1)
+      .get();
+
+    if (firstScene) {
+      return firstScene;
+    }
+  }
+
+  return null;
+};
+
+// New party-level active scene function with fallback for orphaned activeSceneId
 export const getActiveSceneForParty = async (
   partyId: string
 ): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
   const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
 
-  if (!party || !party.activeSceneId) {
+  if (!party) {
     return null;
   }
 
-  const activeScene = await getScene(party.activeSceneId);
+  // If party has an activeSceneId, try to fetch it
+  if (party.activeSceneId) {
+    const sceneExists = await db
+      .select({ id: sceneTable.id })
+      .from(sceneTable)
+      .where(eq(sceneTable.id, party.activeSceneId))
+      .get();
 
-  if (!activeScene) {
+    if (sceneExists) {
+      const activeScene = await getScene(party.activeSceneId);
+      return activeScene;
+    }
+
+    // Active scene no longer exists - find a fallback
+    const fallbackScene = await getFirstAvailableSceneForParty(partyId);
+    if (fallbackScene) {
+      // Self-heal: update the party's activeSceneId
+      await db.update(partyTable).set({ activeSceneId: fallbackScene.id }).where(eq(partyTable.id, partyId));
+      return await getScene(fallbackScene.id);
+    }
+
+    // No scenes exist at all - clear the activeSceneId
+    await db.update(partyTable).set({ activeSceneId: null }).where(eq(partyTable.id, partyId));
     return null;
   }
 
-  return activeScene;
+  return null;
 };
 
 export const setActiveSceneForParty = async (partyId: string, sceneId: string): Promise<void> => {
