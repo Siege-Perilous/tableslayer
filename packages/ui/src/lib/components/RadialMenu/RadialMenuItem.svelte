@@ -103,12 +103,27 @@
   }
 
   .radialMenu__item--colorOnly {
-    padding: 0.5rem;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    box-shadow: none;
+  }
+
+  .radialMenu__item--colorOnly:hover {
+    background: transparent;
+    border: none;
   }
 
   .radialMenu__item--colorOnly .radialMenu__itemSwatch {
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
+    border: 2px solid var(--bg);
+    box-shadow:
+      0 0 0 1px var(--fgMuted),
+      0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .radialMenu__item--iconOnly {
