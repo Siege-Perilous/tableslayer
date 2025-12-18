@@ -498,6 +498,15 @@
           devLog('playfield', 'Player initiated scene switch to:', sceneId);
           const manager = getPartyDataManager();
           if (manager) {
+            // Log connection status before making any changes
+            const connectionStatus = manager.getConnectionStatus();
+            devLog('playfield', 'Scene switch - Y.js connection status:', {
+              sceneId,
+              connectionStatus,
+              managerGameSessionId: manager.gameSessionId,
+              currentGameSessionId
+            });
+
             // Update database first to ensure persistence across hard refreshes
             (async () => {
               try {
@@ -508,8 +517,8 @@
 
                 devLog('playfield', 'Database updated with new active scene');
 
-                // Update Y.js to notify other clients
-                switchActiveScene(manager, sceneId);
+                // Note: switchActiveScene is called AFTER invalidateAll() completes
+                // to ensure we use a connected manager (the old one may be destroyed during invalidation)
 
                 // Manually trigger page reload for the local client
                 devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
@@ -544,6 +553,37 @@
                       initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
                       partyData = usePartyData();
 
+                      // Call switchActiveScene with the NEW manager to broadcast to other clients
+                      // Wait a moment for the party connection to establish
+                      const newManager = getPartyDataManager();
+                      if (newManager) {
+                        // Wait for party connection before broadcasting
+                        const waitForConnection = () => {
+                          return new Promise<void>((resolve) => {
+                            const checkConnection = () => {
+                              const status = newManager.getConnectionStatus();
+                              if (status.party === 'connected') {
+                                resolve();
+                              } else {
+                                setTimeout(checkConnection, 50);
+                              }
+                            };
+                            // Start checking immediately
+                            checkConnection();
+                            // Also resolve after a reasonable timeout (1 second)
+                            setTimeout(resolve, 1000);
+                          });
+                        };
+
+                        waitForConnection().then(() => {
+                          devLog('playfield', 'Broadcasting scene change via new Y.js manager:', {
+                            sceneId,
+                            connectionStatus: newManager.getConnectionStatus()
+                          });
+                          switchActiveScene(newManager, sceneId);
+                        });
+                      }
+
                       partyData.subscribe(() => {
                         if (isUnmounting || isInvalidating) return;
                         const updatedPartyState = partyData!.getPartyState();
@@ -558,6 +598,19 @@
                           }
                         }
                       });
+                    }
+                  } else {
+                    // Same game session - ensure Y.js is updated with current manager
+                    const currentManager = getPartyDataManager();
+                    if (currentManager) {
+                      const status = currentManager.getConnectionStatus();
+                      if (status.party === 'connected') {
+                        devLog('playfield', 'Broadcasting scene change via existing Y.js manager (same session):', {
+                          sceneId,
+                          connectionStatus: status
+                        });
+                        switchActiveScene(currentManager, sceneId);
+                      }
                     }
                   }
 

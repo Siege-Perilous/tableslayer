@@ -14,8 +14,25 @@ export function switchActiveScene(partyData: PartyDataManager, sceneId: string):
   // Update party state with new active scene ID
   const partyState = partyData.getYPartyState();
   if (partyState) {
+    const currentActiveSceneId = partyState.get('activeSceneId');
+    devLog('yjs', 'switchActiveScene called:', {
+      currentActiveSceneId,
+      newSceneId: sceneId,
+      isChange: currentActiveSceneId !== sceneId
+    });
+
     partyState.set('activeSceneId', sceneId);
     devLog('yjs', `Switched active scene to: ${sceneId}`);
+
+    // Verify the change was applied
+    const verifiedActiveSceneId = partyState.get('activeSceneId');
+    devLog('yjs', 'switchActiveScene verification:', {
+      requestedSceneId: sceneId,
+      verifiedActiveSceneId,
+      matchesRequested: verifiedActiveSceneId === sceneId
+    });
+  } else {
+    devLog('yjs', 'Cannot switch scene: partyState is undefined');
   }
 }
 

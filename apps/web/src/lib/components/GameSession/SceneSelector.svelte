@@ -90,12 +90,32 @@
 
     // Get initial value
     const partyState = partyData.getPartyState();
-    liveActiveSceneId = partyState.activeSceneId || activeSceneId;
+    const initialActiveSceneId = partyState.activeSceneId;
+    liveActiveSceneId = initialActiveSceneId ?? activeSceneId;
+    devLog('scene', 'SceneSelector Y.js subscription setup', {
+      initialActiveSceneId,
+      ssrActiveSceneId: activeSceneId,
+      liveActiveSceneId,
+      gameSessionId: gameSession.id
+    });
 
     // Subscribe to changes
     const unsubscribe = partyData.subscribe(() => {
       const updatedPartyState = partyData.getPartyState();
-      liveActiveSceneId = updatedPartyState.activeSceneId || activeSceneId;
+      const newActiveSceneId = updatedPartyState.activeSceneId;
+      const previousLiveActiveSceneId = liveActiveSceneId;
+
+      // Only use SSR fallback if Y.js value is truly undefined (not just falsy)
+      liveActiveSceneId = newActiveSceneId ?? activeSceneId;
+
+      devLog('scene', 'SceneSelector received Y.js party state update', {
+        newActiveSceneId,
+        previousLiveActiveSceneId,
+        liveActiveSceneId,
+        ssrActiveSceneId: activeSceneId,
+        gameSessionId: gameSession.id,
+        changed: previousLiveActiveSceneId !== liveActiveSceneId
+      });
     });
 
     return unsubscribe;
