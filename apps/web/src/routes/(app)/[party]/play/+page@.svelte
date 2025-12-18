@@ -527,6 +527,46 @@
 
                 if (success) {
                   devLog('playfield', 'Page reload complete after locally-initiated scene change');
+
+                  // Check if game session changed (cross-session scene switch)
+                  const newGameSessionId = data.activeGameSession?.id;
+                  if (newGameSessionId && newGameSessionId !== currentGameSessionId) {
+                    devLog('playfield', 'Game session changed during radial menu scene switch, reinitializing Y.js:', {
+                      from: currentGameSessionId,
+                      to: newGameSessionId
+                    });
+
+                    currentGameSessionId = newGameSessionId;
+                    destroyPartyDataManager();
+
+                    const partySlug = page.params.party;
+                    if (partySlug) {
+                      initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
+                      partyData = usePartyData();
+
+                      partyData.subscribe(() => {
+                        if (isUnmounting || isInvalidating) return;
+                        const updatedPartyState = partyData!.getPartyState();
+                        yjsPartyState = {
+                          isPaused: updatedPartyState.isPaused,
+                          activeSceneId: updatedPartyState.activeSceneId
+                        };
+                        if (updatedPartyState.activeSceneId) {
+                          const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+                          if (sceneData?.stageProps) {
+                            yjsSceneData = sceneData;
+                          }
+                        }
+                      });
+                    }
+                  }
+
+                  // Update yjsPartyState from SSR data to ensure correct state
+                  yjsPartyState = {
+                    isPaused: party.gameSessionIsPaused,
+                    activeSceneId: data.activeScene?.id
+                  };
+                  hasActiveScene = !!data.activeScene?.id;
                 } else {
                   devWarn('playfield', 'Scene change may not have loaded correctly, SSR returned stale data');
                 }
@@ -2005,6 +2045,62 @@
             } else {
               devWarn('playfield', 'Scene change may not have loaded correctly, SSR returned stale data');
             }
+
+            // Check if game session changed (cross-session scene switch)
+            const newGameSessionId = data.activeGameSession?.id;
+            if (newGameSessionId && newGameSessionId !== currentGameSessionId) {
+              devLog('playfield', 'Game session changed during scene switch, reinitializing Y.js:', {
+                from: currentGameSessionId,
+                to: newGameSessionId
+              });
+
+              // Update tracked game session ID
+              currentGameSessionId = newGameSessionId;
+
+              // Destroy old Y.js connection
+              destroyPartyDataManager();
+
+              // Reinitialize with new game session
+              const partySlug = page.params.party;
+              if (partySlug) {
+                initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
+                partyData = usePartyData();
+
+                // Resubscribe to Y.js changes
+                partyData.subscribe(() => {
+                  if (isUnmounting || isInvalidating) return;
+
+                  const updatedPartyState = partyData!.getPartyState();
+                  yjsPartyState = {
+                    isPaused: updatedPartyState.isPaused,
+                    activeSceneId: updatedPartyState.activeSceneId
+                  };
+
+                  // Update scene data
+                  if (updatedPartyState.activeSceneId) {
+                    const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+                    if (sceneData?.stageProps) {
+                      yjsSceneData = sceneData;
+                    }
+                  }
+                });
+
+                devLog('playfield', 'Y.js reinitialized for new game session');
+              }
+            }
+
+            // Update yjsPartyState from SSR data to ensure correct state
+            // Y.js may not have synced yet, so use SSR as source of truth
+            yjsPartyState = {
+              isPaused: party.gameSessionIsPaused,
+              activeSceneId: data.activeScene?.id
+            };
+            hasActiveScene = !!data.activeScene?.id;
+
+            devLog('playfield', 'Updated yjsPartyState from SSR after scene change:', {
+              activeSceneId: data.activeScene?.id,
+              hasActiveScene
+            });
 
             // Reset flags after invalidation completes
             isInvalidating = false;

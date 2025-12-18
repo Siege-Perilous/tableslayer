@@ -78,6 +78,29 @@
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
 
+  // Live active scene ID from Y.js (falls back to prop)
+  let liveActiveSceneId = $state<string | undefined>(activeSceneId);
+
+  // Subscribe to Y.js party state for real-time activeSceneId updates
+  $effect(() => {
+    if (!partyData) {
+      liveActiveSceneId = activeSceneId;
+      return;
+    }
+
+    // Get initial value
+    const partyState = partyData.getPartyState();
+    liveActiveSceneId = partyState.activeSceneId || activeSceneId;
+
+    // Subscribe to changes
+    const unsubscribe = partyData.subscribe(() => {
+      const updatedPartyState = partyData.getPartyState();
+      liveActiveSceneId = updatedPartyState.activeSceneId || activeSceneId;
+    });
+
+    return unsubscribe;
+  });
+
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
   const deleteScene = useDeleteSceneMutation();
@@ -606,7 +629,7 @@
           ondragover={(e) => e.preventDefault()}
           ondrop={(e) => e.preventDefault()}
         >
-          {#if activeSceneId && activeSceneId === scene.id}
+          {#if liveActiveSceneId && liveActiveSceneId === scene.id}
             <div class="scene__projectedIcon">
               {#if !party.gameSessionIsPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />

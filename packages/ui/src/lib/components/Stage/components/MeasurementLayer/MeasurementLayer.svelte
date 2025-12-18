@@ -62,6 +62,29 @@
   let startPoint: THREE.Vector2 | null = null;
   let measurementManager: MeasurementManager | null = null;
 
+  // Track previous display resolution to detect scene changes
+  let prevResX = display.resolution.x;
+  let prevResY = display.resolution.y;
+
+  // Reset measurement state when layer becomes inactive or display changes (scene switch)
+  $effect(() => {
+    const resChanged = display.resolution.x !== prevResX || display.resolution.y !== prevResY;
+
+    // Reset any lingering measurement state when layer deactivates or scene changes
+    if (!isActive || resChanged) {
+      isDrawing = false;
+      startPoint = null;
+      if (measurementManager) {
+        measurementManager.clearMeasurement();
+        measurementManager.hidePreview();
+      }
+    }
+
+    // Update tracked resolution
+    prevResX = display.resolution.x;
+    prevResY = display.resolution.y;
+  });
+
   /**
    * Handles mouse down events to initiate measurement creation.
    * Converts screen coordinates to world coordinates, applies grid snapping if enabled,
