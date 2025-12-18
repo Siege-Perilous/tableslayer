@@ -266,6 +266,18 @@
       clearTimeout(resetLayerTimer);
     }
     resetLayerTimer = setTimeout(() => {
+      // Check if user is still actively drawing (mouse/touch down)
+      // If so, restart the timer rather than interrupting their drawing
+      const isAnnotationDrawing = stage?.annotations?.isDrawing() ?? false;
+      const isFogDrawing = stage?.fogOfWar?.isDrawing() ?? false;
+
+      if (isAnnotationDrawing || isFogDrawing) {
+        devLog('playfield', 'User still drawing, restarting reset timer');
+        resetLayerTimer = null;
+        resetToNoneAfterDelay();
+        return;
+      }
+
       devLog('playfield', 'Resetting active layer to None after timeout');
 
       // Show persist button now that drawing window is closed
