@@ -33,7 +33,7 @@
   import { switchActiveScene } from '$lib/utils/yjs/sceneCoordination';
   import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
   import { useUpdateFogMaskMutation, useUpdateAnnotationMaskMutation } from '$lib/queries/masks';
-  import { useUpsertAnnotationMutation } from '$lib/queries/annotations';
+  import { useUpsertAnnotationMutation, useDeleteAnnotationMutation } from '$lib/queries/annotations';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import {
     IconMap,
@@ -111,6 +111,7 @@
   // Annotation persistence mutations
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
   const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
+  const deleteAnnotationMutation = useDeleteAnnotationMutation();
 
   // Temporary drawing state
   let temporaryLayers = $state<TemporaryLayer[]>([]);
@@ -123,6 +124,8 @@
   let persistButtonPosition = $state({ x: 0, y: 0 });
   let persistButtonLayerId: string | null = $state(null);
   let persistButtonTimer: ReturnType<typeof setTimeout> | null = null;
+  // Store pending position to show persist button after drawing window closes
+  let pendingPersistPosition: { x: number; y: number } | null = null;
 
   // Track IDs of layers we've created as temporary (so we can clean them up when they expire)
   let knownTemporaryLayerIds = new Set<string>();
@@ -208,7 +211,16 @@
         { id: 'draw-blue', label: '', color: '#2e86ab' },
         { id: 'draw-purple', label: '', color: '#b197fc' },
         { id: 'draw-pink', label: '', color: '#f06595' },
-        { id: 'draw-turquoise', label: '', color: '#20c997' }
+        { id: 'draw-turquoise', label: '', color: '#20c997' },
+        {
+          id: 'draw-delete-all',
+          label: '',
+          icon: IconTrash,
+          submenu: [
+            { id: 'draw-delete-all-confirm', label: 'Yes, delete all' },
+            { id: 'draw-delete-all-cancel', label: 'Cancel' }
+          ]
+        }
       ]
     },
     {
@@ -247,14 +259,37 @@
   import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
 
   // Reset active layer to None after a delay (3 seconds)
+  // Also clears currentTemporaryLayerId so a new layer is created on next draw
+  // Shows the persist button if there's a pending position
   function resetToNoneAfterDelay() {
     if (resetLayerTimer) {
       clearTimeout(resetLayerTimer);
     }
     resetLayerTimer = setTimeout(() => {
       devLog('playfield', 'Resetting active layer to None after timeout');
+
+      // Show persist button now that drawing window is closed
+      if (pendingPersistPosition && currentTemporaryLayerId) {
+        // Clear any existing timer
+        if (persistButtonTimer) {
+          clearTimeout(persistButtonTimer);
+        }
+
+        persistButtonLayerId = currentTemporaryLayerId;
+        persistButtonPosition = pendingPersistPosition;
+        showPersistButton = true;
+        pendingPersistPosition = null;
+
+        // Auto-hide after 3 seconds
+        persistButtonTimer = setTimeout(() => {
+          showPersistButton = false;
+          persistButtonLayerId = null;
+        }, 3000);
+      }
+
       stageProps.activeLayer = MapLayerType.None;
       stageProps.annotations.activeLayer = null;
+      currentTemporaryLayerId = null;
       resetLayerTimer = null;
     }, 3000);
   }
@@ -315,39 +350,105 @@
         };
 
         const selectedColor = colorMap[itemId] || '#d73e2e';
-        devLog('playfield', `Starting draw with color: ${selectedColor}`);
 
-        // Create a new temporary layer for drawing
-        currentTemporaryLayerId = uuidv4();
+        // Check if we have an active temporary layer with the same color
+        const existingLayer = currentTemporaryLayerId
+          ? stageProps.annotations.layers.find((l) => l.id === currentTemporaryLayerId && l.color === selectedColor)
+          : null;
 
-        const tempLayer: AnnotationLayerData = {
-          id: currentTemporaryLayerId,
-          name: 'Temporary drawing',
-          color: selectedColor,
-          opacity: 1.0,
-          url: null,
-          visibility: StageMode.Player
-        };
+        if (existingLayer) {
+          // Reuse existing layer, just reset the timer
+          devLog('playfield', `Continuing draw on existing layer with color: ${selectedColor}`);
+          stageProps.annotations.activeLayer = currentTemporaryLayerId;
+          stageProps.activeLayer = MapLayerType.Annotation;
+          resetToNoneAfterDelay();
+        } else {
+          // Create a new temporary layer for drawing
+          devLog('playfield', `Starting new draw with color: ${selectedColor}`);
+          currentTemporaryLayerId = uuidv4();
 
-        stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
-        stageProps.annotations.activeLayer = currentTemporaryLayerId;
-        stageProps.activeLayer = MapLayerType.Annotation;
+          const tempLayer: AnnotationLayerData = {
+            id: currentTemporaryLayerId,
+            name: 'Temporary drawing',
+            color: selectedColor,
+            opacity: 1.0,
+            url: null,
+            visibility: StageMode.Player
+          };
 
-        // Set line width as percentage (1% of texture resolution)
-        // AnnotationMaterial will convert this to texture pixels
-        stageProps.annotations.lineWidth = 1.0;
+          stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+          stageProps.annotations.activeLayer = currentTemporaryLayerId;
+          stageProps.activeLayer = MapLayerType.Annotation;
 
-        // Immediately broadcast to Y.js awareness with empty mask
-        {
+          // Set line width as percentage (1% of texture resolution)
+          // AnnotationMaterial will convert this to texture pixels
+          stageProps.annotations.lineWidth = 1.0;
+
+          // Immediately broadcast to Y.js awareness with empty mask
           const manager = getPartyDataManager();
           if (manager && currentTemporaryLayerId) {
             const tempYjsLayer = createTemporaryLayer(currentTemporaryLayerId, user.id, tempLayer.color, '', 10000);
             broadcastTemporaryLayer(manager, tempYjsLayer);
             temporaryLayers = getTemporaryLayers(manager);
           }
+
+          resetToNoneAfterDelay();
         }
         break;
       }
+
+      case 'draw-delete-all-confirm': {
+        devLog('playfield', 'Deleting all annotation layers');
+
+        (async () => {
+          try {
+            // Get persisted annotation IDs from SSR data
+            const persistedAnnotationIds = data.activeSceneAnnotations?.map((a) => a.id) || [];
+
+            // Delete persisted annotations from database
+            for (const annotationId of persistedAnnotationIds) {
+              await deleteAnnotationMutation.mutateAsync({ annotationId });
+              devLog('playfield', `Deleted annotation from database: ${annotationId}`);
+            }
+
+            // Clear all annotation layers from stageProps
+            stageProps.annotations.layers = [];
+            stageProps.annotations.activeLayer = null;
+            ssrAnnotationLayers = [];
+
+            // Clear temporary layers from Y.js awareness
+            const manager = getPartyDataManager();
+            if (manager) {
+              for (const tempLayer of temporaryLayers) {
+                removeTemporaryLayer(manager, tempLayer.id);
+              }
+              temporaryLayers = [];
+
+              // Broadcast the updated stageProps to sync with editor
+              if (data.activeScene?.id) {
+                manager.updateSceneStageProps(data.activeScene.id, stageProps);
+                devLog('playfield', 'Broadcasted annotation deletion to Y.js');
+              }
+            }
+
+            // Clear current temporary layer ID
+            currentTemporaryLayerId = null;
+
+            // Reset to none
+            stageProps.activeLayer = MapLayerType.None;
+
+            devLog('playfield', 'All annotation layers deleted');
+          } catch (error) {
+            devError('playfield', 'Error deleting annotation layers:', error);
+          }
+        })();
+        break;
+      }
+
+      case 'draw-delete-all-cancel':
+        // User cancelled, do nothing
+        devLog('playfield', 'Delete all cancelled');
+        break;
 
       case 'measure-line':
         devLog('playfield', 'Starting line measurement');
@@ -1571,22 +1672,9 @@
                 temporaryLayers = getTemporaryLayers(manager);
               }
 
-              // Show persist button if we have an end position
+              // Store end position for persist button (shown after drawing window closes)
               if (endPosition) {
-                // Clear any existing timer
-                if (persistButtonTimer) {
-                  clearTimeout(persistButtonTimer);
-                }
-
-                persistButtonLayerId = currentTemporaryLayerId;
-                persistButtonPosition = endPosition;
-                showPersistButton = true;
-
-                // Auto-hide after 3 seconds
-                persistButtonTimer = setTimeout(() => {
-                  showPersistButton = false;
-                  persistButtonLayerId = null;
-                }, 3000);
+                pendingPersistPosition = endPosition;
               }
             }
           }
@@ -1594,10 +1682,9 @@
           devError('playfield', 'Error broadcasting temporary layer:', error);
         }
 
-        // Exit drawing mode after the drawing is complete with a delay
-        devLog('playfield', 'Drawing complete, will exit annotation mode after 3 seconds');
+        // Reset timer - user has 3 more seconds to continue drawing on the same layer
+        devLog('playfield', 'Drawing stroke complete, resetting 3-second buffer timer');
         resetToNoneAfterDelay();
-        currentTemporaryLayerId = null;
       }
     });
   }
