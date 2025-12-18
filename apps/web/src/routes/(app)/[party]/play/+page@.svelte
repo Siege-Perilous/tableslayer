@@ -398,20 +398,19 @@
           const manager = getPartyDataManager();
           if (manager) {
             // Update database first to ensure persistence across hard refreshes
-            updatePartyMutation
-              .mutateAsync({
-                partyId: party.id,
-                partyData: { activeSceneId: sceneId }
-              })
-              .then(() => {
+            (async () => {
+              try {
+                await updatePartyMutation.mutateAsync({
+                  partyId: party.id,
+                  partyData: { activeSceneId: sceneId }
+                });
+
                 devLog('playfield', 'Database updated with new active scene');
 
                 // Update Y.js to notify other clients
                 switchActiveScene(manager, sceneId);
 
                 // Manually trigger page reload for the local client
-                // This is necessary because in production, the Y.js update happens so fast
-                // that the reactive effect misses the state transition
                 devLog('playfield', 'Manually triggering page reload for locally-initiated scene change');
                 lastProcessedSceneId = sceneId;
                 isProcessingSceneChange = true;
@@ -422,20 +421,25 @@
                 yjsSceneData = null;
                 lastYjsUpdateTimestamp = 0;
 
-                return invalidateAll();
-              })
-              .then(() => {
-                devLog('playfield', 'Page reload complete after locally-initiated scene change');
+                // Invalidate with retry to handle stale SSR data
+                const success = await invalidateWithRetry(sceneId);
+
+                if (success) {
+                  devLog('playfield', 'Page reload complete after locally-initiated scene change');
+                } else {
+                  devWarn('playfield', 'Scene change may not have loaded correctly, SSR returned stale data');
+                }
+
                 isInvalidating = false;
                 isProcessingSceneChange = false;
                 sceneIsChanging = false;
-              })
-              .catch((error) => {
+              } catch (error) {
                 devError('playfield', 'Error updating scene:', error);
                 isInvalidating = false;
                 isProcessingSceneChange = false;
                 sceneIsChanging = false;
-              });
+              }
+            })();
           }
         }
         break;
@@ -459,6 +463,37 @@
   let lastYjsUpdateTimestamp = 0;
   let lastFogMaskVersion: number | undefined;
   let lastAnnotationMaskVersions: Map<string, number> = new Map();
+
+  // Helper to invalidate with retry when SSR returns stale data
+  const invalidateWithRetry = async (expectedSceneId: string, maxRetries = 3, retryDelay = 300): Promise<boolean> => {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      await invalidateAll();
+
+      // Check if SSR returned the expected scene
+      if (data.activeScene?.id === expectedSceneId) {
+        devLog('playfield', `invalidateWithRetry succeeded on attempt ${attempt + 1}`);
+        return true;
+      }
+
+      devLog('playfield', `invalidateWithRetry: SSR returned wrong scene`, {
+        expected: expectedSceneId,
+        got: data.activeScene?.id,
+        attempt: attempt + 1,
+        maxRetries
+      });
+
+      // Wait before retrying (except on last attempt)
+      if (attempt < maxRetries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+
+    devWarn('playfield', `invalidateWithRetry: Max retries reached, SSR still returning wrong scene`, {
+      expected: expectedSceneId,
+      got: data.activeScene?.id
+    });
+    return false;
+  };
 
   // Fetch mask functions for real-time updates
   const fetchFogMask = async (sceneId: string) => {
@@ -1861,33 +1896,43 @@
 
         devLog('playfield', 'Starting invalidateAll() for scene change');
 
-        // Invalidate the page to load the new scene data
+        // Invalidate the page to load the new scene data with retry logic
         // This is necessary because:
         // 1. The new scene might be in a different game session requiring new Y.js connection
         // 2. We need fresh SSR data for the new scene
         // 3. The playfield needs to reinitialize with the correct scene context
-        invalidateAll()
-          .then(() => {
+        const expectedSceneId = yjsPartyState.activeSceneId;
+        (async () => {
+          try {
+            const success = await invalidateWithRetry(expectedSceneId);
+
             devLog('playfield', 'invalidateAll() completed:', {
               newActiveSceneId: data.activeScene?.id,
               newGameSessionId: data.activeGameSession?.id,
+              success,
               timestamp: Date.now()
             });
-            devLog('playfield', 'Page invalidation complete after active scene change');
+
+            if (success) {
+              devLog('playfield', 'Page invalidation complete after active scene change');
+            } else {
+              devWarn('playfield', 'Scene change may not have loaded correctly, SSR returned stale data');
+            }
+
             // Reset flags after invalidation completes
             isInvalidating = false;
             isProcessingSceneChange = false;
             // Clear scene changing state after invalidation
             sceneIsChanging = false;
-          })
-          .catch((error) => {
+          } catch (error) {
             devLog('playfield', 'invalidateAll() failed:', error);
             devError('playfield', 'Error invalidating page after active scene change:', error);
             // Reset flags even on error
             isInvalidating = false;
             isProcessingSceneChange = false;
             sceneIsChanging = false;
-          });
+          }
+        })();
 
         return;
       }
