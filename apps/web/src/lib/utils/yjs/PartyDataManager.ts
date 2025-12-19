@@ -534,6 +534,20 @@ export class PartyDataManager {
   }
 
   /**
+   * Get the party state Y.Map for external coordination functions
+   */
+  getYPartyState(): Y.Map<unknown> {
+    return this.yPartyState;
+  }
+
+  /**
+   * Get the game session provider for awareness access
+   */
+  getGameSessionProvider(): YPartyKitProvider {
+    return this.gameSessionProvider;
+  }
+
+  /**
    * Update scene stage props
    */
   updateSceneStageProps(sceneId: string, stageProps: StageProps) {
@@ -548,6 +562,31 @@ export class PartyDataManager {
       // Also update markers if they're included in stageProps
       if (stageProps.marker?.markers) {
         sceneMap.set('markers', stageProps.marker.markers);
+      }
+    });
+  }
+
+  /**
+   * Update a single marker's position (for playfield → editor sync)
+   * This only updates the marker position without broadcasting full stageProps
+   */
+  updateMarkerPosition(sceneId: string, markerId: string, position: { x: number; y: number }) {
+    this.doc.transact(() => {
+      const sceneMap = this.yScenes.get(sceneId);
+      if (!sceneMap) return;
+
+      const markers = sceneMap.get('markers') as Marker[] | undefined;
+      if (!markers) return;
+
+      const index = markers.findIndex((m) => m.id === markerId);
+      if (index !== -1) {
+        const updatedMarkers = [...markers];
+        updatedMarkers[index] = {
+          ...updatedMarkers[index],
+          position: { x: position.x, y: position.y }
+        };
+        sceneMap.set('markers', updatedMarkers);
+        sceneMap.set('lastUpdated', Date.now());
       }
     });
   }

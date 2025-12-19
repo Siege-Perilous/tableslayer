@@ -78,6 +78,49 @@
   // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
 
+  // Live active scene ID from Y.js (falls back to prop)
+  let liveActiveSceneId = $state<string | undefined>(activeSceneId);
+
+  // Subscribe to Y.js party state for real-time activeSceneId updates
+  $effect(() => {
+    if (!partyData) {
+      liveActiveSceneId = activeSceneId;
+      return;
+    }
+
+    // Get initial value
+    const partyState = partyData.getPartyState();
+    const initialActiveSceneId = partyState.activeSceneId;
+    liveActiveSceneId = initialActiveSceneId ?? activeSceneId;
+    devLog('scene', 'SceneSelector Y.js subscription setup', {
+      initialActiveSceneId,
+      ssrActiveSceneId: activeSceneId,
+      liveActiveSceneId,
+      gameSessionId: gameSession.id
+    });
+
+    // Subscribe to changes
+    const unsubscribe = partyData.subscribe(() => {
+      const updatedPartyState = partyData.getPartyState();
+      const newActiveSceneId = updatedPartyState.activeSceneId;
+      const previousLiveActiveSceneId = liveActiveSceneId;
+
+      // Only use SSR fallback if Y.js value is truly undefined (not just falsy)
+      liveActiveSceneId = newActiveSceneId ?? activeSceneId;
+
+      devLog('scene', 'SceneSelector received Y.js party state update', {
+        newActiveSceneId,
+        previousLiveActiveSceneId,
+        liveActiveSceneId,
+        ssrActiveSceneId: activeSceneId,
+        gameSessionId: gameSession.id,
+        changed: previousLiveActiveSceneId !== liveActiveSceneId
+      });
+    });
+
+    return unsubscribe;
+  });
+
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
   const deleteScene = useDeleteSceneMutation();
@@ -606,7 +649,7 @@
           ondragover={(e) => e.preventDefault()}
           ondrop={(e) => e.preventDefault()}
         >
-          {#if activeSceneId && activeSceneId === scene.id}
+          {#if liveActiveSceneId && liveActiveSceneId === scene.id}
             <div class="scene__projectedIcon">
               {#if !party.gameSessionIsPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />

@@ -10,7 +10,7 @@ import {
 import { getVideoUrl, SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 import type { Thumb } from '../file';
@@ -92,7 +92,53 @@ export const deleteGameSession = async (id: string) => {
     if (!gameSession) {
       throw new Error('Game session not found');
     }
+
+    const partyId = gameSession.partyId;
+
+    // Check if the party's active scene belongs to this game session
+    const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+    const activeSceneInDeletedSession =
+      party?.activeSceneId &&
+      (await db
+        .select({ id: sceneTable.id })
+        .from(sceneTable)
+        .where(and(eq(sceneTable.id, party.activeSceneId), eq(sceneTable.gameSessionId, id)))
+        .get());
+
+    // Delete the game session (cascades to scenes)
     await db.delete(gameSessionTable).where(eq(gameSessionTable.id, id)).run();
+
+    // If the active scene was in the deleted session, find a new one
+    if (activeSceneInDeletedSession) {
+      // Find the first scene from remaining game sessions
+      const remainingGameSessions = await db
+        .select()
+        .from(gameSessionTable)
+        .where(eq(gameSessionTable.partyId, partyId))
+        .orderBy(desc(gameSessionTable.lastUpdated))
+        .all();
+
+      let newActiveSceneId: string | null = null;
+
+      for (const gs of remainingGameSessions) {
+        const firstScene = await db
+          .select({ id: sceneTable.id })
+          .from(sceneTable)
+          .where(eq(sceneTable.gameSessionId, gs.id))
+          .orderBy(asc(sceneTable.order))
+          .limit(1)
+          .get();
+
+        if (firstScene) {
+          newActiveSceneId = firstScene.id;
+          break;
+        }
+      }
+
+      // Update the party's active scene (or clear it if no scenes remain)
+      await db.update(partyTable).set({ activeSceneId: newActiveSceneId }).where(eq(partyTable.id, partyId));
+    }
+
     return true;
   } catch (error) {
     console.error(error);

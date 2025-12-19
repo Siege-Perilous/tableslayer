@@ -74,7 +74,6 @@
     party,
     activeScene,
     user,
-    brushSize,
     isStripeEnabled
   } = $derived(data);
 
@@ -91,84 +90,9 @@
   });
 
   // Helper function to clean stage props before sending to Y.js
-  // Removes local-only properties that should not be synchronized
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cleanStagePropsForYjs = (props: StageProps): any => {
-    return {
-      ...props,
-      annotations: {
-        ...props.annotations,
-        activeLayer: null, // activeLayer is local-only, not synchronized
-        lineWidth: undefined // lineWidth is local-only, not synchronized
-      },
-      fogOfWar: {
-        ...props.fogOfWar,
-        tool: {
-          ...props.fogOfWar.tool
-          // size is omitted to prevent syncing
-        }
-      },
-      // Ensure grid props are fully included with worldGridUnits and worldGridSize
-      grid: {
-        ...props.grid,
-        worldGridUnits: props.grid.worldGridUnits || 'FT',
-        worldGridSize: props.grid.worldGridSize || 5
-      }
-    };
-  };
-
-  // Helper function to merge markers while protecting ones being moved or edited
-  const mergeMarkersWithProtection = (
-    localMarkers: Marker[],
-    incomingMarkers: Marker[],
-    beingMoved: Set<string>,
-    beingEdited: Set<string>,
-    recentlyDeleted: Set<string>
-  ) => {
-    const protectedMarkers = new Set([...beingMoved, ...beingEdited]);
-
-    devLog('markers', '🔄 Merging markers:', {
-      localCount: localMarkers.length,
-      incomingCount: incomingMarkers.length,
-      protectedCount: protectedMarkers.size
-    });
-
-    // Start with incoming markers as base, but exclude recently deleted ones
-    const resultMap = new Map();
-    incomingMarkers.forEach((marker) => {
-      // Skip markers that were recently deleted in this editor
-      if (!recentlyDeleted.has(marker.id)) {
-        resultMap.set(marker.id, marker);
-      }
-    });
-
-    // Apply protections and add new markers
-    for (const localMarker of localMarkers) {
-      if (protectedMarkers.has(localMarker.id)) {
-        if (resultMap.has(localMarker.id)) {
-          // Marker exists in incoming - apply protection
-          const incomingMarker = resultMap.get(localMarker.id);
-          if (beingMoved.has(localMarker.id)) {
-            // For moved markers, only preserve position from local state
-            // This protects the marker being actively dragged in THIS editor
-            resultMap.set(localMarker.id, {
-              ...incomingMarker,
-              position: localMarker.position
-            });
-          } else if (beingEdited.has(localMarker.id)) {
-            // For edited markers, preserve entire local marker
-            resultMap.set(localMarker.id, localMarker);
-          }
-        } else {
-          // New marker not in incoming yet - add it
-          resultMap.set(localMarker.id, localMarker);
-        }
-      }
-    }
-
-    const result = Array.from(resultMap.values());
-    return result;
-  };
+  import { cleanStagePropsForYjs } from '$lib/utils/stage/cleanStagePropsForYjs';
+  import { mergeMarkersWithProtection } from '$lib/utils/markers/mergeMarkersWithProtection';
+  import { getLatestMeasurement } from '$lib/utils/measurements';
 
   // Y.js integration
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
@@ -261,21 +185,46 @@
 
   devLog('annoations', data.selectedSceneAnnotations);
   // Socket now managed by PartyDataManager for unified connection
-  let stageProps: StageProps = $state(
-    buildSceneProps(
-      data.selectedScene,
-      data.selectedSceneMarkers,
-      'editor',
-      data.selectedSceneAnnotations,
-      data.bucketUrl
-    )
+
+  // Build initial stage props and apply user preferences
+  const initialStageProps = buildSceneProps(
+    data.selectedScene,
+    data.selectedSceneMarkers,
+    'editor',
+    data.selectedSceneAnnotations,
+    data.bucketUrl
   );
+
+  // Apply fog brush size preference (percentage-based, 5-20% range)
+  // Clamp to valid range in case of old/invalid values
+  const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+  const clampedFogBrush = Math.max(5, Math.min(20, fogBrushPref));
+  console.log('[Init] Fog brush size:', { fogBrushPref, clampedFogBrush });
+
+  // If preference was invalid, clear it and save the clamped value
+  if (fogBrushPref !== clampedFogBrush) {
+    console.log('[Init] Clearing invalid fog brush preference and saving clamped value');
+    setPreference('brushSizePercent', clampedFogBrush);
+  }
+
+  initialStageProps.fogOfWar.tool.size = clampedFogBrush;
+
+  // Apply annotation line width preference (percentage-based, 0.01-5.0% range)
+  // Clamp to valid range in case of old/invalid values
+  const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
+  initialStageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
+
+  let stageProps: StageProps = $state(initialStageProps);
 
   // Derive pinned marker IDs from markers with pinnedTooltip set to true
   let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
 
   let selectedMarkerId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
+
+  // Track measurements from Y.js awareness (playfield → editor)
+  let measurements: Record<string, import('$lib/utils/yjs/PartyDataManager').MeasurementData> = $state({});
+  let latestMeasurement: import('$lib/utils/yjs/PartyDataManager').MeasurementData | null = $state(null);
 
   // Derive active annotation for drawing sliders
   let activeAnnotation = $derived(
@@ -430,13 +379,6 @@
     }
   });
 
-  // Initialize annotation line width from preferences on client side
-  $effect(() => {
-    if (typeof window !== 'undefined' && stageProps) {
-      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
-    }
-  });
-
   // Subscribe to Y.js StageProps changes for the current scene
   $effect(() => {
     const sceneId = selectedScene?.id;
@@ -529,13 +471,24 @@
           marker: {
             ...incomingStageProps.marker,
             // Protect markers being moved or edited from Y.js overwrites
-            markers: mergeMarkersWithProtection(
-              stageProps.marker?.markers || [],
-              incomingStageProps.marker?.markers || sceneData.markers || [],
-              markersBeingMoved,
-              markersBeingEdited,
-              recentlyDeletedMarkers
-            )
+            markers: (() => {
+              const localMarkers = stageProps.marker?.markers || [];
+              const incomingMarkers = incomingStageProps.marker?.markers || sceneData.markers || [];
+
+              devLog('markers', '🔄 Merging markers:', {
+                localCount: localMarkers.length,
+                incomingCount: incomingMarkers.length,
+                protectedCount: markersBeingMoved.size + markersBeingEdited.size
+              });
+
+              return mergeMarkersWithProtection(
+                localMarkers,
+                incomingMarkers,
+                markersBeingMoved,
+                markersBeingEdited,
+                recentlyDeletedMarkers
+              );
+            })()
           },
           fogOfWar: {
             ...incomingStageProps.fogOfWar,
@@ -551,16 +504,30 @@
             url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
               ...incomingStageProps.fogOfWar.tool,
-              // Preserve local brush size or use default from preferences
-              size: stageProps.fogOfWar.tool.size || getPreference('brushSize') || 75
+              // Preserve local brush size or use default from preferences (stored as percentage, clamped to 5-20 range)
+              size: (() => {
+                const localSize = stageProps.fogOfWar.tool.size;
+                const prefSize = getPreference('brushSizePercent');
+                const incomingSize = incomingStageProps.fogOfWar.tool.size;
+                const rawValue = localSize || prefSize || 10.0;
+                const clampedValue = Math.max(5, Math.min(20, rawValue));
+                console.log('[Y.js Sync] Fog tool size:', {
+                  localSize,
+                  prefSize,
+                  incomingSize,
+                  rawValue,
+                  clampedValue
+                });
+                return clampedValue;
+              })()
             }
           },
           annotations: {
             ...incomingStageProps.annotations,
             // Preserve local activeLayer for annotations (should not be shared)
             activeLayer: stageProps.annotations.activeLayer,
-            // Preserve local lineWidth (global setting)
-            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidth') || 50,
+            // Preserve local lineWidth (global setting, stored as percentage)
+            lineWidth: stageProps.annotations.lineWidth || getPreference('annotationLineWidthPercent') || 2.0,
             // Block annotation URL updates while drawing
             layers: isDrawingAnnotation
               ? stageProps.annotations.layers.map((localLayer) => {
@@ -602,10 +569,11 @@
             }
           }
 
-          // Reset flag after the update - longer timeout to prevent auto-save loop
+          // Reset flag after the update - timeout must be longer than auto-save delay (3s)
+          // to prevent auto-save from triggering after receiving Y.js updates
           setTimeout(() => {
             isReceivingYjsUpdate = false;
-          }, 1000);
+          }, 4000);
 
           // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
         }
@@ -616,6 +584,38 @@
       unsubscribe();
     };
   });
+
+  // Receive measurements from Y.js awareness (playfield → editor)
+  $effect(() => {
+    if (!partyData) return;
+
+    const unsubscribe = partyData.subscribe(() => {
+      // Update measurements from Y.js awareness
+      const yjsMeasurements = partyData!.getMeasurements();
+      if (Object.keys(yjsMeasurements).length > 0) {
+        devLog('measurement', 'Received measurements from Y.js:', yjsMeasurements);
+      }
+      measurements = yjsMeasurements;
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  });
+
+  // Track the latest measurement to pass to Stage
+  $effect(() => {
+    const newest = getLatestMeasurement(measurements);
+    if (newest) {
+      devLog('measurement', 'Latest measurement to pass to Stage:', newest);
+    }
+    latestMeasurement = newest;
+  });
+
+  // TODO: Temporary layer display in editor is disabled to prevent infinite loops
+  // The editor doesn't need to show playfield temporary drawings - they're ephemeral
+  // and only meant for the playfield view. If we want to enable this in the future,
+  // we need to find a way that doesn't trigger effect loops.
 
   // Track when initial load is complete to prevent auto-save on hydration
   const currentSceneId = $derived(selectedScene?.id);
@@ -629,26 +629,46 @@
   });
 
   // Handle annotation layer activation/deactivation
-  $effect(() => {
-    if (stageProps.activeLayer === MapLayerType.Annotation) {
-      // Set active control to annotation (but don't auto-expand panel)
-      if (activeControl !== 'annotation') {
-        activeControl = 'annotation';
-      }
+  // Track the last values to prevent infinite loops
+  let lastActiveLayer = $state<MapLayerType | null>(null);
+  let lastActiveAnnotationLayer = $state<string | null>(null);
 
-      // Check if there are any annotation layers
-      if (stageProps.annotations.layers.length === 0) {
-        // No annotations exist, create one
-        onAnnotationCreated();
-      } else if (!stageProps.annotations.activeLayer) {
-        // Annotations exist but none are selected, select the first one
-        const firstAnnotation = stageProps.annotations.layers[0];
-        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
-      }
-    } else if (stageProps.annotations.activeLayer) {
-      // Annotation tool was deactivated, clear the active annotation to prevent drawing
-      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+  $effect(() => {
+    const activeLayerValue = stageProps.activeLayer;
+    const activeAnnotationLayer = stageProps.annotations.activeLayer;
+
+    // Only run logic if values actually changed
+    if (activeLayerValue === lastActiveLayer && activeAnnotationLayer === lastActiveAnnotationLayer) {
+      return;
     }
+
+    lastActiveLayer = activeLayerValue;
+    lastActiveAnnotationLayer = activeAnnotationLayer;
+
+    untrack(() => {
+      if (activeLayerValue === MapLayerType.Annotation) {
+        // Set active control to annotation (but don't auto-expand panel)
+        if (activeControl !== 'annotation') {
+          activeControl = 'annotation';
+        }
+
+        // Only auto-select a layer if none is currently active
+        if (!activeAnnotationLayer) {
+          // Check if there are any annotation layers
+          if (stageProps.annotations.layers.length === 0) {
+            // No annotations exist, create one
+            onAnnotationCreated();
+          } else {
+            // Annotations exist, select the first one
+            const firstAnnotation = stageProps.annotations.layers[0];
+            queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], firstAnnotation.id, 'control');
+          }
+        }
+      } else if (activeAnnotationLayer) {
+        // Annotation tool was deactivated, clear the active annotation to prevent drawing
+        queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      }
+    });
   });
 
   // Handle marker layer activation/deactivation
@@ -1021,13 +1041,13 @@
       const markersToUse = currentSelectedSceneMarkers;
 
       stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations, data.bucketUrl);
-      // Preserve local annotation line width preference
-      stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
+      // Preserve local annotation line width preference (stored as percentage)
+      const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
+      stageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
 
-      // Apply brush size from cookie if available
-      if (brushSize) {
-        stageProps.fogOfWar.tool.size = brushSize;
-      }
+      // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+      const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+      stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
       lastBuiltMapLocation = currentMapLocation;
 
       // Reset grid origin when scene changes
@@ -1151,8 +1171,8 @@
             currentSelectedSceneAnnotations,
             data.bucketUrl
           );
-          // Preserve local annotation line width preference
-          stageProps.annotations.lineWidth = getPreference('annotationLineWidth') || 50;
+          // Preserve local annotation line width preference (stored as percentage)
+          stageProps.annotations.lineWidth = getPreference('annotationLineWidthPercent') || 2.0;
 
           // Restore viewport state
           stageProps.map.offset = currentMapState.offset;
@@ -1162,10 +1182,9 @@
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
 
-          // Apply brush size from cookie if available
-          if (brushSize) {
-            stageProps.fogOfWar.tool.size = brushSize;
-          }
+          // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+          const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+          stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
         }
       } else if (markersChanged) {
         devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
@@ -1414,6 +1433,15 @@
 
   // Measurement callbacks for Y.js broadcasting
   const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
+    // Only broadcast measurements if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      devLog('measurement', 'Skipping measurement broadcast - not active scene:', {
+        selectedSceneId: selectedScene?.id,
+        activeSceneId: yjsPartyState.activeSceneId
+      });
+      return;
+    }
+
     // Broadcast measurement start to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
       const measurementProps = {
@@ -1441,6 +1469,11 @@
     endPoint: { x: number; y: number },
     type: number
   ) => {
+    // Only broadcast measurements if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      return;
+    }
+
     // Broadcast measurement update to all clients via Y.js awareness
     if (partyData && stageProps.measurement) {
       const measurementProps = {
@@ -1463,6 +1496,11 @@
   };
 
   const onMeasurementEnd = () => {
+    // Only broadcast measurement end if this is the active scene
+    if (!selectedScene || selectedScene.id !== yjsPartyState.activeSceneId) {
+      return;
+    }
+
     // Clear measurement when finished (it will fade out on its own in the playfield)
     if (partyData) {
       partyData.updateMeasurement(null, null, 0);
@@ -1802,18 +1840,48 @@
         scrollDelta = e.deltaY * 0.05; // Very granular adjustment
       }
 
-      // Get current line width from global setting
-      const currentLineWidth = stageProps.annotations.lineWidth || 50;
+      // Get current line width from global setting (stored as percentage)
+      const currentLineWidth = stageProps.annotations.lineWidth || 2.0;
 
-      // Calculate new line width (clamped between 1 and 200)
-      const rawLineWidth = currentLineWidth - scrollDelta;
-      const newLineWidth = Math.round(Math.max(1, Math.min(rawLineWidth, 200)));
+      // Calculate new line width (clamped between 0.01% and 5%)
+      // Scale scroll delta appropriately for percentage range
+      const rawLineWidth = currentLineWidth - scrollDelta * 0.01;
+      const newLineWidth = Math.max(0.01, Math.min(rawLineWidth, 5.0));
 
       // Update the global annotation line width
       stageProps.annotations.lineWidth = newLineWidth;
 
       // Save preference
-      setPreference('annotationLineWidth', newLineWidth);
+      setPreference('annotationLineWidthPercent', newLineWidth);
+
+      return;
+    }
+
+    // Handle fog brush size adjustment
+    if (stageProps.activeLayer === MapLayerType.FogOfWar && !e.shiftKey && !e.ctrlKey) {
+      e.preventDefault();
+
+      let scrollDelta;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        scrollDelta = e.deltaX * 0.1; // Granular adjustment for 5-20% range
+      } else {
+        scrollDelta = e.deltaY * 0.1; // Granular adjustment for 5-20% range
+      }
+
+      // Get current fog brush size (stored as percentage, 5-20% range)
+      const currentSize = stageProps.fogOfWar.tool.size || 10.0;
+      console.log('[Wheel] Current fog size:', currentSize);
+
+      // Calculate new size (clamped between 5% and 20%)
+      const rawSize = currentSize - scrollDelta * 0.1;
+      const newSize = Math.max(5, Math.min(20, rawSize));
+      console.log('[Wheel] New fog size:', { currentSize, scrollDelta, rawSize, newSize });
+
+      // Update the fog brush size
+      stageProps.fogOfWar.tool.size = newSize;
+
+      // Save preference
+      setPreference('brushSizePercent', newSize);
 
       return;
     }
@@ -1883,10 +1951,10 @@
         return;
       }
 
-      const data = (await response.json()) as { maskData?: string };
-      if (data.maskData && stage?.annotations?.loadMask) {
+      const maskResponse = (await response.json()) as { maskData?: string };
+      if (maskResponse.maskData && stage?.annotations?.loadMask) {
         // Convert base64 back to Uint8Array
-        const binaryString = atob(data.maskData);
+        const binaryString = atob(maskResponse.maskData);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
@@ -1894,6 +1962,13 @@
         // Apply the mask to the annotation layer
         await stage.annotations.loadMask(annotationId, bytes);
         devLog('mask', `Applied updated annotation mask for layer ${annotationId} from remote`);
+
+        // Update the SSR data so AnnotationManager can generate thumbnails
+        // Use object spread to trigger Svelte reactivity
+        data.selectedSceneAnnotationMasks = {
+          ...data.selectedSceneAnnotationMasks,
+          [annotationId]: maskResponse.maskData
+        };
       }
     } catch (error) {
       devError('mask', 'Error fetching annotation mask:', error);
@@ -2176,6 +2251,12 @@
   let isSaving = false;
   const saveScene = async () => {
     if (isSaving || isUpdatingFog || isUpdatingAnnotation) return;
+
+    // Don't save if we just received a Y.js update - prevents sync loops
+    if (isReceivingYjsUpdate) {
+      devLog('save', 'Skipping saveScene - currently receiving Y.js update');
+      return;
+    }
 
     // Try to become the active saver for this scene
     if (!partyData || !partyData.becomeActiveSaver(selectedScene.id)) {
@@ -2837,7 +2918,7 @@
         {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange && handleColorChange}
           <DrawingSliders
             opacity={activeAnnotation.opacity}
-            brushSize={stageProps.annotations.lineWidth || 50}
+            brushSize={stageProps.annotations.lineWidth || 2.0}
             color={activeAnnotation.color}
             activeLayerIndex={stageProps.annotations.layers.findIndex(
               (l) => l.id === stageProps.annotations.activeLayer
@@ -2850,9 +2931,17 @@
         {/if}
         {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
           <FogSliders
-            brushSize={stageProps.fogOfWar.tool.size || 50}
+            brushSize={Math.max(5, Math.min(20, stageProps.fogOfWar.tool.size || 10.0))}
             onBrushSizeChange={(size) => {
-              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
+              console.log('[Editor] FogSliders brushSize change:', {
+                incomingSize: size,
+                currentSize: stageProps.fogOfWar.tool.size
+              });
+              // Clamp size to valid range (5-20%)
+              const clampedSize = Math.max(5, Math.min(20, size));
+              console.log('[Editor] Setting fog brush size to:', clampedSize);
+              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], clampedSize, 'control');
+              setPreference('brushSizePercent', clampedSize);
             }}
           />
         {/if}
@@ -2894,6 +2983,26 @@
             hoveredMarkerId={hoveredMarker?.id || null}
             {pinnedMarkerIds}
             {onPinToggle}
+            receivedMeasurement={latestMeasurement
+              ? {
+                  startPoint: latestMeasurement.startPoint,
+                  endPoint: latestMeasurement.endPoint,
+                  type: latestMeasurement.type,
+                  beamWidth: latestMeasurement.beamWidth,
+                  coneAngle: latestMeasurement.coneAngle,
+                  color: latestMeasurement.color,
+                  thickness: latestMeasurement.thickness,
+                  outlineColor: latestMeasurement.outlineColor,
+                  outlineThickness: latestMeasurement.outlineThickness,
+                  opacity: latestMeasurement.opacity,
+                  markerSize: latestMeasurement.markerSize,
+                  autoHideDelay: latestMeasurement.autoHideDelay,
+                  fadeoutTime: latestMeasurement.fadeoutTime,
+                  showDistance: latestMeasurement.showDistance,
+                  snapToGrid: latestMeasurement.snapToGrid,
+                  enableDMG252: latestMeasurement.enableDMG252
+                }
+              : null}
           />
         </div>
         <SceneControls

@@ -62,6 +62,29 @@
   let startPoint: THREE.Vector2 | null = null;
   let measurementManager: MeasurementManager | null = null;
 
+  // Track previous display resolution to detect scene changes
+  let prevResX = display.resolution.x;
+  let prevResY = display.resolution.y;
+
+  // Reset measurement state when layer becomes inactive or display changes (scene switch)
+  $effect(() => {
+    const resChanged = display.resolution.x !== prevResX || display.resolution.y !== prevResY;
+
+    // Reset any lingering measurement state when layer deactivates or scene changes
+    if (!isActive || resChanged) {
+      isDrawing = false;
+      startPoint = null;
+      if (measurementManager) {
+        measurementManager.clearMeasurement();
+        measurementManager.hidePreview();
+      }
+    }
+
+    // Update tracked resolution
+    prevResX = display.resolution.x;
+    prevResY = display.resolution.y;
+  });
+
   /**
    * Handles mouse down events to initiate measurement creation.
    * Converts screen coordinates to world coordinates, applies grid snapping if enabled,
@@ -80,17 +103,15 @@
     const isHexGrid = grid.gridType === GridType.Hex;
     const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
 
+    // Always clear any existing measurement state before starting new one
+    // This handles edge cases where isDrawing might be unexpectedly true
     if (isDrawing) {
-      // Reset current measurement
       measurementManager.clearMeasurement();
-      isDrawing = false;
-      startPoint = null;
-      return; // Don't start a new measurement immediately after clearing
     }
 
     // Start new measurement
     isDrawing = true;
-    startPoint = snappedCoords;
+    startPoint = snappedCoords.clone(); // Clone to avoid reference issues
     measurementManager.startMeasurement(snappedCoords);
 
     // Notify parent component
@@ -146,18 +167,30 @@
    * @returns {void}
    */
   function handleMouseUp(event: MouseEvent | TouchEvent, coords: THREE.Vector2 | null): void {
-    if (!isDrawing || !startPoint || !measurementManager || !coords) return;
+    // Always reset drawing state when mouseUp is called, even if coords is null
+    // This prevents isDrawing from staying true after touch gestures or edge cases
+    const wasDrawing = isDrawing;
+    isDrawing = false;
 
-    coords.sub(centerOffset);
-    // For measurements on hex grids, snap to centers only
-    const isHexGrid = grid.gridType === GridType.Hex;
-    const snappedCoords = coords && props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
-
-    if (snappedCoords) {
-      measurementManager.finishMeasurement();
+    if (!wasDrawing || !startPoint || !measurementManager) {
+      startPoint = null;
+      return;
     }
 
-    isDrawing = false;
+    if (coords) {
+      coords.sub(centerOffset);
+      // For measurements on hex grids, snap to centers only
+      const isHexGrid = grid.gridType === GridType.Hex;
+      const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
+
+      if (snappedCoords) {
+        measurementManager.finishMeasurement();
+      }
+    } else {
+      // Coords is null (released outside canvas) - clear the incomplete measurement
+      measurementManager.clearMeasurement();
+    }
+
     startPoint = null;
 
     // Notify parent component
@@ -170,9 +203,20 @@
    * Handles mouse leave events when the cursor exits the measurement area.
    * Hides the preview indicator to provide clear visual feedback that measurements
    * cannot be placed outside the active area.
+   * Also resets any in-progress measurement to prevent stuck state.
    * @returns {void}
    */
   function handleMouseLeave(): void {
+    // Reset drawing state if user leaves canvas while drawing
+    if (isDrawing && measurementManager) {
+      measurementManager.clearMeasurement();
+      isDrawing = false;
+      startPoint = null;
+      if (onMeasurementEnd) {
+        onMeasurementEnd();
+      }
+    }
+
     if (measurementManager) {
       measurementManager.hidePreview();
     }
