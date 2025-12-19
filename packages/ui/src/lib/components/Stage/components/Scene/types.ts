@@ -93,6 +93,7 @@ export interface SceneExports {
     hoveredMarker: Marker | null;
     selectedMarker: Marker | null;
     maintainHover: (maintain: boolean) => void;
+    onSceneChange: () => void;
   };
 
   getMarkerSizeInScreenSpace: (markerSize: number) => number;

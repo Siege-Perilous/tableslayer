@@ -122,4 +122,5 @@ export interface MarkerLayerExports {
     selectedMarker: Marker | null;
   };
   maintainHover: (maintain: boolean) => void;
+  onSceneChange: () => void;
 }
