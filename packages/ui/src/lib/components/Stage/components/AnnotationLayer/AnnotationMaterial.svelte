@@ -17,7 +17,14 @@
     lineWidth?: number;
   }
 
-  const { props, display, lineWidth = 50 }: Props = $props();
+  const { props, display, lineWidth = 2.0 }: Props = $props();
+
+  // Convert percentage-based lineWidth to texture pixels
+  // lineWidth is a percentage (0.01-5.0), display.resolution gives texture size
+  const lineWidthPixels = $derived.by(() => {
+    const textureSize = Math.min(display.resolution.x, display.resolution.y);
+    return Math.round(textureSize * (lineWidth / 100));
+  });
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
@@ -137,7 +144,7 @@
     },
     tool: {
       mode: DrawMode.Draw,
-      size: lineWidth,
+      size: lineWidthPixels,
       type: ToolType.Brush
     }
   }}

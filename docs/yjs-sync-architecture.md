@@ -21,6 +21,8 @@ This document explains how Table Slayer's real-time collaboration system works u
 15. [Adding New Properties to StageProps](#adding-new-properties-to-stageprops)
 16. [RLE Mask System](#rle-mask-system-run-length-encoding)
 17. [Drawing Protection System](#drawing-protection-system)
+18. [Temporary Drawing Layers](#temporary-drawing-layers-playfield-touch-interaction)
+19. [Mask Version Synchronization](#mask-version-synchronization)
 
 ## Overview
 
@@ -1172,6 +1174,165 @@ Expected log messages:
 - "Fog update completed but user is drawing - skipping update"
 - "[FOG-RT] Complete round-trip timing logs"
 
+## Temporary Drawing Layers (Playfield Touch Interaction)
+
+The playfield route supports temporary drawings that broadcast in real-time to other viewers without persisting to the database. This is powered by Y.js awareness protocol.
+
+### Architecture Overview
+
+```
+Player draws → RLE encode → Y.js awareness broadcast → Other clients render
+                                    ↓
+                           (Optional) Persist button → Database save → Permanent annotation
+```
+
+### Temporary Layer Structure
+
+```typescript
+// temporaryLayers.ts
+interface TemporaryLayer {
+  id: string; // Unique layer ID
+  ownerId: string; // User who created it
+  color: string; // Drawing color
+  maskData: string; // Base64 RLE data
+  expiresAt: number; // Auto-expire timestamp
+  createdAt: number; // Creation time
+}
+```
+
+### Broadcasting Temporary Layers
+
+Temporary layers use Y.js awareness (ephemeral state) rather than the document (persistent state):
+
+```typescript
+// Broadcasting a temporary layer
+export function broadcastTemporaryLayer(manager: PartyDataManager, layer: TemporaryLayer) {
+  const awareness = manager.getAwareness();
+  if (awareness) {
+    const localState = awareness.getLocalState() || {};
+    awareness.setLocalState({
+      ...localState,
+      temporaryLayer: layer
+    });
+  }
+}
+
+// Retrieving all temporary layers from other users
+export function getTemporaryLayers(manager: PartyDataManager): TemporaryLayer[] {
+  const awareness = manager.getAwareness();
+  const layers: TemporaryLayer[] = [];
+
+  awareness?.getStates().forEach((state, clientId) => {
+    if (state.temporaryLayer && clientId !== awareness.clientID) {
+      layers.push(state.temporaryLayer);
+    }
+  });
+
+  return layers;
+}
+```
+
+### Persistence Flow
+
+When a user clicks the persist button, the temporary layer becomes a permanent annotation:
+
+```typescript
+// In playfield route
+async function handlePersistDrawing() {
+  if (!persistButtonLayerId || !stage?.annotations) return;
+
+  // Get the RLE data from the temporary layer
+  const rleData = await stage.annotations.toRLE();
+
+  // Save to database as permanent annotation
+  await saveAnnotationMask({
+    sceneId: activeSceneId,
+    annotationId: persistButtonLayerId,
+    maskData: uint8ArrayToBase64(rleData)
+  });
+
+  // Update mask version to sync with other clients
+  const maskVersion = Date.now();
+  stageProps.annotations.layers[layerIndex].maskVersion = maskVersion;
+
+  // Broadcast via Y.js document (persistent)
+  partyData.updateSceneStageProps(activeSceneId, stageProps);
+
+  // Clear the temporary layer from awareness
+  clearTemporaryLayer(partyData);
+}
+```
+
+### Expiration and Cleanup
+
+Temporary layers auto-expire to prevent stale drawings:
+
+```typescript
+// Create layer with expiration
+const tempLayer = createTemporaryLayer(
+  layerId,
+  userId,
+  color,
+  base64Data,
+  10000 // 10 second expiration
+);
+
+// Cleanup expired layers (runs periodically)
+function cleanupExpiredLayers(layers: TemporaryLayer[]): TemporaryLayer[] {
+  const now = Date.now();
+  return layers.filter((layer) => layer.expiresAt > now);
+}
+```
+
+### Key Benefits
+
+1. **Instant Feedback**: No database round-trip for temporary drawings
+2. **Low Overhead**: Uses ephemeral awareness, not persistent Y.js document
+3. **Auto-cleanup**: Expired layers are automatically removed
+4. **Optional Persistence**: Users can choose to save their drawings
+5. **Multi-user Support**: All connected users see temporary drawings in real-time
+
+## Mask Version Synchronization
+
+The mask synchronization system uses version timestamps to coordinate updates between clients without syncing the full mask data through Y.js.
+
+### Version Tracking Pattern
+
+```typescript
+// Correct pattern: Only track version after successful load
+async function loadFogMask() {
+  if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
+    // Decode and apply SSR mask data
+    const bytes = base64ToUint8Array(data.activeSceneFogMask);
+    await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
+
+    // Track version ONLY after successful load
+    if (stageProps.fogOfWar?.maskVersion) {
+      lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+    }
+  }
+  // If no SSR data, let Y.js sync effect handle it
+  // Do NOT prematurely set lastFogMaskVersion
+}
+```
+
+### Race Condition Prevention
+
+The key insight is that version tracking should only occur after **actually loading data**, not when merely detecting a version exists:
+
+```typescript
+// Y.js sync effect - triggers fetch when version changes
+$effect(() => {
+  if (stageProps.fogOfWar?.maskVersion !== lastFogMaskVersion) {
+    // Version differs - fetch fresh data
+    lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
+    fetchFogMask(sceneId);
+  }
+});
+```
+
+If `lastFogMaskVersion` is set prematurely (before data is loaded), the effect won't trigger because `version === lastVersion`. The fix is to only set the tracking variable after successful data application.
+
 ## Key Architecture Benefits
 
 1. **Simplified Infrastructure**: No Socket.IO complexity, native WebSocket support
@@ -1186,6 +1347,7 @@ Expected log messages:
 10. **RLE Compression**: ~600x size reduction for masks, eliminating storage costs
 11. **Real-time Masks**: Sub-second updates without R2/S3 latency
 12. **Version-based Sync**: Only 8-byte timestamps sync via Y.js, masks fetched on-demand
+13. **Temporary Layers**: Ephemeral drawings via awareness for instant feedback
 
 ## Debugging
 

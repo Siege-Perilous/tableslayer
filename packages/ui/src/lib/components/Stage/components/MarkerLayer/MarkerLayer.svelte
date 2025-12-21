@@ -56,11 +56,12 @@
 
   function findClosestMarker(gridCoords: THREE.Vector2) {
     // Find the marker that is closest to the mouse down point. The test point
-    // must be within the outer radius of the marker for it to be considered
+    // must be within the outer radius of the marker for it to be considered.
+    // Uses isTokenInteractable to ensure hidden/DM-only markers can't be found in Player mode.
     let closestMarker: Marker | undefined;
     let minDistance = Infinity;
     props.marker.markers.forEach((marker) => {
-      if (!isTokenVisible(marker)) return;
+      if (!isTokenInteractable(marker)) return;
 
       const distance = gridCoords.distanceTo(marker.position);
       const markerRadius = getGridCellSize(grid, display) * marker.size;
@@ -84,6 +85,12 @@
     if (isMouseEvent && e.button !== 0) return;
     if (isTouchEvent && (e as TouchEvent).touches.length !== 1) return;
 
+    // Only allow marker interaction when activeLayer is None or Marker
+    // This prevents marker dragging during fog, drawing, annotation, and measurement modes
+    if (props.activeLayer !== MapLayerType.None && props.activeLayer !== MapLayerType.Marker) {
+      return;
+    }
+
     const gridCoords = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
 
     const closestMarker = findClosestMarker(gridCoords);
@@ -91,8 +98,12 @@
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
-      if (stage.mode === StageMode.DM) {
+      // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
+      if (closestMarker.shape !== MarkerShape.Pin) {
         isDragging = true;
+        // Clear tooltip when drag starts
+        hoveredMarkerDelayed = null;
+        clearHoverTimer();
       }
       onMarkerSelected(selectedMarker);
     } else {
@@ -141,9 +152,9 @@
     // Only check for hover when we're not dragging and when activeLayer is None or Marker
     // This prevents hover during fog/drawing/annotation/measurement modes
     if (!isDragging && (props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Marker)) {
-      // Check if there are any visible markers
-      const hasVisibleMarkers = props.marker.markers.some(isTokenVisible);
-      if (hasVisibleMarkers) {
+      // Check if there are any interactable markers (not just visible ones)
+      const hasInteractableMarkers = props.marker.markers.some(isTokenInteractable);
+      if (hasInteractableMarkers) {
         const newHoveredMarker = findClosestMarker(position) ?? null;
 
         // If we're hovering over a different marker than before
@@ -208,6 +219,23 @@
     );
   }
 
+  /**
+   * Checks if a marker can be interacted with (clicked, hovered, dragged) in the current mode.
+   * In Player mode, only markers with Always or Player visibility can be interacted with.
+   * Hover-revealed markers are visible to players but NOT interactable - they're for viewing only.
+   * DM-only markers are never interactable in Player mode.
+   */
+  function isTokenInteractable(marker: Marker) {
+    if (stage.mode === StageMode.DM) {
+      // In DM mode, all visible markers are interactable
+      return isTokenVisible(marker);
+    }
+
+    // In Player mode, only Always and Player visibility markers are interactable
+    // Hover and DM visibility markers are view-only (revealed by DM) or hidden
+    return marker.visibility === MarkerVisibility.Always || marker.visibility === MarkerVisibility.Player;
+  }
+
   function onMouseUp() {
     if (isDragging && selectedMarker) {
       isDragging = false;
@@ -246,6 +274,26 @@
       cancelHideTimer();
     } else if (!maintain && stage.mode === StageMode.DM && !hoveredMarker) {
       clearHoverTimer();
+    }
+  }
+
+  /**
+   * Called when the scene changes to clear all marker interaction state.
+   * Resets selection, hover, dragging, and clears any pending timers.
+   */
+  export function onSceneChange() {
+    selectedMarker = null;
+    isDragging = false;
+    hoveredMarker = null;
+    hoveredMarkerDelayed = null;
+
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
     }
   }
 

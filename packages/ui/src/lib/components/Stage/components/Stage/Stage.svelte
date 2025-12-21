@@ -136,6 +136,19 @@
     isDrawing: () => sceneRef?.measurement?.isDrawing() ?? false
   };
 
+  /**
+   * Called when the scene changes to clear all transient state.
+   * Clears tooltips, marker hover/selection, and other scene-specific state.
+   */
+  export function onSceneChange() {
+    // Clear tooltip state
+    hoveredMarkerData = null;
+    tooltipPosition = null;
+
+    // Clear marker interaction state
+    sceneRef?.markers?.onSceneChange?.();
+  }
+
   $effect(() => {
     // Update marker size when zoom changes or marker data changes
     const zoom = props.scene.zoom;
@@ -197,7 +210,10 @@
       // MapLayerType: None = 0, FogOfWar = 1, Marker = 2, Annotation = 3, Measurement = 4
       const isMarkerOrNoneLayer = props.activeLayer === 0 || props.activeLayer === 2;
       if (hoveredMarker && !pinnedMarkerIds.includes(hoveredMarker.id) && !isDragging && isMarkerOrNoneLayer) {
-        markerForTooltip = hoveredMarker;
+        // Look up the current marker from the markers array by ID to handle Y.js updates
+        // This prevents stale marker references from breaking tooltips after sync
+        const currentMarker = props.marker.markers.find((m) => m.id === hoveredMarker.id);
+        markerForTooltip = currentMarker || hoveredMarker;
       }
     } else if (props.mode === 1) {
       // Player mode - only show tooltips for markers where:
@@ -219,8 +235,9 @@
       // In player mode, also check if player has selected a marker
       // But only show tooltip if it has appropriate visibility (not DM-only)
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
+      const isDragging = sceneRef?.markers?.isDraggingMarker;
       let selectedNotPinned = null;
-      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id)) {
+      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) && !isDragging) {
         // Only show if marker visibility is not DM-only (i.e., not visibility = 1)
         // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
         if (selectedByPlayer.visibility !== 1) {

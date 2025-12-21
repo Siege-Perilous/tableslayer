@@ -11,7 +11,7 @@ import type { WeatherLayerProps } from '../WeatherLayer/types';
 export type { CursorData } from '../CursorLayer/types';
 
 export interface Callbacks {
-  onAnnotationUpdate: (layerId: string, blob: Promise<Blob>) => void;
+  onAnnotationUpdate: (layerId: string, blob: Promise<Blob>, endPosition?: { x: number; y: number }) => void;
   onFogUpdate: (blob: Promise<Blob>) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
@@ -122,4 +122,5 @@ export interface StageExports {
     } | null;
     isDrawing: () => boolean;
   };
+  onSceneChange: () => void;
 }

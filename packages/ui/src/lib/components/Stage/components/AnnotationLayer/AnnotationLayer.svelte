@@ -34,6 +34,9 @@
   // to the new point
   let lastPos: THREE.Vector2 | null = null;
 
+  // Track the last screen position for the persist button
+  let lastScreenPos: { x: number; y: number } | null = null;
+
   // Track if cursors are hidden to avoid redundant resets
   let cursorsHidden = false;
 
@@ -125,6 +128,13 @@
     lastPos = p;
     drawing = true;
 
+    // Track screen position for persist button
+    if (e instanceof MouseEvent) {
+      lastScreenPos = { x: e.clientX, y: e.clientY };
+    } else if (e instanceof TouchEvent && e.touches[0]) {
+      lastScreenPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+
     // Start a new stroke with lazy brush
     if (p) {
       // Need to adjust for display offset before starting stroke
@@ -139,7 +149,7 @@
   function onMouseUp() {
     // If we have just finished drawing, save the annotation
     if (props.activeLayer && drawing) {
-      onAnnotationUpdate(props.activeLayer, toPng());
+      onAnnotationUpdate(props.activeLayer, toPng(), lastScreenPos || undefined);
     }
 
     // Reset the drawing state
@@ -160,7 +170,16 @@
     }
   }
 
-  function draw(_: Event, p: THREE.Vector2 | null) {
+  function draw(e: Event, p: THREE.Vector2 | null) {
+    // Track screen position during drawing for persist button
+    if (drawing) {
+      if (e instanceof MouseEvent) {
+        lastScreenPos = { x: e.clientX, y: e.clientY };
+      } else if (e instanceof TouchEvent && e.touches[0]) {
+        lastScreenPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }
+
     // If the mouse is not within the drawing area, hide cursor
     if (!p) {
       // Reset cursor for all layers when mouse leaves (only if not already hidden)
@@ -278,7 +297,8 @@
    * @param rleData RLE encoded data
    */
   export async function loadMask(layerId: string, rleData: Uint8Array) {
-    const layer = layers.find((layer) => layer.getId() === layerId);
+    // Filter out null entries that may exist before components are rendered
+    const layer = layers.find((layer) => layer && layer.getId() === layerId);
     if (layer) {
       return layer.fromRLE(rleData, 1024, 1024);
     }
