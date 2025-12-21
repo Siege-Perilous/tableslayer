@@ -122,4 +122,5 @@ export interface StageExports {
     } | null;
     isDrawing: () => boolean;
   };
+  onSceneChange: () => void;
 }

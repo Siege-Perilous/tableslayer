@@ -469,6 +469,9 @@
     },
     maintainHover: (maintain: boolean) => {
       markerLayer?.maintainHover?.(maintain);
+    },
+    onSceneChange: () => {
+      markerLayer?.onSceneChange?.();
     }
   };
 

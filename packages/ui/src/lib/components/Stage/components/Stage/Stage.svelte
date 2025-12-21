@@ -136,6 +136,19 @@
     isDrawing: () => sceneRef?.measurement?.isDrawing() ?? false
   };
 
+  /**
+   * Called when the scene changes to clear all transient state.
+   * Clears tooltips, marker hover/selection, and other scene-specific state.
+   */
+  export function onSceneChange() {
+    // Clear tooltip state
+    hoveredMarkerData = null;
+    tooltipPosition = null;
+
+    // Clear marker interaction state
+    sceneRef?.markers?.onSceneChange?.();
+  }
+
   $effect(() => {
     // Update marker size when zoom changes or marker data changes
     const zoom = props.scene.zoom;
