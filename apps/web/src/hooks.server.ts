@@ -3,9 +3,9 @@ import * as Sentry from '@sentry/sveltekit';
 import { type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
-if (process.env.ENV_NAME === 'production') {
+if (process.env.ENV_NAME === 'production' && process.env.SENTRY_DSN) {
   Sentry.init({
-    dsn: 'https://f027207d962eb65a32305ca8824d26f1@o4508673215430656.ingest.us.sentry.io/4508673215758336',
+    dsn: process.env.SENTRY_DSN,
     tracesSampleRate: 1
   });
 }
