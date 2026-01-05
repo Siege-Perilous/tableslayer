@@ -32,8 +32,8 @@ jobs:
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Delete fly instances
         run: |
-          flyctl apps destroy pr-${{ github.event.pull_request.number }}-web --yes
-          flyctl apps destroy pr-${{ github.event.pull_request.number }}-docs --yes
+          flyctl apps destroy pr-${{ github.event.pull_request.number }}-web --yes || echo "Fly web app not found or already deleted"
+          flyctl apps destroy pr-${{ github.event.pull_request.number }}-docs --yes || echo "Fly docs app not found or already deleted"
 
       - name: Delete All Turso Databases for the Pull Request
         run: |
