@@ -5,6 +5,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
+// Validates that a scene belongs to a specific party (scene -> gameSession -> party)
+export const isSceneInParty = async (sceneId: string, partyId: string): Promise<boolean> => {
+  const result = await db
+    .select({ partyId: gameSessionTable.partyId })
+    .from(sceneTable)
+    .innerJoin(gameSessionTable, eq(sceneTable.gameSessionId, gameSessionTable.id))
+    .where(eq(sceneTable.id, sceneId))
+    .get();
+
+  return result?.partyId === partyId;
+};
+
 export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
   try {
     // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)

@@ -1,6 +1,6 @@
 import { updateSceneSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
-import { getScene, isUserInParty, updateScene } from '$lib/server';
+import { getScene, isSceneInParty, isUserInParty, updateScene } from '$lib/server';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -15,6 +15,11 @@ export const POST = apiFactory(
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
+    }
+
+    // Validate that the scene belongs to this party
+    if (!(await isSceneInParty(sceneId, partyId))) {
+      throw new Error('Scene does not belong to this party');
     }
 
     const userId = locals.user.id;
