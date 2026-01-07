@@ -2258,8 +2258,13 @@
       return;
     }
 
+    // Capture scene ID at the start of save to use throughout all async operations
+    // This prevents thumbnail/data from being applied to wrong scene if user switches scenes during save
+    const saveSceneId = selectedScene.id;
+    const saveSceneThumbUrl = selectedScene.mapThumbLocation;
+
     // Try to become the active saver for this scene
-    if (!partyData || !partyData.becomeActiveSaver(selectedScene.id)) {
+    if (!partyData || !partyData.becomeActiveSaver(saveSceneId)) {
       return;
     }
 
@@ -2277,18 +2282,20 @@
             mutation: () =>
               createThumbnailMutation.mutateAsync({
                 blob: thumbnailBlob,
-                sceneId: selectedScene.id,
-                currentUrl: selectedScene.mapThumbLocation
+                sceneId: saveSceneId,
+                currentUrl: saveSceneThumbUrl
               }),
             formLoadingState: () => {},
             onSuccess: (result) => {
               // Store the versioned location path for database saving
-              mapThumbLocation = result.location;
+              // Only update if we're still on the same scene
+              if (selectedScene.id === saveSceneId) {
+                mapThumbLocation = result.location;
+              }
 
-              // Update Y.js immediately with the new thumbnail location
-              if (partyData && selectedScene) {
-                // Just update the mapThumbLocation - we don't have full thumb data here
-                partyData.updateScene(selectedScene.id, {
+              // Update Y.js with the new thumbnail location using captured scene ID
+              if (partyData) {
+                partyData.updateScene(saveSceneId, {
                   mapThumbLocation: result.location
                 });
               }
@@ -2311,7 +2318,7 @@
       await handleMutation({
         mutation: () =>
           updateSceneMutation.mutateAsync({
-            sceneId: selectedScene.id,
+            sceneId: saveSceneId,
             partyId: party.id,
             sceneData: convertPropsToSceneDetails(stageProps, mapThumbLocation)
           }),
@@ -2336,13 +2343,13 @@
       if (markersSnapshot.length > 0) {
         // Process markers one by one using upsert (create or update as needed)
         for (const marker of markersSnapshot) {
-          const markerData = convertStageMarkersToDbFormat([marker], selectedScene.id)[0];
+          const markerData = convertStageMarkersToDbFormat([marker], saveSceneId)[0];
 
           await handleMutation({
             mutation: () =>
               upsertMarkerMutation.mutateAsync({
                 partyId: party.id,
-                sceneId: selectedScene.id,
+                sceneId: saveSceneId,
                 markerData: markerData
               }),
             formLoadingState: () => {},
@@ -2370,7 +2377,7 @@
         // After all markers are saved, force sync the current state to Y.js
         // This ensures other editors get the saved markers
         // IMPORTANT: Use the markers snapshot from before the save started to avoid losing new markers
-        if (partyData && selectedScene?.id) {
+        if (partyData) {
           // Check if stageProps was modified during save (e.g., by the StageProps effect)
           const currentMarkerCount = stageProps.marker?.markers?.length || 0;
           if (currentMarkerCount !== markerCountAtSave) {
@@ -2393,16 +2400,16 @@
             }
           };
 
-          // Make sure Y.js has the scene initialized
-          const sceneData = partyData.getSceneData(selectedScene.id);
+          // Make sure Y.js has the scene initialized - use captured saveSceneId
+          const sceneData = partyData.getSceneData(saveSceneId);
           if (!sceneData) {
             partyData.initializeSceneData(
-              selectedScene.id,
+              saveSceneId,
               cleanStagePropsForYjs(stagePropsWithAllMarkers),
               markersSnapshot
             );
           } else {
-            partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stagePropsWithAllMarkers));
+            partyData.updateSceneStageProps(saveSceneId, cleanStagePropsForYjs(stagePropsWithAllMarkers));
           }
         }
       }
@@ -2421,7 +2428,7 @@
                 mutation: () =>
                   upsertAnnotationMutation.mutateAsync({
                     id: annotation.id,
-                    sceneId: selectedScene.id,
+                    sceneId: saveSceneId,
                     name: annotation.name,
                     opacity: annotation.opacity,
                     color: annotation.color,
@@ -2468,9 +2475,9 @@
       devError('save', 'Error during save operation:', error);
       saveSuccess = false;
     } finally {
-      // Always release the save lock and reset flags
+      // Always release the save lock and reset flags - use captured saveSceneId
       if (partyData) {
-        partyData.releaseActiveSaver(selectedScene.id, saveSuccess);
+        partyData.releaseActiveSaver(saveSceneId, saveSuccess);
       }
       isSaving = false;
 

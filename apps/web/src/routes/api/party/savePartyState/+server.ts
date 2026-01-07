@@ -4,6 +4,7 @@ import {
   createMarker,
   deleteMarker,
   getScene,
+  isSceneInParty,
   isUserInParty,
   updateGameSession,
   updateMarker,
@@ -43,6 +44,11 @@ export const POST = apiFactory(
 
     if (!locals.user?.id || !isUserInParty(locals.user.id, partyId)) {
       throw new Error('Unauthorized');
+    }
+
+    // Validate that the scene belongs to this party
+    if (!(await isSceneInParty(sceneId, partyId))) {
+      throw new Error('Scene does not belong to this party');
     }
 
     const userId = locals.user.id;
