@@ -41,6 +41,12 @@ export interface AnnotationEffectProps {
    * Controls foam, glow, nebula wisps, etc. at the edges
    */
   border: number;
+
+  /**
+   * Edge roughness - adds random noise to effect edges (0.0 - 1.0)
+   * Higher values create more jagged, organic-looking boundaries
+   */
+  roughness: number;
 }
 
 /**

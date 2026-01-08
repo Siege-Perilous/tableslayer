@@ -40,6 +40,7 @@
   const getEffectIntensity = () => props.effect?.intensity ?? 1.0;
   const getEffectSoftness = () => props.effect?.softness ?? 0.5;
   const getEffectBorder = () => props.effect?.border ?? 0.5;
+  const getEffectRoughness = () => props.effect?.roughness ?? 0.0;
 
   let material = new THREE.ShaderMaterial({
     defines: {
@@ -55,6 +56,7 @@
       uIntensity: { value: getEffectIntensity() },
       uSoftness: { value: getEffectSoftness() },
       uBorder: { value: getEffectBorder() },
+      uRoughness: { value: getEffectRoughness() },
       uEdgeMinMipMapLevel: { value: 0 },
       uEdgeMaxMipMapLevel: { value: 4 },
       uClippingPlanes: new THREE.Uniform(
@@ -74,6 +76,7 @@
     material.uniforms.uIntensity.value = getEffectIntensity();
     material.uniforms.uSoftness.value = getEffectSoftness();
     material.uniforms.uBorder.value = getEffectBorder();
+    material.uniforms.uRoughness.value = getEffectRoughness();
     material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );

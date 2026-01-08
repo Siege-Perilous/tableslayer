@@ -9,6 +9,7 @@ uniform float uSpeed;
 uniform float uIntensity;
 uniform float uSoftness;
 uniform float uBorder;
+uniform float uRoughness;
 
 uniform int uEdgeMinMipMapLevel;
 uniform int uEdgeMaxMipMapLevel;
@@ -81,6 +82,31 @@ float domainWarp(vec2 p, float time) {
 
 // Get feathered mask with animated rolling edges (like Fog.frag)
 float getVolumeMask(vec2 uv, vec2 texSize, float time, float edgeFreq, float edgeAmp, float edgeSpeed) {
+  // === ROUGHNESS: Add jagged edges via UV displacement ===
+  // Multiple noise frequencies for organic, random-looking edges
+  vec2 roughnessUV = uv * texSize * 0.008;
+
+  // Layer 1: Medium-scale jagged edges
+  float roughNoise1 = snoise(roughnessUV * 3.0 + time * 0.02);
+  float roughNoise2 = snoise(roughnessUV * 3.0 + vec2(50.0, 50.0) + time * 0.015);
+
+  // Layer 2: Fine detail roughness
+  float roughNoise3 = snoise(roughnessUV * 8.0 + time * 0.01);
+  float roughNoise4 = snoise(roughnessUV * 8.0 + vec2(100.0, 100.0) + time * 0.008);
+
+  // Layer 3: Large-scale variation
+  float roughNoise5 = snoise(roughnessUV * 1.0 + time * 0.005);
+
+  // Combine noise layers
+  vec2 roughnessOffset = vec2(
+    roughNoise1 * 0.5 + roughNoise3 * 0.3 + roughNoise5 * 0.2,
+    roughNoise2 * 0.5 + roughNoise4 * 0.3 + roughNoise5 * 0.2
+  );
+
+  // Scale offset by roughness - max displacement of ~3% of texture size
+  float roughnessStrength = uRoughness * 0.03;
+  vec2 displacedUV = uv + roughnessOffset * roughnessStrength;
+
   // Remap softness to a much higher range
   // 0 -> 0.8, 1 -> 2.0 (very strong effect across the board)
   float softnessFactor = uSoftness * 1.2 + 0.8;
@@ -95,7 +121,8 @@ float getVolumeMask(vec2 uv, vec2 texSize, float time, float edgeFreq, float edg
     if(i > maxMip) break;
     // Higher softness = much more weight on higher mip levels
     float weight = 1.0 + float(i) * softnessFactor;
-    featheredMask += textureLod(uMaskTexture, uv, float(i)).a * weight;
+    // Use displaced UV for roughness effect
+    featheredMask += textureLod(uMaskTexture, displacedUV, float(i)).a * weight;
     totalWeight += weight;
   }
   featheredMask /= totalWeight;
@@ -402,33 +429,64 @@ vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
   vec3 halfDir = normalize(lightDir + viewDir);
   float specular = pow(max(dot(normal, halfDir), 0.0), 128.0);
 
+  // === DEPTH FROM CENTER OF DRAWING ===
+  // Sample mask at multiple mipmap levels to find how "inside" we are
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  // The more all levels agree, the more "inside" we are (center of blob)
+  float centerDepth = min(maskHigh, min(maskMid, maskLow));
+  // Subtle center effect - don't darken too much
+  centerDepth = smoothstep(0.5, 0.95, centerDepth) * 0.4;
+
   // === COLORS ===
-  vec3 deepColor = vec3(0.02, 0.08, 0.2);
-  vec3 shallowColor = vec3(0.1, 0.3, 0.5);
-  vec3 highlightColor = vec3(0.95, 0.98, 1.0);
+  vec3 deepColor = vec3(0.08, 0.2, 0.4);        // Darker blue for centers (but still visible)
+  vec3 shallowColor = vec3(0.15, 0.4, 0.6);     // Brighter blue near edges
+  vec3 highlightColor = vec3(0.9, 0.95, 1.0);   // Slight blue tint to highlights
+  vec3 foamColor = vec3(0.95, 0.9, 0.75);       // Sandy/beachy foam color
 
   // Height affects color (deeper in troughs)
   float heightNorm = height * 0.5 + 0.5;
-  vec3 waterColor = mix(deepColor, shallowColor, heightNorm * 0.5 + diffuse * 0.5);
+
+  // Blend based on center depth - centers are slightly darker
+  vec3 baseWaterColor = mix(shallowColor, deepColor, centerDepth);
+
+  // Wave height creates visible color variation
+  vec3 waterColor = mix(baseWaterColor * 0.85, baseWaterColor * 1.3, heightNorm * 0.5 + diffuse * 0.4);
 
   // Add specular highlights
   waterColor += highlightColor * specular * 1.5 * uIntensity;
 
-  // === FOAM AT EDGES ===
+  // === FOAM AT EDGES - multiple layers for wide spread ===
   float foamMask0 = textureLod(uMaskTexture, uv, 0.0).a;
-  float foamMask3 = textureLod(uMaskTexture, uv, 3.0 + uBorder * 2.0).a;
-  float foamEdge = abs(foamMask0 - foamMask3);
+
+  // Inner foam band (close to edge)
+  float foamMask2 = textureLod(uMaskTexture, uv, 2.0 + uBorder * 1.5).a;
+  float innerFoam = abs(foamMask0 - foamMask2);
+
+  // Middle foam band (spreads further in)
+  float foamMask4 = textureLod(uMaskTexture, uv, 4.0 + uBorder * 2.5).a;
+  float midFoam = abs(foamMask0 - foamMask4) * 0.6;
+
+  // Outer foam band (reaches deep into the water)
+  float foamMask6 = textureLod(uMaskTexture, uv, 6.0 + uBorder * 3.0).a;
+  float outerFoam = abs(foamMask0 - foamMask6) * 0.3;
 
   // Foam follows wave peaks
   float foamWave = smoothstep(0.2, 0.6, heightNorm);
-  float foam = foamEdge * (0.3 + foamWave * 0.7) * uBorder;
-  foam += edgeDist * foamWave * uBorder * 0.5;
 
-  // Add foam noise
-  float foamNoise = snoise(pos * 8.0 + time * 0.5) * 0.5 + 0.5;
-  foam *= (0.6 + foamNoise * 0.4);
+  // Combine foam layers
+  float foam = (innerFoam + midFoam + outerFoam) * (0.3 + foamWave * 0.7) * uBorder;
+  foam += edgeDist * foamWave * uBorder * 0.4;
 
-  waterColor += highlightColor * foam;
+  // Add foam noise - different frequencies for variety
+  float foamNoise1 = snoise(pos * 6.0 + time * 0.4) * 0.5 + 0.5;
+  float foamNoise2 = snoise(pos * 12.0 + time * 0.6 + 30.0) * 0.5 + 0.5;
+  float foamNoise = foamNoise1 * 0.7 + foamNoise2 * 0.3;
+  foam *= (0.5 + foamNoise * 0.5);
+
+  // Apply beachy foam color
+  waterColor += foamColor * foam * 1.2;
 
   // Final color with intensity
   vec3 finalColor = waterColor * uIntensity;
@@ -545,6 +603,12 @@ void main() {
   float maskBlur3 = textureLod(uMaskTexture, vUv, 8.0 + uBorder * 5.0).a;
   float maskBlur4 = textureLod(uMaskTexture, vUv, 10.0 + uBorder * 6.0).a;
 
+  // Noise for organic shadow edges
+  vec2 shadowNoiseUV = vUv * texSize * 0.003;
+  float shadowNoise1 = snoise(shadowNoiseUV * 2.0 + time * 0.03) * 0.5 + 0.5;
+  float shadowNoise2 = snoise(shadowNoiseUV * 4.0 + time * 0.02 + 50.0) * 0.5 + 0.5;
+  float combinedShadowNoise = shadowNoise1 * 0.6 + shadowNoise2 * 0.4;
+
   // Inner shadow zone: close to the edge, darkest
   float innerZone = smoothstep(0.0, 0.7, maskBlur1) * (1.0 - smoothstep(0.0, 0.1, maskSharp));
   // Mid-inner shadow zone
@@ -553,6 +617,12 @@ void main() {
   float midOuterZone = smoothstep(0.0, 0.5, maskBlur3) * (1.0 - smoothstep(0.0, 0.25, maskBlur2));
   // Outer shadow zone: farthest, lightest
   float outerZone = smoothstep(0.0, 0.4, maskBlur4) * (1.0 - smoothstep(0.0, 0.2, maskBlur3));
+
+  // Apply noise to break up the shadow - more noise on outer zones
+  innerZone *= (0.85 + combinedShadowNoise * 0.15);
+  midInnerZone *= (0.7 + combinedShadowNoise * 0.3);
+  midOuterZone *= (0.5 + combinedShadowNoise * 0.5);
+  outerZone *= (0.3 + combinedShadowNoise * 0.7);
 
   // Combine with heavier weight near the edge (color burn effect)
   float shadowIntensity = innerZone * 1.0 + midInnerZone * 0.7 + midOuterZone * 0.4 + outerZone * 0.2;
