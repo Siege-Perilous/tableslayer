@@ -233,7 +233,9 @@
 
   const getAnnotationEffect = (annotationId: string): AnnotationEffectProps => {
     const annotation = stageProps.annotations.layers.find((a) => a.id === annotationId);
-    return annotation?.effect ?? { type: AnnotationEffect.None, speed: 1.0, intensity: 1.0, softness: 0.5 };
+    return (
+      annotation?.effect ?? { type: AnnotationEffect.None, speed: 1.0, intensity: 1.0, softness: 0.5, border: 0.5 }
+    );
   };
 
   const updateAnnotationEffect = (annotationId: string, effectUpdates: Partial<AnnotationEffectProps>) => {
@@ -496,6 +498,20 @@
                     hex={annotation.color}
                     oninput={(e) =>
                       updateAnnotationEffect(annotation.id, { softness: e.currentTarget.valueAsNumber / 100 })}
+                  />
+                {/snippet}
+              </FormControl>
+              <FormControl label="Border" name="border-{annotation.id}">
+                {#snippet input({ inputProps })}
+                  <InputSlider
+                    {...inputProps}
+                    value={getAnnotationEffect(annotation.id).border * 100}
+                    min={0}
+                    max={100}
+                    step={1}
+                    hex={annotation.color}
+                    oninput={(e) =>
+                      updateAnnotationEffect(annotation.id, { border: e.currentTarget.valueAsNumber / 100 })}
                   />
                 {/snippet}
               </FormControl>

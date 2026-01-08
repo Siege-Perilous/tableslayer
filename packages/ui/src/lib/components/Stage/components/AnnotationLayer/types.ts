@@ -35,6 +35,12 @@ export interface AnnotationEffectProps {
    * Higher values create a more gradual fade to transparent
    */
   softness: number;
+
+  /**
+   * Border/edge effect intensity (0.0 - 1.0)
+   * Controls foam, glow, nebula wisps, etc. at the edges
+   */
+  border: number;
 }
 
 /**

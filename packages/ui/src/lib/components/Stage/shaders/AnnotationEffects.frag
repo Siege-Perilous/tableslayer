@@ -8,6 +8,7 @@ uniform float uOpacity;
 uniform float uSpeed;
 uniform float uIntensity;
 uniform float uSoftness;
+uniform float uBorder;
 
 uniform int uEdgeMinMipMapLevel;
 uniform int uEdgeMaxMipMapLevel;
@@ -225,7 +226,7 @@ vec4 fireEffect(vec2 uv, vec2 texSize, float time) {
 
   // Screen blend: result = 1 - (1-a)(1-b)(1-c)
   vec3 color = baseColor + midColor + hotColor;
-  color += vec3(1.0, 0.5, 0.2) * edgeTurb * 0.4 * uIntensity;
+  color += vec3(1.0, 0.5, 0.2) * edgeTurb * uBorder * uIntensity;
 
   // Composite alpha from all layers
   float alpha = max(max(baseIntensity, midIntensity), hotIntensity);
@@ -235,136 +236,206 @@ vec4 fireEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(color, alpha);
 }
 
-// Helper: get void color from intensity
-vec3 getVoidColor(float t) {
-  vec3 deepPurple = vec3(0.1, 0.02, 0.2);
-  vec3 purple = vec3(0.3, 0.1, 0.5);
-  vec3 blue = vec3(0.2, 0.3, 0.7);
-  vec3 cyan = vec3(0.3, 0.8, 1.0);
-  vec3 white = vec3(1.3, 1.2, 1.5);
-
-  if(t < 0.25) return mix(deepPurple, purple, t * 4.0);
-  if(t < 0.5) return mix(purple, blue, (t - 0.25) * 4.0);
-  if(t < 0.75) return mix(blue, cyan, (t - 0.5) * 4.0);
-  return mix(cyan, white, (t - 0.75) * 4.0);
-}
-
-// Space tear - multi-layered void (top-down view)
+// Space tear - dark void with stars (top-down view)
 vec4 spaceTearEffect(vec2 uv, vec2 texSize, float time) {
-  float mask = getVolumeMask(uv, texSize, time, 2.0, 0.3, 0.8);
+  float mask = getVolumeMask(uv, texSize, time, 1.5, 0.2, 0.5);
   if(mask < 0.001) return vec4(0.0);
 
   float edgeDist = getEdgeDistortion(uv, texSize);
   vec2 noiseUV = uv * texSize * 0.001;
-  float warpScale = 1.0 + edgeDist * 2.5 * uIntensity;
 
-  // === LAYER 1: Deep void (large scale, slow swirl) ===
-  float deep1 = domainWarp(noiseUV * 0.6, time * 0.1);
-  float deep2 = domainWarp(noiseUV * 0.8 + 40.0, time * 0.15 + 8.0);
-  float deepLayer = (deep1 + deep2) * 0.5;
-  deepLayer = deepLayer * 0.5 + 0.5;
-  float deepIntensity = deepLayer * mask * uIntensity * 0.6;
+  // === BASE: Deep black void ===
+  // Subtle dark variation so it's not flat black
+  float voidNoise = fbm3(noiseUV * 0.5 + time * 0.05);
+  vec3 voidColor = vec3(0.02, 0.02, 0.04) + vec3(0.01, 0.0, 0.02) * voidNoise;
 
-  // === LAYER 2: Mid void swirl (medium scale) ===
-  float mid1 = domainWarp(noiseUV * 1.2 + 80.0, time * 0.25) * warpScale;
-  float mid2 = domainWarp(noiseUV * 1.5 + 120.0, time * 0.3 + 4.0) * warpScale;
-  float midLayer = (mid1 + mid2) * 0.5;
-  midLayer = midLayer * 0.5 + 0.5;
-  float midMask = getVolumeMask(uv, texSize, time * 1.15, 1.8, 0.35, 0.9);
-  float midIntensity = midLayer * midMask * uIntensity * 0.8;
+  // === LAYER 1: Distant tiny stars (many, dim, slow twinkle) ===
+  vec2 starUV1 = noiseUV * 15.0;
+  float stars1 = snoise(starUV1 + 100.0);
+  float twinkle1 = snoise(starUV1 * 0.5 + time * 0.8);
+  stars1 = smoothstep(0.75, 0.95, stars1) * (0.5 + 0.5 * twinkle1);
 
-  // === LAYER 3: Energy crackles (small scale, faster) ===
-  float energy1 = domainWarp(noiseUV * 2.5 + 160.0, time * 0.4);
-  float energy2 = fbm3(noiseUV * 3.0 + time * 0.45 + 200.0);
-  float energyLayer = (energy1 + energy2) * 0.5;
-  energyLayer = energyLayer * 0.5 + 0.5;
-  energyLayer = pow(energyLayer, 0.8);
-  float energyMask = getVolumeMask(uv, texSize, time * 1.25, 1.5, 0.25, 1.1);
-  float energyIntensity = energyLayer * energyMask * uIntensity;
+  // === LAYER 2: Medium stars (fewer, brighter) ===
+  vec2 starUV2 = noiseUV * 8.0 + 50.0;
+  float stars2 = snoise(starUV2);
+  float twinkle2 = snoise(starUV2 * 0.3 + time * 1.2 + 20.0);
+  stars2 = smoothstep(0.8, 0.98, stars2) * (0.6 + 0.4 * twinkle2);
 
-  // === LAYER 4: Sparkles (high frequency) ===
-  float sparkleBase = snoise(noiseUV * 6.0 + time * 0.3);
-  float sparkle = smoothstep(0.5, 0.85, sparkleBase) * (1.0 + edgeDist * 0.5);
+  // === LAYER 3: Bright stars (rare, very bright, slow twinkle) ===
+  vec2 starUV3 = noiseUV * 4.0 + 200.0;
+  float stars3 = snoise(starUV3);
+  float twinkle3 = sin(time * 0.5 + snoise(starUV3 * 2.0) * 6.28) * 0.5 + 0.5;
+  stars3 = smoothstep(0.88, 0.99, stars3) * twinkle3;
 
-  // Composite layers
-  vec3 deepColor = getVoidColor(deepIntensity * 0.8) * deepIntensity;
-  vec3 midColor = getVoidColor(midIntensity) * midIntensity;
-  vec3 energyColor = getVoidColor(energyIntensity * 1.3) * energyIntensity;
+  // === LAYER 4: Subtle nebula wisps at edges ===
+  float nebula = domainWarp(noiseUV * 1.5 + 300.0, time * 0.1);
+  nebula = nebula * 0.5 + 0.5;
+  nebula *= edgeDist * uBorder; // Only visible near edges, controlled by border
+  vec3 nebulaColor = vec3(0.15, 0.05, 0.25) * nebula * uIntensity;
 
-  vec3 color = deepColor + midColor + energyColor;
-  color += vec3(0.8, 0.9, 1.0) * sparkle * 0.4 * uIntensity;
-  color += vec3(0.3, 0.1, 0.5) * edgeDist * 0.5 * uIntensity; // Edge glow
+  // Combine stars with different colors
+  vec3 starColor = vec3(0.0);
+  starColor += vec3(0.7, 0.8, 1.0) * stars1 * 0.4; // Bluish distant stars
+  starColor += vec3(1.0, 1.0, 0.95) * stars2 * 0.7; // White medium stars
+  starColor += vec3(1.2, 1.1, 1.0) * stars3 * 1.2;  // Bright warm stars
 
-  float alpha = max(max(deepIntensity, midIntensity), energyIntensity);
-  alpha = smoothstep(0.0, 0.15, alpha);
-  alpha *= mask * uOpacity;
+  // Final color
+  vec3 color = voidColor + starColor * uIntensity + nebulaColor;
+
+  // Edge glow - subtle purple, controlled by border
+  color += vec3(0.1, 0.02, 0.15) * edgeDist * uBorder * uIntensity;
+
+  float alpha = mask * uOpacity;
 
   return vec4(color, alpha);
 }
 
-// Helper: get water color from intensity
-vec3 getWaterColor(float t) {
-  vec3 deepBlue = vec3(0.02, 0.1, 0.25);
-  vec3 midBlue = vec3(0.05, 0.2, 0.45);
-  vec3 lightBlue = vec3(0.2, 0.5, 0.7);
-  vec3 highlight = vec3(0.6, 0.85, 1.0);
-
-  if(t < 0.3) return mix(deepBlue, midBlue, t / 0.3);
-  if(t < 0.6) return mix(midBlue, lightBlue, (t - 0.3) / 0.3);
-  return mix(lightBlue, highlight, (t - 0.6) / 0.4);
-}
-
-// Water effect - multi-layered caustics (top-down view)
+// Water effect - proper ripples using sum of sine waves with lighting
 vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
-  float mask = getVolumeMask(uv, texSize, time, 4.0, 0.2, 2.0);
+  float mask = getVolumeMask(uv, texSize, time, 2.0, 0.1, 1.0);
   if(mask < 0.001) return vec4(0.0);
 
   float edgeDist = getEdgeDistortion(uv, texSize);
-  vec2 noiseUV = uv * texSize * 0.001;
-  float warpScale = 1.0 + edgeDist * 1.8 * uIntensity;
+  vec2 basePos = uv * texSize * 0.004; // Higher scale = smaller waves (viewing from ~100ft)
 
-  // === LAYER 1: Deep water (large scale, slow) ===
-  float deep1 = domainWarp(noiseUV * 0.8, time * 0.1);
-  float deep2 = domainWarp(noiseUV * 1.0 + 30.0, time * 0.12 + 6.0);
-  float deepLayer = (deep1 + deep2) * 0.5;
-  deepLayer = deepLayer * 0.5 + 0.5;
-  float deepIntensity = deepLayer * mask * uIntensity * 0.5;
+  // === DOMAIN WARPING - bend waves organically to break up repetition ===
+  float warpStrength = 0.15;
+  vec2 warp = vec2(
+    snoise(basePos * 0.3 + time * 0.05),
+    snoise(basePos * 0.3 + vec2(50.0, 50.0) + time * 0.04)
+  );
+  vec2 pos = basePos + warp * warpStrength;
 
-  // === LAYER 2: Mid-depth caustics (medium scale) ===
-  float mid1 = domainWarp(noiseUV * 1.8 + 60.0, time * 0.2) * warpScale;
-  float mid2 = domainWarp(noiseUV * 2.2 + 90.0, time * 0.25 + 3.0) * warpScale;
-  float midLayer = (mid1 + mid2) * 0.5;
-  midLayer = midLayer * 0.5 + 0.5;
-  float midMask = getVolumeMask(uv, texSize, time * 1.1, 3.5, 0.25, 1.8);
-  float midIntensity = midLayer * midMask * uIntensity * 0.7;
+  // === SUM OF DIRECTIONAL SINE WAVES ===
+  // Each wave has: direction, frequency, amplitude, speed
+  // Directions slowly rotate over time for organic movement
+  float height = 0.0;
+  vec2 gradient = vec2(0.0); // For normal calculation
 
-  // === LAYER 3: Surface shimmer (small scale, faster) ===
-  float surf1 = domainWarp(noiseUV * 3.0 + 120.0, time * 0.35);
-  float surf2 = fbm3(noiseUV * 3.5 + time * 0.3 + 150.0);
-  float surfLayer = (surf1 + surf2) * 0.5;
-  surfLayer = surfLayer * 0.5 + 0.5;
-  float surfMask = getVolumeMask(uv, texSize, time * 1.2, 3.0, 0.2, 2.2);
-  float surfIntensity = surfLayer * surfMask * uIntensity * 0.85;
+  // Local noise for phase variation - breaks up sync
+  float phaseNoise1 = snoise(basePos * 0.5) * 2.0;
+  float phaseNoise2 = snoise(basePos * 0.7 + 100.0) * 2.0;
 
-  // === LAYER 4: Highlights/sparkles ===
-  float shimmer = fbm5(noiseUV * 4.0 + time * 0.15);
-  shimmer = smoothstep(0.3, 0.7, shimmer) * smoothstep(1.0, 0.5, shimmer);
-  shimmer *= (1.0 + edgeDist * 0.4);
+  // Wave 1: Primary wave - direction slowly rotates
+  float angle1 = time * 0.02;
+  vec2 dir1 = normalize(vec2(cos(angle1) + 0.3, sin(angle1) * 0.5 + 0.7));
+  float freq1 = 25.0;
+  float amp1 = 0.25 * (0.8 + snoise(basePos * 0.2) * 0.2); // Vary amplitude locally
+  float phase1 = dot(dir1, pos) * freq1 - time * 2.0 + phaseNoise1;
+  height += amp1 * sin(phase1);
+  gradient += dir1 * amp1 * freq1 * cos(phase1);
 
-  // Composite layers
-  vec3 deepColor = getWaterColor(deepIntensity * 0.7) * deepIntensity;
-  vec3 midColor = getWaterColor(midIntensity) * midIntensity;
-  vec3 surfColor = getWaterColor(surfIntensity * 1.2) * surfIntensity;
+  // Wave 2: Cross wave - counter-rotating
+  float angle2 = -time * 0.015 + 1.5;
+  vec2 dir2 = normalize(vec2(cos(angle2) - 0.5, sin(angle2) + 0.3));
+  float freq2 = 35.0;
+  float amp2 = 0.18 * (0.85 + snoise(basePos * 0.25 + 30.0) * 0.15);
+  float phase2 = dot(dir2, pos) * freq2 - time * 2.5 + phaseNoise2;
+  height += amp2 * sin(phase2);
+  gradient += dir2 * amp2 * freq2 * cos(phase2);
 
-  vec3 color = deepColor + midColor + surfColor;
-  color += vec3(0.15, 0.25, 0.35) * shimmer * 0.5 * uIntensity;
-  color += vec3(0.2, 0.3, 0.4) * edgeDist * 0.4 * uIntensity; // Edge foam
+  // Wave 3: Diagonal - slight wobble
+  float angle3 = sin(time * 0.03) * 0.2 + 2.35;
+  vec2 dir3 = normalize(vec2(cos(angle3), sin(angle3)));
+  float freq3 = 20.0;
+  float amp3 = 0.2;
+  float phase3 = dot(dir3, pos) * freq3 - time * 1.5 + phaseNoise1 * 0.5;
+  height += amp3 * sin(phase3);
+  gradient += dir3 * amp3 * freq3 * cos(phase3);
 
-  float alpha = max(max(deepIntensity, midIntensity), surfIntensity);
-  alpha = smoothstep(0.0, 0.15, alpha);
-  alpha *= mask * uOpacity * 0.85;
+  // Wave 4: Fine detail
+  float angle4 = time * 0.025 + 4.0;
+  vec2 dir4 = normalize(vec2(cos(angle4) - 0.3, sin(angle4) - 0.9));
+  float freq4 = 50.0;
+  float amp4 = 0.1;
+  float phase4 = dot(dir4, pos) * freq4 - time * 3.0 + phaseNoise2 * 0.7;
+  height += amp4 * sin(phase4);
+  gradient += dir4 * amp4 * freq4 * cos(phase4);
 
-  return vec4(color, alpha);
+  // Wave 5: Extra fine detail - faster rotation
+  float angle5 = -time * 0.03 + 1.0;
+  vec2 dir5 = normalize(vec2(cos(angle5) + 0.9, sin(angle5) + 0.5));
+  float freq5 = 65.0;
+  float amp5 = 0.08;
+  float phase5 = dot(dir5, pos) * freq5 - time * 3.5;
+  height += amp5 * sin(phase5);
+  gradient += dir5 * amp5 * freq5 * cos(phase5);
+
+  // === CONCENTRIC RIPPLES - centers drift slowly ===
+  for(int i = 0; i < 8; i++) {
+    // Ripple centers drift over time
+    float drift = time * 0.02;
+    vec2 center = vec2(
+      fract(sin(float(i) * 127.1) * 43758.5453 + drift * 0.1) * 0.8 + 0.1,
+      fract(sin(float(i) * 269.5) * 43758.5453 + drift * 0.07) * 0.8 + 0.1
+    );
+    // Add noise-based wobble to centers
+    center += vec2(
+      snoise(vec2(float(i) * 3.0, time * 0.1)) * 0.05,
+      snoise(vec2(time * 0.1, float(i) * 5.0)) * 0.05
+    );
+
+    vec2 toCenter = pos - center * texSize.x * 0.004;
+    float dist = length(toCenter);
+    float rippleFreq = 40.0 + float(i) * 5.0;
+    float rippleAmp = 0.12 / (1.0 + dist * 3.0);
+    // Vary ripple speed slightly per source
+    float rippleSpeed = 4.0 + snoise(vec2(float(i) * 10.0, 0.0)) * 0.5;
+    float ripplePhase = dist * rippleFreq - time * rippleSpeed - float(i) * 1.0;
+
+    height += rippleAmp * sin(ripplePhase);
+    if(dist > 0.001) {
+      vec2 rippleDir = toCenter / dist;
+      gradient += rippleDir * rippleAmp * rippleFreq * cos(ripplePhase);
+    }
+  }
+
+  // === CALCULATE NORMAL FROM GRADIENT ===
+  vec3 normal = normalize(vec3(-gradient.x, -gradient.y, 1.0));
+
+  // === LIGHTING ===
+  vec3 lightDir = normalize(vec3(0.3, 0.3, 1.0)); // Light from above-front
+  float diffuse = max(dot(normal, lightDir), 0.0);
+
+  // Specular highlight (Blinn-Phong) - high exponent for small sharp highlights
+  vec3 viewDir = vec3(0.0, 0.0, 1.0); // Top-down view
+  vec3 halfDir = normalize(lightDir + viewDir);
+  float specular = pow(max(dot(normal, halfDir), 0.0), 128.0);
+
+  // === COLORS ===
+  vec3 deepColor = vec3(0.02, 0.08, 0.2);
+  vec3 shallowColor = vec3(0.1, 0.3, 0.5);
+  vec3 highlightColor = vec3(0.95, 0.98, 1.0);
+
+  // Height affects color (deeper in troughs)
+  float heightNorm = height * 0.5 + 0.5;
+  vec3 waterColor = mix(deepColor, shallowColor, heightNorm * 0.5 + diffuse * 0.5);
+
+  // Add specular highlights
+  waterColor += highlightColor * specular * 1.5 * uIntensity;
+
+  // === FOAM AT EDGES ===
+  float foamMask0 = textureLod(uMaskTexture, uv, 0.0).a;
+  float foamMask3 = textureLod(uMaskTexture, uv, 3.0 + uBorder * 2.0).a;
+  float foamEdge = abs(foamMask0 - foamMask3);
+
+  // Foam follows wave peaks
+  float foamWave = smoothstep(0.2, 0.6, heightNorm);
+  float foam = foamEdge * (0.3 + foamWave * 0.7) * uBorder;
+  foam += edgeDist * foamWave * uBorder * 0.5;
+
+  // Add foam noise
+  float foamNoise = snoise(pos * 8.0 + time * 0.5) * 0.5 + 0.5;
+  foam *= (0.6 + foamNoise * 0.4);
+
+  waterColor += highlightColor * foam;
+
+  // Final color with intensity
+  vec3 finalColor = waterColor * uIntensity;
+
+  float alpha = mask * uOpacity;
+
+  return vec4(finalColor, alpha);
 }
 
 // Helper: get magic color from intensity (uses base color)
@@ -433,14 +504,14 @@ vec4 magicEffect(vec2 uv, vec2 texSize, float time) {
 
   vec3 color = deepColor + midColor + surfColor;
 
-  // Add edge turbulence glow
-  color += uBaseColor * edgeTurb * 0.5 * uIntensity;
+  // Add edge turbulence glow - controlled by border
+  color += uBaseColor * edgeTurb * uBorder * uIntensity;
 
   // Soft white sparkles
   color += vec3(1.2, 1.2, 1.3) * sparkle * 0.35 * uIntensity;
 
-  // Enhanced edge glow
-  float edgeGlow = edgeDist * 0.6 * uIntensity;
+  // Enhanced edge glow - controlled by border
+  float edgeGlow = edgeDist * uBorder * uIntensity;
   color += uBaseColor * edgeGlow;
 
   // Composite alpha from all layers
@@ -465,6 +536,28 @@ void main() {
   float time = uTime * uSpeed;
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 
+  // === OUTER SHADOW - makes effects feel inset (color burn style) ===
+  // Sample mask at increasing mip levels to get expanded/blurred versions
+  // Higher mip = more blur = wider spread
+  float maskSharp = textureLod(uMaskTexture, vUv, 0.0).a;
+  float maskBlur1 = textureLod(uMaskTexture, vUv, 4.0 + uBorder * 3.0).a;
+  float maskBlur2 = textureLod(uMaskTexture, vUv, 6.0 + uBorder * 4.0).a;
+  float maskBlur3 = textureLod(uMaskTexture, vUv, 8.0 + uBorder * 5.0).a;
+  float maskBlur4 = textureLod(uMaskTexture, vUv, 10.0 + uBorder * 6.0).a;
+
+  // Inner shadow zone: close to the edge, darkest
+  float innerZone = smoothstep(0.0, 0.7, maskBlur1) * (1.0 - smoothstep(0.0, 0.1, maskSharp));
+  // Mid-inner shadow zone
+  float midInnerZone = smoothstep(0.0, 0.6, maskBlur2) * (1.0 - smoothstep(0.0, 0.3, maskBlur1));
+  // Mid-outer shadow zone
+  float midOuterZone = smoothstep(0.0, 0.5, maskBlur3) * (1.0 - smoothstep(0.0, 0.25, maskBlur2));
+  // Outer shadow zone: farthest, lightest
+  float outerZone = smoothstep(0.0, 0.4, maskBlur4) * (1.0 - smoothstep(0.0, 0.2, maskBlur3));
+
+  // Combine with heavier weight near the edge (color burn effect)
+  float shadowIntensity = innerZone * 1.0 + midInnerZone * 0.7 + midOuterZone * 0.4 + outerZone * 0.2;
+  shadowIntensity *= uBorder * uOpacity;
+
   vec4 result;
 
   if(uEffectType == 1) {
@@ -478,11 +571,27 @@ void main() {
   } else {
     // No effect - solid color
     float mask = texture2D(uMaskTexture, vUv).a;
-    if(mask < 0.001) discard;
+    if(mask < 0.001 && shadowIntensity < 0.001) discard;
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  if(result.a < 0.001) discard;
+  // Blend outer shadow under the effect
+  // Shadow is dark, high opacity near edge for color burn effect
+  vec3 shadowColor = vec3(0.0, 0.0, 0.0);
+  float shadowAlpha = shadowIntensity * 0.85;
 
-  gl_FragColor = result;
+  // If we have shadow but no effect, show just the shadow
+  if(result.a < 0.001 && shadowAlpha > 0.001) {
+    gl_FragColor = vec4(shadowColor, shadowAlpha);
+    return;
+  }
+
+  // Composite: shadow underneath, effect on top
+  // Use standard alpha blending: result over shadow
+  float finalAlpha = result.a + shadowAlpha * (1.0 - result.a);
+  vec3 finalColor = (result.rgb * result.a + shadowColor * shadowAlpha * (1.0 - result.a)) / max(finalAlpha, 0.001);
+
+  if(finalAlpha < 0.001) discard;
+
+  gl_FragColor = vec4(finalColor, finalAlpha);
 }
