@@ -1,5 +1,10 @@
 export { type HoveredMarker } from '../../types/awareness';
-export { type AnnotationLayerData, type AnnotationsLayerProps } from './components/AnnotationLayer/types';
+export {
+  AnnotationEffect,
+  type AnnotationEffectProps,
+  type AnnotationLayerData,
+  type AnnotationsLayerProps
+} from './components/AnnotationLayer/types';
 export { DrawMode, RenderMode, ToolType } from './components/DrawingLayer/types';
 export { GridMode, GridType } from './components/GridLayer/types';
 export { MapLayerType } from './components/MapLayer/types';

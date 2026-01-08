@@ -1,6 +1,43 @@
 import type { StageMode } from '../Stage/types';
 
 /**
+ * Visual effect types for annotation layers
+ */
+export enum AnnotationEffect {
+  None = 0,
+  Fire = 1,
+  SpaceTear = 2,
+  Water = 3,
+  Magic = 4
+}
+
+/**
+ * Properties for annotation visual effects
+ */
+export interface AnnotationEffectProps {
+  /**
+   * The type of visual effect to apply
+   */
+  type: AnnotationEffect;
+
+  /**
+   * Animation speed multiplier (0.0 - 2.0)
+   */
+  speed: number;
+
+  /**
+   * Intensity of the effect (0.0 - 1.0)
+   */
+  intensity: number;
+
+  /**
+   * Edge softness - how much the effect fades at the boundaries (0.0 - 1.0)
+   * Higher values create a more gradual fade to transparent
+   */
+  softness: number;
+}
+
+/**
  * The properties for the annotations layer
  */
 export interface AnnotationsLayerProps {
@@ -58,6 +95,11 @@ export interface AnnotationLayerData {
    * Control who can see the layer
    */
   visibility: StageMode;
+
+  /**
+   * Visual effect settings for this annotation layer (experimental, not persisted)
+   */
+  effect?: AnnotationEffectProps;
 }
 
 export interface AnnotationExports {

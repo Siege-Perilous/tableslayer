@@ -1,14 +1,14 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T } from '@threlte/core';
+  import { T, useTask } from '@threlte/core';
   import chroma from 'chroma-js';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
-  import { type AnnotationLayerData } from './types';
+  import { type AnnotationLayerData, AnnotationEffect } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { DrawMode, ToolType, InitialState } from '../DrawingLayer/types';
   import type { DisplayProps } from '../Stage/types';
 
-  import annotationFragmentShader from '../../shaders/Annotations.frag?raw';
+  import annotationEffectsFragmentShader from '../../shaders/AnnotationEffects.frag?raw';
   import annotationVertexShader from '../../shaders/default.vert?raw';
 
   interface Props {
@@ -19,8 +19,6 @@
 
   const { props, display, lineWidth = 2.0 }: Props = $props();
 
-  // Convert percentage-based lineWidth to texture pixels
-  // lineWidth is a percentage (0.01-5.0), display.resolution gives texture size
   const lineWidthPixels = $derived.by(() => {
     const textureSize = Math.min(display.resolution.x, display.resolution.y);
     return Math.round(textureSize * (lineWidth / 100));
@@ -30,108 +28,90 @@
 
   let drawMaterial: DrawingMaterial;
 
-  // Helper to parse hex color to RGB vector (in sRGB space, 0-1 range)
-  // Use chroma-js to avoid Three.js color space conversions
-  function hexToRGB(hex: string): THREE.Vector3 {
+  const hexToRGB = (hex: string): THREE.Vector3 => {
     const [r, g, b] = chroma(hex).gl();
     return new THREE.Vector3(r, g, b);
-  }
+  };
 
-  // Create reactive uniform values
   let colorUniform = $derived(hexToRGB(props.color));
 
-  // Material used for rendering the annotations
-  let annotationMaterial = new THREE.ShaderMaterial({
+  const getEffectType = () => props.effect?.type ?? AnnotationEffect.None;
+  const getEffectSpeed = () => props.effect?.speed ?? 1.0;
+  const getEffectIntensity = () => props.effect?.intensity ?? 1.0;
+  const getEffectSoftness = () => props.effect?.softness ?? 0.5;
+
+  let material = new THREE.ShaderMaterial({
+    defines: {
+      NUM_CLIPPING_PLANES: 4
+    },
     uniforms: {
       uMaskTexture: { value: null },
-      uColor: { value: hexToRGB(props.color) },
+      uTime: { value: 0.0 },
+      uEffectType: { value: getEffectType() },
+      uBaseColor: { value: hexToRGB(props.color) },
       uOpacity: { value: props.opacity },
+      uSpeed: { value: getEffectSpeed() },
+      uIntensity: { value: getEffectIntensity() },
+      uSoftness: { value: getEffectSoftness() },
+      uEdgeMinMipMapLevel: { value: 0 },
+      uEdgeMaxMipMapLevel: { value: 4 },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
       )
     },
     transparent: true,
-    fragmentShader: annotationFragmentShader,
+    fragmentShader: annotationEffectsFragmentShader,
     vertexShader: annotationVertexShader
   });
 
-  // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    // Update the uniform value in-place rather than replacing the object
-    annotationMaterial.uniforms.uColor.value.copy(colorUniform);
-    annotationMaterial.uniforms.uOpacity.value = props.opacity;
-    annotationMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
+    material.uniforms.uBaseColor.value.copy(colorUniform);
+    material.uniforms.uOpacity.value = props.opacity;
+    material.uniforms.uEffectType.value = getEffectType();
+    material.uniforms.uSpeed.value = getEffectSpeed();
+    material.uniforms.uIntensity.value = getEffectIntensity();
+    material.uniforms.uSoftness.value = getEffectSoftness();
+    material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
     );
-    annotationMaterial.uniformsNeedUpdate = true;
+    material.uniformsNeedUpdate = true;
   });
 
-  /**
-   * Returns the ID of the annotation layer
-   * @returns The ID of the annotation layer
-   */
-  export function getId() {
-    return props.id;
-  }
+  useTask((delta) => {
+    material.uniforms.uTime.value += delta;
+  });
 
-  /**
-   * Reverts the changes made to the annotation layer
-   */
-  export function revertChanges() {
+  export const getId = () => props.id;
+
+  export const revertChanges = () => {
     drawMaterial.revert();
-  }
+  };
 
-  /**
-   * Resets the cursor position to hide it
-   */
-  export function resetCursor() {
+  export const resetCursor = () => {
     if (drawMaterial) {
       drawMaterial.resetCursor();
     }
-  }
+  };
 
-  /**
-   * Clears the annotation layer
-   */
-  export function clear() {
+  export const clear = () => {
     drawMaterial.clear();
-  }
+  };
 
-  /**
-   * Draws a path on the annotation layer
-   * @param start The start position of the path
-   * @param last The last position of the path
-   * @param persist Whether to persist the current state
-   */
-  export function drawPath(start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) {
+  export const drawPath = (start: THREE.Vector2, last: THREE.Vector2 | null = null, persist: boolean = false) => {
     drawMaterial.drawPath(start, last, persist);
-  }
+  };
 
-  /**
-   * Serializes the current annotation layer state to a binary buffer
-   * @returns A binary buffer representation of the annotation layer texture
-   */
-  export async function toPng(): Promise<Blob> {
+  export const toPng = async (): Promise<Blob> => {
     return drawMaterial.toPng();
-  }
+  };
 
-  /**
-   * Exports the annotation layer state as RLE-encoded data
-   * @returns RLE encoded Uint8Array
-   */
-  export async function toRLE(): Promise<Uint8Array> {
+  export const toRLE = async (): Promise<Uint8Array> => {
     return drawMaterial.toRLE();
-  }
+  };
 
-  /**
-   * Loads RLE-encoded data into the annotation layer
-   * @param rleData RLE encoded data
-   * @param width Image width
-   * @param height Image height
-   */
-  export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
+  export const fromRLE = async (rleData: Uint8Array, width: number, height: number) => {
     return drawMaterial.fromRLE(rleData, width, height);
-  }
+  };
 </script>
 
 <DrawingMaterial
@@ -151,17 +131,16 @@
   initialState={InitialState.Clear}
   {size}
   onRender={(texture) => {
-    // Ensure color is correct when texture updates
-    annotationMaterial.uniforms.uColor.value.copy(colorUniform);
-    annotationMaterial.uniforms.uMaskTexture.value = texture;
-    annotationMaterial.uniformsNeedUpdate = true;
+    material.uniforms.uBaseColor.value.copy(colorUniform);
+    material.uniforms.uMaskTexture.value = texture;
+    material.uniformsNeedUpdate = true;
   }}
 />
 
 {#snippet attachMaterial()}
-  {annotationMaterial}
+  {material}
 {/snippet}
 
-<T is={annotationMaterial}>
+<T is={material}>
   {@render attachMaterial()}
 </T>

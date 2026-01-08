@@ -3,6 +3,8 @@
     Icon,
     type StageProps,
     type AnnotationLayerData,
+    type AnnotationEffectProps,
+    AnnotationEffect,
     Input,
     Spacer,
     Button,
@@ -11,15 +13,26 @@
     Text,
     MapLayerType,
     StageMode,
-    decodeRLE
+    decodeRLE,
+    Select,
+    InputSlider,
+    FormControl
   } from '@tableslayer/ui';
-  import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
+  import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical, IconSparkles } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
   import { onDestroy } from 'svelte';
+
+  const effectOptions = [
+    { value: String(AnnotationEffect.None), label: 'None' },
+    { value: String(AnnotationEffect.Fire), label: 'Fire' },
+    { value: String(AnnotationEffect.SpaceTear), label: 'Space tear' },
+    { value: String(AnnotationEffect.Water), label: 'Water' },
+    { value: String(AnnotationEffect.Magic), label: 'Magic' }
+  ];
 
   let {
     stageProps,
@@ -218,6 +231,22 @@
     updateAnnotation(annotationId, { visibility: newVisibility });
   };
 
+  const getAnnotationEffect = (annotationId: string): AnnotationEffectProps => {
+    const annotation = stageProps.annotations.layers.find((a) => a.id === annotationId);
+    return annotation?.effect ?? { type: AnnotationEffect.None, speed: 1.0, intensity: 1.0, softness: 0.5 };
+  };
+
+  const updateAnnotationEffect = (annotationId: string, effectUpdates: Partial<AnnotationEffectProps>) => {
+    const currentEffect = getAnnotationEffect(annotationId);
+    const newEffect = { ...currentEffect, ...effectUpdates };
+    updateAnnotation(annotationId, { effect: newEffect }, false);
+  };
+
+  const handleEffectTypeChange = (annotationId: string, selected: string[]) => {
+    const effectType = parseInt(selected[0] ?? '0', 10) as AnnotationEffect;
+    updateAnnotationEffect(annotationId, { type: effectType });
+  };
+
   const handleLineWidthChange = (value: number) => {
     // Update the global state (value is now a percentage)
     queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], value, 'control');
@@ -316,12 +345,9 @@
           class:annotationManager__listItem--dragging={dragAndDrop.draggedItem === annotation.id}
           class:annotationManager__listItem--dragOver={dragAndDrop.draggedOverItem === annotation.id}
           data-drag-id={annotation.id}
-          draggable="true"
-          ondragstart={(e) => dragAndDrop.handleDragStart(e, annotation.id)}
           ondragover={(e) => dragAndDrop.handleDragOver(e, annotation.id)}
           ondragleave={dragAndDrop.handleDragLeave}
           ondrop={(e) => dragAndDrop.handleDrop(e, annotation.id)}
-          ondragend={(e) => dragAndDrop.handleDragEnd(e)}
           onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
@@ -330,6 +356,9 @@
               role="button"
               tabindex="-1"
               aria-label="Drag handle for reordering annotation layer"
+              draggable="true"
+              ondragstart={(e) => dragAndDrop.handleDragStart(e, annotation.id)}
+              ondragend={(e) => dragAndDrop.handleDragEnd(e)}
               ontouchstart={(e) => {
                 e.stopPropagation();
                 const dragElement = e.currentTarget.closest('[data-drag-id]') as HTMLElement | null;
@@ -385,6 +414,18 @@
               class="annotationManager__nameInput"
               oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
             />
+            <div class="annotationManager__effectSelect">
+              <Select
+                variant="transparent"
+                options={effectOptions}
+                selected={[String(getAnnotationEffect(annotation.id).type)]}
+                onSelectedChange={(selected) => handleEffectTypeChange(annotation.id, selected)}
+              >
+                {#snippet selectedPrefix()}
+                  <Icon Icon={IconSparkles} size="1rem" color="var(--fgMuted)" />
+                {/snippet}
+              </Select>
+            </div>
             <div class="annotationManager__deleteButton">
               <ConfirmActionButton
                 action={() => handleAnnotationDelete(annotation.id)}
@@ -400,6 +441,65 @@
                 {/snippet}
               </ConfirmActionButton>
             </div>
+          </div>
+          <div class="annotationManager__effectSliders">
+            <FormControl label="Opacity" name="opacity-{annotation.id}">
+              {#snippet input({ inputProps })}
+                <InputSlider
+                  {...inputProps}
+                  value={annotation.opacity * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  hex={annotation.color}
+                  oninput={(e) => updateAnnotation(annotation.id, { opacity: e.currentTarget.valueAsNumber / 100 })}
+                />
+              {/snippet}
+            </FormControl>
+            {#if getAnnotationEffect(annotation.id).type !== AnnotationEffect.None}
+              <FormControl label="Speed" name="speed-{annotation.id}">
+                {#snippet input({ inputProps })}
+                  <InputSlider
+                    {...inputProps}
+                    value={getAnnotationEffect(annotation.id).speed * 50}
+                    min={0}
+                    max={100}
+                    step={1}
+                    hex={annotation.color}
+                    oninput={(e) =>
+                      updateAnnotationEffect(annotation.id, { speed: e.currentTarget.valueAsNumber / 50 })}
+                  />
+                {/snippet}
+              </FormControl>
+              <FormControl label="Intensity" name="intensity-{annotation.id}">
+                {#snippet input({ inputProps })}
+                  <InputSlider
+                    {...inputProps}
+                    value={getAnnotationEffect(annotation.id).intensity * 100}
+                    min={0}
+                    max={100}
+                    step={1}
+                    hex={annotation.color}
+                    oninput={(e) =>
+                      updateAnnotationEffect(annotation.id, { intensity: e.currentTarget.valueAsNumber / 100 })}
+                  />
+                {/snippet}
+              </FormControl>
+              <FormControl label="Softness" name="softness-{annotation.id}">
+                {#snippet input({ inputProps })}
+                  <InputSlider
+                    {...inputProps}
+                    value={getAnnotationEffect(annotation.id).softness * 100}
+                    min={0}
+                    max={100}
+                    step={1}
+                    hex={annotation.color}
+                    oninput={(e) =>
+                      updateAnnotationEffect(annotation.id, { softness: e.currentTarget.valueAsNumber / 100 })}
+                  />
+                {/snippet}
+              </FormControl>
+            {/if}
           </div>
         </button>
       {:else}
@@ -562,6 +662,19 @@
 
   .annotationManager__deleteButton {
     margin-left: auto;
+  }
+
+  .annotationManager__effectSelect {
+    min-width: 7rem;
+    flex-shrink: 0;
+  }
+
+  .annotationManager__effectSliders {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    width: 100%;
   }
 
   .annotationManager__dragHandle {
