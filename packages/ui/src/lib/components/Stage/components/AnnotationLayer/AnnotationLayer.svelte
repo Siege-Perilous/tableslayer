@@ -2,10 +2,10 @@
   import * as THREE from 'three';
   import { getContext } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { type AnnotationLayerData, type AnnotationsLayerProps } from './types';
+  import { type AnnotationLayerData, type AnnotationsLayerProps, AnnotationEffect } from './types';
   import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import { SceneLayer } from '../Scene/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
   import { LazyBrushManager } from '../../helpers/lazyBrush';
 
@@ -255,6 +255,11 @@
     return !(mode === StageMode.Player && layer.visibility === StageMode.DM);
   }
 
+  function hasEffect(layer: AnnotationLayerData) {
+    // Check if the layer has an effect (not None)
+    return layer.effect?.type !== undefined && layer.effect.type !== AnnotationEffect.None;
+  }
+
   /**
    * Clears the annotation layer
    */
@@ -330,13 +335,18 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
 </T.Mesh>
 
-<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
+<!--
+Effect annotations render on Main layer (under fog, with post-processing).
+Color annotations render on Overlay layer (over fog, no post-processing).
+-->
+<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]}>
   {#each props.layers as layer, index (layer.id)}
     <T.Mesh
       name={layer.id}
       visible={isVisible(layer)}
       position.z={(props.layers.length - index) * 0.001}
-      {...meshProps}
+      layers={hasEffect(layer) ? [SceneLayer.Main] : [SceneLayer.Overlay]}
+      renderOrder={hasEffect(layer) ? SceneLayerOrder.EffectAnnotation : SceneLayerOrder.Annotation}
     >
       <AnnotationMaterial bind:this={layers[index]} props={layer} {display} lineWidth={props.lineWidth} />
       <T.PlaneGeometry />

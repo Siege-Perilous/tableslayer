@@ -564,12 +564,10 @@
   <AnnotationLayer
     bind:this={annotationsLayer}
     props={props.annotations}
-    layers={[SceneLayer.Overlay]}
     mode={props.mode}
     isActive={props.activeLayer === MapLayerType.Annotation}
     sceneZoom={props.scene.zoom}
     display={props.display}
-    renderOrder={SceneLayerOrder.Annotation}
   />
 
   <MarkerLayer

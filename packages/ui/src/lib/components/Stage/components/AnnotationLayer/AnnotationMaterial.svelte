@@ -70,6 +70,7 @@
       )
     },
     transparent: true,
+    depthWrite: false, // Prevent transparent overlay from affecting depth buffer
     fragmentShader: annotationEffectsFragmentShader,
     vertexShader: annotationVertexShader
   });

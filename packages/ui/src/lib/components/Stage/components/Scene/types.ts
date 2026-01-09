@@ -26,10 +26,11 @@ export enum SceneLayerOrder {
   Marker = 15,
   Fog = 20,
   Weather = 30,
+  EffectAnnotation = 35, // Effect annotations render under fog of war
   FogOfWar = 40,
   Grid = 50,
   EdgeOverlay = 70,
-  Annotation = 80,
+  Annotation = 80, // Color annotations render over fog of war
   Measurement = 90,
   Cursor = 100
 }
