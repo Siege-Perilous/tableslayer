@@ -45,13 +45,16 @@
   const BASE_RADIUS = 20;
   const BASE_FRICTION = 0.05;
 
+  // Smoothing enabled defaults to true if not specified
+  const smoothingEnabled = $derived(props.smoothingEnabled ?? true);
+
   const lazyBrush = new LazyBrushManager({
     radius: BASE_RADIUS,
-    enabled: true,
+    enabled: smoothingEnabled,
     friction: BASE_FRICTION
   });
 
-  // Adjust lazy brush settings based on zoom level
+  // Adjust lazy brush settings based on zoom level and smoothing toggle
   $effect(() => {
     // Scale radius inversely with zoom - less smoothing when zoomed in
     // At zoom 2x, radius is 25 (half)
@@ -66,7 +69,8 @@
 
     lazyBrush.updateConfig({
       radius: Math.max(5, Math.min(100, adjustedRadius)), // Clamp between 5 and 100
-      friction: adjustedFriction
+      friction: adjustedFriction,
+      enabled: smoothingEnabled
     });
   });
 

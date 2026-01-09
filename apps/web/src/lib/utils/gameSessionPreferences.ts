@@ -16,6 +16,7 @@ export interface GameSessionPreferences {
   brushSizePercent?: number;
   annotationLineWidth?: number;
   annotationLineWidthPercent?: number;
+  annotationSmoothing?: boolean;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
 }
@@ -53,6 +54,11 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
     cookieName: 'tableslayer:annotationLineWidthPercent',
     defaultValue: 2.0,
     validate: (value): value is number => typeof value === 'number' && value >= 0.01 && value <= 5.0
+  },
+  annotationSmoothing: {
+    cookieName: 'tableslayer:annotationSmoothing',
+    defaultValue: true, // ON by default in editor
+    validate: (value): value is boolean => typeof value === 'boolean'
   },
   paneLayoutDesktop: {
     cookieName: 'tableslayer:paneLayoutDesktop',

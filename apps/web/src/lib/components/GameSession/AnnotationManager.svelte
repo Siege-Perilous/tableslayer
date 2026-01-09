@@ -16,7 +16,8 @@
     decodeRLE,
     Select,
     InputSlider,
-    FormControl
+    FormControl,
+    RadioButton
   } from '@tableslayer/ui';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical, IconSparkles } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
@@ -32,7 +33,8 @@
     { value: String(AnnotationEffect.SpaceTear), label: 'Space tear' },
     { value: String(AnnotationEffect.Water), label: 'Water' },
     { value: String(AnnotationEffect.Magic), label: 'Magic' },
-    { value: String(AnnotationEffect.Grease), label: 'Grease' }
+    { value: String(AnnotationEffect.Grease), label: 'Grease' },
+    { value: String(AnnotationEffect.Ice), label: 'Ice' }
   ];
 
   let {
@@ -44,7 +46,9 @@
     handleOpacityChange = $bindable(),
     handleBrushSizeChange = $bindable(),
     handleColorChange = $bindable(),
-    annotationMasks = {}
+    annotationMasks = {},
+    smoothingEnabled = $bindable(true),
+    onSmoothingChange
   }: {
     stageProps: StageProps;
     selectedAnnotationId: string | undefined;
@@ -55,7 +59,22 @@
     handleBrushSizeChange?: (value: number) => void;
     handleColorChange?: (color: string, opacity: number) => void;
     annotationMasks?: Record<string, string | null>;
+    smoothingEnabled?: boolean;
+    onSmoothingChange?: (enabled: boolean) => void;
   } = $props();
+
+  const smoothingOptions = [
+    { label: 'On', value: 'on' },
+    { label: 'Off', value: 'off' }
+  ];
+
+  let smoothingValue = $derived(smoothingEnabled ? 'on' : 'off');
+
+  function handleSmoothingChange(value: string) {
+    const enabled = value === 'on';
+    smoothingEnabled = enabled;
+    onSmoothingChange?.(enabled);
+  }
 
   // Store thumbnail blob URLs for annotations
   let thumbnailUrls = $state<Record<string, string>>({});
@@ -344,6 +363,10 @@
         Layer
       </Button>
     {/if}
+    <div class="annotationManager__smoothing">
+      <Text size="0.875rem" color="var(--fgMuted)">Smoothing</Text>
+      <RadioButton options={smoothingOptions} selected={smoothingValue} onSelectedChange={handleSmoothingChange} />
+    </div>
   </div>
   <div class="annotationManager__content">
     <div class="annotationManager__list">
@@ -663,6 +686,13 @@
     width: 100%;
     background-color: var(--bgColorBlur);
     backdrop-filter: blur(10px);
+  }
+
+  .annotationManager__smoothing {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
   }
 
   .annotationManager__preview {

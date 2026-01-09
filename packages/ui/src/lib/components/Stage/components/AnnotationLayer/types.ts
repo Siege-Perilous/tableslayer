@@ -9,7 +9,8 @@ export enum AnnotationEffect {
   SpaceTear = 2,
   Water = 3,
   Magic = 4,
-  Grease = 5
+  Grease = 5,
+  Ice = 6
 }
 
 /**
@@ -68,6 +69,13 @@ export interface AnnotationsLayerProps {
    * The line width for drawing (global setting)
    */
   lineWidth?: number;
+
+  /**
+   * Whether to enable brush smoothing for drawing
+   * When true, uses lazy brush algorithm for smoother lines
+   * Default: true in editor, false in play view
+   */
+  smoothingEnabled?: boolean;
 }
 
 /**

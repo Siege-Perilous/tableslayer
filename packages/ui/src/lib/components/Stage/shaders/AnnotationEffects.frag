@@ -810,6 +810,175 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(finalColor, alpha);
 }
 
+// Ice effect - frosted glass look that lets map show through
+vec4 iceEffect(vec2 uv, vec2 texSize, float time) {
+  float mask = getVolumeMask(uv, texSize, time, 1.2, 0.05, 0.3);
+  if(mask < 0.001) return vec4(0.0);
+
+  float edgeDist = getEdgeDistortion(uv, texSize);
+  vec2 basePos = uv * texSize * 0.002;
+
+  // === FROST PATTERN - subtle, organic ice crystals with cold air movement ===
+  // Drifting direction for cold air effect
+  vec2 drift = vec2(time * 0.15, time * 0.08);
+
+  // Multiple layers of noise at different scales for natural frost look
+  float frost1 = fbm3(basePos * 4.0 + drift * 0.5) * 0.5 + 0.5;
+  float frost2 = fbm3(basePos * 8.0 + vec2(50.0, 50.0) + drift * 0.7) * 0.5 + 0.5;
+  float frost3 = snoise(basePos * 16.0 + drift) * 0.5 + 0.5;
+
+  // Combine for layered frost texture
+  float frostPattern = frost1 * 0.5 + frost2 * 0.3 + frost3 * 0.2;
+
+  // Cold air wisps - flowing patterns
+  float wisp1 = snoise(basePos * 3.0 + vec2(time * 0.2, time * 0.1)) * 0.5 + 0.5;
+  float wisp2 = snoise(basePos * 5.0 + vec2(-time * 0.15, time * 0.12) + 80.0) * 0.5 + 0.5;
+  float coldAir = wisp1 * 0.6 + wisp2 * 0.4;
+  coldAir = smoothstep(0.3, 0.7, coldAir); // Soften the wisps
+
+  // === GEOMETRIC CRACKS - voronoi cell edges for angular look ===
+  float crackScale = 20.0;
+  vec2 crackPos = basePos * crackScale;
+
+  // Voronoi for geometric angular cracks
+  vec2 cellId = floor(crackPos);
+  vec2 cellUV = fract(crackPos);
+
+  float minDist = 1.0;
+  float secondDist = 1.0;
+
+  // Find two closest cell centers
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 neighbor = vec2(float(x), float(y));
+      // Jittered cell centers for irregular but angular pattern
+      vec2 point = neighbor + hash2(cellId + neighbor) * 0.8 + 0.1;
+      float dist = length(cellUV - point);
+
+      if(dist < minDist) {
+        secondDist = minDist;
+        minDist = dist;
+      } else if(dist < secondDist) {
+        secondDist = dist;
+      }
+    }
+  }
+
+  // Crack lines are at cell boundaries (where distances are similar)
+  float cellEdgeDist = secondDist - minDist;
+  float cracks = 1.0 - smoothstep(0.0, 0.08, cellEdgeDist);
+
+  // Second layer at different scale for more detail
+  vec2 crackPos2 = basePos * crackScale * 2.5;
+  vec2 cellId2 = floor(crackPos2);
+  vec2 cellUV2 = fract(crackPos2);
+
+  float minDist2 = 1.0;
+  float secondDist2 = 1.0;
+
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 neighbor = vec2(float(x), float(y));
+      vec2 point = neighbor + hash2(cellId2 + neighbor + 200.0) * 0.7 + 0.15;
+      float dist = length(cellUV2 - point);
+
+      if(dist < minDist2) {
+        secondDist2 = minDist2;
+        minDist2 = dist;
+      } else if(dist < secondDist2) {
+        secondDist2 = dist;
+      }
+    }
+  }
+
+  float cellEdgeDist2 = secondDist2 - minDist2;
+  float cracks2 = 1.0 - smoothstep(0.0, 0.06, cellEdgeDist2);
+
+  // Combine both crack layers
+  cracks = max(cracks, cracks2 * 0.7);
+
+  // Always visible, roughness makes them stronger
+  cracks = cracks * (0.5 + uRoughness * 0.5);
+
+  // === DEPTH - border controls how much shallow/white ice at edges ===
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  float maskVeryLow = textureLod(uMaskTexture, uv, 7.0).a;
+
+  // Edge proximity: higher at edges, lower in center
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
+
+  // Border controls how far the light/white ice extends into center
+  float shallowSpread = uBorder * 0.8 + 0.1;
+  float shallowZone = smoothstep(0.0, shallowSpread, edgeProximity);
+
+  // Also use blurred mask difference for smoother depth transition
+  float depthGradient = abs(maskHigh - maskVeryLow);
+  shallowZone = max(shallowZone, depthGradient * uBorder * 2.0);
+  shallowZone = clamp(shallowZone, 0.0, 1.0);
+
+  // Add noise to break up depth bands
+  float depthNoise = snoise(basePos * 2.0 + drift * 0.3) * 0.1;
+  shallowZone = clamp(shallowZone + depthNoise * uBorder, 0.0, 1.0);
+
+  // === SUBTLE SHIMMER - slow sparkle ===
+  float shimmer = snoise(basePos * 6.0 + drift * 1.2) * 0.5 + 0.5;
+  shimmer = pow(shimmer, 3.0); // Make sparkles more sparse
+
+  // === COLORS - subtle blue center, white edges ===
+  vec3 deepBlue = vec3(0.45, 0.6, 0.8);        // Lighter blue for center
+  vec3 midBlue = vec3(0.55, 0.7, 0.85);        // Medium blue
+  vec3 lightBlue = vec3(0.7, 0.82, 0.92);      // Light blue
+  vec3 paleBlue = vec3(0.82, 0.9, 0.97);       // Pale blue
+  vec3 frostWhite = vec3(0.94, 0.97, 1.0);     // White frost at edges
+  vec3 crackColor = vec3(0.08, 0.15, 0.3);     // Darker crack lines for contrast
+  vec3 coldAirColor = vec3(0.85, 0.92, 1.0);   // Pale blue for cold air
+
+  // Multi-step depth gradient - darker in center, lighter at edges
+  vec3 iceColor;
+  if(shallowZone < 0.25) {
+    iceColor = mix(deepBlue, midBlue, shallowZone * 4.0);
+  } else if(shallowZone < 0.5) {
+    iceColor = mix(midBlue, lightBlue, (shallowZone - 0.25) * 4.0);
+  } else if(shallowZone < 0.75) {
+    iceColor = mix(lightBlue, paleBlue, (shallowZone - 0.5) * 4.0);
+  } else {
+    iceColor = mix(paleBlue, frostWhite, (shallowZone - 0.75) * 4.0);
+  }
+
+  // Add frost pattern variation
+  iceColor = mix(iceColor, iceColor * 1.1, frostPattern * 0.2);
+
+  // Add cold air wisps - subtle pale blue flowing over the ice
+  iceColor = mix(iceColor, coldAirColor, coldAir * 0.2);
+
+  // Add crack lines - dark blue cracks stand out
+  iceColor = mix(iceColor, crackColor, cracks * 0.8);
+
+  // Add sparse shimmer highlights - subtle
+  iceColor += frostWhite * shimmer * 0.2;
+
+  // Edge frost - lighter at edges
+  iceColor = mix(iceColor, lightBlue, edgeDist * 0.25);
+
+  // Apply intensity without washing out blue
+  vec3 finalColor = iceColor * (0.7 + uIntensity * 0.5);
+
+  // === ALPHA - semi-transparent to show map through ===
+  // Thicker/more opaque in center, thinner at edges
+  float iceThickness = 1.0 - shallowZone; // Inverse of shallow zone
+  float baseAlpha = 0.4 + iceThickness * 0.35; // 0.4 to 0.75 base
+  baseAlpha += frostPattern * 0.1; // Variation from frost pattern
+  baseAlpha += cracks * 0.15; // Cracks are more opaque
+  baseAlpha += coldAir * 0.08; // Cold air adds slight opacity variation
+  baseAlpha = clamp(baseAlpha, 0.0, 0.85); // Never fully opaque
+
+  float alpha = mask * uOpacity * baseAlpha;
+
+  return vec4(finalColor, alpha);
+}
+
 void main() {
   // Clipping planes
   vec4 plane;
@@ -870,6 +1039,8 @@ void main() {
     result = magicEffect(vUv, texSize, time);
   } else if(uEffectType == 5) {
     result = greaseEffect(vUv, texSize, time);
+  } else if(uEffectType == 6) {
+    result = iceEffect(vUv, texSize, time);
   } else {
     // No effect - solid color
     float mask = texture2D(uMaskTexture, vUv).a;
@@ -877,10 +1048,10 @@ void main() {
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  // Blend outer shadow under the effect (skip for water/grease - they handle their own depth)
+  // Blend outer shadow under the effect (skip for water/grease/ice - they handle their own depth)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = (uEffectType == 3 || uEffectType == 5) ? 0.0 : shadowIntensity * 0.85; // No shadow for water/grease
+  float shadowAlpha = (uEffectType == 3 || uEffectType == 5 || uEffectType == 6) ? 0.0 : shadowIntensity * 0.85; // No shadow for water/grease/ice
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {

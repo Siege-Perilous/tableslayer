@@ -17,7 +17,8 @@ export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   annotations: {
     layers: [],
-    activeLayer: null
+    activeLayer: null,
+    smoothingEnabled: false // OFF by default for play view (touch controls)
   },
   debug: {
     enableStats: false,

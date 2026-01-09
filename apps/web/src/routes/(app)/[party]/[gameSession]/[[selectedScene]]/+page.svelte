@@ -214,6 +214,10 @@
   const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
   initialStageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
 
+  // Apply annotation smoothing preference (default: true in editor)
+  const annotationSmoothingPref = getPreference('annotationSmoothing');
+  initialStageProps.annotations.smoothingEnabled = annotationSmoothingPref ?? true;
+
   let stageProps: StageProps = $state(initialStageProps);
 
   // Derive pinned marker IDs from markers with pinnedTooltip set to true
@@ -3077,6 +3081,11 @@
             bind:handleBrushSizeChange
             bind:handleColorChange
             annotationMasks={data.selectedSceneAnnotationMasks}
+            smoothingEnabled={stageProps.annotations.smoothingEnabled}
+            onSmoothingChange={(enabled) => {
+              stageProps.annotations.smoothingEnabled = enabled;
+              setPreference('annotationSmoothing', enabled);
+            }}
           />
         {/key}
       {:else}
