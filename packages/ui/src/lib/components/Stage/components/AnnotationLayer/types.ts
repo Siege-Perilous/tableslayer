@@ -8,7 +8,8 @@ export enum AnnotationEffect {
   Fire = 1,
   SpaceTear = 2,
   Water = 3,
-  Magic = 4
+  Magic = 4,
+  Grease = 5
 }
 
 /**

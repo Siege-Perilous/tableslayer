@@ -264,53 +264,150 @@ vec4 fireEffect(vec2 uv, vec2 texSize, float time) {
 }
 
 // Space tear - dark void with stars (top-down view)
+// Hash function for consistent random values per grid cell
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+// Hash that returns vec2
+vec2 hash2(vec2 p) {
+  return vec2(
+    fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453),
+    fract(sin(dot(p, vec2(269.5, 183.3))) * 43758.5453)
+  );
+}
+
+// Generate a single star layer with grid-based placement
+// Returns: x = star intensity, yzw = star color
+vec4 starLayer(vec2 uv, float time, float gridSize, float speed, float brightness, float twinkleSpeed) {
+  // Grid cell
+  vec2 gridUV = uv * gridSize;
+  vec2 cellId = floor(gridUV);
+  vec2 cellUV = fract(gridUV);
+
+  float totalStar = 0.0;
+  vec3 totalColor = vec3(0.0);
+
+  // Check this cell and neighbors for stars
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 neighborId = cellId + vec2(float(x), float(y));
+
+      // Random position within cell
+      vec2 starPos = hash2(neighborId);
+
+      // Add slow drift movement
+      starPos += vec2(
+        sin(time * speed * 0.3 + hash(neighborId) * 6.28) * 0.1,
+        cos(time * speed * 0.2 + hash(neighborId + 100.0) * 6.28) * 0.1
+      );
+
+      // Distance from current pixel to star center
+      vec2 toStar = (cellUV - vec2(float(x), float(y))) - starPos;
+      float dist = length(toStar);
+
+      // Star visibility (only some cells have stars)
+      float hasStar = step(0.7, hash(neighborId + 50.0));
+
+      // Star size varies
+      float starSize = 0.02 + hash(neighborId + 80.0) * 0.03;
+
+      // Core star (sharp point)
+      float star = smoothstep(starSize, 0.0, dist) * hasStar;
+
+      // Soft glow around star
+      float glow = smoothstep(starSize * 4.0, 0.0, dist) * 0.3 * hasStar;
+
+      // Independent twinkle per star
+      float twinklePhase = hash(neighborId + 200.0) * 6.28;
+      float twinkleFreq = 0.5 + hash(neighborId + 300.0) * 1.5;
+      float twinkle = sin(time * twinkleSpeed * twinkleFreq + twinklePhase);
+      twinkle = twinkle * 0.4 + 0.6;
+
+      // Some stars blink more dramatically
+      float blinkStrength = hash(neighborId + 400.0);
+      if(blinkStrength > 0.8) {
+        float blink = sin(time * twinkleSpeed * 0.3 + hash(neighborId + 500.0) * 6.28);
+        twinkle *= smoothstep(-0.8, 0.2, blink);
+      }
+
+      // Star color based on temperature
+      float temp = hash(neighborId + 600.0);
+      vec3 starColor;
+      if(temp < 0.3) {
+        starColor = vec3(0.7, 0.85, 1.0); // Blue-white hot
+      } else if(temp < 0.7) {
+        starColor = vec3(1.0, 1.0, 1.0); // Pure white
+      } else if(temp < 0.9) {
+        starColor = vec3(1.0, 0.95, 0.8); // Yellow-white
+      } else {
+        starColor = vec3(1.0, 0.7, 0.5); // Orange-red cool
+      }
+
+      float finalStar = (star + glow) * twinkle * brightness;
+      totalStar += finalStar;
+      totalColor += starColor * finalStar;
+    }
+  }
+
+  if(totalStar > 0.001) {
+    totalColor /= totalStar;
+  }
+
+  return vec4(totalStar, totalColor);
+}
+
 vec4 spaceTearEffect(vec2 uv, vec2 texSize, float time) {
   float mask = getVolumeMask(uv, texSize, time, 1.5, 0.2, 0.5);
   if(mask < 0.001) return vec4(0.0);
 
   float edgeDist = getEdgeDistortion(uv, texSize);
-  vec2 noiseUV = uv * texSize * 0.001;
+  vec2 baseUV = uv * texSize * 0.001;
 
-  // === BASE: Deep black void ===
-  // Subtle dark variation so it's not flat black
-  float voidNoise = fbm3(noiseUV * 0.5 + time * 0.05);
-  vec3 voidColor = vec3(0.02, 0.02, 0.04) + vec3(0.01, 0.0, 0.02) * voidNoise;
+  // === BASE: Deep black void with subtle variation ===
+  float voidNoise = fbm3(baseUV * 0.5 + time * 0.02);
+  vec3 voidColor = vec3(0.01, 0.01, 0.02) + vec3(0.01, 0.005, 0.02) * voidNoise;
 
-  // === LAYER 1: Distant tiny stars (many, dim, slow twinkle) ===
-  vec2 starUV1 = noiseUV * 15.0;
-  float stars1 = snoise(starUV1 + 100.0);
-  float twinkle1 = snoise(starUV1 * 0.5 + time * 0.8);
-  stars1 = smoothstep(0.75, 0.95, stars1) * (0.5 + 0.5 * twinkle1);
-
-  // === LAYER 2: Medium stars (fewer, brighter) ===
-  vec2 starUV2 = noiseUV * 8.0 + 50.0;
-  float stars2 = snoise(starUV2);
-  float twinkle2 = snoise(starUV2 * 0.3 + time * 1.2 + 20.0);
-  stars2 = smoothstep(0.8, 0.98, stars2) * (0.6 + 0.4 * twinkle2);
-
-  // === LAYER 3: Bright stars (rare, very bright, slow twinkle) ===
-  vec2 starUV3 = noiseUV * 4.0 + 200.0;
-  float stars3 = snoise(starUV3);
-  float twinkle3 = sin(time * 0.5 + snoise(starUV3 * 2.0) * 6.28) * 0.5 + 0.5;
-  stars3 = smoothstep(0.88, 0.99, stars3) * twinkle3;
-
-  // === LAYER 4: Subtle nebula wisps at edges ===
-  float nebula = domainWarp(noiseUV * 1.5 + 300.0, time * 0.1);
-  nebula = nebula * 0.5 + 0.5;
-  nebula *= edgeDist * uBorder; // Only visible near edges, controlled by border
-  vec3 nebulaColor = vec3(0.15, 0.05, 0.25) * nebula * uIntensity;
-
-  // Combine stars with different colors
+  // === STAR LAYERS with parallax movement ===
   vec3 starColor = vec3(0.0);
-  starColor += vec3(0.7, 0.8, 1.0) * stars1 * 0.4; // Bluish distant stars
-  starColor += vec3(1.0, 1.0, 0.95) * stars2 * 0.7; // White medium stars
-  starColor += vec3(1.2, 1.1, 1.0) * stars3 * 1.2;  // Bright warm stars
 
-  // Final color
-  vec3 color = voidColor + starColor * uIntensity + nebulaColor;
+  // Layer 1: Distant tiny stars (many, dim, slow)
+  vec2 layer1UV = baseUV + vec2(time * 0.002, time * 0.001);
+  vec4 stars1 = starLayer(layer1UV, time, 25.0, 0.3, 0.5, 1.5);
+  starColor += stars1.yzw * stars1.x;
 
-  // Edge glow - subtle purple, controlled by border
-  color += vec3(0.1, 0.02, 0.15) * edgeDist * uBorder * uIntensity;
+  // Layer 2: Medium distance stars
+  vec2 layer2UV = baseUV + vec2(time * 0.004, -time * 0.002);
+  vec4 stars2 = starLayer(layer2UV, time, 15.0, 0.5, 0.8, 1.2);
+  starColor += stars2.yzw * stars2.x;
+
+  // Layer 3: Closer bright stars (fewer, brighter, faster drift)
+  vec2 layer3UV = baseUV + vec2(-time * 0.006, time * 0.003);
+  vec4 stars3 = starLayer(layer3UV, time, 8.0, 0.8, 1.2, 0.8);
+  starColor += stars3.yzw * stars3.x;
+
+  // Layer 4: Rare very bright stars with strong glow
+  vec2 layer4UV = baseUV + vec2(time * 0.003, time * 0.005);
+  vec4 stars4 = starLayer(layer4UV, time, 4.0, 0.4, 1.8, 0.5);
+  starColor += stars4.yzw * stars4.x;
+
+  // === NEBULA WISPS at edges ===
+  float nebula = domainWarp(baseUV * 1.5 + 300.0, time * 0.05);
+  nebula = nebula * 0.5 + 0.5;
+  nebula *= edgeDist * uBorder;
+  vec3 nebulaColor = vec3(0.12, 0.04, 0.2) * nebula;
+
+  // Occasional colored nebula patches
+  float nebulaHue = snoise(baseUV * 2.0 + 500.0);
+  if(nebulaHue > 0.3) {
+    nebulaColor = mix(nebulaColor, vec3(0.05, 0.1, 0.2), (nebulaHue - 0.3) * nebula);
+  }
+
+  // === COMBINE ===
+  vec3 color = voidColor + starColor * uIntensity + nebulaColor * uIntensity;
+
+  // Edge glow - subtle purple rim
+  color += vec3(0.08, 0.02, 0.12) * edgeDist * uBorder * uIntensity;
 
   float alpha = mask * uOpacity;
 
@@ -580,6 +677,99 @@ vec4 magicEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(color, alpha);
 }
 
+// Grease effect - iridescent oil slick
+// Adapted from "Liquid toy" by Leon Denise (Shadertoy)
+vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
+  float mask = getVolumeMask(uv, texSize, time, 1.5, 0.1, 0.6);
+  if(mask < 0.001) return vec4(0.0);
+
+  float edgeDist = getEdgeDistortion(uv, texSize);
+  vec2 baseUV = uv * texSize * 0.002;
+
+  // === CREATE HEIGHTMAP using animated FBM ===
+  // Slow swirling motion
+  vec2 flowUV = baseUV + vec2(
+    sin(time * 0.1 + baseUV.y * 2.0) * 0.1,
+    cos(time * 0.08 + baseUV.x * 2.0) * 0.1
+  );
+
+  // Multiple layers of noise for organic flow
+  float height1 = fbm5(flowUV * 1.5 + time * 0.05);
+  float height2 = fbm3(flowUV * 3.0 - time * 0.03 + 50.0);
+  float height3 = domainWarp(flowUV * 0.8 + 100.0, time * 0.08);
+
+  float height = height1 * 0.5 + height2 * 0.3 + height3 * 0.2;
+  height = height * 0.5 + 0.5; // Normalize to 0-1
+
+  // === CALCULATE NORMALS from heightmap gradient ===
+  float range = 3.0;
+  vec2 unit = vec2(range / texSize.x, range / texSize.y);
+
+  // Sample height at offset positions
+  vec2 flowUV_px = flowUV + vec2(unit.x, 0.0);
+  vec2 flowUV_nx = flowUV - vec2(unit.x, 0.0);
+  vec2 flowUV_py = flowUV + vec2(0.0, unit.y);
+  vec2 flowUV_ny = flowUV - vec2(0.0, unit.y);
+
+  float h_px = fbm5(flowUV_px * 1.5 + time * 0.05) * 0.5 +
+               fbm3(flowUV_px * 3.0 - time * 0.03 + 50.0) * 0.3;
+  float h_nx = fbm5(flowUV_nx * 1.5 + time * 0.05) * 0.5 +
+               fbm3(flowUV_nx * 3.0 - time * 0.03 + 50.0) * 0.3;
+  float h_py = fbm5(flowUV_py * 1.5 + time * 0.05) * 0.5 +
+               fbm3(flowUV_py * 3.0 - time * 0.03 + 50.0) * 0.3;
+  float h_ny = fbm5(flowUV_ny * 1.5 + time * 0.05) * 0.5 +
+               fbm3(flowUV_ny * 3.0 - time * 0.03 + 50.0) * 0.3;
+
+  vec3 normal = normalize(vec3(
+    h_px - h_nx,
+    h_py - h_ny,
+    height * height * height * 0.5 + 0.1
+  ));
+
+  // === LIGHTING - from original shader ===
+  vec3 lightDir = normalize(vec3(0.0, 1.0, 2.0));
+  float lightDot = dot(normal, lightDir);
+
+  // Backlight - rim effect
+  float backlight = 1.0 - abs(dot(normal, vec3(0.0, 0.0, 1.0)));
+  vec3 color = vec3(0.3) * backlight;
+
+  // Specular highlight
+  float specular = pow(lightDot * 0.5 + 0.5, 20.0);
+  color += vec3(0.5) * smoothstep(0.2, 1.0, specular);
+
+  // === RAINBOW IRIDESCENCE - the key effect ===
+  // This creates the oil-slick rainbow colors
+  vec3 rainbow = 0.5 + 0.5 * cos(
+    vec3(1.0, 2.0, 3.0) * 1.0 +  // Phase offset per channel
+    lightDot * 4.0 -              // Based on light angle
+    uv.y * 3.0 -                  // Vertical gradient
+    3.0 +                         // Base offset
+    time * 0.2                    // Slow color shift
+  );
+
+  // Rainbow shows more at thin areas (edges)
+  float thinFilm = smoothstep(0.15, 0.0, height * mask);
+  color += rainbow * thinFilm * uIntensity;
+
+  // Also add rainbow based on edge distance
+  color += rainbow * edgeDist * uBorder * 0.5;
+
+  // === EDGE EFFECTS ===
+  // Darker at very thin edges
+  color *= smoothstep(0.0, 0.1, mask);
+
+  // Subtle glow at border
+  color += vec3(0.2, 0.15, 0.1) * edgeDist * uBorder * 0.3;
+
+  color *= uIntensity;
+
+  // Alpha
+  float alpha = mask * uOpacity;
+
+  return vec4(color, alpha);
+}
+
 void main() {
   // Clipping planes
   vec4 plane;
@@ -638,6 +828,8 @@ void main() {
     result = waterEffect(vUv, texSize, time);
   } else if(uEffectType == 4) {
     result = magicEffect(vUv, texSize, time);
+  } else if(uEffectType == 5) {
+    result = greaseEffect(vUv, texSize, time);
   } else {
     // No effect - solid color
     float mask = texture2D(uMaskTexture, vUv).a;

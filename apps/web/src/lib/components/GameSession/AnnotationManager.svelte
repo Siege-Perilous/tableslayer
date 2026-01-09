@@ -31,7 +31,8 @@
     { value: String(AnnotationEffect.Fire), label: 'Fire' },
     { value: String(AnnotationEffect.SpaceTear), label: 'Space tear' },
     { value: String(AnnotationEffect.Water), label: 'Water' },
-    { value: String(AnnotationEffect.Magic), label: 'Magic' }
+    { value: String(AnnotationEffect.Magic), label: 'Magic' },
+    { value: String(AnnotationEffect.Grease), label: 'Grease' }
   ];
 
   let {
