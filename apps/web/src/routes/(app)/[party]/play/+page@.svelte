@@ -396,7 +396,7 @@
             visibility: StageMode.Player
           };
 
-          stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+          stageProps.annotations.layers = [tempLayer, ...stageProps.annotations.layers];
           stageProps.annotations.activeLayer = currentTemporaryLayerId;
           stageProps.activeLayer = MapLayerType.Annotation;
 
@@ -502,7 +502,7 @@
           effect: getDefaultEffectProps(selectedEffect)
         };
 
-        stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+        stageProps.annotations.layers = [tempLayer, ...stageProps.annotations.layers];
         stageProps.annotations.activeLayer = currentTemporaryLayerId;
         stageProps.activeLayer = MapLayerType.Annotation;
         stageProps.annotations.lineWidth = 1.0;
@@ -2052,7 +2052,7 @@
       const newLayers = tempAnnotationLayers.filter((l) => !existingLayerIds.has(l.id));
 
       if (newLayers.length > 0) {
-        stageProps.annotations.layers = [...stageProps.annotations.layers, ...newLayers];
+        stageProps.annotations.layers = [...newLayers, ...stageProps.annotations.layers];
 
         // Load RLE data for each new temporary layer after components render
         // Use setTimeout to give Three.js/Threlte time to create components
