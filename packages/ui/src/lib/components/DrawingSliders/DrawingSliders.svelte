@@ -79,9 +79,6 @@
     onLayersClick
   }: Props = $props();
 
-  // Track popover close function
-  let closePopover: (() => void) | null = null;
-
   // Select the appropriate icon based on layer count
   const layerIcons: ComponentType[] = [
     IconBoxMultiple1,
@@ -128,18 +125,18 @@
     onBrushSizeChange(actualPercentage);
   };
 
-  const handleColorSelect = (selectedColor: string) => {
+  const handleColorSelect = (selectedColor: string, close?: () => void) => {
     onColorChange(selectedColor, opacity);
     // Clear any active effect when selecting a color
     onEffectChange?.(AnnotationEffect.None);
-    closePopover?.();
+    close?.();
   };
 
-  const handleEffectSelect = (effect: AnnotationEffect) => {
+  const handleEffectSelect = (effect: AnnotationEffect, close?: () => void) => {
     // Set color to match the effect for the opacity slider gradient
     onColorChange(EFFECT_COLORS[effect], opacity);
     onEffectChange?.(effect);
-    closePopover?.();
+    close?.();
   };
 
   // Touch event handlers for better mobile support
@@ -168,12 +165,11 @@
         </button>
       {/snippet}
       {#snippet content({ contentProps })}
-        {@const _ = closePopover = contentProps.close}
         <div class="drawingSliders__swatchGrid">
           {#each COLORS as swatchColor}
             <button
               class="drawingSliders__gridItem"
-              onclick={() => handleColorSelect(swatchColor)}
+              onclick={() => handleColorSelect(swatchColor, contentProps.close)}
               aria-label="Select color {swatchColor}"
             >
               <span class="drawingSliders__gridSwatch" style:background-color={swatchColor}></span>
@@ -182,7 +178,7 @@
           {#each EFFECTS as effect}
             <button
               class="drawingSliders__gridItem"
-              onclick={() => handleEffectSelect(effect)}
+              onclick={() => handleEffectSelect(effect, contentProps.close)}
               aria-label="Select effect"
             >
               <EffectPreview effectType={effect} size="2rem" shape="rounded" />

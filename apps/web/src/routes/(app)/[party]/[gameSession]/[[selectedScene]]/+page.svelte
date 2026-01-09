@@ -17,8 +17,7 @@
     MarkerVisibility,
     DrawingSliders,
     FogSliders,
-    AnnotationEffect,
-    getDefaultEffectProps
+    AnnotationEffect
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';

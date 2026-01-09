@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Folder, List, Pane, Slider } from 'svelte-tweakpane-ui';
+  import { Folder, List, Pane, Slider } from 'svelte-tweakpane-ui';
   import {
     Stage,
     type StageExports,

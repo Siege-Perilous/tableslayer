@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { getContext } from 'svelte';
-  import { T, type Props as ThrelteProps } from '@threlte/core';
+  import { T } from '@threlte/core';
   import { type AnnotationLayerData, type AnnotationsLayerProps, AnnotationEffect } from './types';
   import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
@@ -9,7 +9,7 @@
   import AnnotationMaterial from './AnnotationMaterial.svelte';
   import { LazyBrushManager } from '../../helpers/lazyBrush';
 
-  interface Props extends ThrelteProps<typeof THREE.Mesh> {
+  interface Props {
     props: AnnotationsLayerProps;
     mode: StageMode;
     isActive: boolean;
@@ -17,7 +17,7 @@
     sceneZoom: number;
   }
 
-  const { props, mode, isActive, display, sceneZoom, ...meshProps }: Props = $props();
+  const { props, mode, isActive, display, sceneZoom }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
