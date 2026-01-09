@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Popover } from '../Popover';
-  import { ColorPicker } from '../ColorPicker';
   import { Icon } from '../Icon';
   import { IconButton } from '../Button';
   import {
@@ -16,15 +15,54 @@
     IconBoxMultiple9
   } from '@tabler/icons-svelte';
   import type { ComponentType } from 'svelte';
+  import { AnnotationEffect } from '../Stage/components/AnnotationLayer/types';
+  import EffectPreview from '../RadialMenu/EffectPreview.svelte';
+
+  // Color palette - 10 colors
+  const COLORS = [
+    '#d73e2e', // red
+    '#ffa500', // orange
+    '#ffd93d', // yellow
+    '#6bcf7f', // green
+    '#2e86ab', // blue
+    '#b197fc', // purple
+    '#f06595', // pink
+    '#20c997', // turquoise
+    '#ffffff', // white
+    '#2a2a2a' // dark
+  ];
+
+  // Effects array
+  const EFFECTS = [
+    AnnotationEffect.Fire,
+    AnnotationEffect.Water,
+    AnnotationEffect.Ice,
+    AnnotationEffect.Magic,
+    AnnotationEffect.Grease,
+    AnnotationEffect.SpaceTear
+  ];
+
+  // Effect colors for the opacity slider gradient
+  const EFFECT_COLORS: Record<AnnotationEffect, string> = {
+    [AnnotationEffect.None]: '#ffffff',
+    [AnnotationEffect.Fire]: '#ff4d1a',
+    [AnnotationEffect.Water]: '#3380cc',
+    [AnnotationEffect.Ice]: '#b3d9ff',
+    [AnnotationEffect.Magic]: '#9333ea',
+    [AnnotationEffect.Grease]: '#4d3319',
+    [AnnotationEffect.SpaceTear]: '#330066'
+  };
 
   interface Props {
     opacity: number;
     brushSize: number;
     color: string;
     activeLayerIndex: number;
+    currentEffect?: AnnotationEffect;
     onOpacityChange: (value: number) => void;
     onBrushSizeChange: (value: number) => void;
     onColorChange: (color: string, opacity: number) => void;
+    onEffectChange?: (effect: AnnotationEffect) => void;
     onLayersClick: () => void;
   }
 
@@ -33,9 +71,11 @@
     brushSize,
     color,
     activeLayerIndex,
+    currentEffect = AnnotationEffect.None,
     onOpacityChange,
     onBrushSizeChange,
     onColorChange,
+    onEffectChange,
     onLayersClick
   }: Props = $props();
 
@@ -56,6 +96,9 @@
     // activeLayerIndex is 1-based (1st layer, 2nd layer, etc.)
     return activeLayerIndex <= 9 && activeLayerIndex > 0 ? layerIcons[activeLayerIndex - 1] : IconBoxMultiple;
   });
+
+  // Check if current selection is an effect
+  const hasEffect = $derived(currentEffect !== AnnotationEffect.None);
 
   // Brush size is now stored as a percentage (0.01% to 5%)
   // Use quadratic curve for slider to give more precision to lower values
@@ -82,6 +125,20 @@
     onBrushSizeChange(actualPercentage);
   };
 
+  const handleColorSelect = (selectedColor: string, close?: () => void) => {
+    onColorChange(selectedColor, opacity);
+    // Clear any active effect when selecting a color
+    onEffectChange?.(AnnotationEffect.None);
+    close?.();
+  };
+
+  const handleEffectSelect = (effect: AnnotationEffect, close?: () => void) => {
+    // Set color to match the effect for the opacity slider gradient
+    onColorChange(EFFECT_COLORS[effect], opacity);
+    onEffectChange?.(effect);
+    close?.();
+  };
+
   // Touch event handlers for better mobile support
   const handleTouchStart = (e: TouchEvent) => {
     // Prevent default to avoid conflicts with other touch interactions
@@ -99,23 +156,34 @@
   <div class="drawingSliders__slider">
     <Popover portal="body" positioning={{ placement: 'left', gutter: 12 }}>
       {#snippet trigger()}
-        <button
-          class="drawingSliders__colorSwatch"
-          style:background-color={color}
-          style:opacity
-          aria-label="Change annotation color"
-        ></button>
+        <button class="drawingSliders__colorSwatch" aria-label="Change annotation color or effect">
+          {#if hasEffect}
+            <EffectPreview effectType={currentEffect} size="2rem" shape="rounded" />
+          {:else}
+            <span class="drawingSliders__colorSwatchInner" style:background-color={color} style:opacity></span>
+          {/if}
+        </button>
       {/snippet}
-      {#snippet content()}
-        <div class="ColorPicker-container">
-          <ColorPicker
-            showOpacity={true}
-            hex={color +
-              Math.round(opacity * 255)
-                .toString(16)
-                .padStart(2, '0')}
-            onUpdate={(colorData) => onColorChange(colorData.hex.slice(0, 7), colorData.rgba.a)}
-          />
+      {#snippet content({ contentProps })}
+        <div class="drawingSliders__swatchGrid">
+          {#each COLORS as swatchColor}
+            <button
+              class="drawingSliders__gridItem"
+              onclick={() => handleColorSelect(swatchColor, contentProps.close)}
+              aria-label="Select color {swatchColor}"
+            >
+              <span class="drawingSliders__gridSwatch" style:background-color={swatchColor}></span>
+            </button>
+          {/each}
+          {#each EFFECTS as effect}
+            <button
+              class="drawingSliders__gridItem"
+              onclick={() => handleEffectSelect(effect, contentProps.close)}
+              aria-label="Select effect"
+            >
+              <EffectPreview effectType={effect} size="2rem" shape="rounded" />
+            </button>
+          {/each}
         </div>
       {/snippet}
     </Popover>
@@ -268,9 +336,44 @@
     border-radius: var(--radius-2);
     cursor: pointer;
     transition: border-color 0.2s;
+    padding: 0;
+    border: none;
+    background: transparent;
+    overflow: hidden;
   }
 
-  :global(.drawingSliders .ColorPicker-container) {
-    padding: 1rem;
+  .drawingSliders__colorSwatchInner {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-2);
+  }
+
+  .drawingSliders__swatchGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    background-color: var(--bg);
+    border-radius: var(--radius-2);
+  }
+
+  .drawingSliders__gridItem {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-2);
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .drawingSliders__gridSwatch {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-1);
   }
 </style>

@@ -16,7 +16,8 @@
     type HoveredMarker,
     MarkerVisibility,
     DrawingSliders,
-    FogSliders
+    FogSliders,
+    AnnotationEffect
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -213,6 +214,10 @@
   // Clamp to valid range in case of old/invalid values
   const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
   initialStageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
+
+  // Apply annotation smoothing preference (default: true in editor)
+  const annotationSmoothingPref = getPreference('annotationSmoothing');
+  initialStageProps.annotations.smoothingEnabled = annotationSmoothingPref ?? true;
 
   let stageProps: StageProps = $state(initialStageProps);
 
@@ -1561,6 +1566,14 @@
         // After deletion, update the orders of remaining annotations to remove gaps
         const remainingLayers = stageProps.annotations.layers.filter((layer) => layer.id !== annotationId);
 
+        // Select the first remaining layer, or deactivate annotation tool if none remain
+        if (remainingLayers.length > 0) {
+          stageProps.annotations.activeLayer = remainingLayers[0].id;
+        } else {
+          stageProps.annotations.activeLayer = null;
+          stageProps.activeLayer = MapLayerType.None;
+        }
+
         // Save all remaining annotations with their new sequential orders
         const updatePromises = remainingLayers.map(async (layer, index) => {
           const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
@@ -1621,6 +1634,7 @@
   let handleOpacityChange: ((value: number) => void) | undefined = $state();
   let handleBrushSizeChange: ((value: number) => void) | undefined = $state();
   let handleColorChange: ((color: string, opacity: number) => void) | undefined = $state();
+  let handleEffectChange: ((effect: AnnotationEffect) => void) | undefined = $state();
 
   // Generate random high-contrast colors that complement #d73e2e
   const getRandomAnnotationColor = () => {
@@ -2927,12 +2941,14 @@
             opacity={activeAnnotation.opacity}
             brushSize={stageProps.annotations.lineWidth || 2.0}
             color={activeAnnotation.color}
+            currentEffect={activeAnnotation.effect?.type ?? AnnotationEffect.None}
             activeLayerIndex={stageProps.annotations.layers.findIndex(
               (l) => l.id === stageProps.annotations.activeLayer
             ) + 1}
             onOpacityChange={handleOpacityChange}
             onBrushSizeChange={handleBrushSizeChange}
             onColorChange={handleColorChange}
+            onEffectChange={handleEffectChange}
             onLayersClick={handleToggleAnnotationPanel}
           />
         {/if}
@@ -3076,7 +3092,13 @@
             bind:handleOpacityChange
             bind:handleBrushSizeChange
             bind:handleColorChange
+            bind:handleEffectChange
             annotationMasks={data.selectedSceneAnnotationMasks}
+            smoothingEnabled={stageProps.annotations.smoothingEnabled}
+            onSmoothingChange={(enabled) => {
+              stageProps.annotations.smoothingEnabled = enabled;
+              setPreference('annotationSmoothing', enabled);
+            }}
           />
         {/key}
       {:else}

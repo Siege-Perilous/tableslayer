@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { RadialMenuItemProps } from './types';
+  import EffectPreview from './EffectPreview.svelte';
 
   interface Props {
     item: RadialMenuItemProps;
@@ -16,7 +17,10 @@
   const y = $derived(Math.sin(angle) * radius);
 
   // Determine if this is an icon-only button (has icon but no label)
-  const isIconOnly = $derived(item.icon && !item.label && !item.color);
+  const isIconOnly = $derived(item.icon && !item.label && !item.color && item.effectType === undefined);
+
+  // Determine if this is an effect-only button
+  const isEffectOnly = $derived(item.effectType !== undefined && !item.label);
 
   function handleClick() {
     if (!item.disabled) {
@@ -30,11 +34,16 @@
   class:radialMenu__item--disabled={item.disabled}
   class:radialMenu__item--colorOnly={item.color && !item.label}
   class:radialMenu__item--iconOnly={isIconOnly}
+  class:radialMenu__item--effectOnly={isEffectOnly}
   style="transform: translate({x}px, {y}px) rotate({-counterRotation}deg);"
   onclick={handleClick}
   type="button"
 >
-  {#if item.color}
+  {#if item.effectType !== undefined}
+    <span class="radialMenu__itemEffect">
+      <EffectPreview effectType={item.effectType} size="2.5rem" />
+    </span>
+  {:else if item.color}
     <span class="radialMenu__itemSwatch" style="background-color: {item.color};"></span>
   {:else if item.icon}
     <span class="radialMenu__itemIcon">
@@ -131,6 +140,35 @@
     height: 3rem;
     padding: 0;
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radialMenu__item--effectOnly {
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    box-shadow: none;
+  }
+
+  .radialMenu__item--effectOnly:hover {
+    background: transparent;
+    border: none;
+  }
+
+  .radialMenu__itemEffect {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--bg);
+    box-shadow:
+      0 0 0 1px var(--fgMuted),
+      0 4px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;

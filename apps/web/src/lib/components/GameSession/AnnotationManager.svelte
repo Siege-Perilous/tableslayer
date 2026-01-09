@@ -11,7 +11,10 @@
     Text,
     MapLayerType,
     StageMode,
-    decodeRLE
+    decodeRLE,
+    RadioButton,
+    AnnotationEffect,
+    getDefaultEffectProps
   } from '@tableslayer/ui';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
@@ -30,7 +33,10 @@
     handleOpacityChange = $bindable(),
     handleBrushSizeChange = $bindable(),
     handleColorChange = $bindable(),
-    annotationMasks = {}
+    handleEffectChange = $bindable(),
+    annotationMasks = {},
+    smoothingEnabled = $bindable(true),
+    onSmoothingChange
   }: {
     stageProps: StageProps;
     selectedAnnotationId: string | undefined;
@@ -40,8 +46,24 @@
     handleOpacityChange?: (value: number) => void;
     handleBrushSizeChange?: (value: number) => void;
     handleColorChange?: (color: string, opacity: number) => void;
+    handleEffectChange?: (effect: AnnotationEffect) => void;
     annotationMasks?: Record<string, string | null>;
+    smoothingEnabled?: boolean;
+    onSmoothingChange?: (enabled: boolean) => void;
   } = $props();
+
+  const smoothingOptions = [
+    { label: 'On', value: 'on' },
+    { label: 'Off', value: 'off' }
+  ];
+
+  let smoothingValue = $derived(smoothingEnabled ? 'on' : 'off');
+
+  function handleSmoothingChange(value: string) {
+    const enabled = value === 'on';
+    smoothingEnabled = enabled;
+    onSmoothingChange?.(enabled);
+  }
 
   // Store thumbnail blob URLs for annotations
   let thumbnailUrls = $state<Record<string, string>>({});
@@ -234,6 +256,16 @@
     updateAnnotation(annotationId, { color, opacity });
   };
 
+  const handleEffectChangeInternal = (annotationId: string, effect: AnnotationEffect) => {
+    // Apply the full default effect props for the selected effect type
+    // If effect is None, remove the effect entirely
+    if (effect === AnnotationEffect.None) {
+      updateAnnotation(annotationId, { effect: undefined });
+    } else {
+      updateAnnotation(annotationId, { effect: getDefaultEffectProps(effect) });
+    }
+  };
+
   // Bind handlers for external components
   $effect(() => {
     const activeLayer = stageProps.annotations.activeLayer;
@@ -241,10 +273,12 @@
       handleOpacityChange = (value: number) => handleOpacityChangeInternal(activeLayer, value);
       handleBrushSizeChange = handleLineWidthChange;
       handleColorChange = (color: string, opacity: number) => handleColorChangeInternal(activeLayer, color, opacity);
+      handleEffectChange = (effect: AnnotationEffect) => handleEffectChangeInternal(activeLayer, effect);
     } else {
       handleOpacityChange = undefined;
       handleBrushSizeChange = undefined;
       handleColorChange = undefined;
+      handleEffectChange = undefined;
     }
   });
 
@@ -305,6 +339,10 @@
         Layer
       </Button>
     {/if}
+    <div class="annotationManager__smoothing">
+      <Text size="0.875rem" color="var(--fgMuted)">Smoothing</Text>
+      <RadioButton options={smoothingOptions} selected={smoothingValue} onSelectedChange={handleSmoothingChange} />
+    </div>
   </div>
   <div class="annotationManager__content">
     <div class="annotationManager__list">
@@ -316,12 +354,9 @@
           class:annotationManager__listItem--dragging={dragAndDrop.draggedItem === annotation.id}
           class:annotationManager__listItem--dragOver={dragAndDrop.draggedOverItem === annotation.id}
           data-drag-id={annotation.id}
-          draggable="true"
-          ondragstart={(e) => dragAndDrop.handleDragStart(e, annotation.id)}
           ondragover={(e) => dragAndDrop.handleDragOver(e, annotation.id)}
           ondragleave={dragAndDrop.handleDragLeave}
           ondrop={(e) => dragAndDrop.handleDrop(e, annotation.id)}
-          ondragend={(e) => dragAndDrop.handleDragEnd(e)}
           onclick={() => setActiveAnnotation(annotation.id)}
         >
           <div class="annotationManager__controls">
@@ -330,6 +365,9 @@
               role="button"
               tabindex="-1"
               aria-label="Drag handle for reordering annotation layer"
+              draggable="true"
+              ondragstart={(e) => dragAndDrop.handleDragStart(e, annotation.id)}
+              ondragend={(e) => dragAndDrop.handleDragEnd(e)}
               ontouchstart={(e) => {
                 e.stopPropagation();
                 const dragElement = e.currentTarget.closest('[data-drag-id]') as HTMLElement | null;
@@ -525,6 +563,13 @@
     width: 100%;
     background-color: var(--bgColorBlur);
     backdrop-filter: blur(10px);
+  }
+
+  .annotationManager__smoothing {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
   }
 
   .annotationManager__preview {

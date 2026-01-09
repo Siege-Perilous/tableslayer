@@ -18,7 +18,9 @@
     DrawMode,
     StageMode,
     MeasurementType,
-    PersistButton
+    PersistButton,
+    AnnotationEffect,
+    getDefaultEffectProps
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -212,6 +214,12 @@
         { id: 'draw-purple', label: '', color: '#b197fc' },
         { id: 'draw-pink', label: '', color: '#f06595' },
         { id: 'draw-turquoise', label: '', color: '#20c997' },
+        { id: 'effect-fire', label: '', effectType: AnnotationEffect.Fire },
+        { id: 'effect-water', label: '', effectType: AnnotationEffect.Water },
+        { id: 'effect-ice', label: '', effectType: AnnotationEffect.Ice },
+        { id: 'effect-magic', label: '', effectType: AnnotationEffect.Magic },
+        { id: 'effect-grease', label: '', effectType: AnnotationEffect.Grease },
+        { id: 'effect-spacetear', label: '', effectType: AnnotationEffect.SpaceTear },
         {
           id: 'draw-delete-all',
           label: '',
@@ -388,7 +396,7 @@
             visibility: StageMode.Player
           };
 
-          stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];
+          stageProps.annotations.layers = [tempLayer, ...stageProps.annotations.layers];
           stageProps.annotations.activeLayer = currentTemporaryLayerId;
           stageProps.activeLayer = MapLayerType.Annotation;
 
@@ -461,6 +469,62 @@
         // User cancelled, do nothing
         devLog('playfield', 'Delete all cancelled');
         break;
+
+      case 'effect-fire':
+      case 'effect-water':
+      case 'effect-ice':
+      case 'effect-magic':
+      case 'effect-grease':
+      case 'effect-spacetear': {
+        // Map action IDs to effect types
+        const effectMap: Record<string, AnnotationEffect> = {
+          'effect-fire': AnnotationEffect.Fire,
+          'effect-water': AnnotationEffect.Water,
+          'effect-ice': AnnotationEffect.Ice,
+          'effect-magic': AnnotationEffect.Magic,
+          'effect-grease': AnnotationEffect.Grease,
+          'effect-spacetear': AnnotationEffect.SpaceTear
+        };
+
+        const selectedEffect = effectMap[itemId];
+        devLog('playfield', `Starting draw with effect: ${itemId}`);
+
+        // Create a new temporary layer for drawing with effect
+        currentTemporaryLayerId = uuidv4();
+
+        const tempLayer: AnnotationLayerData = {
+          id: currentTemporaryLayerId,
+          name: 'Temporary effect drawing',
+          color: '#ffffff', // White base color for effects
+          opacity: 1.0,
+          url: null,
+          visibility: StageMode.Player,
+          effect: getDefaultEffectProps(selectedEffect)
+        };
+
+        stageProps.annotations.layers = [tempLayer, ...stageProps.annotations.layers];
+        stageProps.annotations.activeLayer = currentTemporaryLayerId;
+        stageProps.activeLayer = MapLayerType.Annotation;
+        stageProps.annotations.lineWidth = 1.0;
+
+        // Immediately broadcast to Y.js awareness with empty mask
+        const effectManager = getPartyDataManager();
+        if (effectManager && currentTemporaryLayerId) {
+          const tempYjsLayer = createTemporaryLayer(
+            currentTemporaryLayerId,
+            user.id,
+            tempLayer.color,
+            '',
+            10000,
+            selectedEffect
+          );
+          broadcastTemporaryLayer(effectManager, tempYjsLayer);
+          temporaryLayers = getTemporaryLayers(effectManager);
+        }
+
+        resetToNoneAfterDelay();
+        break;
+      }
 
       case 'measure-line':
         devLog('playfield', 'Starting line measurement');
@@ -1768,7 +1832,8 @@
                 user.id,
                 tempLayerData.color,
                 base64,
-                10000 // 10 second expiration
+                10000, // 10 second expiration
+                tempLayerData.effect?.type
               );
 
               const manager = getPartyDataManager();
@@ -1838,10 +1903,11 @@
       // Create the annotation in the database
       const newAnnotation = await upsertAnnotationMutation.mutateAsync({
         sceneId: data.activeScene.id,
-        name: 'Player drawing',
+        name: tempLayer.effectType ? 'Player effect' : 'Player drawing',
         color: tempLayer.color,
         opacity: 1.0,
-        visibility: StageMode.Player
+        visibility: StageMode.Player,
+        effectType: tempLayer.effectType ?? null
       });
 
       if (!newAnnotation) {
@@ -1871,7 +1937,11 @@
         opacity: newAnnotation.opacity,
         visibility: StageMode.Player,
         url: null,
-        maskVersion: Date.now() // Set mask version to signal other clients
+        maskVersion: Date.now(), // Set mask version to signal other clients
+        effect:
+          tempLayer.effectType && tempLayer.effectType !== AnnotationEffect.None
+            ? getDefaultEffectProps(tempLayer.effectType as AnnotationEffect)
+            : undefined
       };
 
       // Remove the temporary layer AND any layer that might have the same ID as the new annotation
@@ -1984,7 +2054,11 @@
         opacity: tempLayer.opacity,
         url: null,
         maskVersion: undefined,
-        visibility: StageMode.Player
+        visibility: StageMode.Player,
+        effect:
+          tempLayer.effectType && tempLayer.effectType !== AnnotationEffect.None
+            ? getDefaultEffectProps(tempLayer.effectType as AnnotationEffect)
+            : undefined
       }));
 
       // Track which IDs are temporary
@@ -1995,7 +2069,7 @@
       const newLayers = tempAnnotationLayers.filter((l) => !existingLayerIds.has(l.id));
 
       if (newLayers.length > 0) {
-        stageProps.annotations.layers = [...stageProps.annotations.layers, ...newLayers];
+        stageProps.annotations.layers = [...newLayers, ...stageProps.annotations.layers];
 
         // Load RLE data for each new temporary layer after components render
         // Use setTimeout to give Three.js/Threlte time to create components

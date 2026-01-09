@@ -34,7 +34,8 @@ export const convertAnnotationToDbFormat = (
     color: annotation.color || '#FF0000',
     url: url,
     visibility: typeof annotation.visibility === 'number' ? annotation.visibility : 1,
-    order: order
+    order: order,
+    effectType: annotation.effect?.type ?? null
   };
 };
 

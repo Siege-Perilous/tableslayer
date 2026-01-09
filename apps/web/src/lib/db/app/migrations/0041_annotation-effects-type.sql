@@ -1,0 +1,1 @@
+ALTER TABLE `annotations` ADD `effect_type` integer;

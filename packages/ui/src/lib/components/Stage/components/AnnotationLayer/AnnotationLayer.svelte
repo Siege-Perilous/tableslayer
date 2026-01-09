@@ -1,15 +1,15 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { getContext } from 'svelte';
-  import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { type AnnotationLayerData, type AnnotationsLayerProps } from './types';
+  import { T } from '@threlte/core';
+  import { type AnnotationLayerData, type AnnotationsLayerProps, AnnotationEffect } from './types';
   import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
   import LayerInput from '../LayerInput/LayerInput.svelte';
-  import { SceneLayer } from '../Scene/types';
+  import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
   import { LazyBrushManager } from '../../helpers/lazyBrush';
 
-  interface Props extends ThrelteProps<typeof THREE.Mesh> {
+  interface Props {
     props: AnnotationsLayerProps;
     mode: StageMode;
     isActive: boolean;
@@ -17,7 +17,7 @@
     sceneZoom: number;
   }
 
-  const { props, mode, isActive, display, sceneZoom, ...meshProps }: Props = $props();
+  const { props, mode, isActive, display, sceneZoom }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
@@ -45,13 +45,16 @@
   const BASE_RADIUS = 20;
   const BASE_FRICTION = 0.05;
 
+  // Smoothing enabled defaults to true if not specified
+  const smoothingEnabled = $derived(props.smoothingEnabled ?? true);
+
   const lazyBrush = new LazyBrushManager({
     radius: BASE_RADIUS,
-    enabled: true,
+    enabled: smoothingEnabled,
     friction: BASE_FRICTION
   });
 
-  // Adjust lazy brush settings based on zoom level
+  // Adjust lazy brush settings based on zoom level and smoothing toggle
   $effect(() => {
     // Scale radius inversely with zoom - less smoothing when zoomed in
     // At zoom 2x, radius is 25 (half)
@@ -66,7 +69,8 @@
 
     lazyBrush.updateConfig({
       radius: Math.max(5, Math.min(100, adjustedRadius)), // Clamp between 5 and 100
-      friction: adjustedFriction
+      friction: adjustedFriction,
+      enabled: smoothingEnabled
     });
   });
 
@@ -251,6 +255,11 @@
     return !(mode === StageMode.Player && layer.visibility === StageMode.DM);
   }
 
+  function hasEffect(layer: AnnotationLayerData) {
+    // Check if the layer has an effect (not None)
+    return layer.effect?.type !== undefined && layer.effect.type !== AnnotationEffect.None;
+  }
+
   /**
    * Clears the annotation layer
    */
@@ -326,13 +335,18 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
 </T.Mesh>
 
-<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
+<!--
+Effect annotations render on Main layer (under fog, with post-processing).
+Color annotations render on Overlay layer (over fog, no post-processing).
+-->
+<T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]}>
   {#each props.layers as layer, index (layer.id)}
     <T.Mesh
       name={layer.id}
       visible={isVisible(layer)}
       position.z={(props.layers.length - index) * 0.001}
-      {...meshProps}
+      layers={hasEffect(layer) ? [SceneLayer.Main] : [SceneLayer.Overlay]}
+      renderOrder={hasEffect(layer) ? SceneLayerOrder.EffectAnnotation : SceneLayerOrder.Annotation}
     >
       <AnnotationMaterial bind:this={layers[index]} props={layer} {display} lineWidth={props.lineWidth} />
       <T.PlaneGeometry />

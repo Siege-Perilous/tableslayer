@@ -16,6 +16,7 @@ export interface TemporaryLayer {
   creatorId: string;
   opacity: number;
   name: string;
+  effectType?: number; // AnnotationEffect enum value
 }
 
 /**
@@ -149,7 +150,8 @@ export function createTemporaryLayer(
   creatorId: string,
   color: string,
   maskData: string,
-  expirationMs: number = 10000
+  expirationMs: number = 10000,
+  effectType?: number
 ): TemporaryLayer {
   const now = Date.now();
   return {
@@ -161,6 +163,7 @@ export function createTemporaryLayer(
     maskData,
     creatorId,
     opacity: 1.0,
-    name: 'Temporary drawing'
+    name: 'Temporary drawing',
+    effectType
   };
 }
