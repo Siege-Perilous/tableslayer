@@ -485,13 +485,13 @@
                 {#snippet input({ inputProps })}
                   <InputSlider
                     {...inputProps}
-                    value={getAnnotationEffect(annotation.id).intensity * 100}
+                    value={getAnnotationEffect(annotation.id).intensity * 50}
                     min={0}
                     max={100}
                     step={1}
                     hex={annotation.color}
                     oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { intensity: e.currentTarget.valueAsNumber / 100 })}
+                      updateAnnotationEffect(annotation.id, { intensity: e.currentTarget.valueAsNumber / 50 })}
                   />
                 {/snippet}
               </FormControl>

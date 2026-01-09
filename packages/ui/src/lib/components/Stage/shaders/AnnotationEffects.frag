@@ -526,64 +526,71 @@ vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
   vec3 halfDir = normalize(lightDir + viewDir);
   float specular = pow(max(dot(normal, halfDir), 0.0), 128.0);
 
-  // === DEPTH FROM CENTER OF DRAWING ===
-  // Sample mask at multiple mipmap levels to find how "inside" we are
+  // === DEPTH/SHALLOWNESS - border controls how much shallow water ===
+  // Sample mask at multiple mipmap levels to find distance from edge
   float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
   float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
   float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
-  // The more all levels agree, the more "inside" we are (center of blob)
-  float centerDepth = min(maskHigh, min(maskMid, maskLow));
-  // Subtle center effect - don't darken too much
-  centerDepth = smoothstep(0.5, 0.95, centerDepth) * 0.4;
+  float maskVeryLow = textureLod(uMaskTexture, uv, 7.0).a;
+
+  // Edge distance: higher at edges, lower in center
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
+
+  // Border controls how far shallow water extends into the center
+  // At border=0, only very edge is shallow. At border=1, most of water is shallow
+  float shallowSpread = uBorder * 0.8 + 0.1; // 0.1 to 0.9
+  float shallowZone = smoothstep(0.0, shallowSpread, edgeProximity);
+
+  // Also use blurred mask difference for smoother depth transition
+  float depthGradient = abs(maskHigh - maskVeryLow);
+  shallowZone = max(shallowZone, depthGradient * uBorder * 2.0);
+  shallowZone = clamp(shallowZone, 0.0, 1.0);
+
+  // Add some noise to break up the depth bands
+  float depthNoise = snoise(pos * 2.0 + time * 0.05) * 0.15;
+  shallowZone = clamp(shallowZone + depthNoise * uBorder, 0.0, 1.0);
 
   // === COLORS ===
-  vec3 deepColor = vec3(0.08, 0.2, 0.4);        // Darker blue for centers (but still visible)
-  vec3 shallowColor = vec3(0.15, 0.4, 0.6);     // Brighter blue near edges
-  vec3 highlightColor = vec3(0.9, 0.95, 1.0);   // Slight blue tint to highlights
-  vec3 foamColor = vec3(0.95, 0.9, 0.75);       // Sandy/beachy foam color
+  vec3 deepColor = vec3(0.05, 0.15, 0.35);       // Dark blue for deep water
+  vec3 midColor = vec3(0.1, 0.3, 0.5);           // Medium blue
+  vec3 shallowColor = vec3(0.2, 0.5, 0.6);       // Lighter cyan for shallow
+  vec3 veryShallowColor = vec3(0.35, 0.6, 0.55); // Turquoise/teal for very shallow
+  vec3 beachColor = vec3(0.55, 0.65, 0.5);       // Sandy greenish for beach edge
+  vec3 highlightColor = vec3(0.9, 0.95, 1.0);    // Slight blue tint to highlights
 
   // Height affects color (deeper in troughs)
   float heightNorm = height * 0.5 + 0.5;
 
-  // Blend based on center depth - centers are slightly darker
-  vec3 baseWaterColor = mix(shallowColor, deepColor, centerDepth);
+  // Multi-step depth gradient based on shallow zone
+  vec3 baseWaterColor;
+  if(shallowZone < 0.25) {
+    // Deep water
+    baseWaterColor = mix(deepColor, midColor, shallowZone * 4.0);
+  } else if(shallowZone < 0.5) {
+    // Mid depth
+    baseWaterColor = mix(midColor, shallowColor, (shallowZone - 0.25) * 4.0);
+  } else if(shallowZone < 0.75) {
+    // Shallow
+    baseWaterColor = mix(shallowColor, veryShallowColor, (shallowZone - 0.5) * 4.0);
+  } else {
+    // Very shallow / beach
+    baseWaterColor = mix(veryShallowColor, beachColor, (shallowZone - 0.75) * 4.0);
+  }
 
-  // Wave height creates visible color variation
-  vec3 waterColor = mix(baseWaterColor * 0.85, baseWaterColor * 1.3, heightNorm * 0.5 + diffuse * 0.4);
+  // Wave height creates visible color variation - more visible in shallow water
+  float heightInfluence = 0.3 + shallowZone * 0.3; // Shallow water shows more height variation
+  vec3 waterColor = mix(baseWaterColor * 0.85, baseWaterColor * 1.2, heightNorm * heightInfluence + diffuse * 0.3);
 
-  // Add specular highlights
-  waterColor += highlightColor * specular * 1.5 * uIntensity;
+  // Add specular highlights - stronger in shallow water where you can see the surface better
+  float specularStrength = 1.0 + shallowZone * 0.5;
+  waterColor += highlightColor * specular * specularStrength * uIntensity;
 
-  // === FOAM AT EDGES - multiple layers for wide spread ===
-  float foamMask0 = textureLod(uMaskTexture, uv, 0.0).a;
-
-  // Inner foam band (close to edge)
-  float foamMask2 = textureLod(uMaskTexture, uv, 2.0 + uBorder * 1.5).a;
-  float innerFoam = abs(foamMask0 - foamMask2);
-
-  // Middle foam band (spreads further in)
-  float foamMask4 = textureLod(uMaskTexture, uv, 4.0 + uBorder * 2.5).a;
-  float midFoam = abs(foamMask0 - foamMask4) * 0.6;
-
-  // Outer foam band (reaches deep into the water)
-  float foamMask6 = textureLod(uMaskTexture, uv, 6.0 + uBorder * 3.0).a;
-  float outerFoam = abs(foamMask0 - foamMask6) * 0.3;
-
-  // Foam follows wave peaks
-  float foamWave = smoothstep(0.2, 0.6, heightNorm);
-
-  // Combine foam layers
-  float foam = (innerFoam + midFoam + outerFoam) * (0.3 + foamWave * 0.7) * uBorder;
-  foam += edgeDist * foamWave * uBorder * 0.4;
-
-  // Add foam noise - different frequencies for variety
-  float foamNoise1 = snoise(pos * 6.0 + time * 0.4) * 0.5 + 0.5;
-  float foamNoise2 = snoise(pos * 12.0 + time * 0.6 + 30.0) * 0.5 + 0.5;
-  float foamNoise = foamNoise1 * 0.7 + foamNoise2 * 0.3;
-  foam *= (0.5 + foamNoise * 0.5);
-
-  // Apply beachy foam color
-  waterColor += foamColor * foam * 1.2;
+  // Subtle foam on wave peaks in very shallow areas only
+  float foam = smoothstep(0.6, 0.9, heightNorm) * smoothstep(0.5, 0.8, shallowZone) * 0.3;
+  foam += edgeDist * smoothstep(0.7, 1.0, shallowZone) * 0.2; // Foam right at the edge
+  float foamNoise = snoise(pos * 8.0 + time * 0.5) * 0.5 + 0.5;
+  foam *= foamNoise;
+  waterColor += vec3(0.9, 0.85, 0.75) * foam;
 
   // Final color with intensity
   vec3 finalColor = waterColor * uIntensity;
@@ -677,97 +684,130 @@ vec4 magicEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(color, alpha);
 }
 
-// Grease effect - iridescent oil slick
-// Adapted from "Liquid toy" by Leon Denise (Shadertoy)
+// Grease effect - murky brown liquid with depth (same technique as water)
 vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
-  float mask = getVolumeMask(uv, texSize, time, 1.5, 0.1, 0.6);
+  float mask = getVolumeMask(uv, texSize, time, 2.0, 0.1, 0.8);
   if(mask < 0.001) return vec4(0.0);
 
   float edgeDist = getEdgeDistortion(uv, texSize);
-  vec2 baseUV = uv * texSize * 0.002;
+  vec2 basePos = uv * texSize * 0.004;
 
-  // === CREATE HEIGHTMAP using animated FBM ===
-  // Slow swirling motion
-  vec2 flowUV = baseUV + vec2(
-    sin(time * 0.1 + baseUV.y * 2.0) * 0.1,
-    cos(time * 0.08 + baseUV.x * 2.0) * 0.1
+  // === DOMAIN WARPING - slower, more viscous movement ===
+  float warpStrength = 0.12;
+  vec2 warp = vec2(
+    snoise(basePos * 0.25 + time * 0.03),
+    snoise(basePos * 0.25 + vec2(50.0, 50.0) + time * 0.025)
   );
+  vec2 pos = basePos + warp * warpStrength;
 
-  // Multiple layers of noise for organic flow
-  float height1 = fbm5(flowUV * 1.5 + time * 0.05);
-  float height2 = fbm3(flowUV * 3.0 - time * 0.03 + 50.0);
-  float height3 = domainWarp(flowUV * 0.8 + 100.0, time * 0.08);
+  // === SLOWER SINE WAVES for viscous liquid ===
+  float height = 0.0;
+  vec2 gradient = vec2(0.0);
 
-  float height = height1 * 0.5 + height2 * 0.3 + height3 * 0.2;
-  height = height * 0.5 + 0.5; // Normalize to 0-1
+  float phaseNoise1 = snoise(basePos * 0.5) * 2.0;
+  float phaseNoise2 = snoise(basePos * 0.7 + 100.0) * 2.0;
 
-  // === CALCULATE NORMALS from heightmap gradient ===
-  float range = 3.0;
-  vec2 unit = vec2(range / texSize.x, range / texSize.y);
+  // Wave 1: Primary - slower
+  float angle1 = time * 0.015;
+  vec2 dir1 = normalize(vec2(cos(angle1) + 0.3, sin(angle1) * 0.5 + 0.7));
+  float freq1 = 20.0;
+  float amp1 = 0.2 * (0.8 + snoise(basePos * 0.2) * 0.2);
+  float phase1 = dot(dir1, pos) * freq1 - time * 1.2 + phaseNoise1;
+  height += amp1 * sin(phase1);
+  gradient += dir1 * amp1 * freq1 * cos(phase1);
 
-  // Sample height at offset positions
-  vec2 flowUV_px = flowUV + vec2(unit.x, 0.0);
-  vec2 flowUV_nx = flowUV - vec2(unit.x, 0.0);
-  vec2 flowUV_py = flowUV + vec2(0.0, unit.y);
-  vec2 flowUV_ny = flowUV - vec2(0.0, unit.y);
+  // Wave 2: Cross wave
+  float angle2 = -time * 0.01 + 1.5;
+  vec2 dir2 = normalize(vec2(cos(angle2) - 0.5, sin(angle2) + 0.3));
+  float freq2 = 28.0;
+  float amp2 = 0.15 * (0.85 + snoise(basePos * 0.25 + 30.0) * 0.15);
+  float phase2 = dot(dir2, pos) * freq2 - time * 1.5 + phaseNoise2;
+  height += amp2 * sin(phase2);
+  gradient += dir2 * amp2 * freq2 * cos(phase2);
 
-  float h_px = fbm5(flowUV_px * 1.5 + time * 0.05) * 0.5 +
-               fbm3(flowUV_px * 3.0 - time * 0.03 + 50.0) * 0.3;
-  float h_nx = fbm5(flowUV_nx * 1.5 + time * 0.05) * 0.5 +
-               fbm3(flowUV_nx * 3.0 - time * 0.03 + 50.0) * 0.3;
-  float h_py = fbm5(flowUV_py * 1.5 + time * 0.05) * 0.5 +
-               fbm3(flowUV_py * 3.0 - time * 0.03 + 50.0) * 0.3;
-  float h_ny = fbm5(flowUV_ny * 1.5 + time * 0.05) * 0.5 +
-               fbm3(flowUV_ny * 3.0 - time * 0.03 + 50.0) * 0.3;
+  // Wave 3: Diagonal
+  float angle3 = sin(time * 0.02) * 0.2 + 2.35;
+  vec2 dir3 = normalize(vec2(cos(angle3), sin(angle3)));
+  float freq3 = 15.0;
+  float amp3 = 0.18;
+  float phase3 = dot(dir3, pos) * freq3 - time * 1.0 + phaseNoise1 * 0.5;
+  height += amp3 * sin(phase3);
+  gradient += dir3 * amp3 * freq3 * cos(phase3);
 
-  vec3 normal = normalize(vec3(
-    h_px - h_nx,
-    h_py - h_ny,
-    height * height * height * 0.5 + 0.1
-  ));
+  // Wave 4: Fine detail (less prominent for viscous look)
+  float angle4 = time * 0.018 + 4.0;
+  vec2 dir4 = normalize(vec2(cos(angle4) - 0.3, sin(angle4) - 0.9));
+  float freq4 = 40.0;
+  float amp4 = 0.08;
+  float phase4 = dot(dir4, pos) * freq4 - time * 2.0 + phaseNoise2 * 0.7;
+  height += amp4 * sin(phase4);
+  gradient += dir4 * amp4 * freq4 * cos(phase4);
 
-  // === LIGHTING - from original shader ===
-  vec3 lightDir = normalize(vec3(0.0, 1.0, 2.0));
-  float lightDot = dot(normal, lightDir);
+  // === CALCULATE NORMAL FROM GRADIENT ===
+  vec3 normal = normalize(vec3(-gradient.x, -gradient.y, 1.0));
 
-  // Backlight - rim effect
-  float backlight = 1.0 - abs(dot(normal, vec3(0.0, 0.0, 1.0)));
-  vec3 color = vec3(0.3) * backlight;
+  // === LIGHTING ===
+  vec3 lightDir = normalize(vec3(0.3, 0.3, 1.0));
+  float diffuse = max(dot(normal, lightDir), 0.0);
 
-  // Specular highlight
-  float specular = pow(lightDot * 0.5 + 0.5, 20.0);
-  color += vec3(0.5) * smoothstep(0.2, 1.0, specular);
+  vec3 viewDir = vec3(0.0, 0.0, 1.0);
+  vec3 halfDir = normalize(lightDir + viewDir);
+  float specular = pow(max(dot(normal, halfDir), 0.0), 64.0); // Lower exponent for broader highlights
 
-  // === RAINBOW IRIDESCENCE - the key effect ===
-  // This creates the oil-slick rainbow colors
-  vec3 rainbow = 0.5 + 0.5 * cos(
-    vec3(1.0, 2.0, 3.0) * 1.0 +  // Phase offset per channel
-    lightDot * 4.0 -              // Based on light angle
-    uv.y * 3.0 -                  // Vertical gradient
-    3.0 +                         // Base offset
-    time * 0.2                    // Slow color shift
-  );
+  // === DEPTH/THICKNESS - border controls how dark the edges are ===
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  float maskVeryLow = textureLod(uMaskTexture, uv, 7.0).a;
 
-  // Rainbow shows more at thin areas (edges)
-  float thinFilm = smoothstep(0.15, 0.0, height * mask);
-  color += rainbow * thinFilm * uIntensity;
+  // How far from center (1 = edge, 0 = center)
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
 
-  // Also add rainbow based on edge distance
-  color += rainbow * edgeDist * uBorder * 0.5;
+  // Border controls how much darkness spreads from edges
+  float darkSpread = uBorder * 0.8 + 0.1;
+  float darkZone = smoothstep(0.0, darkSpread, edgeProximity);
 
-  // === EDGE EFFECTS ===
-  // Darker at very thin edges
-  color *= smoothstep(0.0, 0.1, mask);
+  float depthGradient = abs(maskHigh - maskVeryLow);
+  darkZone = max(darkZone, depthGradient * uBorder * 2.0);
+  darkZone = clamp(darkZone, 0.0, 1.0);
 
-  // Subtle glow at border
-  color += vec3(0.2, 0.15, 0.1) * edgeDist * uBorder * 0.3;
+  float depthNoise = snoise(pos * 2.0 + time * 0.03) * 0.15;
+  darkZone = clamp(darkZone + depthNoise * uBorder, 0.0, 1.0);
 
-  color *= uIntensity;
+  // === BROWN COLORS - inverted: edges get darker with border (softened) ===
+  vec3 centerColor = vec3(0.4, 0.3, 0.18);       // Lighter brown in center
+  vec3 midColor = vec3(0.32, 0.24, 0.14);        // Medium brown
+  vec3 darkColor = vec3(0.24, 0.18, 0.1);        // Dark brown
+  vec3 veryDarkColor = vec3(0.16, 0.12, 0.06);   // Very dark brown
+  vec3 edgeColor = vec3(0.1, 0.07, 0.03);        // Dark but not black at edges
+  vec3 highlightColor = vec3(0.8, 0.7, 0.5);     // Warm highlights
 
-  // Alpha
+  float heightNorm = height * 0.5 + 0.5;
+
+  // Multi-step depth gradient - darker towards edges
+  vec3 baseGreaseColor;
+  if(darkZone < 0.25) {
+    baseGreaseColor = mix(centerColor, midColor, darkZone * 4.0);
+  } else if(darkZone < 0.5) {
+    baseGreaseColor = mix(midColor, darkColor, (darkZone - 0.25) * 4.0);
+  } else if(darkZone < 0.75) {
+    baseGreaseColor = mix(darkColor, veryDarkColor, (darkZone - 0.5) * 4.0);
+  } else {
+    baseGreaseColor = mix(veryDarkColor, edgeColor, (darkZone - 0.75) * 4.0);
+  }
+
+  float heightInfluence = 0.25 + (1.0 - darkZone) * 0.25; // More height variation in lighter areas
+  vec3 greaseColor = mix(baseGreaseColor * 0.85, baseGreaseColor * 1.15, heightNorm * heightInfluence + diffuse * 0.25);
+
+  // Specular highlights - oily sheen, stronger in lighter center areas
+  float specularStrength = 0.8 + (1.0 - darkZone) * 0.4;
+  greaseColor += highlightColor * specular * specularStrength * uIntensity * 0.6;
+
+  vec3 finalColor = greaseColor * uIntensity;
+
   float alpha = mask * uOpacity;
 
-  return vec4(color, alpha);
+  return vec4(finalColor, alpha);
 }
 
 void main() {
@@ -837,10 +877,10 @@ void main() {
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  // Blend outer shadow under the effect
+  // Blend outer shadow under the effect (skip for water/grease - they handle their own depth)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = shadowIntensity * 0.85;
+  float shadowAlpha = (uEffectType == 3 || uEffectType == 5) ? 0.0 : shadowIntensity * 0.85; // No shadow for water/grease
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {
