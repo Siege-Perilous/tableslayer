@@ -510,7 +510,14 @@
         // Immediately broadcast to Y.js awareness with empty mask
         const effectManager = getPartyDataManager();
         if (effectManager && currentTemporaryLayerId) {
-          const tempYjsLayer = createTemporaryLayer(currentTemporaryLayerId, user.id, tempLayer.color, '', 10000);
+          const tempYjsLayer = createTemporaryLayer(
+            currentTemporaryLayerId,
+            user.id,
+            tempLayer.color,
+            '',
+            10000,
+            selectedEffect
+          );
           broadcastTemporaryLayer(effectManager, tempYjsLayer);
           temporaryLayers = getTemporaryLayers(effectManager);
         }
@@ -1825,7 +1832,8 @@
                 user.id,
                 tempLayerData.color,
                 base64,
-                10000 // 10 second expiration
+                10000, // 10 second expiration
+                tempLayerData.effect?.type
               );
 
               const manager = getPartyDataManager();
@@ -1895,10 +1903,11 @@
       // Create the annotation in the database
       const newAnnotation = await upsertAnnotationMutation.mutateAsync({
         sceneId: data.activeScene.id,
-        name: 'Player drawing',
+        name: tempLayer.effectType ? 'Player effect' : 'Player drawing',
         color: tempLayer.color,
         opacity: 1.0,
-        visibility: StageMode.Player
+        visibility: StageMode.Player,
+        effectType: tempLayer.effectType ?? null
       });
 
       if (!newAnnotation) {
@@ -1928,7 +1937,11 @@
         opacity: newAnnotation.opacity,
         visibility: StageMode.Player,
         url: null,
-        maskVersion: Date.now() // Set mask version to signal other clients
+        maskVersion: Date.now(), // Set mask version to signal other clients
+        effect:
+          tempLayer.effectType && tempLayer.effectType !== AnnotationEffect.None
+            ? getDefaultEffectProps(tempLayer.effectType as AnnotationEffect)
+            : undefined
       };
 
       // Remove the temporary layer AND any layer that might have the same ID as the new annotation
