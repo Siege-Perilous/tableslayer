@@ -13,6 +13,7 @@ export interface RadialMenuItemProps {
   label: string;
   icon?: IconComponent;
   color?: string; // Hex color for rendering a color swatch
+  effectType?: number; // AnnotationEffect enum value for rendering effect preview
   submenu?: RadialMenuItemProps[];
   submenuLayout?: SubmenuLayout; // 'radial' (default) or 'table' for column-based layout
   submenuFilterOptions?: TableFilterOption[]; // Filter options for table layout (e.g., game sessions)
