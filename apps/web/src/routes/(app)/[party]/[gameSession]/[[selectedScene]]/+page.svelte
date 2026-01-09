@@ -1566,6 +1566,14 @@
         // After deletion, update the orders of remaining annotations to remove gaps
         const remainingLayers = stageProps.annotations.layers.filter((layer) => layer.id !== annotationId);
 
+        // Select the first remaining layer, or deactivate annotation tool if none remain
+        if (remainingLayers.length > 0) {
+          stageProps.annotations.activeLayer = remainingLayers[0].id;
+        } else {
+          stageProps.annotations.activeLayer = null;
+          stageProps.activeLayer = MapLayerType.None;
+        }
+
         // Save all remaining annotations with their new sequential orders
         const updatePromises = remainingLayers.map(async (layer, index) => {
           const annotationData = convertAnnotationToDbFormat(layer, selectedScene.id, index);
