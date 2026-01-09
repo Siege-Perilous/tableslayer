@@ -101,6 +101,9 @@ export class PartyDataManager {
   // Track which scenes this specific instance has observers for (local to this editor)
   private sceneObservers = new Set<string>();
 
+  // Stored handler reference for cleanup
+  private awarenessChangeHandler: () => void;
+
   // SSR data protection (handled at subscription level in page component)
   private freshPageLoadTime: number;
 
@@ -179,9 +182,10 @@ export class PartyDataManager {
     });
 
     // Subscribe to awareness updates for cursor tracking
-    this.gameSessionProvider.awareness.on('change', () => {
+    this.awarenessChangeHandler = () => {
       this.notifySubscribers();
-    });
+    };
+    this.gameSessionProvider.awareness.on('change', this.awarenessChangeHandler);
 
     // Set up observers
     this.setupObservers();
@@ -862,6 +866,9 @@ export class PartyDataManager {
    */
   destroy() {
     devLog('yjs', `[${this.clientId}] Destroying PartyDataManager`);
+
+    // Unregister awareness listener before destroying providers
+    this.gameSessionProvider.awareness.off('change', this.awarenessChangeHandler);
 
     // Clean up providers
     this.gameSessionProvider.destroy();
