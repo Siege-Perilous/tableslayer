@@ -149,7 +149,7 @@
   let markersBeingMoved = new Set<string>(); // Track markers being dragged to prevent Y.js overwrites
   let stageIsLoading: boolean = $state(true);
   let sceneIsChanging: boolean = $state(false);
-  let gameIsPaused = $derived(party.gameSessionIsPaused || !hasActiveScene);
+  let gameIsPaused = $derived(yjsPartyState.isPaused || !hasActiveScene);
   let randomFantasyQuote = $state(getRandomFantasyQuote());
   let stageClasses = $derived([
     'stage',
