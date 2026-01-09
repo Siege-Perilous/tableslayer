@@ -1048,10 +1048,10 @@ void main() {
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  // Blend outer shadow under the effect (skip for water/grease/ice - they handle their own depth)
+  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they handle their own depth or don't need it)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = (uEffectType == 3 || uEffectType == 5 || uEffectType == 6) ? 0.0 : shadowIntensity * 0.85; // No shadow for water/grease/ice
+  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {
