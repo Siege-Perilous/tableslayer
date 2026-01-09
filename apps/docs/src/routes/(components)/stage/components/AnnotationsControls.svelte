@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Color, Folder, Text, List, Button, type ListOptions, Slider } from 'svelte-tweakpane-ui';
   import type { AnnotationLayerData, StageProps, StageExports } from '@tableslayer/ui';
-  import { StageMode } from '@tableslayer/ui';
+  import { StageMode, AnnotationEffect, getDefaultEffectProps } from '@tableslayer/ui';
 
   let { props = $bindable(), stage } = $props<{
     props: StageProps;
@@ -12,6 +12,28 @@
     { text: 'DM', value: StageMode.DM },
     { text: 'Player', value: StageMode.Player }
   ];
+
+  const effectOptions: ListOptions<AnnotationEffect> = [
+    { text: 'None', value: AnnotationEffect.None },
+    { text: 'Fire', value: AnnotationEffect.Fire },
+    { text: 'Water', value: AnnotationEffect.Water },
+    { text: 'Ice', value: AnnotationEffect.Ice },
+    { text: 'Magic', value: AnnotationEffect.Magic },
+    { text: 'Grease', value: AnnotationEffect.Grease },
+    { text: 'Space Tear', value: AnnotationEffect.SpaceTear }
+  ];
+
+  function getLayerEffectType(layer: AnnotationLayerData): AnnotationEffect {
+    return layer.effect?.type ?? AnnotationEffect.None;
+  }
+
+  function setLayerEffectType(layer: AnnotationLayerData, effectType: AnnotationEffect) {
+    if (effectType === AnnotationEffect.None) {
+      layer.effect = undefined;
+    } else {
+      layer.effect = getDefaultEffectProps(effectType);
+    }
+  }
 
   function addLayer() {
     const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
@@ -65,6 +87,21 @@
         <Color bind:value={layer.color} label="Color" />
         <Text bind:value={layer.url} label="URL" />
         <List bind:value={layer.visibility} label="Visibility" options={visibilityOptions} />
+        <Folder title="Effect" expanded={false}>
+          <List
+            value={getLayerEffectType(layer)}
+            on:change={(e) => setLayerEffectType(layer, e.detail.value as AnnotationEffect)}
+            label="Type"
+            options={effectOptions}
+          />
+          {#if layer.effect}
+            <Slider bind:value={layer.effect.speed} label="Speed" min={0} max={2} step={0.01} />
+            <Slider bind:value={layer.effect.intensity} label="Intensity" min={0} max={2} step={0.01} />
+            <Slider bind:value={layer.effect.softness} label="Softness" min={0} max={1} step={0.01} />
+            <Slider bind:value={layer.effect.border} label="Border" min={0} max={1} step={0.01} />
+            <Slider bind:value={layer.effect.roughness} label="Roughness" min={0} max={1} step={0.01} />
+          {/if}
+        </Folder>
         <Button on:click={() => setActiveLayer(layer.id)} title="Set Active" />
         <Button on:click={() => viewLayer(layer.id)} title="View PNG" />
         <Button on:click={() => clearLayer(layer.id)} title="Clear" />

@@ -4,8 +4,10 @@ import { generateGradientColors } from '$lib/utils';
 import { StageDefaultProps } from '$lib/utils/defaultMapState';
 import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '$lib/utils/generateR2Url';
 import {
+  AnnotationEffect,
   type AnnotationLayerData,
   DrawMode,
+  getDefaultEffectProps,
   GridMode,
   GridType,
   MapLayerType,
@@ -66,7 +68,11 @@ export const buildSceneProps = (
         opacity: annotation.opacity,
         color: annotation.color,
         url: annotation.url ? `https://files.tableslayer.com/${annotation.url}` : null,
-        visibility: annotation.visibility as StageMode
+        visibility: annotation.visibility as StageMode,
+        effect:
+          annotation.effectType && annotation.effectType !== AnnotationEffect.None
+            ? getDefaultEffectProps(annotation.effectType as AnnotationEffect)
+            : undefined
       }));
   }
 

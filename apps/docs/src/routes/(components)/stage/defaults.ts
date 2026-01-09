@@ -18,9 +18,18 @@ export const StageDefaultProps: StageProps = {
   activeLayer: MapLayerType.None,
   backgroundColor: '#404040',
   annotations: {
-    layers: [],
-    activeLayer: null,
-    lineWidth: 50
+    layers: [
+      {
+        id: 'default-layer',
+        name: 'Default Layer',
+        color: '#d73e2e',
+        url: '',
+        visibility: StageMode.DM,
+        opacity: 1
+      }
+    ],
+    activeLayer: 'default-layer',
+    lineWidth: 1
   },
   debug: {
     enableStats: false,

@@ -281,23 +281,6 @@
     <List bind:value={stageProps.debug.enableStats} label="Enable Stats" options={{ Yes: true, No: false }} />
     <Slider bind:value={stageProps.debug.loggingRate} label="Logging Rate" min={0} max={10} step={1} />
   </Folder>
-
-  <Button
-    on:click={() => {
-      localStorage.setItem('stageProps', JSON.stringify(stageProps));
-      console.log(stageProps);
-      alert('Props saved to local storage');
-    }}
-    title="Save Props"
-  />
-  <Button
-    on:click={() => {
-      stageProps = JSON.parse(localStorage.getItem('stageProps') || '{}');
-      console.log(stageProps);
-      alert('Props loaded from local storage');
-    }}
-    title="Load Props"
-  />
 </Pane>
 
 <style>
