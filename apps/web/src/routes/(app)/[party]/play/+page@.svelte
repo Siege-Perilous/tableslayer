@@ -2054,7 +2054,11 @@
         opacity: tempLayer.opacity,
         url: null,
         maskVersion: undefined,
-        visibility: StageMode.Player
+        visibility: StageMode.Player,
+        effect:
+          tempLayer.effectType && tempLayer.effectType !== AnnotationEffect.None
+            ? getDefaultEffectProps(tempLayer.effectType as AnnotationEffect)
+            : undefined
       }));
 
       // Track which IDs are temporary
