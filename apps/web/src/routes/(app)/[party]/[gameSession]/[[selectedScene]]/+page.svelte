@@ -16,7 +16,9 @@
     type HoveredMarker,
     MarkerVisibility,
     DrawingSliders,
-    FogSliders
+    FogSliders,
+    AnnotationEffect,
+    getDefaultEffectProps
   } from '@tableslayer/ui';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
@@ -1625,6 +1627,7 @@
   let handleOpacityChange: ((value: number) => void) | undefined = $state();
   let handleBrushSizeChange: ((value: number) => void) | undefined = $state();
   let handleColorChange: ((color: string, opacity: number) => void) | undefined = $state();
+  let handleEffectChange: ((effect: AnnotationEffect) => void) | undefined = $state();
 
   // Generate random high-contrast colors that complement #d73e2e
   const getRandomAnnotationColor = () => {
@@ -2931,12 +2934,14 @@
             opacity={activeAnnotation.opacity}
             brushSize={stageProps.annotations.lineWidth || 2.0}
             color={activeAnnotation.color}
+            currentEffect={activeAnnotation.effect?.type ?? AnnotationEffect.None}
             activeLayerIndex={stageProps.annotations.layers.findIndex(
               (l) => l.id === stageProps.annotations.activeLayer
             ) + 1}
             onOpacityChange={handleOpacityChange}
             onBrushSizeChange={handleBrushSizeChange}
             onColorChange={handleColorChange}
+            onEffectChange={handleEffectChange}
             onLayersClick={handleToggleAnnotationPanel}
           />
         {/if}
@@ -3080,6 +3085,7 @@
             bind:handleOpacityChange
             bind:handleBrushSizeChange
             bind:handleColorChange
+            bind:handleEffectChange
             annotationMasks={data.selectedSceneAnnotationMasks}
             smoothingEnabled={stageProps.annotations.smoothingEnabled}
             onSmoothingChange={(enabled) => {

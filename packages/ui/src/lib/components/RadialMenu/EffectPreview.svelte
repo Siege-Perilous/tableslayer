@@ -5,15 +5,16 @@
 
   interface Props {
     effectType: AnnotationEffect;
-    size?: number;
+    size?: string;
+    shape?: 'circle' | 'rounded';
   }
 
-  const { effectType, size = 48 }: Props = $props();
+  const { effectType, size = '3rem', shape = 'circle' }: Props = $props();
 </script>
 
-<div class="effectPreview" style="width: {size}px; height: {size}px;">
+<div class="effectPreview" class:effectPreview--rounded={shape === 'rounded'} style="width: {size}; height: {size};">
   <Canvas>
-    <EffectPreviewScene {effectType} />
+    <EffectPreviewScene {effectType} {shape} />
   </Canvas>
 </div>
 
@@ -22,6 +23,10 @@
     border-radius: 50%;
     overflow: hidden;
     background: transparent;
+  }
+
+  .effectPreview--rounded {
+    border-radius: var(--radius-1);
   }
 
   .effectPreview :global(canvas) {

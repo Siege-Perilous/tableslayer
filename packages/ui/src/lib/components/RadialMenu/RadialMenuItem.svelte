@@ -41,7 +41,7 @@
 >
   {#if item.effectType !== undefined}
     <span class="radialMenu__itemEffect">
-      <EffectPreview effectType={item.effectType} size={40} />
+      <EffectPreview effectType={item.effectType} size="2.5rem" />
     </span>
   {:else if item.color}
     <span class="radialMenu__itemSwatch" style="background-color: {item.color};"></span>

@@ -33,7 +33,13 @@
     return new THREE.Vector3(r, g, b);
   };
 
-  let colorUniform = $derived(hexToRGB(props.color));
+  // Hardcoded color for Magic effect (saturated purple)
+  const MAGIC_EFFECT_COLOR = '#9333ea';
+
+  // Use hardcoded color for Magic effect, otherwise use layer color
+  let colorUniform = $derived(
+    props.effect?.type === AnnotationEffect.Magic ? hexToRGB(MAGIC_EFFECT_COLOR) : hexToRGB(props.color)
+  );
 
   const getEffectType = () => props.effect?.type ?? AnnotationEffect.None;
   const getEffectSpeed = () => props.effect?.speed ?? 1.0;

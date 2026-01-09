@@ -3,8 +3,6 @@
     Icon,
     type StageProps,
     type AnnotationLayerData,
-    AnnotationEffect,
-    getDefaultEffectProps,
     Input,
     Spacer,
     Button,
@@ -14,26 +12,17 @@
     MapLayerType,
     StageMode,
     decodeRLE,
-    Select,
-    RadioButton
+    RadioButton,
+    AnnotationEffect,
+    getDefaultEffectProps
   } from '@tableslayer/ui';
-  import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical, IconSparkles } from '@tabler/icons-svelte';
+  import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
   import { onDestroy } from 'svelte';
-
-  const effectOptions = [
-    { value: String(AnnotationEffect.None), label: 'None' },
-    { value: String(AnnotationEffect.Fire), label: 'Fire' },
-    { value: String(AnnotationEffect.SpaceTear), label: 'Space tear' },
-    { value: String(AnnotationEffect.Water), label: 'Water' },
-    { value: String(AnnotationEffect.Magic), label: 'Magic' },
-    { value: String(AnnotationEffect.Grease), label: 'Grease' },
-    { value: String(AnnotationEffect.Ice), label: 'Ice' }
-  ];
 
   let {
     stageProps,
@@ -44,6 +33,7 @@
     handleOpacityChange = $bindable(),
     handleBrushSizeChange = $bindable(),
     handleColorChange = $bindable(),
+    handleEffectChange = $bindable(),
     annotationMasks = {},
     smoothingEnabled = $bindable(true),
     onSmoothingChange
@@ -56,6 +46,7 @@
     handleOpacityChange?: (value: number) => void;
     handleBrushSizeChange?: (value: number) => void;
     handleColorChange?: (color: string, opacity: number) => void;
+    handleEffectChange?: (effect: AnnotationEffect) => void;
     annotationMasks?: Record<string, string | null>;
     smoothingEnabled?: boolean;
     onSmoothingChange?: (enabled: boolean) => void;
@@ -249,18 +240,6 @@
     updateAnnotation(annotationId, { visibility: newVisibility });
   };
 
-  const getAnnotationEffectType = (annotationId: string): AnnotationEffect => {
-    const annotation = stageProps.annotations.layers.find((a) => a.id === annotationId);
-    return annotation?.effect?.type ?? AnnotationEffect.None;
-  };
-
-  const handleEffectTypeChange = (annotationId: string, selected: string[]) => {
-    const effectType = parseInt(selected[0] ?? '0', 10) as AnnotationEffect;
-    // Apply the full default effect props for the selected effect type
-    const defaultProps = getDefaultEffectProps(effectType);
-    updateAnnotation(annotationId, { effect: defaultProps }, false);
-  };
-
   const handleLineWidthChange = (value: number) => {
     // Update the global state (value is now a percentage)
     queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], value, 'control');
@@ -277,6 +256,16 @@
     updateAnnotation(annotationId, { color, opacity });
   };
 
+  const handleEffectChangeInternal = (annotationId: string, effect: AnnotationEffect) => {
+    // Apply the full default effect props for the selected effect type
+    // If effect is None, remove the effect entirely
+    if (effect === AnnotationEffect.None) {
+      updateAnnotation(annotationId, { effect: undefined });
+    } else {
+      updateAnnotation(annotationId, { effect: getDefaultEffectProps(effect) });
+    }
+  };
+
   // Bind handlers for external components
   $effect(() => {
     const activeLayer = stageProps.annotations.activeLayer;
@@ -284,10 +273,12 @@
       handleOpacityChange = (value: number) => handleOpacityChangeInternal(activeLayer, value);
       handleBrushSizeChange = handleLineWidthChange;
       handleColorChange = (color: string, opacity: number) => handleColorChangeInternal(activeLayer, color, opacity);
+      handleEffectChange = (effect: AnnotationEffect) => handleEffectChangeInternal(activeLayer, effect);
     } else {
       handleOpacityChange = undefined;
       handleBrushSizeChange = undefined;
       handleColorChange = undefined;
+      handleEffectChange = undefined;
     }
   });
 
@@ -432,18 +423,6 @@
               class="annotationManager__nameInput"
               oninput={(e) => updateAnnotation(annotation.id, { name: e.currentTarget.value })}
             />
-            <div class="annotationManager__effectSelect">
-              <Select
-                variant="transparent"
-                options={effectOptions}
-                selected={[String(getAnnotationEffectType(annotation.id))]}
-                onSelectedChange={(selected) => handleEffectTypeChange(annotation.id, selected)}
-              >
-                {#snippet selectedPrefix()}
-                  <Icon Icon={IconSparkles} size="1rem" color="var(--fgMuted)" />
-                {/snippet}
-              </Select>
-            </div>
             <div class="annotationManager__deleteButton">
               <ConfirmActionButton
                 action={() => handleAnnotationDelete(annotation.id)}
@@ -628,11 +607,6 @@
 
   .annotationManager__deleteButton {
     margin-left: auto;
-  }
-
-  .annotationManager__effectSelect {
-    min-width: 7rem;
-    flex-shrink: 0;
   }
 
   .annotationManager__dragHandle {
