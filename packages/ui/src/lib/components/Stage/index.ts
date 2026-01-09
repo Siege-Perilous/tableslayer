@@ -1,6 +1,8 @@
 export { type HoveredMarker } from '../../types/awareness';
 export {
   AnnotationEffect,
+  AnnotationEffectDefaults,
+  getDefaultEffectProps,
   type AnnotationEffectProps,
   type AnnotationLayerData,
   type AnnotationsLayerProps

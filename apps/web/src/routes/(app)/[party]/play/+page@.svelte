@@ -19,7 +19,8 @@
     StageMode,
     MeasurementType,
     PersistButton,
-    AnnotationEffect
+    AnnotationEffect,
+    getDefaultEffectProps
   } from '@tableslayer/ui';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -498,14 +499,7 @@
           opacity: 1.0,
           url: null,
           visibility: StageMode.Player,
-          effect: {
-            type: selectedEffect,
-            speed: 0.5,
-            intensity: 1.0,
-            softness: 0.5,
-            border: 0.5,
-            roughness: 0.5
-          }
+          effect: getDefaultEffectProps(selectedEffect)
         };
 
         stageProps.annotations.layers = [...stageProps.annotations.layers, tempLayer];

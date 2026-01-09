@@ -49,13 +49,6 @@
   };
 
   const maskTexture = createCircularMaskTexture();
-  console.log('EffectPreview maskTexture created:', {
-    width: maskTexture.image.width,
-    height: maskTexture.image.height,
-    generateMipmaps: maskTexture.generateMipmaps,
-    minFilter: maskTexture.minFilter,
-    magFilter: maskTexture.magFilter
-  });
 
   const getEffectColor = (effect: AnnotationEffect): THREE.Vector3 => {
     switch (effect) {
@@ -109,17 +102,6 @@
     clipping: false
   });
 
-  console.log('EffectPreview material created:', {
-    effectType,
-    uniforms: {
-      uEffectType: material.uniforms.uEffectType.value,
-      uOpacity: material.uniforms.uOpacity.value,
-      uIntensity: material.uniforms.uIntensity.value,
-      uSoftness: material.uniforms.uSoftness.value,
-      uBorder: material.uniforms.uBorder.value
-    }
-  });
-
   $effect(() => {
     material.uniforms.uEffectType.value = effectType;
     material.uniforms.uBaseColor.value = getEffectColor(effectType);
@@ -145,25 +127,9 @@
     ref.near = 0.1;
     ref.far = 10;
     ref.updateProjectionMatrix();
-    console.log('EffectPreview Camera after manual setup:', {
-      left: ref.left,
-      right: ref.right,
-      top: ref.top,
-      bottom: ref.bottom
-    });
   }}
 />
-<T.Mesh
-  oncreate={(ref) => {
-    console.log('EffectPreview Mesh created:', {
-      geometry: ref.geometry,
-      geometryParams: (ref.geometry as THREE.PlaneGeometry).parameters,
-      material: ref.material,
-      position: ref.position.toArray(),
-      scale: ref.scale.toArray()
-    });
-  }}
->
+<T.Mesh>
   <T.PlaneGeometry args={[2, 2]} />
   <T is={material} />
 </T.Mesh>

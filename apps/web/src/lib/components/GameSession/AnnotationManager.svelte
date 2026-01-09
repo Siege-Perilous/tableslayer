@@ -3,8 +3,8 @@
     Icon,
     type StageProps,
     type AnnotationLayerData,
-    type AnnotationEffectProps,
     AnnotationEffect,
+    getDefaultEffectProps,
     Input,
     Spacer,
     Button,
@@ -15,8 +15,6 @@
     StageMode,
     decodeRLE,
     Select,
-    InputSlider,
-    FormControl,
     RadioButton
   } from '@tableslayer/ui';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical, IconSparkles } from '@tabler/icons-svelte';
@@ -251,29 +249,16 @@
     updateAnnotation(annotationId, { visibility: newVisibility });
   };
 
-  const getAnnotationEffect = (annotationId: string): AnnotationEffectProps => {
+  const getAnnotationEffectType = (annotationId: string): AnnotationEffect => {
     const annotation = stageProps.annotations.layers.find((a) => a.id === annotationId);
-    return (
-      annotation?.effect ?? {
-        type: AnnotationEffect.None,
-        speed: 1.0,
-        intensity: 1.0,
-        softness: 0.5,
-        border: 0.5,
-        roughness: 0.0
-      }
-    );
-  };
-
-  const updateAnnotationEffect = (annotationId: string, effectUpdates: Partial<AnnotationEffectProps>) => {
-    const currentEffect = getAnnotationEffect(annotationId);
-    const newEffect = { ...currentEffect, ...effectUpdates };
-    updateAnnotation(annotationId, { effect: newEffect }, false);
+    return annotation?.effect?.type ?? AnnotationEffect.None;
   };
 
   const handleEffectTypeChange = (annotationId: string, selected: string[]) => {
     const effectType = parseInt(selected[0] ?? '0', 10) as AnnotationEffect;
-    updateAnnotationEffect(annotationId, { type: effectType });
+    // Apply the full default effect props for the selected effect type
+    const defaultProps = getDefaultEffectProps(effectType);
+    updateAnnotation(annotationId, { effect: defaultProps }, false);
   };
 
   const handleLineWidthChange = (value: number) => {
@@ -451,7 +436,7 @@
               <Select
                 variant="transparent"
                 options={effectOptions}
-                selected={[String(getAnnotationEffect(annotation.id).type)]}
+                selected={[String(getAnnotationEffectType(annotation.id))]}
                 onSelectedChange={(selected) => handleEffectTypeChange(annotation.id, selected)}
               >
                 {#snippet selectedPrefix()}
@@ -474,93 +459,6 @@
                 {/snippet}
               </ConfirmActionButton>
             </div>
-          </div>
-          <div class="annotationManager__effectSliders">
-            <FormControl label="Opacity" name="opacity-{annotation.id}">
-              {#snippet input({ inputProps })}
-                <InputSlider
-                  {...inputProps}
-                  value={annotation.opacity * 100}
-                  min={0}
-                  max={100}
-                  step={1}
-                  hex={annotation.color}
-                  oninput={(e) => updateAnnotation(annotation.id, { opacity: e.currentTarget.valueAsNumber / 100 })}
-                />
-              {/snippet}
-            </FormControl>
-            {#if getAnnotationEffect(annotation.id).type !== AnnotationEffect.None}
-              <FormControl label="Speed" name="speed-{annotation.id}">
-                {#snippet input({ inputProps })}
-                  <InputSlider
-                    {...inputProps}
-                    value={getAnnotationEffect(annotation.id).speed * 50}
-                    min={0}
-                    max={100}
-                    step={1}
-                    hex={annotation.color}
-                    oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { speed: e.currentTarget.valueAsNumber / 50 })}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Intensity" name="intensity-{annotation.id}">
-                {#snippet input({ inputProps })}
-                  <InputSlider
-                    {...inputProps}
-                    value={getAnnotationEffect(annotation.id).intensity * 50}
-                    min={0}
-                    max={100}
-                    step={1}
-                    hex={annotation.color}
-                    oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { intensity: e.currentTarget.valueAsNumber / 50 })}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Softness" name="softness-{annotation.id}">
-                {#snippet input({ inputProps })}
-                  <InputSlider
-                    {...inputProps}
-                    value={getAnnotationEffect(annotation.id).softness * 100}
-                    min={0}
-                    max={100}
-                    step={1}
-                    hex={annotation.color}
-                    oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { softness: e.currentTarget.valueAsNumber / 100 })}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Border" name="border-{annotation.id}">
-                {#snippet input({ inputProps })}
-                  <InputSlider
-                    {...inputProps}
-                    value={getAnnotationEffect(annotation.id).border * 100}
-                    min={0}
-                    max={100}
-                    step={1}
-                    hex={annotation.color}
-                    oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { border: e.currentTarget.valueAsNumber / 100 })}
-                  />
-                {/snippet}
-              </FormControl>
-              <FormControl label="Roughness" name="roughness-{annotation.id}">
-                {#snippet input({ inputProps })}
-                  <InputSlider
-                    {...inputProps}
-                    value={getAnnotationEffect(annotation.id).roughness * 100}
-                    min={0}
-                    max={100}
-                    step={1}
-                    hex={annotation.color}
-                    oninput={(e) =>
-                      updateAnnotationEffect(annotation.id, { roughness: e.currentTarget.valueAsNumber / 100 })}
-                  />
-                {/snippet}
-              </FormControl>
-            {/if}
           </div>
         </button>
       {:else}
@@ -735,14 +633,6 @@
   .annotationManager__effectSelect {
     min-width: 7rem;
     flex-shrink: 0;
-  }
-
-  .annotationManager__effectSliders {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
-    width: 100%;
   }
 
   .annotationManager__dragHandle {
