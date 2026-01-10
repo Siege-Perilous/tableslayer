@@ -21,6 +21,10 @@ export const load: PageServerLoad = async (event) => {
     return redirect(302, '/login');
   }
 
+  if (!event.locals.user) {
+    return redirect(302, '/login');
+  }
+
   const userId = event.locals.user.id;
   const user = await getUser(userId);
   if (!user) {
