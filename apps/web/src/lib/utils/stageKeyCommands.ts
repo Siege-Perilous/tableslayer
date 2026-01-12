@@ -186,7 +186,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Brush, 'control');
-        handleSelectActiveControl('erase'); // Activate
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
@@ -202,7 +205,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Brush, 'control');
-        handleSelectActiveControl('erase'); // Activate fog tool
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
@@ -226,7 +232,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Ellipse, 'control');
-        handleSelectActiveControl('erase'); // Activate
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
@@ -242,7 +251,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Ellipse, 'control');
-        handleSelectActiveControl('erase'); // Activate
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
@@ -292,7 +304,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Erase, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Rectangle, 'control');
-        handleSelectActiveControl('erase'); // Activate
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
@@ -308,7 +323,10 @@ export function handleKeyCommands(
       } else {
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
         queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Rectangle, 'control');
-        handleSelectActiveControl('erase'); // Activate
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
         return 'erase';
       }
       break;
