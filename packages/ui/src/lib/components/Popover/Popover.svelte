@@ -6,6 +6,7 @@
 
   let {
     isOpen = false,
+    onIsOpenChange,
     trigger,
     content,
     triggerClass,
@@ -29,7 +30,10 @@
   const sync = createSync(states);
 
   $effect(() => {
-    sync.open(isOpen, (v) => (isOpen = v));
+    sync.open(isOpen, (v) => {
+      isOpen = v;
+      onIsOpenChange?.(v);
+    });
   });
 
   const contentProps = {

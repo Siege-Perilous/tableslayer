@@ -197,24 +197,15 @@
     }
   ];
 
-  // Set initial state based on current stageProps matching the toolType and drawMode
-  let selectedFogTool = $state(
+  // Derive selected fog tool from stageProps - this will reactively update when keyboard shortcuts change the tool
+  const selectedFogTool = $derived(
     eraseOptions.find(
       (option) => option.toolType === stageProps.fogOfWar.tool.type && option.drawMode === stageProps.fogOfWar.tool.mode
     ) || eraseOptions[0]
   );
 
-  $effect(() => {
-    selectedFogTool =
-      eraseOptions.find(
-        (option) =>
-          option.toolType === stageProps.fogOfWar.tool.type && option.drawMode === stageProps.fogOfWar.tool.mode
-      ) || eraseOptions[0];
-  });
-
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
-    selectedFogTool = selectedOption!;
     activeControl = 'erase';
     queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], selectedOption.toolType, 'control');
@@ -237,6 +228,16 @@
       openPopoverId = null;
     }
   });
+
+  // Handle popover close from outside click - sync activeControl with popover state
+  const handlePopoverOpenChange = (sceneId: string) => (open: boolean) => {
+    if (!open && activeControl === sceneId) {
+      activeControl = 'none';
+    }
+    if (!open && openPopoverId === sceneId) {
+      openPopoverId = null;
+    }
+  };
 </script>
 
 <ColorMode mode="dark">
@@ -351,7 +352,11 @@
     {#each sceneControlArray as scene}
       <!-- Regular popover controls for other tools -->
       <div class="sceneControls__item">
-        <Popover positioning={{ placement: 'bottom', gutter: 8 }} isOpen={openPopoverId === scene.id}>
+        <Popover
+          positioning={{ placement: 'bottom', gutter: 8 }}
+          isOpen={openPopoverId === scene.id}
+          onIsOpenChange={handlePopoverOpenChange(scene.id)}
+        >
           {#snippet trigger()}
             <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
               {#snippet children()}
@@ -359,16 +364,27 @@
                   <div
                     role="button"
                     tabindex="0"
-                    class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
+                    class="sceneControls__layer {openPopoverId === scene.id ? 'sceneControls__layer--isActive' : ''}"
                     onclick={() => {
-                      const newPopoverId = handleSelectActiveControl(scene.id);
-                      openPopoverId = newPopoverId;
+                      // Toggle popover: if open, close it; if closed, open it
+                      if (openPopoverId === scene.id) {
+                        openPopoverId = null;
+                        activeControl = 'none';
+                      } else {
+                        openPopoverId = scene.id;
+                        activeControl = scene.id;
+                      }
                     }}
                     onkeydown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        const newPopoverId = handleSelectActiveControl(scene.id);
-                        openPopoverId = newPopoverId;
+                        if (openPopoverId === scene.id) {
+                          openPopoverId = null;
+                          activeControl = 'none';
+                        } else {
+                          openPopoverId = scene.id;
+                          activeControl = scene.id;
+                        }
                       }
                     }}
                   >
