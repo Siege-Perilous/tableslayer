@@ -229,13 +229,18 @@
     }
   });
 
-  // Handle popover close from outside click - sync activeControl with popover state
+  // Handle popover state changes (from trigger click, outside click, etc.)
   const handlePopoverOpenChange = (sceneId: string) => (open: boolean) => {
-    if (!open && activeControl === sceneId) {
-      activeControl = 'none';
-    }
-    if (!open && openPopoverId === sceneId) {
-      openPopoverId = null;
+    if (open) {
+      openPopoverId = sceneId;
+      activeControl = sceneId;
+    } else {
+      if (openPopoverId === sceneId) {
+        openPopoverId = null;
+      }
+      if (activeControl === sceneId) {
+        activeControl = 'none';
+      }
     }
   };
 </script>
@@ -362,31 +367,7 @@
               {#snippet children()}
                 <div class="sceneControls__trigger">
                   <div
-                    role="button"
-                    tabindex="0"
                     class="sceneControls__layer {openPopoverId === scene.id ? 'sceneControls__layer--isActive' : ''}"
-                    onclick={() => {
-                      // Toggle popover: if open, close it; if closed, open it
-                      if (openPopoverId === scene.id) {
-                        openPopoverId = null;
-                        activeControl = 'none';
-                      } else {
-                        openPopoverId = scene.id;
-                        activeControl = scene.id;
-                      }
-                    }}
-                    onkeydown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (openPopoverId === scene.id) {
-                          openPopoverId = null;
-                          activeControl = 'none';
-                        } else {
-                          openPopoverId = scene.id;
-                          activeControl = scene.id;
-                        }
-                      }
-                    }}
                   >
                     <Icon
                       Icon={scene.id === 'play'
