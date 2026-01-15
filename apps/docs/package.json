@@ -29,7 +29,7 @@
     "@playwright/test": "^1.57.0",
     "@sveltejs/adapter-auto": "^7.0.0",
     "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.49.4",
+    "@sveltejs/kit": "^2.49.5",
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
@@ -38,11 +38,11 @@
     "@tiptap/core": "^3.15.3",
     "dotenv": "^17.2.3",
     "postprocessing": "6.38.2",
-    "svelte": "5.46.1",
+    "svelte": "5.46.4",
     "svelte-check": "^4.3.5",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }
