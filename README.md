@@ -39,7 +39,7 @@ To get started, edit the `.env` file in each `app` and run `pnpm run dev` to loa
 A full guide for self-hosting is coming soon. Here's a quick list for anyone who wants to get up and running.
 
 1. Copy `.env-example` in the `apps/web` folder to `.env`
-2. Create a new database on Turso. Add the required keys to `.env`.
+2. Create a new database on Turso (or use libsql directly](https://github.com/Siege-Perilous/tableslayer/issues/243#issuecomment-3613109830)). Add the required keys to `.env`.
 3. Create a Cloudflare account. Add the required API keys to `.env`.
    - You will need to set up an R2 bucket for assets and uploads. If self-hosting, you can run `pnpm run assets:upload` to populate your bucket with any large files that are excluded from this repo (ex: illustrations and LUT files).
    - You will need to setup [Partykit](https://docs.partykit.io/) with a partykit token. For dev, Parykit will run locally. For production, Partykit is hosted with Cloudflare workers.

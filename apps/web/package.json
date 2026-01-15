@@ -38,10 +38,10 @@
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
-    "@sentry/sveltekit": "^10.32.1",
+    "@sentry/sveltekit": "^10.34.0",
     "@tabler/icons-svelte": "^3.36.1",
     "@tableslayer/ui": "workspace:*",
-    "@tanstack/svelte-query": "^6.0.14",
+    "@tanstack/svelte-query": "^6.0.15",
     "@tursodatabase/api": "^1.9.2",
     "@types/ws": "^8.18.1",
     "arctic": "^3.7.0",
@@ -69,19 +69,19 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@sveltejs/adapter-auto": "^7.0.0",
-    "@sveltejs/adapter-node": "^5.4.0",
-    "@sveltejs/kit": "^2.49.4",
+    "@sveltejs/adapter-node": "^5.5.1",
+    "@sveltejs/kit": "^2.49.5",
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
     "drizzle-kit": "^0.31.8",
     "postprocessing": "6.38.2",
-    "svelte": "5.46.1",
+    "svelte": "5.46.4",
     "svelte-check": "^4.3.5",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }
