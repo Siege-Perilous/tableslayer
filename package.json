@@ -20,7 +20,7 @@
     "prettier": "^3.8.0",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-svelte": "^3.4.1",
-    "turbo": "^2.7.4"
+    "turbo": "^2.7.5"
   },
   "pnpm": {
     "overrides": {
