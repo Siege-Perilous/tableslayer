@@ -9,6 +9,7 @@
     MapLayerType,
     type Marker,
     PointerInputManager,
+    PerformanceDebugger,
     StageMode
   } from '@tableslayer/ui';
   import { StageDefaultProps } from './defaults';
@@ -223,6 +224,8 @@
     {onSceneZoom}
   />
 
+  <PerformanceDebugger />
+
   <Stage
     bind:this={stage}
     props={stageProps}
@@ -257,6 +260,7 @@
       <li>SHIFT + Wheel - Zoom Map</li>
       <li>CONTROL + Mouse Down - Pan Scene</li>
       <li>CONTROL + Wheel - Zoom Scene</li>
+      <li>F9 - Toggle Performance Stats</li>
     </ul>
   </div>
 </div>

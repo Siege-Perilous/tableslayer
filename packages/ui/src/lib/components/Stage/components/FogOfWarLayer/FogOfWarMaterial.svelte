@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
-  import { getContext } from 'svelte';
+  import { getContext, onDestroy } from 'svelte';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
@@ -177,6 +177,10 @@
   export async function fromRLE(rleData: Uint8Array, width: number, height: number) {
     return drawMaterial.fromRLE(rleData, width, height);
   }
+
+  onDestroy(() => {
+    fogMaterial.dispose();
+  });
 </script>
 
 <DrawingMaterial

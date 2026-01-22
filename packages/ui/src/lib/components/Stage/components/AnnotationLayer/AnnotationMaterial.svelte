@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
+  import { onDestroy } from 'svelte';
   import chroma from 'chroma-js';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayerData, AnnotationEffect } from './types';
@@ -125,6 +126,10 @@
   export const fromRLE = async (rleData: Uint8Array, width: number, height: number) => {
     return drawMaterial.fromRLE(rleData, width, height);
   };
+
+  onDestroy(() => {
+    material.dispose();
+  });
 </script>
 
 <DrawingMaterial

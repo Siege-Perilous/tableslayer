@@ -7,6 +7,7 @@
   import {
     MapLayerType,
     Stage,
+    PerformanceDebugger,
     Text,
     Title,
     type StageExports,
@@ -2349,7 +2350,7 @@
     trackLocalCursor={false}
   />
 
-  <!-- Cursors are now rendered in Three.js via the CursorLayer component -->
+  <PerformanceDebugger />
 </div>
 
 <!-- Touch hint overlay -->

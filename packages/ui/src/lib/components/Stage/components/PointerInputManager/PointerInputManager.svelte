@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
   import type { StageProps } from '../Stage/types';
 
   interface Props {
@@ -40,25 +39,24 @@
   let prevCentroid = $state<{ x: number; y: number } | null>(null);
 
   $effect(() => {
-    if (stageElement) {
-      stageElement.addEventListener('pointerdown', onPointerDown as EventListener);
-      stageElement.addEventListener('pointermove', onPointerMove as EventListener);
-      stageElement.addEventListener('pointerup', onPointerUp as EventListener);
-      stageElement.addEventListener('pointercancel', onPointerUp as EventListener);
-      stageElement.addEventListener('pointerout', onPointerUp as EventListener);
-      stageElement.addEventListener('pointerleave', onPointerUp as EventListener);
-    }
-  });
+    if (!stageElement) return;
 
-  onDestroy(() => {
-    if (stageElement) {
+    stageElement.addEventListener('pointerdown', onPointerDown as EventListener);
+    stageElement.addEventListener('pointermove', onPointerMove as EventListener);
+    stageElement.addEventListener('pointerup', onPointerUp as EventListener);
+    stageElement.addEventListener('pointercancel', onPointerUp as EventListener);
+    stageElement.addEventListener('pointerout', onPointerUp as EventListener);
+    stageElement.addEventListener('pointerleave', onPointerUp as EventListener);
+
+    // Cleanup when stageElement changes or component unmounts
+    return () => {
       stageElement.removeEventListener('pointerdown', onPointerDown as EventListener);
       stageElement.removeEventListener('pointermove', onPointerMove as EventListener);
       stageElement.removeEventListener('pointerup', onPointerUp as EventListener);
       stageElement.removeEventListener('pointercancel', onPointerUp as EventListener);
       stageElement.removeEventListener('pointerout', onPointerUp as EventListener);
       stageElement.removeEventListener('pointerleave', onPointerUp as EventListener);
-    }
+    };
   });
 
   // Event handlers

@@ -86,7 +86,10 @@ export const buildSceneProps = (
     },
     debug: {
       enableStats: false,
-      loggingRate: 30
+      loggingRate: 1000,
+      enableMetrics: false,
+      logMetricsToConsole: false,
+      disabledLayers: []
     },
     display: {
       padding: {

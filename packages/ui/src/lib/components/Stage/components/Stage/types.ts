@@ -56,6 +56,13 @@ export interface DisplayProps {
    * The resolution of the display in pixels
    */
   resolution: { x: number; y: number };
+
+  /**
+   * Maximum device pixel ratio to use for rendering.
+   * Caps the pixel ratio to improve performance on high-DPI devices with weak GPUs.
+   * Defaults to 2 if not specified.
+   */
+  maxPixelRatio?: number;
 }
 
 /**
@@ -69,6 +76,9 @@ export type StageProps = {
   debug: {
     enableStats: boolean;
     loggingRate: number;
+    enableMetrics: boolean;
+    logMetricsToConsole: boolean;
+    disabledLayers: string[];
   };
   display: DisplayProps;
   fog: FogLayerProps;
