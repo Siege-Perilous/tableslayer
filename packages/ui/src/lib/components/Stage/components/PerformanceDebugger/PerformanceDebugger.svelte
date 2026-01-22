@@ -108,32 +108,33 @@
 {/if}
 
 {#if showHelp}
-  <div class="perf-debugger__help">
+  <div class="performanceDebugger__help">
     Performance metrics enabled. Press {formatShortcut()} to disable.
   </div>
 {/if}
 
 <style>
-  .perf-debugger__help {
+  .performanceDebugger__help {
     position: absolute;
-    bottom: 16px;
+    bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--bgOverlay, rgba(0, 0, 0, 0.8));
-    color: var(--fg, #fff);
-    font-family: system-ui, sans-serif;
-    font-size: 12px;
-    padding: 8px 16px;
-    border-radius: 4px;
-    z-index: 1001;
+    background: var(--fg);
+    color: var(--bg);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-2);
+    z-index: 1000;
     pointer-events: none;
-    animation: fadeIn 0.2s ease-out;
+    animation: performanceDebuggerFadeIn 0.2s var(--ease-out-3);
   }
 
-  @keyframes fadeIn {
+  @keyframes performanceDebuggerFadeIn {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(10px);
+      transform: translateX(-50%) translateY(0.5rem);
     }
     to {
       opacity: 1;
