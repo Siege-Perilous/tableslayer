@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { onMount, untrack } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
   import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
@@ -10,8 +10,6 @@
   import RainPreset from './presets/RainPreset';
   import LeavesPreset from './presets/LeavesPreset';
   import AshPreset from './presets/AshPreset';
-
-  import { EffectComposer, RenderPass, CopyPass } from 'postprocessing';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -29,32 +27,29 @@
   particleCamera.position.set(0, 0, -1);
   particleCamera.rotation.x = Math.PI;
 
-  // Remove stencil-related settings from render target
+  // Render target for particle scene
   const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
     format: THREE.RGBAFormat,
     minFilter: THREE.LinearFilter,
     magFilter: THREE.LinearFilter
   });
 
-  const composer = new EffectComposer(renderer);
-  composer.autoRenderToScreen = false;
-  composer.outputBuffer = renderTarget;
-
-  // Remove stencil settings from quad material
+  // Material for displaying particles
   const quadMaterial = new THREE.MeshBasicMaterial({
     map: renderTarget.texture,
     transparent: true,
     blending: THREE.NormalBlending
   });
 
-  // Enable stencil test in renderer
   onMount(() => {
     if (particleCamera && particleScene) {
-      composer.setMainCamera(particleCamera);
-      composer.setMainScene(particleScene);
-      composer.setSize(size.x, size.y, false);
       renderTarget.setSize(size.x, size.y);
     }
+  });
+
+  onDestroy(() => {
+    renderTarget.dispose();
+    quadMaterial.dispose();
   });
 
   // If weather type changes, update the preset
@@ -103,35 +98,23 @@
     }
   });
 
-  // Add DOF effect to the composer
-  $effect(() => {
-    if (!particleScene || !particleCamera) return;
-
-    composer.removeAllPasses();
-
-    // Add render pass
-    const renderPass = new RenderPass(particleScene, particleCamera);
-    composer.addPass(renderPass);
-    composer.addPass(new CopyPass(renderTarget));
-  });
-
-  // Update the map size effect to use scaled resolution
+  // Update the camera and render target when size changes
   $effect(() => {
     particleCamera.aspect = size.x / size.y;
     particleCamera.fov = weatherPreset.fov;
     particleCamera.updateProjectionMatrix();
     renderTarget.setSize(size.x, size.y);
-    composer.setSize(size.x, size.y, false);
   });
 
-  // Update render task (remove stencil-related code)
+  // Render particle scene directly to render target (bypasses unnecessary EffectComposer overhead)
   useTask(
-    (dt) => {
+    () => {
       if (!particleScene || !particleCamera || !size) return;
 
       particleScene.visible = true;
       renderer.setRenderTarget(renderTarget);
-      composer.render(dt);
+      renderer.clear();
+      renderer.render(particleScene, particleCamera);
       renderer.setRenderTarget(null);
       particleScene.visible = false;
       quadMaterial.needsUpdate = true;

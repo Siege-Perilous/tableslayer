@@ -69,6 +69,9 @@ export type StageProps = {
   debug: {
     enableStats: boolean;
     loggingRate: number;
+    enableMetrics: boolean;
+    logMetricsToConsole: boolean;
+    disabledLayers: string[];
   };
   display: DisplayProps;
   fog: FogLayerProps;

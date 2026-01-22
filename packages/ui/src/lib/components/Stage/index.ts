@@ -23,6 +23,8 @@ export {
 } from './components/MarkerLayer/types';
 export { MeasurementType, type MeasurementLayerProps } from './components/MeasurementLayer/types';
 export { ParticleType, type ParticleSystemProps } from './components/ParticleSystem/types';
+export { default as PerformanceDebugger } from './components/PerformanceDebugger/PerformanceDebugger.svelte';
+export { default as PerformanceOverlay } from './components/PerformanceOverlay/PerformanceOverlay.svelte';
 export { default as PointerInputManager } from './components/PointerInputManager/PointerInputManager.svelte';
 export { SceneRotation, type PostProcessingProps, type SceneLayerProps } from './components/Scene/types';
 export { default as Stage } from './components/Stage/Stage.svelte';
@@ -34,3 +36,14 @@ export {
   type WeatherLayerPreset,
   type WeatherLayerProps
 } from './components/WeatherLayer/types';
+export { debugState, isDebugEnabled, setDebugEnabled } from './helpers/debugState.svelte';
+export {
+  get1PercentLowFps,
+  getAverageFps,
+  getFrameTimes,
+  performanceHistory,
+  performanceMetrics,
+  resetMetrics,
+  type PerformanceHistory,
+  type PerformanceMetrics
+} from './helpers/performanceMetrics.svelte';

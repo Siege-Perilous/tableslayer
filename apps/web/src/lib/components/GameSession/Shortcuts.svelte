@@ -33,7 +33,9 @@
     { label: 'Pan map direction', shortcut: 'Shift + Arrow keys' },
     { divider: true },
     { label: 'Zoom scene', shortcut: hasTouchSupport ? 'Two finger pinch' : 'Ctrl + Mouse wheel' },
-    { label: 'Pan scene', shortcut: hasTouchSupport ? 'Two finger drag' : 'Ctrl + Mouse drag' }
+    { label: 'Pan scene', shortcut: hasTouchSupport ? 'Two finger drag' : 'Ctrl + Mouse drag' },
+    { divider: true },
+    { label: 'Performance stats', shortcut: 'F9' }
   ]);
 </script>
 

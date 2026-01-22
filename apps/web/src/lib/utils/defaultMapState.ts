@@ -22,7 +22,10 @@ export const StageDefaultProps: StageProps = {
   },
   debug: {
     enableStats: false,
-    loggingRate: 30
+    loggingRate: 1000,
+    enableMetrics: false,
+    logMetricsToConsole: false,
+    disabledLayers: []
   },
   backgroundColor: '#0b0b0c',
   display: {

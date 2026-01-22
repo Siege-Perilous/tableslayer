@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useLoader } from '@threlte/core';
+  import { onDestroy } from 'svelte';
   import { MarkerShape, type Marker } from './types';
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import { getGridCellSize } from '../../helpers/grid';
@@ -218,9 +219,25 @@
   // Create and update marker texture when properties change (including hover state)
   $effect(() => {
     markerCanvas = drawMarker();
+
+    // Dispose old texture before creating new one
+    if (markerMaterial.map) {
+      markerMaterial.map.dispose();
+    }
+
     markerMaterial.map = new THREE.CanvasTexture(markerCanvas);
     markerMaterial.map.colorSpace = THREE.SRGBColorSpace;
     markerMaterial.map.needsUpdate = true;
+  });
+
+  onDestroy(() => {
+    if (markerMaterial.map) {
+      markerMaterial.map.dispose();
+    }
+    markerMaterial.dispose();
+    if (imageTexture) {
+      imageTexture.dispose();
+    }
   });
 
   // Get CSS variable value for hover color

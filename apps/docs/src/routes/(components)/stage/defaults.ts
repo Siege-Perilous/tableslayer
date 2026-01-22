@@ -33,7 +33,10 @@ export const StageDefaultProps: StageProps = {
   },
   debug: {
     enableStats: false,
-    loggingRate: 30
+    loggingRate: 1000,
+    enableMetrics: false,
+    logMetricsToConsole: false,
+    disabledLayers: []
   },
   display: {
     padding: { x: 16, y: 16 },

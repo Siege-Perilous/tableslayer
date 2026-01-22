@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { getContext, onMount, untrack } from 'svelte';
+  import { getContext, onMount, onDestroy, untrack } from 'svelte';
   import { T, useThrelte, useTask } from '@threlte/core';
   import {
     EffectComposer,
@@ -18,6 +18,8 @@
   import { type Callbacks, type StageProps } from '../Stage/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
+  import { beginFrame, endFrame, startTiming, endTiming, logMetrics } from '../../helpers/performanceMetrics.svelte';
+  import { debugState } from '../../helpers/debugState.svelte';
   import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
@@ -143,6 +145,10 @@
     };
   });
 
+  onDestroy(() => {
+    composer.dispose();
+  });
+
   // Setup camera and renderer in effect
   $effect(() => {
     if (!camera) return;
@@ -258,10 +264,20 @@
     }
   });
 
+  // Check if any post-processing effects are active
+  const hasActiveEffects = $derived(() => {
+    const pp = props.postProcessing;
+    if (!pp.enabled) return false;
+    return pp.bloom.enabled || pp.chromaticAberration.enabled || pp.vignette.enabled || pp.lut.enabled;
+  });
+
   // Custom render task
   useTask(
     (dt) => {
       if (!scene || !renderer || !camera) return;
+
+      const enableMetrics = debugState.enableMetrics;
+      const frameStart = enableMetrics ? beginFrame() : 0;
 
       if (needsResize) {
         needsResize = false;
@@ -274,17 +290,38 @@
 
       renderer.clear();
 
-      // Render main scene with post-processing
+      // Render main scene with post-processing (or bypass if no effects active)
       camera.current.layers.set(SceneLayer.Main);
-      composer.render(dt);
 
-      // Render overlays (grid/ping)without post-processing
+      let composerTime = 0;
+      if (hasActiveEffects()) {
+        const composerStart = enableMetrics ? startTiming() : 0;
+        composer.render(dt);
+        composerTime = enableMetrics ? endTiming(composerStart) : 0;
+      } else {
+        const composerStart = enableMetrics ? startTiming() : 0;
+        renderer.render(scene, camera.current);
+        composerTime = enableMetrics ? endTiming(composerStart) : 0;
+      }
+
+      // Render overlays (grid/ping) without post-processing
       camera.current.layers.set(SceneLayer.Overlay);
 
+      const overlayStart = enableMetrics ? startTiming() : 0;
       renderer.render(scene, camera.current);
+      const overlayTime = enableMetrics ? endTiming(overlayStart) : 0;
 
       // Reset camera back to main layer
       camera.current.layers.set(SceneLayer.Main);
+
+      // Update metrics if enabled
+      if (enableMetrics) {
+        endFrame(frameStart, renderer, { composerTime, overlayTime });
+
+        if (debugState.logMetricsToConsole) {
+          logMetrics(props.debug.loggingRate);
+        }
+      }
 
       // If scene was resized, need to wait for prop update to finish
       if (loadingState === SceneLoadingState.Resizing) {

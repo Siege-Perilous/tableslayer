@@ -67,6 +67,7 @@
   onDestroy(() => {
     tempTarget?.dispose();
     persistedTarget?.dispose();
+    drawMaterial?.dispose();
   });
 
   // Map size changed
@@ -343,6 +344,9 @@
 
     // Load into buffer
     render(RenderMode.Revert, true, texture);
+
+    // Dispose the temporary texture after rendering to buffer
+    texture.dispose();
   }
 </script>
 

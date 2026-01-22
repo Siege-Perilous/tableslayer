@@ -3,6 +3,7 @@
   import { handleMutation } from '$lib/factories';
   import {
     Stage,
+    PerformanceDebugger,
     type StageExports,
     type StageProps,
     MapLayerType,
@@ -3027,6 +3028,7 @@
                 }
               : null}
           />
+          <PerformanceDebugger />
         </div>
         <SceneControls
           {stageProps}
