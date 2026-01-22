@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Canvas, T } from '@threlte/core';
+  import * as THREE from 'three';
   import type { Callbacks, StageProps } from './types';
   import Scene from '../Scene/Scene.svelte';
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
@@ -8,6 +9,23 @@
   import { MarkerTooltip } from '../../../MarkerTooltip';
 
   import type { CursorData } from './types';
+
+  /**
+   * Creates a custom WebGL renderer with high-performance settings.
+   * This fixes Chrome/Mac performance issues by:
+   * - Requesting high-performance GPU mode (critical for macOS)
+   * - Disabling unnecessary features like stencil buffer
+   */
+  const createRenderer = (canvas: HTMLCanvasElement) => {
+    return new THREE.WebGLRenderer({
+      canvas,
+      powerPreference: 'high-performance',
+      antialias: true,
+      alpha: false,
+      stencil: false,
+      depth: true
+    });
+  };
 
   interface Props {
     props: StageProps;
@@ -262,7 +280,7 @@
 </script>
 
 <div bind:this={containerElement} style="height: 100%; width: 100%; position: relative;">
-  <Canvas>
+  <Canvas {createRenderer} renderMode="always">
     <T.Mesh scale={[100000, 100000, 1]} layers={[SceneLayerOrder.Background]}>
       <T.PlaneGeometry />
       <T.MeshBasicMaterial color={props.backgroundColor} />

@@ -96,7 +96,10 @@
     autoRender.set(false);
     renderer.autoClear = false;
     renderer.setClearColor(0, 0);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    // Cap pixel ratio for performance on weak GPUs (e.g., Mac Mini)
+    const maxDpr = props.display.maxPixelRatio ?? 2;
+    const dpr = Math.min(window.devicePixelRatio, maxDpr);
+    renderer.setPixelRatio(dpr);
     renderer.localClippingEnabled = true;
 
     // Add mouse tracking if enabled
