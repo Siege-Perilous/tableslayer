@@ -14,7 +14,11 @@ import { getFile, isUserOnlyAdminInParty, transformImage, UserIsLastAdminInParty
 import { error } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 
-export const getParty = async (partyId: string): Promise<SelectParty & Thumb> => {
+export type PauseScreenThumb = {
+  pauseScreenThumb: { url: string; resizedUrl: string } | null;
+};
+
+export const getParty = async (partyId: string): Promise<SelectParty & Thumb & PauseScreenThumb> => {
   try {
     const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
     if (!party) {
@@ -22,7 +26,15 @@ export const getParty = async (partyId: string): Promise<SelectParty & Thumb> =>
     }
     const file = await getFile(party.avatarFileId);
     const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-    const partyWithThumb = { ...party, thumb: thumb };
+
+    let pauseScreenThumb: PauseScreenThumb['pauseScreenThumb'] = null;
+    if (party.pauseScreenFileId !== 1) {
+      const pauseScreenFile = await getFile(party.pauseScreenFileId);
+      const pauseScreenImage = await transformImage(pauseScreenFile.location, 'w=1920,h=1080,fit=contain');
+      pauseScreenThumb = pauseScreenImage;
+    }
+
+    const partyWithThumb = { ...party, thumb, pauseScreenThumb };
     return partyWithThumb;
   } catch (error) {
     console.error('Error fetching party', error);
@@ -30,7 +42,7 @@ export const getParty = async (partyId: string): Promise<SelectParty & Thumb> =>
   }
 };
 
-export const getPartyFromName = async (partyName: string): Promise<SelectParty & Thumb> => {
+export const getPartyFromName = async (partyName: string): Promise<SelectParty & Thumb & PauseScreenThumb> => {
   const party = await db.select().from(partyTable).where(eq(partyTable.name, partyName)).get();
 
   if (!party) {
@@ -39,11 +51,19 @@ export const getPartyFromName = async (partyName: string): Promise<SelectParty &
 
   const file = await getFile(party.avatarFileId);
   const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-  const partyWithThumb = { ...party, thumb: thumb };
+
+  let pauseScreenThumb: PauseScreenThumb['pauseScreenThumb'] = null;
+  if (party.pauseScreenFileId !== 1) {
+    const pauseScreenFile = await getFile(party.pauseScreenFileId);
+    const pauseScreenImage = await transformImage(pauseScreenFile.location, 'w=1920,h=1080,fit=contain');
+    pauseScreenThumb = pauseScreenImage;
+  }
+
+  const partyWithThumb = { ...party, thumb, pauseScreenThumb };
   return partyWithThumb;
 };
 
-export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty & Thumb> => {
+export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty & Thumb & PauseScreenThumb> => {
   //  console.time('getParty total time');
   const party = await db.select().from(partyTable).where(eq(partyTable.slug, partySlug)).get();
 
@@ -53,7 +73,15 @@ export const getPartyFromSlug = async (partySlug: string): Promise<SelectParty &
 
   const file = await getFile(party.avatarFileId);
   const thumb = await transformImage(file.location, 'w=80,h=80,fit=cover,gravity=center');
-  const partyWithThumb = { ...party, thumb: thumb };
+
+  let pauseScreenThumb: PauseScreenThumb['pauseScreenThumb'] = null;
+  if (party.pauseScreenFileId !== 1) {
+    const pauseScreenFile = await getFile(party.pauseScreenFileId);
+    const pauseScreenImage = await transformImage(pauseScreenFile.location, 'w=1920,h=1080,fit=contain');
+    pauseScreenThumb = pauseScreenImage;
+  }
+
+  const partyWithThumb = { ...party, thumb, pauseScreenThumb };
   //  console.timeEnd('getParty total time');
   return partyWithThumb;
 };

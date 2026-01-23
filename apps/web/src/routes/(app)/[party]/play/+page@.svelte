@@ -2281,24 +2281,28 @@
   </span>
 {/if}
 
-{#if gameIsPaused || !hasActiveScene}
-  <div class="paused">
-    <div>
-      <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
-      {#if !hasActiveScene}
-        <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
-      {:else}
-        <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
-      {/if}
+{#if !stageIsLoading && (gameIsPaused || !hasActiveScene)}
+  {#if party.pauseScreenThumb}
+    <div class="paused paused--custom" style="background-image: url({party.pauseScreenThumb.resizedUrl})"></div>
+  {:else}
+    <div class="paused">
+      <div>
+        <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
+        {#if !hasActiveScene}
+          <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
+        {:else}
+          <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
+        {/if}
+      </div>
+      <div class="quote">
+        <Text size="1.5rem">{randomFantasyQuote.quote}</Text>
+        <Text color="var(--fgMuted)">
+          — {randomFantasyQuote.author},
+          <span>{randomFantasyQuote.source}</span>
+        </Text>
+      </div>
     </div>
-    <div class="quote">
-      <Text size="1.5rem">{randomFantasyQuote.quote}</Text>
-      <Text color="var(--fgMuted)">
-        — {randomFantasyQuote.author},
-        <span>{randomFantasyQuote.source}</span>
-      </Text>
-    </div>
-  </div>
+  {/if}
 {/if}
 <div class={stageClasses} bind:this={stageElement}>
   <Stage
@@ -2389,6 +2393,12 @@
     height: 100dvh;
     align-items: center;
     justify-content: center;
+  }
+  .paused--custom {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: black;
   }
   .quote {
     display: flex;
