@@ -171,6 +171,8 @@
     const offScreen = new THREE.Vector2(Infinity, Infinity);
     drawMaterial.uniforms.uStart.value.copy(offScreen);
     drawMaterial.uniforms.uEnd.value.copy(offScreen);
+    // Re-render to clear the cursor from the texture
+    render(RenderMode.Revert, false);
   }
 
   /**

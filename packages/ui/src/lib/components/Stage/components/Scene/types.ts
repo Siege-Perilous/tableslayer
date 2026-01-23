@@ -23,10 +23,10 @@ export enum SceneLayer {
 export enum SceneLayerOrder {
   Background = 0,
   Map = 10,
-  Marker = 15,
   Fog = 20,
   Weather = 30,
   EffectAnnotation = 35, // Effect annotations render under fog of war
+  Marker = 37, // Markers render above effect annotations but below fog of war
   FogOfWar = 40,
   Grid = 50,
   EdgeOverlay = 70,

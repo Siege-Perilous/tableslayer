@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { getContext } from 'svelte';
+  import { getContext, onDestroy } from 'svelte';
   import { T, type Props as ThrelteProps } from '@threlte/core';
   import { ToolType } from '../DrawingLayer/types';
   import { type FogOfWarLayerProps } from './types';
@@ -31,6 +31,7 @@
   });
 
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
+  let outlineMesh: THREE.Mesh = $state(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
   let hasFinishedDrawing = false;
@@ -64,39 +65,33 @@
     depthTest: false
   });
 
-  // Whenever the tool type changes, we need to reset the drawing state
+  onDestroy(() => {
+    outlineMaterial.dispose();
+  });
+
+  // Whenever the tool becomes inactive, reset the drawing state and hide outline
   $effect(() => {
     if (!isActive) {
       lastPos = null;
       drawing = false;
       material?.revertChanges();
-      outlineMaterial.visible = false;
+      outlineMesh.visible = false;
+      // Reset cursor position so it doesn't appear at old location when reactivated
+      outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+      outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
     }
   });
 
-  // Update outline material uniforms
+  // Update outline material uniforms (but don't control visibility here - let draw() handle it)
   $effect(() => {
     if (!mapSize) return;
 
-    console.log('[FogOfWarLayer] Outline update:', {
-      toolSizePercent: props.tool.size,
-      toolSizePixels,
-      mapSize,
-      textureSize: new THREE.Vector2(mapSize.width, mapSize.height)
-    });
-
-    outlineMaterial.visible = isActive;
     outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
     outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
     outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
     outlineMaterial.uniforms.uOutlineOpacity.value = props.outline.opacity;
     outlineMaterial.uniforms.uShapeType.value = props.tool.type;
-    outlineMaterial.uniforms.uBrushSize.value = toolSizePixels; // Use converted pixel value
-
-    // When changing to a rectangle or ellipse, initially hide the outline
-    if (props.tool.type === ToolType.Rectangle || props.tool.type === ToolType.Ellipse) {
-      outlineMaterial.visible = false;
-    }
+    outlineMaterial.uniforms.uBrushSize.value = toolSizePixels;
   });
 
   function onMouseDown(e: Event, p: THREE.Vector2 | null) {
@@ -113,7 +108,7 @@
     if (props.tool.type === ToolType.Ellipse || props.tool.type === ToolType.Rectangle) {
       if (p && drawing && lastPos) {
         material?.drawPath(p, lastPos, true);
-        outlineMaterial.visible = false;
+        outlineMesh.visible = false;
         hasFinishedDrawing = true;
       }
     }
@@ -131,7 +126,7 @@
   function onMouseLeave() {
     lastPos = null;
     drawing = false;
-    outlineMaterial.visible = false;
+    outlineMesh.visible = false;
     material?.revertChanges();
 
     // Hide cursor when mouse leaves
@@ -155,12 +150,12 @@
 
       // When using shapes, draw the shape outline while the mouse button is held down
       if (drawing) {
-        outlineMaterial.visible = true;
+        outlineMesh.visible = true;
         material?.drawPath(p, lastPos);
       }
     } else {
       // For freehand tools, always show the cursor
-      outlineMaterial.visible = true;
+      outlineMesh.visible = true;
 
       // For freehand drawing
       if (drawing) {
@@ -242,7 +237,7 @@ events to be detected outside of the fog of war layer.
   <T.PlaneGeometry args={[10, 10]} />
 </T.Mesh>
 
-<T.Mesh name="fogOfWarToolOutline" layers={[SceneLayer.Overlay]}>
+<T.Mesh bind:ref={outlineMesh} name="fogOfWarToolOutline" layers={[SceneLayer.Overlay]}>
   <T is={outlineMaterial} transparent={true} opacity={0.0} depthTest={false} />
   <T.PlaneGeometry />
 </T.Mesh>

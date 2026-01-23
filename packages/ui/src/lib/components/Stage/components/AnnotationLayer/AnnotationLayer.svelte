@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { getContext } from 'svelte';
+  import { getContext, onDestroy } from 'svelte';
   import { T } from '@threlte/core';
   import { type AnnotationLayerData, type AnnotationsLayerProps, AnnotationEffect } from './types';
   import { StageMode, type Callbacks, type DisplayProps } from '../Stage/types';
@@ -8,6 +8,9 @@
   import { SceneLayer, SceneLayerOrder } from '../Scene/types';
   import AnnotationMaterial from './AnnotationMaterial.svelte';
   import { LazyBrushManager } from '../../helpers/lazyBrush';
+  import { ToolType } from '../DrawingLayer/types';
+  import toolOutlineVertexShader from '../../shaders/default.vert?raw';
+  import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
 
   interface Props {
     props: AnnotationsLayerProps;
@@ -21,7 +24,19 @@
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
+  // Outline styling (same as fog of war)
+  const OUTLINE_COLOR = '#FFFFFF';
+  const OUTLINE_OPACITY = 1;
+  const OUTLINE_THICKNESS = 2;
+
+  // Convert percentage-based lineWidth to texture pixels for outline
+  const lineWidthPixels = $derived.by(() => {
+    const textureSize = Math.min(display.resolution.x, display.resolution.y);
+    return Math.round(textureSize * ((props.lineWidth ?? 2.0) / 100));
+  });
+
   let mesh: THREE.Mesh = $state(new THREE.Mesh());
+  let outlineMesh: THREE.Mesh = $state(new THREE.Mesh());
   let drawing = false;
 
   // Export drawing state so parent can check it
@@ -54,6 +69,28 @@
     friction: BASE_FRICTION
   });
 
+  // Outline material for brush cursor (same as fog of war)
+  const outlineMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uStart: { value: new THREE.Vector2(Infinity, Infinity) },
+      uEnd: { value: new THREE.Vector2(Infinity, Infinity) },
+      uBrushSize: { value: lineWidthPixels },
+      uTextureSize: { value: new THREE.Vector2(display.resolution.x, display.resolution.y) },
+      uShapeType: { value: ToolType.Brush },
+      uOutlineColor: { value: new THREE.Color(OUTLINE_COLOR) },
+      uOutlineOpacity: { value: OUTLINE_OPACITY },
+      uOutlineThickness: { value: OUTLINE_THICKNESS }
+    },
+    vertexShader: toolOutlineVertexShader,
+    fragmentShader: toolOutlineFragmentShader,
+    transparent: true,
+    depthTest: false
+  });
+
+  onDestroy(() => {
+    outlineMaterial.dispose();
+  });
+
   // Adjust lazy brush settings based on zoom level and smoothing toggle
   $effect(() => {
     // Scale radius inversely with zoom - less smoothing when zoomed in
@@ -72,6 +109,21 @@
       friction: adjustedFriction,
       enabled: smoothingEnabled
     });
+  });
+
+  // Update outline material uniforms when props change
+  $effect(() => {
+    outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(display.resolution.x, display.resolution.y);
+    outlineMaterial.uniforms.uBrushSize.value = lineWidthPixels;
+  });
+
+  // Hide outline when tool is not active
+  $effect(() => {
+    if (!isActive || !props.activeLayer) {
+      outlineMesh.visible = false;
+      outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+      outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
+    }
   });
 
   // Reference to the child layers
@@ -172,6 +224,11 @@
       activeLayer.revertChanges();
       activeLayer.resetCursor();
     }
+
+    // Hide outline
+    outlineMesh.visible = false;
+    outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+    outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
   }
 
   function draw(e: Event, p: THREE.Vector2 | null) {
@@ -184,7 +241,7 @@
       }
     }
 
-    // If the mouse is not within the drawing area, hide cursor
+    // If the mouse is not within the drawing area, hide cursor and outline
     if (!p) {
       // Reset cursor for all layers when mouse leaves (only if not already hidden)
       if (!cursorsHidden) {
@@ -194,6 +251,10 @@
           }
         });
       }
+      // Hide outline
+      outlineMesh.visible = false;
+      outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+      outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
       return;
     }
 
@@ -208,6 +269,10 @@
         });
         cursorsHidden = true;
       }
+      // Hide outline
+      outlineMesh.visible = false;
+      outlineMaterial.uniforms.uStart.value.set(Infinity, Infinity);
+      outlineMaterial.uniforms.uEnd.value.set(Infinity, Infinity);
       return;
     }
 
@@ -215,6 +280,11 @@
     cursorsHidden = false;
 
     p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+
+    // Show outline at cursor position
+    outlineMesh.visible = true;
+    outlineMaterial.uniforms.uStart.value.copy(p);
+    outlineMaterial.uniforms.uEnd.value.copy(p);
 
     // Use lazy brush for smooth drawing when drawing is active
     if (drawing && lazyBrush.enabled) {
@@ -233,6 +303,9 @@
       const brushPos = lazyBrush.getBrushPosition();
       if (brushPos) {
         activeLayer.drawPath(brushPos, brushPos, false);
+        // Update outline to follow lazy brush position
+        outlineMaterial.uniforms.uStart.value.copy(brushPos);
+        outlineMaterial.uniforms.uEnd.value.copy(brushPos);
       } else {
         // Show cursor at actual position if no brush position
         activeLayer.drawPath(p, p, false);
@@ -333,6 +406,18 @@ events to be detected outside of the fog of war layer.
 <T.Mesh bind:ref={mesh} name="annotationInput" layers={isActive ? [SceneLayer.Input] : undefined}>
   <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry args={[2 * display.resolution.x, 2 * display.resolution.y]} />
+</T.Mesh>
+
+<!-- Brush outline for annotation tool -->
+<T.Mesh
+  bind:ref={outlineMesh}
+  name="annotationToolOutline"
+  layers={[SceneLayer.Overlay]}
+  scale={[display.resolution.x, display.resolution.y, 1]}
+  renderOrder={SceneLayerOrder.Cursor}
+>
+  <T is={outlineMaterial} transparent={true} depthTest={false} />
+  <T.PlaneGeometry />
 </T.Mesh>
 
 <!--
