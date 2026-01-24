@@ -211,7 +211,8 @@ export const POST = async ({ request, locals }: RequestEvent) => {
             url: annotationData.url || null,
             mask: annotationData.mask || null, // Preserve the RLE mask data
             visibility: annotationData.visibility,
-            order: annotationData.order
+            order: annotationData.order,
+            effectType: annotationData.effectType ?? null
           };
 
           await db
