@@ -33,6 +33,7 @@ const isVideoFile = (location: string): boolean => {
 };
 
 // Exclude fogOfWarMask from scene queries to avoid transferring large blob data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { fogOfWarMask: _fogOfWarMask, ...sceneColumnsWithoutMask } = getTableColumns(sceneTable);
 
 export const getPartyGameSessionsWithScenes = async (partyId: string) => {

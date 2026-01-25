@@ -6,6 +6,7 @@ import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInpu
 import { getPartyFromGameSessionId } from '../party';
 
 // Get all scene columns except fogOfWarMask for list queries (avoids transferring large blob data)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { fogOfWarMask: _fogOfWarMask, ...sceneColumnsWithoutMask } = getTableColumns(sceneTable);
 
 // Validates that a scene belongs to a specific party (scene -> gameSession -> party)
