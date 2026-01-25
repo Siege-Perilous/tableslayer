@@ -1,7 +1,7 @@
 import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
 import { getMarkersForScene, type Thumb } from '$lib/server';
-import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
-import { createScene, getSceneFromOrder, getSceneMaskData, getScenes } from '$lib/server/scene';
+import { getAnnotationMasksForScene, getAnnotationsForScene } from '$lib/server/annotations';
+import { createScene, getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -35,32 +35,25 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   }
 
   // check if activeSceneNumber is valid - check if the scene with this order exists
-  if (!scenes.some((s) => s.order === selectedSceneNumber)) {
+  let sceneFromList = scenes.find((s) => s.order === selectedSceneNumber);
+  if (!sceneFromList) {
     selectedSceneNumber = lowestOrder;
-  }
-  const selectedScene = await getSceneFromOrder(gameSession.id, selectedSceneNumber);
-  const selectedSceneMarkers = await getMarkersForScene(selectedScene.id);
-  const selectedSceneAnnotations = await getAnnotationsForScene(selectedScene.id);
-
-  // Get fog mask data separately
-  let selectedSceneFogMask: string | null = null;
-  try {
-    const maskData = await getSceneMaskData(selectedScene.id);
-    selectedSceneFogMask = maskData.fogOfWarMask;
-  } catch {
-    // Silently ignore - scene might not have mask data yet
+    sceneFromList = scenes.find((s) => s.order === lowestOrder)!;
   }
 
-  // Get annotation mask data for all annotations
-  const selectedSceneAnnotationMasks: Record<string, string | null> = {};
-  try {
-    for (const annotation of selectedSceneAnnotations) {
-      const maskData = await getAnnotationMaskData(annotation.id);
-      selectedSceneAnnotationMasks[annotation.id] = maskData?.mask || null;
-    }
-  } catch {
-    // Silently ignore - annotations might not have mask data yet
-  }
+  // Get full scene data (scenes list excludes fogOfWarMask for performance)
+  const selectedScene = await getScene(sceneFromList.id);
+
+  // Fetch markers, annotations, and masks in parallel
+  const [selectedSceneMarkers, selectedSceneAnnotations, fogMaskResult, annotationMasks] = await Promise.all([
+    getMarkersForScene(selectedScene.id),
+    getAnnotationsForScene(selectedScene.id),
+    getSceneMaskData(selectedScene.id).catch(() => ({ fogOfWarMask: null })),
+    getAnnotationMasksForScene(selectedScene.id)
+  ]);
+
+  const selectedSceneFogMask = fogMaskResult.fogOfWarMask;
+  const selectedSceneAnnotationMasks = annotationMasks;
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {

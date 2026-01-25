@@ -19,8 +19,7 @@ export const load: LayoutServerLoad = async (event) => {
 
   const userId = event.locals.user.id;
   try {
-    const user = await getUser(userId);
-    const parties = await getPartiesForUser(user.id);
+    const [user, parties] = await Promise.all([getUser(userId), getPartiesForUser(userId)]);
     return {
       user,
       parties,

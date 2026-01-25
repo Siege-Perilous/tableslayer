@@ -1,9 +1,12 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
-import { and, asc, desc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
+
+// Get all scene columns except fogOfWarMask for list queries (avoids transferring large blob data)
+const { fogOfWarMask: _fogOfWarMask, ...sceneColumnsWithoutMask } = getTableColumns(sceneTable);
 
 // Validates that a scene belongs to a specific party (scene -> gameSession -> party)
 export const isSceneInParty = async (sceneId: string, partyId: string): Promise<boolean> => {
@@ -145,8 +148,9 @@ export const getSceneMaskData = async (sceneId: string): Promise<{ fogOfWarMask:
 };
 
 export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (SelectScene & Thumb))[]> => {
+  // Select all columns except fogOfWarMask to avoid transferring large blob data
   const scenes = await db
-    .select()
+    .select(sceneColumnsWithoutMask)
     .from(sceneTable)
     .where(eq(sceneTable.gameSessionId, gameSessionId))
     .orderBy(asc(sceneTable.order))
@@ -170,34 +174,26 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
     }
   }
 
-  const scenesWithThumbs: (SelectScene | (SelectScene & Thumb))[] = [];
+  // Process thumbnails in parallel for better performance
+  const scenesWithThumbs = await Promise.all(
+    scenes.map(async (scene) => {
+      // Use mapThumbLocation if available, otherwise fall back to mapLocation
+      const imageLocation = scene.mapThumbLocation || scene.mapLocation;
 
-  for (const scene of scenes) {
-    // Remove fogOfWarMask if present to avoid serialization issues
-    if ('fogOfWarMask' in scene) {
-      delete (scene as Record<string, unknown>).fogOfWarMask;
-    }
+      if (!imageLocation) {
+        return scene as SelectScene | (SelectScene & Thumb);
+      }
 
-    // Use mapThumbLocation if available, otherwise fall back to mapLocation
-    const imageLocation = scene.mapThumbLocation || scene.mapLocation;
+      // For video files, return direct URL without transformation
+      if (isVideoFile(imageLocation)) {
+        const thumb = getVideoUrl(imageLocation);
+        return { ...scene, thumb } as SelectScene & Thumb;
+      }
 
-    if (!imageLocation) {
-      scenesWithThumbs.push(scene);
-      continue;
-    }
-
-    // For video files, return direct URL without transformation
-    if (isVideoFile(imageLocation)) {
-      const thumb = getVideoUrl(imageLocation);
-      const sceneWithThumb = { ...scene, thumb };
-      scenesWithThumbs.push(sceneWithThumb);
-    } else {
       const thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-      // Removed cache busting timestamps to prevent flashing
-      const sceneWithThumb = { ...scene, thumb };
-      scenesWithThumbs.push(sceneWithThumb);
-    }
-  }
+      return { ...scene, thumb } as SelectScene & Thumb;
+    })
+  );
 
   return scenesWithThumbs;
 };

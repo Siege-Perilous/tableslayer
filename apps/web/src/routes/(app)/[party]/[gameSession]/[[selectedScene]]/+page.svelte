@@ -2264,12 +2264,22 @@
   };
 
   let isSaving = false;
+  let pendingSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
   const saveScene = async () => {
     if (isSaving || isUpdatingFog || isUpdatingAnnotation) return;
 
     // Don't save if we just received a Y.js update - prevents sync loops
+    // But schedule a retry after the protection window ends
     if (isReceivingYjsUpdate) {
-      devLog('save', 'Skipping saveScene - currently receiving Y.js update');
+      devLog('save', 'Skipping saveScene - currently receiving Y.js update, scheduling retry');
+      if (pendingSaveTimer) clearTimeout(pendingSaveTimer);
+      pendingSaveTimer = setTimeout(() => {
+        pendingSaveTimer = null;
+        if (!isReceivingYjsUpdate) {
+          saveScene();
+        }
+      }, 4500); // Retry after Y.js protection window (4s) + buffer
       return;
     }
 

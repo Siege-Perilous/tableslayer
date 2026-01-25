@@ -47,6 +47,28 @@ export const getAnnotationMaskData = async (annotationId: string): Promise<{ mas
 };
 
 /**
+ * Get mask data for all annotations in a scene (batch query)
+ * Returns a Record mapping annotation ID to mask data
+ */
+export const getAnnotationMasksForScene = async (sceneId: string): Promise<Record<string, string | null>> => {
+  try {
+    const results = await db
+      .select({ id: annotationsTable.id, mask: annotationsTable.mask })
+      .from(annotationsTable)
+      .where(eq(annotationsTable.sceneId, sceneId));
+
+    const masks: Record<string, string | null> = {};
+    for (const row of results) {
+      masks[row.id] = row.mask;
+    }
+    return masks;
+  } catch (error) {
+    devError('annotations', 'Error fetching annotation masks for scene:', error);
+    return {};
+  }
+};
+
+/**
  * Create or update an annotation
  */
 export const upsertAnnotation = async (annotation: InsertAnnotation): Promise<SelectAnnotation | null> => {
