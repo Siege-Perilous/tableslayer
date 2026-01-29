@@ -1,4 +1,4 @@
-import { getEmailsInvitedToParty } from '$lib/server';
+import { getEmailsInvitedToParty, getPartyGameSessionsWithScenes } from '$lib/server';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -8,10 +8,14 @@ export const load: PageServerLoad = async ({ parent }) => {
     throw new Error('Party is undefined');
   }
 
-  const invitedEmails = (await getEmailsInvitedToParty(party.id)) || [];
+  const [invitedEmails, gameSessions] = await Promise.all([
+    getEmailsInvitedToParty(party.id),
+    getPartyGameSessionsWithScenes(party.id)
+  ]);
 
   return {
     members,
-    invitedEmails
+    invitedEmails: invitedEmails || [],
+    gameSessions: gameSessions || []
   };
 };

@@ -10,7 +10,7 @@ import {
 import { getVideoUrl, SlugConflictError, transformImage } from '$lib/server';
 import { createRandomGameSessionName } from '$lib/utils';
 import { error } from '@sveltejs/kit';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 import type { Thumb } from '../file';
@@ -32,30 +32,34 @@ const isVideoFile = (location: string): boolean => {
   return videoExtensions.some((ext) => lowerLocation.includes(ext));
 };
 
+// Exclude fogOfWarMask from scene queries to avoid transferring large blob data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { fogOfWarMask: _fogOfWarMask, ...sceneColumnsWithoutMask } = getTableColumns(sceneTable);
+
 export const getPartyGameSessionsWithScenes = async (partyId: string) => {
   const gameSessions = await getPartyGameSessions(partyId);
 
   const gameSessionsWithScenes = await Promise.all(
     gameSessions.map(async (gameSession) => {
-      const scenes = await db.select().from(sceneTable).where(eq(sceneTable.gameSessionId, gameSession.id)).limit(5);
+      const scenes = await db
+        .select(sceneColumnsWithoutMask)
+        .from(sceneTable)
+        .where(eq(sceneTable.gameSessionId, gameSession.id))
+        .limit(5);
 
-      const scenesWithThumbs: (SelectScene & Thumb)[] = [];
+      // Process all thumbnails in parallel instead of sequentially
+      const scenesWithThumbs = await Promise.all(
+        scenes
+          .filter((scene) => scene.mapLocation)
+          .map(async (scene) => {
+            const imageLocation = scene.mapThumbLocation || scene.mapLocation;
+            const thumb = isVideoFile(imageLocation!)
+              ? getVideoUrl(imageLocation!)
+              : await transformImage(imageLocation!, 'w=400,h=225,fit=cover,gravity=center');
+            return { ...scene, thumb } as SelectScene & Thumb;
+          })
+      );
 
-      for (const scene of scenes) {
-        if (scene.mapLocation) {
-          const imageLocation = scene.mapThumbLocation || scene.mapLocation;
-
-          let thumb;
-          if (isVideoFile(imageLocation)) {
-            thumb = getVideoUrl(imageLocation);
-          } else {
-            thumb = await transformImage(imageLocation, 'w=400,h=225,fit=cover,gravity=center');
-          }
-
-          const sceneWithThumb = { ...scene, thumb } as SelectScene & Thumb;
-          scenesWithThumbs.push(sceneWithThumb);
-        }
-      }
       return {
         ...gameSession,
         scenes: scenesWithThumbs

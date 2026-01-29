@@ -97,6 +97,10 @@
   import { getLatestMeasurement } from '$lib/utils/measurements';
 
   // Y.js integration
+  // Protection window to prevent auto-save from triggering after receiving Y.js updates
+  // Must be longer than auto-save delay (3s) to prevent sync loops
+  const YJS_UPDATE_PROTECTION_MS = 4000;
+
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
   let yjsScenes = $state<typeof scenes>(data.scenes); // Initialize with SSR data to prevent hydration mismatch
   let isHydrated = $state(false); // Track hydration status
@@ -575,11 +579,10 @@
             }
           }
 
-          // Reset flag after the update - timeout must be longer than auto-save delay (3s)
-          // to prevent auto-save from triggering after receiving Y.js updates
+          // Reset flag after the update
           setTimeout(() => {
             isReceivingYjsUpdate = false;
-          }, 4000);
+          }, YJS_UPDATE_PROTECTION_MS);
 
           // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
         }
@@ -2264,12 +2267,22 @@
   };
 
   let isSaving = false;
+  let pendingSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
   const saveScene = async () => {
     if (isSaving || isUpdatingFog || isUpdatingAnnotation) return;
 
     // Don't save if we just received a Y.js update - prevents sync loops
+    // But schedule a retry after the protection window ends
     if (isReceivingYjsUpdate) {
-      devLog('save', 'Skipping saveScene - currently receiving Y.js update');
+      devLog('save', 'Skipping saveScene - currently receiving Y.js update, scheduling retry');
+      if (pendingSaveTimer) clearTimeout(pendingSaveTimer);
+      pendingSaveTimer = setTimeout(() => {
+        pendingSaveTimer = null;
+        if (!isReceivingYjsUpdate) {
+          saveScene();
+        }
+      }, YJS_UPDATE_PROTECTION_MS + 500); // Retry after protection window + buffer
       return;
     }
 
