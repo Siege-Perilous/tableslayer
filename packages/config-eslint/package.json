@@ -3,9 +3,9 @@
   "type": "module",
   "version": "0.0.0",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.53.1",
-    "@typescript-eslint/parser": "^8.53.1",
-    "eslint": "^9.39.2",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "eslint": "^10.0.0",
     "eslint-plugin-svelte": "3.14.0"
   },
   "publishConfig": {
