@@ -34,8 +34,6 @@
   let materialUpdateKey = $state(0);
 
   $effect(() => {
-    console.log('[MapLayer] Effect triggered with URL:', props.map.url);
-
     if (!props.map.url) {
       currentMapUrl = props.map.url;
       // Dispose of data source when URL is null
@@ -54,15 +52,6 @@
     // Check if this is a video file
     const isVideo = props.map.url.match(/\.(mp4|webm|mov|avi)/i);
 
-    console.log('[MapLayer] URL comparison:', {
-      new: newMapUrlWithoutParams,
-      current: currentMapUrlWithoutParams,
-      newFull: props.map.url,
-      currentFull: currentMapUrl,
-      isVideo,
-      willUpdate: isVideo ? currentMapUrl !== props.map.url : currentMapUrlWithoutParams !== newMapUrlWithoutParams
-    });
-
     // For videos, compare full URLs (including query params) to ensure cache busting
     // For images, compare without params to avoid unnecessary reloads
     if (isVideo) {
@@ -77,7 +66,6 @@
 
     // Update the current URL immediately
     currentMapUrl = props.map.url;
-    console.log('[MapLayer] Loading new map:', props.map.url);
 
     onMapLoading();
 

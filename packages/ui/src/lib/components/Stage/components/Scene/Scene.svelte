@@ -89,6 +89,11 @@
   let raycaster = new THREE.Raycaster();
   raycaster.layers.enable(SceneLayer.Main);
 
+  // Pre-allocated objects for mouse tracking to avoid GC pressure
+  const mouseNDC = new THREE.Vector2();
+  const intersectionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  const intersectionPoint = new THREE.Vector3();
+
   let composer = new EffectComposer(renderer);
 
   onMount(() => {
@@ -107,27 +112,22 @@
       const handleMouseMove = (event: MouseEvent) => {
         // Convert mouse position to normalized device coordinates
         const rect = renderer.domElement.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        mouseNDC.set(
+          ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          -((event.clientY - rect.top) / rect.height) * 2 + 1
+        );
 
         // Update raycaster with camera and mouse position
-        raycaster.setFromCamera(new THREE.Vector2(x, y), $camera);
+        raycaster.setFromCamera(mouseNDC, $camera);
 
-        // Create an invisible plane at z=0 to intersect with
-        const planeGeometry = new THREE.PlaneGeometry(10000, 10000);
-        const planeMesh = new THREE.Mesh(planeGeometry);
-        planeMesh.position.set(0, 0, 0);
+        // Find intersection with the z=0 plane using ray.intersectPlane (no allocations)
+        const hit = raycaster.ray.intersectPlane(intersectionPlane, intersectionPoint);
 
-        // Find intersection with the plane
-        const intersects = raycaster.intersectObject(planeMesh);
-
-        if (intersects.length > 0) {
-          const worldPos = intersects[0].point;
-
+        if (hit) {
           // Account for scene transform (offset and zoom)
           const adjustedPos = {
-            x: (worldPos.x - props.scene.offset.x) / props.scene.zoom,
-            y: (worldPos.y - props.scene.offset.y) / props.scene.zoom,
+            x: (intersectionPoint.x - props.scene.offset.x) / props.scene.zoom,
+            y: (intersectionPoint.y - props.scene.offset.y) / props.scene.zoom,
             z: 0
           };
 

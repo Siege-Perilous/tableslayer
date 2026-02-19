@@ -78,7 +78,8 @@
     if (size.width !== tempTarget.width || size.height !== tempTarget.height) {
       tempTarget.setSize(size.width, size.height);
       persistedTarget.setSize(size.width, size.height);
-      drawMaterial.uniforms.uTextureSize.value = new THREE.Vector2(size.width, size.height);
+      // Use .set() to avoid allocating new Vector2
+      drawMaterial.uniforms.uTextureSize.value.set(size.width, size.height);
 
       // If an image is provided, load it, otherwise reset the fog state
       if (props.url) {
@@ -112,10 +113,11 @@
     drawMaterial.uniforms.uShapeType.value = props.tool.type;
     drawMaterial.uniforms.uBrushSize.value = props.tool.size;
 
+    // Use .set() to avoid allocating new Vector4
     if (props.tool.mode === DrawMode.Erase) {
-      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(0, 0, 0, 0);
+      drawMaterial.uniforms.uBrushColor.value.set(0, 0, 0, 0);
     } else {
-      drawMaterial.uniforms.uBrushColor.value = new THREE.Vector4(1, 1, 1, 1);
+      drawMaterial.uniforms.uBrushColor.value.set(1, 1, 1, 1);
     }
 
     // Only revert and redraw if tool type or mode changed, not size

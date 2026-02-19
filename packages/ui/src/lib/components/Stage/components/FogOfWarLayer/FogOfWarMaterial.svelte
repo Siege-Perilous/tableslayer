@@ -26,14 +26,7 @@
   const toolSizePixels = $derived.by(() => {
     if (!mapSize) return props.tool.size;
     const textureSize = Math.min(mapSize.width, mapSize.height);
-    const pixels = Math.round(textureSize * (props.tool.size / 100));
-    console.log('[FogOfWarMaterial] Conversion:', {
-      toolSizePercent: props.tool.size,
-      textureSize,
-      toolSizePixels: pixels,
-      calculation: `${textureSize} * (${props.tool.size} / 100) = ${pixels}`
-    });
-    return pixels;
+    return Math.round(textureSize * (props.tool.size / 100));
   });
 
   // Create derived props with converted tool size
@@ -89,11 +82,12 @@
 
   // Whenever the fog of war props change, we need to update the material
   $effect(() => {
-    fogMaterial.uniforms.uBaseColor.value = new THREE.Color(props.noise.baseColor);
-    fogMaterial.uniforms.uFogColor1.value = new THREE.Color(props.noise.fogColor1);
-    fogMaterial.uniforms.uFogColor2.value = new THREE.Color(props.noise.fogColor2);
-    fogMaterial.uniforms.uFogColor3.value = new THREE.Color(props.noise.fogColor3);
-    fogMaterial.uniforms.uFogColor4.value = new THREE.Color(props.noise.fogColor4);
+    // Use .set() to avoid allocating new Color objects
+    fogMaterial.uniforms.uBaseColor.value.set(props.noise.baseColor);
+    fogMaterial.uniforms.uFogColor1.value.set(props.noise.fogColor1);
+    fogMaterial.uniforms.uFogColor2.value.set(props.noise.fogColor2);
+    fogMaterial.uniforms.uFogColor3.value.set(props.noise.fogColor3);
+    fogMaterial.uniforms.uFogColor4.value.set(props.noise.fogColor4);
 
     fogMaterial.uniforms.uEdgeMinMipMapLevel.value = props.edge.minMipMapLevel;
     fogMaterial.uniforms.uEdgeMaxMipMapLevel.value = props.edge.maxMipMapLevel;
@@ -109,9 +103,12 @@
     fogMaterial.uniforms.uOffset.value = props.noise.offset;
     fogMaterial.uniforms.uAmplitude.value = props.noise.amplitude;
 
-    fogMaterial.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
-      (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
-    );
+    // Update clipping planes in place
+    const planes = clippingPlaneStore.value;
+    for (let i = 0; i < planes.length; i++) {
+      const p = planes[i];
+      fogMaterial.uniforms.uClippingPlanes.value[i].set(p.normal.x, p.normal.y, p.normal.z, p.constant);
+    }
 
     // Force shader to update with new uniform values
     fogMaterial.uniformsNeedUpdate = true;
