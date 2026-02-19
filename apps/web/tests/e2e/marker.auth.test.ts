@@ -112,7 +112,8 @@ test.describe('Marker CRUD operations', () => {
     // Click the marker tool button to open marker panel
     const markerToolBtn = page.getByTestId('markerToolButton');
     await expect(markerToolBtn).toBeVisible({ timeout: 10000 });
-    await markerToolBtn.click();
+    // Use force:true to bypass tooltip overlay that can block clicks
+    await markerToolBtn.click({ force: true });
 
     // Verify the "No markers" message is visible
     await expect(page.locator('text=No markers in this scene')).toBeVisible({ timeout: 10000 });

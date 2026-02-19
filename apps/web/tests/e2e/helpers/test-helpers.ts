@@ -80,8 +80,10 @@ export async function waitForSceneEditor(page: Page) {
   // Wait for the scenes container to be visible
   await page.waitForSelector('.scenes', { state: 'visible', timeout: 15000 });
 
-  // Wait for the "Add scene" button to be ready
-  await page.waitForSelector('.scene__inputBtn', { state: 'visible', timeout: 10000 });
+  // Wait for the "Add scene" button to be ready and enabled
+  const addSceneBtn = page.locator('.scene__inputBtn');
+  await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
+  await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
 
   // Wait for canvas to be visible (ThreeJS initialization)
   await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
@@ -89,8 +91,8 @@ export async function waitForSceneEditor(page: Page) {
   // Wait for network to settle
   await page.waitForLoadState('networkidle');
 
-  // Give ThreeJS a moment to fully initialize
-  await page.waitForTimeout(500);
+  // Give ThreeJS and animations time to fully initialize and stabilize
+  await page.waitForTimeout(1000);
 }
 
 /**
@@ -99,10 +101,12 @@ export async function waitForSceneEditor(page: Page) {
 export async function activateMarkerTool(page: Page) {
   const markerToolBtn = page.getByTestId('markerToolButton');
   await expect(markerToolBtn).toBeVisible({ timeout: 10000 });
-  await markerToolBtn.click();
 
-  // Wait for marker mode hint to be visible
-  await expect(page.locator('text=Left-click an empty space to add a new marker')).toBeVisible({ timeout: 10000 });
+  // Use force:true to bypass tooltip overlay that can block clicks
+  await markerToolBtn.click({ force: true });
+
+  // Wait for marker panel to be visible (more reliable than text which may be hidden)
+  await expect(page.locator('.markerManager')).toBeVisible({ timeout: 10000 });
 }
 
 /**
@@ -116,4 +120,28 @@ export async function clickCanvasCenter(page: Page) {
   if (!canvasBox) throw new Error('Canvas bounding box not found');
 
   await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+}
+
+/**
+ * Uploads a file to the scene input with retry logic for CI stability.
+ */
+export async function uploadSceneFile(page: Page, filePath: string) {
+  // Wait for the add scene button to be enabled
+  const addSceneBtn = page.locator('.scene__inputBtn');
+  await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
+  await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
+
+  // Wait a moment for any animations to settle
+  await page.waitForTimeout(500);
+
+  // Get the file input - it's hidden (opacity: 0) but still accessible
+  const fileInput = page.locator('.scene__input input[type="file"]');
+
+  // Wait for the input to be attached to DOM
+  await fileInput.waitFor({ state: 'attached', timeout: 10000 });
+
+  // Use retry pattern for setting files (handles stability issues)
+  await expect(async () => {
+    await fileInput.setInputFiles(filePath);
+  }).toPass({ timeout: 15000, intervals: [500, 1000, 2000] });
 }

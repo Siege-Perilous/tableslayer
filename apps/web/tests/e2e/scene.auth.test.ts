@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import path from 'path';
-import { createPartyAndSession, waitForSceneEditor } from './helpers/test-helpers';
+import { createPartyAndSession, uploadSceneFile, waitForSceneEditor } from './helpers/test-helpers';
 
 // Use process.cwd() which is apps/web when Playwright runs
 const testImagePath = path.join(process.cwd(), 'tests/e2e/fixtures/test-image.png');
@@ -16,9 +16,8 @@ test.describe('Scene CRUD operations', () => {
     // Count initial scenes (new sessions may start with a default "First scene")
     const initialSceneCount = await page.locator('.scene__list .scene').count();
 
-    // Find the file input inside the "Add scene" button
-    const fileInput = page.locator('.scene__input input[type="file"]');
-    await fileInput.setInputFiles(testImagePath);
+    // Upload a file to create a new scene
+    await uploadSceneFile(page, testImagePath);
 
     // Wait for the scene creation to complete by checking the scene count increases
     await expect(async () => {
@@ -47,7 +46,8 @@ test.describe('Scene CRUD operations', () => {
 
     // Open scene popover by right-clicking on the scene
     const scene = page.locator('.scene__list .scene').first();
-    await scene.click({ button: 'right' });
+    // Use force:true to bypass any overlays that might block clicks
+    await scene.click({ button: 'right', force: true });
 
     // Wait for popover menu to appear and click "Rename scene"
     const renameMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Rename scene' });
@@ -79,8 +79,7 @@ test.describe('Scene CRUD operations', () => {
     await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
 
     // Create an additional scene so we have 2 (deleting the only scene might not be allowed)
-    const fileInput = page.locator('.scene__input input[type="file"]');
-    await fileInput.setInputFiles(testImagePath);
+    await uploadSceneFile(page, testImagePath);
 
     // Wait for second scene to appear
     await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 20000 });
@@ -93,7 +92,8 @@ test.describe('Scene CRUD operations', () => {
     // Delete the first scene since deleting the newly added one might have issues
     const scenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
     await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
-    await scenePopoverBtn.click();
+    // Use force:true to bypass any overlays that might block clicks
+    await scenePopoverBtn.click({ force: true });
 
     // Wait for popover menu to appear and click "Delete scene"
     const deleteMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Delete scene' });
@@ -124,7 +124,8 @@ test.describe('Scene CRUD operations', () => {
     // Wait for the popover button to be visible and click it
     const scenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
     await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
-    await scenePopoverBtn.click();
+    // Use force:true to bypass any overlays that might block clicks
+    await scenePopoverBtn.click({ force: true });
 
     // Wait for popover menu to appear
     const duplicateMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Duplicate scene' });

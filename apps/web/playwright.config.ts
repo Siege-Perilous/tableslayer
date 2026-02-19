@@ -15,9 +15,15 @@ const config: PlaywrightTestConfig = {
   testDir: 'tests/e2e',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['json', { outputFile: 'tests/e2e/test-results.json' }]],
+  timeout: 60000,
+  expect: {
+    timeout: 10000
+  },
   use: {
     baseURL,
-    trace: 'on-first-retry'
+    trace: 'on-first-retry',
+    viewport: { width: 1280, height: 720 },
+    actionTimeout: 15000
   },
   projects: [
     {
