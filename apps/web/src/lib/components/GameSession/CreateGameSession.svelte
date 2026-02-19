@@ -150,7 +150,13 @@
 </script>
 
 {#if !formIsOpen && !importIsOpen}
-  <Panel role="button" class="createSessionPanel createSessionPanel--hover" tabindex={0} onclick={handleOpenForm}>
+  <Panel
+    role="button"
+    class="createSessionPanel createSessionPanel--hover"
+    tabindex={0}
+    onclick={handleOpenForm}
+    data-testid="createSessionTrigger"
+  >
     <Title as="p" size="sm">Create a new session</Title>
     <Text size="0.875rem" color="var(--fgMuted)">Create a game session from scratch</Text>
   </Panel>
@@ -159,11 +165,11 @@
     <form onsubmit={handleCreateGameSession}>
       <FormControl label="Session name" name="name" errors={createGameSessionError && createGameSessionError.errors}>
         {#snippet input({ inputProps })}
-          <Input {...inputProps} bind:value={gameSessionName} autocomplete="off" />
+          <Input {...inputProps} bind:value={gameSessionName} autocomplete="off" data-testid="sessionName" />
         {/snippet}
       </FormControl>
       <Spacer />
-      <Button type="submit">Create</Button>
+      <Button type="submit" data-testid="createSessionSubmit">Create</Button>
       <Button type="button" variant="danger" onclick={() => (formIsOpen = false)}>Cancel</Button>
       <Spacer size="1.5rem" />
       <Hr />

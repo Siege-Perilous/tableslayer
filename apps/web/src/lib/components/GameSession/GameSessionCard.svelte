@@ -139,7 +139,7 @@
       <div class="gameSessionCard__popover">
         <Popover>
           {#snippet trigger()}
-            <IconButton as="div" variant="ghost">
+            <IconButton as="div" variant="ghost" data-testid="sessionMenuTrigger">
               <Icon Icon={IconChevronDown} />
             </IconButton>
           {/snippet}
@@ -154,11 +154,16 @@
                       errors={renameGameSessionErrors && renameGameSessionErrors.errors}
                     >
                       {#snippet input({ inputProps })}
-                        <Input {...inputProps} bind:value={gameSessionName} hideAutocomplete />
+                        <Input
+                          {...inputProps}
+                          bind:value={gameSessionName}
+                          hideAutocomplete
+                          data-testid="renameSessionInput"
+                        />
                       {/snippet}
                     </FormControl>
                   </div>
-                  <IconButton class="gameSessionCard__renameFieldBtn">
+                  <IconButton class="gameSessionCard__renameFieldBtn" data-testid="renameSessionSubmit">
                     <Icon Icon={IconCheck} />
                   </IconButton>
                 </div>
@@ -193,6 +198,7 @@
                     type="button"
                     disabled={formIsLoading}
                     isLoading={formIsLoading}
+                    data-testid="deleteSessionButton"
                   >
                     Delete session
                   </Button>
