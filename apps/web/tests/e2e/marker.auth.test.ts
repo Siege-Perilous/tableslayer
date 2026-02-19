@@ -1,48 +1,10 @@
 import { expect, test } from '@playwright/test';
-
-// Helper to create a party and game session, returns the URL to the editor
-async function createPartyAndSession(
-  page: import('@playwright/test').Page
-): Promise<{ partySlug: string; sessionSlug: string }> {
-  const partyName = `Marker Test ${Date.now()}`;
-
-  // Create party
-  await page.goto('/create-party');
-  await page.waitForLoadState('networkidle');
-  const partyNameInput = page.getByTestId('partyName');
-  await partyNameInput.click();
-  await partyNameInput.fill(partyName);
-  await page.waitForTimeout(300);
-  await page.getByTestId('createPartySubmit').click();
-  await page.waitForURL((url) => !url.pathname.includes('create-party'), { timeout: 15000 });
-
-  const partySlug = page.url().split('/').pop() || '';
-
-  // Create game session
-  await page.getByTestId('createSessionTrigger').click();
-  const sessionNameInput = page.getByTestId('sessionName');
-  await sessionNameInput.click();
-  await sessionNameInput.fill(`Test Session ${Date.now()}`);
-  await page.waitForTimeout(300);
-  await page.getByTestId('createSessionSubmit').click();
-  await page.waitForTimeout(1000);
-
-  // Get the session slug from the created session link
-  const sessionLink = page.locator('.gameSessionCard a').first();
-  const href = (await sessionLink.getAttribute('href')) || '';
-  const sessionSlug = href.split('/').pop() || '';
-
-  return { partySlug, sessionSlug };
-}
-
-// Helper to wait for the scene editor to fully load
-async function waitForSceneEditor(page: import('@playwright/test').Page) {
-  // Wait for the scenes container and stage to be visible
-  await page.waitForSelector('.scenes', { state: 'visible', timeout: 15000 });
-  await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1000); // Allow time for ThreeJS to initialize
-}
+import {
+  activateMarkerTool,
+  clickCanvasCenter,
+  createPartyAndSession,
+  waitForSceneEditor
+} from './helpers/test-helpers';
 
 test.describe('Marker CRUD operations', () => {
   test('should create a marker by clicking on the canvas', async ({ page }) => {
@@ -52,21 +14,11 @@ test.describe('Marker CRUD operations', () => {
     await page.goto(`/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Click the "Marker" button in the toolbar to activate marker mode
-    // This directly puts us in marker mode with "Left-click an empty space to add a new marker"
-    const markerToolbarBtn = page.locator('.sceneControls button:has-text("Marker")');
-    await markerToolbarBtn.click();
-
-    // Wait for marker mode hint to be visible
-    await expect(page.locator('text=Left-click an empty space to add a new marker')).toBeVisible({ timeout: 10000 });
+    // Activate marker tool
+    await activateMarkerTool(page);
 
     // Click on the canvas to create a marker
-    const canvas = page.locator('canvas').first();
-    const canvasBox = await canvas.boundingBox();
-    if (!canvasBox) throw new Error('Canvas not found');
-
-    // Click in the center of the canvas
-    await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+    await clickCanvasCenter(page);
 
     // Wait for marker to be created and appear in the edit view
     await expect(page.locator('.markerManager__editView')).toBeVisible({ timeout: 10000 });
@@ -79,16 +31,11 @@ test.describe('Marker CRUD operations', () => {
     await page.goto(`/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Click the "Marker" button in the toolbar to activate marker mode
-    const markerToolbarBtn = page.locator('.sceneControls button:has-text("Marker")');
-    await markerToolbarBtn.click();
-    await expect(page.locator('text=Left-click an empty space to add a new marker')).toBeVisible({ timeout: 10000 });
+    // Activate marker tool
+    await activateMarkerTool(page);
 
     // Click on canvas to create a marker
-    const canvas = page.locator('canvas').first();
-    const canvasBox = await canvas.boundingBox();
-    if (!canvasBox) throw new Error('Canvas not found');
-    await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+    await clickCanvasCenter(page);
 
     // Wait for marker edit view to appear
     await expect(page.locator('.markerManager__editView')).toBeVisible({ timeout: 10000 });
@@ -117,16 +64,11 @@ test.describe('Marker CRUD operations', () => {
     await page.goto(`/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Click the "Marker" button in the toolbar to activate marker mode
-    const markerToolbarBtn = page.locator('.sceneControls button:has-text("Marker")');
-    await markerToolbarBtn.click();
-    await expect(page.locator('text=Left-click an empty space to add a new marker')).toBeVisible({ timeout: 10000 });
+    // Activate marker tool
+    await activateMarkerTool(page);
 
     // Click on canvas to create a marker
-    const canvas = page.locator('canvas').first();
-    const canvasBox = await canvas.boundingBox();
-    if (!canvasBox) throw new Error('Canvas not found');
-    await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+    await clickCanvasCenter(page);
 
     // Wait for marker edit view to appear
     await expect(page.locator('.markerManager__editView')).toBeVisible({ timeout: 10000 });
@@ -167,9 +109,10 @@ test.describe('Marker CRUD operations', () => {
     await page.goto(`/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Click the "Marker" button in the toolbar to open marker panel
-    const markerToolbarBtn = page.locator('.sceneControls button:has-text("Marker")');
-    await markerToolbarBtn.click();
+    // Click the marker tool button to open marker panel
+    const markerToolBtn = page.getByTestId('markerToolButton');
+    await expect(markerToolBtn).toBeVisible({ timeout: 10000 });
+    await markerToolBtn.click();
 
     // Verify the "No markers" message is visible
     await expect(page.locator('text=No markers in this scene')).toBeVisible({ timeout: 10000 });

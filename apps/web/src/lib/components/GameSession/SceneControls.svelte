@@ -318,6 +318,7 @@
       <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
         {#snippet children()}
           <button
+            data-testid="markerToolButton"
             class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
               'sceneControls__layer--isActive'}"
             onclick={() => {
