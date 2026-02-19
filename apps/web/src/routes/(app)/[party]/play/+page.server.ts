@@ -7,8 +7,8 @@ import {
   getPartyGameSessions,
   getUser
 } from '$lib/server';
-import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
-import { getSceneMaskData, getScenes } from '$lib/server/scene';
+import { getAnnotationsForScene } from '$lib/server/annotations';
+import { getScenes } from '$lib/server/scene';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -51,30 +51,10 @@ export const load: PageServerLoad = async (event) => {
 
   let activeSceneMarkers: SelectMarker[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
-  let activeSceneFogMask: string | null = null;
-  let activeSceneAnnotationMasks: Record<string, string | null> = {};
 
   if (activeScene) {
     activeSceneMarkers = await getMarkersForScene(activeScene.id);
     activeSceneAnnotations = await getAnnotationsForScene(activeScene.id);
-
-    // Get fog mask data
-    try {
-      const maskData = await getSceneMaskData(activeScene.id);
-      activeSceneFogMask = maskData.fogOfWarMask;
-    } catch {
-      // Silently ignore - scene might not have mask data yet
-    }
-
-    // Get annotation mask data for all annotations
-    try {
-      for (const annotation of activeSceneAnnotations) {
-        const maskData = await getAnnotationMaskData(annotation.id);
-        activeSceneAnnotationMasks[annotation.id] = maskData?.mask || null;
-      }
-    } catch {
-      // Silently ignore - annotations might not have mask data yet
-    }
   }
 
   return {
@@ -86,8 +66,6 @@ export const load: PageServerLoad = async (event) => {
     activeScene,
     activeSceneMarkers,
     activeSceneAnnotations,
-    activeSceneFogMask,
-    activeSceneAnnotationMasks,
     partykitHost
   };
 };
