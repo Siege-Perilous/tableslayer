@@ -86,8 +86,9 @@
   $effect(() => {
     if (!mapSize) return;
 
-    outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(mapSize.width, mapSize.height);
-    outlineMaterial.uniforms.uOutlineColor.value = new THREE.Color(props.outline.color);
+    // Use .set() to avoid allocating new objects
+    outlineMaterial.uniforms.uTextureSize.value.set(mapSize.width, mapSize.height);
+    outlineMaterial.uniforms.uOutlineColor.value.set(props.outline.color);
     outlineMaterial.uniforms.uOutlineThickness.value = props.outline.thickness;
     outlineMaterial.uniforms.uOutlineOpacity.value = props.outline.opacity;
     outlineMaterial.uniforms.uShapeType.value = props.tool.type;

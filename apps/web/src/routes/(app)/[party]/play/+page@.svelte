@@ -1065,11 +1065,11 @@
       devLog('playfield', 'Scene changed, fetching fog mask for:', sceneIdToFetch);
       fetchFogMask(sceneIdToFetch);
 
-      // Load annotation masks from SSR data if available (after invalidateAll completes)
+      // Load annotation masks via API (after invalidateAll completes)
       // This ensures masks are loaded when switching to a scene that already has annotations
-      devLog('playfield', 'Scene changed, loading annotation masks from SSR data');
-      loadAnnotationMasksFromSsr().catch((error) => {
-        console.error('Error loading annotation masks from SSR after scene change:', error);
+      devLog('playfield', 'Scene changed, loading annotation masks via API');
+      loadAnnotationMasks().catch((error) => {
+        console.error('Error loading annotation masks after scene change:', error);
       });
 
       // Also fetch annotation masks for any layers that have a maskVersion
@@ -1713,32 +1713,11 @@
   };
 
   async function loadFogMask() {
-    // Load fog mask if available
-    if (data.activeSceneFogMask && stage?.fogOfWar?.fromRLE) {
-      try {
-        devLog('playfield', 'Loading fog mask from server data');
-        // Convert base64 back to Uint8Array
-        const binaryString = atob(data.activeSceneFogMask);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        devLog('playfield', `Applying fog mask (${bytes.length} bytes) to fog layer`);
-        // Apply the mask to the fog layer
-        await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
-        devLog('playfield', 'Fog mask applied successfully');
-
-        // Store the mask version if present in stageProps
-        if (stageProps.fogOfWar?.maskVersion) {
-          lastFogMaskVersion = stageProps.fogOfWar.maskVersion;
-        }
-      } catch (error) {
-        devError('playfield', 'Error loading fog mask:', error);
-      }
+    // Load fog mask via API call (avoids bloating initial HTML payload)
+    if (data.activeScene?.id) {
+      devLog('playfield', 'Loading fog mask via API');
+      await fetchFogMask(data.activeScene.id);
     }
-    // Note: If no SSR data, the Y.js sync effect at line ~663 will handle
-    // fetching the mask when Y.js provides a maskVersion. We intentionally
-    // don't set lastFogMaskVersion here to ensure the effect triggers.
   }
 
   function onStageLoading() {
@@ -1746,64 +1725,31 @@
   }
 
   /**
-   * Load annotation masks from SSR data
+   * Load annotation masks via API
    * Called on initial stage load and when active scene changes
    */
-  async function loadAnnotationMasksFromSsr() {
-    devLog('playfield', 'loadAnnotationMasksFromSsr called:', {
-      hasMaskData: !!data.activeSceneAnnotationMasks,
-      hasStage: !!stage,
-      hasLoadMask: !!stage?.annotations?.loadMask,
-      maskCount: data.activeSceneAnnotationMasks ? Object.keys(data.activeSceneAnnotationMasks).length : 0,
-      layerCount: stageProps.annotations?.layers?.length || 0,
-      layerIds: stageProps.annotations?.layers?.map((l) => l.id) || []
+  async function loadAnnotationMasks() {
+    if (!stage?.annotations?.loadMask || !data.activeSceneAnnotations?.length) {
+      devLog('playfield', 'Skipping annotation mask loading - no stage or annotations');
+      return;
+    }
+
+    devLog('playfield', 'Loading annotation masks via API:', {
+      annotationCount: data.activeSceneAnnotations.length
     });
 
-    if (data.activeSceneAnnotationMasks && stage?.annotations?.loadMask) {
-      try {
-        for (const [annotationId, maskData] of Object.entries(data.activeSceneAnnotationMasks)) {
-          if (maskData) {
-            // Check if the annotation layer exists in stageProps
-            const layerExists = stageProps.annotations.layers.some((layer) => layer.id === annotationId);
-            if (!layerExists) {
-              devLog(
-                'playfield',
-                `Skipping mask load for annotation ${annotationId} - layer not found in stageProps. Available layers:`,
-                {
-                  availableLayerIds: stageProps.annotations.layers.map((l) => l.id),
-                  searchingFor: annotationId
-                }
-              );
-              continue;
-            }
-
-            devLog('playfield', `Loading annotation mask from SSR data for layer ${annotationId}`);
-            // Convert base64 to Uint8Array and apply to the annotation layer
-            const bytes = base64ToUint8Array(maskData);
-            await stage.annotations.loadMask(annotationId, bytes);
-            devLog('playfield', `Successfully loaded annotation mask for layer ${annotationId}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading annotation masks:', error);
-      }
-    } else {
-      devLog('playfield', 'Skipping annotation mask loading - requirements not met:', {
-        hasMaskData: !!data.activeSceneAnnotationMasks,
-        hasStage: !!stage,
-        hasLoadMask: !!stage?.annotations?.loadMask
-      });
-    }
+    // Fetch all annotation masks in parallel
+    await Promise.all(data.activeSceneAnnotations.map((annotation) => fetchAnnotationMask(annotation.id)));
   }
 
   async function onStageInitialized() {
     stageIsLoading = false;
 
-    // Load fog mask from SSR data if available
+    // Load fog mask via API
     await loadFogMask();
 
-    // Load annotation masks from SSR data if available
-    await loadAnnotationMasksFromSsr();
+    // Load annotation masks via API
+    await loadAnnotationMasks();
 
     // Immediately fit when stage is ready
     if (stage?.scene?.fit) {

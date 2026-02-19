@@ -53,9 +53,15 @@
     receivedMeasurement
   }: Props = $props();
 
-  let centerOffset = $derived(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+  // Pre-allocated vectors to avoid GC pressure
+  const centerOffset = new THREE.Vector2();
   let snappedPosition = new THREE.Vector2();
   let inputMesh = $state(new THREE.Mesh());
+
+  // Update centerOffset when display resolution changes
+  $effect(() => {
+    centerOffset.set(display.resolution.x / 2, display.resolution.y / 2);
+  });
 
   // Measurement state
   let isDrawing = false;
@@ -267,16 +273,6 @@
 
   // Effect to handle received measurements from other users
   $effect(() => {
-    if (receivedMeasurement) {
-      console.log(
-        '[MeasurementLayer] Received measurement prop:',
-        receivedMeasurement,
-        'isActive:',
-        isActive,
-        'has manager:',
-        !!measurementManager
-      );
-    }
     if (receivedMeasurement && measurementManager && !isActive) {
       // Check if this is a new measurement (not the same as last displayed)
       const isNewMeasurement =
@@ -291,12 +287,6 @@
         // Convert to Vector2 with center offset adjustment
         const startPoint = new THREE.Vector2(receivedMeasurement.startPoint.x, receivedMeasurement.startPoint.y);
         const endPoint = new THREE.Vector2(receivedMeasurement.endPoint.x, receivedMeasurement.endPoint.y);
-
-        console.log('[MeasurementLayer] Displaying NEW received measurement:', {
-          startPoint,
-          endPoint,
-          type: receivedMeasurement.type
-        });
 
         // Display the received measurement with all properties if available
         measurementManager.displayReceivedMeasurement(
@@ -333,7 +323,6 @@
     } else if (!receivedMeasurement && lastDisplayedMeasurement && !measurementIsFading) {
       // Only clear if no measurement is fading
       // The measurement will clear itself after fade completes
-      console.log('[MeasurementLayer] No measurement received, but one is fading - letting it complete');
       lastDisplayedMeasurement = null;
     }
   });
@@ -371,6 +360,5 @@
   {sceneRotation}
   onFadeComplete={() => {
     measurementIsFading = false;
-    console.log('[MeasurementLayer] Fade complete, measurement can be cleared');
   }}
 />

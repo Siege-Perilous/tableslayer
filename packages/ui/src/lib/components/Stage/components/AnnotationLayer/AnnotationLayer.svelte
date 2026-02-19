@@ -29,6 +29,9 @@
   const OUTLINE_OPACITY = 1;
   const OUTLINE_THICKNESS = 2;
 
+  // Pre-allocated vector for display center offset to avoid GC pressure
+  const displayCenterOffset = new THREE.Vector2();
+
   // Convert percentage-based lineWidth to texture pixels for outline
   const lineWidthPixels = $derived.by(() => {
     const textureSize = Math.min(display.resolution.x, display.resolution.y);
@@ -60,8 +63,8 @@
   const BASE_RADIUS = 20;
   const BASE_FRICTION = 0.05;
 
-  // Smoothing enabled defaults to true if not specified
-  const smoothingEnabled = $derived(props.smoothingEnabled ?? true);
+  // Smoothing disabled by default for more responsive drawing
+  const smoothingEnabled = $derived(props.smoothingEnabled ?? false);
 
   const lazyBrush = new LazyBrushManager({
     radius: BASE_RADIUS,
@@ -111,10 +114,12 @@
     });
   });
 
-  // Update outline material uniforms when props change
+  // Update outline material uniforms and center offset when props change
   $effect(() => {
-    outlineMaterial.uniforms.uTextureSize.value = new THREE.Vector2(display.resolution.x, display.resolution.y);
+    // Use .set() to avoid allocating new objects
+    outlineMaterial.uniforms.uTextureSize.value.set(display.resolution.x, display.resolution.y);
     outlineMaterial.uniforms.uBrushSize.value = lineWidthPixels;
+    displayCenterOffset.set(display.resolution.x / 2, display.resolution.y / 2);
   });
 
   // Hide outline when tool is not active
@@ -195,7 +200,7 @@
     if (p) {
       // Need to adjust for display offset before starting stroke
       const adjustedP = p.clone();
-      adjustedP.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+      adjustedP.add(displayCenterOffset);
       lazyBrush.startStroke(adjustedP);
     }
 
@@ -279,7 +284,7 @@
     // Tool is active and we have a valid position
     cursorsHidden = false;
 
-    p.add(new THREE.Vector2(display.resolution.x / 2, display.resolution.y / 2));
+    p.add(displayCenterOffset);
 
     // Show outline at cursor position
     outlineMesh.visible = true;

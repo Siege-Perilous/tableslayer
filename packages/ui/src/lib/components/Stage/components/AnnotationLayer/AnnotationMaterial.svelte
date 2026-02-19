@@ -85,9 +85,12 @@
     material.uniforms.uSoftness.value = getEffectSoftness();
     material.uniforms.uBorder.value = getEffectBorder();
     material.uniforms.uRoughness.value = getEffectRoughness();
-    material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
-      (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)
-    );
+    // Update clipping planes in place to avoid allocating new Vector4 objects
+    const planes = clippingPlaneStore.value;
+    for (let i = 0; i < planes.length; i++) {
+      const p = planes[i];
+      material.uniforms.uClippingPlanes.value[i].set(p.normal.x, p.normal.y, p.normal.z, p.constant);
+    }
     material.uniformsNeedUpdate = true;
   });
 

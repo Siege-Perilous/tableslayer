@@ -9,6 +9,18 @@ import { getPartyFromGameSessionId } from '../party';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { fogOfWarMask: _fogOfWarMask, ...sceneColumnsWithoutMask } = getTableColumns(sceneTable);
 
+// Lightweight scene list for menus (only id and name, no thumbnails or full data)
+export type SceneListItem = { id: string; name: string };
+export const getSceneList = async (gameSessionId: string): Promise<SceneListItem[]> => {
+  const scenes = await db
+    .select({ id: sceneTable.id, name: sceneTable.name })
+    .from(sceneTable)
+    .where(eq(sceneTable.gameSessionId, gameSessionId))
+    .orderBy(asc(sceneTable.order))
+    .all();
+  return scenes;
+};
+
 // Validates that a scene belongs to a specific party (scene -> gameSession -> party)
 export const isSceneInParty = async (sceneId: string, partyId: string): Promise<boolean> => {
   const result = await db

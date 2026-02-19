@@ -44,13 +44,14 @@
     material.uniforms.uSpacing_in.value = grid.spacing;
     material.uniforms.uPadding_px.value = display.padding;
     material.uniforms.uLineThickness.value = grid.lineThickness;
-    material.uniforms.uLineColor.value = new THREE.Color(grid.lineColor);
+    // Use .set() to avoid allocating new objects
+    material.uniforms.uLineColor.value.set(grid.lineColor);
     material.uniforms.uShadowOpacity.value = grid.shadowOpacity;
     material.uniforms.uShadowBlur.value = grid.shadowBlur;
     material.uniforms.uShadowSpread.value = grid.shadowSpread;
-    material.uniforms.uShadowColor.value = new THREE.Color(grid.shadowColor);
-    material.uniforms.uResolution_px.value = new THREE.Vector2(display.resolution.x, display.resolution.y);
-    material.uniforms.uDisplaySize_in.value = new THREE.Vector2(display.size.x, display.size.y);
+    material.uniforms.uShadowColor.value.set(grid.shadowColor);
+    material.uniforms.uResolution_px.value.set(display.resolution.x, display.resolution.y);
+    material.uniforms.uDisplaySize_in.value.set(display.size.x, display.size.y);
     material.uniforms.uFixedGridCountX.value = grid.fixedGridCount?.x || 24;
     material.uniforms.uFixedGridCountY.value = grid.fixedGridCount?.y || 17;
 
