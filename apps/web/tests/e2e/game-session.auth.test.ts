@@ -49,7 +49,7 @@ test.describe('Game Session CRUD operations', () => {
   });
 
   test('should update game session name', async ({ page }) => {
-    const partySlug = await createParty(page);
+    await createParty(page);
     const originalName = `Update Session ${Date.now()}`;
 
     await page.waitForLoadState('networkidle');
@@ -87,7 +87,7 @@ test.describe('Game Session CRUD operations', () => {
   });
 
   test('should delete a game session', async ({ page }) => {
-    const partySlug = await createParty(page);
+    await createParty(page);
     const sessionName = `Delete Session ${Date.now()}`;
 
     await page.waitForLoadState('networkidle');

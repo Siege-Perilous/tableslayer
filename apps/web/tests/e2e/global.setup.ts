@@ -1,4 +1,4 @@
-import { chromium, type FullConfig } from '@playwright/test';
+import { chromium } from '@playwright/test';
 import { config as dotenvConfig } from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 
 const authFile = join(__dirname, '.auth/user.json');
 
-const globalSetup = async (config: FullConfig) => {
+const globalSetup = async () => {
   const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 
   // Use provided credentials or create a test user
