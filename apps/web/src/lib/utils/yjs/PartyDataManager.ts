@@ -96,7 +96,11 @@ export class PartyDataManager {
 
   // Reactive state
   private subscribers = new Set<() => void>();
-  private isConnected = false;
+  private isPartyConnected = false;
+  private isGameSessionConnected = false;
+
+  // Heartbeat interval for keeping awareness alive
+  private awarenessHeartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
   // Track which scenes this specific instance has observers for (local to this editor)
   private sceneObservers = new Set<string>();
@@ -161,6 +165,8 @@ export class PartyDataManager {
         'yjs',
         `[${this.clientId}] Y.js game session connection status: ${event.status} - room: ${gameSessionRoomName}`
       );
+      this.isGameSessionConnected = event.status === 'connected';
+
       // When game session connects, ensure scene observers are properly set up
       if (event.status === 'connected') {
         devLog('yjs', `[${this.clientId}] Game session connected - refreshing scene observers for connected state`);
@@ -172,12 +178,15 @@ export class PartyDataManager {
           this.notifySubscribers();
         }, 100);
       }
+
+      this.updateHeartbeat();
       this.notifySubscribers();
     });
 
     this.partyProvider.on('status', (event: { status: string }) => {
-      this.isConnected = event.status === 'connected'; // Use party connection for overall status
+      this.isPartyConnected = event.status === 'connected';
       devLog('yjs', `[${this.clientId}] Y.js party connection status: ${event.status} - room: ${partyRoomName}`);
+      this.updateHeartbeat();
       this.notifySubscribers();
     });
 
@@ -189,6 +198,54 @@ export class PartyDataManager {
 
     // Set up observers
     this.setupObservers();
+  }
+
+  /**
+   * Returns true only when both party and game session providers are connected
+   */
+  private get isConnected(): boolean {
+    return this.isPartyConnected && this.isGameSessionConnected;
+  }
+
+  /**
+   * Start or stop the awareness heartbeat based on connection status.
+   * The heartbeat refreshes the Y.js awareness state every 15 seconds to prevent
+   * the 30-second timeout from deleting cursor/measurement data.
+   */
+  private updateHeartbeat() {
+    if (this.isConnected) {
+      // Start heartbeat if not already running
+      if (!this.awarenessHeartbeatInterval) {
+        devLog('yjs', `[${this.clientId}] Starting awareness heartbeat`);
+        this.awarenessHeartbeatInterval = setInterval(() => {
+          this.refreshAwarenessState();
+        }, 15000); // 15 seconds - well before the 30-second timeout
+      }
+    } else {
+      // Stop heartbeat when disconnected
+      if (this.awarenessHeartbeatInterval) {
+        devLog('yjs', `[${this.clientId}] Stopping awareness heartbeat`);
+        clearInterval(this.awarenessHeartbeatInterval);
+        this.awarenessHeartbeatInterval = null;
+      }
+    }
+  }
+
+  /**
+   * Refresh the awareness state to prevent Y.js 30-second timeout.
+   * This re-sets the current local state without changing the data,
+   * which updates the lastUpdated timestamp in Y.js awareness.
+   */
+  private refreshAwarenessState() {
+    if (!this.gameSessionProvider.awareness) return;
+
+    const currentState = this.gameSessionProvider.awareness.getLocalState();
+    if (currentState) {
+      // Re-set the same state to refresh the Y.js awareness timestamp
+      // This doesn't change lastMoveTime for cursors, preserving fade behavior
+      this.gameSessionProvider.awareness.setLocalState(currentState);
+      devLog('yjs', `[${this.clientId}] Refreshed awareness state to prevent timeout`);
+    }
   }
 
   /**
@@ -866,6 +923,12 @@ export class PartyDataManager {
    */
   destroy() {
     devLog('yjs', `[${this.clientId}] Destroying PartyDataManager`);
+
+    // Stop heartbeat
+    if (this.awarenessHeartbeatInterval) {
+      clearInterval(this.awarenessHeartbeatInterval);
+      this.awarenessHeartbeatInterval = null;
+    }
 
     // Unregister awareness listener before destroying providers
     this.gameSessionProvider.awareness.off('change', this.awarenessChangeHandler);

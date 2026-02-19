@@ -92,6 +92,7 @@
 
   // Y.js party state and scene data monitoring for playfield
   let partyData: ReturnType<typeof usePartyData> | null = $state(null);
+  let unsubscribeYjs: (() => void) | null = null;
   let yjsPartyState = $state({
     isPaused: data.party.gameSessionIsPaused,
     activeSceneId: data.activeScene?.id
@@ -1112,8 +1113,6 @@
     isMounted = true;
     isUnmounting = false;
 
-    let unsubscribeYjs: (() => void) | null = null;
-
     // Set initial stage props from SSR data
     if (data.activeScene && !initialDataApplied) {
       const builtProps = buildSceneProps(
@@ -1405,7 +1404,11 @@
       // Update the tracked game session ID
       currentGameSessionId = newGameSessionId;
 
-      // Y.js cleanup will be handled by destroy
+      // Unsubscribe from old Y.js subscription before destroying
+      if (unsubscribeYjs) {
+        (unsubscribeYjs as () => void)();
+        unsubscribeYjs = null;
+      }
 
       // Destroy the old connection
       destroyPartyDataManager();
@@ -1421,7 +1424,7 @@
       devLog('playfield', 'Y.js reinitialized with new game session:', newGameSessionId);
 
       // Resubscribe to Y.js changes
-      partyData.subscribe(() => {
+      unsubscribeYjs = partyData.subscribe(() => {
         if (isUnmounting || isInvalidating) {
           return;
         }
