@@ -25,3 +25,7 @@ yarn.lock
 **/*.glsl
 **/*.frag
 **/*.vert
+
+# Playwright test artifacts
+apps/web/tests/e2e/.auth/
+apps/web/tests/e2e/test-results.json
