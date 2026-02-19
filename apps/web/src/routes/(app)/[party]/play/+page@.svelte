@@ -1166,117 +1166,121 @@
 
       // Subscribe to Y.js changes (both party state and scene data)
       unsubscribeYjs = partyData.subscribe(() => {
-        if (isUnmounting || isInvalidating) {
-          return;
-        }
-
-        const updatedPartyState = partyData!.getPartyState();
-        devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
-
-        // Update reactive state
-        yjsPartyState = {
-          isPaused: updatedPartyState.isPaused,
-          activeSceneId: updatedPartyState.activeSceneId
-        };
-
-        // Update cursors from Y.js awareness
-        const yjsCursors = partyData!.getCursors();
-
-        // Clear out any cursors that are no longer in Y.js
-        const activeCursorKeys = new Set(Object.keys(yjsCursors));
-        const newCursors = { ...cursors };
-        for (const cursorKey of Object.keys(cursors)) {
-          if (!activeCursorKeys.has(cursorKey)) {
-            delete newCursors[cursorKey];
+        try {
+          if (isUnmounting || isInvalidating) {
+            return;
           }
-        }
-        cursors = newCursors;
 
-        // Update or add cursors from Y.js
-        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
-          // Transform cursor data to match playfield format
-          cursors = {
-            ...cursors,
-            [cursorKey]: {
-              worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
-              userId: cursorData.userId,
-              color: cursorData.color,
-              label: cursorData.label,
-              lastMoveTime: cursorData.lastMoveTime || Date.now(),
-              fadedOut: false
-            }
+          const updatedPartyState = partyData!.getPartyState();
+          devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
+
+          // Update reactive state
+          yjsPartyState = {
+            isPaused: updatedPartyState.isPaused,
+            activeSceneId: updatedPartyState.activeSceneId
           };
-        });
 
-        // Update measurements from Y.js awareness
-        const yjsMeasurements = partyData!.getMeasurements();
-        if (Object.keys(yjsMeasurements).length > 0) {
-          devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
-        }
-        measurements = yjsMeasurements;
+          // Update cursors from Y.js awareness
+          const yjsCursors = partyData!.getCursors();
 
-        // Update temporary layers from Y.js awareness
-        const manager = getPartyDataManager();
-        if (manager) {
-          const yjsTemporaryLayers = getTemporaryLayers(manager);
-          if (yjsTemporaryLayers.length > 0) {
-            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          // Clear out any cursors that are no longer in Y.js
+          const activeCursorKeys = new Set(Object.keys(yjsCursors));
+          const newCursors = { ...cursors };
+          for (const cursorKey of Object.keys(cursors)) {
+            if (!activeCursorKeys.has(cursorKey)) {
+              delete newCursors[cursorKey];
+            }
           }
-          temporaryLayers = yjsTemporaryLayers;
-        }
+          cursors = newCursors;
 
-        // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
-        const hoveredMarker = partyData!.getHoveredMarker();
-        hoveredMarkerId = hoveredMarker?.id ?? null;
-        if (hoveredMarker) {
-          devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
-            id: hoveredMarker.id,
-            hoveredMarkerId,
-            hasTooltip: hoveredMarker.tooltip
+          // Update or add cursors from Y.js
+          Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+            // Transform cursor data to match playfield format
+            cursors = {
+              ...cursors,
+              [cursorKey]: {
+                worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+                userId: cursorData.userId,
+                color: cursorData.color,
+                label: cursorData.label,
+                lastMoveTime: cursorData.lastMoveTime || Date.now(),
+                fadedOut: false
+              }
+            };
           });
-        }
 
-        // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
+          // Update measurements from Y.js awareness
+          const yjsMeasurements = partyData!.getMeasurements();
+          if (Object.keys(yjsMeasurements).length > 0) {
+            devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
+          }
+          measurements = yjsMeasurements;
 
-        // Also get scene data if we have an active scene
-        if (updatedPartyState.activeSceneId) {
-          // If we don't have the game session ID, we need to find it
-          if (!activeGameSessionId) {
-            // When the active scene changes, we'll invalidate and get the correct game session
-            devLog('playfield', 'No game session ID available, will invalidate to get correct session');
-          } else {
-            devLog('playfield', 'Attempting to get scene data:', {
-              sceneId: updatedPartyState.activeSceneId,
-              gameSessionId: activeGameSessionId,
-              isConnected: partyData!.getConnectionStatus(),
-              timestamp: Date.now()
+          // Update temporary layers from Y.js awareness
+          const manager = getPartyDataManager();
+          if (manager) {
+            const yjsTemporaryLayers = getTemporaryLayers(manager);
+            if (yjsTemporaryLayers.length > 0) {
+              devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+            }
+            temporaryLayers = yjsTemporaryLayers;
+          }
+
+          // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
+          const hoveredMarker = partyData!.getHoveredMarker();
+          hoveredMarkerId = hoveredMarker?.id ?? null;
+          if (hoveredMarker) {
+            devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
+              id: hoveredMarker.id,
+              hoveredMarkerId,
+              hasTooltip: hoveredMarker.tooltip
             });
+          }
 
-            const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+          // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
 
-            devLog('playfield', 'Scene data retrieval result:', {
-              sceneId: updatedPartyState.activeSceneId,
-              hasSceneData: !!sceneData,
-              hasStageProps: !!sceneData?.stageProps,
-              markerCount: sceneData?.markers?.length || 0,
-              lastUpdated: sceneData?.lastUpdated || null,
-              timestamp: Date.now()
-            });
-
-            if (sceneData) {
-              devLog('playfield', 'Playfield received Y.js scene data update:', {
+          // Also get scene data if we have an active scene
+          if (updatedPartyState.activeSceneId) {
+            // If we don't have the game session ID, we need to find it
+            if (!activeGameSessionId) {
+              // When the active scene changes, we'll invalidate and get the correct game session
+              devLog('playfield', 'No game session ID available, will invalidate to get correct session');
+            } else {
+              devLog('playfield', 'Attempting to get scene data:', {
                 sceneId: updatedPartyState.activeSceneId,
-                markerCount: sceneData.markers?.length || 0
+                gameSessionId: activeGameSessionId,
+                isConnected: partyData!.getConnectionStatus(),
+                timestamp: Date.now()
               });
 
-              // Apply Y.js update immediately - just like editor-to-editor updates
-              if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
-                yjsSceneData = sceneData;
+              const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+
+              devLog('playfield', 'Scene data retrieval result:', {
+                sceneId: updatedPartyState.activeSceneId,
+                hasSceneData: !!sceneData,
+                hasStageProps: !!sceneData?.stageProps,
+                markerCount: sceneData?.markers?.length || 0,
+                lastUpdated: sceneData?.lastUpdated || null,
+                timestamp: Date.now()
+              });
+
+              if (sceneData) {
+                devLog('playfield', 'Playfield received Y.js scene data update:', {
+                  sceneId: updatedPartyState.activeSceneId,
+                  markerCount: sceneData.markers?.length || 0
+                });
+
+                // Apply Y.js update immediately - just like editor-to-editor updates
+                if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
+                  yjsSceneData = sceneData;
+                }
+              } else {
+                devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
               }
-            } else {
-              devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
             }
           }
+        } catch (error) {
+          devError('playfield', 'Error in Y.js subscription callback:', error);
         }
       });
 
@@ -1425,111 +1429,115 @@
 
       // Resubscribe to Y.js changes
       unsubscribeYjs = partyData.subscribe(() => {
-        if (isUnmounting || isInvalidating) {
-          return;
-        }
-
-        const updatedPartyState = partyData!.getPartyState();
-        devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
-
-        // Update reactive state
-        yjsPartyState = {
-          isPaused: updatedPartyState.isPaused,
-          activeSceneId: updatedPartyState.activeSceneId
-        };
-
-        // Update cursors from Y.js awareness
-        const yjsCursors = partyData!.getCursors();
-
-        // Clear out any cursors that are no longer in Y.js
-        const activeCursorKeys = new Set(Object.keys(yjsCursors));
-        const newCursors = { ...cursors };
-        for (const cursorKey of Object.keys(cursors)) {
-          if (!activeCursorKeys.has(cursorKey)) {
-            delete newCursors[cursorKey];
+        try {
+          if (isUnmounting || isInvalidating) {
+            return;
           }
-        }
-        cursors = newCursors;
 
-        // Update or add cursors from Y.js
-        Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
-          // Transform cursor data to match playfield format
-          cursors = {
-            ...cursors,
-            [cursorKey]: {
-              worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
-              userId: cursorData.userId,
-              color: cursorData.color,
-              label: cursorData.label,
-              lastMoveTime: cursorData.lastMoveTime || Date.now(),
-              fadedOut: false
-            }
+          const updatedPartyState = partyData!.getPartyState();
+          devLog('playfield', 'Playfield detected party state change:', updatedPartyState);
+
+          // Update reactive state
+          yjsPartyState = {
+            isPaused: updatedPartyState.isPaused,
+            activeSceneId: updatedPartyState.activeSceneId
           };
-        });
 
-        // Update measurements from Y.js awareness
-        const yjsMeasurements = partyData!.getMeasurements();
-        if (Object.keys(yjsMeasurements).length > 0) {
-          devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
-        }
-        measurements = yjsMeasurements;
+          // Update cursors from Y.js awareness
+          const yjsCursors = partyData!.getCursors();
 
-        // Update temporary layers from Y.js awareness
-        const manager = getPartyDataManager();
-        if (manager) {
-          const yjsTemporaryLayers = getTemporaryLayers(manager);
-          if (yjsTemporaryLayers.length > 0) {
-            devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+          // Clear out any cursors that are no longer in Y.js
+          const activeCursorKeys = new Set(Object.keys(yjsCursors));
+          const newCursors = { ...cursors };
+          for (const cursorKey of Object.keys(cursors)) {
+            if (!activeCursorKeys.has(cursorKey)) {
+              delete newCursors[cursorKey];
+            }
           }
-          temporaryLayers = yjsTemporaryLayers;
-        }
+          cursors = newCursors;
 
-        // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
-        const hoveredMarker = partyData!.getHoveredMarker();
-        hoveredMarkerId = hoveredMarker?.id ?? null;
-        if (hoveredMarker) {
-          devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
-            id: hoveredMarker.id,
-            hoveredMarkerId,
-            hasTooltip: hoveredMarker.tooltip
-          });
-        }
-
-        // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
-
-        // Also get scene data if we have an active scene
-        if (updatedPartyState.activeSceneId) {
-          devLog('playfield', 'Attempting to get scene data:', {
-            sceneId: updatedPartyState.activeSceneId,
-            gameSessionId: newGameSessionId,
-            isConnected: partyData!.getConnectionStatus(),
-            timestamp: Date.now()
+          // Update or add cursors from Y.js
+          Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+            // Transform cursor data to match playfield format
+            cursors = {
+              ...cursors,
+              [cursorKey]: {
+                worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+                userId: cursorData.userId,
+                color: cursorData.color,
+                label: cursorData.label,
+                lastMoveTime: cursorData.lastMoveTime || Date.now(),
+                fadedOut: false
+              }
+            };
           });
 
-          const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+          // Update measurements from Y.js awareness
+          const yjsMeasurements = partyData!.getMeasurements();
+          if (Object.keys(yjsMeasurements).length > 0) {
+            devLog('playfield', 'Received measurements from Y.js:', yjsMeasurements);
+          }
+          measurements = yjsMeasurements;
 
-          devLog('playfield', 'Scene data retrieval result:', {
-            sceneId: updatedPartyState.activeSceneId,
-            hasSceneData: !!sceneData,
-            hasStageProps: !!sceneData?.stageProps,
-            markerCount: sceneData?.markers?.length || 0,
-            lastUpdated: sceneData?.lastUpdated || null,
-            timestamp: Date.now()
-          });
+          // Update temporary layers from Y.js awareness
+          const manager = getPartyDataManager();
+          if (manager) {
+            const yjsTemporaryLayers = getTemporaryLayers(manager);
+            if (yjsTemporaryLayers.length > 0) {
+              devLog('playfield', 'Received temporary layers from Y.js:', yjsTemporaryLayers.length);
+            }
+            temporaryLayers = yjsTemporaryLayers;
+          }
 
-          if (sceneData) {
-            devLog('playfield', 'Playfield received Y.js scene data update:', {
+          // Update hovered marker from Y.js awareness (for players to see what DM is hovering)
+          const hoveredMarker = partyData!.getHoveredMarker();
+          hoveredMarkerId = hoveredMarker?.id ?? null;
+          if (hoveredMarker) {
+            devLog('yjs', '[Play Route] Received hovered marker from Y.js:', {
+              id: hoveredMarker.id,
+              hoveredMarkerId,
+              hasTooltip: hoveredMarker.tooltip
+            });
+          }
+
+          // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
+
+          // Also get scene data if we have an active scene
+          if (updatedPartyState.activeSceneId) {
+            devLog('playfield', 'Attempting to get scene data:', {
               sceneId: updatedPartyState.activeSceneId,
-              markerCount: sceneData.markers?.length || 0
+              gameSessionId: newGameSessionId,
+              isConnected: partyData!.getConnectionStatus(),
+              timestamp: Date.now()
             });
 
-            // Apply Y.js update immediately
-            if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
-              yjsSceneData = sceneData;
+            const sceneData = partyData!.getSceneData(updatedPartyState.activeSceneId);
+
+            devLog('playfield', 'Scene data retrieval result:', {
+              sceneId: updatedPartyState.activeSceneId,
+              hasSceneData: !!sceneData,
+              hasStageProps: !!sceneData?.stageProps,
+              markerCount: sceneData?.markers?.length || 0,
+              lastUpdated: sceneData?.lastUpdated || null,
+              timestamp: Date.now()
+            });
+
+            if (sceneData) {
+              devLog('playfield', 'Playfield received Y.js scene data update:', {
+                sceneId: updatedPartyState.activeSceneId,
+                markerCount: sceneData.markers?.length || 0
+              });
+
+              // Apply Y.js update immediately
+              if (!isUnmounting && !isInvalidating && !isProcessingSceneChange) {
+                yjsSceneData = sceneData;
+              }
+            } else {
+              devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
             }
-          } else {
-            devLog('playfield', 'No scene data found in Y.js for scene:', updatedPartyState.activeSceneId);
           }
+        } catch (error) {
+          devError('playfield', 'Error in Y.js subscription callback (after session change):', error);
         }
       });
 

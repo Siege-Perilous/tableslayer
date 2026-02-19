@@ -174,6 +174,8 @@ export class PartyDataManager {
           // Clear existing observers and re-add them for connected state
           this.sceneObservers.clear();
           this.ensureSceneObservers();
+          // Re-broadcast awareness state so other clients immediately see our cursor/measurements
+          this.refreshAwarenessState();
           // Trigger a data refresh to sync any missed updates
           this.notifySubscribers();
         }, 100);
