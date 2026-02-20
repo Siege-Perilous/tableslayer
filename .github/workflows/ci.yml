@@ -300,7 +300,7 @@ jobs:
   tests:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, fly_deploy]
-    runs-on: ubuntu-latest-4-cores
+    runs-on: linux-4-core
     strategy:
       matrix:
         include:
