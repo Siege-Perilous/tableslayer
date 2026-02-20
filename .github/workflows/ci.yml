@@ -338,28 +338,12 @@ jobs:
   tests-web:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, fly_deploy_web]
-    # Use GPU-enabled 4-core runner for ThreeJS canvas rendering
-    runs-on: gpu-linux-4
+    # Use 4-core runner for parallel test execution with xvfb for WebGL
+    runs-on: linux-4-core
     name: web tests
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Check GPU and display info
-        run: |
-          echo "=== NVIDIA GPU Info ==="
-          nvidia-smi || echo "nvidia-smi not available"
-          echo ""
-          echo "=== GPU Devices ==="
-          ls -la /dev/nvidia* 2>/dev/null || echo "No /dev/nvidia* devices found"
-          ls -la /dev/dri/* 2>/dev/null || echo "No /dev/dri/* devices found"
-          echo ""
-          echo "=== OpenGL/Vulkan Info ==="
-          glxinfo -B 2>/dev/null | head -20 || echo "glxinfo not available"
-          vulkaninfo --summary 2>/dev/null | head -30 || echo "vulkaninfo not available"
-          echo ""
-          echo "=== Environment ==="
-          echo "DISPLAY=$DISPLAY"
-          echo "XDG_SESSION_TYPE=$XDG_SESSION_TYPE"
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/web
@@ -383,12 +367,7 @@ jobs:
           PUBLIC_PARTYKIT_HOST: pr-${{ github.event.pull_request.number }}.tableslayer.com
           CI: true
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
-          # NVIDIA GPU environment variables
-          __NV_PRIME_RENDER_OFFLOAD: '1'
-          __GLX_VENDOR_LIBRARY_NAME: 'nvidia'
         run: |
           echo "BASE_URL is ${{ env.BASE_URL }}"
           echo "PUBLIC_PARTYKIT_HOST is ${{ env.PUBLIC_PARTYKIT_HOST }}"
-          echo ""
-          echo "=== Running tests with xvfb (headed mode for GPU) ==="
           xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm run test:xvfb
