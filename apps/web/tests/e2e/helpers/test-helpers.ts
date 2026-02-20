@@ -164,3 +164,38 @@ export async function uploadSceneFile(page: Page, filePath: string) {
   // Set files directly - the input is hidden but functional
   await fileInput.setInputFiles(filePath);
 }
+
+/**
+ * Waits for the playfield to fully load including ThreeJS canvas.
+ * The playfield may show either the stage (with active scene) or a waiting message.
+ */
+export async function waitForPlayfield(page: Page) {
+  const start = Date.now();
+  console.log(`[waitForPlayfield] starting at URL: ${page.url()}`);
+
+  // Wait for network to settle
+  await page.waitForLoadState('networkidle');
+  console.log(`[waitForPlayfield] networkidle after ${Date.now() - start}ms`);
+
+  // Wait for either the stage or the waiting message to be visible
+  // The playfield shows one or the other depending on whether there's an active scene
+  const stageOrWaiting = page
+    .getByTestId('playfieldStage')
+    .or(page.getByTestId('playfieldWaitingMessage'))
+    .or(page.getByTestId('playfieldPauseScreen'));
+
+  await expect(stageOrWaiting.first()).toBeVisible({ timeout: 30000 });
+  console.log(`[waitForPlayfield] stage or waiting message visible after ${Date.now() - start}ms`);
+
+  // If the stage is visible, wait for canvas to load
+  const stage = page.getByTestId('playfieldStage');
+  if (await stage.isVisible()) {
+    await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
+    console.log(`[waitForPlayfield] canvas visible after ${Date.now() - start}ms`);
+
+    // Brief pause for ThreeJS initialization
+    await page.waitForTimeout(300);
+  }
+
+  console.log(`[waitForPlayfield] complete after ${Date.now() - start}ms`);
+}

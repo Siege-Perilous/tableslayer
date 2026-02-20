@@ -189,8 +189,12 @@ async function createPartyAndSession(page: Page): Promise<{
 
 ### Test organization
 
+For **non-stage tests** (pages without ThreeJS/GPU rendering), use parallel tests:
+
 ```typescript
 test.describe('Feature CRUD operations', () => {
+  test.describe.configure({ mode: 'parallel' });
+
   test('should create a feature', async ({ page }) => {
     // Happy path
   });
@@ -209,6 +213,49 @@ test.describe('Feature CRUD operations', () => {
 });
 ```
 
+### Linear tests for stage-based pages
+
+For **stage-based tests** (scene editor, markers, etc.), use a single linear test that performs the full workflow. The ThreeJS canvas takes 15-20 seconds to initialize the GPU on GitHub CI runners. Running separate tests would multiply this overhead significantly.
+
+```typescript
+test.describe('Scene CRUD operations', () => {
+  // Increase timeout for GPU initialization + all operations
+  test.setTimeout(150000);
+
+  test('should perform full workflow: create, rename, duplicate, delete', async ({ page }) => {
+    const { partySlug, sessionSlug } = await createPartyAndSession(page);
+    await page.goto(`/${partySlug}/${sessionSlug}`);
+    await waitForSceneEditor(page);
+
+    // --- STEP 1: Verify initial state ---
+    // ...
+
+    // --- STEP 2: Create ---
+    // ...
+
+    // --- STEP 3: Rename ---
+    // ...
+
+    // --- STEP 4: Delete ---
+    // ...
+  });
+});
+```
+
+**Why linear tests for the stage?**
+
+- GPU initialization happens once per page load (~15-20s on CI)
+- Separate tests = separate page loads = multiplied wait times
+- A 5-test suite would take 75-100s just for GPU init
+- Linear approach: load once, test everything, total time ~30-40s
+
+**When to use linear vs parallel:**
+
+| Test type                                | Pattern                      | Example files                                                    |
+| ---------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| Non-stage pages                          | Parallel, separate tests     | `party.auth.test.ts`                                             |
+| Stage pages (scenes, markers, playfield) | Linear, single workflow test | `scene.auth.test.ts`, `marker.auth.test.ts`, `play.auth.test.ts` |
+
 ## File structure
 
 ```
@@ -217,11 +264,14 @@ apps/web/tests/e2e/
 │   └── user.json          # Auto-generated auth state (gitignored)
 ├── fixtures/
 │   └── test-image.png     # Test assets
+├── helpers/
+│   └── test-helpers.ts    # Shared helper functions
 ├── global.setup.ts        # Auth setup, runs before all tests
-├── party.auth.test.ts     # Party CRUD tests
+├── party.auth.test.ts     # Party CRUD tests (parallel)
 ├── game-session.auth.test.ts
-├── scene.auth.test.ts
-├── marker.auth.test.ts
+├── scene.auth.test.ts     # Scene CRUD tests (linear, stage-based)
+├── marker.auth.test.ts    # Marker CRUD tests (linear, stage-based)
+├── play.auth.test.ts      # Playfield tests (linear, stage-based)
 ├── invite.auth.test.ts
 └── test-results.json      # Test output (gitignored)
 ```
@@ -266,6 +316,14 @@ Test output is saved to `tests/e2e/test-results.json` for debugging failures.
 - CI deploys a preview app to Fly.io per PR
 - Tests run against the preview URL (set via `PLAYWRIGHT_BASE_URL`)
 - Each PR gets an isolated Turso database
+
+### GPU/Stage loading on CI runners
+
+GitHub CI runners don't have dedicated GPUs, which means ThreeJS canvas initialization is slow (15-20 seconds per page load). To avoid excessive test times:
+
+- **Stage-based tests use linear workflows** - See "Linear tests for stage-based pages" above
+- **Timeouts are extended** - Stage tests use `test.setTimeout(150000)` (2.5 minutes)
+- **Non-stage tests run in parallel** - Pages without ThreeJS can use separate tests
 
 ### Test data isolation
 

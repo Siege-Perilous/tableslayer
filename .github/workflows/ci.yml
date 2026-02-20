@@ -297,23 +297,17 @@ jobs:
             - [Inspect web preview](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring).
             - PartyKit deployment may have failed - check workflow logs
 
-  tests:
+  tests-docs:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, fly_deploy]
-    # Use 4-core runner for Playwright tests (ThreeJS canvas rendering benefits from more CPU)
-    runs-on: linux-4-core
-    strategy:
-      matrix:
-        include:
-          - app: docs
-          - app: web
-    name: ${{ matrix.app }} tests
+    runs-on: ubuntu-latest
+    name: docs tests
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
       - name: Get Playwright version
         id: playwright-version
-        working-directory: apps/${{ matrix.app }}
+        working-directory: apps/docs
         run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // "unknown"')" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -324,13 +318,48 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
       - name: Install Playwright Browsers
-        working-directory: apps/${{ matrix.app }}
+        working-directory: apps/docs
         run: pnpm exec playwright install chromium --with-deps
       - name: Run Playwright Tests
         if: ${{ github.ref != 'refs/heads/main' }}
-        working-directory: apps/${{ matrix.app }}
+        working-directory: apps/docs
         env:
-          BASE_URL: https://pr-${{ github.event.pull_request.number }}-${{ matrix.app }}.fly.dev
+          BASE_URL: https://pr-${{ github.event.pull_request.number }}-docs.fly.dev
+          CI: true
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "BASE_URL is ${{ env.BASE_URL }}"
+          pnpm run test
+
+  tests-web:
+    if: github.event.pull_request.draft == false
+    needs: [format-check, lint, tsc, create_database, fly_deploy]
+    # Use GPU-enabled 4-core runner for web tests (ThreeJS canvas rendering benefits from GPU)
+    runs-on: gpu-linux-4
+    name: web tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/shared
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: apps/web
+        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // "unknown"')" >> $GITHUB_OUTPUT
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Install Playwright Browsers
+        working-directory: apps/web
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run Playwright Tests
+        if: ${{ github.ref != 'refs/heads/main' }}
+        working-directory: apps/web
+        env:
+          BASE_URL: https://pr-${{ github.event.pull_request.number }}-web.fly.dev
           PUBLIC_PARTYKIT_HOST: pr-${{ github.event.pull_request.number }}.tableslayer.com
           CI: true
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
