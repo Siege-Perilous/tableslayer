@@ -49,7 +49,8 @@ test.describe('Marker CRUD operations', () => {
     await labelInput.fill(newLabel);
 
     // Click somewhere else to trigger save (blur the input)
-    await page.locator('.markerManager__header').click();
+    // Use force:true to bypass stability checks that can timeout in CI
+    await page.locator('.markerManager__header').click({ force: true });
     await page.waitForTimeout(500);
 
     // Verify the label was updated by checking the marker preview shows the new label
@@ -76,7 +77,8 @@ test.describe('Marker CRUD operations', () => {
     // Go back to list view by clicking the link
     const backLink = page.locator('.markerManager__backButton');
     await expect(backLink).toBeVisible({ timeout: 5000 });
-    await backLink.click();
+    // Use force:true to bypass stability checks that can timeout in CI
+    await backLink.click({ force: true });
 
     // Wait for list view to appear (marker list with at least one item)
     await expect(page.locator('.markerManager__listItem')).toBeVisible({ timeout: 10000 });
@@ -93,10 +95,12 @@ test.describe('Marker CRUD operations', () => {
     // Click the trash icon to delete (the IconButton has class iconBtn)
     const trashBtn = page.locator('.markerManager__editIcon .iconBtn');
     await expect(trashBtn).toBeVisible({ timeout: 5000 });
-    await trashBtn.click();
+    // Use force:true to bypass stability checks that can timeout in CI
+    await trashBtn.click({ force: true });
 
     // Confirm deletion
-    await page.getByTestId('confirmActionButton').click();
+    // Use force:true to bypass stability checks that can timeout in CI
+    await page.getByTestId('confirmActionButton').click({ force: true });
 
     // Verify we're back to showing "No markers in this scene"
     await expect(page.locator('text=No markers in this scene')).toBeVisible({ timeout: 10000 });

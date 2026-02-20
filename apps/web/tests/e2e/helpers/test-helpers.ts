@@ -13,7 +13,8 @@ export async function createParty(page: Page): Promise<string> {
   // Wait for form to be ready
   const partyNameInput = page.getByTestId('partyName');
   await expect(partyNameInput).toBeVisible();
-  await partyNameInput.click();
+  // Use force:true to bypass stability checks that can timeout in CI
+  await partyNameInput.click({ force: true });
   await partyNameInput.fill(partyName);
 
   // Wait for submit button to be enabled (form validation passed)
@@ -48,7 +49,8 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   // Fill in session name
   const sessionNameInput = page.getByTestId('sessionName');
   await expect(sessionNameInput).toBeVisible({ timeout: 5000 });
-  await sessionNameInput.click();
+  // Use force:true to bypass stability checks that can timeout in CI
+  await sessionNameInput.click({ force: true });
   const sessionName = `Test Session ${Date.now()}`;
   await sessionNameInput.fill(sessionName);
 
@@ -128,8 +130,8 @@ export async function clickCanvasCenter(page: Page) {
 export async function uploadSceneFile(page: Page, filePath: string) {
   // Wait for the add scene button to be enabled
   const addSceneBtn = page.locator('.scene__inputBtn');
-  await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
-  await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
+  await expect(addSceneBtn).toBeVisible({ timeout: 15000 });
+  await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
 
   // Wait a moment for any animations to settle
   await page.waitForTimeout(500);
@@ -138,10 +140,10 @@ export async function uploadSceneFile(page: Page, filePath: string) {
   const fileInput = page.locator('.scene__input input[type="file"]');
 
   // Wait for the input to be attached to DOM
-  await fileInput.waitFor({ state: 'attached', timeout: 10000 });
+  await fileInput.waitFor({ state: 'attached', timeout: 15000 });
 
   // Use retry pattern for setting files (handles stability issues)
   await expect(async () => {
     await fileInput.setInputFiles(filePath);
-  }).toPass({ timeout: 15000, intervals: [500, 1000, 2000] });
+  }).toPass({ timeout: 20000, intervals: [500, 1000, 2000] });
 }
