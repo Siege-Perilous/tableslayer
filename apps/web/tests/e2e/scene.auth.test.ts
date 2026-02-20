@@ -6,6 +6,8 @@ import { createPartyAndSession, uploadSceneFile, waitForSceneEditor } from './he
 const testImagePath = path.join(process.cwd(), 'tests/e2e/fixtures/test-image.png');
 
 test.describe('Scene CRUD operations', () => {
+  // ThreeJS canvas takes 15-20s to load on CI runners
+  test.setTimeout(120000);
   test('should create a scene by uploading an image', async ({ page }) => {
     const { partySlug, sessionSlug } = await createPartyAndSession(page);
 
