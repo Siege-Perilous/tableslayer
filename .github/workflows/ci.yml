@@ -14,21 +14,21 @@ permissions:
 
 jobs:
   format-check:
-    runs-on: ubuntu-latest
+    runs-on: linux-4-core
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
       - run: pnpm format-check
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: linux-4-core
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
       - run: pnpm lint -- --quiet
 
   tsc:
-    runs-on: ubuntu-latest
+    runs-on: linux-4-core
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
@@ -39,7 +39,7 @@ jobs:
   create_database:
     if: github.event.pull_request.draft == false
     name: 'Turso'
-    runs-on: ubuntu-latest
+    runs-on: linux-4-core
     needs: [format-check, lint, tsc]
     outputs:
       turso_db_url: ${{ steps.set-db-url.outputs.turso_db_url }}
@@ -147,7 +147,7 @@ jobs:
 
   fly_deploy:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: linux-4-core
     needs: [create_database]
 
     env:
