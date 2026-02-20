@@ -338,12 +338,20 @@ jobs:
   tests-web:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, fly_deploy_web]
-    # Use GPU runner for faster WebGL rendering (llvmpipe)
+    # Use GPU runner for faster WebGL rendering (Tesla T4)
     runs-on: gpu-linux-4
     name: web tests
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
+      - name: Check GPU availability
+        run: |
+          echo "=== NVIDIA Driver Info ==="
+          nvidia-smi || echo "nvidia-smi failed"
+          echo ""
+          echo "=== GPU Devices ==="
+          ls -la /dev/nvidia* 2>/dev/null || echo "No /dev/nvidia* devices"
+          ls -la /dev/dri/* 2>/dev/null || echo "No /dev/dri/* devices"
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/web
