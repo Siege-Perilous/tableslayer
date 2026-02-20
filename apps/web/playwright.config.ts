@@ -13,6 +13,7 @@ const __dirname = dirname(__filename);
 const config: PlaywrightTestConfig = {
   globalSetup: './tests/e2e/global.setup.ts',
   testDir: 'tests/e2e',
+  workers: process.env.CI ? 4 : undefined,
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['json', { outputFile: 'tests/e2e/test-results.json' }]],
   timeout: 60000,

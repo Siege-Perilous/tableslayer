@@ -6,51 +6,41 @@ import { createPartyAndSession, uploadSceneFile, waitForSceneEditor } from './he
 const testImagePath = path.join(process.cwd(), 'tests/e2e/fixtures/test-image.png');
 
 test.describe('Scene CRUD operations', () => {
-  test.describe.configure({ mode: 'parallel' });
-  // ThreeJS canvas takes 15-20s to load on CI runners
-  test.setTimeout(120000);
-  test('should create a scene by uploading an image', async ({ page }) => {
+  // ThreeJS canvas takes 15-20s to load on CI runners, plus image uploads can be slow
+  test.setTimeout(150000);
+
+  test('should perform full scene workflow: create, rename, duplicate, set active, and delete', async ({ page }) => {
     const { partySlug, sessionSlug } = await createPartyAndSession(page);
 
     // Navigate to the game session editor
     await page.goto(`/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Count initial scenes (new sessions may start with a default "First scene")
-    const initialSceneCount = await page.locator('.scene__list .scene').count();
+    // --- STEP 1: Verify initial state (default "First scene" exists) ---
+    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
+    const addSceneBtn = page.locator('.scene__inputBtn');
+    await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
 
-    // Upload a file to create a new scene
+    // --- STEP 2: Create a new scene by uploading an image ---
+    const initialSceneCount = await page.locator('.scene__list .scene').count();
     await uploadSceneFile(page, testImagePath);
 
-    // Wait for the scene creation to complete by checking the scene count increases
+    // Wait for the scene creation to complete
     await expect(async () => {
       const count = await page.locator('.scene__list .scene').count();
       expect(count).toBe(initialSceneCount + 1);
     }).toPass({ timeout: 20000 });
 
     // Verify the "Add scene" button is enabled (scene creation completed)
-    const addSceneBtn = page.locator('.scene__inputBtn');
     await expect(addSceneBtn).not.toBeDisabled();
-  });
 
-  test('should rename a scene', async ({ page }) => {
-    const { partySlug, sessionSlug } = await createPartyAndSession(page);
-
-    // Navigate to the game session editor
-    await page.goto(`/${partySlug}/${sessionSlug}`);
-    await waitForSceneEditor(page);
-
-    // Wait for the scene list to have at least one scene (default "First scene")
-    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
-
-    // Get the original scene name from the first scene
+    // --- STEP 3: Rename the first scene ---
     const sceneText = page.locator('.scene__list .scene__text').first();
     const originalName = await sceneText.textContent();
 
     // Open scene popover by right-clicking on the scene
-    const scene = page.locator('.scene__list .scene').first();
-    // Use force:true to bypass any overlays that might block clicks
-    await scene.click({ button: 'right', force: true });
+    const firstScene = page.locator('.scene__list .scene').first();
+    await firstScene.click({ button: 'right', force: true });
 
     // Wait for popover menu to appear and click "Rename scene"
     const renameMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Rename scene' });
@@ -66,71 +56,17 @@ test.describe('Scene CRUD operations', () => {
     // Submit rename by clicking the check button
     await page.locator('.scene__renameInput button').first().click({ force: true });
 
-    // Wait for rename to complete by checking name changed
+    // Wait for rename to complete
     await expect(sceneText).toContainText(newName, { timeout: 10000 });
     expect(await sceneText.textContent()).not.toEqual(originalName);
-  });
 
-  test('should delete a scene via context menu', async ({ page }) => {
-    const { partySlug, sessionSlug } = await createPartyAndSession(page);
-
-    // Navigate to the game session editor
-    await page.goto(`/${partySlug}/${sessionSlug}`);
-    await waitForSceneEditor(page);
-
-    // Wait for the scene list to have the default scene
-    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
-
-    // Create an additional scene so we have 2 (deleting the only scene might not be allowed)
-    await uploadSceneFile(page, testImagePath);
-
-    // Wait for second scene to appear
-    await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 20000 });
-
-    // Wait for upload to fully complete (button re-enabled)
-    const addSceneBtn = page.locator('.scene__inputBtn');
-    await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
-
-    // Open scene menu via the chevron button on the FIRST scene (index 0)
-    // Delete the first scene since deleting the newly added one might have issues
-    const scenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
-    await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
-    // Use force:true to bypass any overlays that might block clicks
-    await scenePopoverBtn.click({ force: true });
-
-    // Wait for popover menu to appear and click "Delete scene"
-    const deleteMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Delete scene' });
-    await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
-    await deleteMenuItem.click({ force: true });
-
-    // Wait for popover to close and deletion to complete
-    await expect(deleteMenuItem).not.toBeVisible({ timeout: 5000 });
-
-    // Wait for deletion to complete by checking scene count decreased
-    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 20000 });
-  });
-
-  test('should duplicate a scene', async ({ page }) => {
-    const { partySlug, sessionSlug } = await createPartyAndSession(page);
-
-    // Navigate to the game session editor
-    await page.goto(`/${partySlug}/${sessionSlug}`);
-    await waitForSceneEditor(page);
-
-    // Wait for the scene list to have the default scene
-    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
-
-    // Wait for add scene button to not be disabled (no operations in progress)
-    const addSceneBtn = page.locator('.scene__inputBtn');
+    // --- STEP 4: Duplicate the first scene ---
     await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
 
-    // Wait for the popover button to be visible and click it
     const scenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
     await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
-    // Use force:true to bypass any overlays that might block clicks
     await scenePopoverBtn.click({ force: true });
 
-    // Wait for popover menu to appear
     const duplicateMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Duplicate scene' });
     await expect(duplicateMenuItem).toBeVisible({ timeout: 5000 });
     await duplicateMenuItem.click({ force: true });
@@ -138,7 +74,40 @@ test.describe('Scene CRUD operations', () => {
     // Wait for popover to close
     await expect(duplicateMenuItem).not.toBeVisible({ timeout: 5000 });
 
-    // Wait for duplication to complete by checking scene count increased
-    await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 25000 });
+    // Wait for duplication to complete (now we should have 3 scenes)
+    await expect(page.locator('.scene__list .scene')).toHaveCount(3, { timeout: 25000 });
+
+    // --- STEP 5: Set a scene as active ---
+    // Verify no scene is currently active
+    await expect(page.locator('.scene__projectedIcon')).not.toBeVisible();
+
+    // Open scene menu via the popover button
+    await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
+    await scenePopoverBtn.click({ force: true });
+
+    // Click "Set active scene"
+    const setActiveMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Set active scene' });
+    await expect(setActiveMenuItem).toBeVisible({ timeout: 5000 });
+    await setActiveMenuItem.click({ force: true });
+
+    // Wait for the active scene indicator to appear
+    await expect(page.locator('.scene__projectedIcon')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.scene__projectedIcon')).toContainText('Active on table', { timeout: 5000 });
+
+    // --- STEP 6: Delete a scene ---
+    await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
+
+    // Delete the second scene (not the active one)
+    const secondScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').nth(1);
+    await expect(secondScenePopoverBtn).toBeVisible({ timeout: 5000 });
+    await secondScenePopoverBtn.click({ force: true });
+
+    const deleteMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Delete scene' });
+    await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
+    await deleteMenuItem.click({ force: true });
+
+    // Wait for popover to close and deletion to complete
+    await expect(deleteMenuItem).not.toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 20000 });
   });
 });
