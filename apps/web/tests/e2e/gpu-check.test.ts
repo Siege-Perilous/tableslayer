@@ -1,8 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Diagnostic test to verify GPU/WebGL status.
- * This checks WebGL renderer info from within an actual page context.
+ * Diagnostic test to verify GPU/WebGL status in CI.
+ *
+ * This test outputs WebGL renderer info to help debug GPU acceleration issues.
+ * Look for these indicators in the test output:
+ *
+ *   ✅ "NVIDIA Tesla T4" = Hardware GPU working (fastest, ~1.4min total)
+ *   ⚠️  "llvmpipe" = Mesa software rendering (fast, ~1.6min total)
+ *   ❌ "SwiftShader" = Chromium software rendering (slow, ~5min total)
+ *
+ * See docs/playwright-testing-guide.md for GPU setup documentation.
  */
 test.describe('GPU diagnostics', () => {
   test('should report WebGL renderer info', async ({ page }) => {

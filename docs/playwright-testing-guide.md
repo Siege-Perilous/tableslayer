@@ -317,13 +317,59 @@ Test output is saved to `tests/e2e/test-results.json` for debugging failures.
 - Tests run against the preview URL (set via `PLAYWRIGHT_BASE_URL`)
 - Each PR gets an isolated Turso database
 
-### GPU/Stage loading on CI runners
+### GPU acceleration for WebGL/ThreeJS tests
 
-GitHub CI runners don't have dedicated GPUs, which means ThreeJS canvas initialization is slow (15-20 seconds per page load). To avoid excessive test times:
+The test suite uses a GPU-enabled GitHub Actions runner (`gpu-linux-4`) with an NVIDIA Tesla T4 GPU for hardware-accelerated WebGL rendering. This dramatically improves canvas load times for ThreeJS-based tests.
 
-- **Stage-based tests use linear workflows** - See "Linear tests for stage-based pages" above
-- **Timeouts are extended** - Stage tests use `test.setTimeout(150000)` (2.5 minutes)
-- **Non-stage tests run in parallel** - Pages without ThreeJS can use separate tests
+#### How it works
+
+1. **GPU Runner**: We use the `gpu-linux-4` runner with "Ubuntu NVIDIA GPU-Optimized Image for AI and HPC"
+2. **Kernel Module Loading**: The NVIDIA driver is present but not loaded by default. CI runs `modprobe nvidia` to load it
+3. **xvfb + Headed Mode**: Tests run in headed mode with xvfb (X Virtual Framebuffer) to enable GPU rendering
+4. **Chromium GPU Flags**: Playwright launches Chromium with flags to use Vulkan/ANGLE for GPU acceleration
+
+#### Performance comparison
+
+| Setup                         | Renderer | Canvas Load | Total Time |
+| ----------------------------- | -------- | ----------- | ---------- |
+| Standard runner (SwiftShader) | Software | 20-32s      | 5+ min     |
+| GPU runner (llvmpipe only)    | Software | 1-6s        | 1.6 min    |
+| GPU runner (Tesla T4)         | Hardware | 300ms-1.4s  | 1.4 min    |
+
+#### Key files
+
+- **`.github/workflows/ci.yml`** - GPU setup step with `modprobe nvidia`
+- **`apps/web/playwright.config.ts`** - Chromium GPU flags (`--use-angle=vulkan`, etc.)
+- **`apps/web/package.json`** - `test:xvfb` script for headed mode with xvfb
+- **`apps/web/tests/e2e/gpu-check.test.ts`** - Diagnostic test that reports GPU renderer info
+
+#### Troubleshooting GPU issues
+
+If tests are slow or failing with canvas timeouts:
+
+1. **Check GPU diagnostic output**: Look for the "WebGL GPU DIAGNOSTICS" box in test logs
+   - ✅ `NVIDIA Tesla T4` = Hardware GPU working
+   - ⚠️ `llvmpipe` = Software rendering (still fast, ~1.6min)
+   - ❌ `SwiftShader` = Slow software rendering (5+ min)
+
+2. **Verify nvidia-smi**: The "Setup and check GPU" step should show:
+
+   ```
+   nvidia module loaded
+   nvidia-smi showing Tesla T4
+   ```
+
+3. **If nvidia-smi fails**: The kernel module didn't load. Check runner configuration.
+
+4. **Fallback option**: If GPU setup adds too much overhead, removing the `modprobe` step falls back to llvmpipe (still 1.6min test times).
+
+#### Why xvfb + headed mode?
+
+Headless Chromium ignores GPU hardware by default. Running in "headed" mode with xvfb (a virtual display) enables the full GPU rendering pipeline. This is configured via:
+
+```bash
+xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm run test:xvfb
+```
 
 ### Test data isolation
 

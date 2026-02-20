@@ -344,20 +344,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      # Note: If this step adds significant time, we can revert to just using llvmpipe
-      # which already gives us 1.6m test runs. The goal is to see if Tesla T4 works.
+      # Load NVIDIA kernel modules for Tesla T4 GPU acceleration.
+      # The GPU runner has drivers installed but modules aren't loaded by default.
+      # This enables hardware WebGL rendering (1.4min) vs software llvmpipe (1.6min).
+      # If this step fails, tests still work via llvmpipe software rendering.
+      # See docs/playwright-testing-guide.md for full GPU setup documentation.
       - name: Setup and check GPU
         run: |
-          echo "=== Attempting to load NVIDIA kernel module ==="
-          sudo modprobe nvidia && echo "nvidia module loaded" || echo "Failed to load nvidia module"
-          sudo modprobe nvidia_uvm && echo "nvidia_uvm module loaded" || echo "Failed to load nvidia_uvm module"
+          echo "=== Loading NVIDIA kernel modules ==="
+          sudo modprobe nvidia && echo "✓ nvidia module loaded" || echo "✗ Failed to load nvidia module"
+          sudo modprobe nvidia_uvm && echo "✓ nvidia_uvm module loaded" || echo "✗ Failed to load nvidia_uvm module"
           echo ""
-          echo "=== GPU Devices After Module Load ==="
+          echo "=== GPU Devices ==="
           ls -la /dev/nvidia* 2>/dev/null || echo "No /dev/nvidia* devices"
-          ls -la /dev/dri/* 2>/dev/null || echo "No /dev/dri/* devices"
           echo ""
-          echo "=== NVIDIA Driver Info ==="
-          nvidia-smi || echo "nvidia-smi still failed"
+          echo "=== NVIDIA Driver Status ==="
+          nvidia-smi || echo "nvidia-smi failed - falling back to software rendering"
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/web
