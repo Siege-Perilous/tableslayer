@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test';
 import path from 'path';
-import { createPartyAndSession, uploadSceneFile, waitForSceneEditor } from './helpers/test-helpers';
+import { createPartyAndSession, gotoWithRetry, uploadSceneFile, waitForSceneEditor } from './helpers/test-helpers';
 
 // Use process.cwd() which is apps/web when Playwright runs
 const testImagePath = path.join(process.cwd(), 'tests/e2e/fixtures/test-image.png');
 
 test.describe('Scene CRUD operations', () => {
-  // ThreeJS canvas takes 15-20s to load on CI runners, plus image uploads can be slow
-  test.setTimeout(150000);
+  // ThreeJS canvas takes 30-45s to load on CI GPU runners, plus image uploads can be slow
+  test.setTimeout(240000);
 
   test('should perform full scene workflow: create, rename, duplicate, set active, and delete', async ({ page }) => {
     const { partySlug, sessionSlug } = await createPartyAndSession(page);
 
     // Navigate to the game session editor
-    await page.goto(`/${partySlug}/${sessionSlug}`);
+    await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
     // --- STEP 1: Verify initial state (default "First scene" exists) ---

@@ -10,6 +10,18 @@ const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// GPU flags for hardware-accelerated WebGL rendering in headless Chromium on Linux
+// See: https://michelkraemer.com/enable-gpu-for-slow-playwright-tests-in-headless-mode/
+const gpuArgs = process.env.CI
+  ? [
+      '--use-gl=egl',
+      '--use-angle=vulkan',
+      '--enable-features=Vulkan',
+      '--disable-vulkan-surface',
+      '--enable-unsafe-webgpu'
+    ]
+  : [];
+
 const config: PlaywrightTestConfig = {
   globalSetup: './tests/e2e/global.setup.ts',
   testDir: 'tests/e2e',
@@ -24,7 +36,10 @@ const config: PlaywrightTestConfig = {
     baseURL,
     trace: 'on-first-retry',
     viewport: { width: 1280, height: 720 },
-    actionTimeout: 15000
+    actionTimeout: 15000,
+    launchOptions: {
+      args: gpuArgs
+    }
   },
   projects: [
     {

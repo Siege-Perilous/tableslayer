@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { clickCanvasCenter, createPartyAndSession, waitForSceneEditor } from './helpers/test-helpers';
+import { clickCanvasCenter, createPartyAndSession, gotoWithRetry, waitForSceneEditor } from './helpers/test-helpers';
 
 test.describe('Marker CRUD operations', () => {
-  // ThreeJS canvas takes 15-20s to load on CI runners
-  test.setTimeout(150000);
+  // ThreeJS canvas takes 30-45s to load on CI GPU runners
+  test.setTimeout(240000);
 
   test('should perform full marker workflow: verify empty state, create, edit, delete, verify empty again', async ({
     page
@@ -11,7 +11,7 @@ test.describe('Marker CRUD operations', () => {
     const { partySlug, sessionSlug } = await createPartyAndSession(page);
 
     // Navigate to the game session editor
-    await page.goto(`/${partySlug}/${sessionSlug}`);
+    await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
     // --- STEP 1: Verify empty state initially ---

@@ -107,7 +107,8 @@ export async function waitForSceneEditor(page: Page) {
   console.log(`[waitForSceneEditor] addSceneBtn ready after ${Date.now() - start}ms`);
 
   // Wait for canvas to be visible (ThreeJS initialization)
-  await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
+  // GPU initialization on CI runners can take 30+ seconds
+  await page.waitForSelector('canvas', { state: 'visible', timeout: 45000 });
   console.log(`[waitForSceneEditor] canvas visible after ${Date.now() - start}ms`);
 
   // Wait for network to settle
@@ -115,7 +116,7 @@ export async function waitForSceneEditor(page: Page) {
   console.log(`[waitForSceneEditor] networkidle after ${Date.now() - start}ms`);
 
   // Brief pause for ThreeJS initialization
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
   console.log(`[waitForSceneEditor] complete after ${Date.now() - start}ms`);
 }
 
@@ -184,18 +185,47 @@ export async function waitForPlayfield(page: Page) {
     .or(page.getByTestId('playfieldWaitingMessage'))
     .or(page.getByTestId('playfieldPauseScreen'));
 
-  await expect(stageOrWaiting.first()).toBeVisible({ timeout: 30000 });
+  await expect(stageOrWaiting.first()).toBeVisible({ timeout: 45000 });
   console.log(`[waitForPlayfield] stage or waiting message visible after ${Date.now() - start}ms`);
 
   // If the stage is visible, wait for canvas to load
   const stage = page.getByTestId('playfieldStage');
   if (await stage.isVisible()) {
-    await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
+    // GPU initialization on CI runners can take 30+ seconds
+    await page.waitForSelector('canvas', { state: 'visible', timeout: 45000 });
     console.log(`[waitForPlayfield] canvas visible after ${Date.now() - start}ms`);
 
     // Brief pause for ThreeJS initialization
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
   }
 
   console.log(`[waitForPlayfield] complete after ${Date.now() - start}ms`);
+}
+
+/**
+ * Navigate to a URL with retry logic for CI flakiness.
+ * Handles net::ERR_ABORTED errors that can occur when preview apps are still warming up.
+ */
+export async function gotoWithRetry(page: Page, url: string, maxRetries = 3) {
+  const start = Date.now();
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[gotoWithRetry] attempt ${attempt}/${maxRetries} for ${url}`);
+      await page.goto(url, { timeout: 30000 });
+      await page.waitForLoadState('domcontentloaded');
+      console.log(`[gotoWithRetry] success after ${Date.now() - start}ms`);
+      return;
+    } catch (error) {
+      lastError = error as Error;
+      console.log(`[gotoWithRetry] attempt ${attempt} failed: ${lastError.message}`);
+      if (attempt < maxRetries) {
+        // Wait before retrying
+        await page.waitForTimeout(2000);
+      }
+    }
+  }
+
+  throw lastError;
 }
