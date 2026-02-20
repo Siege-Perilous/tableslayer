@@ -300,7 +300,8 @@ jobs:
   tests:
     if: github.event.pull_request.draft == false
     needs: [format-check, lint, tsc, create_database, fly_deploy]
-    runs-on: ubuntu-latest
+    # Use 4-core runner for Playwright tests (ThreeJS canvas rendering benefits from more CPU)
+    runs-on: linux-4-core
     strategy:
       matrix:
         include:
