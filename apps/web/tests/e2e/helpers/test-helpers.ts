@@ -93,8 +93,8 @@ export async function waitForSceneEditor(page: Page) {
   // Wait for network to settle
   await page.waitForLoadState('networkidle');
 
-  // Give ThreeJS and animations time to fully initialize and stabilize
-  await page.waitForTimeout(1000);
+  // Brief pause for ThreeJS initialization
+  await page.waitForTimeout(300);
 }
 
 /**
@@ -130,20 +130,15 @@ export async function clickCanvasCenter(page: Page) {
 export async function uploadSceneFile(page: Page, filePath: string) {
   // Wait for the add scene button to be enabled
   const addSceneBtn = page.locator('.scene__inputBtn');
-  await expect(addSceneBtn).toBeVisible({ timeout: 15000 });
-  await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
-
-  // Wait a moment for any animations to settle
-  await page.waitForTimeout(500);
+  await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
+  await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
 
   // Get the file input - it's hidden (opacity: 0) but still accessible
   const fileInput = page.locator('.scene__input input[type="file"]');
 
   // Wait for the input to be attached to DOM
-  await fileInput.waitFor({ state: 'attached', timeout: 15000 });
+  await fileInput.waitFor({ state: 'attached', timeout: 10000 });
 
-  // Use retry pattern for setting files (handles stability issues)
-  await expect(async () => {
-    await fileInput.setInputFiles(filePath);
-  }).toPass({ timeout: 20000, intervals: [500, 1000, 2000] });
+  // Set files directly - the input is hidden but functional
+  await fileInput.setInputFiles(filePath);
 }

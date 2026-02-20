@@ -85,9 +85,8 @@ test.describe('Scene CRUD operations', () => {
     await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 20000 });
 
     // Wait for upload to fully complete (button re-enabled)
-    // Use longer timeout as file uploads can be slow in CI
     const addSceneBtn = page.locator('.scene__inputBtn');
-    await expect(addSceneBtn).not.toBeDisabled({ timeout: 30000 });
+    await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
 
     // Open scene menu via the chevron button on the FIRST scene (index 0)
     // Delete the first scene since deleting the newly added one might have issues

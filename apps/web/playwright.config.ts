@@ -15,9 +15,9 @@ const config: PlaywrightTestConfig = {
   testDir: 'tests/e2e',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['json', { outputFile: 'tests/e2e/test-results.json' }]],
-  timeout: 90000,
+  timeout: 60000,
   expect: {
-    timeout: 15000
+    timeout: 10000
   },
   use: {
     baseURL,
