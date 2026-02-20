@@ -79,22 +79,29 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
  * Waits for the scene editor to fully load including ThreeJS canvas.
  */
 export async function waitForSceneEditor(page: Page) {
+  const start = Date.now();
+
   // Wait for the scenes container to be visible
   await page.waitForSelector('.scenes', { state: 'visible', timeout: 15000 });
+  console.log(`[waitForSceneEditor] .scenes visible after ${Date.now() - start}ms`);
 
   // Wait for the "Add scene" button to be ready and enabled
   const addSceneBtn = page.locator('.scene__inputBtn');
   await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
   await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
+  console.log(`[waitForSceneEditor] addSceneBtn ready after ${Date.now() - start}ms`);
 
   // Wait for canvas to be visible (ThreeJS initialization)
   await page.waitForSelector('canvas', { state: 'visible', timeout: 15000 });
+  console.log(`[waitForSceneEditor] canvas visible after ${Date.now() - start}ms`);
 
   // Wait for network to settle
   await page.waitForLoadState('networkidle');
+  console.log(`[waitForSceneEditor] networkidle after ${Date.now() - start}ms`);
 
   // Brief pause for ThreeJS initialization
   await page.waitForTimeout(300);
+  console.log(`[waitForSceneEditor] complete after ${Date.now() - start}ms`);
 }
 
 /**
