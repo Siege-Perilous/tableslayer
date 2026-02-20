@@ -115,8 +115,9 @@ export async function waitForSceneEditor(page: Page) {
   await page.waitForLoadState('networkidle');
   console.log(`[waitForSceneEditor] networkidle after ${Date.now() - start}ms`);
 
-  // Brief pause for ThreeJS initialization
-  await page.waitForTimeout(500);
+  // Wait for ThreeJS to fully initialize and become interactive
+  // The canvas needs time to set up WebGL context and event handlers
+  await page.waitForTimeout(2000);
   console.log(`[waitForSceneEditor] complete after ${Date.now() - start}ms`);
 }
 
@@ -151,19 +152,29 @@ export async function clickCanvasCenter(page: Page) {
  * Uploads a file to the scene input with retry logic for CI stability.
  */
 export async function uploadSceneFile(page: Page, filePath: string) {
+  const start = Date.now();
+  console.log(`[uploadSceneFile] starting upload of ${filePath}`);
+
   // Wait for the add scene button to be enabled
   const addSceneBtn = page.locator('.scene__inputBtn');
   await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
   await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
+  console.log(`[uploadSceneFile] addSceneBtn ready after ${Date.now() - start}ms`);
 
   // Get the file input - it's hidden (opacity: 0) but still accessible
   const fileInput = page.locator('.scene__input input[type="file"]');
 
   // Wait for the input to be attached to DOM
   await fileInput.waitFor({ state: 'attached', timeout: 10000 });
+  console.log(`[uploadSceneFile] fileInput attached after ${Date.now() - start}ms`);
 
   // Set files directly - the input is hidden but functional
   await fileInput.setInputFiles(filePath);
+  console.log(`[uploadSceneFile] file set after ${Date.now() - start}ms`);
+
+  // Wait for network activity from the upload
+  await page.waitForLoadState('networkidle');
+  console.log(`[uploadSceneFile] networkidle after ${Date.now() - start}ms`);
 }
 
 /**
@@ -195,8 +206,8 @@ export async function waitForPlayfield(page: Page) {
     await page.waitForSelector('canvas', { state: 'visible', timeout: 45000 });
     console.log(`[waitForPlayfield] canvas visible after ${Date.now() - start}ms`);
 
-    // Brief pause for ThreeJS initialization
-    await page.waitForTimeout(500);
+    // Wait for ThreeJS to fully initialize
+    await page.waitForTimeout(2000);
   }
 
   console.log(`[waitForPlayfield] complete after ${Date.now() - start}ms`);

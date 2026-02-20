@@ -111,8 +111,15 @@ test.describe('Scene CRUD operations', () => {
     await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
     await deleteMenuItem.click({ force: true });
 
-    // Wait for popover to close and deletion to complete
-    await expect(deleteMenuItem).not.toBeVisible({ timeout: 5000 });
+    // Confirm deletion if confirmation dialog appears
+    const confirmBtn = page.getByTestId('confirmActionButton');
+    if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await confirmBtn.click({ force: true });
+      console.log('[scene test] confirmed deletion');
+    }
+
+    // Wait for deletion to complete
+    await page.waitForLoadState('networkidle');
     await expect(page.locator('.scene__list .scene')).toHaveCount(2, { timeout: 20000 });
   });
 });

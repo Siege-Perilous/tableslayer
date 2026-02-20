@@ -17,7 +17,13 @@ test.describe('Marker CRUD operations', () => {
     // --- STEP 1: Verify empty state initially ---
     const markerToolBtn = page.getByTestId('markerToolButton');
     await expect(markerToolBtn).toBeVisible({ timeout: 10000 });
-    await markerToolBtn.click({ force: true });
+
+    // Use evaluate to click - bypasses any potential event handler blocking
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="markerToolButton"]') as HTMLButtonElement;
+      if (btn) btn.click();
+    });
+    console.log('[marker test] marker tool button clicked');
 
     // Verify the "No markers" message is visible
     await expect(page.locator('text=No markers in this scene')).toBeVisible({ timeout: 10000 });

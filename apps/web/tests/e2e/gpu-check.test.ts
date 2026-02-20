@@ -1,42 +1,54 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Diagnostic test to verify GPU hardware acceleration is working.
- * This helps debug performance issues with ThreeJS canvas rendering.
+ * Diagnostic test to verify GPU/WebGL status.
+ * This checks WebGL renderer info from within an actual page context.
  */
 test.describe('GPU diagnostics', () => {
-  test('should have hardware acceleration enabled', async ({ page }) => {
-    await page.goto('chrome://gpu');
+  test('should report WebGL renderer info', async ({ page }) => {
+    // Navigate to a real page (the app's homepage)
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Check the feature status list for hardware acceleration indicators
-    const featureStatusList = page.locator('.feature-status-list');
-    await expect(featureStatusList).toBeVisible({ timeout: 10000 });
+    // Check WebGL info via JavaScript
+    const webglInfo = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      const gl =
+        (canvas.getContext('webgl2') as WebGL2RenderingContext) ||
+        (canvas.getContext('webgl') as WebGLRenderingContext);
 
-    // Log GPU info for debugging
-    const content = await featureStatusList.textContent();
-    console.log('[GPU Check] Feature status:', content);
+      if (!gl) {
+        return { error: 'WebGL not available' };
+      }
 
-    // Check for hardware acceleration - at least WebGL should be accelerated
-    // Note: This test is informational - it logs GPU status but doesn't fail
-    // if software rendering is used, since that's still functional
-    const webglStatus = page.locator('li', { hasText: 'WebGL' }).first();
-    if (await webglStatus.isVisible()) {
-      const webglText = await webglStatus.textContent();
-      console.log('[GPU Check] WebGL status:', webglText);
-    }
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown';
+      const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'Unknown';
 
-    // Check for Canvas status
-    const canvasStatus = page.locator('li', { hasText: 'Canvas' }).first();
-    if (await canvasStatus.isVisible()) {
-      const canvasText = await canvasStatus.textContent();
-      console.log('[GPU Check] Canvas status:', canvasText);
-    }
+      return {
+        renderer,
+        vendor,
+        version: gl.getParameter(gl.VERSION),
+        shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+        maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+        maxViewportDims: gl.getParameter(gl.MAX_VIEWPORT_DIMS)
+      };
+    });
 
-    // Get GPU device info
-    const gpuInfo = page.locator('#basic-info');
-    if (await gpuInfo.isVisible()) {
-      const gpuText = await gpuInfo.textContent();
-      console.log('[GPU Check] GPU info:', gpuText?.slice(0, 500));
-    }
+    console.log('=== WebGL Info ===');
+    console.log(JSON.stringify(webglInfo, null, 2));
+
+    // Check if we're using software rendering (SwiftShader/llvmpipe)
+    const renderer = String(webglInfo.renderer || '').toLowerCase();
+    const isSoftwareRendering =
+      renderer.includes('swiftshader') || renderer.includes('llvmpipe') || renderer.includes('software');
+
+    const isNvidiaGpu = renderer.includes('nvidia') || renderer.includes('tesla') || renderer.includes('geforce');
+
+    console.log(`Software rendering: ${isSoftwareRendering}`);
+    console.log(`NVIDIA GPU detected: ${isNvidiaGpu}`);
+
+    // This test is informational - log but don't fail
+    expect(webglInfo.renderer).toBeDefined();
   });
 });

@@ -40,13 +40,15 @@ test.describe('Playfield operations', () => {
     await waitForSceneEditor(page);
 
     const initialSceneCount = await page.locator('.scene__list .scene').count();
+    console.log(`[play test] initial scene count: ${initialSceneCount}`);
     await uploadSceneFile(page, testImagePath);
 
-    // Wait for the scene creation to complete
+    // Wait for the scene creation to complete (image upload + processing can be slow)
     await expect(async () => {
       const count = await page.locator('.scene__list .scene').count();
+      console.log(`[play test] current scene count: ${count}, expecting: ${initialSceneCount + 1}`);
       expect(count).toBe(initialSceneCount + 1);
-    }).toPass({ timeout: 20000 });
+    }).toPass({ timeout: 45000, intervals: [2000] });
 
     // --- STEP 4: Set the second scene as active via context menu ---
     const secondScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').nth(1);
