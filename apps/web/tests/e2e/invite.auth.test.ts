@@ -20,6 +20,7 @@ async function createParty(page: import('@playwright/test').Page): Promise<strin
 }
 
 test.describe('Party Invite operations', () => {
+  test.describe.configure({ mode: 'parallel' });
   test('should create an invite by entering an email', async ({ page }) => {
     const partySlug = await createParty(page);
 

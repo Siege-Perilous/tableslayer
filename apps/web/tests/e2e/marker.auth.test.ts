@@ -7,6 +7,7 @@ import {
 } from './helpers/test-helpers';
 
 test.describe('Marker CRUD operations', () => {
+  test.describe.configure({ mode: 'parallel' });
   // ThreeJS canvas takes 15-20s to load on CI runners
   test.setTimeout(120000);
   test('should create a marker by clicking on the canvas', async ({ page }) => {

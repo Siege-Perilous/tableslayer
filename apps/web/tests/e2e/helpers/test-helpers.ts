@@ -5,10 +5,13 @@ import { expect, type Page } from '@playwright/test';
  * Uses robust waiting strategies to avoid flakiness.
  */
 export async function createParty(page: Page): Promise<string> {
+  const start = Date.now();
   const partyName = `Test Party ${Date.now()}`;
 
   await page.goto('/create-party');
+  console.log(`[createParty] navigated to /create-party after ${Date.now() - start}ms`);
   await page.waitForLoadState('networkidle');
+  console.log(`[createParty] networkidle after ${Date.now() - start}ms`);
 
   // Wait for form to be ready
   const partyNameInput = page.getByTestId('partyName');
@@ -16,6 +19,7 @@ export async function createParty(page: Page): Promise<string> {
   // Use force:true to bypass stability checks that can timeout in CI
   await partyNameInput.click({ force: true });
   await partyNameInput.fill(partyName);
+  console.log(`[createParty] form filled after ${Date.now() - start}ms`);
 
   // Wait for submit button to be enabled (form validation passed)
   const submitBtn = page.getByTestId('createPartySubmit');
@@ -28,6 +32,7 @@ export async function createParty(page: Page): Promise<string> {
   }).toPass({ timeout: 20000, intervals: [1000] });
 
   const slug = page.url().split('/').pop() || '';
+  console.log(`[createParty] complete after ${Date.now() - start}ms, slug: ${slug}`);
   return slug;
 }
 
@@ -36,15 +41,19 @@ export async function createParty(page: Page): Promise<string> {
  * Uses robust waiting strategies to avoid flakiness.
  */
 export async function createPartyAndSession(page: Page): Promise<{ partySlug: string; sessionSlug: string }> {
+  const start = Date.now();
   const partySlug = await createParty(page);
+  console.log(`[createPartyAndSession] createParty complete after ${Date.now() - start}ms`);
 
   // Wait for party page to fully load
   await page.waitForLoadState('networkidle');
+  console.log(`[createPartyAndSession] party page networkidle after ${Date.now() - start}ms`);
 
   // Wait for and click the create session trigger
   const createSessionTrigger = page.getByTestId('createSessionTrigger');
   await expect(createSessionTrigger).toBeVisible({ timeout: 10000 });
   await createSessionTrigger.click({ force: true });
+  console.log(`[createPartyAndSession] session trigger clicked after ${Date.now() - start}ms`);
 
   // Fill in session name
   const sessionNameInput = page.getByTestId('sessionName');
@@ -53,17 +62,21 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   await sessionNameInput.click({ force: true });
   const sessionName = `Test Session ${Date.now()}`;
   await sessionNameInput.fill(sessionName);
+  console.log(`[createPartyAndSession] session form filled after ${Date.now() - start}ms`);
 
   // Wait for submit button to be enabled
   const submitBtn = page.getByTestId('createSessionSubmit');
   await expect(submitBtn).toBeEnabled({ timeout: 5000 });
   await submitBtn.click({ force: true });
+  console.log(`[createPartyAndSession] session submit clicked after ${Date.now() - start}ms`);
 
   // Wait for the session to appear - use heading which is more reliable
   await expect(page.getByRole('heading', { name: sessionName })).toBeVisible({ timeout: 20000 });
+  console.log(`[createPartyAndSession] session heading visible after ${Date.now() - start}ms`);
 
   // Wait for network to settle after creation
   await page.waitForLoadState('networkidle');
+  console.log(`[createPartyAndSession] final networkidle after ${Date.now() - start}ms`);
 
   // Get the session slug from the created session link
   const sessionCard = page.locator('.gameSessionCard', { hasText: sessionName }).first();
@@ -72,6 +85,7 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   const href = (await sessionLink.getAttribute('href')) || '';
   const sessionSlug = href.split('/').pop() || '';
 
+  console.log(`[createPartyAndSession] complete after ${Date.now() - start}ms`);
   return { partySlug, sessionSlug };
 }
 
@@ -80,9 +94,10 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
  */
 export async function waitForSceneEditor(page: Page) {
   const start = Date.now();
+  console.log(`[waitForSceneEditor] starting at URL: ${page.url()}`);
 
   // Wait for the scenes container to be visible
-  await page.waitForSelector('.scenes', { state: 'visible', timeout: 15000 });
+  await page.waitForSelector('.scenes', { state: 'visible', timeout: 30000 });
   console.log(`[waitForSceneEditor] .scenes visible after ${Date.now() - start}ms`);
 
   // Wait for the "Add scene" button to be ready and enabled

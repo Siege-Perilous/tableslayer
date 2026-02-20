@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Party CRUD operations', () => {
+  test.describe.configure({ mode: 'parallel' });
   test('should create a new party with valid name', async ({ page }) => {
     const testPartyName = `Test Party ${Date.now()}`;
 

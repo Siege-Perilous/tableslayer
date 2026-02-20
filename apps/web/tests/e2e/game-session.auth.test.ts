@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createParty } from './helpers/test-helpers';
 
 test.describe('Game Session CRUD operations', () => {
+  test.describe.configure({ mode: 'parallel' });
   test('should create a new game session', async ({ page }) => {
     const partySlug = await createParty(page);
     const sessionName = `Test Session ${Date.now()}`;
