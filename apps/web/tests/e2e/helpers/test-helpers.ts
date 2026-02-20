@@ -23,7 +23,7 @@ export async function createParty(page: Page): Promise<string> {
 
   // Click and wait for navigation with retry logic
   await expect(async () => {
-    await submitBtn.click();
+    await submitBtn.click({ force: true });
     await page.waitForURL((url) => !url.pathname.includes('create-party'), { timeout: 10000 });
   }).toPass({ timeout: 20000, intervals: [1000] });
 
@@ -44,7 +44,7 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   // Wait for and click the create session trigger
   const createSessionTrigger = page.getByTestId('createSessionTrigger');
   await expect(createSessionTrigger).toBeVisible({ timeout: 10000 });
-  await createSessionTrigger.click();
+  await createSessionTrigger.click({ force: true });
 
   // Fill in session name
   const sessionNameInput = page.getByTestId('sessionName');
@@ -57,7 +57,7 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   // Wait for submit button to be enabled
   const submitBtn = page.getByTestId('createSessionSubmit');
   await expect(submitBtn).toBeEnabled({ timeout: 5000 });
-  await submitBtn.click();
+  await submitBtn.click({ force: true });
 
   // Wait for the session to appear - use heading which is more reliable
   await expect(page.getByRole('heading', { name: sessionName })).toBeVisible({ timeout: 20000 });

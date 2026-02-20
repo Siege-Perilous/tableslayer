@@ -48,10 +48,8 @@ test.describe('Marker CRUD operations', () => {
     await labelInput.clear();
     await labelInput.fill(newLabel);
 
-    // Click somewhere else to trigger save (blur the input)
-    // Use force:true to bypass stability checks that can timeout in CI
-    await page.locator('.markerManager__header').click({ force: true });
-    await page.waitForTimeout(500);
+    // Press Tab to blur the input and trigger save
+    await labelInput.press('Tab');
 
     // Verify the label was updated by checking the marker preview shows the new label
     const markerPreview = page.locator('.markerManager__imagePreviewLabel');

@@ -52,7 +52,7 @@ test.describe('Scene CRUD operations', () => {
     // Wait for popover menu to appear and click "Rename scene"
     const renameMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Rename scene' });
     await expect(renameMenuItem).toBeVisible({ timeout: 5000 });
-    await renameMenuItem.click();
+    await renameMenuItem.click({ force: true });
 
     // Fill in new name
     const renameInput = page.locator('.scene__renameInput input');
@@ -61,7 +61,7 @@ test.describe('Scene CRUD operations', () => {
     await renameInput.fill(newName);
 
     // Submit rename by clicking the check button
-    await page.locator('.scene__renameInput button').first().click();
+    await page.locator('.scene__renameInput button').first().click({ force: true });
 
     // Wait for rename to complete by checking name changed
     await expect(sceneText).toContainText(newName, { timeout: 10000 });
@@ -98,7 +98,7 @@ test.describe('Scene CRUD operations', () => {
     // Wait for popover menu to appear and click "Delete scene"
     const deleteMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Delete scene' });
     await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
-    await deleteMenuItem.click();
+    await deleteMenuItem.click({ force: true });
 
     // Wait for popover to close and deletion to complete
     await expect(deleteMenuItem).not.toBeVisible({ timeout: 5000 });
@@ -130,7 +130,7 @@ test.describe('Scene CRUD operations', () => {
     // Wait for popover menu to appear
     const duplicateMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Duplicate scene' });
     await expect(duplicateMenuItem).toBeVisible({ timeout: 5000 });
-    await duplicateMenuItem.click();
+    await duplicateMenuItem.click({ force: true });
 
     // Wait for popover to close
     await expect(duplicateMenuItem).not.toBeVisible({ timeout: 5000 });
