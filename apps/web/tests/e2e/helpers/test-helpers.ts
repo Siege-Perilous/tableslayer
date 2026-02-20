@@ -168,13 +168,20 @@ export async function uploadSceneFile(page: Page, filePath: string) {
   await fileInput.waitFor({ state: 'attached', timeout: 10000 });
   console.log(`[uploadSceneFile] fileInput attached after ${Date.now() - start}ms`);
 
-  // Set files directly - the input is hidden but functional
-  await fileInput.setInputFiles(filePath);
+  // Set files with explicit timeout - CI can be slow
+  await fileInput.setInputFiles(filePath, { timeout: 30000 });
   console.log(`[uploadSceneFile] file set after ${Date.now() - start}ms`);
 
-  // Wait for network activity from the upload
-  await page.waitForLoadState('networkidle');
+  // Wait for the upload to be processed - look for loading indicator or network activity
+  await page.waitForTimeout(1000);
+
+  // Wait for network to settle after upload starts
+  await page.waitForLoadState('networkidle', { timeout: 30000 });
   console.log(`[uploadSceneFile] networkidle after ${Date.now() - start}ms`);
+
+  // Additional wait for scene to be created and rendered
+  await page.waitForTimeout(2000);
+  console.log(`[uploadSceneFile] complete after ${Date.now() - start}ms`);
 }
 
 /**

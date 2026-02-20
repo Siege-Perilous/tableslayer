@@ -13,6 +13,8 @@ test.describe('GPU diagnostics', () => {
     // Check WebGL info via JavaScript
     const webglInfo = await page.evaluate(() => {
       const canvas = document.createElement('canvas');
+
+      // Try WebGL2 first, then WebGL1
       const gl =
         (canvas.getContext('webgl2') as WebGL2RenderingContext) ||
         (canvas.getContext('webgl') as WebGLRenderingContext);
@@ -31,24 +33,61 @@ test.describe('GPU diagnostics', () => {
         version: gl.getParameter(gl.VERSION),
         shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
         maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
-        maxViewportDims: gl.getParameter(gl.MAX_VIEWPORT_DIMS)
+        maxViewportDims: Array.from(gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array),
+        maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+        webglVersion: gl instanceof WebGL2RenderingContext ? 2 : 1
       };
     });
 
-    console.log('=== WebGL Info ===');
-    console.log(JSON.stringify(webglInfo, null, 2));
+    console.log('');
+    console.log('╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                    WebGL GPU DIAGNOSTICS                     ║');
+    console.log('╠══════════════════════════════════════════════════════════════╣');
+    console.log(
+      `║ Renderer: ${String(webglInfo.renderer || 'N/A')
+        .slice(0, 50)
+        .padEnd(50)} ║`
+    );
+    console.log(
+      `║ Vendor:   ${String(webglInfo.vendor || 'N/A')
+        .slice(0, 50)
+        .padEnd(50)} ║`
+    );
+    console.log(
+      `║ Version:  ${String(webglInfo.version || 'N/A')
+        .slice(0, 50)
+        .padEnd(50)} ║`
+    );
+    console.log('╠══════════════════════════════════════════════════════════════╣');
 
-    // Check if we're using software rendering (SwiftShader/llvmpipe)
+    // Detect rendering type
     const renderer = String(webglInfo.renderer || '').toLowerCase();
     const isSoftwareRendering =
       renderer.includes('swiftshader') || renderer.includes('llvmpipe') || renderer.includes('software');
+    const isNvidiaGpu =
+      renderer.includes('nvidia') ||
+      renderer.includes('tesla') ||
+      renderer.includes('geforce') ||
+      renderer.includes('quadro');
+    const isAngle = renderer.includes('angle');
+    const isVulkan = renderer.includes('vulkan');
 
-    const isNvidiaGpu = renderer.includes('nvidia') || renderer.includes('tesla') || renderer.includes('geforce');
+    const gpuStatus = isNvidiaGpu
+      ? '✅ NVIDIA GPU DETECTED'
+      : isSoftwareRendering
+        ? '❌ SOFTWARE RENDERING'
+        : '⚠️  UNKNOWN GPU';
 
-    console.log(`Software rendering: ${isSoftwareRendering}`);
-    console.log(`NVIDIA GPU detected: ${isNvidiaGpu}`);
+    console.log(`║ Status:   ${gpuStatus.padEnd(50)} ║`);
+    console.log(`║ ANGLE:    ${(isAngle ? 'Yes' : 'No').padEnd(50)} ║`);
+    console.log(`║ Vulkan:   ${(isVulkan ? 'Yes' : 'No').padEnd(50)} ║`);
+    console.log('╚══════════════════════════════════════════════════════════════╝');
+    console.log('');
 
-    // This test is informational - log but don't fail
+    // Log full details
+    console.log('Full WebGL Info:', JSON.stringify(webglInfo, null, 2));
+
+    // This test is informational - don't fail, just report
     expect(webglInfo.renderer).toBeDefined();
   });
 });

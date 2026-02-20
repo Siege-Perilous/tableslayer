@@ -10,15 +10,16 @@ const baseURL = process.env.BASE_URL || 'http://localhost:5174';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// GPU flags for hardware-accelerated WebGL rendering in headless Chromium on Linux
-// See: https://michelkraemer.com/enable-gpu-for-slow-playwright-tests-in-headless-mode/
+// GPU flags for hardware-accelerated WebGL rendering
+// These help enable GPU acceleration when running with xvfb in headed mode
 const gpuArgs = process.env.CI
   ? [
-      '--use-gl=egl',
+      '--ignore-gpu-blocklist',
       '--use-angle=vulkan',
       '--enable-features=Vulkan',
-      '--disable-vulkan-surface',
-      '--enable-unsafe-webgpu'
+      '--use-gl=angle',
+      '--enable-gpu-rasterization',
+      '--enable-zero-copy'
     ]
   : [];
 
