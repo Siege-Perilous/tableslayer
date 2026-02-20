@@ -344,14 +344,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Check GPU availability
+      # Note: If this step adds significant time, we can revert to just using llvmpipe
+      # which already gives us 1.6m test runs. The goal is to see if Tesla T4 works.
+      - name: Setup and check GPU
         run: |
-          echo "=== NVIDIA Driver Info ==="
-          nvidia-smi || echo "nvidia-smi failed"
+          echo "=== Attempting to load NVIDIA kernel module ==="
+          sudo modprobe nvidia && echo "nvidia module loaded" || echo "Failed to load nvidia module"
+          sudo modprobe nvidia_uvm && echo "nvidia_uvm module loaded" || echo "Failed to load nvidia_uvm module"
           echo ""
-          echo "=== GPU Devices ==="
+          echo "=== GPU Devices After Module Load ==="
           ls -la /dev/nvidia* 2>/dev/null || echo "No /dev/nvidia* devices"
           ls -la /dev/dri/* 2>/dev/null || echo "No /dev/dri/* devices"
+          echo ""
+          echo "=== NVIDIA Driver Info ==="
+          nvidia-smi || echo "nvidia-smi still failed"
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/web
