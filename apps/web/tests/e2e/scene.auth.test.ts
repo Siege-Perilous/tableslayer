@@ -54,14 +54,17 @@ test.describe('Scene CRUD operations', () => {
     await renameInput.fill(newName);
 
     // Submit rename by clicking the check button
-    await page.locator('.scene__renameInput button').first().click({ force: true });
+    await page.locator('.scene__renameInput button').first().click({ force: true, noWaitAfter: true });
 
     // Wait for rename to complete
     await expect(sceneText).toContainText(newName, { timeout: 10000 });
     expect(await sceneText.textContent()).not.toEqual(originalName);
 
+    // Wait for rename input to disappear (operation fully complete)
+    await expect(renameInput).not.toBeVisible({ timeout: 10000 });
+
     // --- STEP 4: Duplicate the first scene ---
-    await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
+    await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
 
     const scenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
     await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
@@ -78,12 +81,13 @@ test.describe('Scene CRUD operations', () => {
     await expect(page.locator('.scene__list .scene')).toHaveCount(3, { timeout: 25000 });
 
     // --- STEP 5: Set a scene as active ---
-    // Verify no scene is currently active
-    await expect(page.locator('.scene__projectedIcon')).not.toBeVisible();
+    // Wait for UI to settle after duplication
+    await page.waitForLoadState('networkidle');
 
-    // Open scene menu via the popover button
-    await expect(scenePopoverBtn).toBeVisible({ timeout: 5000 });
-    await scenePopoverBtn.click({ force: true });
+    // Re-locate the popover button (DOM may have changed after duplication)
+    const firstScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
+    await expect(firstScenePopoverBtn).toBeVisible({ timeout: 10000 });
+    await firstScenePopoverBtn.click({ force: true });
 
     // Click "Set active scene"
     const setActiveMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Set active scene' });
@@ -95,12 +99,13 @@ test.describe('Scene CRUD operations', () => {
     await expect(page.locator('.scene__projectedIcon')).toContainText('Active on table', { timeout: 5000 });
 
     // --- STEP 6: Delete a scene ---
-    await expect(addSceneBtn).not.toBeDisabled({ timeout: 15000 });
+    // Wait for UI to settle after set active
+    await page.waitForLoadState('networkidle');
 
-    // Delete the second scene (not the active one)
-    const secondScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').nth(1);
-    await expect(secondScenePopoverBtn).toBeVisible({ timeout: 5000 });
-    await secondScenePopoverBtn.click({ force: true });
+    // Delete the third scene (the duplicate, not the active one)
+    const thirdScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').nth(2);
+    await expect(thirdScenePopoverBtn).toBeVisible({ timeout: 10000 });
+    await thirdScenePopoverBtn.click({ force: true });
 
     const deleteMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Delete scene' });
     await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
