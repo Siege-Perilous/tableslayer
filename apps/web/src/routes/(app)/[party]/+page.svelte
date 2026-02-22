@@ -60,7 +60,7 @@
       <Title as="h2" size="sm">Party members</Title>
       <Spacer />
       <Panel class="partyMembers__aside">
-        <div class="partyMembers">
+        <div class="partyMembers" data-testid="partyMembers">
           {#each members as member (member.id)}
             <PartyMember {user} {member} {isPartyAdmin} />
           {:else}
@@ -72,7 +72,7 @@
           <Spacer size="1rem" />
           <Text weight={600}>Pending invites</Text>
           <Spacer size="0.5rem" />
-          <div class="partyMembers">
+          <div class="partyMembers" data-testid="pendingInvites">
             {#each invitedEmails as email (email)}
               <ResendInvite {email} {partyId} {isPartyAdmin} {isEmailEnabled} />
             {:else}

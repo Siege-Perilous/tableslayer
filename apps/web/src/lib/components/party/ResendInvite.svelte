@@ -72,7 +72,7 @@
 </script>
 
 {#snippet resendInvite()}
-  <div class="resendInvite {isPartyAdmin && 'resendInvite--canEdit'}">
+  <div class="resendInvite {isPartyAdmin && 'resendInvite--canEdit'}" data-testid="pendingInvite">
     <div class="resendInvite__avatar">
       <Avatar initials="TS" />
       {#if isPartyAdmin}

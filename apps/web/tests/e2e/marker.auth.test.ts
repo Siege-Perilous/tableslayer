@@ -33,7 +33,7 @@ test.describe('Marker CRUD operations', () => {
     await clickCanvasCenter(page);
 
     // Wait for marker to be created and appear in the edit view
-    await expect(page.locator('.markerManager__editView')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('markerEditView')).toBeVisible({ timeout: 10000 });
 
     // --- STEP 3: Edit the marker label ---
     const labelInput = page.getByRole('textbox', { name: 'ABC' });
@@ -47,21 +47,21 @@ test.describe('Marker CRUD operations', () => {
     await labelInput.press('Tab');
 
     // Verify the label was updated by checking the marker preview shows the new label
-    const markerPreview = page.locator('.markerManager__imagePreviewLabel');
+    const markerPreview = page.getByTestId('markerImagePreviewLabel');
     await expect(markerPreview).toContainText(newLabel, { timeout: 5000 });
 
     // --- STEP 4: Go back to list view ---
-    const backLink = page.locator('.markerManager__backButton');
+    const backLink = page.getByTestId('markerBackButton');
     await expect(backLink).toBeVisible({ timeout: 5000 });
     await backLink.click({ force: true });
 
     // Wait for list view to appear (marker list with at least one item)
-    await expect(page.locator('.markerManager__listItem')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('markerListItem')).toBeVisible({ timeout: 10000 });
 
     // --- STEP 5: Delete the marker ---
     // Make the trash icon visible by forcing opacity
     await page.evaluate(() => {
-      const editIcon = document.querySelector('.markerManager__editIcon');
+      const editIcon = document.querySelector('[data-testid="markerEditIcon"]');
       if (editIcon) {
         (editIcon as HTMLElement).style.opacity = '1';
       }
@@ -69,7 +69,7 @@ test.describe('Marker CRUD operations', () => {
     await page.waitForTimeout(100);
 
     // Click the trash icon to delete
-    const trashBtn = page.locator('.markerManager__editIcon .iconBtn');
+    const trashBtn = page.getByTestId('markerDeleteButton');
     await expect(trashBtn).toBeVisible({ timeout: 5000 });
     await trashBtn.click({ force: true });
 

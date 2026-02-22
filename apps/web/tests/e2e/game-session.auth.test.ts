@@ -55,7 +55,7 @@ test.describe('Game Session CRUD operations', () => {
     await expect(page.getByRole('heading', { name: originalName })).toBeVisible({ timeout: 15000 });
 
     // Find the session and open its menu
-    const sessionCard = page.locator('.gameSessionCard', { hasText: originalName });
+    const sessionCard = page.getByTestId('gameSessionCard').filter({ hasText: originalName });
     await expect(sessionCard).toBeVisible();
     const menuTrigger = sessionCard.getByTestId('sessionMenuTrigger');
     await expect(menuTrigger).toBeVisible();
@@ -103,7 +103,7 @@ test.describe('Game Session CRUD operations', () => {
     await expect(page.getByRole('heading', { name: sessionName })).toBeVisible({ timeout: 15000 });
 
     // Find the session and open its menu
-    const sessionCard = page.locator('.gameSessionCard', { hasText: sessionName });
+    const sessionCard = page.getByTestId('gameSessionCard').filter({ hasText: sessionName });
     await expect(sessionCard).toBeVisible();
     const menuTrigger = sessionCard.getByTestId('sessionMenuTrigger');
     await expect(menuTrigger).toBeVisible();

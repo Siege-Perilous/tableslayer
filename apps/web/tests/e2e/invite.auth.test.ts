@@ -37,14 +37,14 @@ test.describe('Party Invite operations', () => {
     await inviteInput.fill(testEmail);
 
     // Submit the form by clicking the mail icon button
-    const submitBtn = page.locator('.partyMember__inviteFormBtn');
+    const submitBtn = page.getByTestId('inviteFormSubmit');
     await submitBtn.click();
 
     // Wait for the success toast
     await expect(page.locator('text=Invite sent!')).toBeVisible({ timeout: 10000 });
 
-    // Verify the pending invite appears in the list (using the resendInvite class to be specific)
-    const pendingInvite = page.locator('.resendInvite', { hasText: testEmail });
+    // Verify the pending invite appears in the list
+    const pendingInvite = page.getByTestId('pendingInvite').filter({ hasText: testEmail });
     await expect(pendingInvite).toBeVisible({ timeout: 10000 });
   });
 
@@ -62,16 +62,15 @@ test.describe('Party Invite operations', () => {
     const testEmail = `cancel+${Date.now()}@example.com`;
     await inviteInput.fill(testEmail);
 
-    const submitBtn = page.locator('.partyMember__inviteFormBtn');
+    const submitBtn = page.getByTestId('inviteFormSubmit');
     await submitBtn.click();
 
     // Wait for invite to appear in the list
-    const pendingInvite = page.locator('.resendInvite', { hasText: testEmail });
+    const pendingInvite = page.getByTestId('pendingInvite').filter({ hasText: testEmail });
     await expect(pendingInvite).toBeVisible({ timeout: 10000 });
 
     // Click on the pending invite to open the popover
-    const resendInviteClickable = page.locator('.resendInvite--canEdit', { hasText: testEmail });
-    await resendInviteClickable.click();
+    await pendingInvite.click();
 
     // Wait for popover to appear and click "Cancel invite"
     const cancelBtn = page.locator('button:has-text("Cancel invite")');
@@ -100,7 +99,7 @@ test.describe('Party Invite operations', () => {
     await inviteInput.fill('not-an-email');
 
     // Submit the form
-    const submitBtn = page.locator('.partyMember__inviteFormBtn');
+    const submitBtn = page.getByTestId('inviteFormSubmit');
     await submitBtn.click();
 
     // Wait a moment for validation
@@ -124,7 +123,7 @@ test.describe('Party Invite operations', () => {
 
     // Verify at least one member (the creator) is shown
     // The creator should be shown with their email or as a PartyMember
-    const membersList = page.locator('.partyMembers');
+    const membersList = page.getByTestId('partyMembers');
     await expect(membersList).toBeVisible({ timeout: 5000 });
   });
 });

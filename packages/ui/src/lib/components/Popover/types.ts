@@ -5,6 +5,7 @@ export type PopoverProps = {
   onIsOpenChange?: (open: boolean) => void;
   trigger: Snippet;
   triggerClass?: string;
+  triggerTestId?: string;
   contentClass?: string;
   content: Snippet<
     [

@@ -79,7 +79,7 @@ export async function createPartyAndSession(page: Page): Promise<{ partySlug: st
   console.log(`[createPartyAndSession] final networkidle after ${Date.now() - start}ms`);
 
   // Get the session slug from the created session link
-  const sessionCard = page.locator('.gameSessionCard', { hasText: sessionName }).first();
+  const sessionCard = page.getByTestId('gameSessionCard').filter({ hasText: sessionName }).first();
   const sessionLink = sessionCard.locator('a').first();
   await expect(sessionLink).toBeVisible({ timeout: 5000 });
   const href = (await sessionLink.getAttribute('href')) || '';
@@ -97,14 +97,14 @@ export async function waitForSceneEditor(page: Page) {
   console.log(`[waitForSceneEditor] starting at URL: ${page.url()}`);
 
   // Wait for the scenes container to be visible
-  await page.waitForSelector('.scenes', { state: 'visible', timeout: 30000 });
-  console.log(`[waitForSceneEditor] .scenes visible after ${Date.now() - start}ms`);
+  await page.getByTestId('scenesContainer').waitFor({ state: 'visible', timeout: 30000 });
+  console.log(`[waitForSceneEditor] scenesContainer visible after ${Date.now() - start}ms`);
 
   // Wait for the "Add scene" button to be ready and enabled
-  const addSceneBtn = page.locator('.scene__inputBtn');
+  const addSceneBtn = page.getByTestId('addSceneButton');
   await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
   await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
-  console.log(`[waitForSceneEditor] addSceneBtn ready after ${Date.now() - start}ms`);
+  console.log(`[waitForSceneEditor] addSceneButton ready after ${Date.now() - start}ms`);
 
   // Wait for canvas to be visible (ThreeJS initialization)
   // GPU initialization on CI runners can take 30+ seconds
@@ -132,7 +132,7 @@ export async function activateMarkerTool(page: Page) {
   await markerToolBtn.click({ force: true });
 
   // Wait for marker panel to be visible (more reliable than text which may be hidden)
-  await expect(page.locator('.markerManager')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('markerManager')).toBeVisible({ timeout: 10000 });
 }
 
 /**
@@ -156,13 +156,13 @@ export async function uploadSceneFile(page: Page, filePath: string) {
   console.log(`[uploadSceneFile] starting upload of ${filePath}`);
 
   // Wait for the add scene button to be enabled
-  const addSceneBtn = page.locator('.scene__inputBtn');
+  const addSceneBtn = page.getByTestId('addSceneButton');
   await expect(addSceneBtn).toBeVisible({ timeout: 10000 });
   await expect(addSceneBtn).not.toBeDisabled({ timeout: 10000 });
-  console.log(`[uploadSceneFile] addSceneBtn ready after ${Date.now() - start}ms`);
+  console.log(`[uploadSceneFile] addSceneButton ready after ${Date.now() - start}ms`);
 
   // Get the file input - it's hidden (opacity: 0) but still accessible
-  const fileInput = page.locator('.scene__input input[type="file"]');
+  const fileInput = page.getByTestId('sceneInput').locator('input[type="file"]');
 
   // Wait for the input to be attached to DOM
   await fileInput.waitFor({ state: 'attached', timeout: 10000 });

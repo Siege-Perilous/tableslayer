@@ -173,7 +173,7 @@
       style:background-color={marker.shapeColor}
       style:background-image={`url('${marker.imageUrl}')`}
     >
-      <span class="markerManager__imagePreviewLabel">{marker.label}</span>
+      <span class="markerManager__imagePreviewLabel" data-testid="markerImagePreviewLabel">{marker.label}</span>
       <div class="markerManager__imagePreviewIcon">
         <Icon Icon={IconPhotoCirclePlus} size="1.5rem" />
       </div>
@@ -199,7 +199,7 @@
   </div>
 {/snippet}
 
-<div class="markerManager">
+<div class="markerManager" data-testid="markerManager">
   <div class="markerManager__header">
     <Label>Snap to grid</Label>
     <RadioButton
@@ -215,11 +215,11 @@
   </div>
   <div class="markerManager__content">
     {#if editingMarkerId !== undefined}
-      <Link onclick={backToList} class="markerManager__backButton">
+      <Link onclick={backToList} class="markerManager__backButton" data-testid="markerBackButton">
         List all markers
         <Icon Icon={IconArrowBack} size="1rem" />
       </Link>
-      <div class="markerManager__editView">
+      <div class="markerManager__editView" data-testid="markerEditView">
         <div class="markerManager__marker">
           {#if stageProps.marker.markers}
             {#each stageProps.marker.markers.filter((m) => m.id === editingMarkerId) as marker (marker.id)}
@@ -398,7 +398,7 @@
     {:else}
       <div class="markerManager__list">
         {#each stageProps.marker.markers as marker (marker.id)}
-          <div class="markerManager__listItem">
+          <div class="markerManager__listItem" data-testid="markerListItem">
             <div class="markerManager__read">
               <IconButton
                 variant="ghost"
@@ -439,10 +439,10 @@
               <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>
                 {marker.title}
               </button>
-              <div class="markerManager__editIcon">
+              <div class="markerManager__editIcon" data-testid="markerEditIcon">
                 <ConfirmActionButton action={() => handleMarkerDelete(marker.id)} actionButtonText="Confirm delete">
                   {#snippet trigger({ triggerProps })}
-                    <IconButton as="div" variant="ghost" {...triggerProps}>
+                    <IconButton as="div" variant="ghost" {...triggerProps} data-testid="markerDeleteButton">
                       <Icon Icon={IconTrash} />
                     </IconButton>
                   {/snippet}

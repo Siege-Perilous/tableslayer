@@ -129,7 +129,7 @@
 </script>
 
 <LinkBox>
-  <Panel class="gameSessionCard">
+  <Panel class="gameSessionCard" data-testid="gameSessionCard">
     <div
       class="cardFan__image"
       style={`

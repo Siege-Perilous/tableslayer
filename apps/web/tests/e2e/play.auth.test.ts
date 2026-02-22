@@ -22,7 +22,7 @@ test.describe('Playfield operations', () => {
     await waitForSceneEditor(page);
 
     // Verify we have the default scene
-    await expect(page.locator('.scene__list .scene')).toHaveCount(1, { timeout: 10000 });
+    await expect(page.getByTestId('sceneItem')).toHaveCount(1, { timeout: 10000 });
 
     // --- STEP 2: Navigate to playfield and verify it loads with default active scene ---
     await gotoWithRetry(page, `/${partySlug}/play`);
@@ -39,31 +39,31 @@ test.describe('Playfield operations', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    const initialSceneCount = await page.locator('.scene__list .scene').count();
+    const initialSceneCount = await page.getByTestId('sceneItem').count();
     console.log(`[play test] initial scene count: ${initialSceneCount}`);
     await uploadSceneFile(page, testImagePath);
 
     // Wait for the scene creation to complete (image upload + processing can be slow)
     await expect(async () => {
-      const count = await page.locator('.scene__list .scene').count();
+      const count = await page.getByTestId('sceneItem').count();
       console.log(`[play test] current scene count: ${count}, expecting: ${initialSceneCount + 1}`);
       expect(count).toBe(initialSceneCount + 1);
     }).toPass({ timeout: 45000, intervals: [2000] });
 
     // --- STEP 4: Set the second scene as active via context menu ---
-    const secondScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').nth(1);
+    const secondScenePopoverBtn = page.getByTestId('scenePopoverButton').nth(1);
     await expect(secondScenePopoverBtn).toBeVisible({ timeout: 10000 });
     await secondScenePopoverBtn.click({ force: true });
 
     // Click "Set active scene"
-    const setActiveMenuItem = page.locator('.scene__menuItem').filter({ hasText: 'Set active scene' });
+    const setActiveMenuItem = page.getByTestId('sceneMenuSetActive');
     await expect(setActiveMenuItem).toBeVisible({ timeout: 5000 });
     await setActiveMenuItem.click({ force: true });
 
     // Wait for the active scene indicator to appear on the second scene
-    const secondScene = page.locator('.scene__list .scene').nth(1);
-    await expect(secondScene.locator('.scene__projectedIcon')).toBeVisible({ timeout: 10000 });
-    await expect(secondScene.locator('.scene__projectedIcon')).toContainText('Active on table', { timeout: 5000 });
+    const secondScene = page.getByTestId('sceneItem').nth(1);
+    await expect(secondScene.getByTestId('sceneActiveIcon')).toBeVisible({ timeout: 10000 });
+    await expect(secondScene.getByTestId('sceneActiveIcon')).toContainText('Active on table', { timeout: 5000 });
 
     // --- STEP 5: Navigate to playfield and verify it shows the new active scene ---
     await gotoWithRetry(page, `/${partySlug}/play`);
@@ -77,17 +77,17 @@ test.describe('Playfield operations', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    const firstScenePopoverBtn = page.locator('.scene__list .scene__popoverBtn').first();
+    const firstScenePopoverBtn = page.getByTestId('scenePopoverButton').first();
     await expect(firstScenePopoverBtn).toBeVisible({ timeout: 10000 });
     await firstScenePopoverBtn.click({ force: true });
 
-    const setActiveMenuItem2 = page.locator('.scene__menuItem').filter({ hasText: 'Set active scene' });
+    const setActiveMenuItem2 = page.getByTestId('sceneMenuSetActive');
     await expect(setActiveMenuItem2).toBeVisible({ timeout: 5000 });
     await setActiveMenuItem2.click({ force: true });
 
     // Wait for the active indicator to move to the first scene
-    const firstScene = page.locator('.scene__list .scene').first();
-    await expect(firstScene.locator('.scene__projectedIcon')).toBeVisible({ timeout: 10000 });
+    const firstScene = page.getByTestId('sceneItem').first();
+    await expect(firstScene.getByTestId('sceneActiveIcon')).toBeVisible({ timeout: 10000 });
 
     // --- STEP 7: Verify playfield still works after switching active scene back ---
     await gotoWithRetry(page, `/${partySlug}/play`);

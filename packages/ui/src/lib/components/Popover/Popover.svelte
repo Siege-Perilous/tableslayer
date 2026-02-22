@@ -10,6 +10,7 @@
     trigger,
     content,
     triggerClass,
+    triggerTestId,
     contentClass,
     positioning = { placement: 'bottom' },
     portal = null,
@@ -46,6 +47,7 @@
 <button
   type="button"
   class={['popTrigger', triggerClass ?? '']}
+  data-testid={triggerTestId}
   use:melt={$triggerAction}
   aria-label="Update dimensions"
 >
