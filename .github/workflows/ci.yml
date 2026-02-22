@@ -172,7 +172,6 @@ jobs:
             - Docs preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
             - Web preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
             - PartyKit WebSocket: `pr-${{ github.event.pull_request.number }}.tableslayer.com`
-          create-when-empty: true
 
   # Deploy docs (runs in parallel with web)
   fly_deploy_docs:
