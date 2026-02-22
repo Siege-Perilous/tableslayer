@@ -545,14 +545,19 @@
   });
 </script>
 
-<div class="scenes" id="scenes">
-  <div class="scene__input">
+<div class="scenes" id="scenes" data-testid="scenesContainer">
+  <div class="scene__input" data-testid="sceneInput">
     {#if needsToUpgrade}
       <PartyUpgrade {party} limitText="Free plan limited to 3 scenes" />
     {:else}
       <FormControl name="file" errors={createSceneErrors && createSceneErrors.errors}>
         {#snippet input({ inputProps })}
-          <Button class="scene__inputBtn" isLoading={formIsLoading} disabled={formIsLoading}>
+          <Button
+            class="scene__inputBtn"
+            isLoading={formIsLoading}
+            disabled={formIsLoading}
+            data-testid="addSceneButton"
+          >
             {#snippet start()}
               <Icon Icon={IconPhoto} size="1.25rem" />
             {/snippet}
@@ -570,13 +575,14 @@
       </FormControl>
     {/if}
   </div>
-  <div class="scene__list">
+  <div class="scene__list" data-testid="sceneList">
     {#each orderedScenes as scene, index (scene.id)}
       <div
         animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
         in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : Math.min(index * 50, 500), easing: sineOut }}
         role="presentation"
         id={`scene-${scene.order}`}
+        data-testid="sceneItem"
         class={[
           'scene',
           scene.order === selectedSceneNumber && 'scene--isSelected',
@@ -620,7 +626,7 @@
         {#if isSceneBeingRenamed(scene.id)}
           <div class="scene__rename">
             <form onsubmit={() => handleRenameScene(scene.id)}>
-              <div class="scene__renameInput">
+              <div class="scene__renameInput" data-testid="sceneRenameInput">
                 <FormControl label="Name" name="name">
                   {#snippet input({ inputProps })}
                     <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} hideAutocomplete />
@@ -650,7 +656,7 @@
           ondrop={(e) => e.preventDefault()}
         >
           {#if liveActiveSceneId && liveActiveSceneId === scene.id}
-            <div class="scene__projectedIcon">
+            <div class="scene__projectedIcon" data-testid="sceneActiveIcon">
               {#if !party.gameSessionIsPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />
                 Active on table
@@ -660,13 +666,16 @@
               {/if}
             </div>
           {/if}
-          <div class="scene__text">{scene.order} - {renamingScenes[scene.id] || scene.name}</div>
+          <div class="scene__text" data-testid="sceneText">
+            {scene.order} - {renamingScenes[scene.id] || scene.name}
+          </div>
         </a>
         <div class="scene__dragHandle" class:scene__dragHandle--disabled={isDragDisabled(scene.id)}>
           <Icon Icon={IconGripVertical} size="1.25rem" class="scene__dragHandleIcon" />
         </div>
         <Popover
           triggerClass="scene__popoverBtn"
+          triggerTestId="scenePopoverButton"
           isOpen={openScenePopover === scene.id}
           positioning={{ placement: 'bottom-end' }}
           portal={document.getElementById('scenes')}
@@ -682,6 +691,7 @@
             <button
               class={['scene__menuItem', needsToUpgrade && 'scene__menuItem--disabled']}
               disabled={needsToUpgrade}
+              data-testid="sceneMenuNewScene"
               onclick={() => {
                 handleCreateScene(scene.order + 1);
                 contentProps.close();
@@ -691,6 +701,7 @@
             </button>
             <button
               class="scene__menuItem"
+              data-testid="sceneMenuRename"
               onclick={() => {
                 renamingScenes[scene.id] = scene.name;
                 contentProps.close();
@@ -701,6 +712,7 @@
             <button
               class={['scene__menuItem', needsToUpgrade && 'scene__menuItem--disabled']}
               disabled={needsToUpgrade}
+              data-testid="sceneMenuDuplicate"
               onclick={() => {
                 handleDuplicateScene(scene.id);
                 contentProps.close();
@@ -710,6 +722,7 @@
             </button>
             <button
               class="scene__menuItem"
+              data-testid="sceneMenuChangeImage"
               onclick={() => {
                 handleMapImageChange(scene.id);
                 contentProps.close();
@@ -719,6 +732,7 @@
             </button>
             <button
               class="scene__menuItem"
+              data-testid="sceneMenuDelete"
               onclick={() => {
                 handleDeleteScene(scene.id);
                 contentProps.close();
@@ -728,6 +742,7 @@
             </button>
             <button
               class="scene__menuItem"
+              data-testid="sceneMenuSetActive"
               onclick={() => {
                 handleSetActiveScene(scene.id);
                 contentProps.close();

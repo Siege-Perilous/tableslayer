@@ -176,11 +176,22 @@
             <div>
               <FormControl label="Rename party" name="name" errors={renamePartyErrors && renamePartyErrors.errors}>
                 {#snippet input({ inputProps })}
-                  <Input {...inputProps} type="text" bind:value={partyName} hideAutocomplete />
+                  <Input
+                    {...inputProps}
+                    type="text"
+                    bind:value={partyName}
+                    hideAutocomplete
+                    data-testid="renamePartyInput"
+                  />
                 {/snippet}
               </FormControl>
             </div>
-            <IconButton disabled={formIsLoading} type="submit" class="partyName__renameFieldBtn">
+            <IconButton
+              disabled={formIsLoading}
+              type="submit"
+              class="partyName__renameFieldBtn"
+              data-testid="renamePartySubmit"
+            >
               <Icon Icon={IconCheck} />
             </IconButton>
           </div>
@@ -208,7 +219,7 @@
         <Spacer />
         <ConfirmActionButton actionButtonText="Confirm delete" action={handleDeleteParty}>
           {#snippet trigger({ triggerProps })}
-            <Button as="div" variant="danger" {...triggerProps}>Delete party</Button>
+            <Button as="div" variant="danger" {...triggerProps} data-testid="deletePartyButton">Delete party</Button>
           {/snippet}
           {#snippet actionMessage()}
             <Text size="0.875rem" color="var(--fgDanger)">

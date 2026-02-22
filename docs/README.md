@@ -4,5 +4,6 @@ This folder contains documentation for various architecture patterns in Table Sl
 
 - **debugging-guide.md** - General debugging tips and strategies
 - **grid-system-architecture.md** - How the grid system works
+- **playwright-testing-guide.md** - How to write and run Playwright end-to-end tests
 - **stage-performance-guide.md** - Performance patterns, GPU memory management, and optimization techniques for the Stage component
 - **yjs-sync-architecture.md** - Real-time sync architecture using Yjs

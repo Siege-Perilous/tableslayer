@@ -68,7 +68,7 @@
   <div bind:this={popoverElement} class="confirmAction__content" style={floatingStyles}>
     {@render actionMessage()}
     <div class="confirmAction__buttons">
-      <Button onclick={action} variant="danger" {isLoading}>
+      <Button onclick={action} variant="danger" {isLoading} data-testid="confirmActionButton">
         {actionButtonText}
       </Button>
       <Button onclick={() => (isShowingConfirm = false)} variant="ghost">Cancel</Button>

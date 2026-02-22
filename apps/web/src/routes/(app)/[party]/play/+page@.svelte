@@ -2240,15 +2240,21 @@
 
 {#if !stageIsLoading && (gameIsPaused || !hasActiveScene)}
   {#if party.pauseScreenThumb}
-    <div class="paused paused--custom" style="background-image: url({party.pauseScreenThumb.resizedUrl})"></div>
+    <div
+      class="paused paused--custom"
+      data-testid="playfieldPauseScreen"
+      style="background-image: url({party.pauseScreenThumb.resizedUrl})"
+    ></div>
   {:else}
-    <div class="paused">
+    <div class="paused" data-testid="playfieldPauseScreen">
       <div>
         <Title as="h1" size="lg" class="heroTitle">Table Slayer</Title>
         {#if !hasActiveScene}
-          <Text size="1.5rem" color="var(--fgPrimary)">Waiting for Game Master to set an active scene</Text>
+          <Text size="1.5rem" color="var(--fgPrimary)" data-testid="playfieldWaitingMessage">
+            Waiting for Game Master to set an active scene
+          </Text>
         {:else}
-          <Text size="1.5rem" color="var(--fgPrimary)">Game is paused</Text>
+          <Text size="1.5rem" color="var(--fgPrimary)" data-testid="playfieldPausedMessage">Game is paused</Text>
         {/if}
       </div>
       <div class="quote">
@@ -2261,7 +2267,7 @@
     </div>
   {/if}
 {/if}
-<div class={stageClasses} bind:this={stageElement}>
+<div class={stageClasses} bind:this={stageElement} data-testid="playfieldStage">
   <Stage
     bind:this={stage}
     props={stageProps}

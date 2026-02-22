@@ -66,7 +66,7 @@
   <form onsubmit={handleCreateParty}>
     <FormControl label="Party name" name="name" errors={createPartyError && createPartyError.errors}>
       {#snippet input({ inputProps })}
-        <Input {...inputProps} type="text" bind:value={partyName} hideAutocomplete />
+        <Input {...inputProps} type="text" bind:value={partyName} hideAutocomplete data-testid="partyName" />
       {/snippet}
     </FormControl>
     <Spacer />

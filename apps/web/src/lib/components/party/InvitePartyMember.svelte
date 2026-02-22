@@ -50,7 +50,12 @@
         </FormControl>
       </div>
 
-      <IconButton type="submit" class="partyMember__inviteFormBtn" disabled={formIsLoading}>
+      <IconButton
+        type="submit"
+        class="partyMember__inviteFormBtn"
+        disabled={formIsLoading}
+        data-testid="inviteFormSubmit"
+      >
         <Icon Icon={IconMail} />
       </IconButton>
     </div>

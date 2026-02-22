@@ -15,3 +15,7 @@ vite.config.ts.timestamp-*
 
 # PartyKit
 .partykit/
+
+# Playwright
+tests/e2e/test-results.json
+tests/e2e/.auth/
