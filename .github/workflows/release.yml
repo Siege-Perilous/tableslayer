@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
       id-token: write
     steps:
       - name: Checkout
@@ -37,12 +36,30 @@ jobs:
       - name: Build packages
         run: pnpm run build --filter=@tableslayer/ui
 
-      - name: Create Release Pull Request or Publish
+      - name: Check for changesets
         id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm changeset publish
-          version: pnpm changeset version
+        run: |
+          # Check if there are any changeset files (excluding README)
+          CHANGESETS=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null | head -1)
+          if [ -n "$CHANGESETS" ]; then
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Version and publish
+        if: steps.changesets.outputs.has_changesets == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          pnpm changeset version
+
+          git add .
+          git commit -m "Version packages" || echo "No changes to commit"
+          git push
+
+          pnpm changeset publish
