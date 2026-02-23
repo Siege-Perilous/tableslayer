@@ -2,14 +2,12 @@
   "name": "@tableslayer/eslint-config",
   "type": "module",
   "version": "0.0.0",
+  "private": true,
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "eslint": "^10.0.0",
     "eslint-plugin-svelte": "3.15.0"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "exports": {
     ".": "./index.js"
