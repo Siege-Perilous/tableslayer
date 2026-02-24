@@ -4,7 +4,7 @@
   "license": "FSL-1.1-ALv2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tableslayer/tableslayer.git",
+    "url": "https://github.com/Siege-Perilous/tableslayer.git",
     "directory": "packages/ui"
   },
   "author": "Siege Perilous LLC",
@@ -15,7 +15,7 @@
     "ui",
     "tableslayer"
   ],
-  "homepage": "https://github.com/tableslayer/tableslayer/tree/main/packages/ui",
+  "homepage": "https://github.com/Siege-Perilous/tableslayer/tree/main/packages/ui",
   "scripts": {
     "dev": "typedoc && pnpm check:watch",
     "build": "svelte-kit sync && vite build && npm run package",

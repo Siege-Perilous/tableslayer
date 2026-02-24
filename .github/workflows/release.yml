@@ -47,11 +47,10 @@ jobs:
             echo "has_changesets=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Version and publish
+      - name: Version packages
         if: steps.changesets.outputs.has_changesets == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -62,4 +61,12 @@ jobs:
           git commit -m "Version packages" || echo "No changes to commit"
           git push
 
-          pnpm changeset publish
+      - name: Publish to npm
+        if: steps.changesets.outputs.has_changesets == 'true'
+        working-directory: packages/ui
+        env:
+          NPM_CONFIG_PROVENANCE: true
+        run: |
+          echo "Node version: $(node -v)"
+          echo "npm version: $(npm -v)"
+          npm publish --access public
