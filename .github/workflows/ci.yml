@@ -54,19 +54,31 @@ jobs:
           else
             echo "ui_changed=false" >> $GITHUB_OUTPUT
           fi
-      - name: Check for changeset
+      - name: Verify release was run
         if: steps.ui-changes.outputs.ui_changed == 'true'
         run: |
-          CHANGESETS=$(git diff --name-only origin/main...HEAD | grep "^\.changeset/.*\.md$" | grep -v "README.md" || true)
-          if [ -z "$CHANGESETS" ]; then
-            echo "Error: UI files changed but no changeset found!"
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+
+          # Check if package.json was updated (versioning was done)
+          if ! echo "$CHANGED" | grep -q "^packages/ui/package.json"; then
+            echo "Error: UI files changed but package.json not updated!"
             echo ""
-            echo "Please run 'pnpm changeset' to create a changeset describing your changes."
-            echo "Then commit the generated .changeset/*.md file with your PR."
+            echo "Please run 'pnpm release' to version your changes."
+            echo "This will prompt you to describe the change and update the version."
             exit 1
-          else
-            echo "Changeset found: $CHANGESETS"
           fi
+
+          # Check that no changeset files are left (they should be consumed by versioning)
+          CHANGESETS=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null || true)
+          if [ -n "$CHANGESETS" ]; then
+            echo "Error: Uncommitted changeset files found!"
+            echo ""
+            echo "It looks like you ran 'pnpm changeset' but not 'pnpm changeset version'."
+            echo "Please run 'pnpm release' instead, which does both steps."
+            exit 1
+          fi
+
+          echo "Release check passed - UI versioned correctly"
 
   create_database:
     if: github.event.pull_request.draft == false
