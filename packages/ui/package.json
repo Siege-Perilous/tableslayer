@@ -45,21 +45,10 @@
   },
   "files": [
     "dist",
+    "src/lib",
     "!dist/**/*.test.*",
     "!dist/**/*.spec.*"
   ],
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "svelte": "./dist/index.js"
-      },
-      "./styles/*.css": {
-        "import": "./dist/styles/*.css",
-        "require": "./dist/styles/*.css"
-      }
-    }
-  },
   "peerDependencies": {
     "@melt-ui/svelte": "^0.86.2",
     "@sveltejs/kit": "^2.16.0",
