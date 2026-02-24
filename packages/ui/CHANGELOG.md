@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.1
+
+### Patch Changes
+
+- [#402](https://github.com/Siege-Perilous/tableslayer/pull/402) [`c5fef32`](https://github.com/Siege-Perilous/tableslayer/commit/c5fef32970e5418d91cacc9deb5fe5d692c24a2d) Thanks [@snide](https://github.com/snide)! - Testing changesets
+
 ## 0.1.0
 
 ### Minor Changes
