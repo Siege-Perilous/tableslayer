@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.4
+
+### Patch Changes
+
+- [#405](https://github.com/Siege-Perilous/tableslayer/pull/405) [`1f98a7d`](https://github.com/Siege-Perilous/tableslayer/commit/1f98a7d55d4c0f426cb9eb44ec1bae0cc69ee958) Thanks [@snide](https://github.com/snide)! - Fix publish to include src files
+
 ## 0.1.3
 
 ### Patch Changes
