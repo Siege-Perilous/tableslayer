@@ -93,6 +93,19 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "@tableslayer/ui#package": {
+      "outputs": ["dist/**"]
+    },
+    "web#dev": {
+      "dependsOn": ["@tableslayer/ui#package"],
+      "cache": false,
+      "persistent": true
+    },
+    "docs#dev": {
+      "dependsOn": ["@tableslayer/ui#package"],
+      "cache": false,
+      "persistent": true
+    },
     "dev": {
       "cache": false,
       "persistent": true
