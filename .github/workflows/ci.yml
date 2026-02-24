@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -43,6 +43,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check if UI files changed
         id: ui-changes
         run: |
@@ -54,19 +56,43 @@ jobs:
           else
             echo "ui_changed=false" >> $GITHUB_OUTPUT
           fi
-      - name: Check for changeset
+      - name: Check for changeset files
+        id: changeset-files
         if: steps.ui-changes.outputs.ui_changed == 'true'
         run: |
-          CHANGESETS=$(git diff --name-only origin/main...HEAD | grep "^\.changeset/.*\.md$" | grep -v "README.md" || true)
+          CHANGESETS=$(find .changeset -name "*.md" ! -name "README.md" 2>/dev/null || true)
           if [ -z "$CHANGESETS" ]; then
-            echo "Error: UI files changed but no changeset found!"
-            echo ""
-            echo "Please run 'pnpm changeset' to create a changeset describing your changes."
-            echo "Then commit the generated .changeset/*.md file with your PR."
-            exit 1
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
           else
-            echo "Changeset found: $CHANGESETS"
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+            echo "Changeset files found: $CHANGESETS"
           fi
+      - name: Fail if UI changed but no changeset
+        if: steps.ui-changes.outputs.ui_changed == 'true' && steps.changeset-files.outputs.has_changesets == 'false'
+        run: |
+          # Check if package.json was already versioned (changeset was processed)
+          if git diff --name-only origin/main...HEAD | grep -q "^packages/ui/package.json"; then
+            echo "UI package.json already updated - changeset was processed"
+            exit 0
+          fi
+          echo "Error: UI files changed but no changeset found!"
+          echo ""
+          echo "Please run 'pnpm changeset' to create a changeset describing your changes."
+          echo "Then commit the generated .changeset/*.md file with your PR."
+          exit 1
+      - uses: ./.github/shared
+        if: steps.changeset-files.outputs.has_changesets == 'true'
+      - name: Version packages
+        if: steps.changeset-files.outputs.has_changesets == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          pnpm changeset version
+
+          git add .
+          git commit -m "Version packages"
+          git push
 
   create_database:
     if: github.event.pull_request.draft == false
