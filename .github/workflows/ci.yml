@@ -57,11 +57,19 @@ jobs:
       - name: Verify release was run
         if: steps.ui-changes.outputs.ui_changed == 'true'
         run: |
-          CHANGED=$(git diff --name-only origin/main...HEAD)
+          # Get the version from main branch
+          MAIN_VERSION=$(git show origin/main:packages/ui/package.json | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
 
-          # Check if package.json was updated (versioning was done)
-          if ! echo "$CHANGED" | grep -q "^packages/ui/package.json"; then
-            echo "Error: UI files changed but package.json not updated!"
+          # Get the version from current branch
+          CURRENT_VERSION=$(grep '"version"' packages/ui/package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+
+          echo "Main branch version: $MAIN_VERSION"
+          echo "Current branch version: $CURRENT_VERSION"
+
+          # Check if version was actually bumped
+          if [ "$MAIN_VERSION" = "$CURRENT_VERSION" ]; then
+            echo ""
+            echo "Error: UI files changed but version was not bumped!"
             echo ""
             echo "Please run 'pnpm release' to version your changes."
             echo "This will prompt you to describe the change and update the version."
@@ -78,7 +86,7 @@ jobs:
             exit 1
           fi
 
-          echo "Release check passed - UI versioned correctly"
+          echo "Release check passed - UI version bumped from $MAIN_VERSION to $CURRENT_VERSION"
 
   create_database:
     if: github.event.pull_request.draft == false
