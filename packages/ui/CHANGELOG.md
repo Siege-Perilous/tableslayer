@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.6
+
+### Patch Changes
+
+- Removes the Stage component from the ui package, which should cut the dep tree down considerably.
+
 ## 0.1.5
 
 ### Patch Changes

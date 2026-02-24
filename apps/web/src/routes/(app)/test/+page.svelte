@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { MyCounterButton } from '@tableslayer/ui';
   import { createUsersQuery } from '$lib/queries/users';
 
   const usersQuery = createUsersQuery();
 </script>
 
 <h1>Web</h1>
-<MyCounterButton />
 
 {#if usersQuery.isLoading}
   <p>Loading...</p>
