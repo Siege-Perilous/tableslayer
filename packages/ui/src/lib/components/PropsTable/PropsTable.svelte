@@ -1,5 +1,5 @@
 <script>
-  import jsonData from '../../../../typedocgen.json';
+  import jsonData from '@tableslayer/ui/typedoc.json';
   import Markdown from '@magidoc/plugin-svelte-marked';
   import { Table, Th, Td, Title, Spacer } from '@tableslayer/ui';
   export let componentName = '';
