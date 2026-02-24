@@ -12,7 +12,8 @@
     "prepare": "husky",
     "deploy:party": "cd apps/web && pnpm deploy:party",
     "assets:generate": "cd apps/web && pnpm assets:generate",
-    "assets:upload": "cd apps/web && pnpm assets:upload"
+    "assets:upload": "cd apps/web && pnpm assets:upload",
+    "release": "changeset && changeset version"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
