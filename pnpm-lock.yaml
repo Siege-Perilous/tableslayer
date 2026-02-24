@@ -38,9 +38,15 @@ importers:
 
   apps/docs:
     dependencies:
+      '@magidoc/plugin-svelte-marked':
+        specifier: ^6.3.0
+        version: 6.3.0
       '@tabler/icons-svelte':
         specifier: ^3.36.1
         version: 3.36.1(svelte@5.51.2)
+      '@tableslayer/stage':
+        specifier: workspace:*
+        version: link:../../packages/stage
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -138,6 +144,9 @@ importers:
       '@tabler/icons-svelte':
         specifier: ^3.36.1
         version: 3.36.1(svelte@5.51.2)
+      '@tableslayer/stage':
+        specifier: workspace:*
+        version: link:../../packages/stage
       '@tableslayer/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -284,6 +293,82 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/stage:
+    dependencies:
+      '@floating-ui/dom':
+        specifier: ^1.7.5
+        version: 1.7.5
+      '@tabler/icons-svelte':
+        specifier: ^3.36.1
+        version: 3.36.1(svelte@5.51.2)
+      '@tableslayer/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@threlte/core':
+        specifier: 8.3.1
+        version: 8.3.1(svelte@5.51.2)(three@0.182.0)
+      '@threlte/extras':
+        specifier: 9.7.1
+        version: 9.7.1(@types/three@0.182.0)(svelte@5.51.2)(three@0.182.0)
+      '@tiptap/core':
+        specifier: ^3.19.0
+        version: 3.19.0(@tiptap/pm@3.19.0)
+      chroma-js:
+        specifier: ^3.2.0
+        version: 3.2.0
+      gifuct-js:
+        specifier: ^2.1.2
+        version: 2.1.2
+      lazy-brush:
+        specifier: ^2.0.2
+        version: 2.0.2
+      postprocessing:
+        specifier: 6.38.2
+        version: 6.38.2(three@0.182.0)
+      three:
+        specifier: 0.182.0
+        version: 0.182.0
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
+    devDependencies:
+      '@sveltejs/adapter-auto':
+        specifier: ^7.0.1
+        version: 7.0.1(@sveltejs/kit@2.52.0(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.51.2)(vite@7.3.1(@types/node@24.0.0)(yaml@2.8.1)))(svelte@5.51.2)(typescript@5.9.3)(vite@7.3.1(@types/node@24.0.0)(yaml@2.8.1)))
+      '@sveltejs/kit':
+        specifier: ^2.52.0
+        version: 2.52.0(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.51.2)(vite@7.3.1(@types/node@24.0.0)(yaml@2.8.1)))(svelte@5.51.2)(typescript@5.9.3)(vite@7.3.1(@types/node@24.0.0)(yaml@2.8.1))
+      '@sveltejs/package':
+        specifier: ^2.5.7
+        version: 2.5.7(svelte@5.51.2)(typescript@5.9.3)
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^6.2.4
+        version: 6.2.4(svelte@5.51.2)(vite@7.3.1(@types/node@24.0.0)(yaml@2.8.1))
+      '@tableslayer/eslint-config':
+        specifier: workspace:*
+        version: link:../config-eslint
+      '@tableslayer/tsconfig':
+        specifier: workspace:*
+        version: link:../config-typescript
+      '@types/chroma-js':
+        specifier: ^3.1.2
+        version: 3.1.2
+      '@types/three':
+        specifier: 0.182.0
+        version: 0.182.0
+      svelte:
+        specifier: 5.51.2
+        version: 5.51.2
+      svelte-check:
+        specifier: ^4.4.0
+        version: 4.4.0(picomatch@4.0.3)(svelte@5.51.2)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@24.0.0)(yaml@2.8.1)
+
   packages/ui:
     dependencies:
       '@floating-ui/dom':
@@ -292,12 +377,6 @@ importers:
       '@tabler/icons-svelte':
         specifier: ^3.36.1
         version: 3.36.1(svelte@5.51.2)
-      '@threlte/core':
-        specifier: 8.3.1
-        version: 8.3.1(svelte@5.51.2)(three@0.182.0)
-      '@threlte/extras':
-        specifier: 9.7.1
-        version: 9.7.1(@types/three@0.182.0)(svelte@5.51.2)(three@0.182.0)
       '@tiptap/core':
         specifier: ^3.19.0
         version: 3.19.0(@tiptap/pm@3.19.0)
@@ -319,21 +398,9 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
-      gifuct-js:
-        specifier: ^2.1.2
-        version: 2.1.2
-      lazy-brush:
-        specifier: ^2.0.2
-        version: 2.0.2
-      postprocessing:
-        specifier: 6.38.2
-        version: 6.38.2(three@0.182.0)
       shiki:
         specifier: ^3.22.0
         version: 3.22.0
-      three:
-        specifier: 0.182.0
-        version: 0.182.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -371,9 +438,6 @@ importers:
       '@types/marked':
         specifier: ^6.0.0
         version: 6.0.0
-      '@types/three':
-        specifier: 0.182.0
-        version: 0.182.0
       marked:
         specifier: ^17.0.2
         version: 17.0.2
@@ -3964,7 +4028,6 @@ packages:
 
   libsql@0.5.22:
     resolution: {integrity: sha512-NscWthMQt7fpU8lqd7LXMvT9pi+KhhmTHAJWUB/Lj6MWa0MKFv0F2V4C6WKKpjCVZl0VwcDz4nOI3CyaT1DDiA==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   liftoff@2.0.3:

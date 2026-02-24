@@ -1,4 +1,4 @@
-import { type StageProps, MapLayerType } from '@tableslayer/ui';
+import { type StageProps, MapLayerType } from '@tableslayer/stage';
 import { setPreferenceDebounced } from './gameSessionPreferences';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 

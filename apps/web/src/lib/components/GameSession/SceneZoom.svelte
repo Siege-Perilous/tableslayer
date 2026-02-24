@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, IconButton, Icon, type StageProps } from '@tableslayer/ui';
+  import { Button, IconButton, Icon } from '@tableslayer/ui';
+  import { type StageProps } from '@tableslayer/stage';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
   import { queuePropertyUpdate } from '$lib/utils';
 

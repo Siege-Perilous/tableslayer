@@ -2,7 +2,7 @@
   import { List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
   import frostImageUrl from './overlays/frost.png?url';
   import heatImageUrl from './overlays/heat.png?url';
-  import type { StageProps } from '@tableslayer/ui';
+  import type { StageProps } from '@tableslayer/stage';
 
   const { props = $bindable() }: { props: StageProps } = $props();
 

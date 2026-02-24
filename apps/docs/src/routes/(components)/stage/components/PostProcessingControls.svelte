@@ -1,7 +1,7 @@
 <script lang="ts">
   import { List, Slider, Folder, type ListOptions } from 'svelte-tweakpane-ui';
   import { ToneMappingMode } from 'postprocessing';
-  import type { StageProps } from '@tableslayer/ui';
+  import type { StageProps } from '@tableslayer/stage';
 
   let { props = $bindable() } = $props<{ props: StageProps }>();
 

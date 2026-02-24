@@ -1,6 +1,6 @@
 <script lang="ts">
   import { List, Color, Slider, Button, Binding, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { DrawMode, ToolType, type StageExports, type StageProps } from '@tableslayer/ui';
+  import { DrawMode, ToolType, type StageExports, type StageProps } from '@tableslayer/stage';
 
   const { props = $bindable(), stage }: { props: StageProps; stage: StageExports } = $props();
 

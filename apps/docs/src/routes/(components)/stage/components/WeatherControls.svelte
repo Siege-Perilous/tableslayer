@@ -1,9 +1,15 @@
 <script lang="ts">
   import { List, Color, Slider, Button, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import { WeatherType, ParticleType } from '@tableslayer/ui';
-  import { SnowPreset, RainPreset, LeavesPreset, AshPreset } from '@tableslayer/ui';
+  import {
+    WeatherType,
+    ParticleType,
+    SnowPreset,
+    RainPreset,
+    LeavesPreset,
+    AshPreset,
+    type StageProps
+  } from '@tableslayer/stage';
   import { KernelSize } from 'postprocessing';
-  import type { StageProps } from '@tableslayer/ui';
 
   let { props = $bindable() } = $props<{ props: StageProps }>();
 

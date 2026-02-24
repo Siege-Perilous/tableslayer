@@ -1,25 +1,23 @@
 <script lang="ts">
   let { data } = $props();
   import { handleMutation } from '$lib/factories';
+  import { Icon, addToast, FogSliders } from '@tableslayer/ui';
   import {
     Stage,
     PerformanceDebugger,
     type StageExports,
     type StageProps,
     MapLayerType,
-    Icon,
     type Marker,
     type AnnotationLayerData,
     StageMode,
     PointerInputManager,
-    addToast,
     ToolType,
     type HoveredMarker,
     MarkerVisibility,
     DrawingSliders,
-    FogSliders,
     AnnotationEffect
-  } from '@tableslayer/ui';
+  } from '@tableslayer/stage';
   import { invalidateAll } from '$app/navigation';
   import { PaneGroup, Pane, PaneResizer, type PaneAPI } from 'paneforge';
   import {

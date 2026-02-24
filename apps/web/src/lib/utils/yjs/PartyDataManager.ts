@@ -1,4 +1,4 @@
-import type { HoveredMarker, Marker, StageProps } from '@tableslayer/ui';
+import type { HoveredMarker, Marker, StageProps } from '@tableslayer/stage';
 import YPartyKitProvider from 'y-partykit/provider';
 import * as Y from 'yjs';
 import { devLog, devWarn } from '../debug';

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Color, Button, List, Folder, type ListOptions } from 'svelte-tweakpane-ui';
-  import type { StageProps, StageExports } from '@tableslayer/ui';
-  import { SceneRotation } from '@tableslayer/ui';
+  import { type StageProps, type StageExports, SceneRotation } from '@tableslayer/stage';
 
   let {
     props = $bindable(),

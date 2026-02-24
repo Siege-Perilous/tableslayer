@@ -8,7 +8,7 @@ import {
   ToolType,
   WeatherType,
   type StageProps
-} from '@tableslayer/ui';
+} from '@tableslayer/stage';
 import { ToneMappingMode } from 'postprocessing';
 
 import frostImageUrl from './components/overlays/frost.png?url';

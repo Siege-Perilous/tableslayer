@@ -17,7 +17,7 @@
 
 <script lang="ts">
   import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  import { GridMode } from '@tableslayer/ui';
+  import { GridMode } from '@tableslayer/stage';
   import { hasThumb, generateLargeImageUrl, resetGridOrigin } from '$lib/utils';
   import type { usePartyData } from '$lib/utils/yjs/stores';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';

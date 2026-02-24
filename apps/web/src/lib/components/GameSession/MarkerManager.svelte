@@ -2,8 +2,6 @@
   import {
     RadioButton,
     Icon,
-    type StageProps,
-    type Marker,
     FormControl,
     Input,
     ColorPickerSwatch,
@@ -16,13 +14,17 @@
     ConfirmActionButton,
     IconButton,
     Loader,
+    Label,
+    Text
+  } from '@tableslayer/ui';
+  import {
+    type StageProps,
+    type Marker,
     MarkerVisibility,
     MarkerShape,
     MarkerSize,
-    Label,
-    Text,
     MapLayerType
-  } from '@tableslayer/ui';
+  } from '@tableslayer/stage';
   import {
     IconTriangle,
     IconTrash,

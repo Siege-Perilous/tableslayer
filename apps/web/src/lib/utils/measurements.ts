@@ -1,4 +1,4 @@
-import type { StageProps } from '@tableslayer/ui';
+import type { StageProps } from '@tableslayer/stage';
 import type { MeasurementData } from './yjs/PartyDataManager';
 
 /**

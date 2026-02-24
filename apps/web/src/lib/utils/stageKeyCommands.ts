@@ -1,5 +1,4 @@
-import type { StageProps } from '@tableslayer/ui';
-import { DrawMode, GridMode, MapLayerType, ToolType } from '@tableslayer/ui';
+import { DrawMode, GridMode, MapLayerType, ToolType, type StageProps } from '@tableslayer/stage';
 import { devLog } from './debug';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 

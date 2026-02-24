@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Icon, FormControl, Spacer, type StageProps, Input, Button, IconButton, Text, Hr } from '@tableslayer/ui';
+  import { Icon, FormControl, Spacer, Input, Button, IconButton, Text, Hr } from '@tableslayer/ui';
+  import { type StageProps } from '@tableslayer/stage';
   import type { SelectScene } from '$lib/db/app/schema';
   import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';

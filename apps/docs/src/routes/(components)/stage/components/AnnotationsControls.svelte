@@ -1,7 +1,13 @@
 <script lang="ts">
   import { Color, Folder, Text, List, Button, type ListOptions, Slider } from 'svelte-tweakpane-ui';
-  import type { AnnotationLayerData, StageProps, StageExports } from '@tableslayer/ui';
-  import { StageMode, AnnotationEffect, getDefaultEffectProps } from '@tableslayer/ui';
+  import {
+    type AnnotationLayerData,
+    type StageProps,
+    type StageExports,
+    StageMode,
+    AnnotationEffect,
+    getDefaultEffectProps
+  } from '@tableslayer/stage';
 
   let { props = $bindable(), stage } = $props<{
     props: StageProps;
