@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.3
+
+### Patch Changes
+
+- [#404](https://github.com/Siege-Perilous/tableslayer/pull/404) [`0ba2862`](https://github.com/Siege-Perilous/tableslayer/commit/0ba28628d7b62c8b5852828f35dd3f668c9c1055) Thanks [@snide](https://github.com/snide)! - fix: upgrade npm for oidc
+
 ## 0.1.2
 
 ### Patch Changes

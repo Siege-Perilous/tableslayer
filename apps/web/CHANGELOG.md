@@ -1,5 +1,12 @@
 # web
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`0ba2862`](https://github.com/Siege-Perilous/tableslayer/commit/0ba28628d7b62c8b5852828f35dd3f668c9c1055)]:
+  - @tableslayer/ui@0.1.3
+
 ## 0.0.4
 
 ### Patch Changes
