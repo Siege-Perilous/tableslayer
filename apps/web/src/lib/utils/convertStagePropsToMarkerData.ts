@@ -1,5 +1,5 @@
 import type { InsertMarker } from '$lib/db/app/schema';
-import type { Marker } from '@tableslayer/ui';
+import type { Marker } from '@tableslayer/stage';
 import { devError } from './debug';
 import { extractLocationFromUrl } from './extractLocationFromUrl';
 

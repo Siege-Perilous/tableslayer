@@ -1,6 +1,7 @@
 <script lang="ts">
   import { type ZodIssue } from 'zod';
-  import { Spacer, DualInputSlider, type StageProps, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
+  import { Spacer, DualInputSlider, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
+  import { type StageProps } from '@tableslayer/stage';
   import { IconX } from '@tabler/icons-svelte';
   import type { SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';

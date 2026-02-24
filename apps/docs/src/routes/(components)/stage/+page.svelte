@@ -11,7 +11,7 @@
     PointerInputManager,
     PerformanceDebugger,
     StageMode
-  } from '@tableslayer/ui';
+  } from '@tableslayer/stage';
   import { StageDefaultProps } from './defaults';
   import { onMount } from 'svelte';
   import {

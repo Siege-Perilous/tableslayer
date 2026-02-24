@@ -19,7 +19,9 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
+    "@magidoc/plugin-svelte-marked": "^6.3.0",
     "@tabler/icons-svelte": "^3.36.1",
+    "@tableslayer/stage": "workspace:*",
     "@tableslayer/ui": "workspace:*",
     "mode-watcher": "^1.1.0",
     "svelte-tweakpane-ui": "^1.5.14"

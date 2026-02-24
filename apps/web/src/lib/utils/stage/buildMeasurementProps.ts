@@ -1,4 +1,4 @@
-import type { StageProps } from '@tableslayer/ui';
+import type { StageProps } from '@tableslayer/stage';
 
 /**
  * Build measurement properties object from stageProps

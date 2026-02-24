@@ -1,4 +1,4 @@
-import type { Marker } from '@tableslayer/ui';
+import type { Marker } from '@tableslayer/stage';
 
 /**
  * Merge markers while protecting ones being moved or edited

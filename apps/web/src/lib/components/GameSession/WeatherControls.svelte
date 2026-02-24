@@ -5,13 +5,13 @@
     ColorPicker,
     InputSlider,
     Spacer,
-    type StageProps,
     Select,
     type ColorUpdatePayload,
     Hr,
     RadioButton,
     Label
   } from '@tableslayer/ui';
+  import { type StageProps } from '@tableslayer/stage';
   import { to8CharHex, queuePropertyUpdate } from '$lib/utils';
   import chroma from 'chroma-js';
 

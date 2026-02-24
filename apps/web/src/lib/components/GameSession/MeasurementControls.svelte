@@ -1,15 +1,6 @@
 <script lang="ts">
-  import {
-    type StageProps,
-    SelectorMenu,
-    FormControl,
-    Input,
-    Hr,
-    Spacer,
-    MeasurementType,
-    MapLayerType,
-    Text
-  } from '@tableslayer/ui';
+  import { SelectorMenu, FormControl, Input, Hr, Spacer, Text } from '@tableslayer/ui';
+  import { type StageProps, MeasurementType, MapLayerType } from '@tableslayer/stage';
   import { IconLine, IconCone2, IconCircle, IconSquare, IconRectangleVertical } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';

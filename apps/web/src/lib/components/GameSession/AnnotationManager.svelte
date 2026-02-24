@@ -1,21 +1,23 @@
 <script lang="ts">
   import {
     Icon,
-    type StageProps,
-    type AnnotationLayerData,
     Input,
     Spacer,
     Button,
     ConfirmActionButton,
     IconButton,
     Text,
+    decodeRLE,
+    RadioButton
+  } from '@tableslayer/ui';
+  import {
+    type StageProps,
+    type AnnotationLayerData,
     MapLayerType,
     StageMode,
-    decodeRLE,
-    RadioButton,
     AnnotationEffect,
     getDefaultEffectProps
-  } from '@tableslayer/ui';
+  } from '@tableslayer/stage';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
   import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
   import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';

@@ -1,14 +1,6 @@
 <script lang="ts">
-  import {
-    ColorPicker,
-    type StageProps,
-    type ColorUpdatePayload,
-    Button,
-    type StageExports,
-    Spacer,
-    InputSlider,
-    FormControl
-  } from '@tableslayer/ui';
+  import { ColorPicker, type ColorUpdatePayload, Button, Spacer, InputSlider, FormControl } from '@tableslayer/ui';
+  import { type StageProps, type StageExports } from '@tableslayer/stage';
   import { generateGradientColors, queuePropertyUpdate } from '$lib/utils';
   import chroma from 'chroma-js';
 

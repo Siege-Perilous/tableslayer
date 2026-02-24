@@ -1,7 +1,15 @@
 <script lang="ts">
-  import { MarkerVisibility } from '../Stage/components/MarkerLayer/types';
   import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
   import { Editor } from '../Editor';
+
+  // Duplicated from @tableslayer/stage to avoid circular dependency
+  const MarkerVisibility = {
+    Always: 0,
+    DM: 1,
+    Player: 2,
+    Hover: 3
+  } as const;
+  type MarkerVisibility = (typeof MarkerVisibility)[keyof typeof MarkerVisibility];
   import { onMount, onDestroy } from 'svelte';
   import { IconPin, IconPinFilled } from '@tabler/icons-svelte';
 

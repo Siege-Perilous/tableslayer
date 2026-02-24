@@ -9,7 +9,7 @@ import {
   ToolType,
   WeatherType,
   type StageProps
-} from '@tableslayer/ui';
+} from '@tableslayer/stage';
 import { ToneMappingMode } from 'postprocessing';
 
 export const StageDefaultProps: StageProps = {

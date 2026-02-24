@@ -42,6 +42,7 @@
     "@oslojs/encoding": "^1.1.0",
     "@sentry/sveltekit": "^10.38.0",
     "@tabler/icons-svelte": "^3.36.1",
+    "@tableslayer/stage": "workspace:*",
     "@tableslayer/ui": "workspace:*",
     "@tanstack/svelte-query": "^6.0.18",
     "@tursodatabase/api": "^1.9.2",

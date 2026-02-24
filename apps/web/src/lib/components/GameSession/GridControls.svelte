@@ -11,17 +11,15 @@
     Select,
     FormControl,
     Spacer,
-    type StageProps,
-    type StageExports,
     type ColorUpdatePayload,
     Input,
     IconButton,
-    GridMode,
     Button,
     RadioButton,
     Text,
     Hr
   } from '@tableslayer/ui';
+  import { type StageProps, type StageExports, GridMode } from '@tableslayer/stage';
   import {
     tvResolutionOptions,
     getResolutionOption,

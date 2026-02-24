@@ -4,12 +4,11 @@
   import { page } from '$app/state';
   import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
   import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
+  import { Text, Title, PersistButton } from '@tableslayer/ui';
   import {
     MapLayerType,
     Stage,
     PerformanceDebugger,
-    Text,
-    Title,
     type StageExports,
     type StageProps,
     type Marker,
@@ -19,10 +18,9 @@
     DrawMode,
     StageMode,
     MeasurementType,
-    PersistButton,
     AnnotationEffect,
     getDefaultEffectProps
-  } from '@tableslayer/ui';
+  } from '@tableslayer/stage';
   import { Head } from '$lib/components';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import {

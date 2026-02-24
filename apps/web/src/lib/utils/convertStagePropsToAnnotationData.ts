@@ -1,5 +1,5 @@
 import type { InsertAnnotation } from '$lib/db/app/schema';
-import type { AnnotationLayerData } from '@tableslayer/ui';
+import type { AnnotationLayerData } from '@tableslayer/stage';
 import { devError } from './debug';
 import { extractLocationFromUrl } from './extractLocationFromUrl';
 

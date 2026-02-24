@@ -1,4 +1,4 @@
-import type { StageProps } from '@tableslayer/ui';
+import type { StageProps } from '@tableslayer/stage';
 import { devError, devLog, devWarn } from './debug';
 import { getPartyDataManager } from './yjs/stores';
 

@@ -18,7 +18,7 @@ import {
   StageMode,
   type StageProps,
   ToolType
-} from '@tableslayer/ui';
+} from '@tableslayer/stage';
 
 // Map activeScene properties to StageProps
 export const buildSceneProps = (

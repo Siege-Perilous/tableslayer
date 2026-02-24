@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ColorMode, PropsTable, Title, Spacer } from '@tableslayer/ui';
+  import { ColorMode, Title, Spacer } from '@tableslayer/ui';
+  import PropsTable from '$lib/components/PropsTable/PropsTable.svelte';
   import type { ExampleProps } from './types';
   let { children, codeBlock, propsName, title, layout, ...restProps }: ExampleProps = $props();
 

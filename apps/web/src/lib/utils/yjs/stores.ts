@@ -1,4 +1,4 @@
-import type { HoveredMarker, Marker, StageProps } from '@tableslayer/ui';
+import type { HoveredMarker, Marker, StageProps } from '@tableslayer/stage';
 import { devLog } from '../debug';
 import { PartyDataManager, type PartyState, type SceneData, type SceneMetadata } from './PartyDataManager';
 

@@ -1,6 +1,6 @@
 // Utility function to set properties if they exist
 
-import type { StageProps } from '@tableslayer/ui';
+import type { StageProps } from '@tableslayer/stage';
 import { devLog } from './debug';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

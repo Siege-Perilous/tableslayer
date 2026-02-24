@@ -1,16 +1,6 @@
 <script lang="ts">
-  import {
-    ColorMode,
-    Icon,
-    Popover,
-    DrawMode,
-    ToolType,
-    type StageProps,
-    MapLayerType,
-    SelectorMenu,
-    type StageExports,
-    ToolTip
-  } from '@tableslayer/ui';
+  import { ColorMode, Icon, Popover, SelectorMenu, ToolTip } from '@tableslayer/ui';
+  import { DrawMode, ToolType, type StageProps, MapLayerType, type StageExports } from '@tableslayer/stage';
   import {
     IconGrid4x4,
     IconPaint,

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { List, Slider, Button, Folder, type ListOptions, Separator } from 'svelte-tweakpane-ui';
-  import type { StageProps, StageExports } from '@tableslayer/ui';
+  import type { StageProps, StageExports } from '@tableslayer/stage';
   import caveWebmUrl from './maps/cave.webm?url';
   import bridgeMp4Url from './maps/bridge.mp4?url';
   import bridgeGifUrl from './maps/bridge.gif?url';

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Color, Slider, Folder, Text, List, type ListOptions } from 'svelte-tweakpane-ui';
-  import type { Marker, StageProps } from '@tableslayer/ui';
-  import { MarkerShape, MarkerSize, MarkerVisibility } from '@tableslayer/ui';
+  import { type Marker, type StageProps, MarkerShape, MarkerSize, MarkerVisibility } from '@tableslayer/stage';
 
   import imgDruid from './tokens/druid.png';
   import imgElf from './tokens/elf.png';

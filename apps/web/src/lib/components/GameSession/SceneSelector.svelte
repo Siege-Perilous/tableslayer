@@ -1,15 +1,6 @@
 <script lang="ts">
-  import {
-    IconButton,
-    FileInput,
-    Icon,
-    FormControl,
-    Input,
-    Popover,
-    Button,
-    ColorMode,
-    GridMode
-  } from '@tableslayer/ui';
+  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
+  import { GridMode } from '@tableslayer/stage';
   import { devLog, devWarn, devError } from '$lib/utils/debug';
   import {
     IconCheck,
