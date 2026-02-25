@@ -8,6 +8,7 @@
 
 <style>
   .hr {
+    min-height: 1px;
     height: 1px;
     width: 100%;
     background: var(--contrastMedium);

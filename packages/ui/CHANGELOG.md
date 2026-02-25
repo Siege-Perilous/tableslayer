@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.7
+
+### Patch Changes
+
+- Hr min-height fix
+
 ## 0.1.6
 
 ### Patch Changes
