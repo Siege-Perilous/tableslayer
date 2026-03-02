@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.8
+
+### Patch Changes
+
+- Adds portal prop to confirm action button
+
 ## 0.1.7
 
 ### Patch Changes

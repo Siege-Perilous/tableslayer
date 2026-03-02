@@ -43,6 +43,11 @@ export type ConfirmActionButtonProps = {
   actionButtonText?: string;
   isLoading?: boolean;
   positioning?: FloatingConfig;
+  /**
+   * Render the popover in a portal to avoid overflow clipping.
+   * Set to 'body' or a CSS selector to enable.
+   */
+  portal?: string | null;
 };
 
 export type RadioOption = { label: string | Snippet; value: string };
