@@ -14,12 +14,24 @@ import { IconCheck } from '@tabler/icons-svelte';
 </Button>
 `;
   const confirmActionExample = `import { Button, ConfirmActionButton, Text } from '@tableslayer/ui';
+
+// Basic usage
 <ConfirmActionButton actionButtonText="Double sure?" action={() => alert('hello')}>
   {#snippet trigger({ triggerProps })}
     <Button variant="danger" {...triggerProps}>Delete this thing?</Button>
   {/snippet}
   {#snippet actionMessage()}
     <Text>Are you sure you want to delete this thing?</Text>
+  {/snippet}
+</ConfirmActionButton>
+
+// With portal (useful when inside overflow:hidden containers)
+<ConfirmActionButton portal="body" actionButtonText="Confirm" action={() => alert('portaled!')}>
+  {#snippet trigger({ triggerProps })}
+    <Button variant="ghost" {...triggerProps}>With portal</Button>
+  {/snippet}
+  {#snippet actionMessage()}
+    <Text>This popover renders in a portal to avoid clipping.</Text>
   {/snippet}
 </ConfirmActionButton>
 `;
@@ -63,6 +75,15 @@ import { IconCheck } from '@tabler/icons-svelte';
     {/snippet}
     {#snippet actionMessage()}
       <Text>Are you sure you want to delete this thing?</Text>
+    {/snippet}
+  </ConfirmActionButton>
+
+  <ConfirmActionButton portal="body" actionButtonText="Confirm" action={() => alert('portaled!')}>
+    {#snippet trigger({ triggerProps })}
+      <Button variant="ghost" {...triggerProps}>With portal</Button>
+    {/snippet}
+    {#snippet actionMessage()}
+      <Text>This popover renders in a portal to avoid clipping.</Text>
     {/snippet}
   </ConfirmActionButton>
 </Example>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { computePosition, offset, flip, shift, platform } from '@floating-ui/dom';
   import { Button, type ConfirmActionButtonProps } from './';
-  import { tick } from 'svelte';
+  import { tick, onDestroy } from 'svelte';
 
   let {
     trigger,
@@ -10,13 +10,37 @@
     action,
     isLoading,
     positioning = { placement: 'bottom' },
+    portal = null,
     ...restProps
   }: ConfirmActionButtonProps = $props();
 
   let triggerElement: HTMLElement | null = null;
   let popoverElement = $state<HTMLElement | null>(null);
+  let portalContainer: HTMLDivElement | null = null;
   let isShowingConfirm = $state(false);
   let floatingStyles = $state('');
+
+  // Handle portal mounting
+  $effect(() => {
+    if (isShowingConfirm && portal && popoverElement) {
+      const targetEl = typeof portal === 'string' ? document.querySelector(portal) : null;
+      if (targetEl && popoverElement.parentNode !== targetEl) {
+        // Create a container for the portal if needed
+        if (!portalContainer) {
+          portalContainer = document.createElement('div');
+          portalContainer.style.display = 'contents';
+        }
+        portalContainer.appendChild(popoverElement);
+        targetEl.appendChild(portalContainer);
+      }
+    }
+  });
+
+  onDestroy(() => {
+    if (portalContainer?.parentNode) {
+      portalContainer.parentNode.removeChild(portalContainer);
+    }
+  });
 
   const toggleShowConfirm = async () => {
     isShowingConfirm = true;
