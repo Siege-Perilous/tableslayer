@@ -46,14 +46,17 @@ jobs:
           OTHER_UPDATES=""
 
           while IFS= read -r line; do
-            # Skip empty lines and headers
+            # Skip empty lines, headers, and path lines
             [[ -z "$line" ]] && continue
             [[ "$line" =~ ^[[:space:]]*$ ]] && continue
             [[ "$line" =~ "Checking" ]] && continue
             [[ "$line" =~ "Run" ]] && continue
+            [[ "$line" =~ "Upgrading" ]] && continue
+            [[ "$line" =~ "Using" ]] && continue
 
-            # Extract version numbers (handles ^, ~, or no prefix)
-            if [[ "$line" =~ ([0-9]+)\.[0-9]+\.[0-9]+.*→.*[\^~]?([0-9]+)\.[0-9]+\.[0-9]+ ]]; then
+            # Match: package-name    ^1.2.3  →  ^2.0.0
+            # Require whitespace boundaries to avoid greedy matching
+            if [[ "$line" =~ [[:space:]][\^~]?([0-9]+)\.[0-9]+\.[0-9]+[[:space:]]+→[[:space:]]+[\^~]?([0-9]+)\.[0-9]+\.[0-9]+ ]]; then
               OLD_MAJOR="${BASH_REMATCH[1]}"
               NEW_MAJOR="${BASH_REMATCH[2]}"
 
