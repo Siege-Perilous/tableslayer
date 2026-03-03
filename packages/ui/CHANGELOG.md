@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.9
+
+### Patch Changes
+
+- Export the remove toast helper
+
 ## 0.1.8
 
 ### Patch Changes
