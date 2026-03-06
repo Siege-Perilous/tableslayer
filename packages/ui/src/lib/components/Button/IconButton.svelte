@@ -4,11 +4,8 @@
   let { children, size = 'md', href, as, variant = 'primary', ...restProps }: IconButtonProps = $props();
 
   const iconBtnClasses = $derived(['iconBtn', `iconBtn--${size}`, `iconBtn--${variant}`, restProps.class ?? '']);
-  const component = as ?? 'button';
-  let iconButtonProps = $state({});
-  if (component === 'a') {
-    iconButtonProps = { href };
-  }
+  let component = $derived(as ?? 'button');
+  let iconButtonProps = $derived(component === 'a' ? { href } : {});
 </script>
 
 <svelte:element this={component} {...iconButtonProps} {...restProps} class={iconBtnClasses}>

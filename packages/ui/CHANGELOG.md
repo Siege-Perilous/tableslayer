@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.10
+
+### Patch Changes
+
+- Fix button derived state
+
 ## 0.1.9
 
 ### Patch Changes

@@ -11,13 +11,15 @@
   }: InputCheckboxProps = $props();
 
   const inputClasses = $derived(['input', variant && `input--${variant}`, restProps.class ?? '']);
-  let autoCompleteOffAttrs = hideAutocomplete
-    ? {
-        autocomplete: 'off' as const,
-        'data-1p-ignore': 'true' as const,
-        'data-lpignore': 'true' as const
-      }
-    : {};
+  let autoCompleteOffAttrs = $derived(
+    hideAutocomplete
+      ? {
+          autocomplete: 'off' as const,
+          'data-1p-ignore': 'true' as const,
+          'data-lpignore': 'true' as const
+        }
+      : {}
+  );
 
   const id = `checkbox-${uuidv4()}`;
 </script>
