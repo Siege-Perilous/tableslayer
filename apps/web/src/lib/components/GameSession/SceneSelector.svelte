@@ -668,8 +668,11 @@
           triggerClass="scene__popoverBtn"
           triggerTestId="scenePopoverButton"
           isOpen={openScenePopover === scene.id}
+          onIsOpenChange={(open) => {
+            if (!open) openScenePopover = null;
+          }}
           positioning={{ placement: 'bottom-end' }}
-          portal={document.getElementById('scenes')}
+          portal="#scenes"
         >
           {#snippet trigger()}
             <ColorMode mode="dark">

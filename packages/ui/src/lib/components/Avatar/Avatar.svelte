@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { AvatarProps } from './types';
   let { src, alt, initials, variant = 'round', size = 'sm', isLoading, ...restProps }: AvatarProps = $props();
-  import { createAvatar, melt } from '@melt-ui/svelte';
+
+  let imageLoaded = $state(false);
+  let imageError = $state(false);
+
+  let showFallback = $derived(!src || imageError || !imageLoaded);
 
   let avatarClasses = $derived([
     'avatar',
@@ -11,16 +15,37 @@
     restProps.class
   ]);
 
-  const {
-    elements: { fallback }
-  } = createAvatar({
-    src: src || ''
+  $effect(() => {
+    // Reset state when src changes
+    if (src) {
+      imageLoaded = false;
+      imageError = false;
+    }
   });
+
+  const handleLoad = () => {
+    imageLoaded = true;
+  };
+
+  const handleError = () => {
+    imageError = true;
+  };
 </script>
 
 <div class={avatarClasses}>
-  <img {src} {alt} class="avatar__image" />
-  <span use:melt={$fallback} class="avatar__text">{initials}</span>
+  {#if src && !imageError}
+    <img
+      {src}
+      {alt}
+      class="avatar__image"
+      class:avatar__image--hidden={!imageLoaded}
+      onload={handleLoad}
+      onerror={handleError}
+    />
+  {/if}
+  {#if showFallback}
+    <span class="avatar__text">{initials}</span>
+  {/if}
 </div>
 
 <style>
@@ -75,6 +100,9 @@
     height: 100%;
     object-fit: cover;
     border-radius: 50%;
+  }
+  .avatar__image--hidden {
+    display: none;
   }
   .avatar__text {
     font-weight: var(--font-weight-6);

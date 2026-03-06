@@ -1,86 +1,113 @@
 <script lang="ts" module>
-  import type { ToastDataProps } from './types';
+  export { addToast, removeToast } from './toastStore.svelte';
+</script>
+
+<script lang="ts">
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
   import { IconX } from '@tabler/icons-svelte';
   import { Icon, Loader } from '../';
   import { page } from '$app/state';
-  const {
-    elements: { content, title, description, close },
-    helpers,
-    states: { toasts },
-    actions: { portal }
-  } = createToaster<ToastDataProps>({ hover: 'pause-all' });
+  import { checkToastCookie } from './toastCookie';
+  import { toastManager } from './toastStore.svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   let isHovered = $state(false);
   let leaveTimeout: ReturnType<typeof setTimeout>;
+  let portalContainer: HTMLDivElement | null = null;
+  let toastContainer = $state<HTMLDivElement | null>(null);
 
   const handleMouseEnter = () => {
     if (leaveTimeout) {
       clearTimeout(leaveTimeout);
     }
     isHovered = true;
+    toastManager.pauseAll();
   };
 
   const handleMouseLeave = () => {
     leaveTimeout = setTimeout(() => {
       isHovered = false;
+      toastManager.resumeAll();
     }, 1000);
   };
 
-  export const addToast = helpers.addToast;
-  export const removeToast = helpers.removeToast;
-</script>
-
-<script lang="ts">
-  import { checkToastCookie } from './toastCookie';
   $effect(() => {
     if (page.url) {
       checkToastCookie();
     }
   });
-  import { createToaster, melt } from '@melt-ui/svelte';
+
+  onMount(() => {
+    portalContainer = document.createElement('div');
+    portalContainer.id = 'toast-portal';
+    portalContainer.style.position = 'fixed';
+    portalContainer.style.bottom = '0';
+    portalContainer.style.right = '0';
+    portalContainer.style.zIndex = '9999';
+    document.body.appendChild(portalContainer);
+
+    if (toastContainer && portalContainer) {
+      portalContainer.appendChild(toastContainer);
+    }
+  });
+
+  onDestroy(() => {
+    if (leaveTimeout) {
+      clearTimeout(leaveTimeout);
+    }
+    if (portalContainer?.parentNode) {
+      portalContainer.parentNode.removeChild(portalContainer);
+    }
+  });
+
+  $effect(() => {
+    if (toastContainer && portalContainer && !portalContainer.contains(toastContainer)) {
+      portalContainer.appendChild(toastContainer);
+    }
+  });
 </script>
 
 <div
-  use:portal
+  bind:this={toastContainer}
   role="alert"
   class={['toasts', isHovered && 'toasts--isHovered']}
   onmouseenter={handleMouseEnter}
   onmouseleave={handleMouseLeave}
 >
-  {#each $toasts as { id, data }, index (id)}
+  {#each toastManager.toasts as toast, index (toast.id)}
     <div
-      use:melt={$content(id)}
       animate:flip={{ duration: 500 }}
       in:fly={{ duration: 150, y: '100%' }}
       out:fly={{ duration: 150, y: '100%' }}
       data-testid="toast"
       class="toast"
-      style="z-index: index; visibility: {index > $toasts.length - 6 || isHovered
+      style="z-index: index; visibility: {index > toastManager.toasts.length - 6 || isHovered
         ? 'visible'
-        : 'hidden'} ; transform: {index === $toasts.length - 1 || isHovered
+        : 'hidden'} ; transform: {index === toastManager.toasts.length - 1 || isHovered
         ? 'scale(1) translateY(0)'
-        : `scale(${1 - 0.05 * ($toasts.length - 1 - index)}) translateY(${-12 * ($toasts.length - 1 - index)}px)`};"
+        : `scale(${1 - 0.05 * (toastManager.toasts.length - 1 - index)}) translateY(${-12 * (toastManager.toasts.length - 1 - index)}px)`};"
     >
       <div>
         <div class="toast__title">
-          <p use:melt={$title(id)} class="toast__titleText">
-            {data.title}
+          <p class="toast__titleText">
+            {toast.data.title}
           </p>
-          {#if data.type === 'loading'}
+          {#if toast.data.type === 'loading'}
             <Loader />
           {:else}
-            <div class={['toast__titleDot', `toast__titleDot--${data.type}`]}></div>
+            <div class={['toast__titleDot', `toast__titleDot--${toast.data.type}`]}></div>
           {/if}
         </div>
-        {#if data.body}
-          <div use:melt={$description(id)}>
-            {data.body}
+        {#if toast.data.body}
+          <div>
+            {toast.data.body}
           </div>
         {/if}
       </div>
-      <button use:melt={$close(id)} aria-label="Close notification"><Icon Icon={IconX} /></button>
+      <button onclick={() => toastManager.removeToast(toast.id)} aria-label="Close notification">
+        <Icon Icon={IconX} />
+      </button>
     </div>
   {/each}
 </div>
@@ -97,7 +124,7 @@
   .toasts {
     display: flex;
     flex-direction: column;
-    gap: var(--size-2); /* Reduced gap to allow overlapping look */
+    gap: var(--size-2);
     width: 300px;
     position: fixed;
     right: var(--size-8);

@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.11
+
+### Patch Changes
+
+- Table Slayer is fairly stable and no longer uses melt.
+
 ## 0.1.10
 
 ### Patch Changes

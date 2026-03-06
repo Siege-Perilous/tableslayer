@@ -18,7 +18,7 @@ export const checkToastCookie = () => {
 
   if (toastCookie) {
     const toastData = JSON.parse(decodeURIComponent(toastCookie.split('=')[1]));
-    addToast({ data: { title: toastData.title, type: toastData.type } });
+    addToast({ title: toastData.title, type: toastData.type, body: toastData.body });
     document.cookie = 'toast=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
   }
 };

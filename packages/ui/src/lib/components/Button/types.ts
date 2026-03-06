@@ -1,6 +1,11 @@
-import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
+import type { OffsetOptions, Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
 import type { HTMLAnchorAttributes, HTMLButtonAttributes, SvelteHTMLElements } from 'svelte/elements';
+
+export type FloatingPositioning = {
+  placement?: Placement;
+  offset?: OffsetOptions;
+};
 
 export type _ButtonProps = {
   children: Snippet;
@@ -42,7 +47,7 @@ export type ConfirmActionButtonProps = {
   action: (e: Event) => void;
   actionButtonText?: string;
   isLoading?: boolean;
-  positioning?: FloatingConfig;
+  positioning?: FloatingPositioning;
   /**
    * Render the popover in a portal to avoid overflow clipping.
    * Set to 'body' or a CSS selector to enable.

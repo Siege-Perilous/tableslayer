@@ -1,4 +1,4 @@
-import type { FloatingConfig } from '@melt-ui/svelte/internal/actions';
+import type { OffsetOptions, Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
 import type { HTMLBaseAttributes } from 'svelte/elements';
 
@@ -11,11 +11,18 @@ export type AvatarProps = {
   variant?: 'round' | 'square';
 } & HTMLBaseAttributes;
 
+export type AvatarPopoverPositioning = {
+  placement?: Placement;
+  offset?: OffsetOptions;
+  /** @deprecated Use offset instead. Alias for offset (melt-ui compatibility) */
+  gutter?: number;
+};
+
 export type AvatarPopoverProps = {
   src: AvatarProps['src'];
   size?: AvatarProps['size'];
   content: Snippet;
-  positioning?: FloatingConfig;
+  positioning?: AvatarPopoverPositioning;
 };
 
 export type AvatarFileInputProps = AvatarProps & {
