@@ -117,6 +117,9 @@
     --cMenuItemBorderHover: solid 2px var(--primary-500);
   }
   .cMenu {
+    position: fixed;
+    top: 0;
+    left: 0;
     z-index: 1000;
     background-color: var(--bg);
     border: var(--borderThin);
@@ -124,6 +127,7 @@
     box-shadow: var(--shadow-2);
     padding: 0.5rem;
     min-width: 10rem;
+    width: max-content;
   }
   .cMenuItem {
     cursor: pointer;

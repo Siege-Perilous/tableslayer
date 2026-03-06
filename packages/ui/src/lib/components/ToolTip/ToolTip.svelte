@@ -126,6 +126,13 @@
     }
   };
 
+  const handleClick = () => {
+    // Always close tooltip when clicking the trigger
+    // This ensures tooltips close when opening popovers, modals, etc.
+    clearTimeouts();
+    isOpen = false;
+  };
+
   onDestroy(() => {
     clearTimeouts();
   });
@@ -137,6 +144,8 @@
   onmouseenter={handleTriggerMouseEnter}
   onmouseleave={handleTriggerMouseLeave}
   onpointerdown={handlePointerDown}
+  onclick={handleClick}
+  onkeydown={(e) => e.key === 'Enter' && handleClick()}
   role="button"
   tabindex="0"
 >
