@@ -56,13 +56,16 @@
     floatingStyles = `position: ${strategy}; left: ${x}px; top: ${y}px;`;
   };
 
+  // Update position when isOpen changes (handles external control of isOpen)
+  $effect(() => {
+    if (isOpen) {
+      tick().then(updatePosition);
+    }
+  });
+
   const toggleOpen = async () => {
     isOpen = !isOpen;
     onIsOpenChange?.(isOpen);
-    if (isOpen) {
-      await tick();
-      updatePosition();
-    }
   };
 
   const closePopover = () => {
