@@ -24,14 +24,9 @@
     restProps.class ?? ''
   ]);
 
-  const component = as !== undefined ? as : href !== undefined ? 'a' : 'button';
+  let component = $derived(as !== undefined ? as : href !== undefined ? 'a' : 'button');
 
-  let buttonProps = $state({});
-  if (component === 'button') {
-    buttonProps = { disabled: isDisabled };
-  } else if (component === 'a') {
-    buttonProps = { href };
-  }
+  let buttonProps = $derived(component === 'button' ? { disabled: isDisabled } : component === 'a' ? { href } : {});
 </script>
 
 <!--
