@@ -27,7 +27,6 @@
     "svelte-tweakpane-ui": "^1.5.14"
   },
   "devDependencies": {
-    "@melt-ui/pp": "^0.3.2",
     "@playwright/test": "^1.58.2",
     "@sveltejs/adapter-auto": "^7.0.1",
     "@sveltejs/adapter-static": "^3.0.10",
