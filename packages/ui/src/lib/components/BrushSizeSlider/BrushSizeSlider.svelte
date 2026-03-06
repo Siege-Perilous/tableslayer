@@ -22,8 +22,8 @@
   // midpoint = (min + max) / 2
   // So: midpoint = coefficient * 50^2
   // coefficient = midpoint / 2500
-  const midpoint = (min + max) / 2;
-  const coefficient = midpoint / 2500;
+  const midpoint = $derived((min + max) / 2);
+  const coefficient = $derived(midpoint / 2500);
 
   const brushSizeToSlider = (size: number): number => {
     const clampedSize = Math.max(min, Math.min(max, size));
