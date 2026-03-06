@@ -14,7 +14,8 @@
     ...restProps
   }: AvatarFileInputProps = $props();
 
-  let avatarPreviewUrl = $state<string | null>(src ?? null);
+  let localPreviewUrl = $state<string | undefined>(undefined);
+  let avatarPreviewUrl = $derived(localPreviewUrl ?? src);
   let hiddenFileInput: HTMLInputElement | null = null;
 
   function openFileDialog() {
@@ -26,7 +27,7 @@
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
-    avatarPreviewUrl = URL.createObjectURL(file);
+    localPreviewUrl = URL.createObjectURL(file);
     if (onChange) {
       onChange();
     }
@@ -46,7 +47,7 @@
   onclick={openFileDialog}
   class={['avatarFileInput', restProps.class]}
 >
-  <Avatar src={avatarPreviewUrl || src} {alt} {initials} {isLoading} {size} {variant} {...restProps} />
+  <Avatar src={avatarPreviewUrl} {alt} {initials} {isLoading} {size} {variant} {...restProps} />
   <div class="avatarFileInput__overlay">
     <Icon Icon={IconPhotoCirclePlus} size="2rem" stroke={2} />
   </div>

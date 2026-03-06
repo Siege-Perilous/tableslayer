@@ -1,5 +1,11 @@
-import type { CreatePopoverProps } from '@melt-ui/svelte';
+import type { Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
+
+export type PopoverPositioning = {
+  placement?: Placement;
+  offset?: number;
+};
+
 export type PopoverProps = {
   isOpen?: boolean;
   onIsOpenChange?: (open: boolean) => void;
@@ -7,6 +13,9 @@ export type PopoverProps = {
   triggerClass?: string;
   triggerTestId?: string;
   contentClass?: string;
+  positioning?: PopoverPositioning;
+  portal?: string | null;
+  closeOnOutsideClick?: boolean;
   content: Snippet<
     [
       {
@@ -16,4 +25,4 @@ export type PopoverProps = {
       }
     ]
   >;
-} & CreatePopoverProps;
+};

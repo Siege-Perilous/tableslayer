@@ -1,16 +1,22 @@
 <script lang="ts">
-  import { createContextMenu, melt } from '@melt-ui/svelte';
+  import { computePosition, flip, shift, offset, platform } from '@floating-ui/dom';
   import type { ContextMenuProps, ContextMenuItem } from './types';
   import { goto } from '$app/navigation';
-  let { items, trigger }: ContextMenuProps = $props();
   import { fly } from 'svelte/transition';
+  import { tick, onDestroy } from 'svelte';
   import { Hr } from '../Hr';
   import Spacer from '../Spacer/Spacer.svelte';
-  const {
-    elements: { menu, item: meltItem, trigger: meltTrigger }
-  } = createContextMenu();
+
+  let { items, trigger }: ContextMenuProps = $props();
+
+  let triggerElement: HTMLElement | null = null;
+  let menuElement = $state<HTMLElement | null>(null);
+  let isOpen = $state(false);
+  let floatingStyles = $state('');
+  let clickPosition = $state({ x: 0, y: 0 });
 
   const handleItemClick = (item: ContextMenuItem) => {
+    isOpen = false;
     if (item.href) {
       goto(item.href);
     }
@@ -18,29 +24,88 @@
       item.onclick();
     }
   };
+
+  const updatePosition = async () => {
+    if (!menuElement) return;
+
+    const virtualEl = {
+      getBoundingClientRect() {
+        return {
+          width: 0,
+          height: 0,
+          x: clickPosition.x,
+          y: clickPosition.y,
+          top: clickPosition.y,
+          left: clickPosition.x,
+          right: clickPosition.x,
+          bottom: clickPosition.y
+        };
+      }
+    };
+
+    const { x, y, strategy } = await computePosition(virtualEl, menuElement, {
+      placement: 'bottom-start',
+      middleware: [offset(4), flip(), shift({ padding: 8 })],
+      platform
+    });
+
+    floatingStyles = `position: ${strategy}; left: ${x}px; top: ${y}px;`;
+  };
+
+  const handleContextMenu = async (e: MouseEvent) => {
+    e.preventDefault();
+    clickPosition = { x: e.clientX, y: e.clientY };
+    isOpen = true;
+    await tick();
+    updatePosition();
+  };
+
+  const handleGlobalClick = (e: MouseEvent) => {
+    if (isOpen && menuElement && triggerElement) {
+      const target = e.target as Node;
+      if (!menuElement.contains(target) && !triggerElement.contains(target)) {
+        isOpen = false;
+      }
+    }
+  };
+
+  const handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+    }
+  };
+
+  onDestroy(() => {
+    isOpen = false;
+  });
 </script>
 
-<button use:melt={$meltTrigger} class="cMenuTrigger">
+<svelte:window onclick={handleGlobalClick} onkeydown={handleKeydown} />
+
+<button bind:this={triggerElement} oncontextmenu={handleContextMenu} class="cMenuTrigger">
   {@render trigger()}
 </button>
-<div use:melt={$menu} class="cMenu" transition:fly={{ duration: 50 }}>
-  {#each items as item}
-    {#if item.type === 'divider'}
-      <Spacer size="0.5rem" />
-      <Hr />
-      <Spacer size="0.5rem" />
-    {:else}
-      <button use:melt={$meltItem} onclick={() => handleItemClick(item)} class="cMenuItem">
-        {item.label}
-        {#if item.end}
-          <div class="cMenuItemEnd">
-            {@render item.end()}
-          </div>
-        {/if}
-      </button>
-    {/if}
-  {/each}
-</div>
+
+{#if isOpen}
+  <div bind:this={menuElement} class="cMenu" style={floatingStyles} transition:fly={{ duration: 50 }} role="menu">
+    {#each items as item}
+      {#if item.type === 'divider'}
+        <Spacer size="0.5rem" />
+        <Hr />
+        <Spacer size="0.5rem" />
+      {:else}
+        <button onclick={() => handleItemClick(item)} class="cMenuItem" role="menuitem">
+          {item.label}
+          {#if item.end}
+            <div class="cMenuItemEnd">
+              {@render item.end()}
+            </div>
+          {/if}
+        </button>
+      {/if}
+    {/each}
+  </div>
+{/if}
 
 <style>
   :global(.light) {

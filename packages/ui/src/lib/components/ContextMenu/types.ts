@@ -1,15 +1,15 @@
-import type { ContextMenuItemProps, CreateContextMenuProps } from '@melt-ui/svelte';
 import type { Snippet } from 'svelte';
 
-export type ContextMenuItem = ContextMenuItemProps & {
+export type ContextMenuItem = {
   type?: 'divider';
   label?: string;
   href?: string;
   onclick?: () => void;
   end?: Snippet;
+  disabled?: boolean;
 };
 
-export type ContextMenuProps = CreateContextMenuProps & {
+export type ContextMenuProps = {
   items: ContextMenuItem[];
   trigger: Snippet;
 };
