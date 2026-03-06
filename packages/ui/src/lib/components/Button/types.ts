@@ -1,10 +1,10 @@
-import type { Placement } from '@floating-ui/dom';
+import type { OffsetOptions, Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
 import type { HTMLAnchorAttributes, HTMLButtonAttributes, SvelteHTMLElements } from 'svelte/elements';
 
 export type FloatingPositioning = {
   placement?: Placement;
-  offset?: number;
+  offset?: OffsetOptions;
 };
 
 export type _ButtonProps = {

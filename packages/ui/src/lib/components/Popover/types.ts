@@ -1,9 +1,11 @@
-import type { Placement } from '@floating-ui/dom';
+import type { OffsetOptions, Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
 
 export type PopoverPositioning = {
   placement?: Placement;
-  offset?: number;
+  offset?: OffsetOptions;
+  /** @deprecated Use offset instead. Alias for offset (melt-ui compatibility) */
+  gutter?: number;
 };
 
 export type PopoverProps = {

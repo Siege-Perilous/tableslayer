@@ -1,4 +1,4 @@
-import type { Placement } from '@floating-ui/dom';
+import type { OffsetOptions, Placement } from '@floating-ui/dom';
 import type { Snippet } from 'svelte';
 import type { HTMLBaseAttributes } from 'svelte/elements';
 
@@ -13,7 +13,9 @@ export type AvatarProps = {
 
 export type AvatarPopoverPositioning = {
   placement?: Placement;
-  offset?: number;
+  offset?: OffsetOptions;
+  /** @deprecated Use offset instead. Alias for offset (melt-ui compatibility) */
+  gutter?: number;
 };
 
 export type AvatarPopoverProps = {

@@ -46,9 +46,10 @@
   const updatePosition = async () => {
     if (!triggerElement || !popoverElement) return;
 
+    const offsetValue = positioning.offset ?? positioning.gutter ?? 8;
     const { x, y, strategy } = await computePosition(triggerElement, popoverElement, {
-      placement: positioning.placement,
-      middleware: [offset(positioning.offset ?? 8), flip(), shift({ padding: 8 })],
+      placement: positioning?.placement ?? 'bottom',
+      middleware: [offset(offsetValue), flip(), shift({ padding: 8 })],
       platform
     });
 
