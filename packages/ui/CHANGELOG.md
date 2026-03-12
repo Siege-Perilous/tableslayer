@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.12
+
+### Patch Changes
+
+- Dep upgrades
+
 ## 0.1.11
 
 ### Patch Changes
