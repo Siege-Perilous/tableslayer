@@ -1,27 +1,26 @@
 <script lang="ts">
-  import { GameSessionCard, PartyInviteResponse, Head } from '$lib/components';
+  import { ApiKeyManager, PartyInviteResponse, Head } from '$lib/components';
   import {
     Text,
     Title,
     Spacer,
-    Icon,
     Panel,
     Avatar,
-    LinkBox,
-    LinkOverlay,
     FormControl,
     AvatarFileInput,
     Input,
     Button,
-    FormError,
-    Link
+    FormError
   } from '@tableslayer/ui';
-  import { IconCrown, IconArrowRightDashed } from '@tabler/icons-svelte';
   import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
+
   let { data } = $props();
-  const { invites, userParties, user } = data;
+  const user = $derived(data.user);
+  const invites = $derived(data.invites);
+  const apiKeys = $derived(data.apiKeys);
+
   let formIsLoading = $state(false);
   let name = $state(user.name);
   let email = $state(user.email);
@@ -33,12 +32,9 @@
 
   const updateUser = useUpdateUserMutation();
   const uploadFile = useUploadFileMutation();
-  $inspect(updateProfileError);
 
-  // Get current avatar location from thumb URL for versioning
   const getCurrentAvatarLocation = () => {
     if (!user.thumb?.url) return undefined;
-    // Extract the base location from the URL (remove domain and version query)
     const urlParts = user.thumb.url.split('?')[0].split('/');
     const fileName = urlParts[urlParts.length - 1];
     return `avatar/${fileName}`;
@@ -148,7 +144,7 @@
 
 <Head title={user.name} description={`${user.name} on Table Slayer`} />
 
-<div class="container">
+<div class="profile">
   <div class="profile__header">
     <AvatarFileInput
       onChange={avatarOnChange}
@@ -159,9 +155,9 @@
     />
     <Title as="h1" size="lg">{user.name}</Title>
   </div>
-  <div class="containerLayout">
-    <aside>
-      <Spacer size="0.5rem" />
+
+  <div class="profile__content">
+    <section class="profile__section">
       <Title as="h2" size="sm">User details</Title>
       <Spacer size="0.5rem" />
       <Panel class="profile__panel">
@@ -211,6 +207,7 @@
           <FormError error={updateProfileError} />
         </form>
       </Panel>
+
       {#if user.hasGoogle && data.envName !== 'preview'}
         <Spacer />
         <Panel class="profile__panel">
@@ -219,20 +216,25 @@
             Your Google account is linked. You can unlink it to remove Google sign-in.
           </Text>
           <Spacer />
-
           <Button onclick={() => unlinkGoogle()}>
             {#snippet start()}
               <img src="/google.svg" alt="Google logo" width="16" height="16" />
             {/snippet}
-            Unlink Google Account
+            Unlink Google account
           </Button>
         </Panel>
       {/if}
-      {#if invites.length > 0}
-        <Spacer />
+    </section>
+
+    <section class="profile__section">
+      <ApiKeyManager {apiKeys} />
+    </section>
+
+    {#if invites.length > 0}
+      <section class="profile__section">
         <Title as="h2" size="sm">Party invites</Title>
         <Spacer size="0.5rem" />
-        <Panel class="profile__panel">
+        <Panel class="profile__panel profile__invites">
           {#each invites as invite (invite.party.id)}
             <div class="profile__invite">
               <Avatar src={invite.invitedByUser?.thumb.resizedUrl} size="sm" />
@@ -247,86 +249,20 @@
                 <PartyInviteResponse {invite} />
               </div>
             </div>
-          {:else}
-            <p>No pending invites</p>
           {/each}
         </Panel>
-      {/if}
-    </aside>
-    <div>
-      {#each userParties as party (party.id)}
-        <LinkBox>
-          <div class="profile__partyTitle">
-            <Avatar src={party.thumb.resizedUrl} variant="square" size="lg" />
-            <LinkOverlay href={`/${party.slug}`}>
-              <Title as="h2" size="sm" class="profile__partyLink">{party.name}</Title>
-            </LinkOverlay>
-            <Icon Icon={IconArrowRightDashed} size="1.5rem" color="var(--fgPrimary)" />
-            <div class="profile__partyRole">
-              {#if party.partyRole === 'admin'}
-                <Icon Icon={IconCrown} size="1.5rem" color="var(--fgPrimary)" />
-              {/if}
-              <Text>{party.partyRole}</Text>
-            </div>
-          </div>
-        </LinkBox>
-        <div class="profile__sessionList">
-          {#each party.gameSessions as gameSession (gameSession.id)}
-            <GameSessionCard isPartyAdmin={party.partyRole === 'admin'} {party} session={gameSession} />
-          {/each}
-        </div>
-        <Spacer size="3rem" />
-      {:else}
-        You are not a member of any parties. <Link href="/create-party">Create one</Link>.
-      {/each}
-    </div>
+      </section>
+    {/if}
   </div>
 </div>
 
 <style>
-  .container {
-    max-width: var(--contain-desktop);
+  .profile {
+    max-width: 600px;
     margin: var(--size-12) auto;
+    padding: 0 var(--size-4);
   }
-  .containerLayout {
-    display: grid;
-    grid-template-columns: 1fr 3fr;
-    margin-top: var(--size-8);
-    gap: var(--size-12);
-  }
-  :global {
-    .profile__panel {
-      padding: 1rem;
-      background: var(--bg);
-      border-radius: var(--radius-2);
-    }
-    .profile__partyTitle:hover .profile__partyLink {
-      text-decoration: underline;
-    }
-  }
-  .profile__invite {
-    display: flex;
-    gap: 1rem;
-    align-items: start;
-  }
-  .profile__sessionList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--size-4);
-  }
-  .profile__partyTitle {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 1rem;
-    width: 100%;
-  }
-  .profile__partyRole {
-    display: flex;
-    gap: 0.5rem;
-    text-transform: capitalize;
-    margin-left: auto;
-  }
+
   .profile__header {
     display: flex;
     gap: 2rem;
@@ -334,12 +270,32 @@
     margin-bottom: 2rem;
   }
 
-  @media (max-width: 768px) {
-    .container {
-      padding: 0 2rem;
-    }
-    .containerLayout {
-      grid-template-columns: 1fr;
-    }
+  .profile__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-8);
+  }
+
+  .profile__section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.profile__panel) {
+    padding: 1rem;
+    background: var(--bg);
+    border-radius: var(--radius-2);
+  }
+
+  :global(.profile__invites) {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .profile__invite {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
   }
 </style>

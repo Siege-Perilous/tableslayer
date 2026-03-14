@@ -15,13 +15,19 @@
   let formIsLoading = $state(false);
   let loginErrors = $state<FormMutationError | undefined>(undefined);
 
-  // Check for OAuth error on mount
+  // Check for OAuth error or API key error on mount
   onMount(() => {
     if (page.url.searchParams.get('error') === 'oauth_failed') {
       loginErrors = {
         success: false,
         status: 500,
         message: 'Failed to sign in with Google. Please try again or use email/password.'
+      };
+    } else if (data.keyError) {
+      loginErrors = {
+        success: false,
+        status: 401,
+        message: data.keyError
       };
     }
   });
