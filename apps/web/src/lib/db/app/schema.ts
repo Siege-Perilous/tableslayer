@@ -112,6 +112,36 @@ export const insertSessionSchema = createInsertSchema(sessionTable);
 export const selectSessionSchema = createSelectSchema(sessionTable);
 export const updateSessionSchema = createUpdateSchema(sessionTable);
 
+// API KEYS
+// API KEYS
+// API KEYS
+
+export const apiKeysTable = sqliteTable(
+  'api_keys',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    keyHash: text('key_hash').notNull().unique(),
+    name: text('name').notNull(),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+  },
+  (table) => [index('idx_api_keys_user_id').on(table.userId), index('idx_api_keys_key_hash').on(table.keyHash)]
+);
+
+export type InsertApiKey = typeof apiKeysTable.$inferInsert;
+export type SelectApiKey = typeof apiKeysTable.$inferSelect;
+export const insertApiKeySchema = createInsertSchema(apiKeysTable);
+export const selectApiKeySchema = createSelectSchema(apiKeysTable);
+export const updateApiKeySchema = createUpdateSchema(apiKeysTable);
+
 // EMAIL VERIFICATION CODES
 // EMAIL VERIFICATION CODES
 // EMAIL VERIFICATION CODES

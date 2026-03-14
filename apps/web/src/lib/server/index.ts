@@ -1,4 +1,5 @@
 export * from './annotations';
+export * from './apiKey';
 export * from './auth';
 export * from './config';
 export * from './email';
