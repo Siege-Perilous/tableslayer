@@ -89,7 +89,7 @@
   };
 </script>
 
-<div class="apiKeyManager">
+<div class="apiKeyManager" data-testid="apiKeyManager">
   <Title as="h2" size="sm">API keys</Title>
   <Text size="0.875rem" color="var(--fgMuted)">Keys can be used to authenticate with our API for custom scripting</Text>
   <Spacer size="0.5rem" />
@@ -98,8 +98,8 @@
       <Text color="var(--fgDanger)" weight={600}>Your new API key (copy it now!):</Text>
       <Spacer size="0.5rem" />
       <div class="apiKeyManager__keyDisplay">
-        <code class="apiKeyManager__key">{generatedKey}</code>
-        <Button variant="ghost" onclick={copyToClipboard}>
+        <code class="apiKeyManager__key" data-testid="apiKeyValue">{generatedKey}</code>
+        <Button variant="ghost" onclick={copyToClipboard} data-testid="apiKeyCopyButton">
           {#snippet start()}
             <Icon Icon={copied ? IconCheck : IconCopy} size="1rem" />
           {/snippet}
@@ -107,34 +107,45 @@
         </Button>
       </div>
       <Spacer />
-      <Button onclick={dismissKeyModal}>Done</Button>
+      <Button onclick={dismissKeyModal} data-testid="apiKeyDoneButton">Done</Button>
     {:else}
-      <form onsubmit={handleGenerateKey}>
+      <form onsubmit={handleGenerateKey} data-testid="apiKeyForm">
         <div class="apiKeyManager__form">
           <FormControl label="Name" name="name" errors={formError?.errors}>
             {#snippet input({ inputProps })}
-              <Input {...inputProps} bind:value={newKeyName} placeholder="Game room machine" />
+              <Input
+                {...inputProps}
+                bind:value={newKeyName}
+                placeholder="Game room machine"
+                data-testid="apiKeyNameInput"
+              />
             {/snippet}
           </FormControl>
-          <Button onclick={handleGenerateKey} disabled={formIsLoading || !newKeyName}>Generate</Button>
+          <Button
+            onclick={handleGenerateKey}
+            disabled={formIsLoading || !newKeyName}
+            data-testid="apiKeyGenerateButton"
+          >
+            Generate
+          </Button>
         </div>
       </form>
     {/if}
 
     <Spacer />
     {#if apiKeys.length > 0}
-      <div class="apiKeyManager__list">
+      <div class="apiKeyManager__list" data-testid="apiKeyList">
         {#each apiKeys as key (key.id)}
-          <div class="apiKeyManager__item">
+          <div class="apiKeyManager__item" data-testid="apiKeyItem">
             <div class="apiKeyManager__itemInfo">
-              <Text size="0.875rem">{key.name}</Text>
+              <Text size="0.875rem" data-testid="apiKeyItemName">{key.name}</Text>
               <Text size="0.75rem" color="var(--fgMuted)">
                 Created: {formatDate(key.createdAt)} · Last used: {formatDate(key.lastUsedAt)}
               </Text>
             </div>
             <ConfirmActionButton action={() => handleDeleteKey(key.id)} actionButtonText="Delete">
               {#snippet trigger({ triggerProps })}
-                <IconButton variant="danger" size="sm" {...triggerProps}>
+                <IconButton variant="danger" size="sm" {...triggerProps} data-testid="apiKeyDeleteButton">
                   <Icon Icon={IconX} size="1rem" />
                 </IconButton>
               {/snippet}
