@@ -12,7 +12,7 @@
     Icon,
     addToast
   } from '@tableslayer/ui';
-  import { IconKey, IconCopy, IconX, IconCheck } from '@tabler/icons-svelte';
+  import { IconCopy, IconX, IconCheck } from '@tabler/icons-svelte';
   import { useGenerateApiKeyMutation, useDeleteApiKeyMutation } from '$lib/queries';
   import { handleMutation, type FormMutationError } from '$lib/factories';
   import { invalidateAll } from '$app/navigation';
