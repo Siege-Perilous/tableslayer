@@ -299,11 +299,11 @@ importers:
         specifier: workspace:*
         version: link:../ui
       '@threlte/core':
-        specifier: 8.5.0
-        version: 8.5.0(svelte@5.54.1)(three@0.183.2)
+        specifier: 8.4.1
+        version: 8.4.1(svelte@5.54.1)(three@0.183.2)
       '@threlte/extras':
-        specifier: 9.9.0
-        version: 9.9.0(@types/three@0.183.1)(svelte@5.54.1)(three@0.183.2)
+        specifier: 9.8.1
+        version: 9.8.1(@types/three@0.183.1)(svelte@5.54.1)(three@0.183.2)
       '@tiptap/core':
         specifier: ^3.20.4
         version: 3.20.4(@tiptap/pm@3.20.4)
@@ -2743,8 +2743,20 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
+  '@threlte/core@8.4.1':
+    resolution: {integrity: sha512-wjYhAQmT3nHwtLDJUYFpf1wW0n/igjCzrShw9vOtHx1SMtvxzaEigZMseNHn8wfzQuoOxhp/ufFJJnM2+HdHjQ==}
+    peerDependencies:
+      svelte: '>=5'
+      three: '>=0.160'
+
   '@threlte/core@8.5.0':
     resolution: {integrity: sha512-gEG5lOu6Rk00ISm5JdlTuo1AuX5u5N3iQ+LdbTLCzqsQmkr2iPJ/aM3pJkn9NJCC98hkK3sysBLHIHJVu5jOIw==}
+    peerDependencies:
+      svelte: '>=5'
+      three: '>=0.160'
+
+  '@threlte/extras@9.8.1':
+    resolution: {integrity: sha512-GNpCtTugDR5JJCYIUJ28P6Onr19z43GqAUBGlUEu05aNaJ4PVyz7em7SRwHNBQEpIjBx/tLVNdd7XoCUKRSFVg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -4134,7 +4146,6 @@ packages:
 
   libsql@0.5.28:
     resolution: {integrity: sha512-wKqx9FgtPcKHdPfR/Kfm0gejsnbuf8zV+ESPmltFvsq5uXwdeN9fsWn611DmqrdXj1e94NkARcMA2f1syiAqOg==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   liftoff@2.0.3:
@@ -8202,11 +8213,30 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
+  '@threlte/core@8.4.1(svelte@5.54.1)(three@0.183.2)':
+    dependencies:
+      mitt: 3.0.1
+      svelte: 5.54.1
+      three: 0.183.2
+
   '@threlte/core@8.5.0(svelte@5.54.1)(three@0.183.2)':
     dependencies:
       mitt: 3.0.1
       svelte: 5.54.1
       three: 0.183.2
+
+  '@threlte/extras@9.8.1(@types/three@0.183.1)(svelte@5.54.1)(three@0.183.2)':
+    dependencies:
+      '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.183.1)(three@0.183.2)
+      camera-controls: 3.1.2(three@0.183.2)
+      svelte: 5.54.1
+      three: 0.183.2
+      three-mesh-bvh: 0.9.1(three@0.183.2)
+      three-perf: 1.0.11(three@0.183.2)
+      three-viewport-gizmo: 2.2.0(three@0.183.2)
+      troika-three-text: 0.52.4(three@0.183.2)
+    transitivePeerDependencies:
+      - '@types/three'
 
   '@threlte/extras@9.9.0(@types/three@0.183.1)(svelte@5.54.1)(three@0.183.2)':
     dependencies:
