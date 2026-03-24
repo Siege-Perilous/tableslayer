@@ -6,8 +6,5 @@ export default defineConfig({
   server: {
     port: 5176,
     strictPort: false
-  },
-  optimizeDeps: {
-    include: ['three', 'postprocessing']
   }
 });

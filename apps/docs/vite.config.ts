@@ -13,9 +13,6 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}']
   },
-  optimizeDeps: {
-    include: ['three', 'postprocessing']
-  },
   build: {
     commonjsOptions: {
       include: [/@tableslayer\/ui/, /node_modules/]

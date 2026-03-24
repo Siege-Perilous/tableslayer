@@ -26,8 +26,7 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.{test,spec}.{js,ts}', 'tests/unit/**/*.{test,spec}.{js,ts}']
     },
     optimizeDeps: {
-      exclude: ['@node-rs/argon2', '@node-rs/bcrypt', 'fsevents'],
-      include: ['three', 'postprocessing']
+      exclude: ['@node-rs/argon2', '@node-rs/bcrypt', 'fsevents']
     },
     build: {
       commonjsOptions: {
