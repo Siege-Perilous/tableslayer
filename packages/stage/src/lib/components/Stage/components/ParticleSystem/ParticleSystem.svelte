@@ -7,7 +7,7 @@
 
   import fragmentShader from '../../shaders/Particles.frag?raw';
   import vertexShader from '../../shaders/Particles.vert?raw';
-  import { DEG2RAD } from 'three/src/math/MathUtils';
+  import { MathUtils } from 'three';
   import { onDestroy, untrack } from 'svelte';
 
   interface Props {
@@ -50,7 +50,7 @@
       let width = size * props.scale.x;
       let height = size * props.scale.y;
 
-      const rotation = new THREE.Euler(0, 0, props.rotation.offset * DEG2RAD);
+      const rotation = new THREE.Euler(0, 0, props.rotation.offset * MathUtils.DEG2RAD);
       rotation.z += props.rotation.alignRadially ? angle : 0;
       rotation.z += props.rotation.randomize ? rng.random() * 360 : 0;
 
