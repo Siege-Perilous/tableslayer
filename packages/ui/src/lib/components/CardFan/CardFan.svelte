@@ -43,11 +43,10 @@
     height: calc(var(--cardFanHeight) * 0.6818);
     background-size: cover;
     background-position: center center;
-    transform: rotate(-90deg);
+    transform: translate(-50%, -50%) rotate(-90deg);
     transform-origin: center center;
     top: 50%;
     left: 50%;
-    translate: -50% -50%;
   }
 
   .cardFan__card:before {
