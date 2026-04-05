@@ -56,7 +56,8 @@
   // Pre-allocated vectors to avoid GC pressure
   const centerOffset = new THREE.Vector2();
   let snappedPosition = new THREE.Vector2();
-  let inputMesh = $state(new THREE.Mesh());
+  // Use $state.raw() for Three.js objects to prevent proxy interference
+  let inputMesh = $state.raw(new THREE.Mesh());
 
   // Update centerOffset when display resolution changes
   $effect(() => {

@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@magidoc/plugin-svelte-marked": "^6.3.0",
-    "@tabler/icons-svelte": "^3.40.0",
+    "@tabler/icons-svelte": "^3.41.1",
     "@tableslayer/stage": "workspace:*",
     "@tableslayer/ui": "workspace:*",
     "mode-watcher": "^1.1.0",
@@ -34,16 +34,16 @@
     "@sveltejs/vite-plugin-svelte": "7.0.0",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
-    "@threlte/core": "8.5.0",
-    "@threlte/extras": "9.9.0",
-    "@tiptap/core": "^3.20.4",
+    "@threlte/core": "8.4.1",
+    "@threlte/extras": "9.8.1",
+    "@tiptap/core": "^3.21.0",
     "dotenv": "^17.3.1",
     "postprocessing": "6.39.0",
-    "svelte": "5.54.1",
-    "svelte-check": "^4.4.5",
+    "svelte": "5.55.1",
+    "svelte-check": "^4.4.6",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.1",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3",
+    "vitest": "^4.1.2"
   }
 }

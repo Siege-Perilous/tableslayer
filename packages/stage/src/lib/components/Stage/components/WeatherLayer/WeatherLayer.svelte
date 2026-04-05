@@ -21,9 +21,10 @@
   const { renderer, renderStage } = useThrelte();
   let weatherType: WeatherType | null = $state(null);
   let weatherPreset: WeatherLayerPreset = $state(RainPreset);
-  let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let particleScene = $state(new THREE.Scene());
-  let particleCamera = $state(new THREE.PerspectiveCamera(90, 1, 0.01, 10));
+  // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
+  let mesh: THREE.Mesh = $state.raw(new THREE.Mesh());
+  let particleScene = $state.raw(new THREE.Scene());
+  let particleCamera = $state.raw(new THREE.PerspectiveCamera(90, 1, 0.01, 10));
   particleCamera.position.set(0, 0, -1);
   particleCamera.rotation.x = Math.PI;
 
