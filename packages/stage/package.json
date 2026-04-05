@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/stage",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "private": true,
   "license": "FSL-1.1-ALv2",
   "repository": {
@@ -40,16 +40,16 @@
     "@types/chroma-js": "^3.1.2",
     "@types/three": "0.183.1",
     "svelte": "5.55.1",
-    "svelte-check": "^4.4.5",
+    "svelte-check": "^4.4.6",
     "typescript": "^6.0.2",
     "vite": "^8.0.3"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
-    "@tableslayer/ui": "workspace:*",
     "@tabler/icons-svelte": "^3.41.1",
-    "@threlte/core": "8.5.4",
-    "@threlte/extras": "9.13.3",
+    "@tableslayer/ui": "workspace:*",
+    "@threlte/core": "8.4.1",
+    "@threlte/extras": "9.8.1",
     "@tiptap/core": "^3.21.0",
     "chroma-js": "^3.2.0",
     "gifuct-js": "^2.1.2",

@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/ui",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "license": "FSL-1.1-ALv2",
   "repository": {
     "type": "git",
@@ -65,7 +65,7 @@
     "@types/marked": "^6.0.0",
     "marked": "^17.0.5",
     "svelte": "5.55.1",
-    "svelte-check": "^4.4.5",
+    "svelte-check": "^4.4.6",
     "typedoc": "^0.28.18",
     "typescript": "^6.0.2",
     "vite": "^8.0.3"

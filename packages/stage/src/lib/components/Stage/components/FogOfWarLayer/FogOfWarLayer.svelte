@@ -30,8 +30,9 @@
     return Math.round(textureSize * (props.tool.size / 100));
   });
 
-  let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let outlineMesh: THREE.Mesh = $state(new THREE.Mesh());
+  // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
+  let mesh: THREE.Mesh = $state.raw(new THREE.Mesh());
+  let outlineMesh: THREE.Mesh = $state.raw(new THREE.Mesh());
   let material: FogOfWarMaterial | undefined = $state();
   let drawing = false;
   let hasFinishedDrawing = false;

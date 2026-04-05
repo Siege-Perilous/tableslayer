@@ -30,7 +30,9 @@
   });
 
   let currentMeasurement: IMeasurement | null = null;
-  let measurementGroup = $state(new THREE.Group());
+  // Use $state.raw() for Three.js objects to prevent Svelte's proxy from interfering
+  // with internal Three.js property access (like object.layers)
+  let measurementGroup = $state.raw(new THREE.Group());
   let autoHideTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   // Fade animation state
@@ -39,10 +41,10 @@
   let fadeOpacity = $state(1.0);
   let receivedFadeoutTime = $state<number | null>(null); // Store fadeout time for received measurements
 
-  // Preview indicator
-  let previewMesh = $state(new THREE.Mesh());
-  let previewMaterial = $state(new THREE.MeshBasicMaterial());
-  let previewGeometry = $state(new THREE.PlaneGeometry());
+  // Preview indicator - use $state.raw() to avoid proxy issues with Three.js objects
+  let previewMesh = $state.raw(new THREE.Mesh());
+  let previewMaterial = $state.raw(new THREE.MeshBasicMaterial());
+  let previewGeometry = $state.raw(new THREE.PlaneGeometry());
   let previewSize = $derived(props ? props.markerSize + props.outlineThickness * 2 : 22);
   let showPreview = $state(false);
 

@@ -28,7 +28,8 @@
     getContext<Callbacks>('callbacks');
 
   // Quad used for raycasting / mouse input detection
-  let inputMesh = $state(new THREE.Mesh());
+  // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
+  let inputMesh = $state.raw(new THREE.Mesh());
 
   // Track the currently selected marker and dragging state
   let selectedMarker: Marker | null = $state(null);

@@ -38,8 +38,9 @@
     return Math.round(textureSize * ((props.lineWidth ?? 2.0) / 100));
   });
 
-  let mesh: THREE.Mesh = $state(new THREE.Mesh());
-  let outlineMesh: THREE.Mesh = $state(new THREE.Mesh());
+  // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
+  let mesh: THREE.Mesh = $state.raw(new THREE.Mesh());
+  let outlineMesh: THREE.Mesh = $state.raw(new THREE.Mesh());
   let drawing = false;
 
   // Export drawing state so parent can check it
