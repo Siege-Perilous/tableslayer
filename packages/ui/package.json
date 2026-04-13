@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/ui",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "license": "FSL-1.1-ALv2",
   "repository": {
     "type": "git",
@@ -62,6 +62,7 @@
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
+    "@types/node": "^22.0.0",
     "@types/marked": "^6.0.0",
     "marked": "^17.0.5",
     "svelte": "5.55.1",

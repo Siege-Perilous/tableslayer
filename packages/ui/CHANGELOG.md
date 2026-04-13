@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.16
+
+### Patch Changes
+
+- Types
+
 ## 0.1.15
 
 ### Patch Changes
