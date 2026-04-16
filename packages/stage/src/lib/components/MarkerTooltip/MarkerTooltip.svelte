@@ -72,14 +72,42 @@
     }
   }
 
+  // Check if TipTap content is empty (only contains empty paragraphs)
+  const isTipTapContentEmpty = (content: unknown): boolean => {
+    if (!content) return true;
+
+    // Handle JSON TipTap content
+    if (typeof content === 'object' && content !== null) {
+      const doc = content as { type?: string; content?: Array<{ type?: string; content?: unknown[] }> };
+      if (doc.type === 'doc' && Array.isArray(doc.content)) {
+        // Empty if no content blocks, or only empty paragraphs
+        if (doc.content.length === 0) return true;
+        return doc.content.every(
+          (block) => block.type === 'paragraph' && (!block.content || block.content.length === 0)
+        );
+      }
+    }
+
+    // Handle HTML string content
+    if (typeof content === 'string') {
+      // Strip HTML tags and check if there's any text content
+      const textContent = content.replace(/<[^>]*>/g, '').trim();
+      return textContent.length === 0;
+    }
+
+    return false;
+  };
+
   const getMarkerContent = (marker: MarkerData | null) => {
     if (!marker) return null;
 
     if (marker.note) {
+      if (isTipTapContentEmpty(marker.note)) return null;
       return marker.note;
     }
 
     if (marker.tooltip?.content) {
+      if (isTipTapContentEmpty(marker.tooltip.content)) return null;
       if (typeof marker.tooltip.content === 'string') {
         try {
           return JSON.parse(marker.tooltip.content);

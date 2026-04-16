@@ -120,6 +120,7 @@
   let currentTemporaryLayerId: string | null = null;
   let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
   let resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
+  let connectionSyncTimer: ReturnType<typeof setInterval> | null = null;
 
   // Persist button state
   let showPersistButton = $state(false);
@@ -1354,6 +1355,15 @@
       }
     }, 1000);
 
+    // Set up periodic sync check to keep the Y.js connection alive
+    // This helps recover from stale WebSocket connections that don't trigger disconnect events
+    connectionSyncTimer = setInterval(() => {
+      if (partyData && !isUnmounting) {
+        devLog('playfield', 'Periodic connection sync check');
+        partyData.forceSyncCheck();
+      }
+    }, 30000); // Every 30 seconds
+
     return () => {
       isUnmounting = true;
       isMounted = false;
@@ -1374,6 +1384,11 @@
       // Clean up temporary drawing timer
       if (temporaryDrawingTimer) {
         clearInterval(temporaryDrawingTimer);
+      }
+
+      // Clean up connection sync timer
+      if (connectionSyncTimer) {
+        clearInterval(connectionSyncTimer);
       }
 
       // Cursor cleanup is handled by Y.js awareness automatically
@@ -2158,11 +2173,17 @@
               // Reinitialize with new game session
               const partySlug = page.params.party;
               if (partySlug) {
+                // Clean up old subscription before creating new one
+                if (unsubscribeYjs) {
+                  (unsubscribeYjs as () => void)();
+                  unsubscribeYjs = null;
+                }
+
                 initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
                 partyData = usePartyData();
 
-                // Resubscribe to Y.js changes
-                partyData.subscribe(() => {
+                // Resubscribe to Y.js changes with full cursor/measurement handling
+                unsubscribeYjs = partyData.subscribe(() => {
                   if (isUnmounting || isInvalidating) return;
 
                   const updatedPartyState = partyData!.getPartyState();
@@ -2170,6 +2191,44 @@
                     isPaused: updatedPartyState.isPaused,
                     activeSceneId: updatedPartyState.activeSceneId
                   };
+
+                  // Update cursors from Y.js awareness
+                  const yjsCursors = partyData!.getCursors();
+                  const activeCursorKeys = new Set(Object.keys(yjsCursors));
+                  const newCursors = { ...cursors };
+                  for (const cursorKey of Object.keys(cursors)) {
+                    if (!activeCursorKeys.has(cursorKey)) {
+                      delete newCursors[cursorKey];
+                    }
+                  }
+                  cursors = newCursors;
+
+                  Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+                    cursors = {
+                      ...cursors,
+                      [cursorKey]: {
+                        worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+                        userId: cursorData.userId,
+                        color: cursorData.color,
+                        label: cursorData.label,
+                        lastMoveTime: cursorData.lastMoveTime || Date.now(),
+                        fadedOut: false
+                      }
+                    };
+                  });
+
+                  // Update measurements from Y.js awareness
+                  measurements = partyData!.getMeasurements();
+
+                  // Update temporary layers from Y.js awareness
+                  const manager = getPartyDataManager();
+                  if (manager) {
+                    temporaryLayers = getTemporaryLayers(manager);
+                  }
+
+                  // Update hovered marker from Y.js awareness
+                  const hoveredMarker = partyData!.getHoveredMarker();
+                  hoveredMarkerId = hoveredMarker?.id ?? null;
 
                   // Update scene data
                   if (updatedPartyState.activeSceneId) {
@@ -2180,7 +2239,7 @@
                   }
                 });
 
-                devLog('playfield', 'Y.js reinitialized for new game session');
+                devLog('playfield', 'Y.js reinitialized for new game session with full cursor handling');
               }
             }
 
@@ -2225,6 +2284,40 @@
 
   // $inspect(stageProps); // Commented out to prevent performance issues
 </script>
+
+<svelte:document
+  onvisibilitychange={() => {
+    // When tab becomes visible again after being hidden, trigger a sync check
+    if (!document.hidden && partyData) {
+      devLog('playfield', 'Tab became visible, triggering sync check');
+      partyData.forceSyncCheck();
+    }
+  }}
+/>
+<svelte:window
+  onfocus={() => {
+    // Trigger Y.js sync check when regaining focus to catch any missed cursor/measurement updates
+    if (partyData) {
+      devLog('playfield', 'Window regained focus, triggering sync check');
+      // Small delay to ensure Y.js has had time to reconnect if needed
+      setTimeout(async () => {
+        if (!partyData) return;
+
+        partyData.forceSyncCheck();
+
+        // Invalidate to refresh data from server if connection was stale
+        if (!isInvalidating) {
+          isInvalidating = true;
+          try {
+            await invalidateAll();
+          } finally {
+            isInvalidating = false;
+          }
+        }
+      }, 200);
+    }
+  }}
+/>
 
 <Head title={party.name} description={`${party.name} on Table Slayer`} />
 

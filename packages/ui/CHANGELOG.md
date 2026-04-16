@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.17
+
+### Patch Changes
+
+- Fix tooltip rendering for markers
+
 ## 0.1.16
 
 ### Patch Changes
