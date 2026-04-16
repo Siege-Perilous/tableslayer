@@ -120,6 +120,7 @@
   let currentTemporaryLayerId: string | null = null;
   let temporaryDrawingTimer: ReturnType<typeof setInterval> | null = null;
   let resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
+  let connectionSyncTimer: ReturnType<typeof setInterval> | null = null;
 
   // Persist button state
   let showPersistButton = $state(false);
@@ -1354,6 +1355,15 @@
       }
     }, 1000);
 
+    // Set up periodic sync check to keep the Y.js connection alive
+    // This helps recover from stale WebSocket connections that don't trigger disconnect events
+    connectionSyncTimer = setInterval(() => {
+      if (partyData && !isUnmounting) {
+        devLog('playfield', 'Periodic connection sync check');
+        partyData.forceSyncCheck();
+      }
+    }, 30000); // Every 30 seconds
+
     return () => {
       isUnmounting = true;
       isMounted = false;
@@ -1374,6 +1384,11 @@
       // Clean up temporary drawing timer
       if (temporaryDrawingTimer) {
         clearInterval(temporaryDrawingTimer);
+      }
+
+      // Clean up connection sync timer
+      if (connectionSyncTimer) {
+        clearInterval(connectionSyncTimer);
       }
 
       // Cursor cleanup is handled by Y.js awareness automatically
