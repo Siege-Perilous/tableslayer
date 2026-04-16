@@ -2226,6 +2226,40 @@
   // $inspect(stageProps); // Commented out to prevent performance issues
 </script>
 
+<svelte:document
+  onvisibilitychange={() => {
+    // When tab becomes visible again after being hidden, trigger a sync check
+    if (!document.hidden && partyData) {
+      devLog('playfield', 'Tab became visible, triggering sync check');
+      partyData.forceSyncCheck();
+    }
+  }}
+/>
+<svelte:window
+  onfocus={() => {
+    // Trigger Y.js sync check when regaining focus to catch any missed cursor/measurement updates
+    if (partyData) {
+      devLog('playfield', 'Window regained focus, triggering sync check');
+      // Small delay to ensure Y.js has had time to reconnect if needed
+      setTimeout(async () => {
+        if (!partyData) return;
+
+        partyData.forceSyncCheck();
+
+        // Invalidate to refresh data from server if connection was stale
+        if (!isInvalidating) {
+          isInvalidating = true;
+          try {
+            await invalidateAll();
+          } finally {
+            isInvalidating = false;
+          }
+        }
+      }, 200);
+    }
+  }}
+/>
+
 <Head title={party.name} description={`${party.name} on Table Slayer`} />
 
 <!-- Y.js is disabled in playfield to prevent conflicts with editor -->
