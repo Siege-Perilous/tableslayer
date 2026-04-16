@@ -2173,11 +2173,17 @@
               // Reinitialize with new game session
               const partySlug = page.params.party;
               if (partySlug) {
+                // Clean up old subscription before creating new one
+                if (unsubscribeYjs) {
+                  (unsubscribeYjs as () => void)();
+                  unsubscribeYjs = null;
+                }
+
                 initializePartyDataManager(partySlug, user.id, newGameSessionId, data.partykitHost);
                 partyData = usePartyData();
 
-                // Resubscribe to Y.js changes
-                partyData.subscribe(() => {
+                // Resubscribe to Y.js changes with full cursor/measurement handling
+                unsubscribeYjs = partyData.subscribe(() => {
                   if (isUnmounting || isInvalidating) return;
 
                   const updatedPartyState = partyData!.getPartyState();
@@ -2185,6 +2191,44 @@
                     isPaused: updatedPartyState.isPaused,
                     activeSceneId: updatedPartyState.activeSceneId
                   };
+
+                  // Update cursors from Y.js awareness
+                  const yjsCursors = partyData!.getCursors();
+                  const activeCursorKeys = new Set(Object.keys(yjsCursors));
+                  const newCursors = { ...cursors };
+                  for (const cursorKey of Object.keys(cursors)) {
+                    if (!activeCursorKeys.has(cursorKey)) {
+                      delete newCursors[cursorKey];
+                    }
+                  }
+                  cursors = newCursors;
+
+                  Object.entries(yjsCursors).forEach(([cursorKey, cursorData]) => {
+                    cursors = {
+                      ...cursors,
+                      [cursorKey]: {
+                        worldPosition: cursorData.worldPosition || { x: 0, y: 0, z: 0 },
+                        userId: cursorData.userId,
+                        color: cursorData.color,
+                        label: cursorData.label,
+                        lastMoveTime: cursorData.lastMoveTime || Date.now(),
+                        fadedOut: false
+                      }
+                    };
+                  });
+
+                  // Update measurements from Y.js awareness
+                  measurements = partyData!.getMeasurements();
+
+                  // Update temporary layers from Y.js awareness
+                  const manager = getPartyDataManager();
+                  if (manager) {
+                    temporaryLayers = getTemporaryLayers(manager);
+                  }
+
+                  // Update hovered marker from Y.js awareness
+                  const hoveredMarker = partyData!.getHoveredMarker();
+                  hoveredMarkerId = hoveredMarker?.id ?? null;
 
                   // Update scene data
                   if (updatedPartyState.activeSceneId) {
@@ -2195,7 +2239,7 @@
                   }
                 });
 
-                devLog('playfield', 'Y.js reinitialized for new game session');
+                devLog('playfield', 'Y.js reinitialized for new game session with full cursor handling');
               }
             }
 
