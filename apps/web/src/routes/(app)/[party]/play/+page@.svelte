@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
-  import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
+  import { getRandomFantasyQuote, buildSceneProps, throttle } from '$lib/utils';
   import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
   import { Text, Title, PersistButton } from '@tableslayer/ui';
   import {
@@ -1652,10 +1652,14 @@
     return;
   }
 
-  // Throttle Y.js broadcasts during marker drag to prevent slowdown
-  let markerBroadcastTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingMarkerPosition: { markerId: string; position: { x: number; y: number } } | null = null;
-  const MARKER_BROADCAST_THROTTLE_MS = 50;
+  // Throttled Y.js broadcast for marker position updates
+  const broadcastMarkerPosition = throttle((sceneId: string, markerId: string, position: { x: number; y: number }) => {
+    const manager = getPartyDataManager();
+    if (manager) {
+      manager.updateMarkerPosition(sceneId, markerId, position);
+      devLog('playfield', 'Broadcasting marker position update:', { markerId, position });
+    }
+  }, 50);
 
   // Players can move markers - broadcast position updates via Y.js
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
@@ -1673,29 +1677,8 @@
         position: { x: position.x, y: position.y }
       };
 
-      // Throttle Y.js broadcasts to prevent slowdown during rapid mouse movements
-      pendingMarkerPosition = { markerId: marker.id, position };
-
-      if (!markerBroadcastTimer) {
-        markerBroadcastTimer = setTimeout(() => {
-          if (pendingMarkerPosition) {
-            const manager = getPartyDataManager();
-            if (manager) {
-              manager.updateMarkerPosition(
-                activeSceneId,
-                pendingMarkerPosition.markerId,
-                pendingMarkerPosition.position
-              );
-              devLog('playfield', 'Broadcasting marker position update:', {
-                markerId: pendingMarkerPosition.markerId,
-                position: pendingMarkerPosition.position
-              });
-            }
-            pendingMarkerPosition = null;
-          }
-          markerBroadcastTimer = null;
-        }, MARKER_BROADCAST_THROTTLE_MS);
-      }
+      // Broadcast via throttled function to prevent slowdown during rapid mouse movements
+      broadcastMarkerPosition(activeSceneId, marker.id, position);
 
       // Remove protection after a short delay to allow Y.js sync to complete
       setTimeout(() => {
