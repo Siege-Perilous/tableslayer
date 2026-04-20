@@ -1652,6 +1652,11 @@
     return;
   }
 
+  // Throttle Y.js broadcasts during marker drag to prevent slowdown
+  let markerBroadcastTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingMarkerPosition: { markerId: string; position: { x: number; y: number } } | null = null;
+  const MARKER_BROADCAST_THROTTLE_MS = 50;
+
   // Players can move markers - broadcast position updates via Y.js
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
     const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
@@ -1662,21 +1667,34 @@
       // Mark marker as being moved to protect from Y.js overwrites
       markersBeingMoved.add(marker.id);
 
-      // Update marker position immediately in local state
+      // Update marker position immediately in local state (for smooth visual feedback)
       stageProps.marker.markers[index] = {
         ...marker,
         position: { x: position.x, y: position.y }
       };
 
-      // Broadcast only the marker position update to Y.js - editor will receive and save to database
-      // This prevents overwriting other stageProps state that should only be managed by the editor
-      const manager = getPartyDataManager();
-      if (manager) {
-        manager.updateMarkerPosition(activeSceneId, marker.id, position);
-        devLog('playfield', 'Broadcasting marker position update:', {
-          markerId: marker.id,
-          position
-        });
+      // Throttle Y.js broadcasts to prevent slowdown during rapid mouse movements
+      pendingMarkerPosition = { markerId: marker.id, position };
+
+      if (!markerBroadcastTimer) {
+        markerBroadcastTimer = setTimeout(() => {
+          if (pendingMarkerPosition) {
+            const manager = getPartyDataManager();
+            if (manager) {
+              manager.updateMarkerPosition(
+                activeSceneId,
+                pendingMarkerPosition.markerId,
+                pendingMarkerPosition.position
+              );
+              devLog('playfield', 'Broadcasting marker position update:', {
+                markerId: pendingMarkerPosition.markerId,
+                position: pendingMarkerPosition.position
+              });
+            }
+            pendingMarkerPosition = null;
+          }
+          markerBroadcastTimer = null;
+        }, MARKER_BROADCAST_THROTTLE_MS);
       }
 
       // Remove protection after a short delay to allow Y.js sync to complete
