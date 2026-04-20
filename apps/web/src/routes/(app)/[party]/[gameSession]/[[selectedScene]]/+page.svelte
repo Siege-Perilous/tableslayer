@@ -481,11 +481,35 @@
             // Protect markers being moved or edited from Y.js overwrites
             markers: (() => {
               const localMarkers = stageProps.marker?.markers || [];
-              const incomingMarkers = incomingStageProps.marker?.markers || sceneData.markers || [];
+              // Prioritize sceneData.markers (updated by playfield) over stageProps.marker.markers
+              // This ensures marker position updates from the playfield are received
+              const stagePropsMarkers = incomingStageProps.marker?.markers || [];
+              const topLevelMarkers = sceneData.markers || [];
+
+              // Merge markers from both sources, preferring positions from topLevelMarkers
+              // (which is what the playfield updates via updateMarkerPosition)
+              const incomingMarkers = (() => {
+                if (!topLevelMarkers.length) return stagePropsMarkers;
+                if (!stagePropsMarkers.length) return topLevelMarkers;
+
+                // Create a map from topLevelMarkers (has updated positions from playfield)
+                const markerMap = new Map(topLevelMarkers.map((m) => [m.id, m]));
+
+                // Add any markers that only exist in stagePropsMarkers
+                stagePropsMarkers.forEach((m) => {
+                  if (!markerMap.has(m.id)) {
+                    markerMap.set(m.id, m);
+                  }
+                });
+
+                return Array.from(markerMap.values());
+              })();
 
               devLog('markers', '🔄 Merging markers:', {
                 localCount: localMarkers.length,
                 incomingCount: incomingMarkers.length,
+                topLevelCount: topLevelMarkers.length,
+                stagePropsCount: stagePropsMarkers.length,
                 protectedCount: markersBeingMoved.size + markersBeingEdited.size
               });
 
@@ -581,6 +605,32 @@
           setTimeout(() => {
             isReceivingYjsUpdate = false;
           }, YJS_UPDATE_PROTECTION_MS);
+
+          // Check if any marker positions changed from the playfield (not from local edits)
+          // If so, schedule a save for those changes
+          const oldMarkers = currentStagePropsSnapshot.marker?.markers || [];
+          const newMarkers = mergedStageProps.marker?.markers || [];
+          const positionsChangedFromPlayfield = newMarkers.some((newMarker) => {
+            // Skip markers being edited/moved locally
+            if (markersBeingMoved.has(newMarker.id) || markersBeingEdited.has(newMarker.id)) {
+              return false;
+            }
+            const oldMarker = oldMarkers.find((m) => m.id === newMarker.id);
+            if (!oldMarker) return false;
+            // Check if position changed
+            return oldMarker.position.x !== newMarker.position.x || oldMarker.position.y !== newMarker.position.y;
+          });
+
+          if (positionsChangedFromPlayfield) {
+            devLog('markers', '📍 Marker positions changed from playfield, scheduling save');
+            // Schedule save for playfield marker updates (bypass isReceivingYjsUpdate check)
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+              if (isWindowFocused && hasInitialLoad && !isSaving) {
+                saveScene();
+              }
+            }, 3000);
+          }
 
           // Playfield now subscribes directly to Y.js - no need for Socket.IO broadcast
         }
