@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { page } from '$app/state';
-  import { getRandomFantasyQuote, buildSceneProps } from '$lib/utils';
+  import { getRandomFantasyQuote, buildSceneProps, throttle } from '$lib/utils';
   import { devLog, devWarn, devError, timingLog } from '$lib/utils/debug';
   import { Text, Title, PersistButton } from '@tableslayer/ui';
   import {
@@ -1652,6 +1652,15 @@
     return;
   }
 
+  // Throttled Y.js broadcast for marker position updates
+  const broadcastMarkerPosition = throttle((sceneId: string, markerId: string, position: { x: number; y: number }) => {
+    const manager = getPartyDataManager();
+    if (manager) {
+      manager.updateMarkerPosition(sceneId, markerId, position);
+      devLog('playfield', 'Broadcasting marker position update:', { markerId, position });
+    }
+  }, 50);
+
   // Players can move markers - broadcast position updates via Y.js
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
     const activeSceneId = yjsPartyState.activeSceneId || data.activeScene?.id;
@@ -1662,22 +1671,14 @@
       // Mark marker as being moved to protect from Y.js overwrites
       markersBeingMoved.add(marker.id);
 
-      // Update marker position immediately in local state
+      // Update marker position immediately in local state (for smooth visual feedback)
       stageProps.marker.markers[index] = {
         ...marker,
         position: { x: position.x, y: position.y }
       };
 
-      // Broadcast only the marker position update to Y.js - editor will receive and save to database
-      // This prevents overwriting other stageProps state that should only be managed by the editor
-      const manager = getPartyDataManager();
-      if (manager) {
-        manager.updateMarkerPosition(activeSceneId, marker.id, position);
-        devLog('playfield', 'Broadcasting marker position update:', {
-          markerId: marker.id,
-          position
-        });
-      }
+      // Broadcast via throttled function to prevent slowdown during rapid mouse movements
+      broadcastMarkerPosition(activeSceneId, marker.id, position);
 
       // Remove protection after a short delay to allow Y.js sync to complete
       setTimeout(() => {
