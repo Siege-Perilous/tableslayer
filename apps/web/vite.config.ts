@@ -6,14 +6,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [
-      sveltekit(),
       sentrySvelteKit({
         sourceMapsUploadOptions: {
           org: 'siege-perilous',
           project: 'tableslayer',
           authToken: env.SENTRY_AUTH_TOKEN
         }
-      })
+      }),
+      sveltekit()
     ],
     server: {
       port: 5174,

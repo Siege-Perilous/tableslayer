@@ -76,10 +76,10 @@ export const POST = apiFactory(
         await updateParty(partyId, { stripeCustomerId });
       }
 
-      const mode: Stripe.Checkout.SessionCreateParams.Mode = plan === 'lifetime' ? 'payment' : 'subscription';
+      const mode = plan === 'lifetime' ? 'payment' : 'subscription';
 
-      // Create the session config with proper typing
-      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+      // Create the session config
+      const sessionConfig: Parameters<typeof stripe.checkout.sessions.create>[0] = {
         payment_method_types: ['card'],
         allow_promotion_codes: true,
         mode,
