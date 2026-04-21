@@ -342,11 +342,7 @@
 />
 
 <!-- This quad is user for raycasting / mouse input detection. It is invisible -->
-<T.Mesh
-  bind:ref={inputMesh}
-  scale={[display.resolution.x, display.resolution.y, 1]}
-  layers={isActive ? [SceneLayer.Input] : undefined}
->
+<T.Mesh bind:ref={inputMesh} scale={[display.resolution.x, display.resolution.y, 1]} layers={[SceneLayer.Input]}>
   <T.MeshBasicMaterial visible={false} />
   <T.PlaneGeometry />
 </T.Mesh>
