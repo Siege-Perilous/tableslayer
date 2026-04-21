@@ -87,6 +87,9 @@ importers:
       '@tiptap/core':
         specifier: ^3.22.4
         version: 3.22.4(@tiptap/pm@3.22.4)
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
