@@ -23,6 +23,7 @@ export const lightFragmentShader = /* glsl */ `
 
   uniform float uTime;
   uniform float uOpacity;
+  uniform float uPulse; // 0.0 to 1.0, affects radius expansion
   uniform int uStyle;
   uniform vec3 uColor;
   uniform bool uSelected;
@@ -109,6 +110,9 @@ export const lightFragmentShader = /* glsl */ `
       // Warm glow with animated flickering edges
       float speed = uTime * 0.15;
 
+      // Pulse affects radius (0.0 = normal, 1.0 = expanded)
+      float pulseRadius = 1.0 + uPulse * 0.15;
+
       // Noise for edge variation
       vec2 noiseCoord = vec2(angle * 2.0, dist * 3.0 - speed);
       float n = fbm(noiseCoord * 1.2);
@@ -116,16 +120,17 @@ export const lightFragmentShader = /* glsl */ `
       // Secondary slower noise for overall intensity variation
       float n2 = fbm(vec2(angle * 0.5, speed * 0.5)) * 0.5 + 0.5;
 
-      // Shape with noise-distorted edge
-      float radius = 0.38 + n * 0.06;
+      // Shape with noise-distorted edge - pulse expands radius
+      float radius = (0.38 + n * 0.06) * pulseRadius;
       float shape = 1.0 - smoothstep(radius * 0.6, radius, dist);
 
-      // Soft outer glow
-      float glow = exp(-dist * dist * 12.0) * 0.3;
+      // Soft outer glow - pulse makes it spread further
+      float glowFactor = 12.0 - uPulse * 4.0;
+      float glow = exp(-dist * dist * glowFactor) * 0.3;
       shape = shape + glow;
 
-      // Edge mask
-      float edgeMask = 1.0 - smoothstep(0.38, 0.5, dist);
+      // Edge mask - expands with pulse
+      float edgeMask = 1.0 - smoothstep(0.38 * pulseRadius, 0.5, dist);
       shape *= edgeMask;
 
       // Intensity varies with noise
@@ -140,11 +145,14 @@ export const lightFragmentShader = /* glsl */ `
       // Softer, smaller flame
       float speed = uTime * 0.2;
 
+      // Pulse affects radius
+      float pulseRadius = 1.0 + uPulse * 0.12;
+
       vec2 noiseCoord = vec2(angle * 1.5, dist * 3.0 - speed);
       float n = fbm(noiseCoord * 1.2);
 
-      // Tighter radius, softer edges
-      float radius = 0.35;
+      // Tighter radius, softer edges - pulse expands
+      float radius = 0.35 * pulseRadius;
       float edge = radius + n * 0.1 - 0.05;
       float shape = 1.0 - smoothstep(edge * 0.4, edge, dist);
 
@@ -160,19 +168,22 @@ export const lightFragmentShader = /* glsl */ `
       // Swirling glow with sparkles
       float speed = uTime * 0.15;
 
+      // Pulse affects the glow spread
+      float pulseFactor = 1.0 + uPulse * 0.2;
+
       // Swirling motion
       float swirl = angle + dist * 3.0 + speed * 2.0;
       vec2 swirlCoord = vec2(cos(swirl), sin(swirl)) * dist + speed * 0.5;
       float n = fbm(swirlCoord * 2.0);
 
-      // Edge mask to ensure fade to zero before quad boundary
-      float edgeMask = 1.0 - smoothstep(0.35, 0.5, dist);
+      // Edge mask - expands with pulse
+      float edgeMask = 1.0 - smoothstep(0.35 * pulseFactor, 0.5, dist);
 
-      // Gaussian falloff for soft edges
-      float shape = exp(-dist * dist * 18.0);
-
-      // Additional soft outer glow
-      float outerGlow = exp(-dist * dist * 8.0) * 0.4;
+      // Gaussian falloff - pulse makes it spread wider
+      float coreFactor = 18.0 - uPulse * 6.0;
+      float glowFactor = 8.0 - uPulse * 3.0;
+      float shape = exp(-dist * dist * coreFactor);
+      float outerGlow = exp(-dist * dist * glowFactor) * 0.4;
       shape = (shape + outerGlow) * edgeMask;
 
       // Sparkles
@@ -203,14 +214,17 @@ export const lightFragmentShader = /* glsl */ `
       // More intense, chaotic fire
       float speed = uTime * 0.4;
 
+      // Pulse affects radius
+      float pulseRadius = 1.0 + uPulse * 0.18;
+
       // Multiple noise layers for chaos
       vec2 noiseCoord = vec2(angle * 2.5, dist * 5.0 - speed);
       float n1 = fbm(noiseCoord * 1.5);
       float n2 = fbm(noiseCoord * 2.5 + 5.0);
       float n = n1 * 0.6 + n2 * 0.4;
 
-      // Larger, more irregular shape
-      float radius = 0.45;
+      // Larger, more irregular shape - pulse expands
+      float radius = 0.45 * pulseRadius;
       float edge = radius + n * 0.2 - 0.15;
       float shape = 1.0 - smoothstep(edge * 0.4, edge, dist);
 
@@ -228,25 +242,34 @@ export const lightFragmentShader = /* glsl */ `
     else if (uStyle == 4) {
       // Steady warm glow with grain texture
 
-      // Simple smooth circular falloff
-      float shape = 1.0 - smoothstep(0.0, 0.45, dist);
-      shape = pow(shape, 1.1);
+      // Pulse affects the falloff spread
+      float intensityFactor = 20.0 - uPulse * 6.0;
+      float alphaFactor = 8.0 - uPulse * 3.0;
 
-      // Edge mask
-      float edgeMask = 1.0 - smoothstep(0.4, 0.5, dist);
-      shape *= edgeMask;
+      // Gaussian falloff for intensity (color brightness)
+      float intensity = exp(-dist * dist * intensityFactor);
 
-      // High-frequency grain noise to break up the gradient (like photoshop noise)
-      // Use UV position for static grain, add subtle time for very slow drift
-      float grain = noise(uv * 80.0 + uTime * 0.05);
-      grain = grain * 0.15; // Subtle grain amount
+      // Separate alpha falloff - more gradual for transparency
+      float alphaFalloff = exp(-dist * dist * alphaFactor);
 
-      float intensity = shape;
+      // Edge mask - expands with pulse
+      float edgeMaskStart = 0.4 + uPulse * 0.05;
+      float edgeMask = 1.0 - smoothstep(edgeMaskStart, 0.5, dist);
 
-      // Warm lantern colors
-      vec3 lanternCore = vec3(1.0, 0.95, 0.8);
+      // High-frequency grain noise to break up the gradient
+      // Rotates slowly for organic movement
+      float rotSpeed = uTime * 0.3;
+      vec2 rotatedUv = vec2(
+        uv.x * cos(rotSpeed) - uv.y * sin(rotSpeed),
+        uv.x * sin(rotSpeed) + uv.y * cos(rotSpeed)
+      );
+      float grain = noise(rotatedUv * 50.0);
+      grain = grain * 0.1;
+
+      // Warm lantern colors - white core to orange edge
+      vec3 lanternCore = vec3(1.0, 0.98, 0.9);
       vec3 lanternMid = uColor;
-      vec3 lanternEdge = uColor * 0.4;
+      vec3 lanternEdge = uColor * 0.6;
 
       if (intensity > 0.5) {
         finalColor = mix(lanternMid, lanternCore, (intensity - 0.5) / 0.5);
@@ -255,11 +278,13 @@ export const lightFragmentShader = /* glsl */ `
       }
 
       // Apply grain to color
-      finalColor += grain * intensity;
+      finalColor += grain * alphaFalloff;
 
       // Very subtle overall flicker
       float flicker = noise(vec2(uTime * 0.3, 0.0)) * 0.05 + 0.975;
-      alpha = smoothstep(0.0, 0.1, intensity) * flicker;
+
+      // Alpha fades out towards edges for transparency
+      alpha = alphaFalloff * edgeMask * flicker;
     }
 
     // === MOONLIGHT (style 5) ===
@@ -267,17 +292,22 @@ export const lightFragmentShader = /* glsl */ `
       // Soft, ethereal glow with very gradual gaussian falloff
       float speed = uTime * 0.03;
 
+      // Pulse affects the glow spread
+      float shapeFactor = 15.0 - uPulse * 5.0;
+      float haloFactor = 6.0 - uPulse * 2.0;
+
       vec2 noiseCoord = vec2(angle * 0.5, dist + speed);
       float n = fbm(noiseCoord * 0.6);
 
-      // Edge mask to ensure fade to zero before quad boundary
-      float edgeMask = 1.0 - smoothstep(0.3, 0.5, dist);
+      // Edge mask - expands with pulse
+      float edgeMaskStart = 0.3 + uPulse * 0.08;
+      float edgeMask = 1.0 - smoothstep(edgeMaskStart, 0.5, dist);
 
-      // Soft gaussian falloff
-      float shape = exp(-dist * dist * 15.0);
+      // Soft gaussian falloff - pulse makes it spread wider
+      float shape = exp(-dist * dist * shapeFactor);
 
       // Soft outer halo
-      float halo = exp(-dist * dist * 6.0) * 0.5;
+      float halo = exp(-dist * dist * haloFactor) * 0.5;
       shape = (shape + halo) * edgeMask;
 
       float intensity = shape * (0.95 + n * 0.05);
@@ -366,6 +396,7 @@ export const createLightMaterial = (style: LightStyle, color: THREE.Color): THRE
     uniforms: {
       uTime: { value: 0 },
       uOpacity: { value: 1 },
+      uPulse: { value: 0 },
       uStyle: { value: getStyleIndex(style) },
       uColor: { value: color },
       uSelected: { value: false }

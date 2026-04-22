@@ -28,29 +28,34 @@
 
   // Pulse animation state
   let pulsePhase = Math.random() * Math.PI * 2;
-  let currentPulseMultiplier = 1;
+  let currentPulseValue = 0;
 
   // Animate shader time and pulse
   useTask((delta) => {
     // Update shader time
     lightMaterial.uniforms.uTime.value += delta;
 
-    // Calculate pulse multiplier for opacity
+    // Calculate smooth pulse value (0 to 1 range)
     if (light.pulse !== LightPulse.None) {
       const baseDuration = LIGHT_PULSE_DURATION[light.pulse];
       const speed = (Math.PI * 2) / (baseDuration / 1000);
 
       pulsePhase += delta * speed;
 
-      // Organic pulse using multiple sine waves
-      const wave = Math.sin(pulsePhase) * 0.15 + Math.sin(pulsePhase * 1.7) * 0.1;
-      currentPulseMultiplier = Math.max(0.7, Math.min(1.0, 0.9 + wave));
+      // Organic pulse using multiple sine waves - output 0 to 1
+      const wave1 = (Math.sin(pulsePhase) + 1) * 0.5; // 0 to 1
+      const wave2 = (Math.sin(pulsePhase * 1.7 + 0.5) + 1) * 0.5; // 0 to 1
+      const wave3 = (Math.sin(pulsePhase * 0.6 + 1.2) + 1) * 0.5; // 0 to 1
+
+      // Blend waves for smooth, organic movement
+      currentPulseValue = wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2;
     } else {
-      currentPulseMultiplier = 1;
+      currentPulseValue = 0;
     }
 
-    // Update opacity uniform
-    lightMaterial.uniforms.uOpacity.value = opacity * currentPulseMultiplier;
+    // Update uniforms
+    lightMaterial.uniforms.uOpacity.value = opacity;
+    lightMaterial.uniforms.uPulse.value = currentPulseValue;
   });
 
   // Update material when light properties change
