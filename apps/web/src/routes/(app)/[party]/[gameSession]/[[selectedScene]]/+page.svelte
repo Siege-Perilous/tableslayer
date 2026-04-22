@@ -291,7 +291,6 @@
   let lightsPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let isMarkersCollapsed = $state(true);
-  let isLightsCollapsed = $state(true);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   let mapThumbLocation: null | string = $state(null);
