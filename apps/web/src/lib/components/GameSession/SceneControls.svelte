@@ -18,7 +18,8 @@
     IconAdjustmentsHorizontal,
     IconPokerChip,
     IconPencil,
-    IconRuler
+    IconRuler,
+    IconFlame
   } from '@tabler/icons-svelte';
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
@@ -214,7 +215,7 @@
 
   // Also react to activeControl changes to close popovers when tools are activated
   $effect(() => {
-    if (['erase', 'marker', 'annotation', 'measurement'].includes(activeControl)) {
+    if (['erase', 'marker', 'light', 'annotation', 'measurement'].includes(activeControl)) {
       openPopoverId = null;
     }
   });
@@ -322,6 +323,27 @@
         {/snippet}
         {#snippet toolTipContent()}
           Place markers to note points of interest on the map with notes.
+        {/snippet}
+      </ToolTip>
+    </div>
+    <div class="sceneControls__item sceneControls__item--light">
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <button
+            data-testid="lightToolButton"
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Light &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => {
+              const newPopoverId = handleSelectActiveControl('light');
+              openPopoverId = newPopoverId;
+            }}
+          >
+            <Icon Icon={IconFlame} size="1.5rem" />
+            <span class="sceneControls__layerText">Light</span>
+          </button>
+        {/snippet}
+        {#snippet toolTipContent()}
+          Place light sources on the map for atmospheric effects.
         {/snippet}
       </ToolTip>
     </div>

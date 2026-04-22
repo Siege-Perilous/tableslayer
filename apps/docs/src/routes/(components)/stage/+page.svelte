@@ -8,6 +8,7 @@
     ToolType,
     MapLayerType,
     type Marker,
+    type Light,
     PointerInputManager,
     PerformanceDebugger,
     StageMode
@@ -21,6 +22,7 @@
     FogControls,
     FogOfWarControls,
     GridControls,
+    LightControls,
     MapControls,
     MarkerControls,
     MeasurementControls,
@@ -32,6 +34,7 @@
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();
   let selectedMarker: Marker | undefined = $state();
+  let selectedLight: Light | undefined = $state();
 
   const minZoom = 0.1;
   const maxZoom = 10;
@@ -70,6 +73,9 @@
           break;
         case 'F':
           stage?.fogOfWar.reset();
+          break;
+        case 'l':
+          stageProps.activeLayer = MapLayerType.Light;
           break;
         case 'm':
           stageProps.activeLayer = MapLayerType.Marker;
@@ -164,6 +170,25 @@
     }
   }
 
+  function onLightAdded(light: Light) {
+    stageProps.light.lights = [...stageProps.light.lights, light];
+    selectedLight = light;
+  }
+
+  function onLightMoved(light: Light, position: { x: number; y: number }) {
+    const index = stageProps.light.lights.findIndex((l: Light) => l.id === light.id);
+    if (index !== -1) {
+      stageProps.light.lights[index] = {
+        ...light,
+        position: { x: position.x, y: position.y }
+      };
+    }
+  }
+
+  function onLightSelected(light: Light | null) {
+    selectedLight = light ?? undefined;
+  }
+
   function onMapPan(dx: number, dy: number) {
     stageProps.map.offset.x += dx;
     stageProps.map.offset.y += dy;
@@ -239,7 +264,10 @@
       onMarkerAdded,
       onMarkerMoved,
       onMarkerSelected,
-      onMarkerContextMenu
+      onMarkerContextMenu,
+      onLightAdded,
+      onLightMoved,
+      onLightSelected
     }}
   />
   <div>
@@ -254,6 +282,7 @@
       <li>R - Draw Fog (Rectangle)</li>
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
+      <li>l - Place Lights</li>
       <li>m - Edit Markers</li>
       <li>M - Edit Measurements</li>
       <li>SHIFT + Mouse Down - Pan Map</li>
@@ -274,6 +303,7 @@
   <EdgeOverlayControls bind:props={stageProps} />
   <FogOfWarControls bind:props={stageProps} {stage} />
   <GridControls bind:props={stageProps} />
+  <LightControls bind:props={stageProps} bind:selectedLight />
   <MapControls bind:props={stageProps} {stage} />
   <MarkerControls bind:props={stageProps} bind:selectedMarker />
   <MeasurementControls bind:props={stageProps} />

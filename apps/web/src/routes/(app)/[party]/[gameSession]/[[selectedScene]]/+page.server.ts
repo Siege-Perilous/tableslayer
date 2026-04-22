@@ -1,5 +1,5 @@
-import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
-import { getMarkersForScene, type Thumb } from '$lib/server';
+import type { SelectAnnotation, SelectLight, SelectMarker } from '$lib/db/app/schema';
+import { getLightsForScene, getMarkersForScene, type Thumb } from '$lib/server';
 import { getAnnotationMasksForScene, getAnnotationsForScene } from '$lib/server/annotations';
 import { createScene, getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
@@ -44,21 +44,27 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   // Get full scene data (scenes list excludes fogOfWarMask for performance)
   const selectedScene = await getScene(sceneFromList.id);
 
-  // Fetch markers, annotations, and masks in parallel
-  const [selectedSceneMarkers, selectedSceneAnnotations, fogMaskResult, annotationMasks] = await Promise.all([
-    getMarkersForScene(selectedScene.id),
-    getAnnotationsForScene(selectedScene.id),
-    getSceneMaskData(selectedScene.id).catch(() => ({ fogOfWarMask: null })),
-    getAnnotationMasksForScene(selectedScene.id)
-  ]);
+  // Fetch markers, lights, annotations, and masks in parallel
+  const [selectedSceneMarkers, selectedSceneLights, selectedSceneAnnotations, fogMaskResult, annotationMasks] =
+    await Promise.all([
+      getMarkersForScene(selectedScene.id),
+      getLightsForScene(selectedScene.id),
+      getAnnotationsForScene(selectedScene.id),
+      getSceneMaskData(selectedScene.id).catch(() => ({ fogOfWarMask: null })),
+      getAnnotationMasksForScene(selectedScene.id)
+    ]);
 
   const selectedSceneFogMask = fogMaskResult.fogOfWarMask;
   const selectedSceneAnnotationMasks = annotationMasks;
   let activeSceneMarkers: (SelectMarker & Partial<Thumb>)[] = [];
+  let activeSceneLights: SelectLight[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
   if (activeScene) {
-    activeSceneMarkers = await getMarkersForScene(activeScene.id);
-    activeSceneAnnotations = await getAnnotationsForScene(activeScene.id);
+    [activeSceneMarkers, activeSceneLights, activeSceneAnnotations] = await Promise.all([
+      getMarkersForScene(activeScene.id),
+      getLightsForScene(activeScene.id),
+      getAnnotationsForScene(activeScene.id)
+    ]);
   }
 
   // Get preferences from cookies using the new system
@@ -71,11 +77,13 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     selectedSceneNumber,
     selectedScene,
     selectedSceneMarkers,
+    selectedSceneLights,
     selectedSceneAnnotations,
     selectedSceneAnnotationMasks,
     selectedSceneFogMask,
     activeScene,
     activeSceneMarkers,
+    activeSceneLights,
     activeSceneAnnotations,
     paneLayoutDesktop,
     paneLayoutMobile,

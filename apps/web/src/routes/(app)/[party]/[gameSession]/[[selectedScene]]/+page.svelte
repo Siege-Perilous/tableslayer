@@ -196,6 +196,7 @@
     data.selectedSceneMarkers,
     'editor',
     data.selectedSceneAnnotations,
+    data.selectedSceneLights,
     data.bucketUrl
   );
 
@@ -228,6 +229,7 @@
   let pinnedMarkerIds = $derived(stageProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
 
   let selectedMarkerId: string | undefined = $state();
+  let selectedLightId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
 
   // Track measurements from Y.js awareness (playfield → editor)
@@ -283,8 +285,10 @@
   );
   let scenesPane: PaneAPI = $state(undefined)!;
   let markersPane: PaneAPI = $state(undefined)!;
+  let lightsPane: PaneAPI = $state(undefined)!;
   let isScenesCollapsed = $state(false);
   let isMarkersCollapsed = $state(true);
+  let isLightsCollapsed = $state(true);
   let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   let mapThumbLocation: null | string = $state(null);
@@ -1006,6 +1010,14 @@
       if (markersPane) {
         markersPane.expand();
       }
+    } else if (control === 'light') {
+      selectedLightId = undefined;
+      queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Light, 'control');
+      // Clear annotation active layer when switching away
+      queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      if (lightsPane) {
+        lightsPane.expand();
+      }
     } else if (control === 'annotation') {
       selectedAnnotationId = undefined;
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Annotation, 'control');
@@ -1049,6 +1061,7 @@
   // Extract reactive dependencies to avoid unnecessary re-runs
   let currentSelectedScene = $derived(data.selectedScene);
   let currentSelectedSceneMarkers = $derived(data.selectedSceneMarkers);
+  let currentSelectedSceneLights = $derived(data.selectedSceneLights);
   let currentSelectedSceneAnnotations = $derived(data.selectedSceneAnnotations);
 
   // Get the Y.js version of the selected scene if available (has the latest mapLocation)
@@ -1097,7 +1110,14 @@
       // Always use database markers for buildSceneProps as it expects the database format
       const markersToUse = currentSelectedSceneMarkers;
 
-      stageProps = buildSceneProps(sceneToUse, markersToUse, 'editor', currentSelectedSceneAnnotations, data.bucketUrl);
+      stageProps = buildSceneProps(
+        sceneToUse,
+        markersToUse,
+        'editor',
+        currentSelectedSceneAnnotations,
+        currentSelectedSceneLights,
+        data.bucketUrl
+      );
       // Preserve local annotation line width preference (stored as percentage)
       const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
       stageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
@@ -1226,6 +1246,7 @@
             currentSelectedSceneMarkers,
             'editor',
             currentSelectedSceneAnnotations,
+            currentSelectedSceneLights,
             data.bucketUrl
           );
           // Preserve local annotation line width preference (stored as percentage)

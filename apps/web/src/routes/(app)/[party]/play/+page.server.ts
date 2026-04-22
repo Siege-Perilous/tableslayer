@@ -1,7 +1,8 @@
-import type { SelectAnnotation, SelectMarker } from '$lib/db/app/schema';
+import type { SelectAnnotation, SelectLight, SelectMarker } from '$lib/db/app/schema';
 import {
   getActiveGameSessionForParty,
   getActiveSceneForParty,
+  getLightsForScene,
   getMarkersForScene,
   getPartyFromSlug,
   getPartyGameSessions,
@@ -48,11 +49,15 @@ export const load: PageServerLoad = async (event) => {
   const activeScene = await getActiveSceneForParty(party.id);
 
   let activeSceneMarkers: SelectMarker[] = [];
+  let activeSceneLights: SelectLight[] = [];
   let activeSceneAnnotations: SelectAnnotation[] = [];
 
   if (activeScene) {
-    activeSceneMarkers = await getMarkersForScene(activeScene.id);
-    activeSceneAnnotations = await getAnnotationsForScene(activeScene.id);
+    [activeSceneMarkers, activeSceneLights, activeSceneAnnotations] = await Promise.all([
+      getMarkersForScene(activeScene.id),
+      getLightsForScene(activeScene.id),
+      getAnnotationsForScene(activeScene.id)
+    ]);
   }
 
   return {
@@ -62,6 +67,7 @@ export const load: PageServerLoad = async (event) => {
     gameSessionsWithScenes,
     activeScene,
     activeSceneMarkers,
+    activeSceneLights,
     activeSceneAnnotations,
     partykitHost
   };

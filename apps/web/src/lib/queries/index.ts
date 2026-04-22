@@ -4,6 +4,7 @@ export * from './auth';
 export * from './email';
 export * from './file';
 export * from './gameSessions';
+export * from './lights';
 export * from './markers';
 export * from './masks';
 export * from './parties';

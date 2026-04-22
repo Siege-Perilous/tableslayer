@@ -62,7 +62,7 @@ export function queuePropertyUpdate(
   stageProps: StageProps,
   propertyPath: PropertyPath,
   value: unknown,
-  updateType: 'marker' | 'control' | 'scene' = 'control'
+  updateType: 'marker' | 'light' | 'control' | 'scene' = 'control'
 ) {
   // Skip Y.js sync for local-only properties but still apply them locally
   if (isLocalOnlyProperty(propertyPath)) {

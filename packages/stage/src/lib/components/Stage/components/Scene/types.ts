@@ -26,6 +26,7 @@ export enum SceneLayerOrder {
   Fog = 20,
   Weather = 30,
   EffectAnnotation = 35, // Effect annotations render under fog of war
+  Light = 36, // Lights render under markers and fog of war
   Marker = 37, // Markers render above effect annotations but below fog of war
   FogOfWar = 40,
   Grid = 50,
@@ -57,6 +58,7 @@ export interface SceneLayerProps {
   zoom: number;
 }
 
+import type { Light } from '../LightLayer/types';
 import type { Marker } from '../MarkerLayer/types';
 
 export interface SceneExports {
@@ -94,6 +96,14 @@ export interface SceneExports {
     hoveredMarker: Marker | null;
     selectedMarker: Marker | null;
     maintainHover: (maintain: boolean) => void;
+    onSceneChange: () => void;
+  };
+
+  lights: {
+    isHoveringLight: boolean;
+    isDraggingLight: boolean;
+    hoveredLight: Light | null;
+    selectedLight: Light | null;
     onSceneChange: () => void;
   };
 

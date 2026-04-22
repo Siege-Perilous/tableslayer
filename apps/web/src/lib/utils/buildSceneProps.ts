@@ -1,4 +1,4 @@
-import { type SelectAnnotation, type SelectMarker, type SelectScene } from '$lib/db/app/schema';
+import { type SelectAnnotation, type SelectLight, type SelectMarker, type SelectScene } from '$lib/db/app/schema';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -10,6 +10,9 @@ import {
   getDefaultEffectProps,
   GridMode,
   GridType,
+  type Light,
+  LightPulse,
+  LightStyle,
   MapLayerType,
   type Marker,
   MeasurementType,
@@ -26,6 +29,7 @@ export const buildSceneProps = (
   activeSceneMarkers: (SelectMarker & Partial<Thumb>)[],
   mode: 'client' | 'editor',
   activeSceneAnnotations: SelectAnnotation[] = [],
+  activeSceneLights: SelectLight[] = [],
   bucketUrl?: string
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
@@ -74,6 +78,19 @@ export const buildSceneProps = (
             ? getDefaultEffectProps(annotation.effectType as AnnotationEffect)
             : undefined
       }));
+  }
+
+  // Map lights to Light format
+  let lights: Light[] = [];
+  if (activeSceneLights && Array.isArray(activeSceneLights)) {
+    lights = activeSceneLights.map((light) => ({
+      id: light.id,
+      position: { x: light.positionX, y: light.positionY },
+      radius: light.radius,
+      color: light.color,
+      style: light.style as LightStyle,
+      pulse: light.pulse as LightPulse
+    }));
   }
 
   return {
@@ -211,6 +228,11 @@ export const buildSceneProps = (
         strokeWidth: 1
       },
       markers: markers
+    },
+    light: {
+      visible: true,
+      snapToGrid: true,
+      lights: lights
     },
     measurement: {
       type: MeasurementType.Line,

@@ -137,6 +137,11 @@ export const StageDefaultProps: StageProps = {
     },
     markers: []
   },
+  light: {
+    visible: true,
+    snapToGrid: true,
+    lights: []
+  },
   measurement: {
     type: MeasurementType.Line,
     snapToGrid: true,

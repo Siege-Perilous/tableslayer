@@ -1025,6 +1025,7 @@
           data.activeSceneMarkers,
           'client',
           data.activeSceneAnnotations,
+          data.activeSceneLights,
           data.bucketUrl
         );
         stageProps = builtProps;
@@ -1119,6 +1120,7 @@
         data.activeSceneMarkers,
         'client',
         data.activeSceneAnnotations,
+        data.activeSceneLights,
         data.bucketUrl
       );
       stageProps = builtProps;
