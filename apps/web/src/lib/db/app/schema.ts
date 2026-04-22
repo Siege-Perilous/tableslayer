@@ -524,12 +524,14 @@ export const lightTable = sqliteTable(
     radius: real('radius').notNull().default(2), // Diameter in grid units
     color: text('color').notNull().default('#FFA500'), // Default lantern orange
     style: text('style', { enum: VALID_LIGHT_STYLES }).notNull().default('lantern'),
-    pulse: integer('pulse').notNull().default(0) // 0=none, 1=slow, 2=medium, 3=fast
+    pulse: integer('pulse').notNull().default(0), // 0=none, 1=slow, 2=medium, 3=fast
+    opacity: real('opacity').notNull().default(1.0) // 0.0 to 1.0
   },
   (table) => [
     index('idx_light_scene_id').on(table.sceneId),
     check('protected_light_pulse', sql`${table.pulse} >= 0 AND ${table.pulse} <= 3`),
-    check('protected_light_radius', sql`${table.radius} > 0`)
+    check('protected_light_radius', sql`${table.radius} > 0`),
+    check('protected_light_opacity', sql`${table.opacity} >= 0 AND ${table.opacity} <= 1`)
   ]
 );
 

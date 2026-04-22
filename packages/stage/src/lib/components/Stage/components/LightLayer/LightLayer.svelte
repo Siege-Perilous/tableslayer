@@ -40,7 +40,8 @@
     radius: 2,
     color: LIGHT_STYLE_COLORS[LightStyle.Lantern],
     style: LightStyle.Lantern,
-    pulse: LightPulse.None
+    pulse: LightPulse.None,
+    opacity: 1
   });
 
   const findClosestLight = (gridCoords: THREE.Vector2) => {
@@ -98,7 +99,8 @@
           radius: 2,
           color: LIGHT_STYLE_COLORS[LightStyle.Lantern],
           style: LightStyle.Lantern,
-          pulse: LightPulse.None
+          pulse: LightPulse.None,
+          opacity: 1
         };
         selectedLight = newLight;
         onLightAdded?.(newLight);

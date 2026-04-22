@@ -89,7 +89,8 @@ export const buildSceneProps = (
       radius: light.radius,
       color: light.color,
       style: light.style as LightStyle,
-      pulse: light.pulse as LightPulse
+      pulse: light.pulse as LightPulse,
+      opacity: light.opacity
     }));
   }
 

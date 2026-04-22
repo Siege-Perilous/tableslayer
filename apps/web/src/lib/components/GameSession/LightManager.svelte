@@ -255,6 +255,30 @@
       {/snippet}
     </FormControl>
 
+    <Spacer size="0.5rem" />
+
+    <FormControl label="Opacity" name="opacity">
+      {#snippet input(inputProps)}
+        <Input
+          {...inputProps}
+          type="range"
+          min={0}
+          max={1}
+          step={0.1}
+          value={editingLight.opacity?.toString() ?? '1'}
+          oninput={(e) => {
+            const value = parseFloat(e.currentTarget.value);
+            if (!isNaN(value)) {
+              updateLightAndSave(editingLight.id, (light) => {
+                light.opacity = value;
+              });
+              throttledUpdate(editingLight.id);
+            }
+          }}
+        />
+      {/snippet}
+    </FormControl>
+
     <Spacer size="1rem" />
 
     <ConfirmActionButton action={() => handleLightDelete(editingLight.id)} actionButtonText="Confirm delete">

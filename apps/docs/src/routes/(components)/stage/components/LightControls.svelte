@@ -36,6 +36,7 @@
         <Color bind:value={light.color} label="Color" />
         <Slider bind:value={light.radius} label="Radius" min={0.5} max={20} step={0.5} />
         <List bind:value={light.pulse} label="Pulse" options={lightPulseOptions} />
+        <Slider bind:value={light.opacity} label="Opacity" min={0} max={1} step={0.1} />
       </Folder>
     {/each}
   </Folder>

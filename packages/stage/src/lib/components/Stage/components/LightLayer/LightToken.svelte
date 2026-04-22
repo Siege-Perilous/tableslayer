@@ -55,8 +55,9 @@
       currentPulseValue = 0;
     }
 
-    // Update uniforms
-    lightMaterial.uniforms.uOpacity.value = opacity;
+    // Update uniforms - combine layer opacity with per-light opacity
+    const lightOpacity = light.opacity ?? 1.0;
+    lightMaterial.uniforms.uOpacity.value = opacity * lightOpacity;
     lightMaterial.uniforms.uPulse.value = currentPulseValue;
   });
 
