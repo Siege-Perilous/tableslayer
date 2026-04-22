@@ -9,7 +9,12 @@
     Popover,
     Spacer,
     Button,
-    ConfirmActionButton
+    Link,
+    ConfirmActionButton,
+    IconButton,
+    Label,
+    Text,
+    Select
   } from '@tableslayer/ui';
   import {
     type StageProps,
@@ -19,7 +24,7 @@
     LIGHT_STYLE_COLORS,
     MapLayerType
   } from '@tableslayer/stage';
-  import { IconTrash, IconArrowBack, IconFlame } from '@tabler/icons-svelte';
+  import { IconTrash, IconArrowBack, IconFlame, IconLocationPin } from '@tabler/icons-svelte';
   import { useDeleteLightMutation } from '$lib/queries';
   import { queuePropertyUpdate, throttle } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
@@ -95,7 +100,7 @@
   const pulseOptions = [
     { label: 'None', value: LightPulse.None.toString() },
     { label: 'Slow', value: LightPulse.Slow.toString() },
-    { label: 'Medium', value: LightPulse.Medium.toString() },
+    { label: 'Med', value: LightPulse.Medium.toString() },
     { label: 'Fast', value: LightPulse.Fast.toString() }
   ];
 
@@ -112,261 +117,394 @@
   };
 </script>
 
-<div class="lightManager">
-  {#if !editingLightId}
-    <!-- Light List View -->
-    <div class="lightManager__header">
-      <span class="lightManager__title">Lights</span>
-      <Button
-        size="sm"
-        variant={stageProps.activeLayer === MapLayerType.Light ? 'primary' : 'ghost'}
-        onclick={() => handleSelectActiveControl('light')}
-      >
-        {#if stageProps.activeLayer === MapLayerType.Light}
-          Placing lights
-        {:else}
-          Place light
-        {/if}
-      </Button>
-    </div>
-    <Spacer size="0.5rem" />
+<div class="lightManager" data-testid="lightManager">
+  <div class="lightManager__header">
+    <Label>Snap to grid</Label>
+    <RadioButton
+      selected={stageProps.light.snapToGrid.toString()}
+      options={[
+        { label: 'on', value: 'true' },
+        { label: 'off', value: 'false' }
+      ]}
+      onSelectedChange={(value) => {
+        queuePropertyUpdate(stageProps, ['light', 'snapToGrid'], value === 'true', 'control');
+      }}
+    />
+  </div>
+  <div class="lightManager__content">
+    {#if editingLightId !== undefined && editingLight}
+      <Link onclick={backToList} class="lightManager__backButton" data-testid="lightBackButton">
+        List all lights
+        <Icon Icon={IconArrowBack} size="1rem" />
+      </Link>
+      <div class="lightManager__editView" data-testid="lightEditView">
+        <div class="lightManager__light">
+          <Spacer />
+          <div class="lightManager__formGrid">
+            <FormControl label="Style" name="style">
+              {#snippet input(inputProps)}
+                <Select
+                  {...inputProps}
+                  selected={[editingLight.style]}
+                  options={styleOptions}
+                  onSelectedChange={(values) => {
+                    const value = values[0] as LightStyle;
+                    updateLightAndSave(editingLight.id, (light) => {
+                      light.style = value;
+                      light.color = LIGHT_STYLE_COLORS[value];
+                    });
+                    socketUpdate();
+                  }}
+                />
+              {/snippet}
+            </FormControl>
 
-    {#if stageProps.light.lights.length === 0}
-      <div class="lightManager__empty">
-        <p class="lightManager__emptyText">No lights placed yet. Click "Place light" to add one.</p>
+            <div class="lightManager__colorPicker">
+              <FormControl label="Color" name="color">
+                {#snippet start()}
+                  <Popover>
+                    {#snippet trigger()}
+                      <ColorPickerSwatch color={editingLight.color} />
+                    {/snippet}
+                    {#snippet content()}
+                      <ColorPicker
+                        showOpacity={false}
+                        hex={editingLight.color}
+                        onUpdate={(colorData) => {
+                          updateLightAndSave(editingLight.id, (light) => {
+                            light.color = colorData.hex;
+                          });
+                          throttledUpdate(editingLight.id);
+                        }}
+                      />
+                    {/snippet}
+                  </Popover>
+                {/snippet}
+                {#snippet input(inputProps)}
+                  <Input
+                    {...inputProps}
+                    value={editingLight.color}
+                    oninput={(e) => {
+                      updateLightAndSave(editingLight.id, (light) => {
+                        light.color = e.currentTarget.value;
+                      });
+                      throttledUpdate(editingLight.id);
+                    }}
+                  />
+                {/snippet}
+              </FormControl>
+            </div>
+
+            <FormControl label="Pulse" name="pulse">
+              {#snippet input(inputProps)}
+                <RadioButton
+                  {...inputProps}
+                  selected={editingLight.pulse.toString()}
+                  options={pulseOptions}
+                  onSelectedChange={(value) => {
+                    updateLightAndSave(editingLight.id, (light) => {
+                      light.pulse = Number(value);
+                    });
+                    socketUpdate();
+                  }}
+                />
+              {/snippet}
+            </FormControl>
+          </div>
+
+          <Spacer />
+
+          <div class="lightManager__formGrid">
+            <FormControl label="Radius" name="radius">
+              {#snippet input(inputProps)}
+                <div class="lightManager__slider">
+                  <input
+                    {...inputProps}
+                    type="range"
+                    min="0.5"
+                    max="20"
+                    step="0.5"
+                    value={editingLight.radius}
+                    oninput={(e) => {
+                      const value = parseFloat(e.currentTarget.value);
+                      if (!isNaN(value)) {
+                        updateLightAndSave(editingLight.id, (light) => {
+                          light.radius = value;
+                        });
+                        throttledUpdate(editingLight.id);
+                      }
+                    }}
+                  />
+                  <span class="lightManager__sliderValue">{editingLight.radius}</span>
+                </div>
+              {/snippet}
+            </FormControl>
+
+            <FormControl label="Opacity" name="opacity">
+              {#snippet input(inputProps)}
+                <div class="lightManager__slider">
+                  <input
+                    {...inputProps}
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={editingLight.opacity ?? 1}
+                    oninput={(e) => {
+                      const value = parseFloat(e.currentTarget.value);
+                      if (!isNaN(value)) {
+                        updateLightAndSave(editingLight.id, (light) => {
+                          light.opacity = value;
+                        });
+                        throttledUpdate(editingLight.id);
+                      }
+                    }}
+                  />
+                  <span class="lightManager__sliderValue">{(editingLight.opacity ?? 1).toFixed(1)}</span>
+                </div>
+              {/snippet}
+            </FormControl>
+          </div>
+
+          <Spacer />
+
+          <ConfirmActionButton action={() => handleLightDelete(editingLight.id)} actionButtonText="Confirm delete">
+            {#snippet trigger({ triggerProps })}
+              <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}>
+                Delete light
+              </Button>
+            {/snippet}
+            {#snippet actionMessage()}
+              Delete light?
+            {/snippet}
+          </ConfirmActionButton>
+        </div>
       </div>
     {:else}
       <div class="lightManager__list">
         {#each stageProps.light.lights as light (light.id)}
-          <button class="lightManager__item" onclick={() => selectLightForEdit(light.id)}>
-            <div class="lightManager__itemIcon" style="background-color: {light.color}">
-              <Icon Icon={IconFlame} size="1rem" />
+          <div class="lightManager__listItem" data-testid="lightListItem">
+            <div class="lightManager__read">
+              <div class="lightManager__lightIcon" style:background-color={light.color}>
+                <Icon Icon={IconFlame} size="1rem" />
+              </div>
+              <button class="lightManager__title" onclick={() => selectLightForEdit(light.id)}>
+                {getStyleName(light.style)}
+              </button>
+              <div class="lightManager__editIcon" data-testid="lightEditIcon">
+                <ConfirmActionButton action={() => handleLightDelete(light.id)} actionButtonText="Confirm delete">
+                  {#snippet trigger({ triggerProps })}
+                    <IconButton as="div" variant="ghost" {...triggerProps} data-testid="lightDeleteButton">
+                      <Icon Icon={IconTrash} />
+                    </IconButton>
+                  {/snippet}
+                  {#snippet actionMessage()}
+                    Delete {getStyleName(light.style)} light?
+                  {/snippet}
+                </ConfirmActionButton>
+              </div>
             </div>
-            <div class="lightManager__itemInfo">
-              <span class="lightManager__itemTitle">{getStyleName(light.style)}</span>
-              <span class="lightManager__itemSub">Radius: {light.radius}</span>
-            </div>
-          </button>
+          </div>
+        {:else}
+          <div>
+            <Text weight={700}>No lights in this scene</Text>
+            <Spacer size="0.5rem" />
+            <Text color="var(--fgMuted)">
+              Lights add ambiance to your scene. Place torches, candles, magical glows, and more to set the mood.
+            </Text>
+            <Spacer />
+            {#if stageProps.activeLayer === MapLayerType.Light}
+              <div class="lightManager__lightHint">
+                <Icon Icon={IconLocationPin} size="2rem" />
+                Click on the map to add a light
+              </div>
+            {:else}
+              <Button onclick={() => handleSelectActiveControl('light')}>
+                {#snippet start()}
+                  <Icon Icon={IconFlame} size="1.25rem" />
+                {/snippet}
+                Add a light
+              </Button>
+            {/if}
+          </div>
         {/each}
       </div>
     {/if}
-  {:else if editingLight}
-    <!-- Light Edit View -->
-    <div class="lightManager__header">
-      <Button size="sm" variant="ghost" onclick={backToList}>
-        <Icon Icon={IconArrowBack} size="1rem" />
-        Back
-      </Button>
-    </div>
-    <Spacer size="0.5rem" />
-
-    <FormControl label="Style" name="style">
-      {#snippet input(inputProps)}
-        <RadioButton
-          {...inputProps}
-          selected={editingLight.style}
-          options={styleOptions}
-          onSelectedChange={(value) => {
-            updateLightAndSave(editingLight.id, (light) => {
-              light.style = value;
-              light.color = LIGHT_STYLE_COLORS[value as LightStyle];
-            });
-            socketUpdate();
-          }}
-        />
-      {/snippet}
-    </FormControl>
-
-    <Spacer size="0.5rem" />
-
-    <FormControl label="Color" name="color">
-      {#snippet start()}
-        <Popover>
-          {#snippet trigger()}
-            <ColorPickerSwatch color={editingLight.color} />
-          {/snippet}
-          {#snippet content()}
-            <ColorPicker
-              showOpacity={false}
-              hex={editingLight.color}
-              onUpdate={(colorData) => {
-                updateLightAndSave(editingLight.id, (light) => {
-                  light.color = colorData.hex;
-                });
-                throttledUpdate(editingLight.id);
-              }}
-            />
-          {/snippet}
-        </Popover>
-      {/snippet}
-      {#snippet input(inputProps)}
-        <Input
-          {...inputProps}
-          value={editingLight.color}
-          oninput={(e) => {
-            updateLightAndSave(editingLight.id, (light) => {
-              light.color = e.currentTarget.value;
-            });
-            throttledUpdate(editingLight.id);
-          }}
-        />
-      {/snippet}
-    </FormControl>
-
-    <Spacer size="0.5rem" />
-
-    <FormControl label="Radius (grid units)" name="radius">
-      {#snippet input(inputProps)}
-        <Input
-          {...inputProps}
-          type="number"
-          min={0.5}
-          max={20}
-          step={0.5}
-          value={editingLight.radius.toString()}
-          oninput={(e) => {
-            const value = parseFloat(e.currentTarget.value);
-            if (!isNaN(value) && value >= 0.5) {
-              updateLightAndSave(editingLight.id, (light) => {
-                light.radius = value;
-              });
-              throttledUpdate(editingLight.id);
-            }
-          }}
-        />
-      {/snippet}
-    </FormControl>
-
-    <Spacer size="0.5rem" />
-
-    <FormControl label="Pulse" name="pulse">
-      {#snippet input(inputProps)}
-        <RadioButton
-          {...inputProps}
-          selected={editingLight.pulse.toString()}
-          options={pulseOptions}
-          onSelectedChange={(value) => {
-            updateLightAndSave(editingLight.id, (light) => {
-              light.pulse = Number(value);
-            });
-            socketUpdate();
-          }}
-        />
-      {/snippet}
-    </FormControl>
-
-    <Spacer size="0.5rem" />
-
-    <FormControl label="Opacity" name="opacity">
-      {#snippet input(inputProps)}
-        <Input
-          {...inputProps}
-          type="range"
-          min={0}
-          max={1}
-          step={0.1}
-          value={editingLight.opacity?.toString() ?? '1'}
-          oninput={(e) => {
-            const value = parseFloat(e.currentTarget.value);
-            if (!isNaN(value)) {
-              updateLightAndSave(editingLight.id, (light) => {
-                light.opacity = value;
-              });
-              throttledUpdate(editingLight.id);
-            }
-          }}
-        />
-      {/snippet}
-    </FormControl>
-
-    <Spacer size="1rem" />
-
-    <ConfirmActionButton action={() => handleLightDelete(editingLight.id)} actionButtonText="Confirm delete">
-      {#snippet trigger({ triggerProps })}
-        <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}>
-          <Icon Icon={IconTrash} size="1rem" />
-          Delete light
-        </Button>
-      {/snippet}
-      {#snippet actionMessage()}
-        Delete this light?
-      {/snippet}
-    </ConfirmActionButton>
-  {/if}
+  </div>
 </div>
 
 <style>
   .lightManager {
-    padding: 0.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size;
+  }
+
+  .lightManager__content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+
+  .lightManager__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+    height: fit-content;
+    min-height: 0;
+    flex-grow: 1;
+    align-content: start;
+    overflow-y: auto;
+    padding: 2rem;
+  }
+
+  .lightManager__editView {
+    grid-column: 1 / -1;
+  }
+
+  .lightManager__listItem {
+    border-radius: 0.25rem;
+  }
+
+  .lightManager__listItem:hover .lightManager__editIcon {
+    opacity: 1;
+  }
+
+  .lightManager__formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @container (max-width: 420px) {
+    .lightManager__formGrid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .lightManager__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-bottom: var(--borderThin);
+    position: sticky;
+    top: 0;
+    width: 100%;
   }
 
-  .lightManager__title {
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-
-  .lightManager__empty {
-    padding: 1rem;
-    text-align: center;
-  }
-
-  .lightManager__emptyText {
-    color: var(--fgMuted);
-    font-size: 0.875rem;
-  }
-
-  .lightManager__list {
+  .lightManager__colorPicker {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 0.25rem;
   }
 
-  .lightManager__item {
+  .lightManager__read {
     display: flex;
+    gap: 1rem;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border-radius: var(--radius-2);
-    border: var(--borderThin);
-    cursor: pointer;
-    background: var(--bg);
+  }
+
+  .lightManager__light {
     width: 100%;
-    text-align: left;
+    padding: 0 2rem;
   }
 
-  .lightManager__item:hover {
-    background: var(--bgMuted);
+  .lightManager__editIcon {
+    margin-left: auto;
+    opacity: 0;
   }
 
-  .lightManager__itemIcon {
-    width: 2rem;
-    height: 2rem;
+  .lightManager__title {
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .lightManager__title:hover {
+    text-decoration: underline;
+  }
+
+  .lightManager__lightIcon {
+    min-width: 2.5rem;
+    width: 2.5rem;
+    min-height: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .lightManager__itemInfo {
+  :global {
+    .lightManager__backButton {
+      display: block;
+      padding: 1rem 2rem;
+      border-bottom: var(--borderThin);
+    }
+  }
+
+  .lightManager__lightHint {
     display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    border-radius: 0.25rem;
+    background-color: var(--contrastLow);
+    color: var(--fgDanger);
   }
 
-  .lightManager__itemTitle {
-    font-weight: 600;
+  .lightManager__slider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .lightManager__slider input[type='range'] {
+    flex: 1;
+    height: 0.5rem;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--contrastLow);
+    border-radius: var(--radius-1);
+    cursor: pointer;
+  }
+
+  .lightManager__slider input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    background: var(--fg);
+    border-radius: 50%;
+    cursor: grab;
+  }
+
+  .lightManager__slider input[type='range']::-webkit-slider-thumb:active {
+    cursor: grabbing;
+  }
+
+  .lightManager__slider input[type='range']::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    background: var(--fg);
+    border: none;
+    border-radius: 50%;
+    cursor: grab;
+  }
+
+  .lightManager__slider input[type='range']::-moz-range-thumb:active {
+    cursor: grabbing;
+  }
+
+  .lightManager__sliderValue {
+    min-width: 2.5rem;
+    text-align: right;
     font-size: 0.875rem;
-  }
-
-  .lightManager__itemSub {
-    color: var(--fgMuted);
-    font-size: 0.75rem;
+    font-weight: 600;
   }
 </style>

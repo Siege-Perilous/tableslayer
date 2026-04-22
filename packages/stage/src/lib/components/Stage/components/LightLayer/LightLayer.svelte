@@ -40,8 +40,16 @@
     radius: 2,
     color: LIGHT_STYLE_COLORS[LightStyle.Lantern],
     style: LightStyle.Lantern,
-    pulse: LightPulse.None,
+    pulse: LightPulse.Slow,
     opacity: 1
+  });
+
+  // Clear selection when layer becomes inactive
+  $effect(() => {
+    if (!isActive && selectedLight) {
+      selectedLight = null;
+      onLightSelected?.(null);
+    }
   });
 
   const findClosestLight = (gridCoords: THREE.Vector2) => {
@@ -99,7 +107,7 @@
           radius: 2,
           color: LIGHT_STYLE_COLORS[LightStyle.Lantern],
           style: LightStyle.Lantern,
-          pulse: LightPulse.None,
+          pulse: LightPulse.Slow,
           opacity: 1
         };
         selectedLight = newLight;

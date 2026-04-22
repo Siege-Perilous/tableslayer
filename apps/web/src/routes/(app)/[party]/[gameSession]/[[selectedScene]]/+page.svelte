@@ -9,6 +9,7 @@
     type StageProps,
     MapLayerType,
     type Marker,
+    type Light,
     type AnnotationLayerData,
     StageMode,
     PointerInputManager,
@@ -23,6 +24,7 @@
   import {
     MarkerManager,
     AnnotationManager,
+    LightManager,
     Hints,
     SceneControls,
     Shortcuts,
@@ -38,7 +40,8 @@
     useUpsertAnnotationMutation,
     useDeleteAnnotationMutation,
     useUpdateFogMaskMutation,
-    useUpdateAnnotationMaskMutation
+    useUpdateAnnotationMaskMutation,
+    useUpsertLightMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -353,6 +356,7 @@
   const upsertAnnotationMutation = useUpsertAnnotationMutation();
   const updateFogMaskMutation = useUpdateFogMaskMutation();
   const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
+  const upsertLightMutation = useUpsertLightMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
 
   const getCollapseIcon = () => {
@@ -573,7 +577,9 @@
               : incomingStageProps.annotations.layers
           },
           // Preserve entire measurement object (it's local-only/ephemeral)
-          measurement: stageProps.measurement
+          measurement: stageProps.measurement,
+          // Ensure light property exists (may be missing in older Y.js data)
+          light: incomingStageProps.light || stageProps.light
         };
 
         // Only update if there are actual changes to avoid infinite loops
@@ -987,6 +993,11 @@
   };
 
   const handleSelectActiveControl = (control: string, openPopover?: string | null): string | null => {
+    // Clear light selection when switching away from light control or toggling it off
+    if (activeControl === 'light') {
+      selectedLightId = undefined;
+    }
+
     // If same control is clicked, toggle it off
     if (control === activeControl) {
       activeControl = 'none';
@@ -1507,6 +1518,69 @@
         }
       }
     }
+  };
+
+  // Light callbacks
+  const onLightAdded = (light: Light) => {
+    // Add light to local state immediately for UI feedback
+    const updatedLights = [...stageProps.light.lights, light];
+    stageProps.light.lights = updatedLights;
+    selectedLightId = light.id;
+
+    // Queue the update for Y.js sync
+    queuePropertyUpdate(stageProps, ['light', 'lights'], updatedLights, 'light');
+
+    // For new lights, sync to Y.js immediately
+    if (partyData && selectedScene?.id) {
+      lastOwnYjsUpdateTime = Date.now();
+      partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+    }
+
+    // Save light to database
+    if (selectedScene?.id && data.party?.id) {
+      upsertLightMutation.mutateAsync({
+        partyId: data.party.id,
+        sceneId: selectedScene.id,
+        lightData: {
+          id: light.id,
+          positionX: light.position.x,
+          positionY: light.position.y,
+          radius: light.radius,
+          color: light.color,
+          style: light.style,
+          pulse: light.pulse,
+          opacity: light.opacity ?? 1
+        }
+      });
+    }
+  };
+
+  const onLightMoved = (light: Light, position: { x: number; y: number }) => {
+    const index = stageProps.light.lights.findIndex((l: Light) => l.id === light.id);
+    if (index !== -1) {
+      // Update light position immediately
+      stageProps.light.lights[index] = {
+        ...light,
+        position: { x: position.x, y: position.y }
+      };
+
+      // Queue the update for Y.js sync
+      queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
+
+      // Delay auto-save for light moves to avoid conflicts during dragging
+      if (saveTimer) clearTimeout(saveTimer);
+      if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
+        saveTimer = setTimeout(() => {
+          if (isWindowFocused && !isReceivingYjsUpdate && hasInitialLoad && !isSaving) {
+            saveScene();
+          }
+        }, 2000);
+      }
+    }
+  };
+
+  const onLightSelected = (light: Light | null) => {
+    selectedLightId = light?.id || undefined;
   };
 
   // Measurement callbacks for Y.js broadcasting
@@ -2628,6 +2702,65 @@
     }
   };
 
+  // Helper function for light updates that triggers auto-save
+  const updateLightAndSave = (lightId: string, updateFn: (light: Light) => void) => {
+    const lightIndex = stageProps.light.lights.findIndex((l: Light) => l.id === lightId);
+    if (lightIndex !== -1) {
+      // Update the light locally first
+      updateFn(stageProps.light.lights[lightIndex]);
+
+      // Force Svelte to detect the change by reassigning the array
+      stageProps.light.lights = [...stageProps.light.lights];
+
+      // Immediately sync to Y.js for real-time collaboration
+      if (partyData && selectedScene?.id) {
+        lastOwnYjsUpdateTime = Date.now();
+        partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+      }
+
+      // Queue the update for database save
+      queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
+
+      // Also save the specific light to database
+      const light = stageProps.light.lights[lightIndex];
+      if (selectedScene?.id && data.party?.id) {
+        upsertLightMutation.mutateAsync({
+          partyId: data.party.id,
+          sceneId: selectedScene.id,
+          lightData: {
+            id: light.id,
+            positionX: light.position.x,
+            positionY: light.position.y,
+            radius: light.radius,
+            color: light.color,
+            style: light.style,
+            pulse: light.pulse,
+            opacity: light.opacity ?? 1
+          }
+        });
+      }
+    }
+  };
+
+  // Handler for when a light is deleted
+  const onLightDeleted = (lightId: string) => {
+    // Remove light from local state
+    const filteredLights = stageProps.light.lights.filter((l) => l.id !== lightId);
+
+    if (filteredLights.length < stageProps.light.lights.length) {
+      stageProps.light.lights = filteredLights;
+
+      // Sync to Y.js
+      if (partyData && selectedScene?.id) {
+        lastOwnYjsUpdateTime = Date.now();
+        partyData.updateSceneStageProps(selectedScene.id, cleanStagePropsForYjs(stageProps));
+      }
+
+      // Queue the update
+      queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
+    }
+  };
+
   // Function to start auto-save timer after user changes
   const startAutoSaveTimer = () => {
     // Only start timer if conditions are met
@@ -3080,6 +3213,9 @@
               onMarkerSelected,
               onMarkerContextMenu,
               onMarkerHover,
+              onLightAdded,
+              onLightMoved,
+              onLightSelected,
               onMeasurementStart,
               onMeasurementUpdate,
               onMeasurementEnd,
@@ -3183,6 +3319,18 @@
               stageProps.annotations.smoothingEnabled = enabled;
               setPreference('annotationSmoothing', enabled);
             }}
+          />
+        {/key}
+      {:else if activeControl === 'light'}
+        {#key selectedLightId}
+          <LightManager
+            partyId={party.id}
+            {stageProps}
+            bind:selectedLightId
+            {socketUpdate}
+            {handleSelectActiveControl}
+            {updateLightAndSave}
+            {onLightDeleted}
           />
         {/key}
       {:else}

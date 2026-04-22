@@ -2,11 +2,14 @@ import { db } from '$lib/db/app';
 import {
   annotationsTable,
   insertAnnotationSchema,
+  insertLightSchema,
   insertMarkerSchema,
   insertSceneSchema,
+  lightTable,
   markerTable,
   sceneTable,
   type InsertAnnotation,
+  type InsertLight,
   type InsertMarker,
   type InsertScene
 } from '$lib/db/app/schema';
@@ -70,6 +73,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         scenes: z.array(
           insertSceneSchema.omit({ gameSessionId: true }).extend({
             markers: z.array(insertMarkerSchema.omit({ sceneId: true })).optional(),
+            lights: z.array(insertLightSchema.omit({ sceneId: true })).optional(),
             annotations: z.array(insertAnnotationSchema.omit({ sceneId: true })).optional(),
             fogOfWarMask: z.string().nullable().optional()
           })
@@ -193,6 +197,30 @@ export const POST = async ({ request, locals }: RequestEvent) => {
           await db
             .insert(markerTable)
             .values(markerToCreate as InsertMarker)
+            .execute();
+        }
+      }
+
+      // Create all lights for this scene
+      if (sceneData.lights && sceneData.lights.length > 0) {
+        for (const lightData of sceneData.lights) {
+          const newLightId = uuidv4();
+
+          const lightToCreate: Partial<InsertLight> & Record<string, unknown> = {
+            id: newLightId,
+            sceneId: newSceneId,
+            positionX: lightData.positionX,
+            positionY: lightData.positionY,
+            radius: lightData.radius,
+            color: lightData.color,
+            style: lightData.style,
+            pulse: lightData.pulse,
+            opacity: lightData.opacity ?? 1
+          };
+
+          await db
+            .insert(lightTable)
+            .values(lightToCreate as InsertLight)
             .execute();
         }
       }
