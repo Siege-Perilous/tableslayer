@@ -326,6 +326,26 @@
         {/snippet}
       </ToolTip>
     </div>
+    <div class="sceneControls__item sceneControls__item--annotation">
+      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+        {#snippet children()}
+          <button
+            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
+              'sceneControls__layer--isActive'}"
+            onclick={() => {
+              const newPopoverId = handleSelectActiveControl('annotation');
+              openPopoverId = newPopoverId;
+            }}
+          >
+            <Icon Icon={IconPencil} size="1.5rem" />
+            <span class="sceneControls__layerText">Draw</span>
+          </button>
+        {/snippet}
+        {#snippet toolTipContent()}
+          Draw freehand annotations on the map
+        {/snippet}
+      </ToolTip>
+    </div>
     <div class="sceneControls__item sceneControls__item--light">
       <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
         {#snippet children()}
@@ -344,26 +364,6 @@
         {/snippet}
         {#snippet toolTipContent()}
           Place light sources on the map for atmospheric effects.
-        {/snippet}
-      </ToolTip>
-    </div>
-    <div class="sceneControls__item sceneControls__item--annotation">
-      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
-        {#snippet children()}
-          <button
-            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
-              'sceneControls__layer--isActive'}"
-            onclick={() => {
-              const newPopoverId = handleSelectActiveControl('annotation');
-              openPopoverId = newPopoverId;
-            }}
-          >
-            <Icon Icon={IconPencil} size="1.5rem" />
-            <span class="sceneControls__layerText">Draw</span>
-          </button>
-        {/snippet}
-        {#snippet toolTipContent()}
-          Draw freehand annotations on the map
         {/snippet}
       </ToolTip>
     </div>
@@ -534,7 +534,7 @@
     align-items: center;
   }
 
-  @container stageWrapper (max-width: 1060px) {
+  @container stageWrapper (max-width: 1120px) {
     .sceneControls {
       gap: 0.25rem !important;
     }
