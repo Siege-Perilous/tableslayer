@@ -20,7 +20,9 @@
 
   const { light, grid, display, opacity, isSelected = false, isHovered = false }: Props = $props();
 
-  const baseSize = $derived(getGridCellSize(grid, display) * light.radius);
+  // Geometry is 2x larger than the light radius to allow ambient glow to extend
+  const glowScale = 2.0;
+  const baseSize = $derived(getGridCellSize(grid, display) * light.radius * glowScale);
   const lightSize = $derived(isHovered ? baseSize * 1.1 : baseSize);
 
   // Create shader material

@@ -13,7 +13,7 @@
     { text: 'Magical', value: LightStyle.Magical },
     { text: 'Fire', value: LightStyle.Fire },
     { text: 'Lantern', value: LightStyle.Lantern },
-    { text: 'Moonlight', value: LightStyle.Moonlight }
+    { text: 'Spotlight', value: LightStyle.Spotlight }
   ];
 
   const lightPulseOptions: ListOptions<LightPulse> = [

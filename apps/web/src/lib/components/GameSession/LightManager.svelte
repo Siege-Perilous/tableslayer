@@ -89,7 +89,7 @@
     { label: 'Magical', value: LightStyle.Magical },
     { label: 'Fire', value: LightStyle.Fire },
     { label: 'Lantern', value: LightStyle.Lantern },
-    { label: 'Moonlight', value: LightStyle.Moonlight }
+    { label: 'Spotlight', value: LightStyle.Spotlight }
   ];
 
   const pulseOptions = [
