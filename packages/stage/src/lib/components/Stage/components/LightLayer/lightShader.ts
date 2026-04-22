@@ -27,6 +27,9 @@ export const lightFragmentShader = /* glsl */ `
   uniform int uStyle;
   uniform vec3 uColor;
   uniform bool uSelected;
+  uniform vec2 uLightPosition;
+  uniform float uLightSize;
+  uniform vec2 uDisplayBounds;
 
   // Hash function for noise
   vec2 hash(vec2 p) {
@@ -97,6 +100,15 @@ export const lightFragmentShader = /* glsl */ `
   }
 
   void main() {
+    // Calculate world position of this fragment
+    vec2 localOffset = (vUv - 0.5) * uLightSize;
+    vec2 worldPos = uLightPosition + localOffset;
+
+    // Clip to display bounds
+    if (abs(worldPos.x) > uDisplayBounds.x || abs(worldPos.y) > uDisplayBounds.y) {
+      discard;
+    }
+
     // Center UV coordinates (-0.5 to 0.5)
     vec2 uv = vUv - 0.5;
     float dist = length(uv);
@@ -442,7 +454,10 @@ export const createLightMaterial = (style: LightStyle, color: THREE.Color): THRE
       uPulse: { value: 0 },
       uStyle: { value: getStyleIndex(style) },
       uColor: { value: color },
-      uSelected: { value: false }
+      uSelected: { value: false },
+      uLightPosition: { value: new THREE.Vector2(0, 0) },
+      uLightSize: { value: 1.0 },
+      uDisplayBounds: { value: new THREE.Vector2(960, 540) }
     },
     transparent: true,
     blending: THREE.AdditiveBlending,

@@ -7,7 +7,7 @@
   import { getGridCellSize } from '../../helpers/grid';
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
-  import { createLightMaterial, lightStyleConfigs, getStyleIndex } from './lightShader';
+  import { createLightMaterial, getStyleIndex } from './lightShader';
 
   interface Props {
     light: Light;
@@ -66,6 +66,10 @@
     lightMaterial.uniforms.uStyle.value = getStyleIndex(light.style);
     lightMaterial.uniforms.uColor.value = new THREE.Color(light.color);
     lightMaterial.uniforms.uSelected.value = isSelected || isHovered;
+    // Update position, size, and display bounds for clipping
+    lightMaterial.uniforms.uLightPosition.value.set(light.position.x, light.position.y);
+    lightMaterial.uniforms.uLightSize.value = lightSize;
+    lightMaterial.uniforms.uDisplayBounds.value.set(display.resolution.x / 2, display.resolution.y / 2);
   });
 
   onDestroy(() => {
