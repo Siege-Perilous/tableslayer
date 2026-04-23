@@ -1740,10 +1740,13 @@
 
   // Track annotation save state to prevent loops
   let annotationSaveInProgress = $state<Set<string>>(new Set());
+  // Queue pending annotation updates that arrive while a save is in progress
+  let pendingAnnotationUpdates = $state<Map<string, AnnotationLayerData>>(new Map());
 
   const onAnnotationUpdated = async (annotation: AnnotationLayerData) => {
-    // Prevent duplicate saves
+    // If save is in progress for this annotation, queue the update instead of dropping it
     if (annotationSaveInProgress.has(annotation.id)) {
+      pendingAnnotationUpdates.set(annotation.id, annotation);
       return;
     }
 
@@ -1763,12 +1766,23 @@
       onSuccess: () => {
         // Remove from in-progress after successful save
         annotationSaveInProgress.delete(annotation.id);
+
+        // Check if there's a pending update that came in while we were saving
+        const pendingUpdate = pendingAnnotationUpdates.get(annotation.id);
+        if (pendingUpdate) {
+          pendingAnnotationUpdates.delete(annotation.id);
+          // Process the pending update (it has the latest state)
+          onAnnotationUpdated(pendingUpdate);
+        }
+
         // Trigger auto-save after annotation update
         startAutoSaveTimer();
       },
       onError: () => {
         // Remove from in-progress on error too
         annotationSaveInProgress.delete(annotation.id);
+        // Clear any pending update on error
+        pendingAnnotationUpdates.delete(annotation.id);
       },
       toastMessages: {
         error: { title: 'Error saving annotation' }
