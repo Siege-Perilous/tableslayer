@@ -386,6 +386,239 @@ export const lightFragmentShader = /* glsl */ `
       alpha = alpha + outerGlow * (1.0 - alpha);
     }
 
+    // === LIGHTNING (style 6) ===
+    else if (uStyle == 6) {
+      // Electric crackling tendrils emanating from center
+      float speed = uTime * 0.8;
+
+      // Pulse affects radius expansion
+      float pulseRadius = 1.0 + uPulse * 0.2;
+
+      // Edge mask - expands with pulse
+      float edgeMask = 1.0 - smoothstep(0.4 * pulseRadius, 0.5, coreDist);
+
+      // Core glow - bright center
+      float coreFactor = 25.0 - uPulse * 8.0;
+      float coreGlow = exp(-coreDist * coreDist * coreFactor);
+
+      // Generate multiple lightning tendrils using angular noise
+      float totalTendril = 0.0;
+      float numArms = 5.0;
+
+      for (float i = 0.0; i < 5.0; i++) {
+        // Each tendril has a base angle that shifts over time
+        float armAngle = (i / numArms) * 6.28318 + speed * 0.3 + i * 1.5;
+
+        // Angular distance from this arm
+        float angleDiff = abs(mod(angle - armAngle + 3.14159, 6.28318) - 3.14159);
+
+        // Noise-based deviation for organic branching
+        float armNoise = fbm(vec2(angle * 3.0 + i * 10.0, coreDist * 4.0 - speed * 2.0 + i));
+
+        // Tendril width varies with distance and noise
+        float armWidth = 0.3 + armNoise * 0.2;
+        armWidth *= (1.0 - coreDist * 1.5); // Narrower at edges
+
+        // Tendril intensity based on angular proximity
+        float armIntensity = exp(-angleDiff * angleDiff / (armWidth * armWidth * 0.1));
+
+        // Fade out towards edges
+        float armFade = 1.0 - smoothstep(0.15 * pulseRadius, 0.4 * pulseRadius, coreDist);
+
+        // Add jagged edges using high-frequency noise
+        float jagged = noise(vec2(angle * 20.0 + i * 5.0, coreDist * 15.0 + speed * 3.0));
+        armIntensity *= (0.7 + jagged * 0.5);
+
+        totalTendril += armIntensity * armFade;
+      }
+
+      // Secondary crackling sparks
+      float sparks = pow(max(0.0, noise(coreUv * 40.0 + speed * 2.0)), 6.0);
+      sparks *= edgeMask * (1.0 - coreDist * 2.0);
+
+      // Random bright flashes
+      float flash = pow(max(0.0, noise(vec2(speed * 0.5, 0.0))), 4.0) * 0.5;
+
+      // Combine effects
+      float intensity = coreGlow + totalTendril * 0.4 + sparks * 0.3;
+      intensity *= (1.0 + flash);
+      intensity *= edgeMask;
+
+      // Electric blue color gradient - white hot core to cyan to blue edges
+      vec3 lightningCore = vec3(1.0, 1.0, 1.0);
+      vec3 lightningMid = uColor;
+      vec3 lightningEdge = uColor * 0.4;
+
+      if (intensity > 0.7) {
+        finalColor = mix(lightningMid, lightningCore, (intensity - 0.7) / 0.3);
+      } else if (intensity > 0.3) {
+        finalColor = mix(lightningEdge, lightningMid, (intensity - 0.3) / 0.4);
+      } else {
+        finalColor = lightningEdge * (intensity / 0.3);
+      }
+
+      // Add spark highlights
+      finalColor += vec3(sparks * 0.5);
+
+      alpha = smoothstep(0.0, 0.1, intensity);
+      alpha = clamp(alpha, 0.0, 1.0);
+
+      // Add outer glow - electric blue ambient
+      vec3 glowColor = uColor * 0.5;
+      finalColor = finalColor * alpha + glowColor * outerGlow * (1.0 - alpha);
+      alpha = alpha + outerGlow * (1.0 - alpha);
+    }
+
+    // === BIOLUMINESCENT (style 7) ===
+    else if (uStyle == 7) {
+      // Organic pulsing glow like deep sea creatures or magical fungi
+      float speed = uTime * 0.2;
+
+      // Pulse creates a breathing effect
+      float breathe = sin(uTime * 0.8) * 0.5 + 0.5;
+      float pulseRadius = 1.0 + uPulse * 0.15 + breathe * 0.1;
+
+      // Edge mask - expands with pulse
+      float edgeMask = 1.0 - smoothstep(0.38 * pulseRadius, 0.5, coreDist);
+
+      // Organic flowing noise pattern
+      vec2 flowCoord = coreUv * 3.0 + vec2(speed * 0.3, speed * 0.2);
+      float organicNoise = fbm(flowCoord);
+
+      // Secondary slower undulation
+      float undulate = fbm(vec2(angle * 2.0 + speed * 0.5, coreDist * 2.0)) * 0.3;
+
+      // Core glow with organic variation
+      float coreFactor = 15.0 - uPulse * 5.0 - breathe * 3.0;
+      float coreGlow = exp(-coreDist * coreDist * coreFactor);
+
+      // Veiny tendrils emanating from center
+      float veins = 0.0;
+      for (float i = 0.0; i < 6.0; i++) {
+        float veinAngle = (i / 6.0) * 6.28318 + organicNoise * 0.5;
+        float angleDiff = abs(mod(angle - veinAngle + 3.14159, 6.28318) - 3.14159);
+        float veinWidth = 0.15 + undulate * 0.1;
+        float vein = exp(-angleDiff * angleDiff / (veinWidth * veinWidth * 0.05));
+        vein *= smoothstep(0.0, 0.1, coreDist) * (1.0 - smoothstep(0.25, 0.4, coreDist));
+        veins += vein * 0.15;
+      }
+
+      // Combine effects
+      float intensity = coreGlow + veins;
+      intensity *= (0.8 + organicNoise * 0.2);
+      intensity *= edgeMask;
+
+      // Bioluminescent color gradient - bright core fading to deep color
+      vec3 bioCore = vec3(0.8, 1.0, 0.9);
+      vec3 bioMid = uColor;
+      vec3 bioEdge = uColor * 0.3;
+
+      if (intensity > 0.5) {
+        finalColor = mix(bioMid, bioCore, (intensity - 0.5) / 0.5);
+      } else {
+        finalColor = mix(bioEdge, bioMid, intensity / 0.5);
+      }
+
+      alpha = smoothstep(0.0, 0.15, intensity);
+      alpha = clamp(alpha, 0.0, 1.0);
+
+      // Add outer glow
+      vec3 glowColor = uColor * 0.4;
+      finalColor = finalColor * alpha + glowColor * outerGlow * (1.0 - alpha);
+      alpha = alpha + outerGlow * (1.0 - alpha);
+    }
+
+    // === FIREFLIES (style 8) ===
+    else if (uStyle == 8) {
+      // Scattered small glowing points that drift and twinkle
+      // More fireflies appear as radius increases, but each stays the same size
+      float speed = uTime * 0.3;
+
+      // Pulse affects overall brightness
+      float pulseBrightness = 1.0 + uPulse * 0.3;
+
+      // Edge mask
+      float edgeMask = 1.0 - smoothstep(0.4, 0.5, coreDist);
+
+      // Soft ambient glow in the center
+      float ambientFactor = 12.0 - uPulse * 4.0;
+      float ambient = exp(-coreDist * coreDist * ambientFactor) * 0.2;
+
+      // Calculate number of fireflies based on light size
+      // uLightSize is the diameter, so larger lights get more fireflies
+      // Scale: ~6 fireflies at size 100, ~24 at size 400+
+      float fireflyCount = clamp(uLightSize / 15.0, 4.0, 24.0);
+
+      // Fixed firefly size in world units (independent of light radius)
+      // Higher values = smaller, sharper fireflies
+      float pointSharpness = 0.8;
+      float glowSharpness = 0.12;
+
+      // Generate multiple firefly points (max 24, but only render up to fireflyCount)
+      float fireflies = 0.0;
+      for (float i = 0.0; i < 24.0; i++) {
+        // Skip fireflies beyond our count
+        if (i >= fireflyCount) break;
+
+        // Each firefly has its own position that drifts over time
+        float phase = i * 1.234 + speed * (0.5 + fract(i * 0.7) * 0.5);
+        float driftX = sin(phase * 1.1 + i) * 0.15;
+        float driftY = cos(phase * 0.9 + i * 2.0) * 0.15;
+
+        // Firefly position in UV space (0-0.5 range to stay within light)
+        // Use golden ratio spacing for even distribution
+        float radius = 0.1 + fract(i * 0.618) * 0.3;
+        float angle = i * 2.399 + driftX * 2.0;
+        vec2 fireflyPos = vec2(
+          cos(angle) * radius + driftX * 0.5,
+          sin(angle) * radius + driftY * 0.5
+        );
+
+        // Distance from this fragment to the firefly in world units
+        // Multiply by uLightSize to convert UV distance to world distance
+        float fireflyDistWorld = length(coreUv - fireflyPos) * uLightSize;
+
+        // Each firefly blinks independently
+        float blink = sin(uTime * (2.0 + i * 0.3) + i * 5.0) * 0.5 + 0.5;
+        blink = pow(blink, 2.0); // Sharper on/off
+
+        // Small bright point - size is constant in world space
+        float point = exp(-fireflyDistWorld * fireflyDistWorld * pointSharpness) * blink;
+
+        // Tiny glow around each firefly - also constant size
+        float glow = exp(-fireflyDistWorld * fireflyDistWorld * glowSharpness) * blink * 0.4;
+
+        fireflies += point + glow;
+      }
+
+      // Keep fireflies within bounds
+      fireflies *= edgeMask;
+
+      // Combine ambient and fireflies
+      float intensity = ambient + fireflies * pulseBrightness;
+
+      // Firefly colors - warm yellow-green
+      vec3 fireflyCore = vec3(1.0, 1.0, 0.8);
+      vec3 fireflyMid = uColor;
+      vec3 fireflyEdge = uColor * 0.4;
+
+      if (intensity > 0.6) {
+        finalColor = mix(fireflyMid, fireflyCore, (intensity - 0.6) / 0.4);
+      } else if (intensity > 0.2) {
+        finalColor = mix(fireflyEdge, fireflyMid, (intensity - 0.2) / 0.4);
+      } else {
+        finalColor = fireflyEdge * (intensity / 0.2);
+      }
+
+      alpha = smoothstep(0.0, 0.05, intensity);
+      alpha = clamp(alpha, 0.0, 1.0);
+
+      // Add outer glow
+      vec3 glowColor = uColor * 0.3;
+      finalColor = finalColor * alpha + glowColor * outerGlow * (1.0 - alpha);
+      alpha = alpha + outerGlow * (1.0 - alpha);
+    }
+
     // Selection indicator (use coreDist to keep it centered on the light)
     if (uSelected) {
       float ring = smoothstep(0.14, 0.15, coreDist) * (1.0 - smoothstep(0.16, 0.17, coreDist));
@@ -427,6 +660,18 @@ export const lightStyleConfigs: Record<LightStyle, LightStyleConfig> = {
   [LightStyle.Spotlight]: {
     baseColor: new THREE.Color('#E6E6FA'),
     flickerSpeed: 0.1
+  },
+  [LightStyle.Lightning]: {
+    baseColor: new THREE.Color('#00BFFF'),
+    flickerSpeed: 2.0
+  },
+  [LightStyle.Bioluminescent]: {
+    baseColor: new THREE.Color('#00FF7F'),
+    flickerSpeed: 0.4
+  },
+  [LightStyle.Fireflies]: {
+    baseColor: new THREE.Color('#ADFF2F'),
+    flickerSpeed: 1.2
   }
 };
 
@@ -438,7 +683,10 @@ export const getStyleIndex = (style: LightStyle): number => {
     LightStyle.Magical,
     LightStyle.Fire,
     LightStyle.Lantern,
-    LightStyle.Spotlight
+    LightStyle.Spotlight,
+    LightStyle.Lightning,
+    LightStyle.Bioluminescent,
+    LightStyle.Fireflies
   ];
   return styles.indexOf(style);
 };

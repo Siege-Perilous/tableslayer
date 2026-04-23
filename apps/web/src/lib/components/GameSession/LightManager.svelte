@@ -24,31 +24,37 @@
     LIGHT_STYLE_COLORS,
     MapLayerType
   } from '@tableslayer/stage';
-  import { IconTrash, IconArrowBack, IconFlame, IconLocationPin } from '@tabler/icons-svelte';
-  import { useDeleteLightMutation } from '$lib/queries';
+  import { IconTrash, IconArrowBack, IconFlame, IconLocationPin, IconCopy } from '@tabler/icons-svelte';
+  import { useDeleteLightMutation, useUpsertLightMutation } from '$lib/queries';
   import { queuePropertyUpdate, throttle } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
+  import { v4 as uuidv4 } from 'uuid';
 
   let {
     stageProps,
     selectedLightId = $bindable(),
     partyId = '',
+    sceneId = '',
     handleSelectActiveControl,
     socketUpdate,
     updateLightAndSave,
-    onLightDeleted
+    onLightDeleted,
+    onLightDuplicated
   }: {
     stageProps: StageProps;
     selectedLightId: string | undefined;
     partyId: string;
+    sceneId: string;
     handleSelectActiveControl: (control: string) => void;
     socketUpdate: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateLightAndSave: (lightId: string, updateFn: (light: any) => void) => void;
     onLightDeleted?: (lightId: string) => void;
+    onLightDuplicated?: (newLight: Light) => void;
   } = $props();
 
   const deleteLight = useDeleteLightMutation();
+  const upsertLight = useUpsertLightMutation();
 
   let formIsLoading = $state(false);
   let editingLightId = $derived(selectedLightId);
@@ -88,13 +94,96 @@
     socketUpdate();
   }, 300);
 
+  const calculateDuplicatePosition = (
+    originalX: number,
+    originalY: number,
+    radius: number
+  ): { x: number; y: number } => {
+    const display = stageProps.display.resolution;
+    const halfWidth = display.x / 2;
+    const halfHeight = display.y / 2;
+    const offset = Math.max(radius * 2, 50);
+
+    const directions = [
+      { x: offset, y: offset },
+      { x: -offset, y: offset },
+      { x: offset, y: -offset },
+      { x: -offset, y: -offset },
+      { x: offset, y: 0 },
+      { x: -offset, y: 0 },
+      { x: 0, y: offset },
+      { x: 0, y: -offset }
+    ];
+
+    for (const dir of directions) {
+      const newX = originalX + dir.x;
+      const newY = originalY + dir.y;
+
+      if (newX >= -halfWidth && newX <= halfWidth && newY >= -halfHeight && newY <= halfHeight) {
+        return { x: newX, y: newY };
+      }
+    }
+
+    return { x: 0, y: 0 };
+  };
+
+  const handleLightDuplicate = async (light: Light) => {
+    const newPosition = calculateDuplicatePosition(light.position.x, light.position.y, light.radius);
+
+    const newLight: Light = {
+      id: uuidv4(),
+      position: newPosition,
+      radius: light.radius,
+      color: light.color,
+      style: light.style,
+      pulse: light.pulse,
+      opacity: light.opacity
+    };
+
+    await handleMutation({
+      mutation: () =>
+        upsertLight.mutateAsync({
+          partyId,
+          sceneId,
+          lightData: {
+            id: newLight.id,
+            positionX: newLight.position.x,
+            positionY: newLight.position.y,
+            radius: newLight.radius,
+            color: newLight.color,
+            style: newLight.style,
+            pulse: newLight.pulse,
+            opacity: newLight.opacity
+          }
+        }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        if (onLightDuplicated) {
+          onLightDuplicated(newLight);
+        } else {
+          stageProps.light.lights = [...stageProps.light.lights, newLight];
+          queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
+        }
+        selectedLightId = newLight.id;
+        socketUpdate();
+      },
+      toastMessages: {
+        success: { title: 'Light duplicated' },
+        error: { title: 'Error duplicating light', body: (error) => error.message }
+      }
+    });
+  };
+
   const styleOptions = [
     { label: 'Torch', value: LightStyle.Torch },
     { label: 'Candle', value: LightStyle.Candle },
     { label: 'Magical', value: LightStyle.Magical },
     { label: 'Fire', value: LightStyle.Fire },
     { label: 'Lantern', value: LightStyle.Lantern },
-    { label: 'Spotlight', value: LightStyle.Spotlight }
+    { label: 'Spotlight', value: LightStyle.Spotlight },
+    { label: 'Lightning', value: LightStyle.Lightning },
+    { label: 'Bioluminescent', value: LightStyle.Bioluminescent },
+    { label: 'Fireflies', value: LightStyle.Fireflies }
   ];
 
   const pulseOptions = [
@@ -268,16 +357,30 @@
 
           <Spacer />
 
-          <ConfirmActionButton action={() => handleLightDelete(editingLight.id)} actionButtonText="Confirm delete">
-            {#snippet trigger({ triggerProps })}
-              <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}>
-                Delete light
-              </Button>
-            {/snippet}
-            {#snippet actionMessage()}
-              Delete light?
-            {/snippet}
-          </ConfirmActionButton>
+          <div class="lightManager__actions">
+            <Button
+              variant="ghost"
+              disabled={formIsLoading}
+              isLoading={formIsLoading}
+              onclick={() => handleLightDuplicate(editingLight)}
+            >
+              {#snippet start()}
+                <Icon Icon={IconCopy} size="1rem" />
+              {/snippet}
+              Duplicate
+            </Button>
+
+            <ConfirmActionButton action={() => handleLightDelete(editingLight.id)} actionButtonText="Confirm delete">
+              {#snippet trigger({ triggerProps })}
+                <Button as="div" variant="danger" disabled={formIsLoading} isLoading={formIsLoading} {...triggerProps}>
+                  Delete light
+                </Button>
+              {/snippet}
+              {#snippet actionMessage()}
+                Delete light?
+              {/snippet}
+            </ConfirmActionButton>
+          </div>
         </div>
       </div>
     {:else}
@@ -413,6 +516,12 @@
   .lightManager__light {
     width: 100%;
     padding: 0 2rem;
+  }
+
+  .lightManager__actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .lightManager__editIcon {

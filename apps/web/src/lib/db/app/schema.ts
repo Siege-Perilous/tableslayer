@@ -506,7 +506,17 @@ export const updateMarkerSchema = createUpdateSchema(markerTable);
 // LIGHTS
 // LIGHTS
 
-export const VALID_LIGHT_STYLES = ['torch', 'candle', 'magical', 'fire', 'lantern', 'spotlight'] as const;
+export const VALID_LIGHT_STYLES = [
+  'torch',
+  'candle',
+  'magical',
+  'fire',
+  'lantern',
+  'spotlight',
+  'lightning',
+  'bioluminescent',
+  'fireflies'
+] as const;
 export const VALID_LIGHT_PULSE = [0, 1, 2, 3] as const; // 0=none, 1=slow, 2=medium, 3=fast
 
 export const lightTable = sqliteTable(

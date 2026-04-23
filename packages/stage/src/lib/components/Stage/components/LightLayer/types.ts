@@ -4,7 +4,10 @@ export enum LightStyle {
   Magical = 'magical',
   Fire = 'fire',
   Lantern = 'lantern',
-  Spotlight = 'spotlight'
+  Spotlight = 'spotlight',
+  Lightning = 'lightning',
+  Bioluminescent = 'bioluminescent',
+  Fireflies = 'fireflies'
 }
 
 export enum LightPulse {
@@ -63,7 +66,10 @@ export const LIGHT_STYLE_COLORS: Record<LightStyle, string> = {
   [LightStyle.Magical]: '#8A2BE2',
   [LightStyle.Fire]: '#FF4500',
   [LightStyle.Lantern]: '#FFA500',
-  [LightStyle.Spotlight]: '#E6E6FA'
+  [LightStyle.Spotlight]: '#E6E6FA',
+  [LightStyle.Lightning]: '#00BFFF',
+  [LightStyle.Bioluminescent]: '#00FF7F',
+  [LightStyle.Fireflies]: '#ADFF2F'
 };
 
 /**

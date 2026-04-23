@@ -3324,6 +3324,7 @@
         {#key selectedLightId}
           <LightManager
             partyId={party.id}
+            sceneId={selectedScene?.id ?? ''}
             {stageProps}
             bind:selectedLightId
             {socketUpdate}

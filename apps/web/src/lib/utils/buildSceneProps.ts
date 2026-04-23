@@ -232,7 +232,7 @@ export const buildSceneProps = (
     },
     light: {
       visible: true,
-      snapToGrid: true,
+      snapToGrid: false,
       lights: lights
     },
     measurement: {
