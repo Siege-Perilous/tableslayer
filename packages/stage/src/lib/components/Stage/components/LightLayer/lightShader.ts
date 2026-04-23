@@ -406,7 +406,7 @@ export const lightFragmentShader = /* glsl */ `
 
       // Core glow - always visible, subtle flicker when pulse > 0
       float coreFlicker = uPulse > 0.01 ? noise(vec2(boundedTime * 0.1, 0.0)) * 0.15 + 0.85 : 1.0;
-      float coreFactor = 20.0; // Fixed size, doesn't pulse
+      float coreFactor = 40.0; // Fixed size, doesn't pulse
       float coreGlow = exp(-coreDist * coreDist * coreFactor) * coreFlicker;
 
       // Generate lightning bolts using UV displacement technique
