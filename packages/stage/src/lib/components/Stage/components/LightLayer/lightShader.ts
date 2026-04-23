@@ -24,6 +24,7 @@ export const lightFragmentShader = /* glsl */ `
   uniform float uTime;
   uniform float uOpacity;
   uniform float uPulse; // 0.0 to 1.0, affects radius expansion
+  uniform int uPulseSetting; // 0=none, 1=slow, 2=medium, 3=fast
   uniform int uStyle;
   uniform vec3 uColor;
   uniform bool uSelected;
@@ -388,8 +389,9 @@ export const lightFragmentShader = /* glsl */ `
 
     // === LIGHTNING (style 6) ===
     else if (uStyle == 6) {
-      // Electric crackling tendrils emanating from center
-      float speed = uTime * 0.8;
+      // Electric crackling tendrils that randomly appear and disappear
+      // Use small bounded time to prevent precision/accumulation issues
+      float boundedTime = mod(uTime, 100.0);
 
       // Pulse affects radius expansion
       float pulseRadius = 1.0 + uPulse * 0.2;
@@ -397,51 +399,109 @@ export const lightFragmentShader = /* glsl */ `
       // Edge mask - expands with pulse
       float edgeMask = 1.0 - smoothstep(0.4 * pulseRadius, 0.5, coreDist);
 
-      // Core glow - bright center
-      float coreFactor = 25.0 - uPulse * 8.0;
-      float coreGlow = exp(-coreDist * coreDist * coreFactor);
+      // Animation speed based on pulse setting (0=none, 1=slow, 2=medium, 3=fast)
+      float animSpeed = 0.05; // Default slow
+      if (uPulseSetting == 2) animSpeed = 0.12;
+      if (uPulseSetting == 3) animSpeed = 0.25;
 
-      // Generate multiple lightning tendrils using angular noise
+      // Core glow - always visible, subtle flicker when pulse > 0
+      float coreFlicker = uPulse > 0.01 ? noise(vec2(boundedTime * 0.1, 0.0)) * 0.15 + 0.85 : 1.0;
+      float coreFactor = 20.0; // Fixed size, doesn't pulse
+      float coreGlow = exp(-coreDist * coreDist * coreFactor) * coreFlicker;
+
+      // Generate lightning bolts using UV displacement technique
+      // Pulse controls animation: 0 = static, higher = faster strobing
       float totalTendril = 0.0;
-      float numArms = 5.0;
+      float isAnimated = step(0.01, uPulse);
 
       for (float i = 0.0; i < 5.0; i++) {
-        // Each tendril has a base angle that shifts over time
-        float armAngle = (i / numArms) * 6.28318 + speed * 0.3 + i * 1.5;
+        float boltVisible = 1.0;
+        float cycleIndex = i;
 
-        // Angular distance from this arm
-        float angleDiff = abs(mod(angle - armAngle + 3.14159, 6.28318) - 3.14159);
+        // Only animate if pulse > 0
+        if (isAnimated > 0.5) {
+          float boltCycle = boundedTime * (1.0 + i * 0.3) * animSpeed + i * 17.0;
+          float boltPhase = fract(boltCycle);
+          boltVisible = smoothstep(0.0, 0.05, boltPhase) * (1.0 - smoothstep(0.2, 0.35, boltPhase));
+          if (boltVisible < 0.01) continue;
+          cycleIndex = floor(boltCycle);
+        }
 
-        // Noise-based deviation for organic branching
-        float armNoise = fbm(vec2(angle * 3.0 + i * 10.0, coreDist * 4.0 - speed * 2.0 + i));
+        // Random direction for this bolt
+        float boltAngle = noise(vec2(cycleIndex * 3.7, i * 5.3)) * 6.28318;
+        vec2 boltDir = vec2(cos(boltAngle), sin(boltAngle));
+        vec2 boltPerp = vec2(-boltDir.y, boltDir.x);
 
-        // Tendril width varies with distance and noise
-        float armWidth = 0.3 + armNoise * 0.2;
-        armWidth *= (1.0 - coreDist * 1.5); // Narrower at edges
+        // Project current position onto bolt direction
+        float alongBolt = dot(coreUv, boltDir);
+        float perpDist = dot(coreUv, boltPerp);
 
-        // Tendril intensity based on angular proximity
-        float armIntensity = exp(-angleDiff * angleDiff / (armWidth * armWidth * 0.1));
+        // Only render in forward direction from center
+        float forwardMask = smoothstep(-0.02, 0.02, alongBolt);
 
-        // Fade out towards edges
-        float armFade = 1.0 - smoothstep(0.15 * pulseRadius, 0.4 * pulseRadius, coreDist);
+        // FBM displacement for jagged path - displacement increases along bolt
+        float displacement = fbm(vec2(alongBolt * 8.0 + cycleIndex, i * 5.0)) * 0.12 * alongBolt;
+        float adjustedPerp = perpDist - displacement;
 
-        // Add jagged edges using high-frequency noise
-        float jagged = noise(vec2(angle * 20.0 + i * 5.0, coreDist * 15.0 + speed * 3.0));
-        armIntensity *= (0.7 + jagged * 0.5);
+        // Main bolt - thin bright line using 1/dist style falloff
+        float boltWidth = 0.006;
+        float mainBolt = boltWidth / (abs(adjustedPerp) + boltWidth);
+        mainBolt = pow(mainBolt, 1.5); // Sharpen falloff
+        mainBolt *= forwardMask;
+        mainBolt *= smoothstep(0.4, 0.0, alongBolt); // Fade at end
 
-        totalTendril += armIntensity * armFade;
+        // Fork 1 - branches off partway along
+        float fork1Start = 0.08;
+        float fork1Angle = boltAngle + (noise(vec2(cycleIndex * 2.1, i + 1.0)) - 0.5) * 0.8;
+        vec2 fork1Dir = vec2(cos(fork1Angle), sin(fork1Angle));
+        vec2 fork1Perp = vec2(-fork1Dir.y, fork1Dir.x);
+        float fork1Along = dot(coreUv, fork1Dir);
+        float fork1PerpDist = dot(coreUv, fork1Perp);
+        float fork1Disp = fbm(vec2(fork1Along * 10.0 + cycleIndex * 2.0, i * 6.0)) * 0.1 * fork1Along;
+        float fork1AdjPerp = fork1PerpDist - fork1Disp;
+        float fork1Width = 0.005;
+        float fork1 = fork1Width / (abs(fork1AdjPerp) + fork1Width);
+        fork1 = pow(fork1, 1.5);
+        fork1 *= smoothstep(fork1Start - 0.02, fork1Start + 0.02, fork1Along);
+        fork1 *= smoothstep(0.3, fork1Start, fork1Along);
+        fork1 *= 0.7;
+
+        // Fork 2 - another branch
+        float fork2Start = 0.12;
+        float fork2Angle = boltAngle + (noise(vec2(cycleIndex * 3.2, i + 2.0)) - 0.5) * 1.0;
+        vec2 fork2Dir = vec2(cos(fork2Angle), sin(fork2Angle));
+        vec2 fork2Perp = vec2(-fork2Dir.y, fork2Dir.x);
+        float fork2Along = dot(coreUv, fork2Dir);
+        float fork2PerpDist = dot(coreUv, fork2Perp);
+        float fork2Disp = fbm(vec2(fork2Along * 12.0 + cycleIndex * 3.0, i * 7.0)) * 0.08 * fork2Along;
+        float fork2AdjPerp = fork2PerpDist - fork2Disp;
+        float fork2Width = 0.004;
+        float fork2 = fork2Width / (abs(fork2AdjPerp) + fork2Width);
+        fork2 = pow(fork2, 1.5);
+        fork2 *= smoothstep(fork2Start - 0.02, fork2Start + 0.02, fork2Along);
+        fork2 *= smoothstep(0.25, fork2Start, fork2Along);
+        fork2 *= 0.5;
+
+        float boltTotal = mainBolt + fork1 + fork2;
+        boltTotal *= smoothstep(0.5, 0.0, coreDist); // Overall fade
+        totalTendril += boltTotal * boltVisible;
       }
 
-      // Secondary crackling sparks
-      float sparks = pow(max(0.0, noise(coreUv * 40.0 + speed * 2.0)), 6.0);
+      // Random bright flash across entire light - only when animated
+      float flash = 0.0;
+      if (uPulse > 0.01) {
+        float flashTrigger = noise(vec2(floor(boundedTime * 0.02), 0.0));
+        flash = (flashTrigger > 0.7) ? (flashTrigger - 0.7) * 3.0 : 0.0;
+      }
+
+      // Crackling sparks - static pattern when pulse = 0, animated otherwise
+      float sparkTime = uPulse > 0.01 ? boundedTime * 0.05 : 0.0;
+      float sparks = pow(max(0.0, noise(coreUv * 50.0 + sparkTime)), 8.0);
       sparks *= edgeMask * (1.0 - coreDist * 2.0);
 
-      // Random bright flashes
-      float flash = pow(max(0.0, noise(vec2(speed * 0.5, 0.0))), 4.0) * 0.5;
-
       // Combine effects
-      float intensity = coreGlow + totalTendril * 0.4 + sparks * 0.3;
-      intensity *= (1.0 + flash);
+      float intensity = coreGlow + totalTendril * 0.6 + sparks * 0.2;
+      intensity *= (1.0 + flash * 0.5);
       intensity *= edgeMask;
 
       // Electric blue color gradient - white hot core to cyan to blue edges
@@ -700,6 +760,7 @@ export const createLightMaterial = (style: LightStyle, color: THREE.Color): THRE
       uTime: { value: 0 },
       uOpacity: { value: 1 },
       uPulse: { value: 0 },
+      uPulseSetting: { value: 0 },
       uStyle: { value: getStyleIndex(style) },
       uColor: { value: color },
       uSelected: { value: false },

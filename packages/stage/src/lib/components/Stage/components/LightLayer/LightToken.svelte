@@ -59,6 +59,7 @@
     const lightOpacity = light.opacity ?? 1.0;
     lightMaterial.uniforms.uOpacity.value = opacity * lightOpacity;
     lightMaterial.uniforms.uPulse.value = currentPulseValue;
+    lightMaterial.uniforms.uPulseSetting.value = light.pulse;
   });
 
   // Update material when light properties change
