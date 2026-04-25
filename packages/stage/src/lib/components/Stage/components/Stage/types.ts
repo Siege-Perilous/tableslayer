@@ -3,6 +3,7 @@ import type { EdgeOverlayProps } from '../EdgeOverlayLayer/types';
 import type { FogLayerProps } from '../FogLayer/types';
 import type { FogOfWarLayerProps } from '../FogOfWarLayer/types';
 import type { GridLayerProps } from '../GridLayer/types';
+import type { Light, LightLayerProps } from '../LightLayer/types';
 import type { MapLayerProps, MapLayerType } from '../MapLayer/types';
 import type { Marker, MarkerLayerProps } from '../MarkerLayer/types';
 import type { MeasurementLayerProps } from '../MeasurementLayer/types';
@@ -30,6 +31,9 @@ export interface Callbacks {
   onMeasurementEnd?: () => void;
   onCursorMove?: (worldPosition: { x: number; y: number; z: number }) => void;
   onMarkerHover?: (marker: Marker | null) => void;
+  onLightAdded?: (light: Light) => void;
+  onLightMoved?: (light: Light, position: { x: number; y: number }) => void;
+  onLightSelected?: (light: Light | null) => void;
 }
 
 export enum StageMode {
@@ -85,6 +89,7 @@ export type StageProps = {
   edgeOverlay: EdgeOverlayProps;
   fogOfWar: FogOfWarLayerProps;
   grid: GridLayerProps;
+  light: LightLayerProps;
   map: MapLayerProps;
   marker: MarkerLayerProps;
   measurement: MeasurementLayerProps;
@@ -123,6 +128,10 @@ export interface StageExports {
   markers: {
     isHoveringMarker: boolean;
     isDraggingMarker: boolean;
+  };
+  lights: {
+    isHoveringLight: boolean;
+    isDraggingLight: boolean;
   };
   measurement: {
     getCurrentMeasurement: () => {

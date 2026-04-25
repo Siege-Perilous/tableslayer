@@ -4,6 +4,7 @@ import EdgeOverlayControls from './EdgeOverlayControls.svelte';
 import FogControls from './FogControls.svelte';
 import FogOfWarControls from './FogOfWarControls.svelte';
 import GridControls from './GridControls.svelte';
+import LightControls from './LightControls.svelte';
 import MapControls from './MapControls.svelte';
 import MarkerControls from './MarkerControls.svelte';
 import MeasurementControls from './MeasurementControls.svelte';
@@ -18,6 +19,7 @@ export {
   FogControls,
   FogOfWarControls,
   GridControls,
+  LightControls,
   MapControls,
   MarkerControls,
   MeasurementControls,

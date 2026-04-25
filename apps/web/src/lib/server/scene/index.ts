@@ -922,3 +922,11 @@ export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((S
 export const updateSceneTimestampForMarkerChange = async (sceneId: string): Promise<void> => {
   await db.update(sceneTable).set({ lastUpdated: new Date() }).where(eq(sceneTable.id, sceneId)).execute();
 };
+
+/**
+ * Update a scene's lastUpdated timestamp when lights are modified
+ * This should be called whenever lights are added, updated, or deleted
+ */
+export const updateSceneTimestampForLightChange = async (sceneId: string): Promise<void> => {
+  await db.update(sceneTable).set({ lastUpdated: new Date() }).where(eq(sceneTable.id, sceneId)).execute();
+};

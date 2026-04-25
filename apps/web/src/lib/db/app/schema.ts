@@ -502,6 +502,58 @@ export const insertMarkerSchema = createInsertSchema(markerTable);
 export const selectMarkerSchema = createSelectSchema(markerTable);
 export const updateMarkerSchema = createUpdateSchema(markerTable);
 
+// LIGHTS
+// LIGHTS
+// LIGHTS
+
+export const VALID_LIGHT_STYLES = [
+  'torch',
+  'candle',
+  'magical',
+  'fire',
+  'lantern',
+  'spotlight',
+  'lightning',
+  'bioluminescent',
+  'fireflies'
+] as const;
+export const VALID_LIGHT_PULSE = [0, 1, 2, 3] as const; // 0=none, 1=slow, 2=medium, 3=fast
+
+export const lightTable = sqliteTable(
+  'light',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    sceneId: text('scene_id')
+      .notNull()
+      .references(() => sceneTable.id, { onDelete: 'cascade' }),
+    positionX: real('position_x').notNull().default(0),
+    positionY: real('position_y').notNull().default(0),
+    radius: real('radius').notNull().default(2), // Diameter in grid units
+    color: text('color').notNull().default('#FFA500'), // Default lantern orange
+    style: text('style', { enum: VALID_LIGHT_STYLES }).notNull().default('lantern'),
+    pulse: integer('pulse').notNull().default(0), // 0=none, 1=slow, 2=medium, 3=fast
+    opacity: real('opacity').notNull().default(1.0) // 0.0 to 1.0
+  },
+  (table) => [
+    index('idx_light_scene_id').on(table.sceneId),
+    check('protected_light_pulse', sql`${table.pulse} >= 0 AND ${table.pulse} <= 3`),
+    check('protected_light_radius', sql`${table.radius} > 0`),
+    check('protected_light_opacity', sql`${table.opacity} >= 0 AND ${table.opacity} <= 1`)
+  ]
+);
+
+export type LightStyle = (typeof VALID_LIGHT_STYLES)[number];
+export type LightPulse = (typeof VALID_LIGHT_PULSE)[number];
+
+export type InsertLight = typeof lightTable.$inferInsert;
+export type SelectLight = typeof lightTable.$inferSelect;
+export const insertLightSchema = createInsertSchema(lightTable);
+export const selectLightSchema = createSelectSchema(lightTable);
+export const updateLightSchema = createUpdateSchema(lightTable);
+
 // ANNOTATIONS
 // ANNOTATIONS
 // ANNOTATIONS

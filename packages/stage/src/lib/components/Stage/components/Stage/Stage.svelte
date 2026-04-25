@@ -149,6 +149,15 @@
     }
   };
 
+  export const lights = {
+    get isHoveringLight() {
+      return sceneRef?.lights?.isHoveringLight ?? false;
+    },
+    get isDraggingLight() {
+      return sceneRef?.lights?.isDraggingLight ?? false;
+    }
+  };
+
   export const measurement = {
     getCurrentMeasurement: () => sceneRef?.measurement?.getCurrentMeasurement() ?? null,
     isDrawing: () => sceneRef?.measurement?.isDrawing() ?? false
@@ -156,7 +165,7 @@
 
   /**
    * Called when the scene changes to clear all transient state.
-   * Clears tooltips, marker hover/selection, and other scene-specific state.
+   * Clears tooltips, marker hover/selection, light state, and other scene-specific state.
    */
   export function onSceneChange() {
     // Clear tooltip state
@@ -165,6 +174,9 @@
 
     // Clear marker interaction state
     sceneRef?.markers?.onSceneChange?.();
+
+    // Clear light interaction state
+    sceneRef?.lights?.onSceneChange?.();
   }
 
   $effect(() => {

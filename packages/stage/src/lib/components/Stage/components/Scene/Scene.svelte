@@ -28,6 +28,8 @@
   import type { CursorData } from '../CursorLayer/types';
   import EdgeOverlayLayer from '../EdgeOverlayLayer/EdgeOverlayLayer.svelte';
   import GridLayer from '../GridLayer/GridLayer.svelte';
+  import LightLayer from '../LightLayer/LightLayer.svelte';
+  import type { LightLayerExports } from '../LightLayer/types';
   import MapLayer from '../MapLayer/MapLayer.svelte';
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
@@ -79,6 +81,7 @@
   };
 
   let annotationsLayer: AnnotationExports;
+  let lightLayer: LightLayerExports;
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
   let measurementLayer: MeasurementLayerExports | null = $state(null);
@@ -515,6 +518,25 @@
     }
   };
 
+  // Export light state getters
+  export const lights = {
+    get isHoveringLight() {
+      return lightLayer?.lightState?.isHovering ?? false;
+    },
+    get isDraggingLight() {
+      return lightLayer?.lightState?.isDragging ?? false;
+    },
+    get hoveredLight() {
+      return lightLayer?.lightState?.hoveredLight ?? null;
+    },
+    get selectedLight() {
+      return lightLayer?.lightState?.selectedLight ?? null;
+    },
+    onSceneChange: () => {
+      lightLayer?.onSceneChange?.();
+    }
+  };
+
   // Export measurement layer methods
   export const measurement = {
     getCurrentMeasurement: () => measurementLayer?.getCurrentMeasurement?.() ?? null,
@@ -607,6 +629,14 @@
     mode={props.mode}
     isActive={props.activeLayer === MapLayerType.Annotation}
     sceneZoom={props.scene.zoom}
+    display={props.display}
+  />
+
+  <LightLayer
+    bind:this={lightLayer}
+    {props}
+    isActive={props.activeLayer === MapLayerType.Light}
+    grid={props.grid}
     display={props.display}
   />
 

@@ -272,6 +272,20 @@ export function handleKeyCommands(
       handleSelectActiveControl('none'); // Deactivate all
       return 'none';
 
+    case 'l':
+      if (activeLayer === MapLayerType.Light) {
+        handleSelectActiveControl('light'); // Toggle off
+        return 'none';
+      } else {
+        handleSelectActiveControl('light'); // Activate
+        return 'light';
+      }
+      break;
+
+    case 'L':
+      handleSelectActiveControl('none'); // Deactivate all
+      return 'none';
+
     case 'd':
       if (activeLayer === MapLayerType.Annotation) {
         handleSelectActiveControl('annotation'); // Toggle off

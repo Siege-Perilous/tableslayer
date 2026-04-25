@@ -5,7 +5,8 @@ export enum MapLayerType {
   FogOfWar = 1,
   Marker = 2,
   Annotation = 3,
-  Measurement = 4
+  Measurement = 4,
+  Light = 5
 }
 
 /**

@@ -12,6 +12,15 @@ export { type EdgeOverlayProps } from './components/EdgeOverlayLayer/types';
 export { type FogLayerProps } from './components/FogLayer/types';
 export { type FogOfWarLayerProps } from './components/FogOfWarLayer/types';
 export { GridMode, GridType, type GridLayerProps } from './components/GridLayer/types';
+export {
+  LIGHT_PULSE_DURATION,
+  LIGHT_STYLE_COLORS,
+  LightPulse,
+  LightStyle,
+  type Light,
+  type LightLayerExports,
+  type LightLayerProps
+} from './components/LightLayer/types';
 export { MapLayerType, type MapLayerProps } from './components/MapLayer/types';
 export {
   MarkerShape,

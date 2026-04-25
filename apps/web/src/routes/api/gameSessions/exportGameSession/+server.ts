@@ -2,6 +2,7 @@ import { db } from '$lib/db/app';
 import { sceneTable } from '$lib/db/app/schema';
 import { getAnnotationMaskData, getAnnotationsForScene } from '$lib/server/annotations';
 import { getGameSession } from '$lib/server/gameSession';
+import { getLightsForScene } from '$lib/server/light';
 import { getMarkersForScene } from '$lib/server/marker';
 import { getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
 import { getScenes } from '$lib/server/scene';
@@ -37,6 +38,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
     const scenesWithMarkers = await Promise.all(
       scenes.map(async (scene) => {
         const markers = await getMarkersForScene(scene.id);
+        const lights = await getLightsForScene(scene.id);
         const annotations = await getAnnotationsForScene(scene.id);
 
         // Get the fogOfWarMask from the database for this scene
@@ -74,6 +76,7 @@ export const POST = async ({ request, locals }: RequestEvent) => {
             const { thumb, ...markerWithoutThumb } = marker as Record<string, unknown>;
             return markerWithoutThumb;
           }),
+          lights,
           annotations: annotationsWithMasks
         };
       })
