@@ -203,17 +203,18 @@
     data.bucketUrl
   );
 
-  // Apply fog brush size preference (percentage-based, 5-20% range)
-  // Clamp to valid range in case of old/invalid values
-  const fogBrushPref = getPreference('brushSizePercent') || 10.0;
-  const clampedFogBrush = Math.max(5, Math.min(20, fogBrushPref));
-  console.log('[Init] Fog brush size:', { fogBrushPref, clampedFogBrush });
+  // Calculate minimum brush size based on grid (1 grid cell as percentage)
+  const getMinBrushSize = (gridSpacing: number, displayWidth: number) => {
+    if (gridSpacing && displayWidth && displayWidth > 0) {
+      return Math.max(0.5, (gridSpacing / displayWidth) * 100);
+    }
+    return 2;
+  };
 
-  // If preference was invalid, clear it and save the clamped value
-  if (fogBrushPref !== clampedFogBrush) {
-    console.log('[Init] Clearing invalid fog brush preference and saving clamped value');
-    setPreference('brushSizePercent', clampedFogBrush);
-  }
+  // Apply fog brush size preference (percentage-based, grid-relative minimum)
+  const fogBrushPref = getPreference('brushSizePercent') || 10.0;
+  const initMinBrush = getMinBrushSize(initialStageProps.grid.spacing, initialStageProps.display.size.x);
+  const clampedFogBrush = Math.max(initMinBrush, Math.min(20, fogBrushPref));
 
   initialStageProps.fogOfWar.tool.size = clampedFogBrush;
 
@@ -543,21 +544,13 @@
             url: isDrawingFog ? stageProps.fogOfWar.url : incomingStageProps.fogOfWar.url,
             tool: {
               ...incomingStageProps.fogOfWar.tool,
-              // Preserve local brush size or use default from preferences (stored as percentage, clamped to 5-20 range)
+              // Preserve local brush size or use default from preferences (grid-relative minimum)
               size: (() => {
                 const localSize = stageProps.fogOfWar.tool.size;
                 const prefSize = getPreference('brushSizePercent');
-                const incomingSize = incomingStageProps.fogOfWar.tool.size;
                 const rawValue = localSize || prefSize || 10.0;
-                const clampedValue = Math.max(5, Math.min(20, rawValue));
-                console.log('[Y.js Sync] Fog tool size:', {
-                  localSize,
-                  prefSize,
-                  incomingSize,
-                  rawValue,
-                  clampedValue
-                });
-                return clampedValue;
+                const minBrush = getMinBrushSize(stageProps.grid.spacing, stageProps.display.size.x);
+                return Math.max(minBrush, Math.min(20, rawValue));
               })()
             }
           },
@@ -1132,10 +1125,14 @@
       const annotationLinePref = getPreference('annotationLineWidthPercent') || 2.0;
       stageProps.annotations.lineWidth = Math.max(0.01, Math.min(5.0, annotationLinePref));
 
-      // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+      // Apply fog brush size from preferences (grid-relative minimum)
       const fogBrushPref = getPreference('brushSizePercent') || 10.0;
-      stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
+      const minBrush = getMinBrushSize(stageProps.grid.spacing, stageProps.display.size.x);
+      stageProps.fogOfWar.tool.size = Math.max(minBrush, Math.min(20, fogBrushPref));
       lastBuiltMapLocation = currentMapLocation;
+
+      // Reset active control to match the reset activeLayer in buildSceneProps
+      activeControl = 'none';
 
       // Reset grid origin when scene changes
       resetGridOrigin();
@@ -1270,9 +1267,10 @@
           stageProps.scene.zoom = currentSceneState.zoom;
           stageProps.scene.rotation = currentSceneState.rotation;
 
-          // Apply fog brush size from preferences (stored as percentage, clamped to 5-20 range)
+          // Apply fog brush size from preferences (grid-relative minimum)
           const fogBrushPref = getPreference('brushSizePercent') || 10.0;
-          stageProps.fogOfWar.tool.size = Math.max(5, Math.min(20, fogBrushPref));
+          const minBrush = getMinBrushSize(stageProps.grid.spacing, stageProps.display.size.x);
+          stageProps.fogOfWar.tool.size = Math.max(minBrush, Math.min(20, fogBrushPref));
         }
       } else if (markersChanged) {
         devLog('markers', 'DEV: [StageProps Effect] Skipping marker rebuild:', {
@@ -2042,14 +2040,13 @@
         scrollDelta = e.deltaY * 0.1; // Granular adjustment for 5-20% range
       }
 
-      // Get current fog brush size (stored as percentage, 5-20% range)
+      // Get current fog brush size (stored as percentage, grid-relative minimum)
       const currentSize = stageProps.fogOfWar.tool.size || 10.0;
-      console.log('[Wheel] Current fog size:', currentSize);
 
-      // Calculate new size (clamped between 5% and 20%)
+      // Calculate new size (clamped to grid-relative minimum and 20% max)
       const rawSize = currentSize - scrollDelta * 0.1;
-      const newSize = Math.max(5, Math.min(20, rawSize));
-      console.log('[Wheel] New fog size:', { currentSize, scrollDelta, rawSize, newSize });
+      const minBrush = getMinBrushSize(stageProps.grid.spacing, stageProps.display.size.x);
+      const newSize = Math.max(minBrush, Math.min(20, rawSize));
 
       // Update the fog brush size
       stageProps.fogOfWar.tool.size = newSize;
@@ -3183,17 +3180,12 @@
         {/if}
         {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
           <FogSliders
-            brushSize={Math.max(5, Math.min(20, stageProps.fogOfWar.tool.size || 10.0))}
+            brushSize={stageProps.fogOfWar.tool.size || 10.0}
+            gridSpacing={stageProps.grid.spacing}
+            displayWidth={stageProps.display.size.x}
             onBrushSizeChange={(size) => {
-              console.log('[Editor] FogSliders brushSize change:', {
-                incomingSize: size,
-                currentSize: stageProps.fogOfWar.tool.size
-              });
-              // Clamp size to valid range (5-20%)
-              const clampedSize = Math.max(5, Math.min(20, size));
-              console.log('[Editor] Setting fog brush size to:', clampedSize);
-              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], clampedSize, 'control');
-              setPreference('brushSizePercent', clampedSize);
+              queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
+              setPreference('brushSizePercent', size);
             }}
           />
         {/if}

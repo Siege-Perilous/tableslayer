@@ -1,5 +1,17 @@
 # @tableslayer/ui
 
+## 0.1.20
+
+### Patch Changes
+
+- Fog of war slider fixes
+
+## 0.1.19
+
+### Patch Changes
+
+- Allow fog of war brush to reach 1x1 grid cell size at minimum
+
 ## 0.1.18
 
 ### Patch Changes
