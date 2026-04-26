@@ -4,13 +4,29 @@
   interface Props {
     brushSize: number;
     onBrushSizeChange: (value: number) => void;
+    gridSpacing?: number;
+    displayWidth?: number;
   }
 
-  let { brushSize, onBrushSizeChange }: Props = $props();
+  let { brushSize, onBrushSizeChange, gridSpacing, displayWidth }: Props = $props();
+
+  const minBrushSize = $derived.by(() => {
+    if (gridSpacing && displayWidth && displayWidth > 0) {
+      return Math.max(0.5, (gridSpacing / displayWidth) * 100);
+    }
+    return 2;
+  });
 </script>
 
 <div class="fogSliders">
-  <BrushSizeSlider {brushSize} {onBrushSizeChange} min={5} max={20} curve="linear" displayAsPercentage={true} />
+  <BrushSizeSlider
+    {brushSize}
+    {onBrushSizeChange}
+    min={minBrushSize}
+    max={20}
+    curve="linear"
+    displayAsPercentage={true}
+  />
 </div>
 
 <style>
