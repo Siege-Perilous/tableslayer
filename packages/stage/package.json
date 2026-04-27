@@ -33,24 +33,24 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",
-    "@sveltejs/kit": "^2.57.1",
+    "@sveltejs/kit": "^2.58.0",
     "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
     "@types/three": "0.184.0",
-    "svelte": "5.55.4",
+    "svelte": "5.55.5",
     "svelte-check": "^4.4.6",
     "typescript": "^6.0.3",
-    "vite": "^8.0.9"
+    "vite": "^8.0.10"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "@tabler/icons-svelte": "^3.41.1",
     "@tableslayer/ui": "workspace:*",
     "@threlte/core": "8.5.9",
-    "@threlte/extras": "9.14.8",
+    "@threlte/extras": "9.14.9",
     "@tiptap/core": "^3.22.4",
     "chroma-js": "^3.2.0",
     "gifuct-js": "^2.1.2",
