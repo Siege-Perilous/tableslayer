@@ -22,8 +22,7 @@
 
   // Geometry is 2x larger than the light radius to allow ambient glow to extend
   const glowScale = 2.0;
-  const baseSize = $derived(getGridCellSize(grid, display) * light.radius * glowScale);
-  const lightSize = $derived(isHovered ? baseSize * 1.1 : baseSize);
+  const lightSize = $derived(getGridCellSize(grid, display) * light.radius * glowScale);
 
   // Create shader material
   let lightMaterial = createLightMaterial(light.style, new THREE.Color(light.color));

@@ -538,8 +538,8 @@ export const lightFragmentShader = /* glsl */ `
       float breathe = sin(uTime * 0.8) * 0.5 + 0.5;
       float pulseRadius = 1.0 + uPulse * 0.15 + breathe * 0.1;
 
-      // Edge mask - expands with pulse
-      float edgeMask = 1.0 - smoothstep(0.38 * pulseRadius, 0.5, coreDist);
+      // Edge mask - expands with pulse, soft fade towards edges
+      float edgeMask = 1.0 - smoothstep(0.2 * pulseRadius, 0.5, coreDist);
 
       // Organic flowing noise pattern
       vec2 flowCoord = coreUv * 3.0 + vec2(speed * 0.3, speed * 0.2);
@@ -579,13 +579,14 @@ export const lightFragmentShader = /* glsl */ `
         finalColor = mix(bioEdge, bioMid, intensity / 0.5);
       }
 
-      alpha = smoothstep(0.0, 0.15, intensity);
+      alpha = smoothstep(0.0, 0.25, intensity);
       alpha = clamp(alpha, 0.0, 1.0);
 
-      // Add outer glow
-      vec3 glowColor = uColor * 0.4;
-      finalColor = finalColor * alpha + glowColor * outerGlow * (1.0 - alpha);
-      alpha = alpha + outerGlow * (1.0 - alpha);
+      // Add subtle outer glow - reduced for softer edges
+      vec3 glowColor = uColor * 0.2;
+      float softGlow = outerGlow * 0.4;
+      finalColor = finalColor * alpha + glowColor * softGlow * (1.0 - alpha);
+      alpha = alpha + softGlow * (1.0 - alpha);
     }
 
     // === FIREFLIES (style 8) ===
@@ -679,11 +680,35 @@ export const lightFragmentShader = /* glsl */ `
       alpha = alpha + outerGlow * (1.0 - alpha);
     }
 
-    // Selection indicator (use coreDist to keep it centered on the light)
+    // Selection indicator - ring scales with light, but stroke width stays constant
     if (uSelected) {
-      float ring = smoothstep(0.14, 0.15, coreDist) * (1.0 - smoothstep(0.16, 0.17, coreDist));
-      finalColor = mix(finalColor, vec3(1.0), ring * 0.8);
-      alpha = max(alpha, ring * 0.8);
+      // Ring radius in normalized coordinates (scales with light)
+      float ringRadius = 0.155;
+
+      // Convert pixel widths to normalized coordinates based on light size
+      // uLightSize is the geometry diameter, coreDist spans 0-1 over half of it
+      float pixelsToNorm = 2.0 / uLightSize;
+      float ringWidth = 3.0 * pixelsToNorm;
+      float shadowWidth = 8.0 * pixelsToNorm;
+      float shadowSoftness = 4.0 * pixelsToNorm;
+
+      // Create the shadow ring (dark outline) - soft edges
+      float shadowInner = ringRadius - shadowWidth * 0.5;
+      float shadowOuter = ringRadius + shadowWidth * 0.5;
+      float shadow = smoothstep(shadowInner - shadowSoftness, shadowInner + shadowSoftness, coreDist) *
+                     (1.0 - smoothstep(shadowOuter - shadowSoftness, shadowOuter + shadowSoftness, coreDist));
+
+      // Create the white ring
+      float ringInner = ringRadius - ringWidth * 0.5;
+      float ringOuter = ringRadius + ringWidth * 0.5;
+      float ring = smoothstep(ringInner - pixelsToNorm * 0.5, ringInner + pixelsToNorm * 0.5, coreDist) *
+                   (1.0 - smoothstep(ringOuter - pixelsToNorm * 0.5, ringOuter + pixelsToNorm * 0.5, coreDist));
+
+      // Apply shadow first (dark), then white ring on top
+      finalColor = mix(finalColor, vec3(0.0), shadow * 0.4);
+      alpha = max(alpha, shadow * 0.4);
+      finalColor = mix(finalColor, vec3(1.0), ring * 0.9);
+      alpha = max(alpha, ring * 0.9);
     }
 
     gl_FragColor = vec4(finalColor, alpha * uOpacity);
