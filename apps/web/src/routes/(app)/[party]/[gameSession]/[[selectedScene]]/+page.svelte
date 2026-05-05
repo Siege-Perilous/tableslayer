@@ -2659,6 +2659,9 @@
       // Always release the save lock and reset flags - use captured saveSceneId
       if (partyData) {
         partyData.releaseActiveSaver(saveSceneId, saveSuccess);
+        if (saveSuccess) {
+          partyData.updateSceneLastUpdated(saveSceneId, Date.now());
+        }
       }
       isSaving = false;
 
