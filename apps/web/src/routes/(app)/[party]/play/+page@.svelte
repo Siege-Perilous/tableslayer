@@ -890,6 +890,11 @@
             );
           })()
         },
+        // Ensure light property exists with defaults if Y.js data is incomplete
+        light: {
+          ...StageDefaultProps.light,
+          ...yjsSceneData.stageProps.light
+        },
         // Merge Y.js annotations (permanent) with temporary layers from Y.js awareness
         annotations: (() => {
           const yjsLayers = yjsSceneData.stageProps.annotations?.layers || [];
