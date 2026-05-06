@@ -36,6 +36,7 @@
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
     { name: 'Text', path: '/text' },
+    { name: 'TextHighlight', path: '/texthighlight' },
     { name: 'Title', path: '/title' },
     { name: 'Toast', path: '/toast' },
     { name: 'ToolTip', path: '/tooltip' }

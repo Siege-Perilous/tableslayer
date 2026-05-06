@@ -30,7 +30,7 @@
 <div class="checklist">
   <div class="checklist__header">
     <div class="checklist__headerContent">
-      <h3 class="checklist__title">Features tour</h3>
+      <h3 class="checklist__title">Learn the features</h3>
       <span class="checklist__progress">{completedCount} / {checklistItems.length}</span>
     </div>
     <button type="button" class="checklist__closeButton" onclick={onDismiss} aria-label="Dismiss checklist">

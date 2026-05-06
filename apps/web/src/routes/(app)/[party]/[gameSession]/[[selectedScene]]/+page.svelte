@@ -1128,6 +1128,9 @@
 
   const handleShowChecklist = () => {
     forceShowChecklist = true;
+    // Deselect any active layer so checklist can show
+    activeControl = 'none';
+    queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
     // Expand the markers pane if collapsed
     if (isMarkersCollapsed) {
       markersPane.expand();
@@ -1599,6 +1602,7 @@
     const updatedLights = [...stageProps.light.lights, light];
     stageProps.light.lights = updatedLights;
     selectedLightId = light.id;
+    trackChecklistItemLocal('add-light');
 
     // Queue the update for Y.js sync
     queuePropertyUpdate(stageProps, ['light', 'lights'], updatedLights, 'light');

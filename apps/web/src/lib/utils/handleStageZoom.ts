@@ -1,4 +1,5 @@
 import { type StageProps, MapLayerType } from '@tableslayer/stage';
+import { trackChecklistItem } from './checklistTracker';
 import { setPreferenceDebounced } from './gameSessionPreferences';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
@@ -17,6 +18,7 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   if (e.shiftKey) {
     const newMapZoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
     queuePropertyUpdate(stageProps, ['map', 'zoom'], newMapZoom, 'control');
+    trackChecklistItem('scale-map');
   } else if (e.ctrlKey) {
     e.preventDefault();
     const newSceneZoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));

@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Code } from '@tableslayer/ui';
+  import { TextHighlight } from '@tableslayer/ui';
+  import { IconPhoto } from '@tabler/icons-svelte';
 </script>
 
 <p class="checklist__instructions">
-  Click the <Code code="+" /> button in the scenes list on the left panel to add a new scene. Each scene can have its own
-  map, markers, fog of war state, and settings. Prepare multiple scenes for different locations in your adventure.
+  Click <TextHighlight text="Add scene" icon={IconPhoto} /> in the left panel to add a new scene. Each scene can have its
+  own map, markers, fog of war state, and settings. Prepare multiple scenes for different locations in your adventure.
 </p>

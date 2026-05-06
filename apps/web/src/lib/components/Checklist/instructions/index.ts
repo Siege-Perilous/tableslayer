@@ -1,3 +1,4 @@
+export { default as AddLightInstructions } from './AddLightInstructions.svelte';
 export { default as AddSceneInstructions } from './AddSceneInstructions.svelte';
 export { default as ChangeSceneInstructions } from './ChangeSceneInstructions.svelte';
 export { default as FogEraseInstructions } from './FogEraseInstructions.svelte';

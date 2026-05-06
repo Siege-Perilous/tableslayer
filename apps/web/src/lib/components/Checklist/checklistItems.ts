@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 import {
+  AddLightInstructions,
   AddSceneInstructions,
   ChangeSceneInstructions,
   FogEraseInstructions,
@@ -31,6 +32,7 @@ export type ChecklistItemId =
   | 'place-marker'
   | 'marker-visibility'
   | 'add-scene'
+  | 'add-light'
   | 'scale-map'
   | 'rotate-map'
   | 'rotate-scene'
@@ -101,6 +103,11 @@ export const checklistItems: ChecklistItem[] = [
     instructions: AddSceneInstructions
   },
   {
+    id: 'add-light',
+    title: 'Add a light to the scene',
+    instructions: AddLightInstructions
+  },
+  {
     id: 'scale-map',
     title: 'Scale the map',
     instructions: ScaleMapInstructions
@@ -112,7 +119,7 @@ export const checklistItems: ChecklistItem[] = [
   },
   {
     id: 'rotate-scene',
-    title: 'Rotate the scene',
+    title: 'Rotate the scene relative to your TV',
     instructions: RotateSceneInstructions
   },
   {
@@ -122,7 +129,7 @@ export const checklistItems: ChecklistItem[] = [
   },
   {
     id: 'map-defined-grid',
-    title: 'Use a map with grid dimensions in filename',
+    title: 'Use a map with grid dimensions in the filename',
     instructions: MapDefinedGridInstructions
   },
   {
