@@ -1,4 +1,5 @@
 import { DrawMode, GridMode, MapLayerType, ToolType, type StageProps } from '@tableslayer/stage';
+import { trackChecklistItem } from './checklistTracker';
 import { devLog } from './debug';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
@@ -214,10 +215,12 @@ export function handleKeyCommands(
 
     case 'f':
       stage.fogOfWar.clear();
+      trackChecklistItem('fog-erase');
       break;
 
     case 'F':
       stage.fogOfWar.reset();
+      trackChecklistItem('fog-reset');
       break;
 
     case 'o':
@@ -292,6 +295,7 @@ export function handleKeyCommands(
         return 'none';
       } else {
         handleSelectActiveControl('annotation'); // Activate
+        trackChecklistItem('spell-effect');
         return 'annotation';
       }
       break;
@@ -302,6 +306,7 @@ export function handleKeyCommands(
         return 'none';
       } else {
         handleSelectActiveControl('measurement'); // Activate
+        trackChecklistItem('measurement');
         return 'measurement';
       }
       break;

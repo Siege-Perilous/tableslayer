@@ -1,4 +1,5 @@
 export * from './buildSceneProps';
+export * from './checklistTracker';
 export * from './colors';
 export * from './convertStagePropsToAnnotationData';
 export * from './convertStagePropsToMarkerData';

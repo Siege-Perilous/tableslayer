@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Icon, Button } from '@tableslayer/ui';
-  import { IconHelp } from '@tabler/icons-svelte';
+  import { IconSchool } from '@tabler/icons-svelte';
 
   type Props = {
     onclick: () => void;
@@ -12,9 +12,9 @@
 <div class="checklistHelp">
   <Button as="div" variant="ghost" class="checklistHelp__button" {onclick}>
     {#snippet start()}
-      <Icon Icon={IconHelp} size="1.5rem" />
+      <Icon Icon={IconSchool} size="1.5rem" />
     {/snippet}
-    Help
+    Learn
   </Button>
 </div>
 

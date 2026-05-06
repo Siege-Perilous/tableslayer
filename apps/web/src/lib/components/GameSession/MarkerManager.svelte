@@ -41,7 +41,7 @@
   } from '@tabler/icons-svelte';
   import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
   import type { Snippet } from 'svelte';
-  import { queuePropertyUpdate, extractLocationFromUrl, throttle } from '$lib/utils';
+  import { queuePropertyUpdate, extractLocationFromUrl, throttle, trackChecklistItem } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
 
   let {
@@ -279,6 +279,10 @@
                           onPinToggle
                         ) {
                           onPinToggle(marker.id, false);
+                        }
+                        // Track checklist completion for making marker visible to players
+                        if (Number(value) === MarkerVisibility.Always || Number(value) === MarkerVisibility.Hover) {
+                          trackChecklistItem('marker-visibility');
                         }
                         socketUpdate();
                       }}

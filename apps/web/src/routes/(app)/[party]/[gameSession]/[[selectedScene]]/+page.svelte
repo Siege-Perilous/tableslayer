@@ -62,7 +62,8 @@
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
-    setUserChangeCallback
+    setUserChangeCallback,
+    setChecklistContext
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
@@ -262,8 +263,15 @@
   let checklistCompletedItems = $state<string[]>(checklistState?.completedItems ?? []);
   let checklistDismissed = $state(checklistState?.isDismissed ?? false);
   let forceShowChecklist = $state(false);
+  // Controls that need the right panel space (checklist should hide for these)
+  const panelRequiringControls = ['annotation', 'light', 'marker'];
+  // Show checklist if:
+  // 1. User clicked help button (forceShowChecklist), OR
+  // 2. User is eligible for auto-show and hasn't dismissed it
+  // BUT only if the current control doesn't need the panel space
   let showChecklist = $derived(
-    forceShowChecklist || (checklistState?.isEligibleForAutoShow && !checklistDismissed && activeControl === 'none')
+    !panelRequiringControls.includes(activeControl) &&
+      (forceShowChecklist || (checklistState?.isEligibleForAutoShow && !checklistDismissed))
   );
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
@@ -372,6 +380,23 @@
   const upsertLightMutation = useUpsertLightMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
   const updateChecklistMutation = useUpdateChecklistProgressMutation();
+
+  // Helper to track checklist items within this component
+  const trackChecklistItemLocal = (itemId: string) => {
+    if (!checklistCompletedItems.includes(itemId)) {
+      checklistCompletedItems = [...checklistCompletedItems, itemId];
+      updateChecklistMutation.mutate({
+        completedItems: checklistCompletedItems,
+        dismissed: checklistDismissed
+      });
+    }
+  };
+
+  // Set up checklist tracking context for automatic item completion
+  setChecklistContext({
+    trackItem: trackChecklistItemLocal,
+    isItemCompleted: (itemId) => checklistCompletedItems.includes(itemId)
+  });
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -1017,8 +1042,10 @@
 
     // Switch to new control
     activeControl = control;
-    // Reset force show checklist when switching to a specific control
-    forceShowChecklist = false;
+    // Only reset force show checklist when switching to controls that need the right panel
+    if (control === 'annotation' || control === 'light' || control === 'marker') {
+      forceShowChecklist = false;
+    }
 
     // Handle specific control types
     if (control === 'marker') {
@@ -2435,6 +2462,9 @@
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onFogUpdate = async (_blob: Promise<Blob>) => {
+    // Track checklist completion for fog erasing
+    trackChecklistItemLocal('fog-erase');
+
     // If there's an existing upload, abort it
     if (fogUploadAbortController) {
       devLog('fog', 'Aborting previous fog upload - new drawing started');
@@ -2587,6 +2617,14 @@
               // Add to persisted set if this was a create operation
               if (result.operation === 'created') {
                 persistedMarkerIds.add(marker.id);
+                // Track checklist completion for placing a marker
+                if (!checklistCompletedItems.includes('place-marker')) {
+                  checklistCompletedItems = [...checklistCompletedItems, 'place-marker'];
+                  updateChecklistMutation.mutate({
+                    completedItems: checklistCompletedItems,
+                    dismissed: checklistDismissed
+                  });
+                }
               }
               // Track recently saved markers to prevent premature rebuilds
               recentlySavedMarkerIds.add(marker.id);
