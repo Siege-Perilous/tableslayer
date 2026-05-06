@@ -373,6 +373,7 @@ export function handleKeyCommands(
         queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
         // Also snap Y axis if misaligned
         snapOtherAxisIfNeeded(stageProps, 'y');
+        trackChecklistItem('pan-map');
       }
       break;
 
@@ -383,6 +384,7 @@ export function handleKeyCommands(
         queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
         // Also snap Y axis if misaligned
         snapOtherAxisIfNeeded(stageProps, 'y');
+        trackChecklistItem('pan-map');
       }
       break;
 
@@ -393,6 +395,7 @@ export function handleKeyCommands(
         queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
         // Also snap X axis if misaligned
         snapOtherAxisIfNeeded(stageProps, 'x');
+        trackChecklistItem('pan-map');
       }
       break;
 
@@ -403,6 +406,7 @@ export function handleKeyCommands(
         queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
         // Also snap X axis if misaligned
         snapOtherAxisIfNeeded(stageProps, 'x');
+        trackChecklistItem('pan-map');
       }
       break;
   }

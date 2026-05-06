@@ -6,8 +6,10 @@ import {
   FogOpacityInstructions,
   FogResetInstructions,
   LaunchPlayfieldInstructions,
+  MapDefinedGridInstructions,
   MarkerVisibilityInstructions,
   MeasurementInstructions,
+  PanMapInstructions,
   PlaceMarkerInstructions,
   RotateMapInstructions,
   RotateSceneInstructions,
@@ -32,7 +34,9 @@ export type ChecklistItemId =
   | 'scale-map'
   | 'rotate-map'
   | 'rotate-scene'
-  | 'change-scene';
+  | 'change-scene'
+  | 'map-defined-grid'
+  | 'pan-map';
 
 export type ChecklistItem = {
   id: ChecklistItemId;
@@ -115,5 +119,15 @@ export const checklistItems: ChecklistItem[] = [
     id: 'change-scene',
     title: 'Change the active scene',
     instructions: ChangeSceneInstructions
+  },
+  {
+    id: 'map-defined-grid',
+    title: 'Use a map with grid dimensions in filename',
+    instructions: MapDefinedGridInstructions
+  },
+  {
+    id: 'pan-map',
+    title: 'Pan the map with arrow keys',
+    instructions: PanMapInstructions
   }
 ];

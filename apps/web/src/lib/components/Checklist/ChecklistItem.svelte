@@ -43,14 +43,6 @@
 </div>
 
 <style>
-  .checklistItem {
-    border-bottom: var(--borderThin);
-  }
-
-  .checklistItem:last-child {
-    border-bottom: none;
-  }
-
   .checklistItem__header {
     display: flex;
     align-items: center;
@@ -106,7 +98,6 @@
   }
 
   .checklistItem--completed .checklistItem__titleText {
-    text-decoration: line-through;
     color: var(--fgMuted);
   }
 

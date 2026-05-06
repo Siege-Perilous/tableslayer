@@ -223,6 +223,11 @@
         // Track checklist completion for adding a scene
         trackChecklistItem('add-scene');
 
+        // Track checklist completion for using map-defined grid dimensions
+        if (gridWidth !== undefined && gridHeight !== undefined) {
+          trackChecklistItem('map-defined-grid');
+        }
+
         // Navigate to the newly created scene
         if (response?.scene) {
           goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
