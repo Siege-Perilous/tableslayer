@@ -1,6 +1,7 @@
 export * from './annotations';
 export * from './apiKey';
 export * from './auth';
+export * from './checklist';
 export * from './config';
 export * from './email';
 export * from './errors';

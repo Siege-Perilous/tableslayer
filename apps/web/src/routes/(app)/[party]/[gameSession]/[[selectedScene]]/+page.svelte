@@ -30,7 +30,10 @@
     Shortcuts,
     SceneSelector,
     SceneZoom,
-    Head
+    Head,
+    Checklist,
+    ChecklistHelpButton,
+    type ChecklistItemId
   } from '$lib/components';
   import {
     useUpdateSceneMutation,
@@ -41,7 +44,8 @@
     useDeleteAnnotationMutation,
     useUpdateFogMaskMutation,
     useUpdateAnnotationMaskMutation,
-    useUpsertLightMutation
+    useUpsertLightMutation,
+    useUpdateChecklistProgressMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -77,7 +81,8 @@
     party,
     activeScene,
     user,
-    isStripeEnabled
+    isStripeEnabled,
+    checklistState
   } = $derived(data);
 
   // Track page params changes
@@ -252,6 +257,14 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let keyboardPopoverId = $state<string | null>(null); // Track popover state from keyboard commands
+
+  // Checklist state
+  let checklistCompletedItems = $state<string[]>(checklistState?.completedItems ?? []);
+  let checklistDismissed = $state(checklistState?.isDismissed ?? false);
+  let forceShowChecklist = $state(false);
+  let showChecklist = $derived(
+    forceShowChecklist || (checklistState?.isEligibleForAutoShow && !checklistDismissed && activeControl === 'none')
+  );
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
@@ -358,6 +371,7 @@
   const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
   const upsertLightMutation = useUpsertLightMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
+  const updateChecklistMutation = useUpdateChecklistProgressMutation();
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -1003,6 +1017,8 @@
 
     // Switch to new control
     activeControl = control;
+    // Reset force show checklist when switching to a specific control
+    forceShowChecklist = false;
 
     // Handle specific control types
     if (control === 'marker') {
@@ -1056,6 +1072,39 @@
 
   const handleMapFit = () => {
     stage.map.fit();
+  };
+
+  // Checklist handlers
+  const handleChecklistItemComplete = (itemId: ChecklistItemId) => {
+    const isCurrentlyCompleted = checklistCompletedItems.includes(itemId);
+    if (isCurrentlyCompleted) {
+      checklistCompletedItems = checklistCompletedItems.filter((id) => id !== itemId);
+    } else {
+      checklistCompletedItems = [...checklistCompletedItems, itemId];
+    }
+    // Persist to server
+    updateChecklistMutation.mutate({
+      completedItems: checklistCompletedItems,
+      dismissed: checklistDismissed
+    });
+  };
+
+  const handleChecklistDismiss = () => {
+    checklistDismissed = true;
+    forceShowChecklist = false;
+    // Persist to server
+    updateChecklistMutation.mutate({
+      completedItems: checklistCompletedItems,
+      dismissed: true
+    });
+  };
+
+  const handleShowChecklist = () => {
+    forceShowChecklist = true;
+    // Expand the markers pane if collapsed
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+    }
   };
 
   // Track previous scene ID to detect scene switches (regular let - not reactive)
@@ -3274,6 +3323,7 @@
         />
         <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
+        <ChecklistHelpButton onclick={handleShowChecklist} />
         <Hints {stageProps} />
       </div>
     </Pane>
@@ -3342,6 +3392,12 @@
             {onLightDeleted}
           />
         {/key}
+      {:else if showChecklist}
+        <Checklist
+          completedItems={checklistCompletedItems}
+          onComplete={handleChecklistItemComplete}
+          onDismiss={handleChecklistDismiss}
+        />
       {:else}
         {#key selectedMarkerId}
           <MarkerManager

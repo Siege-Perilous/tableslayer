@@ -29,7 +29,8 @@ export const usersTable = sqliteTable('users', {
   role: text('role', { enum: VALID_USER_ROLES }).notNull().default('user'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .$defaultFn(() => new Date())
+    .$defaultFn(() => new Date()),
+  completedChecklist: text('completed_checklist', { mode: 'json' }).$type<string[]>()
 });
 
 export type UserRole = (typeof VALID_USER_ROLES)[number];

@@ -1,5 +1,11 @@
 import type { SelectAnnotation, SelectLight, SelectMarker } from '$lib/db/app/schema';
-import { getLightsForScene, getMarkersForScene, type Thumb } from '$lib/server';
+import {
+  checkUserChecklistEligibility,
+  getLightsForScene,
+  getMarkersForScene,
+  getUserChecklistState,
+  type Thumb
+} from '$lib/server';
 import { getAnnotationMasksForScene, getAnnotationsForScene } from '$lib/server/annotations';
 import { createScene, getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
 import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
@@ -7,7 +13,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, params, url, cookies }) => {
-  const { gameSession, activeScene } = await parent();
+  const { gameSession, activeScene, gameSessions, user, parties } = await parent();
   const partykitHost = process.env.PUBLIC_PARTYKIT_HOST || 'localhost:1999';
 
   // Get all scenes first to determine the lowest order
@@ -72,6 +78,14 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
   const paneLayoutMobile = getPreferenceServer(cookies, 'paneLayoutMobile');
   const brushSize = getPreferenceServer(cookies, 'brushSize');
 
+  // Get checklist state for the user
+  const checklistState = await getUserChecklistState(user.id);
+  const isEligibleForAutoShow = checkUserChecklistEligibility(
+    parties?.length ?? 0,
+    gameSessions?.length ?? 0,
+    scenes.length
+  );
+
   return {
     scenes,
     selectedSceneNumber,
@@ -88,6 +102,11 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     paneLayoutDesktop,
     paneLayoutMobile,
     brushSize,
-    partykitHost
+    partykitHost,
+    checklistState: {
+      completedItems: checklistState.completedItems,
+      isDismissed: checklistState.isDismissed,
+      isEligibleForAutoShow
+    }
   };
 };
