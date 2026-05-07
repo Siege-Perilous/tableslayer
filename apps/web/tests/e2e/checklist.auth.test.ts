@@ -111,8 +111,11 @@ test.describe('Checklist feature tour', () => {
     // Wait a moment for any state updates
     await page.waitForTimeout(500);
 
-    // Click Learn button to reopen (use force since it may be hidden on small viewports)
-    await learnButton.click({ force: true });
+    // Click Learn button via JavaScript (bypasses CSS visibility:hidden)
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="checklistHelpButton"]') as HTMLElement;
+      btn?.click();
+    });
 
     // Verify checklist is visible again
     await expect(checklist).toBeVisible({ timeout: 5000 });
@@ -144,8 +147,11 @@ test.describe('Checklist feature tour', () => {
     // Wait for marker to be created
     await page.waitForTimeout(1000);
 
-    // Click Learn button to show checklist again (use force since it may be hidden)
-    await learnButton.click({ force: true });
+    // Click Learn button via JavaScript (bypasses CSS visibility:hidden)
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="checklistHelpButton"]') as HTMLElement;
+      btn?.click();
+    });
 
     // Verify checklist is visible
     await expect(checklist).toBeVisible({ timeout: 5000 });
@@ -245,8 +251,11 @@ test.describe('Checklist feature tour', () => {
       await page.reload();
       await waitForSceneEditor(page);
 
-      // Click Learn button to show checklist (use force since it may be hidden)
-      await learnButton.click({ force: true });
+      // Click Learn button via JavaScript (bypasses CSS visibility:hidden)
+      await page.evaluate(() => {
+        const btn = document.querySelector('[data-testid="checklistHelpButton"]') as HTMLElement;
+        btn?.click();
+      });
 
       // Verify checklist is visible
       await expect(checklist).toBeVisible({ timeout: 10000 });
