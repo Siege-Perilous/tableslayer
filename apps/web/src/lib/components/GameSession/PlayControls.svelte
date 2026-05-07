@@ -4,7 +4,7 @@
   import type { Thumb } from '$lib/server';
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { handleMutation, type FormMutationError } from '$lib/factories';
-  import { usePartyData } from '$lib/utils/yjs/stores';
+  import { usePartyData, trackChecklistItem } from '$lib/utils';
 
   let {
     party,
@@ -33,6 +33,8 @@
         if (partyData) {
           partyData.updatePartyState('activeSceneId', selectedScene.id);
         }
+        // Track checklist completion for changing the active scene
+        trackChecklistItem('change-scene');
       },
       toastMessages: {
         success: { title: 'Active scene set' },
@@ -71,7 +73,9 @@
 </script>
 
 <div class="playControls">
-  <Button href={`/${party.slug}/play`} target="_blank">Open playfield</Button>
+  <Button href={`/${party.slug}/play`} target="_blank" onclick={() => trackChecklistItem('launch-playfield')}>
+    Open playfield
+  </Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">
     This will open a new tab with the playfield. Fullscreen it on your display.

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ColorPicker, type ColorUpdatePayload, Button, Spacer, InputSlider, FormControl } from '@tableslayer/ui';
   import { type StageProps, type StageExports } from '@tableslayer/stage';
-  import { generateGradientColors, queuePropertyUpdate } from '$lib/utils';
+  import { generateGradientColors, queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
   import chroma from 'chroma-js';
 
   let {
@@ -39,6 +39,8 @@
     const value = parseFloat((e.target as HTMLInputElement).value);
     // Update only the specific nested property
     queuePropertyUpdate(stageProps, ['fogOfWar', 'opacity', 'player'], value, 'control');
+    // Track checklist completion for changing fog opacity
+    trackChecklistItem('fog-opacity');
   };
 
   $effect(() => {
@@ -102,6 +104,7 @@
       onclick={() => {
         stage.fogOfWar.reset();
         socketUpdate();
+        trackChecklistItem('fog-reset');
       }}
     >
       Reset fog

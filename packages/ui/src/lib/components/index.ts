@@ -22,6 +22,7 @@ export * from './Select';
 export * from './Spacer';
 export * from './Table';
 export * from './Text';
+export * from './TextHighlight';
 export * from './Title';
 export * from './Toast';
 export * from './ToolTip';

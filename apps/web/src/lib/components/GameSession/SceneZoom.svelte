@@ -2,7 +2,7 @@
   import { Button, IconButton, Icon } from '@tableslayer/ui';
   import { type StageProps } from '@tableslayer/stage';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
 
   let {
     stageProps,
@@ -24,6 +24,10 @@
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
     queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
+    // Track checklist completion for scaling map
+    if (zoomType === 'map') {
+      trackChecklistItem('scale-map');
+    }
   };
 
   const toggleZoomType = () => {
@@ -35,12 +39,16 @@
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
     queuePropertyUpdate(stageProps, ['map', 'rotation'], next, 'control');
+    // Track checklist completion for rotating map
+    trackChecklistItem('rotate-map');
   };
   const handleSceneRotate = () => {
     const current = stageProps.scene.rotation;
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
     queuePropertyUpdate(stageProps, ['scene', 'rotation'], next, 'control');
+    // Track checklist completion for rotating scene
+    trackChecklistItem('rotate-scene');
   };
 </script>
 

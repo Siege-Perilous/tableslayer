@@ -19,7 +19,7 @@
     getDefaultEffectProps
   } from '@tableslayer/stage';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate, flushQueuedPropertyUpdates } from '$lib/utils';
+  import { queuePropertyUpdate, flushQueuedPropertyUpdates, trackChecklistItem } from '$lib/utils';
   import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
@@ -214,6 +214,8 @@
   const createNewAnnotation = () => {
     if (onAnnotationCreated) {
       onAnnotationCreated();
+      // Track checklist completion for creating a spell effect/annotation
+      trackChecklistItem('spell-effect');
     }
   };
 

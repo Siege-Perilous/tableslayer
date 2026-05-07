@@ -30,7 +30,10 @@
     Shortcuts,
     SceneSelector,
     SceneZoom,
-    Head
+    Head,
+    Checklist,
+    ChecklistHelpButton,
+    type ChecklistItemId
   } from '$lib/components';
   import {
     useUpdateSceneMutation,
@@ -41,7 +44,8 @@
     useDeleteAnnotationMutation,
     useUpdateFogMaskMutation,
     useUpdateAnnotationMaskMutation,
-    useUpsertLightMutation
+    useUpsertLightMutation,
+    useUpdateChecklistProgressMutation
   } from '$lib/queries';
   import { type ZodIssue } from 'zod';
   import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-svelte';
@@ -58,7 +62,8 @@
     registerSceneForPropertyUpdates,
     queuePropertyUpdate,
     flushQueuedPropertyUpdates,
-    setUserChangeCallback
+    setUserChangeCallback,
+    setChecklistContext
   } from '$lib/utils';
   import { throttle } from '$lib/utils/throttle';
   import { setPreference, getPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
@@ -77,7 +82,8 @@
     party,
     activeScene,
     user,
-    isStripeEnabled
+    isStripeEnabled,
+    checklistState
   } = $derived(data);
 
   // Track page params changes
@@ -252,6 +258,22 @@
   let stageElement: HTMLDivElement | undefined = $state();
   let activeControl = $state('none');
   let keyboardPopoverId = $state<string | null>(null); // Track popover state from keyboard commands
+
+  // Checklist state
+  let checklistCompletedItems = $state<string[]>(checklistState?.completedItems ?? []);
+  let checklistDismissed = $state(checklistState?.isDismissed ?? false);
+  let forceShowChecklist = $state(false);
+  // Controls that need the right panel space (checklist should hide for these)
+  const panelRequiringControls = ['annotation', 'light', 'marker'];
+  // Show checklist if:
+  // 1. User clicked help button (forceShowChecklist), OR
+  // 2. User is eligible for auto-show and hasn't dismissed it
+  // BUT only if the current control doesn't need the panel space
+  let showChecklist = $derived(
+    !panelRequiringControls.includes(activeControl) &&
+      !selectedMarkerId &&
+      (forceShowChecklist || (checklistState?.isEligibleForAutoShow && !checklistDismissed))
+  );
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let editingTimer: ReturnType<typeof setTimeout> | null = null; // Timer to clear isActivelyEditing flag
   let driftCheckTimer: ReturnType<typeof setInterval> | null = null; // Timer for periodic drift checks
@@ -358,6 +380,24 @@
   const updateAnnotationMaskMutation = useUpdateAnnotationMaskMutation();
   const upsertLightMutation = useUpsertLightMutation();
   const deleteAnnotationMutation = useDeleteAnnotationMutation();
+  const updateChecklistMutation = useUpdateChecklistProgressMutation();
+
+  // Helper to track checklist items within this component
+  const trackChecklistItemLocal = (itemId: string) => {
+    if (!checklistCompletedItems.includes(itemId)) {
+      checklistCompletedItems = [...checklistCompletedItems, itemId];
+      updateChecklistMutation.mutate({
+        completedItems: checklistCompletedItems,
+        dismissed: checklistDismissed
+      });
+    }
+  };
+
+  // Set up checklist tracking context for automatic item completion
+  setChecklistContext({
+    trackItem: trackChecklistItemLocal,
+    isItemCompleted: (itemId) => checklistCompletedItems.includes(itemId)
+  });
 
   const getCollapseIcon = () => {
     if (isMobile) {
@@ -1003,6 +1043,10 @@
 
     // Switch to new control
     activeControl = control;
+    // Only reset force show checklist when switching to controls that need the right panel
+    if (control === 'annotation' || control === 'light' || control === 'marker') {
+      forceShowChecklist = false;
+    }
 
     // Handle specific control types
     if (control === 'marker') {
@@ -1029,6 +1073,7 @@
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      trackChecklistItemLocal('measurement');
     } else if (control === 'erase') {
       // Fog tool
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
@@ -1056,6 +1101,43 @@
 
   const handleMapFit = () => {
     stage.map.fit();
+  };
+
+  // Checklist handlers
+  const handleChecklistItemComplete = (itemId: ChecklistItemId) => {
+    const isCurrentlyCompleted = checklistCompletedItems.includes(itemId);
+    if (isCurrentlyCompleted) {
+      checklistCompletedItems = checklistCompletedItems.filter((id) => id !== itemId);
+    } else {
+      checklistCompletedItems = [...checklistCompletedItems, itemId];
+    }
+    // Persist to server
+    updateChecklistMutation.mutate({
+      completedItems: checklistCompletedItems,
+      dismissed: checklistDismissed
+    });
+  };
+
+  const handleChecklistDismiss = () => {
+    checklistDismissed = true;
+    forceShowChecklist = false;
+    // Persist to server
+    updateChecklistMutation.mutate({
+      completedItems: checklistCompletedItems,
+      dismissed: true
+    });
+  };
+
+  const handleShowChecklist = () => {
+    forceShowChecklist = true;
+    // Deselect any active layer and marker so checklist can show
+    activeControl = 'none';
+    selectedMarkerId = undefined;
+    queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
+    // Expand the markers pane if collapsed
+    if (isMarkersCollapsed) {
+      markersPane.expand();
+    }
   };
 
   // Track previous scene ID to detect scene switches (regular let - not reactive)
@@ -1523,6 +1605,7 @@
     const updatedLights = [...stageProps.light.lights, light];
     stageProps.light.lights = updatedLights;
     selectedLightId = light.id;
+    trackChecklistItemLocal('add-light');
 
     // Queue the update for Y.js sync
     queuePropertyUpdate(stageProps, ['light', 'lights'], updatedLights, 'light');
@@ -2386,6 +2469,9 @@
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onFogUpdate = async (_blob: Promise<Blob>) => {
+    // Track checklist completion for fog erasing
+    trackChecklistItemLocal('fog-erase');
+
     // If there's an existing upload, abort it
     if (fogUploadAbortController) {
       devLog('fog', 'Aborting previous fog upload - new drawing started');
@@ -2538,6 +2624,14 @@
               // Add to persisted set if this was a create operation
               if (result.operation === 'created') {
                 persistedMarkerIds.add(marker.id);
+                // Track checklist completion for placing a marker
+                if (!checklistCompletedItems.includes('place-marker')) {
+                  checklistCompletedItems = [...checklistCompletedItems, 'place-marker'];
+                  updateChecklistMutation.mutate({
+                    completedItems: checklistCompletedItems,
+                    dismissed: checklistDismissed
+                  });
+                }
               }
               // Track recently saved markers to prevent premature rebuilds
               recentlySavedMarkerIds.add(marker.id);
@@ -3274,6 +3368,7 @@
         />
         <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
+        <ChecklistHelpButton onclick={handleShowChecklist} />
         <Hints {stageProps} />
       </div>
     </Pane>
@@ -3342,6 +3437,12 @@
             {onLightDeleted}
           />
         {/key}
+      {:else if showChecklist}
+        <Checklist
+          completedItems={checklistCompletedItems}
+          onComplete={handleChecklistItemComplete}
+          onDismiss={handleChecklistDismiss}
+        />
       {:else}
         {#key selectedMarkerId}
           <MarkerManager

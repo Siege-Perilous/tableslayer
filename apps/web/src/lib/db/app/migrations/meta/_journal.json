@@ -316,6 +316,13 @@
       "when": 1776867867258,
       "tag": "0044_lights-opacity",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1778077580302,
+      "tag": "0045_new-user-checklist",
+      "breakpoints": true
     }
   ]
 }

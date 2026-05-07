@@ -12,7 +12,7 @@
     Label
   } from '@tableslayer/ui';
   import { type StageProps } from '@tableslayer/stage';
-  import { to8CharHex, queuePropertyUpdate } from '$lib/utils';
+  import { to8CharHex, queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
   import chroma from 'chroma-js';
 
   let {
@@ -30,6 +30,10 @@
   // Weather toggle
   const handleWeatherTypeChange = (weatherType: string) => {
     queuePropertyUpdate(stageProps, ['weather', 'type'], Number(weatherType), 'control');
+    // Track checklist completion for changing weather (only if setting to non-none weather)
+    if (Number(weatherType) > 0) {
+      trackChecklistItem('weather');
+    }
   };
 
   const weatherTypes = [

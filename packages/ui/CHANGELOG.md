@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.21
+
+### Patch Changes
+
+- Adds TextHighlight component
+
 ## 0.1.20
 
 ### Patch Changes

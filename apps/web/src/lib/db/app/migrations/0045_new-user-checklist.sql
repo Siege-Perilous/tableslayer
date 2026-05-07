@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `completed_checklist` text;

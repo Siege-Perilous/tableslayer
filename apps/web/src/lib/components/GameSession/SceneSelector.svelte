@@ -13,7 +13,7 @@
   } from '@tabler/icons-svelte';
   import type { SelectParty, SelectScene, InsertScene } from '$lib/db/app/schema';
   import { UpdateMapImage, openFileDialog } from './';
-  import { hasThumb, generateSmallThumbnailUrl, isVideoFile } from '$lib/utils';
+  import { hasThumb, generateSmallThumbnailUrl, isVideoFile, trackChecklistItem } from '$lib/utils';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
   import type { SelectGameSession } from '$lib/db/app/schema';
   import { type Thumb } from '$lib/server';
@@ -220,6 +220,14 @@
         isNewSceneAdded = true;
         file = null;
 
+        // Track checklist completion for adding a scene
+        trackChecklistItem('add-scene');
+
+        // Track checklist completion for using map-defined grid dimensions
+        if (gridWidth !== undefined && gridHeight !== undefined) {
+          trackChecklistItem('map-defined-grid');
+        }
+
         // Navigate to the newly created scene
         if (response?.scene) {
           goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
@@ -248,6 +256,8 @@
         if (partyData) {
           partyData.updatePartyState('activeSceneId', sceneId);
         }
+        // Track checklist completion for changing the active scene
+        trackChecklistItem('change-scene');
       },
       toastMessages: {
         success: { title: 'Active scene set' },

@@ -83,7 +83,7 @@
 </script>
 
 {#if party.plan === 'free'}
-  <div class="edgeControls">
+  <div class="effectsControls">
     <Text weight={800}>You are on a free plan</Text>
     <Spacer size="0.5rem" />
     <Text size="0.875rem" color="var(--fgMuted)">

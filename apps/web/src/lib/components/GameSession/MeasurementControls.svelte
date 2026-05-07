@@ -5,7 +5,7 @@
   import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
   import type { Thumb } from '$lib/server';
   import type { SelectScene } from '$lib/db/app/schema';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
 
   let {
     stageProps,
@@ -72,6 +72,8 @@
         queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
         onSelectedChange?.(value);
       }
+      // Track checklist completion for using measurement tool
+      trackChecklistItem('measurement');
     }
   }
 

@@ -8,7 +8,7 @@
   import { UpdateMapImage, openFileDialog } from './';
   import { type ZodIssue } from 'zod';
   import { usePartyData } from '$lib/utils/yjs/stores';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
 
   let {
     stageProps,
@@ -40,6 +40,8 @@
   const handleMapRotation = () => {
     const newRotation = (stageProps.map.rotation + 90) % 360;
     queuePropertyUpdate(stageProps, ['map', 'rotation'], newRotation, 'control');
+    // Track checklist completion for rotating map
+    trackChecklistItem('rotate-map');
   };
 </script>
 
@@ -57,8 +59,10 @@
           {...inputProps}
           type="number"
           value={stageProps.map.zoom}
-          oninput={(e) =>
-            queuePropertyUpdate(stageProps, ['map', 'zoom'], parseFloat(e.currentTarget.value), 'control')}
+          oninput={(e) => {
+            queuePropertyUpdate(stageProps, ['map', 'zoom'], parseFloat(e.currentTarget.value), 'control');
+            trackChecklistItem('scale-map');
+          }}
         />
       {/snippet}
       {#snippet start()}
@@ -71,8 +75,10 @@
           {...inputProps}
           type="number"
           value={stageProps.map.rotation}
-          oninput={(e) =>
-            queuePropertyUpdate(stageProps, ['map', 'rotation'], parseFloat(e.currentTarget.value), 'control')}
+          oninput={(e) => {
+            queuePropertyUpdate(stageProps, ['map', 'rotation'], parseFloat(e.currentTarget.value), 'control');
+            trackChecklistItem('rotate-map');
+          }}
         />
       {/snippet}
       {#snippet end()}

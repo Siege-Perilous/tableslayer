@@ -28,7 +28,8 @@
     getTvSizeFromPhysicalDimensions,
     queuePropertyUpdate,
     resetGridOrigin,
-    devLog
+    devLog,
+    trackChecklistItem
   } from '$lib/utils';
 
   let {
@@ -71,6 +72,8 @@
     const { width, height } = getTvDimensions(diagonalSize);
     queuePropertyUpdate(stageProps, ['display', 'size', 'x'], width, 'control');
     queuePropertyUpdate(stageProps, ['display', 'size', 'y'], height, 'control');
+    // Track checklist completion for changing TV size
+    trackChecklistItem('tv-size');
   };
 
   // We provide typical TV sizes as options, but save them as x and y values
