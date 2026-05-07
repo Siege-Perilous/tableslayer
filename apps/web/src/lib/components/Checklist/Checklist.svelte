@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon, Text } from '@tableslayer/ui';
+  import { Icon } from '@tableslayer/ui';
   import { IconX } from '@tabler/icons-svelte';
   import ChecklistItem from './ChecklistItem.svelte';
   import { checklistItems, type ChecklistItemId } from './checklistItems';
@@ -25,13 +25,21 @@
   };
 </script>
 
-<div class="checklist">
+<div class="checklist" data-testid="checklist">
   <div class="checklist__header">
     <div class="checklist__headerContent">
       <h3 class="checklist__title">Learn Table Slayer in 5 minutes</h3>
-      <span class="checklist__progress">{completedCount} / {checklistItems.length}</span>
+      <span class="checklist__progress" data-testid="checklistProgress">
+        {completedCount} / {checklistItems.length}
+      </span>
     </div>
-    <button type="button" class="checklist__closeButton" onclick={onDismiss} aria-label="Dismiss checklist">
+    <button
+      type="button"
+      class="checklist__closeButton"
+      onclick={onDismiss}
+      aria-label="Dismiss checklist"
+      data-testid="checklistDismissButton"
+    >
       <Icon Icon={IconX} size="1rem" />
     </button>
   </div>

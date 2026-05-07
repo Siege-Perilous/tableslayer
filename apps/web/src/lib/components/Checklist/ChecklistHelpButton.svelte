@@ -9,7 +9,7 @@
   let { onclick }: Props = $props();
 </script>
 
-<div class="checklistHelp">
+<div class="checklistHelp" data-testid="checklistHelpButton">
   <Button as="div" variant="ghost" class="checklistHelp__button" {onclick}>
     {#snippet start()}
       <Icon Icon={IconSchool} size="1.5rem" />

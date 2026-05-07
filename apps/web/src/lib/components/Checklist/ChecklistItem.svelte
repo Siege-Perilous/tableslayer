@@ -17,7 +17,12 @@
   const Instructions: Component = item.instructions;
 </script>
 
-<div class="checklistItem" class:checklistItem--completed={isCompleted}>
+<div
+  class="checklistItem"
+  class:checklistItem--completed={isCompleted}
+  data-testid="checklistItem"
+  data-item-id={item.id}
+>
   <div class="checklistItem__header">
     <button
       type="button"
@@ -25,12 +30,13 @@
       class:checklistItem__checkbox--checked={isCompleted}
       onclick={onToggleComplete}
       aria-label={isCompleted ? `Mark "${item.title}" as incomplete` : `Mark "${item.title}" as complete`}
+      data-testid="checklistItemCheckbox"
     >
       {#if isCompleted}
         <Icon Icon={IconCheck} size="0.875rem" />
       {/if}
     </button>
-    <button type="button" class="checklistItem__title" onclick={onToggleExpand}>
+    <button type="button" class="checklistItem__title" onclick={onToggleExpand} data-testid="checklistItemTitle">
       <span class="checklistItem__titleText">{item.title}</span>
       <span class="checklistItem__caret" class:checklistItem__caret--expanded={isExpanded}>
         <Icon Icon={isExpanded ? IconChevronDown : IconChevronRight} size="1rem" />
