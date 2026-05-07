@@ -79,7 +79,7 @@ export const checklistItems: ChecklistItem[] = [
   },
   {
     id: 'measurement',
-    title: 'Measure the distance between two grids',
+    title: 'Measure the distance between two squares',
     instructions: MeasurementInstructions
   },
   {

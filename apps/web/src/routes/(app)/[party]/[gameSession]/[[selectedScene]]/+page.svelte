@@ -271,6 +271,7 @@
   // BUT only if the current control doesn't need the panel space
   let showChecklist = $derived(
     !panelRequiringControls.includes(activeControl) &&
+      !selectedMarkerId &&
       (forceShowChecklist || (checklistState?.isEligibleForAutoShow && !checklistDismissed))
   );
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1072,6 +1073,7 @@
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.Measurement, 'control');
       // Clear annotation active layer when switching away
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
+      trackChecklistItemLocal('measurement');
     } else if (control === 'erase') {
       // Fog tool
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
@@ -1128,8 +1130,9 @@
 
   const handleShowChecklist = () => {
     forceShowChecklist = true;
-    // Deselect any active layer so checklist can show
+    // Deselect any active layer and marker so checklist can show
     activeControl = 'none';
+    selectedMarkerId = undefined;
     queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
     // Expand the markers pane if collapsed
     if (isMarkersCollapsed) {

@@ -32,7 +32,9 @@
     </button>
     <button type="button" class="checklistItem__title" onclick={onToggleExpand}>
       <span class="checklistItem__titleText">{item.title}</span>
-      <Icon Icon={isExpanded ? IconChevronDown : IconChevronRight} size="1rem" />
+      <span class="checklistItem__caret" class:checklistItem__caret--expanded={isExpanded}>
+        <Icon Icon={isExpanded ? IconChevronDown : IconChevronRight} size="1rem" />
+      </span>
     </button>
   </div>
   {#if isExpanded}
@@ -95,6 +97,16 @@
 
   .checklistItem__titleText {
     flex: 1;
+  }
+
+  .checklistItem__caret {
+    color: var(--fgMuted);
+    display: flex;
+    align-items: center;
+  }
+
+  .checklistItem__caret--expanded {
+    color: var(--fg);
   }
 
   .checklistItem--completed .checklistItem__titleText {
