@@ -37,7 +37,7 @@
 
   @container stageWrapper (max-width: 768px) {
     .checklistHelp {
-      display: none;
+      visibility: hidden;
     }
   }
 </style>
