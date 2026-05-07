@@ -11,14 +11,19 @@ test.describe('Checklist feature tour', () => {
   // ThreeJS canvas takes time to load
   test.setTimeout(120000);
 
-  test('should display checklist for new users and allow interaction', async ({ page }) => {
+  test('should display checklist and allow interaction', async ({ page }) => {
     const { partySlug, sessionSlug } = await createPartyAndSession(page);
 
     // Navigate to the game session editor
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Verify checklist is visible (auto-shows for new users)
+    // Click Learn button to show checklist
+    const learnButton = page.getByTestId('checklistHelpButton');
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
+
+    // Verify checklist is visible
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
@@ -56,6 +61,11 @@ test.describe('Checklist feature tour', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
+    // Click Learn button to show checklist
+    const learnButton = page.getByTestId('checklistHelpButton');
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
+
     // Verify checklist is visible
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
@@ -69,7 +79,6 @@ test.describe('Checklist feature tour', () => {
     await expect(checklist).not.toBeVisible({ timeout: 5000 });
 
     // Click Learn button to reopen
-    const learnButton = page.getByTestId('checklistHelpButton');
     await expect(learnButton).toBeVisible();
     await learnButton.click();
 
@@ -84,17 +93,18 @@ test.describe('Checklist feature tour', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Verify checklist is visible and place-marker is not completed
+    // Click Learn button to show checklist
+    const learnButton = page.getByTestId('checklistHelpButton');
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
+
+    // Verify checklist is visible
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
-    const placeMarkerItem = page
-      .getByTestId('checklistItem')
-      .filter({ has: page.locator('[data-item-id="place-marker"]') });
-    const placeMarkerCheckbox = placeMarkerItem.getByTestId('checklistItemCheckbox');
-
-    // Verify item is not completed initially (no check icon)
-    await expect(placeMarkerCheckbox.locator('svg')).not.toBeVisible();
+    // Verify progress starts at 0
+    const progress = page.getByTestId('checklistProgress');
+    await expect(progress).toContainText('0 /');
 
     // Activate marker tool and place a marker
     await activateMarkerTool(page);
@@ -103,16 +113,14 @@ test.describe('Checklist feature tour', () => {
     // Wait for marker to be created
     await page.waitForTimeout(1000);
 
-    // Click Learn button to show checklist again (marker panel may have taken over)
-    const learnButton = page.getByTestId('checklistHelpButton');
+    // Click Learn button to show checklist again (marker panel took over)
     await expect(learnButton).toBeVisible();
     await learnButton.click();
 
     // Verify checklist is visible
     await expect(checklist).toBeVisible({ timeout: 5000 });
 
-    // Verify the place-marker item is now completed
-    const progress = page.getByTestId('checklistProgress');
+    // Verify the place-marker item is now completed (progress shows 1)
     await expect(progress).toContainText('1 /');
   });
 
@@ -123,18 +131,26 @@ test.describe('Checklist feature tour', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
+    // Click Learn button to show checklist
+    const learnButton = page.getByTestId('checklistHelpButton');
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
+
     // Verify checklist is visible
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
+    // Verify progress starts at 0
+    const progress = page.getByTestId('checklistProgress');
+    await expect(progress).toContainText('0 /');
+
     // Press 'T' to activate measurement tool
     await page.keyboard.press('t');
 
-    // Wait for tool activation
+    // Wait for tool activation and checklist update
     await page.waitForTimeout(500);
 
-    // Verify the measurement item is now completed
-    const progress = page.getByTestId('checklistProgress');
+    // Verify the measurement item is now completed (progress shows 1)
     await expect(progress).toContainText('1 /');
   });
 
@@ -145,7 +161,12 @@ test.describe('Checklist feature tour', () => {
     await gotoWithRetry(page, `/${partySlug}/${sessionSlug}`);
     await waitForSceneEditor(page);
 
-    // Wait for checklist to be visible
+    // Click Learn button to show checklist
+    const learnButton = page.getByTestId('checklistHelpButton');
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
+
+    // Verify checklist is visible
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
@@ -165,11 +186,9 @@ test.describe('Checklist feature tour', () => {
     await page.reload();
     await waitForSceneEditor(page);
 
-    // Click Learn button to show checklist (may not auto-show after reload depending on state)
-    const learnButton = page.getByTestId('checklistHelpButton');
-    if (await learnButton.isVisible()) {
-      await learnButton.click();
-    }
+    // Click Learn button to show checklist
+    await expect(learnButton).toBeVisible({ timeout: 10000 });
+    await learnButton.click();
 
     // Verify checklist is visible
     await expect(checklist).toBeVisible({ timeout: 10000 });
