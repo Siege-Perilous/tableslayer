@@ -111,8 +111,9 @@ test.describe('Checklist feature tour', () => {
     // Wait a moment for any state updates
     await page.waitForTimeout(500);
 
-    // Click Learn button to reopen (use dispatchEvent since container query may hide it)
-    await learnButton.dispatchEvent('click');
+    // Click the actual button inside the wrapper (use dispatchEvent since container query may hide it)
+    const learnButtonInner = learnButton.locator('div[role="button"], button').first();
+    await learnButtonInner.dispatchEvent('click');
 
     // Verify checklist is visible again
     await expect(checklist).toBeVisible({ timeout: 5000 });
@@ -144,8 +145,9 @@ test.describe('Checklist feature tour', () => {
     // Wait for marker to be created
     await page.waitForTimeout(1000);
 
-    // Click Learn button to show checklist again (use dispatchEvent since marker panel may affect layout)
-    await learnButton.dispatchEvent('click');
+    // Click the actual button inside the wrapper (use dispatchEvent since marker panel may affect layout)
+    const learnButtonInner = learnButton.locator('div[role="button"], button').first();
+    await learnButtonInner.dispatchEvent('click');
 
     // Verify checklist is visible
     await expect(checklist).toBeVisible({ timeout: 5000 });
@@ -245,8 +247,9 @@ test.describe('Checklist feature tour', () => {
       await page.reload();
       await waitForSceneEditor(page);
 
-      // Click Learn button to show checklist (use dispatchEvent since container query may hide it)
-      await learnButton.dispatchEvent('click');
+      // Click the actual button inside the wrapper (use dispatchEvent since container query may hide it)
+      const learnButtonInner = learnButton.locator('div[role="button"], button').first();
+      await learnButtonInner.dispatchEvent('click');
 
       // Verify checklist is visible
       await expect(checklist).toBeVisible({ timeout: 10000 });
