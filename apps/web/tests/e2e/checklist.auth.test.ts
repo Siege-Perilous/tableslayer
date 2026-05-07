@@ -138,10 +138,6 @@ test.describe('Checklist feature tour', () => {
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
-    // Get initial progress count
-    const progress = page.getByTestId('checklistProgress');
-    const initialCount = await getProgressCount(progress);
-
     // Activate marker tool and place a marker
     await activateMarkerTool(page);
     await clickCanvasCenter(page);
