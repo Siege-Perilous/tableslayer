@@ -898,12 +898,32 @@
         }
         // Note: pinnedMarkerIds is now derived from marker.pinnedTooltip in the database
 
-        // Update reactive state
-        yjsScenes = updatedScenes as typeof scenes;
-        yjsPartyState = {
-          isPaused: updatedPartyState.isPaused,
-          activeSceneId: updatedPartyState.activeSceneId
-        };
+        // Only update yjsScenes if scenes actually changed (prevents effect cascade)
+        // Y.js subscription fires for ALL changes (cursors, awareness, etc.)
+        // but we only want to trigger reactive updates when scenes change
+        const scenesChanged =
+          updatedScenes.length !== yjsScenes.length ||
+          updatedScenes.some(
+            (s, i) =>
+              s.id !== yjsScenes[i]?.id ||
+              s.order !== yjsScenes[i]?.order ||
+              s.mapLocation !== yjsScenes[i]?.mapLocation
+          );
+
+        if (scenesChanged) {
+          yjsScenes = updatedScenes as typeof scenes;
+        }
+
+        // Only update party state if it actually changed
+        if (
+          updatedPartyState.isPaused !== yjsPartyState.isPaused ||
+          updatedPartyState.activeSceneId !== yjsPartyState.activeSceneId
+        ) {
+          yjsPartyState = {
+            isPaused: updatedPartyState.isPaused,
+            activeSceneId: updatedPartyState.activeSceneId
+          };
+        }
       });
 
       // Immediately populate reactive state with current Y.js data after initialization
