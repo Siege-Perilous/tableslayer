@@ -19,32 +19,32 @@
     "postinstall": "svelte-kit sync"
   },
   "dependencies": {
-    "@magidoc/plugin-svelte-marked": "^6.3.0",
+    "@magidoc/plugin-svelte-marked": "^6.4.3",
     "@tabler/icons-svelte": "^3.44.0",
     "@tableslayer/stage": "workspace:*",
     "@tableslayer/ui": "workspace:*",
     "mode-watcher": "^1.1.0",
-    "svelte-tweakpane-ui": "^1.5.16"
+    "svelte-tweakpane-ui": "^1.5.17"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-auto": "^7.0.1",
     "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.59.1",
+    "@sveltejs/kit": "^2.60.1",
     "@sveltejs/vite-plugin-svelte": "7.1.2",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.8.0",
     "@threlte/core": "8.5.14",
-    "@threlte/extras": "9.17.0",
-    "@tiptap/core": "^3.23.1",
+    "@threlte/extras": "9.18.0",
+    "@tiptap/core": "^3.23.4",
     "dotenv": "^17.4.2",
     "postprocessing": "6.39.1",
-    "svelte": "5.55.5",
+    "svelte": "5.55.7",
     "svelte-check": "^4.4.8",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.5"
+    "vite": "^8.0.13",
+    "vitest": "^4.1.6"
   }
 }
