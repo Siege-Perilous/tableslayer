@@ -136,6 +136,18 @@ export class GifDataSource implements IMapDataSource {
     if (!this.gifCanvas || this.frames.length === 0) return;
 
     this.gifCtx = this.gifCanvas.getContext('2d')!;
+
+    // For single-frame GIFs (static images), just render once and skip the animation loop
+    // This prevents unnecessary texture uploads every frame which causes major performance issues
+    if (this.frames.length === 1) {
+      this.currentFrameIndex = 0;
+      this.renderFrame(0);
+      if (this.texture) {
+        this.texture.needsUpdate = true;
+      }
+      return;
+    }
+
     this.startTime = performance.now();
     this.lastFrameTime = this.startTime;
     this.currentFrameIndex = -1;
@@ -149,7 +161,8 @@ export class GifDataSource implements IMapDataSource {
       this.lastFrameTime = currentTime;
 
       const currentFrame = this.frames[this.currentFrameIndex];
-      const frameDelay = currentFrame?.delay ?? 0;
+      // Use a minimum delay of 50ms (~20fps) to prevent performance issues with GIFs that have 0 delay
+      const frameDelay = Math.max(currentFrame?.delay ?? 0, 50);
 
       this.totalPlayTime += elapsedTime;
 
