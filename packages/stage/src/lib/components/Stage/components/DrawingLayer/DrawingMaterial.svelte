@@ -314,8 +314,8 @@
       const possibleWidth = view.getUint32(0, true);
       const possibleHeight = view.getUint32(4, true);
 
-      // Sanity check - dimensions should be reasonable
-      if (possibleWidth > 0 && possibleWidth <= 4096 && possibleHeight > 0 && possibleHeight <= 4096) {
+      // Sanity check - dimensions should be reasonable (8192 is common max texture size for modern GPUs)
+      if (possibleWidth > 0 && possibleWidth <= 8192 && possibleHeight > 0 && possibleHeight <= 8192) {
         actualWidth = possibleWidth;
         actualHeight = possibleHeight;
         rleStart = 8;
