@@ -14,4 +14,24 @@ export default class GameSessionServer implements Party.Server {
       // No need to save to database - clients handle saving through saveScene()
     });
   }
+
+  async onRequest(req: Party.Request) {
+    // Handle ping requests for diagnostics
+    if (req.method === 'POST') {
+      const body = await req.json();
+      if (body.type === 'ping') {
+        return new Response(
+          JSON.stringify({
+            type: 'pong',
+            timestamp: body.timestamp,
+            serverTimestamp: Date.now(),
+            roomId: this.room.id
+          }),
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    return new Response('OK', { status: 200 });
+  }
 }

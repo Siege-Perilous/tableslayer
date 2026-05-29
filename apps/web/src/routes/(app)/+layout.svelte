@@ -22,7 +22,8 @@
     IconBrandDiscord,
     IconBrandGithub,
     IconFileDescription,
-    IconConfetti
+    IconConfetti,
+    IconActivity
   } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
   import type { SelectGameSession } from '$lib/db/app/schema';
@@ -66,6 +67,7 @@
 
   const links = [
     { label: 'Product updates', href: '/changelog', icon: IconConfetti },
+    { label: 'Diagnostics', href: '/diagnostics', icon: IconActivity },
     { label: 'Help', href: '/help', icon: IconQuestionMark },
     { label: 'Bluesky', href: 'https://bsky.app/profile/davesnider.com', icon: IconBrandBluesky },
     {
@@ -169,7 +171,11 @@
             <Hr />
             <Spacer size="0.5rem" />
             {#each links as link}
-              <a href={link.href} class="profileDropdown__link" target="_blank">
+              <a
+                href={link.href}
+                class="profileDropdown__link"
+                target={link.href.startsWith('/') ? undefined : '_blank'}
+              >
                 <Text size="0.875rem">{link.label}</Text>
                 <Icon Icon={link.icon} size="1.25rem" />
               </a>
