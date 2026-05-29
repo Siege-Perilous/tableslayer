@@ -20,19 +20,22 @@ const initializeDatabase = async () => {
         console.log('Created /app/data directory');
       }
 
-      // Clear any existing replica files for a fresh sync
-      const replicaFiles = [
-        'turso_local.db',
-        'turso_local.db-wal',
-        'turso_local.db-shm',
-        'turso_local.db-client_wal_index',
-        'turso_local.db-info'
-      ];
-      for (const file of replicaFiles) {
-        const filePath = `/app/data/${file}`;
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-          console.log(`🗑️ Removed existing ${file}`);
+      // Optionally clear replica files for a fresh sync (useful after migrations or protocol changes)
+      if (process.env.FORCE_FRESH_SYNC === 'true') {
+        console.log('🔄 FORCE_FRESH_SYNC enabled, clearing replica files...');
+        const replicaFiles = [
+          'turso_local.db',
+          'turso_local.db-wal',
+          'turso_local.db-shm',
+          'turso_local.db-client_wal_index',
+          'turso_local.db-info'
+        ];
+        for (const file of replicaFiles) {
+          const filePath = `/app/data/${file}`;
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`🗑️ Removed existing ${file}`);
+          }
         }
       }
 
