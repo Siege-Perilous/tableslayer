@@ -9,8 +9,8 @@
   import { Loader, Toast, Title, Text, Logo } from '@tableslayer/ui';
   import { navigating } from '$app/state';
 
-  // MAINTENANCE MODE: Set to false to disable
-  const MAINTENANCE_MODE = true;
+  // MAINTENANCE MODE: Set to true to enable
+  const MAINTENANCE_MODE = false;
 </script>
 
 {#if MAINTENANCE_MODE}
