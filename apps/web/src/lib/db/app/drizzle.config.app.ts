@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 
+// Try multiple paths for .env (handles both local dev and Docker build contexts)
+config({ path: 'apps/web/.env' });
 config({ path: '.env' });
 
 export default defineConfig({
