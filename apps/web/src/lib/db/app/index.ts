@@ -25,7 +25,8 @@ const initializeDatabase = async () => {
         'turso_local.db',
         'turso_local.db-wal',
         'turso_local.db-shm',
-        'turso_local.db-client_wal_index'
+        'turso_local.db-client_wal_index',
+        'turso_local.db-info'
       ];
       for (const file of replicaFiles) {
         const filePath = `/app/data/${file}`;
