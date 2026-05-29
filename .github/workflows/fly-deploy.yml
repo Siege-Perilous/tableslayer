@@ -46,6 +46,8 @@ jobs:
           PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
           PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
           EOF
+          # Copy to root for drizzle-kit migrate (runs from repo root via turbo)
+          cp apps/web/.env .env
       - uses: ./.github/shared
       - name: Deploy PartyKit servers
         if: github.ref == 'refs/heads/main'
