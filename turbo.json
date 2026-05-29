@@ -11,7 +11,7 @@
       "outputs": [".svelte-kit/**"]
     },
     "web#build": {
-      "dependsOn": [],
+      "dependsOn": ["^web#migrate"],
       "env": [
         "ENV_NAME",
         "GITHUB_PR_NUMBER",
