@@ -60,5 +60,5 @@ jobs:
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Deploy fly productions
         run: |
-          flyctl deploy --remote-only --config fly.web.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"
+          flyctl deploy --remote-only --no-cache --config fly.web.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"
           flyctl deploy --remote-only --config fly.docs.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"
