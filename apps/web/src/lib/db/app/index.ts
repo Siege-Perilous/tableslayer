@@ -20,6 +20,24 @@ const initializeDatabase = async () => {
         console.log('Created /app/data directory');
       }
 
+      // Clear any existing replica files for a fresh sync
+      const replicaFiles = [
+        'turso_local.db',
+        'turso_local.db-wal',
+        'turso_local.db-shm',
+        'turso_local.db-client_wal_index'
+      ];
+      for (const file of replicaFiles) {
+        const filePath = `/app/data/${file}`;
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log(`🗑️ Removed existing ${file}`);
+        }
+      }
+
+      // Log directory contents before sync
+      console.log('📂 /app/data contents before sync:', fs.readdirSync('/app/data'));
+
       // Try to use local file with sync
       client = createClient({
         url: `file:${dbPath}`,
@@ -32,6 +50,25 @@ const initializeDatabase = async () => {
       console.log('⏳ Starting initial database sync...');
       await client.sync();
       console.log('✅ Initial database sync completed');
+
+      // Log directory contents and file size after sync
+      console.log('📂 /app/data contents after sync:', fs.readdirSync('/app/data'));
+      if (fs.existsSync(dbPath)) {
+        const stats = fs.statSync(dbPath);
+        console.log(`📊 Local replica size: ${(stats.size / 1024).toFixed(2)} KB`);
+      }
+
+      // Verify schema by checking users table columns
+      const schema = await client.execute(`PRAGMA table_info(users)`);
+      const columns = schema.rows.map((row) => row.name);
+      console.log('📋 Users table columns:', columns);
+      const hasGoogleId = columns.includes('google_id');
+      console.log(`🔍 google_id column exists: ${hasGoogleId ? '✅ YES' : '❌ NO'}`);
+
+      if (!hasGoogleId) {
+        console.error('❌ Schema mismatch detected! Falling back to remote.');
+        throw new Error('Schema mismatch: google_id column missing after sync');
+      }
 
       databaseMode = 'local-with-sync';
       console.log('🔄 DATABASE MODE: Using local database replica with sync');
