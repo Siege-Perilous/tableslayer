@@ -11,7 +11,7 @@
       "outputs": [".svelte-kit/**"]
     },
     "web#build": {
-      "dependsOn": ["^web#migrate"],
+      "dependsOn": ["^web#migrate", "@tableslayer/ui#package", "@tableslayer/stage#build"],
       "env": [
         "ENV_NAME",
         "GITHUB_PR_NUMBER",
@@ -78,12 +78,22 @@
       "cache": false
     },
     "docs#build": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"],
       "env": ["BASE_URL"],
       "outputs": [".svelte-kit/**"]
     },
     "tsc": {
       "dependsOn": ["^tsc"],
       "outputs": []
+    },
+    "@tableslayer/stage#check": {
+      "dependsOn": ["@tableslayer/ui#package"]
+    },
+    "web#tsc": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"]
+    },
+    "docs#tsc": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"]
     },
     "check": {
       "dependsOn": ["^check"],

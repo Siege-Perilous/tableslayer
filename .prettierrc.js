@@ -14,7 +14,6 @@ module.exports = {
         parser: 'svelte',
         svelteIndentScriptAndStyle: true,
         svelteSortOrder: 'options-scripts-markup-styles',
-        svelteStrictMode: false,
         svelteAllowShorthand: true,
         htmlWhitespaceSensitivity: 'ignore'
       }

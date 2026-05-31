@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/stage",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "private": true,
   "license": "FSL-1.1-ALv2",
   "repository": {
@@ -13,8 +13,7 @@
     "dev": "svelte-package --watch",
     "build": "svelte-kit sync && svelte-package",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "postinstall": "svelte-kit sync && svelte-package"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "exports": {
     ".": {
@@ -33,25 +32,26 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",
-    "@sveltejs/kit": "^2.59.1",
+    "@sveltejs/kit": "^2.61.1",
     "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
+    "@types/node": "^25",
     "@types/three": "0.184.1",
-    "svelte": "5.55.5",
+    "svelte": "5.55.9",
     "svelte-check": "^4.4.8",
     "typescript": "^6.0.3",
-    "vite": "^8.0.12"
+    "vite": "^8.0.14"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "@tabler/icons-svelte": "^3.44.0",
     "@tableslayer/ui": "workspace:*",
-    "@threlte/core": "8.5.14",
-    "@threlte/extras": "9.17.0",
-    "@tiptap/core": "^3.23.1",
+    "@threlte/core": "8.5.15",
+    "@threlte/extras": "9.20.0",
+    "@tiptap/core": "^3.23.6",
     "chroma-js": "^3.2.0",
     "gifuct-js": "^2.1.2",
     "lazy-brush": "^2.0.2",
