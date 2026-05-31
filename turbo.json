@@ -85,6 +85,12 @@
       "dependsOn": ["^tsc"],
       "outputs": []
     },
+    "web#tsc": {
+      "dependsOn": ["@tableslayer/ui#package"]
+    },
+    "docs#tsc": {
+      "dependsOn": ["@tableslayer/ui#package"]
+    },
     "check": {
       "dependsOn": ["^check"],
       "outputs": []
