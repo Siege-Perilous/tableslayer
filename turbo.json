@@ -78,6 +78,7 @@
       "cache": false
     },
     "docs#build": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"],
       "env": ["BASE_URL"],
       "outputs": [".svelte-kit/**"]
     },
