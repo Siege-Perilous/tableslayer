@@ -20,7 +20,7 @@
     "dev": "svelte-package --watch",
     "build": "svelte-kit sync && vite build && npm run package",
     "preview": "vite preview",
-    "tsc": "tsc",
+    "tsc": "svelte-kit sync && tsc",
     "package": "svelte-kit sync && svelte-package && typedoc",
     "prepublishOnly": "npm run package",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
