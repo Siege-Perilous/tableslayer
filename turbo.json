@@ -11,7 +11,7 @@
       "outputs": [".svelte-kit/**"]
     },
     "web#build": {
-      "dependsOn": ["^web#migrate"],
+      "dependsOn": ["^web#migrate", "@tableslayer/ui#package", "@tableslayer/stage#build"],
       "env": [
         "ENV_NAME",
         "GITHUB_PR_NUMBER",
