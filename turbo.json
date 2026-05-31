@@ -85,9 +85,6 @@
       "dependsOn": ["^tsc"],
       "outputs": []
     },
-    "@tableslayer/stage#tsc": {
-      "dependsOn": ["@tableslayer/ui#package"]
-    },
     "@tableslayer/stage#check": {
       "dependsOn": ["@tableslayer/ui#package"]
     },

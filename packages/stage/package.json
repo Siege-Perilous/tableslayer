@@ -13,8 +13,7 @@
     "dev": "svelte-package --watch",
     "build": "svelte-kit sync && svelte-package",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tsc": "svelte-kit sync && tsc"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "exports": {
     ".": {
