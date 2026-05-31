@@ -26,8 +26,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint .",
-    "typedoc": "typedoc",
-    "postinstall": "svelte-kit sync && pnpm run package"
+    "typedoc": "typedoc"
   },
   "exports": {
     ".": {
