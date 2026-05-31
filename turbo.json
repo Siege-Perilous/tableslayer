@@ -85,11 +85,17 @@
       "dependsOn": ["^tsc"],
       "outputs": []
     },
-    "web#tsc": {
+    "@tableslayer/stage#tsc": {
       "dependsOn": ["@tableslayer/ui#package"]
     },
-    "docs#tsc": {
+    "@tableslayer/stage#check": {
       "dependsOn": ["@tableslayer/ui#package"]
+    },
+    "web#tsc": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"]
+    },
+    "docs#tsc": {
+      "dependsOn": ["@tableslayer/ui#package", "@tableslayer/stage#build"]
     },
     "check": {
       "dependsOn": ["^check"],
