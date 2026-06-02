@@ -137,7 +137,7 @@
     ></div>
     {#if isPartyAdmin}
       <div class="gameSessionCard__popover">
-        <Popover>
+        <Popover portal="body">
           {#snippet trigger()}
             <IconButton as="div" variant="ghost" data-testid="sessionMenuTrigger">
               <Icon Icon={IconChevronDown} />
@@ -275,6 +275,7 @@
   }
   .gameSessionCard__popover {
     position: absolute;
+    z-index: 1;
     top: 1.5rem;
     right: 1.5rem;
   }
