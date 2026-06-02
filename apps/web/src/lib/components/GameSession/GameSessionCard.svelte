@@ -275,7 +275,6 @@
   }
   .gameSessionCard__popover {
     position: absolute;
-    z-index: 1;
     top: 1.5rem;
     right: 1.5rem;
   }
