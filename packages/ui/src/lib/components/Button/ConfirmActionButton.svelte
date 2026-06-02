@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { computePosition, offset, flip, shift, platform } from '@floating-ui/dom';
+  import { computePosition, offset, flip, shift, autoUpdate } from '@floating-ui/dom';
   import { Button, type ConfirmActionButtonProps } from './';
-  import { tick, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
 
   let {
     trigger,
@@ -19,6 +19,7 @@
   let portalContainer: HTMLDivElement | null = null;
   let isShowingConfirm = $state(false);
   let floatingStyles = $state('');
+  let cleanupAutoUpdate: (() => void) | null = null;
 
   // Handle portal mounting
   $effect(() => {
@@ -36,16 +37,31 @@
     }
   });
 
+  // Set up autoUpdate when popover is shown
+  $effect(() => {
+    if (isShowingConfirm && triggerElement && popoverElement) {
+      cleanupAutoUpdate = autoUpdate(triggerElement, popoverElement, updatePosition);
+    }
+
+    return () => {
+      if (cleanupAutoUpdate) {
+        cleanupAutoUpdate();
+        cleanupAutoUpdate = null;
+      }
+    };
+  });
+
   onDestroy(() => {
     if (portalContainer?.parentNode) {
       portalContainer.parentNode.removeChild(portalContainer);
+    }
+    if (cleanupAutoUpdate) {
+      cleanupAutoUpdate();
     }
   });
 
   const toggleShowConfirm = async () => {
     isShowingConfirm = true;
-    await tick();
-    updatePosition();
   };
 
   const triggerProps = {
@@ -61,8 +77,11 @@
 
     computePosition(triggerElement, popoverElement, {
       placement: positioning?.placement,
-      middleware: [offset(({ rects }) => -rects.reference.height / 2 - rects.floating.height / 2), flip(), shift()],
-      platform
+      middleware: [
+        offset(({ rects }) => -rects.reference.height / 2 - rects.floating.height / 2),
+        flip({ boundary: document.body }),
+        shift({ padding: 8, crossAxis: true, boundary: document.body })
+      ]
     })
       .then(({ x, y, strategy }) => {
         floatingStyles = `position: ${strategy}; left: ${x}px; top: ${y}px;`;
