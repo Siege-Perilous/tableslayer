@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.24
+
+### Patch Changes
+
+- Fix for confirm action component bounding issues
+
 ## 0.1.23
 
 ### Patch Changes
