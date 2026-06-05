@@ -28,6 +28,7 @@
   import { useUpdatePartyMutation } from '$lib/queries/parties';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { PartyUpgrade } from '../party';
+  import { untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
   import { navigating } from '$app/state';
@@ -61,6 +62,7 @@
   let sceneBeingDeleted = $state('');
   let createSceneErrors = $state<FormMutationError | undefined>(undefined);
   let renamingScenes = $state<Record<string, string | null>>({});
+  let renameInputRefs = $state<Record<string, HTMLInputElement | undefined>>({});
   let openScenePopover = $state<string | null>(null);
   let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
   let needsToUpgrade = $derived(isStripeEnabled && party.plan === 'free' && orderedScenes.length >= 3);
@@ -124,6 +126,28 @@
   const isSceneBeingRenamed = (sceneId: string) => {
     return renamingScenes[sceneId] !== null && renamingScenes[sceneId] !== undefined;
   };
+
+  // Focus and select rename input when it becomes available
+  let focusedInputs = new Set<string>();
+  $effect(() => {
+    for (const sceneId of Object.keys(renameInputRefs)) {
+      const input = renameInputRefs[sceneId];
+      if (input && !focusedInputs.has(sceneId)) {
+        focusedInputs.add(sceneId);
+        input.focus();
+        input.select();
+      }
+    }
+    // Clean up tracking for scenes no longer being renamed (untracked to avoid re-runs)
+    untrack(() => {
+      for (const sceneId of focusedInputs) {
+        if (!isSceneBeingRenamed(sceneId)) {
+          focusedInputs.delete(sceneId);
+          delete renameInputRefs[sceneId];
+        }
+      }
+    });
+  });
 
   // Determine if dragging should be disabled for a particular scene
   const isDragDisabled = (sceneId: string) => {
@@ -628,17 +652,21 @@
           <div class="scene__rename">
             <form onsubmit={() => handleRenameScene(scene.id)}>
               <div class="scene__renameInput" data-testid="sceneRenameInput">
-                <FormControl label="Name" name="name">
-                  {#snippet input({ inputProps })}
-                    <Input type="text" {...inputProps} bind:value={renamingScenes[scene.id]} hideAutocomplete />
-                  {/snippet}
-                </FormControl>
-                <IconButton>
-                  <Icon Icon={IconCheck} />
-                </IconButton>
-                <IconButton>
-                  <Icon Icon={IconX} onclick={() => (renamingScenes[scene.id] = null)} />
-                </IconButton>
+                <Input
+                  type="text"
+                  name="name"
+                  bind:value={renamingScenes[scene.id]}
+                  bind:element={renameInputRefs[scene.id]}
+                  hideAutocomplete
+                />
+                <div class="scene__renameActions">
+                  <IconButton type="submit">
+                    <Icon Icon={IconCheck} />
+                  </IconButton>
+                  <IconButton type="button" onclick={() => (renamingScenes[scene.id] = null)}>
+                    <Icon Icon={IconX} />
+                  </IconButton>
+                </div>
               </div>
             </form>
           </div>
@@ -668,7 +696,7 @@
             </div>
           {/if}
           <div class="scene__text" data-testid="sceneText">
-            {scene.order} - {renamingScenes[scene.id] || scene.name}
+            {scene.order} - {scene.name}
           </div>
         </a>
         <div class="scene__dragHandle" class:scene__dragHandle--disabled={isDragDisabled(scene.id)}>
@@ -834,7 +862,7 @@
     background: rgba(0, 0, 0, 0.85);
     display: flex;
     align-items: center;
-    padding: 2rem;
+    padding: 1rem;
     position: absolute;
     top: 0;
     left: 0;
@@ -844,7 +872,13 @@
   }
   .scene__renameInput {
     display: flex;
-    align-items: end;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 200px;
+  }
+  .scene__renameActions {
+    display: flex;
     gap: 0.5rem;
   }
   .scene--isSelected {
