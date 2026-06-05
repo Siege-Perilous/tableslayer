@@ -47,15 +47,67 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PREFIX="pr-${PR_NUMBER}"
 
-          # Fetch databases and capture HTTP status code
-          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
-          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+          # Function to fetch databases with retry for 403 errors
+          fetch_databases_with_retry() {
+            MAX_RETRIES=3
+            RETRY_DELAY=10
 
-          echo "HTTP Status Code: $HTTP_STATUS"
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET -H "$AUTH_HEADER" "$API_BASE_URL")
+              HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+              RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
 
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "Failed to fetch databases. HTTP Status: $HTTP_STATUS"
+              echo "Fetch attempt $i - HTTP Status Code: $HTTP_STATUS"
+
+              if [ "$HTTP_STATUS" -eq 200 ]; then
+                return 0
+              elif [ "$HTTP_STATUS" -eq 403 ]; then
+                echo "Got 403, retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+                sleep $RETRY_DELAY
+              else
+                echo "Failed to fetch databases. HTTP Status: $HTTP_STATUS"
+                return 1
+              fi
+            done
+
+            echo "Failed to fetch databases after $MAX_RETRIES retries due to 403."
+            return 1
+          }
+
+          # Function to delete database with retry for 403 errors
+          delete_database_with_retry() {
+            local DB_NAME=$1
+            MAX_RETRIES=3
+            RETRY_DELAY=10
+
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              DELETE_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+                -H "$AUTH_HEADER" \
+                "$API_BASE_URL/$DB_NAME")
+
+              DELETE_STATUS=$(echo "$DELETE_RESPONSE" | tail -n1)
+
+              echo "Delete attempt $i for $DB_NAME - HTTP Status: $DELETE_STATUS"
+
+              if [ "$DELETE_STATUS" -eq 200 ] || [ "$DELETE_STATUS" -eq 204 ]; then
+                echo "Database $DB_NAME deleted successfully."
+                return 0
+              elif [ "$DELETE_STATUS" -eq 403 ]; then
+                echo "Got 403, retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+                sleep $RETRY_DELAY
+              else
+                echo "Failed to delete database: $DB_NAME. HTTP Status: $DELETE_STATUS."
+                echo "Response Body: $(echo "$DELETE_RESPONSE" | sed '$d')"
+                return 1
+              fi
+            done
+
+            echo "Failed to delete database $DB_NAME after $MAX_RETRIES retries."
+            return 1
+          }
+
+          # Fetch databases with retry
+          if ! fetch_databases_with_retry; then
             exit 1
           fi
 
@@ -73,7 +125,7 @@ jobs:
           fi
 
           # Filter databases with the specific prefix
-          DATABASES=$(echo "$DATABASES" | grep "^${PREFIX}")
+          DATABASES=$(echo "$DATABASES" | grep "^${PREFIX}" || true)
 
           if [ -z "$(echo -n "$DATABASES")" ]; then
             echo "No databases found for prefix ${PREFIX}."
@@ -88,17 +140,5 @@ jobs:
 
           for DB_NAME in $DATABASES; do
             echo "Attempting to delete database: $DB_NAME"
-
-            DELETE_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-              -H "$AUTH_HEADER" \
-              "$API_BASE_URL/$DB_NAME")
-
-            DELETE_STATUS=$(echo "$DELETE_RESPONSE" | tail -n1)
-
-            if [ "$DELETE_STATUS" -eq 200 ] || [ "$DELETE_STATUS" -eq 204 ]; then
-              echo "Database $DB_NAME deleted successfully."
-            else
-              echo "Failed to delete database: $DB_NAME. HTTP Status: $DELETE_STATUS."
-              echo "Response Body: $(echo "$DELETE_RESPONSE" | sed '$d')"
-            fi
+            delete_database_with_retry "$DB_NAME" || true
           done

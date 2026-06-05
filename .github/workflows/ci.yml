@@ -122,7 +122,6 @@ jobs:
             RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
 
             echo "HTTP_STATUS: $HTTP_STATUS"
-            echo "RESPONSE: $RESPONSE"
 
             if [ "$HTTP_STATUS" -eq 200 ]; then
               HOSTNAME=$(echo "$RESPONSE" | python3 -c 'import sys, json; data=json.load(sys.stdin)["database"]; print((data.get("Hostname") or data.get("hostname") or "null").strip())')
@@ -134,10 +133,46 @@ jobs:
             fi
           }
 
+          # Function to create database with retry for 403 errors
+          create_database_with_retry() {
+            MAX_RETRIES=3
+            RETRY_DELAY=10
+
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+                -H "$AUTH_HEADER" \
+                -H "Content-Type: application/json" \
+                -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts-prod"} }' \
+                "$API_BASE_URL")
+
+              HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+              RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+              echo "Create attempt $i - HTTP_STATUS: $HTTP_STATUS"
+
+              if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
+                echo "Database created successfully."
+                return 0
+              elif [ "$HTTP_STATUS" -eq 409 ]; then
+                echo "Database already exists."
+                return 0
+              elif [ "$HTTP_STATUS" -eq 403 ]; then
+                echo "Got 403, retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+                sleep $RETRY_DELAY
+              else
+                echo "Failed to create database. HTTP Status: $HTTP_STATUS"
+                return 1
+              fi
+            done
+
+            echo "Failed to create database after $MAX_RETRIES retries."
+            return 1
+          }
+
           # Function to retry fetching the database details until hostname is available
           retry_fetch_until_hostname() {
             MAX_RETRIES=5
-            RETRY_DELAY=5  # seconds
+            RETRY_DELAY=5
 
             for ((i=1; i<=MAX_RETRIES; i++)); do
               fetch_database_details
@@ -153,37 +188,33 @@ jobs:
             exit 1
           }
 
-          # Fetch existing database details
-          fetch_database_details
+          # Function to fetch with retry for 403 errors
+          fetch_with_retry() {
+            MAX_RETRIES=3
+            RETRY_DELAY=10
+
+            for ((i=1; i<=MAX_RETRIES; i++)); do
+              fetch_database_details
+              if [ "$HTTP_STATUS" -ne 403 ]; then
+                return 0
+              fi
+              echo "Got 403 on fetch, retrying in $RETRY_DELAY seconds... ($i/$MAX_RETRIES)"
+              sleep $RETRY_DELAY
+            done
+
+            echo "Failed to fetch database after $MAX_RETRIES retries due to 403."
+            exit 1
+          }
+
+          # Fetch existing database details with retry
+          fetch_with_retry
 
           # Create the database if it doesn't exist
           if [ "$DATABASE_EXISTS" != "true" ]; then
-            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-              -H "$AUTH_HEADER" \
-              -H "Content-Type: application/json" \
-              -d '{"name": "'"$DB_NAME"'", "group": "default", "seed": {"type": "database", "name": "ts-prod"} }' \
-              "$API_BASE_URL")
-
-            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
-            RESPONSE=$(echo "$HTTP_RESPONSE" | sed '$d')
-
-            echo "HTTP_STATUS: $HTTP_STATUS"
-            echo "RESPONSE: $RESPONSE"
-
-            if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
-              echo "Database created successfully."
-              retry_fetch_until_hostname  # Wait and retry fetching hostname if not available
-            elif [ "$HTTP_STATUS" -eq 409 ]; then
-              echo "Database already exists. Fetching details..."
-              fetch_database_details
-              if [ "$DATABASE_EXISTS" != "true" ]; then
-                echo "Failed to fetch database details after 409 error."
-                exit 1
-              fi
-            else
-              echo "Failed to create database. HTTP Status: $HTTP_STATUS. Response: $RESPONSE"
+            if ! create_database_with_retry; then
               exit 1
             fi
+            retry_fetch_until_hostname
           fi
 
           # Check if hostname was successfully retrieved
