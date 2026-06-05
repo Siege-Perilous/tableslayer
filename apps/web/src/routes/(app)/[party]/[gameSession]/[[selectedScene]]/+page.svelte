@@ -906,6 +906,7 @@
           updatedScenes.some(
             (s, i) =>
               s.id !== yjsScenes[i]?.id ||
+              s.name !== yjsScenes[i]?.name ||
               s.order !== yjsScenes[i]?.order ||
               s.mapLocation !== yjsScenes[i]?.mapLocation
           );
