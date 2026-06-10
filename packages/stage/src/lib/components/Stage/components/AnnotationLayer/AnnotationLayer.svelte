@@ -439,7 +439,13 @@ Effect annotations have a different render order to appear below plain color ann
       layers={[SceneLayer.Overlay]}
       renderOrder={hasEffect(layer) ? SceneLayerOrder.EffectAnnotation : SceneLayerOrder.Annotation}
     >
-      <AnnotationMaterial bind:this={layers[index]} props={layer} {display} lineWidth={props.lineWidth} />
+      <AnnotationMaterial
+        bind:this={layers[index]}
+        props={layer}
+        {display}
+        lineWidth={props.lineWidth}
+        isDrawingThisLayer={() => drawing && props.activeLayer === layer.id}
+      />
       <T.PlaneGeometry />
     </T.Mesh>
   {/each}

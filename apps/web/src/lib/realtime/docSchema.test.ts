@@ -190,9 +190,11 @@ describe('docSchema hydration and reads', () => {
     expect(snap?.markers).toHaveLength(2);
     expect(snap?.markers.find((m) => m.id === 'm2')?.positionX).toBe(10);
     expect(snap?.lights[0]?.style).toBe('lantern');
-    // Annotations sorted by order, mask excluded from rows
+    // Annotations sorted by order, masks included as Uint8Array references
     expect(snap?.annotations.map((a) => a.id)).toEqual(['a1', 'a2']);
-    expect(snap?.annotations.find((a) => a.id === 'a2')).not.toHaveProperty('mask');
+    expect(snap?.annotations.find((a) => a.id === 'a2')?.mask).toEqual(new Uint8Array([9, 9]));
+    // Same reference until the mask is rewritten — feeds reference-based reactivity
+    expect(snap?.annotations.find((a) => a.id === 'a2')?.mask).toBe(getAnnotationMask(doc, 's1', 'a2'));
 
     expect(getFogMask(doc, 's1')).toEqual(new Uint8Array([1, 2, 3, 4]));
     expect(getAnnotationMask(doc, 's1', 'a2')).toEqual(new Uint8Array([9, 9]));

@@ -52,19 +52,19 @@ export class EditorSession {
   }
 
   /**
-   * Apply a scene's fog + annotation masks from the doc to the stage. Retries on
-   * a short schedule: the fog layer refills itself when the map texture loads,
-   * and annotation layer components must mount before loadMask can land.
+   * Apply a scene's fog mask from the doc to the stage. Retries on a short
+   * schedule: the fog layer refills itself when the map texture loads.
+   * (Annotation masks are declarative layer props — no application needed.)
    */
   async applyMasks(sceneId: string) {
     for (const delay of [0, 300, 1000, 3000]) {
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       if (this.#options.selectedSceneId() !== sceneId) return; // scene changed mid-retry
-      await this.#applyMasksOnce(sceneId);
+      await this.#applyFogMaskOnce(sceneId);
     }
   }
 
-  async #applyMasksOnce(sceneId: string) {
+  async #applyFogMaskOnce(sceneId: string) {
     const client = this.client;
     const stage = this.#options.getStage();
     if (!client || !stage) return;
@@ -74,14 +74,8 @@ export class EditorSession {
       if (fogMask && stage.fogOfWar?.fromRLE && !stage.fogOfWar.isDrawing()) {
         await stage.fogOfWar.fromRLE(fogMask, 1024, 1024);
       }
-      for (const annotation of client.scene(sceneId)?.annotations ?? []) {
-        const mask = client.annotationMask(sceneId, annotation.id);
-        if (mask && stage.annotations?.loadMask && !stage.annotations.isDrawing()) {
-          await stage.annotations.loadMask(annotation.id, mask);
-        }
-      }
     } catch (error) {
-      devError('editor', 'Failed to apply masks', error);
+      devError('editor', 'Failed to apply fog mask', error);
     }
   }
 
@@ -100,36 +94,15 @@ export class EditorSession {
 
       if (!change.remote || change.sceneId !== selectedSceneId) continue;
 
-      // Remote mask changes apply straight to the canvas (own commits are
-      // excluded by transaction identity, not timing)
+      // Remote fog changes apply straight to the canvas (own commits are
+      // excluded by transaction identity, not timing). Annotation masks are
+      // declarative layer props and need no handling here.
       const stage = this.#options.getStage();
       if (!stage) continue;
       if (change.part === 'fogMask' && !stage.fogOfWar?.isDrawing()) {
         const mask = client.fogMask(change.sceneId);
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
       }
-      // Any annotation row change can (re)mount its layer component (new rows,
-      // visibility toggles); reapply masks rather than only reacting to 'mask'.
-      if (change.part === 'annotations' && !stage.annotations?.isDrawing()) {
-        const annotationIds = change.childId ? [change.childId] : change.keys;
-        for (const annotationId of annotationIds) {
-          this.#reapplyAnnotationMask(change.sceneId, annotationId);
-        }
-      }
-    }
-  }
-
-  // Reapply on a short ladder: loadMask silently no-ops if the layer component
-  // hasn't mounted yet, so a single immediate call can miss a remounting layer.
-  #reapplyAnnotationMask(sceneId: string, annotationId: string) {
-    for (const delay of [50, 350, 1000]) {
-      setTimeout(() => {
-        if (this.#options.selectedSceneId() !== sceneId) return;
-        const stage = this.#options.getStage();
-        if (!stage?.annotations?.loadMask || stage.annotations.isDrawing()) return;
-        const mask = this.client?.annotationMask(sceneId, annotationId);
-        if (mask) stage.annotations.loadMask(annotationId, mask);
-      }, delay);
     }
   }
 

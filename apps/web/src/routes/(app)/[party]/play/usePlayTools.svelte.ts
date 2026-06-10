@@ -91,7 +91,8 @@ export class PlayTools {
   #fogCommitTimer: ReturnType<typeof setTimeout> | null = null;
   #expiryTicker: ReturnType<typeof setInterval>;
   #now = $state(Date.now());
-  #loadedTempMasks = new Map<string, string>();
+  // Memoized base64 → bytes per layer so mask references stay stable across rebuilds
+  #tempMaskCache = new Map<string, { b64: string; bytes: Uint8Array }>();
 
   constructor(options: PlayToolsOptions) {
     this.#options = options;
@@ -100,7 +101,10 @@ export class PlayTools {
     // Only touch the reactive clock while temp layers exist, so an idle playfield
     // doesn't rebuild its render props every second.
     this.#expiryTicker = setInterval(() => {
-      if (this.#temporaryLayers().length === 0) return;
+      if (this.#temporaryLayers().length === 0) {
+        if (this.#tempMaskCache.size > 0) this.#tempMaskCache.clear();
+        return;
+      }
       this.#now = Date.now();
       this.#options.session.presence?.cleanupExpiredTemporaryLayers();
       if (
@@ -110,18 +114,14 @@ export class PlayTools {
         this.currentTemporaryLayerId = null;
       }
     }, 1000);
+  }
 
-    // Load RLE masks for temporary layers drawn by other clients
-    $effect(() => {
-      for (const layer of this.#temporaryLayers()) {
-        if (!layer.maskData || this.#loadedTempMasks.get(layer.id) === layer.maskData) continue;
-        this.#loadedTempMasks.set(layer.id, layer.maskData);
-        // Our own active drawing is already on the canvas
-        if (layer.id === this.currentTemporaryLayerId) continue;
-        // Give Threlte a beat to create the layer component before loading
-        setTimeout(() => this.#loadTempMaskWithRetry(layer.id, layer.maskData), 50);
-      }
-    });
+  #decodeTempMask(layerId: string, b64: string): Uint8Array {
+    const cached = this.#tempMaskCache.get(layerId);
+    if (cached && cached.b64 === b64) return cached.bytes;
+    const bytes = base64ToUint8(b64);
+    this.#tempMaskCache.set(layerId, { b64, bytes });
+    return bytes;
   }
 
   #temporaryLayers() {
@@ -141,6 +141,7 @@ export class PlayTools {
         color: layer.color,
         opacity: layer.opacity,
         url: this.tempLayerUrls[layer.id] ?? null,
+        mask: layer.maskData ? this.#decodeTempMask(layer.id, layer.maskData) : null,
         visibility: StageMode.Player,
         effect:
           layer.effectType && layer.effectType !== AnnotationEffect.None
@@ -402,7 +403,6 @@ export class PlayTools {
               effectType: current?.effectType
             })
           );
-          this.#loadedTempMasks.set(tempLayerId, uint8ToBase64(rle));
           if (endPosition) this.#pendingPersistPosition = endPosition;
         }
       } catch (error) {
@@ -438,14 +438,12 @@ export class PlayTools {
         effectType: tempLayer.effectType ?? null
       };
 
+      // The mask rides into the doc with the row and reaches the new layer
+      // component as a declarative prop — nothing to coordinate here.
       session.client.write.upsertAnnotation(sceneId, annotation, mask);
-      // Our own doc write is local-origin (the remote reapply path skips it), and
-      // the new annotation's layer component mounts on the NEXT render — use the
-      // retry ladder so the mask lands after the mount instead of no-oping before it.
-      session.reapplyAnnotationMask(sceneId, annotation.id);
 
       session.presence?.removeTemporaryLayer(layerId);
-      this.#loadedTempMasks.delete(layerId);
+      this.#tempMaskCache.delete(layerId);
       if (this.currentTemporaryLayerId === layerId) this.currentTemporaryLayerId = null;
       devLog('play', 'Persisted drawing as annotation', annotation.id);
     } catch (error) {
@@ -475,25 +473,9 @@ export class PlayTools {
       session.presence?.removeTemporaryLayer(layer.id);
     }
     this.tempLayerUrls = {};
-    this.#loadedTempMasks.clear();
+    this.#tempMaskCache.clear();
     this.clearActiveTool();
     devLog('play', 'Deleted all drawings for scene', sceneId);
-  }
-
-  async #loadTempMaskWithRetry(layerId: string, maskData: string, retries = 3) {
-    for (let attempt = 0; attempt < retries; attempt++) {
-      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
-      try {
-        const stage = this.#options.getStage();
-        if (stage?.annotations?.loadMask) {
-          await stage.annotations.loadMask(layerId, base64ToUint8(maskData));
-          return;
-        }
-      } catch {
-        // Layer component may not exist yet; retry
-      }
-    }
-    devLog('play', `Failed to load temporary layer mask ${layerId} after ${retries} attempts`);
   }
 
   destroy() {

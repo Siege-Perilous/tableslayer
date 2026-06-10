@@ -85,7 +85,11 @@ export const getSceneSnapshot = (doc: Y.Doc, sceneId: string): SceneSnapshot | n
     settings: yMapToObject<SceneSettings>(settings),
     markers: rowsOf<MarkerRow>(scene, 'markers'),
     lights: rowsOf<LightRow>(scene, 'lights'),
-    annotations: rowsOf<AnnotationRow>(scene, 'annotations', ANNOTATION_MASK_KEY).sort((a, b) => a.order - b.order)
+    // Masks ride along as stable Uint8Array references (cheap; Y.js returns the
+    // same instance until a new mask is set), feeding declarative layer props
+    annotations: rowsOf<AnnotationRow & { mask?: Uint8Array | null }>(scene, 'annotations').sort(
+      (a, b) => a.order - b.order
+    )
   };
 };
 

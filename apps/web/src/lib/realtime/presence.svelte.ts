@@ -183,11 +183,13 @@ export class PresenceChannel {
   }
 
   broadcastTemporaryLayer(layer: TemporaryLayer) {
+    // Never mutate the stored array: y-protocols deep-compares prev vs next
+    // state to decide whether to emit 'change', and an in-place edit makes the
+    // comparison see "no change" — our own reactive state would go stale.
     const layers = this.#ownTemporaryLayers();
     const index = layers.findIndex((l) => l.id === layer.id);
-    if (index >= 0) layers[index] = layer;
-    else layers.push(layer);
-    this.#awareness.setLocalStateField('temporaryLayers', layers);
+    const next = index >= 0 ? layers.map((l, i) => (i === index ? layer : l)) : [...layers, layer];
+    this.#awareness.setLocalStateField('temporaryLayers', next);
   }
 
   removeTemporaryLayer(layerId: string) {

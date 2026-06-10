@@ -116,7 +116,8 @@ export interface SceneSnapshot {
   settings: SceneSettings;
   markers: MarkerRow[];
   lights: LightRow[];
-  annotations: AnnotationRow[];
+  /** Includes each annotation's RLE mask as a stable Uint8Array reference. */
+  annotations: Array<AnnotationRow & { mask?: Uint8Array | null }>;
 }
 
 /** Lightweight entry for scene lists/selectors, derived from settings. */

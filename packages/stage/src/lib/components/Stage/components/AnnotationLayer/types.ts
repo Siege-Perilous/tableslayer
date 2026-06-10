@@ -108,9 +108,11 @@ export interface AnnotationLayerData {
   url: string | null;
 
   /**
-   * Version timestamp for mask data changes (for real-time sync)
+   * RLE-encoded mask pixels for this layer. Applied declaratively: the layer
+   * loads it on mount and re-applies when the reference changes or the canvas
+   * resizes, so callers never need to coordinate with component lifecycles.
    */
-  maskVersion?: number;
+  mask?: Uint8Array | null;
 
   /**
    * Control who can see the layer

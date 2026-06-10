@@ -152,12 +152,20 @@
   const clampFogBrush = (value: number, props: StageProps) =>
     Math.max(getMinBrushSize(props.grid.spacing, props.display.size.x), Math.min(20, value));
 
+  // SSR strips masks from annotation rows (serialization) and ships them as a
+  // separate record; merge them back so the seed props paint layers immediately
+  const ssrAnnotations = () =>
+    data.selectedSceneAnnotations.map((annotation) => ({
+      ...annotation,
+      mask: data.selectedSceneAnnotationMasks?.[annotation.id] ?? null
+    }));
+
   const initialStageProps = untrack(() => {
     const props = buildSceneProps(
       data.selectedScene,
       data.selectedSceneMarkers,
       'editor',
-      data.selectedSceneAnnotations,
+      ssrAnnotations(),
       data.selectedSceneLights,
       data.bucketUrl
     );
@@ -186,7 +194,7 @@
             ssrScene,
             data.selectedSceneMarkers,
             'editor',
-            data.selectedSceneAnnotations,
+            ssrAnnotations(),
             data.selectedSceneLights,
             data.bucketUrl
           );
@@ -573,24 +581,14 @@
   const onStageInitialized = async () => {
     stageIsLoading = false;
 
-    // SSR masks give a fast first paint; the doc re-applies once ready
+    // SSR fog mask gives a fast first paint; the doc re-applies once ready.
+    // (Annotation masks are declarative layer props — no application needed.)
     if (data.selectedSceneFogMask && stage?.fogOfWar?.fromRLE) {
       try {
         const bytes = Uint8Array.from(atob(data.selectedSceneFogMask), (c) => c.charCodeAt(0));
         await stage.fogOfWar.fromRLE(bytes, 1024, 1024);
       } catch {
         // doc apply will retry
-      }
-    }
-    if (data.selectedSceneAnnotationMasks && stage?.annotations?.loadMask) {
-      for (const [annotationId, maskData] of Object.entries(data.selectedSceneAnnotationMasks)) {
-        if (!maskData) continue;
-        try {
-          const bytes = Uint8Array.from(atob(maskData), (c) => c.charCodeAt(0));
-          await stage.annotations.loadMask(annotationId, bytes);
-        } catch {
-          // doc apply will retry
-        }
       }
     }
   };

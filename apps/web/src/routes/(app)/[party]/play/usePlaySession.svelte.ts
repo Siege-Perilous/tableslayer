@@ -133,21 +133,21 @@ export class PlaySession {
   }
 
   /**
-   * Apply the active scene's fog + annotation masks from the doc to the stage.
-   * Retries on a short schedule: the fog layer refills itself when the map
-   * texture finishes loading, and annotation layer components must mount before
-   * loadMask can land. Re-applying authoritative doc state is idempotent.
+   * Apply the active scene's fog mask from the doc to the stage. Retries on a
+   * short schedule: the fog layer refills itself when the map texture finishes
+   * loading. (Annotation masks are declarative layer props — no application
+   * needed here.)
    */
   async applyMasks() {
     const sceneId = this.activeSceneId;
     for (const delay of [0, 300, 1000, 3000]) {
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       if (this.activeSceneId !== sceneId) return; // scene changed mid-retry
-      await this.#applyMasksOnce(sceneId);
+      await this.#applyFogMaskOnce(sceneId);
     }
   }
 
-  async #applyMasksOnce(sceneId: string | null) {
+  async #applyFogMaskOnce(sceneId: string | null) {
     const client = this.client;
     const stage = this.#options.getStage();
     if (!sceneId || !client || !stage) return;
@@ -157,39 +157,8 @@ export class PlaySession {
       if (fogMask && stage.fogOfWar?.fromRLE && !stage.fogOfWar.isDrawing()) {
         await stage.fogOfWar.fromRLE(fogMask, 1024, 1024);
       }
-      const snapshot = client.scene(sceneId);
-      for (const annotation of snapshot?.annotations ?? []) {
-        const mask = client.annotationMask(sceneId, annotation.id);
-        if (mask && stage.annotations?.loadMask) {
-          await stage.annotations.loadMask(annotation.id, mask);
-        }
-      }
     } catch (error) {
-      devError('play', 'Failed to apply masks', error);
-    }
-  }
-
-  async loadAnnotationMask(annotationId: string, mask: Uint8Array) {
-    const stage = this.#options.getStage();
-    if (!stage?.annotations?.loadMask) return;
-    try {
-      await stage.annotations.loadMask(annotationId, mask);
-    } catch (error) {
-      devError('play', `Failed to load annotation mask ${annotationId}`, error);
-    }
-  }
-
-  // Reapply on a short ladder: loadMask silently no-ops if the layer component
-  // hasn't mounted yet, so a single immediate call can miss a (re)mounting layer.
-  // Public because local writes need it too (e.g. persisting a player drawing
-  // mounts a brand-new annotation layer; own doc changes skip the remote path).
-  reapplyAnnotationMask(sceneId: string, annotationId: string) {
-    for (const delay of [50, 350, 1000]) {
-      setTimeout(() => {
-        if (this.activeSceneId !== sceneId) return;
-        const mask = this.client?.annotationMask(sceneId, annotationId);
-        if (mask) this.loadAnnotationMask(annotationId, mask);
-      }, delay);
+      devError('play', 'Failed to apply fog mask', error);
     }
   }
 
@@ -208,16 +177,6 @@ export class PlaySession {
         if (stage.fogOfWar?.isDrawing()) continue;
         const mask = client.fogMask(sceneId);
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
-      }
-
-      // Any annotation row change can (re)mount its layer component — e.g. a
-      // visibility toggle filters the layer in/out of the render props — and a
-      // fresh component needs its mask reapplied, not just on 'mask' changes.
-      if (change.part === 'annotations') {
-        const annotationIds = change.childId ? [change.childId] : change.keys;
-        for (const annotationId of annotationIds) {
-          this.reapplyAnnotationMask(sceneId, annotationId);
-        }
       }
     }
   }
