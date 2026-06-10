@@ -16,9 +16,11 @@
     props: AnnotationLayerData;
     display: DisplayProps;
     lineWidth?: number;
+    /** True while the user is actively drawing on this layer (skip mask re-apply) */
+    isDrawingThisLayer?: () => boolean;
   }
 
-  const { props, display, lineWidth = 2.0 }: Props = $props();
+  const { props, display, lineWidth = 2.0, isDrawingThisLayer = () => false }: Props = $props();
 
   const lineWidthPixels = $derived.by(() => {
     const textureSize = Math.min(display.resolution.x, display.resolution.y);
@@ -129,6 +131,29 @@
   export const fromRLE = async (rleData: Uint8Array, width: number, height: number) => {
     return drawMaterial.fromRLE(rleData, width, height);
   };
+
+  // Declarative mask application: load on mount and whenever the mask reference
+  // or canvas size changes (DrawingMaterial clears its render targets on resize).
+  // queueMicrotask defers past the current effect flush so this always runs
+  // AFTER DrawingMaterial's own resize/clear effect.
+  let appliedMask: Uint8Array | null = null;
+  let appliedWidth = 0;
+  let appliedHeight = 0;
+  $effect(() => {
+    const mask = props.mask;
+    const { width, height } = size;
+    if (!mask) return;
+    if (mask === appliedMask && width === appliedWidth && height === appliedHeight) return;
+
+    queueMicrotask(() => {
+      if (!drawMaterial || !props.mask) return;
+      if (isDrawingThisLayer()) return; // a commit follows the stroke anyway
+      appliedMask = props.mask;
+      appliedWidth = width;
+      appliedHeight = height;
+      drawMaterial.fromRLE(props.mask, 1024, 1024);
+    });
+  });
 
   onDestroy(() => {
     material.dispose();

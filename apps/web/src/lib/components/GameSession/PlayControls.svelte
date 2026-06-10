@@ -1,72 +1,31 @@
 <script lang="ts">
-  import { Spacer, Button, Text, Hr } from '@tableslayer/ui';
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
+  import type { SessionDocClient } from '$lib/realtime';
   import type { Thumb } from '$lib/server';
-  import { useUpdatePartyMutation } from '$lib/queries/parties';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
-  import { usePartyData, trackChecklistItem } from '$lib/utils';
+  import { trackChecklistItem } from '$lib/utils';
+  import { Button, Hr, Spacer, Text } from '@tableslayer/ui';
 
   let {
     party,
     selectedScene,
     activeSceneId,
-    partyData
+    client
   }: {
     party: SelectParty & Thumb;
     selectedScene: SelectScene | (SelectScene & Thumb);
     activeSceneId: string | undefined;
-    partyData: ReturnType<typeof usePartyData> | null;
+    client: SessionDocClient | null;
   } = $props();
 
-  const updateParty = useUpdatePartyMutation();
-  const handleSetActiveScene = async () => {
+  // Both writes go to the party doc; the PartyKit server persists them.
+  const handleSetActiveScene = () => {
     if (!selectedScene || (activeSceneId && selectedScene.id === activeSceneId)) return;
-
-    await handleMutation({
-      mutation: () =>
-        updateParty.mutateAsync({
-          partyId: party.id,
-          partyData: { activeSceneId: selectedScene.id }
-        }),
-      formLoadingState: () => {},
-      onSuccess: () => {
-        if (partyData) {
-          partyData.updatePartyState('activeSceneId', selectedScene.id);
-        }
-        // Track checklist completion for changing the active scene
-        trackChecklistItem('change-scene');
-      },
-      toastMessages: {
-        success: { title: 'Active scene set' },
-        error: {
-          title: 'Error setting active scene',
-          body: (err: FormMutationError) => err.message || 'Error setting active scene'
-        }
-      }
-    });
+    client?.party.setActiveScene(selectedScene.id);
+    trackChecklistItem('change-scene');
   };
 
-  const handleToggleGamePause = async () => {
-    await handleMutation({
-      mutation: () =>
-        updateParty.mutateAsync({
-          partyId: party.id,
-          partyData: { gameSessionIsPaused: !party.gameSessionIsPaused }
-        }),
-      formLoadingState: () => {},
-      onSuccess: () => {
-        if (partyData) {
-          partyData.updatePartyState('isPaused', !party.gameSessionIsPaused);
-        }
-      },
-      toastMessages: {
-        success: { title: 'Playfield paused' },
-        error: {
-          title: 'Error pausing playfield',
-          body: (err: FormMutationError) => err.message || 'Error pausing playfield'
-        }
-      }
-    });
+  const handleToggleGamePause = () => {
+    client?.party.setPaused(!party.gameSessionIsPaused);
   };
 
   const canSetActiveScene = $derived(!activeSceneId || selectedScene.id !== activeSceneId);

@@ -1,5 +1,5 @@
+import type { MeasurementData } from '$lib/realtime';
 import type { StageProps } from '@tableslayer/stage';
-import type { MeasurementData } from './yjs/PartyDataManager';
 
 /**
  * Get the latest measurement from a collection by timestamp

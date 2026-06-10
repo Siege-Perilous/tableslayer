@@ -16,6 +16,7 @@ import {
 import { copySceneFile } from '$lib/server/file';
 import { createGameSessionForImport } from '$lib/server/gameSession';
 import { getParty, getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
+import { requestPartyRoomResync } from '$lib/server/realtime';
 import { setActiveSceneForParty } from '$lib/server/scene';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
@@ -250,6 +251,11 @@ export const POST = async ({ request, locals }: RequestEvent) => {
         }
       }
     }
+
+    // The import may have set party.activeSceneId in the DB; the live party room
+    // is authoritative, so tell it to re-read (best-effort). The new game session's
+    // room hydrates fresh from the DB on first connection.
+    await requestPartyRoomResync(partyId);
 
     // Return the count of scenes created directly from the JSON file
     // This ensures we're only counting what was in the file, not what might be in the database

@@ -40,3 +40,6 @@ yarn-error.log*
 
 # embedded dbs
 *.db*
+
+# local realtime debugging probes (see spec/realtime-sync-v2-progress.md)
+scratch-*.mjs

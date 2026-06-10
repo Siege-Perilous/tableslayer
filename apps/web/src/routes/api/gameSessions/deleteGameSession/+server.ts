@@ -1,5 +1,6 @@
 import { apiFactory } from '$lib/factories';
 import { deleteGameSession, isUserAdminInParty } from '$lib/server';
+import { requestPartyRoomResync } from '$lib/server/realtime';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -16,6 +17,10 @@ export const POST = apiFactory(
     }
 
     await deleteGameSession(gameSessionId);
+
+    // Deleting a session may reassign party.activeSceneId directly in the DB;
+    // tell the live party room to re-read so it doesn't persist a stale value back.
+    await requestPartyRoomResync(partyId);
 
     return { success: true };
   },

@@ -35,11 +35,10 @@
     PlayControls,
     MeasurementControls
   } from './';
-  import { usePartyData } from '$lib/utils/yjs/stores';
+  import type { SessionDocClient } from '$lib/realtime';
   import { queuePropertyUpdate } from '$lib/utils';
 
   let {
-    socketUpdate,
     handleSelectActiveControl,
     activeControl = 'none',
     stageProps,
@@ -50,11 +49,10 @@
     activeSceneId,
     handleMapFill,
     handleMapFit,
-    errors,
-    partyData,
+    errors = undefined,
+    client,
     keyboardPopoverId = null
   }: {
-    socketUpdate: () => void;
     handleSelectActiveControl: (control: string) => string | null;
     activeControl: string;
     stageProps: StageProps;
@@ -64,9 +62,9 @@
     activeSceneId: string | undefined;
     handleMapFill: () => void;
     handleMapFit: () => void;
-    errors: ZodIssue[] | undefined;
+    errors?: ZodIssue[] | undefined;
     stage: StageExports;
-    partyData: ReturnType<typeof usePartyData> | null;
+    client: SessionDocClient | null;
     keyboardPopoverId?: string | null;
   } = $props();
 
@@ -419,7 +417,7 @@
                 {errors}
               />
             {:else if scene.id === 'fog'}
-              <FogControls {stage} {stageProps} {socketUpdate} />
+              <FogControls {stage} {stageProps} />
             {:else if scene.id === 'map'}
               <MapControls
                 {stageProps}
@@ -431,10 +429,10 @@
                 {handleMapFill}
                 {handleMapFit}
                 {errors}
-                {partyData}
+                {client}
               />
             {:else if scene.id === 'play'}
-              <PlayControls {party} {selectedScene} {activeSceneId} {partyData} />
+              <PlayControls {party} {selectedScene} {activeSceneId} {client} />
             {:else if scene.id === 'weather'}
               <WeatherControls {stageProps} {errors} />
             {:else if scene.id === 'edge'}

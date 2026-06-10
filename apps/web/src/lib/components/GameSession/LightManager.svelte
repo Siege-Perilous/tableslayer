@@ -25,18 +25,14 @@
     MapLayerType
   } from '@tableslayer/stage';
   import { IconTrash, IconArrowBack, IconFlame, IconLocationPin, IconCopy } from '@tabler/icons-svelte';
-  import { useDeleteLightMutation, useUpsertLightMutation } from '$lib/queries';
   import { queuePropertyUpdate, throttle } from '$lib/utils';
-  import { handleMutation } from '$lib/factories';
   import { v4 as uuidv4 } from 'uuid';
 
   let {
     stageProps,
     selectedLightId = $bindable(),
-    partyId = '',
-    sceneId = '',
     handleSelectActiveControl,
-    socketUpdate,
+    socketUpdate = () => {},
     updateLightAndSave,
     onLightDeleted,
     onLightDuplicated
@@ -46,15 +42,13 @@
     partyId: string;
     sceneId: string;
     handleSelectActiveControl: (control: string) => void;
-    socketUpdate: () => void;
+    /** @deprecated no-op; sync flows through the session doc */
+    socketUpdate?: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateLightAndSave: (lightId: string, updateFn: (light: any) => void) => void;
     onLightDeleted?: (lightId: string) => void;
     onLightDuplicated?: (newLight: Light) => void;
   } = $props();
-
-  const deleteLight = useDeleteLightMutation();
-  const upsertLight = useUpsertLightMutation();
 
   let formIsLoading = $state(false);
   let editingLightId = $derived(selectedLightId);
@@ -67,26 +61,17 @@
     selectedLightId = undefined;
   };
 
-  const handleLightDelete = async (lightId: string) => {
-    await handleMutation({
-      mutation: () => deleteLight.mutateAsync({ partyId, lightId }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        if (onLightDeleted) {
-          onLightDeleted(lightId);
-        } else {
-          const updatedLights = stageProps.light.lights.filter((light) => light.id !== lightId);
-          stageProps.light.lights = updatedLights;
-          queuePropertyUpdate(stageProps, ['light', 'lights'], updatedLights, 'light');
-        }
-        selectedLightId = undefined;
-        socketUpdate();
-      },
-      toastMessages: {
-        success: { title: 'Light deleted' },
-        error: { title: 'Error deleting light', body: (error) => error.message }
-      }
-    });
+  // Light changes are doc writes (via callbacks); the server persists them.
+  const handleLightDelete = (lightId: string) => {
+    if (onLightDeleted) {
+      onLightDeleted(lightId);
+    } else {
+      const updatedLights = stageProps.light.lights.filter((light) => light.id !== lightId);
+      stageProps.light.lights = updatedLights;
+      queuePropertyUpdate(stageProps, ['light', 'lights'], updatedLights, 'light');
+    }
+    selectedLightId = undefined;
+    socketUpdate();
   };
 
   const throttledUpdate = throttle((lightId: string) => {
@@ -127,7 +112,7 @@
     return { x: 0, y: 0 };
   };
 
-  const handleLightDuplicate = async (light: Light) => {
+  const handleLightDuplicate = (light: Light) => {
     const newPosition = calculateDuplicatePosition(light.position.x, light.position.y, light.radius);
 
     const newLight: Light = {
@@ -140,38 +125,14 @@
       opacity: light.opacity
     };
 
-    await handleMutation({
-      mutation: () =>
-        upsertLight.mutateAsync({
-          partyId,
-          sceneId,
-          lightData: {
-            id: newLight.id,
-            positionX: newLight.position.x,
-            positionY: newLight.position.y,
-            radius: newLight.radius,
-            color: newLight.color,
-            style: newLight.style,
-            pulse: newLight.pulse,
-            opacity: newLight.opacity
-          }
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        if (onLightDuplicated) {
-          onLightDuplicated(newLight);
-        } else {
-          stageProps.light.lights = [...stageProps.light.lights, newLight];
-          queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
-        }
-        selectedLightId = newLight.id;
-        socketUpdate();
-      },
-      toastMessages: {
-        success: { title: 'Light duplicated' },
-        error: { title: 'Error duplicating light', body: (error) => error.message }
-      }
-    });
+    if (onLightDuplicated) {
+      onLightDuplicated(newLight);
+    } else {
+      stageProps.light.lights = [...stageProps.light.lights, newLight];
+      queuePropertyUpdate(stageProps, ['light', 'lights'], stageProps.light.lights, 'light');
+    }
+    selectedLightId = newLight.id;
+    socketUpdate();
   };
 
   const styleOptions = [

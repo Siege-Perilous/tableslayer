@@ -16,34 +16,28 @@
 </script>
 
 <script lang="ts">
-  import { useUploadFileMutation, useUpdateSceneMutation } from '$lib/queries';
-  import { GridMode } from '@tableslayer/stage';
-  import { hasThumb, generateLargeImageUrl, resetGridOrigin } from '$lib/utils';
-  import type { usePartyData } from '$lib/utils/yjs/stores';
+  import { useUploadFileMutation } from '$lib/queries';
+  import type { SceneSettings, SessionDocClient } from '$lib/realtime';
+  import { resetGridOrigin } from '$lib/utils';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
-  import { updateSceneSchema } from '$lib/db/app/schema';
-  import type { z } from 'zod';
+  import { GridMode } from '@tableslayer/stage';
 
   let {
     sceneId,
-    partyId,
-    partyData
+    client
   }: {
     sceneId: string;
-    partyId: string;
-    partyData: ReturnType<typeof usePartyData> | null;
+    client: SessionDocClient | null;
   } = $props();
 
   const uploadFile = useUploadFileMutation();
-  const updateScene = useUpdateSceneMutation();
 
   async function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
-    // Ensure we have a valid sceneId before processing
-    if (!sceneId) {
-      devWarn('No sceneId provided, cannot update map image');
+    if (!sceneId || !client) {
+      devWarn('No sceneId/client available, cannot update map image');
       input.value = '';
       return;
     }
@@ -51,8 +45,7 @@
     const pickedFile = input.files[0];
     input.value = '';
 
-    // Get current map location from Y.js scenes list if available
-    const currentMapLocation = partyData?.getScenesList()?.find((s) => s.id === sceneId)?.mapLocation || null;
+    const currentMapLocation = client.scene(sceneId)?.settings.mapLocation ?? null;
 
     const uploadedFile = await handleMutation({
       mutation: () =>
@@ -64,93 +57,24 @@
         }),
       formLoadingState: () => {},
       toastMessages: {
-        success: { title: 'File uploaded' },
+        success: { title: 'Map updated' },
         error: { title: 'Error uploading file', body: (err) => err.message || 'Unknown error' }
       }
     });
 
     if (!uploadedFile) return;
 
-    // Extract dimensions from filename
+    // The doc is the source of truth — one settings write propagates the new
+    // map (and grid mode) to every client and the persister.
+    const settings: Partial<SceneSettings> = { mapLocation: uploadedFile.location };
     const dimensions = extractDimensionsFromFilename(pickedFile.name);
-
-    // Prepare scene update data
-    const sceneUpdateData: Partial<z.infer<typeof updateSceneSchema>> = {
-      mapLocation: uploadedFile.location
-    };
-
-    // If dimensions are found, set Fixed Count mode
     if (dimensions.width !== undefined && dimensions.height !== undefined) {
-      sceneUpdateData.gridMode = GridMode.MapDefined;
-      sceneUpdateData.gridMapDefinedX = dimensions.width;
-      sceneUpdateData.gridMapDefinedY = dimensions.height;
+      settings.gridMode = GridMode.MapDefined;
+      settings.gridMapDefinedX = dimensions.width;
+      settings.gridMapDefinedY = dimensions.height;
+      resetGridOrigin();
     }
-
-    await handleMutation({
-      mutation: () =>
-        updateScene.mutateAsync({
-          sceneId,
-          partyId,
-          sceneData: sceneUpdateData
-        }),
-      onSuccess: (response) => {
-        input.value = '';
-        // Update Y.js with the updated scene data instead of invalidateAll()
-        if (partyData && response?.scene) {
-          const updatedScene = response.scene;
-          partyData.updateScene(sceneId, {
-            mapLocation: updatedScene.mapLocation || undefined,
-            mapThumbLocation: updatedScene.mapThumbLocation || undefined,
-            thumb: hasThumb(updatedScene)
-              ? {
-                  resizedUrl: updatedScene.thumb.resizedUrl,
-                  originalUrl: updatedScene.thumb.url
-                }
-              : undefined
-          });
-
-          // Also update the stageProps with the new map URL and grid settings so Stage components re-render
-          const currentSceneData = partyData.getSceneData(sceneId);
-          if (currentSceneData && currentSceneData.stageProps && updatedScene.mapLocation) {
-            const newMapUrl = generateLargeImageUrl(updatedScene.mapLocation);
-            const updatedStageProps = {
-              ...currentSceneData.stageProps,
-              map: {
-                ...currentSceneData.stageProps.map,
-                url: newMapUrl
-              }
-            };
-
-            // If dimensions were found, update grid settings in stageProps
-            if (dimensions.width !== undefined && dimensions.height !== undefined) {
-              updatedStageProps.grid = {
-                ...currentSceneData.stageProps.grid,
-                gridMode: GridMode.MapDefined,
-                fixedGridCount: {
-                  x: dimensions.width,
-                  y: dimensions.height
-                }
-              };
-              // Reset grid origin when switching to Map defined mode
-              resetGridOrigin();
-            }
-
-            partyData.updateSceneStageProps(sceneId, updatedStageProps);
-          }
-        } else {
-          devWarn(
-            'Cannot update scene in Y.js - partyData not available or response missing scene:',
-            !!partyData,
-            !!response?.scene
-          );
-        }
-      },
-      formLoadingState: () => {},
-      toastMessages: {
-        success: { title: 'Map updated' },
-        error: { title: 'Error updating map', body: (err) => err.message || 'Unknown error' }
-      }
-    });
+    client.write.setSceneSettings(sceneId, settings);
   }
 </script>
 

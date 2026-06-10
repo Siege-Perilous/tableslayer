@@ -1,59 +1,58 @@
 <script lang="ts">
-  import { IconButton, FileInput, Icon, FormControl, Input, Popover, Button, ColorMode } from '@tableslayer/ui';
+  import { goto } from '$app/navigation';
+  import { navigating } from '$app/state';
+  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
+  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import { handleMutation, type FormMutationError } from '$lib/factories';
+  import { useCreateSceneMutation, useUploadFileMutation } from '$lib/queries';
+  import { orderBetween, sceneRowToSettings, type SessionDocClient } from '$lib/realtime';
+  import type { Thumb } from '$lib/server';
+  import { generateSmallThumbnailUrl, isVideoFile, trackChecklistItem } from '$lib/utils';
+  import { devLog } from '$lib/utils/debug';
+  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
   import { GridMode } from '@tableslayer/stage';
-  import { devLog, devWarn, devError } from '$lib/utils/debug';
+  import { Button, ColorMode, FileInput, FormControl, Icon, IconButton, Input, Popover } from '@tableslayer/ui';
   import {
     IconCheck,
-    IconX,
-    IconPhoto,
     IconChevronDown,
-    IconPlayerPlayFilled,
+    IconGripVertical,
+    IconPhoto,
     IconPlayerPauseFilled,
-    IconGripVertical
+    IconPlayerPlayFilled,
+    IconX
   } from '@tabler/icons-svelte';
-  import type { SelectParty, SelectScene, InsertScene } from '$lib/db/app/schema';
-  import { UpdateMapImage, openFileDialog } from './';
-  import { hasThumb, generateSmallThumbnailUrl, isVideoFile, trackChecklistItem } from '$lib/utils';
-  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
-  import type { SelectGameSession } from '$lib/db/app/schema';
-  import { type Thumb } from '$lib/server';
-  import {
-    useUploadFileMutation,
-    useCreateSceneMutation,
-    useDeleteSceneMutation,
-    useUpdateSceneMutation,
-    useReorderScenesMutation,
-    useDuplicateSceneMutation
-  } from '$lib/queries';
-  import { useUpdatePartyMutation } from '$lib/queries/parties';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
-  import { PartyUpgrade } from '../party';
   import { untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
-  import { navigating } from '$app/state';
   import { fly } from 'svelte/transition';
-  import { usePartyData } from '$lib/utils/yjs/stores';
-  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
-  import { goto } from '$app/navigation';
+  import { v4 as uuidv4 } from 'uuid';
+  import { PartyUpgrade } from '../party';
+  import { openFileDialog, UpdateMapImage } from './';
+
+  // Minimal scene shape shared by doc entries and SSR rows
+  type SceneListItem = {
+    id: string;
+    name: string;
+    order: number;
+    mapLocation: string | null;
+    mapThumbLocation: string | null;
+  };
 
   let {
     scenes,
     gameSession,
-    selectedSceneNumber,
+    selectedSceneId,
     activeSceneId,
     party,
-    partyData,
-    isLocallyReordering = $bindable(false),
+    client,
     isStripeEnabled = true
   }: {
-    scenes: (SelectScene | (SelectScene & Thumb))[];
+    scenes: SceneListItem[];
     gameSession: SelectGameSession;
-    selectedSceneNumber: number;
+    selectedSceneId: string;
     party: SelectParty & Thumb;
     activeSceneId: string | undefined;
-    partyData: ReturnType<typeof usePartyData> | null;
-    isLocallyReordering?: boolean;
+    client: SessionDocClient | null;
     isStripeEnabled?: boolean;
   } = $props();
 
@@ -64,65 +63,14 @@
   let renamingScenes = $state<Record<string, string | null>>({});
   let renameInputRefs = $state<Record<string, HTMLInputElement | undefined>>({});
   let openScenePopover = $state<string | null>(null);
-  let orderedScenes = $state<(SelectScene | (SelectScene & Thumb))[]>([]);
+  let orderedScenes = $state<SceneListItem[]>([]);
   let needsToUpgrade = $derived(isStripeEnabled && party.plan === 'free' && orderedScenes.length >= 3);
   let isNewSceneAdded = $state(false);
-
-  // Flag to prevent context menu after drag
   let justFinishedDragging = $state(false);
-
-  // Live active scene ID from Y.js (falls back to prop)
-  let liveActiveSceneId = $state<string | undefined>(activeSceneId);
-
-  // Subscribe to Y.js party state for real-time activeSceneId updates
-  $effect(() => {
-    if (!partyData) {
-      liveActiveSceneId = activeSceneId;
-      return;
-    }
-
-    // Get initial value
-    const partyState = partyData.getPartyState();
-    const initialActiveSceneId = partyState.activeSceneId;
-    liveActiveSceneId = initialActiveSceneId ?? activeSceneId;
-    devLog('scene', 'SceneSelector Y.js subscription setup', {
-      initialActiveSceneId,
-      ssrActiveSceneId: activeSceneId,
-      liveActiveSceneId,
-      gameSessionId: gameSession.id
-    });
-
-    // Subscribe to changes
-    const unsubscribe = partyData.subscribe(() => {
-      const updatedPartyState = partyData.getPartyState();
-      const newActiveSceneId = updatedPartyState.activeSceneId;
-      const previousLiveActiveSceneId = liveActiveSceneId;
-
-      // Only use SSR fallback if Y.js value is truly undefined (not just falsy)
-      liveActiveSceneId = newActiveSceneId ?? activeSceneId;
-
-      devLog('scene', 'SceneSelector received Y.js party state update', {
-        newActiveSceneId,
-        previousLiveActiveSceneId,
-        liveActiveSceneId,
-        ssrActiveSceneId: activeSceneId,
-        gameSessionId: gameSession.id,
-        changed: previousLiveActiveSceneId !== liveActiveSceneId
-      });
-    });
-
-    return unsubscribe;
-  });
 
   const uploadFile = useUploadFileMutation();
   const createNewScene = useCreateSceneMutation();
-  const deleteScene = useDeleteSceneMutation();
-  const updateScene = useUpdateSceneMutation();
-  const updateParty = useUpdatePartyMutation();
-  const reorderScenes = useReorderScenesMutation();
-  const duplicateScene = useDuplicateSceneMutation();
 
-  // Check if a scene is currently being renamed
   const isSceneBeingRenamed = (sceneId: string) => {
     return renamingScenes[sceneId] !== null && renamingScenes[sceneId] !== undefined;
   };
@@ -138,7 +86,6 @@
         input.select();
       }
     }
-    // Clean up tracking for scenes no longer being renamed (untracked to avoid re-runs)
     untrack(() => {
       for (const sceneId of focusedInputs) {
         if (!isSceneBeingRenamed(sceneId)) {
@@ -149,12 +96,10 @@
     });
   });
 
-  // Determine if dragging should be disabled for a particular scene
   const isDragDisabled = (sceneId: string) => {
     return formIsLoading || isSceneBeingRenamed(sceneId) || sceneBeingDeleted === sceneId;
   };
 
-  // Initialize drag and drop composable
   const dragAndDrop = useDragAndDrop({
     onReorder: handleReorderScenes,
     getItemId: (index: number) => index.toString(),
@@ -165,13 +110,15 @@
     }
   });
 
-  // Cleanup drag preview on navigation or form loading
   $effect(() => {
     if (navigating.to || formIsLoading) {
       dragAndDrop.cleanupDragPreview();
     }
   });
 
+  // Scene creation still goes through the API: the server computes map/grid
+  // alignment from the uploaded image. The response row is then added to the
+  // doc, which is the live source of truth from that point on.
   const handleCreateScene = async (order: number, gridWidth?: number, gridHeight?: number) => {
     formIsLoading = true;
     let mapLocation: string | undefined = undefined;
@@ -190,15 +137,12 @@
       mapLocation = uploadedFile.location;
     }
 
-    // Prepare scene data with grid settings if provided
-    const sceneData: Partial<InsertScene> = {
+    const sceneData: Record<string, unknown> = {
       gameSessionId: gameSession.id,
       name: 'New Scene',
       order,
       mapLocation
     };
-
-    // If grid dimensions are provided, set Fixed Count mode
     if (gridWidth !== undefined && gridHeight !== undefined) {
       sceneData.gridMode = GridMode.MapDefined;
       sceneData.gridMapDefinedX = gridWidth;
@@ -206,57 +150,24 @@
     }
 
     await handleMutation({
-      mutation: () =>
-        createNewScene.mutateAsync({
-          partyId: party.id,
-          sceneData
-        }),
+      mutation: () => createNewScene.mutateAsync({ partyId: party.id, sceneData }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         createSceneErrors = error;
-        devLog('scene', 'Error creating scene:', error);
       },
       onSuccess: (response) => {
-        if (partyData && response?.scene) {
-          const newScene = response.scene;
-          partyData.addScene({
-            id: newScene.id,
-            name: newScene.name,
-            order: newScene.order,
-            mapLocation: newScene.mapLocation || undefined,
-            mapThumbLocation: newScene.mapThumbLocation || undefined,
-            gameSessionId: newScene.gameSessionId,
-            thumb: hasThumb(newScene)
-              ? {
-                  resizedUrl: newScene.thumb.resizedUrl,
-                  originalUrl: newScene.thumb.url
-                }
-              : undefined
-          });
-        } else {
-          devWarn(
-            'scene',
-            'Cannot add scene to Y.js - partyData not available or response missing scene:',
-            !!partyData,
-            !!response?.scene
-          );
+        if (client && response?.scene) {
+          client.write.createScene(sceneRowToSettings(response.scene));
         }
         isNewSceneAdded = true;
         file = null;
-
-        // Track checklist completion for adding a scene
         trackChecklistItem('add-scene');
-
-        // Track checklist completion for using map-defined grid dimensions
         if (gridWidth !== undefined && gridHeight !== undefined) {
           trackChecklistItem('map-defined-grid');
         }
-
-        // Navigate to the newly created scene
         if (response?.scene) {
-          goto(`/${party.slug}/${gameSession.slug}/${response.scene.order}`);
+          goto(`/${party.slug}/${gameSession.slug}/${response.scene.id}`);
         }
-
         setTimeout(() => {
           isNewSceneAdded = false;
         }, 3000);
@@ -268,252 +179,88 @@
     });
   };
 
-  const handleSetActiveScene = async (sceneId: string) => {
-    await handleMutation({
-      mutation: () =>
-        updateParty.mutateAsync({
-          partyId: party.id,
-          partyData: { activeSceneId: sceneId }
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        if (partyData) {
-          partyData.updatePartyState('activeSceneId', sceneId);
-        }
-        // Track checklist completion for changing the active scene
-        trackChecklistItem('change-scene');
-      },
-      toastMessages: {
-        success: { title: 'Active scene set' },
-        error: { title: 'Error setting active scene', body: (error) => error.message }
-      }
-    });
+  const handleSetActiveScene = (sceneId: string) => {
+    client?.party.setActiveScene(sceneId);
+    trackChecklistItem('change-scene');
   };
 
-  const handleDeleteScene = async (sceneId: string) => {
+  const handleDeleteScene = (sceneId: string) => {
+    if (!client) return;
     sceneBeingDeleted = sceneId;
-
-    await handleMutation({
-      mutation: () =>
-        deleteScene.mutateAsync({
-          gameSessionId: gameSession.id,
-          partyId: party.id,
-          sceneId
-        }),
-      onSuccess: (response) => {
-        sceneBeingDeleted = '';
-        // Update Y.js with the reordered scenes list instead of just removing one
-        if (partyData && response?.scenes) {
-          const reorderedScenes = response.scenes.map((scene) => ({
-            id: scene.id,
-            name: scene.name,
-            order: scene.order,
-            mapLocation: scene.mapLocation || undefined,
-            mapThumbLocation: scene.mapThumbLocation || undefined,
-            gameSessionId: scene.gameSessionId,
-            thumb: hasThumb(scene)
-              ? {
-                  resizedUrl: scene.thumb.resizedUrl,
-                  originalUrl: scene.thumb.url
-                }
-              : undefined
-          }));
-          partyData.reorderScenes(reorderedScenes);
-        } else {
-          devWarn(
-            'scene',
-            'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
-            !!partyData,
-            !!response?.scenes
-          );
-        }
-      },
-      onError: () => {
-        sceneBeingDeleted = '';
-      },
-      formLoadingState: (loading) => (formIsLoading = loading),
-      toastMessages: {
-        success: { title: 'Scene deleted' },
-        error: { title: 'Error deleting scene', body: (error) => error.message || 'Error deleting scene' }
-      }
-    });
+    client.write.deleteScene(sceneId);
+    if (activeSceneId === sceneId) {
+      client.party.setActiveScene(null);
+    }
+    sceneBeingDeleted = '';
   };
 
-  const handleRenameScene = async (sceneId: string) => {
+  const handleRenameScene = (sceneId: string) => {
     const name = renamingScenes[sceneId];
-    if (!name) return;
-
-    await handleMutation({
-      mutation: () =>
-        updateScene.mutateAsync({
-          partyId: party.id,
-          sceneId,
-          sceneData: { name }
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        renamingScenes[sceneId] = null;
-        // Update scene name in Y.js instead of invalidateAll()
-        if (partyData && name) {
-          partyData.updateScene(sceneId, { name });
-        }
-      },
-      toastMessages: {
-        success: { title: 'Scene renamed' },
-        error: { title: 'Error renaming scene', body: (error) => error.message || 'Error renaming scene' }
-      }
-    });
+    if (!name || !client) return;
+    client.write.setSceneSettings(sceneId, { name });
+    renamingScenes[sceneId] = null;
   };
 
-  const handleDuplicateScene = async (sceneId: string) => {
-    await handleMutation({
-      mutation: () =>
-        duplicateScene.mutateAsync({
-          partyId: party.id,
-          sceneId
-        }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: (response) => {
-        // Update Y.js with the reordered scenes list to ensure proper insertion order
-        if (partyData && response?.scenes) {
-          const reorderedScenes = response.scenes.map((scene) => ({
-            id: scene.id,
-            name: scene.name,
-            order: scene.order,
-            mapLocation: scene.mapLocation || undefined,
-            mapThumbLocation: scene.mapThumbLocation || undefined,
-            gameSessionId: scene.gameSessionId,
-            thumb: hasThumb(scene)
-              ? {
-                  resizedUrl: scene.thumb.resizedUrl,
-                  originalUrl: scene.thumb.url
-                }
-              : undefined
-          }));
-          partyData.reorderScenes(reorderedScenes);
-        } else {
-          devWarn(
-            'scene',
-            'Cannot update scenes in Y.js - partyData not available or response missing scenes:',
-            !!partyData,
-            !!response?.scenes
-          );
-        }
+  // Duplicate entirely in the doc: copies settings, markers, lights,
+  // annotations, and masks with fresh ids. The server persists the new rows.
+  const handleDuplicateScene = (sceneId: string) => {
+    if (!client) return;
+    const snapshot = client.scene(sceneId);
+    if (!snapshot) return;
+
+    const list = client.scenes();
+    const index = list.findIndex((scene) => scene.id === sceneId);
+    const order = orderBetween(list[index]?.order ?? null, list[index + 1]?.order ?? null);
+    const newId = uuidv4();
+
+    client.write.createScene(
+      {
+        ...snapshot.settings,
+        id: newId,
+        name: `${snapshot.settings.name} (copy)`,
+        order,
+        mapThumbLocation: null
       },
-      toastMessages: {
-        success: { title: 'Scene duplicated' },
-        error: { title: 'Error duplicating scene', body: (error) => error.message || 'Error duplicating scene' }
+      {
+        markers: snapshot.markers.map((marker) => ({ ...marker, id: uuidv4(), sceneId: newId })),
+        lights: snapshot.lights.map((light) => ({ ...light, id: uuidv4(), sceneId: newId })),
+        annotations: snapshot.annotations.map((annotation) => ({
+          ...annotation,
+          id: uuidv4(),
+          sceneId: newId,
+          mask: client.annotationMask(sceneId, annotation.id)
+        })),
+        fogMask: client.fogMask(sceneId)
       }
-    });
+    );
+    devLog('scene', `Duplicated scene ${sceneId} -> ${newId}`);
+    goto(`/${party.slug}/${gameSession.slug}/${newId}`);
   };
 
-  // Handle scene reordering
-  async function handleReorderScenes(fromId: string, toId: string) {
+  // Reorder = one fractional-order write on the dragged scene
+  function handleReorderScenes(fromId: string, toId: string) {
     const draggedItem = parseInt(fromId);
     const dragOverItem = parseInt(toId);
+    if (draggedItem === dragOverItem || !client) return;
 
-    if (draggedItem === dragOverItem) return;
-
-    // Set the flag to prevent context menu from opening
     justFinishedDragging = true;
-
-    // Reset the flag after a short delay
     setTimeout(() => {
       justFinishedDragging = false;
-    }, 300); // Short delay to ensure context menu event is blocked
+    }, 300);
 
-    // Get the scene that was dragged and the target order
-    const draggedScene = scenes[draggedItem];
-    const oldOrder = draggedScene.order;
-    const newOrder = scenes[dragOverItem].order;
-
-    // Create a copy of the scenes array for local manipulation
-    const updatedScenes = [...scenes];
-
-    // Remove the dragged item
+    const updatedScenes = [...orderedScenes];
     const [removed] = updatedScenes.splice(draggedItem, 1);
-
-    // Insert at the new position
     updatedScenes.splice(dragOverItem, 0, removed);
-
-    // Update the order properties to reflect the new sequence
-    updatedScenes.forEach((scene, index) => {
-      scene.order = index + 1;
-    });
-
-    // Update local state immediately
     orderedScenes = updatedScenes;
 
-    // Temporarily prevent further dragging while updating
-    formIsLoading = true;
-
-    // Set flag to prevent navigation in the origin editor
-    isLocallyReordering = true;
-
-    try {
-      await handleMutation({
-        mutation: () =>
-          reorderScenes.mutateAsync({
-            partyId: party.id,
-            gameSessionId: gameSession.id,
-            sceneId: draggedScene.id,
-            oldOrder,
-            newOrder
-          }),
-        formLoadingState: (loading) => (formIsLoading = loading),
-        onSuccess: (response) => {
-          // Update local state with server-confirmed order
-          if (response?.scenes) {
-            // Sort by order to ensure correct display
-            orderedScenes = [...response.scenes].sort((a, b) => a.order - b.order);
-
-            // Update scene order in Y.js with server response
-            if (partyData) {
-              partyData.reorderScenes(
-                response.scenes.map((scene) => ({
-                  id: scene.id,
-                  name: scene.name,
-                  order: scene.order,
-                  mapLocation: scene.mapLocation || undefined,
-                  mapThumbLocation: scene.mapThumbLocation || undefined,
-                  gameSessionId: scene.gameSessionId,
-                  thumb: hasThumb(scene)
-                    ? {
-                        resizedUrl: scene.thumb.resizedUrl,
-                        originalUrl: scene.thumb.url
-                      }
-                    : undefined
-                }))
-              );
-            }
-          }
-        },
-        toastMessages: {
-          success: { title: 'Scenes reordered' },
-          error: { title: 'Error reordering scenes', body: (error) => error.message || 'Error reordering scenes' }
-        }
-      });
-
-      // Y.js handles sync automatically - no need for invalidateAll()
-    } catch (error) {
-      // On failure, revert to original order
-      devError('scene', 'Error updating scene order:', error);
-      // Revert the visual order
-      orderedScenes = [...scenes];
-      // Y.js will automatically revert if the server operation failed
-    } finally {
-      formIsLoading = false;
-      // Reset the flag after a small delay to ensure navigation effect has run
-      setTimeout(() => {
-        isLocallyReordering = false;
-      }, 500);
-    }
+    const prev = updatedScenes[dragOverItem - 1]?.order ?? null;
+    const next = updatedScenes[dragOverItem + 1]?.order ?? null;
+    client.write.setSceneSettings(removed.id, { order: orderBetween(prev, next) });
   }
 
   let contextSceneId = $state('');
   const handleMapImageChange = (sceneId: string) => {
     contextSceneId = sceneId;
-    // Use requestAnimationFrame to ensure the component re-renders with the new sceneId first
     requestAnimationFrame(() => {
       openFileDialog();
     });
@@ -522,22 +269,17 @@
   const handleFileChange = (event: Event) => {
     event.preventDefault();
     if (file && file.length) {
-      // Extract grid dimensions from filename if present
       const dimensions = extractDimensionsFromFilename(file[0].name);
       handleCreateScene(scenes.length + 1, dimensions.width, dimensions.height);
     }
   };
 
   const handleContextMenu = (event: MouseEvent, sceneId: string) => {
-    // Prevent context menu from opening if we just finished dragging
     if (justFinishedDragging) {
       event.preventDefault();
       return;
     }
-
     event.preventDefault();
-
-    // Extra logic because the popover has internal methods in conflict
     if (openScenePopover === sceneId) {
       openScenePopover = null;
       setTimeout(() => {
@@ -550,21 +292,15 @@
 
   // Keep orderedScenes in sync with scenes prop, but not during drag operations
   $effect(() => {
-    // Skip updating if we're currently dragging or have just finished dragging
     if (dragAndDrop.isDragging || dragAndDrop.draggedItem !== null || justFinishedDragging) {
       return;
     }
-
-    // Skip updating if we're in the middle of a form operation (loading)
     if (formIsLoading) {
       return;
     }
-
-    // Ensure scenes is a valid array before updating
     if (Array.isArray(scenes) && scenes.length > 0) {
       orderedScenes = [...scenes];
     } else if (!orderedScenes.length) {
-      // Only set to empty array if orderedScenes is not already populated
       orderedScenes = [];
     }
   });
@@ -606,11 +342,11 @@
         animate:flip={{ delay: 100, duration: 200, easing: sineOut }}
         in:fly={{ x: -50, duration: 150, delay: isNewSceneAdded ? 0 : Math.min(index * 50, 500), easing: sineOut }}
         role="presentation"
-        id={`scene-${scene.order}`}
+        id={`scene-${scene.id}`}
         data-testid="sceneItem"
         class={[
           'scene',
-          scene.order === selectedSceneNumber && 'scene--isSelected',
+          scene.id === selectedSceneId && 'scene--isSelected',
           sceneBeingDeleted === scene.id && 'scene--isLoading',
           dragAndDrop.isDragging && dragAndDrop.draggedItem === index.toString() && 'scene--dragging',
           dragAndDrop.isDragging && dragAndDrop.draggedOverItem === index.toString() && 'scene--dropTarget',
@@ -631,12 +367,10 @@
           })}
         ondragover={(e) => dragAndDrop.handleDragOver(e, index.toString())}
         ondragleave={(e) => {
-          // Only clear the drag over state if we're leaving to a different scene or outside
           const relatedTarget = e.relatedTarget as HTMLElement | null;
           if (relatedTarget) {
             const targetScene = relatedTarget.closest('.scene');
             const currentScene = e.currentTarget as HTMLElement;
-            // Only call handleDragLeave if we're moving to a different scene or outside
             if (targetScene !== currentScene) {
               dragAndDrop.handleDragLeave();
             }
@@ -672,11 +406,10 @@
           </div>
         {/if}
         <a
-          href={`/${party.slug}/${gameSession.slug}/${scene.order}`}
+          href={`/${party.slug}/${gameSession.slug}/${scene.id}`}
           class="scene__link"
           draggable="false"
           onclick={(e) => {
-            // Only navigate if we're not dragging (prevent link activation during drag)
             if (dragAndDrop.isDragging) {
               e.preventDefault();
             }
@@ -684,7 +417,7 @@
           ondragover={(e) => e.preventDefault()}
           ondrop={(e) => e.preventDefault()}
         >
-          {#if liveActiveSceneId && liveActiveSceneId === scene.id}
+          {#if activeSceneId && activeSceneId === scene.id}
             <div class="scene__projectedIcon" data-testid="sceneActiveIcon">
               {#if !party.gameSessionIsPaused}
                 <Icon Icon={IconPlayerPlayFilled} color="var(--fgPrimary)" />
@@ -696,7 +429,7 @@
             </div>
           {/if}
           <div class="scene__text" data-testid="sceneText">
-            {scene.order} - {scene.name}
+            {index + 1} - {scene.name}
           </div>
         </a>
         <div class="scene__dragHandle" class:scene__dragHandle--disabled={isDragDisabled(scene.id)}>
@@ -788,7 +521,7 @@
     {/each}
   </div>
 
-  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} {partyData} />
+  <UpdateMapImage sceneId={contextSceneId} {client} />
 </div>
 
 <style>

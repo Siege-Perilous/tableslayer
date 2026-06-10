@@ -1,4 +1,5 @@
 import { type SelectAnnotation, type SelectLight, type SelectMarker, type SelectScene } from '$lib/db/app/schema';
+import { base64ToUint8 } from '$lib/realtime/binary';
 import type { Thumb } from '$lib/server';
 import { generateGradientColors } from '$lib/utils';
 import { StageDefaultProps } from '$lib/utils/defaultMapState';
@@ -72,6 +73,8 @@ export const buildSceneProps = (
         opacity: annotation.opacity,
         color: annotation.color,
         url: annotation.url ? `https://files.tableslayer.com/${annotation.url}` : null,
+        // DB rows carry base64; doc snapshots carry stable Uint8Array references
+        mask: typeof annotation.mask === 'string' ? base64ToUint8(annotation.mask) : (annotation.mask ?? null),
         visibility: annotation.visibility as StageMode,
         effect:
           annotation.effectType && annotation.effectType !== AnnotationEffect.None
