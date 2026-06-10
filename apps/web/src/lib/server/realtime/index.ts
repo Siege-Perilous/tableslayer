@@ -28,7 +28,8 @@ const sceneRowToWire = (
   lights: SceneWire['lights'],
   annotations: SceneWire['annotations']
 ): SceneWire => {
-  const { fogOfWarMask, annotationLayers: _annotationLayers, lastUpdated: _lastUpdated, ...settings } = scene;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { fogOfWarMask, annotationLayers, lastUpdated, ...settings } = scene;
   return { settings, markers, lights, annotations, fogMask: fogOfWarMask };
 };
 

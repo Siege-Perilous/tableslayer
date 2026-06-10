@@ -47,7 +47,6 @@
   let {
     stageProps,
     selectedMarkerId = $bindable(),
-    partyId = '',
     handleSelectActiveControl,
     socketUpdate = () => {},
     updateMarkerAndSave,

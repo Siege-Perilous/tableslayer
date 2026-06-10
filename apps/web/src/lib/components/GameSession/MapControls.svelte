@@ -16,7 +16,6 @@
     handleMapFill,
     handleMapFit,
     errors,
-    party,
     client
   }: {
     handleSelectActiveControl: (control: string) => void;

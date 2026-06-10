@@ -25,7 +25,7 @@
   import { PlayTools } from './usePlayTools.svelte';
 
   let { data } = $props();
-  const { user, party } = $derived(data);
+  const { party } = $derived(data);
 
   let stage: StageExports | undefined = $state();
   let stageElement: HTMLDivElement | undefined = $state();

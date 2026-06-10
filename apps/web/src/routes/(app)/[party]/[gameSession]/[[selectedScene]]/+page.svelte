@@ -15,7 +15,6 @@
     Shortcuts,
     type ChecklistItemId
   } from '$lib/components';
-  import { handleMutation } from '$lib/factories';
   import { useUpdateChecklistProgressMutation, useUploadSceneThumbnailMutation } from '$lib/queries';
   import { buildRenderProps, reuseUnchanged, type AnnotationRow, type MarkerRow } from '$lib/realtime';
   import {
@@ -800,6 +799,7 @@
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onAnnotationUpdate = (layerId: string, _blob: Promise<Blob>) => {
     const existing = annotationMaskTimers.get(layerId);
     if (existing) clearTimeout(existing);
@@ -825,6 +825,7 @@
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onFogUpdate = (_blob: Promise<Blob>) => {
     trackChecklistItemLocal('fog-erase');
     if (fogCommitTimer) clearTimeout(fogCommitTimer);

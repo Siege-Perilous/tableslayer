@@ -59,6 +59,7 @@ export function queuePropertyUpdate(
   stageProps: StageProps,
   propertyPath: PropertyPath,
   value: unknown,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _updateType: 'marker' | 'light' | 'control' | 'scene' = 'control'
 ) {
   applyUpdate(stageProps as unknown as Record<string, unknown>, propertyPath, value);

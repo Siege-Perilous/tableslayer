@@ -31,8 +31,6 @@
   let {
     stageProps,
     selectedLightId = $bindable(),
-    partyId = '',
-    sceneId = '',
     handleSelectActiveControl,
     socketUpdate = () => {},
     updateLightAndSave,
