@@ -271,7 +271,10 @@
         // Only show if marker visibility is not DM-only (i.e., not visibility = 1)
         // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
         if (selectedByPlayer.visibility !== 1) {
-          selectedNotPinned = selectedByPlayer;
+          // Look up the current marker by id — the selection captured at pointer-down
+          // holds the pre-drag position, which would place the tooltip at the origin
+          const currentMarker = props.marker.markers.find((m) => m.id === selectedByPlayer.id);
+          selectedNotPinned = currentMarker || selectedByPlayer;
         }
       }
 
