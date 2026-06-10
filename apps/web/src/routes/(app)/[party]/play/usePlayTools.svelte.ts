@@ -439,8 +439,10 @@ export class PlayTools {
       };
 
       session.client.write.upsertAnnotation(sceneId, annotation, mask);
-      // Our own doc write is local-origin, so apply the mask to the new layer here
-      await session.loadAnnotationMask(annotation.id, mask);
+      // Our own doc write is local-origin (the remote reapply path skips it), and
+      // the new annotation's layer component mounts on the NEXT render — use the
+      // retry ladder so the mask lands after the mount instead of no-oping before it.
+      session.reapplyAnnotationMask(sceneId, annotation.id);
 
       session.presence?.removeTemporaryLayer(layerId);
       this.#loadedTempMasks.delete(layerId);

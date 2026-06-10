@@ -179,6 +179,20 @@ export class PlaySession {
     }
   }
 
+  // Reapply on a short ladder: loadMask silently no-ops if the layer component
+  // hasn't mounted yet, so a single immediate call can miss a (re)mounting layer.
+  // Public because local writes need it too (e.g. persisting a player drawing
+  // mounts a brand-new annotation layer; own doc changes skip the remote path).
+  reapplyAnnotationMask(sceneId: string, annotationId: string) {
+    for (const delay of [50, 350, 1000]) {
+      setTimeout(() => {
+        if (this.activeSceneId !== sceneId) return;
+        const mask = this.client?.annotationMask(sceneId, annotationId);
+        if (mask) this.loadAnnotationMask(annotationId, mask);
+      }, delay);
+    }
+  }
+
   #applyRemoteMaskChanges(changes: SceneChange[]) {
     const sceneId = this.activeSceneId;
     const client = this.client;
@@ -196,9 +210,14 @@ export class PlaySession {
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
       }
 
-      if (change.part === 'annotations' && change.childId && change.keys.includes('mask')) {
-        const mask = client.annotationMask(sceneId, change.childId);
-        if (mask) this.loadAnnotationMask(change.childId, mask);
+      // Any annotation row change can (re)mount its layer component — e.g. a
+      // visibility toggle filters the layer in/out of the render props — and a
+      // fresh component needs its mask reapplied, not just on 'mask' changes.
+      if (change.part === 'annotations') {
+        const annotationIds = change.childId ? [change.childId] : change.keys;
+        for (const annotationId of annotationIds) {
+          this.reapplyAnnotationMask(sceneId, annotationId);
+        }
       }
     }
   }

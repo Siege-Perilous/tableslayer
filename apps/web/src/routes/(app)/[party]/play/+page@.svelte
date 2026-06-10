@@ -21,7 +21,7 @@
   import { IconArrowBackUp } from '@tabler/icons-svelte';
   import { onMount, untrack } from 'svelte';
   import PauseOverlay from './PauseOverlay.svelte';
-  import { PlaySession } from './usePlaySession.svelte';
+  import { PlaySession, type SessionRoute } from './usePlaySession.svelte';
   import { PlayTools } from './usePlayTools.svelte';
 
   let { data } = $props();
@@ -42,7 +42,7 @@
         initialActiveSceneId: data.activeScene?.id ?? null,
         initialIsPaused: data.party.gameSessionIsPaused,
         bucketUrl: data.bucketUrl,
-        routes: () => data.gameSessionsWithScenes,
+        routes: () => sceneRoutes,
         getStage: () => stage
       })
   );
@@ -53,10 +53,24 @@
         session,
         userId: data.user.id,
         getStage: () => stage,
-        routes: () => data.gameSessionsWithScenes,
+        routes: () => sceneRoutes,
         defaultSessionFilter: () => session.gameSessionId
       })
   );
+
+  // Scene routing for the radial menu and cross-session switches. SSR provides
+  // every session's list; the doc is authoritative for the connected session, so
+  // renames/additions/deletions there reflect live. Other sessions' rooms aren't
+  // connected, so their names stay as loaded (refreshed on reload).
+  // Explicit annotation breaks a type-inference cycle (session ↔ sceneRoutes)
+  const sceneRoutes: SessionRoute[] = $derived.by((): SessionRoute[] => {
+    const live = session.ready && session.client ? session.client.scenes() : null;
+    return data.gameSessionsWithScenes.map((gs) =>
+      live && gs.id === session.gameSessionId
+        ? { id: gs.id, name: gs.name, scenes: live.map((scene) => ({ id: scene.id, name: scene.name })) }
+        : gs
+    );
+  });
 
   // ---------------------------------------------------------------------------
   // Render props: doc snapshot + local view -> StageProps (one-directional).

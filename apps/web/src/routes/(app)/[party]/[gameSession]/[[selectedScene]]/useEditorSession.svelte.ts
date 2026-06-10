@@ -108,12 +108,28 @@ export class EditorSession {
         const mask = client.fogMask(change.sceneId);
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
       }
-      if (change.part === 'annotations' && change.childId && change.keys.includes('mask')) {
-        if (!stage.annotations?.isDrawing()) {
-          const mask = client.annotationMask(change.sceneId, change.childId);
-          if (mask) stage.annotations.loadMask(change.childId, mask);
+      // Any annotation row change can (re)mount its layer component (new rows,
+      // visibility toggles); reapply masks rather than only reacting to 'mask'.
+      if (change.part === 'annotations' && !stage.annotations?.isDrawing()) {
+        const annotationIds = change.childId ? [change.childId] : change.keys;
+        for (const annotationId of annotationIds) {
+          this.#reapplyAnnotationMask(change.sceneId, annotationId);
         }
       }
+    }
+  }
+
+  // Reapply on a short ladder: loadMask silently no-ops if the layer component
+  // hasn't mounted yet, so a single immediate call can miss a remounting layer.
+  #reapplyAnnotationMask(sceneId: string, annotationId: string) {
+    for (const delay of [50, 350, 1000]) {
+      setTimeout(() => {
+        if (this.#options.selectedSceneId() !== sceneId) return;
+        const stage = this.#options.getStage();
+        if (!stage?.annotations?.loadMask || stage.annotations.isDrawing()) return;
+        const mask = this.client?.annotationMask(sceneId, annotationId);
+        if (mask) stage.annotations.loadMask(annotationId, mask);
+      }, delay);
     }
   }
 
