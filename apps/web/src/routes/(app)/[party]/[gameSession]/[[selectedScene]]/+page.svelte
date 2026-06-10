@@ -93,6 +93,13 @@
     }
   });
 
+  // Undo history follows the selected scene; switching scenes clears it
+  $effect(() => {
+    if (session.ready && session.client && selectedSceneId) {
+      session.client.setUndoScope(selectedSceneId);
+    }
+  });
+
   const scenes = $derived(session.ready && session.client ? session.client.scenes() : data.scenes);
   const partyState = $derived(
     session.ready && session.client
@@ -1032,6 +1039,22 @@
       return;
     }
 
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const key = event.key.toLowerCase();
+      if (key === 'z' || key === 'y') {
+        event.preventDefault();
+        if (!session.client) return;
+        if (key === 'y' || event.shiftKey) {
+          if (session.client.canRedo) session.client.redo();
+          else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
+        } else {
+          if (session.client.canUndo) session.client.undo();
+          else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
+        }
+        return;
+      }
+    }
+
     const previousControl = activeControl;
     const newActiveControl = handleKeyCommands(event, stageProps, activeControl, stage, handleSelectActiveControl);
     activeControl = newActiveControl;
@@ -1072,7 +1095,13 @@
   });
 </script>
 
-<svelte:document onkeydown={handleKeydown} bind:activeElement />
+<!-- Every new pointer gesture starts a new undo step (capture phase: fires before
+     stage/panel handlers write, so the previous capture group closes first) -->
+<svelte:document
+  onkeydown={handleKeydown}
+  onpointerdowncapture={() => session.client?.stopCapturing()}
+  bind:activeElement
+/>
 <svelte:window bind:innerWidth />
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 

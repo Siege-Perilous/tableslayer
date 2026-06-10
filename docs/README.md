@@ -6,4 +6,5 @@ This folder contains documentation for various architecture patterns in Table Sl
 - **grid-system-architecture.md** - How the grid system works
 - **playwright-testing-guide.md** - How to write and run Playwright end-to-end tests
 - **stage-performance-guide.md** - Performance patterns, GPU memory management, and optimization techniques for the Stage component
+- **undo-redo-architecture.md** - Editor undo/redo via Y.UndoManager on the realtime doc
 - **yjs-sync-architecture.md** - Real-time sync architecture using Yjs

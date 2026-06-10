@@ -157,4 +157,7 @@ export interface SceneChange {
   childId?: string;
   /** False when this client's own transaction produced the change. */
   remote: boolean;
+  /** True when a local Y.UndoManager produced the change (local, but the canvas
+   *  must re-apply masks exactly as it does for remote changes). */
+  undoRedo: boolean;
 }

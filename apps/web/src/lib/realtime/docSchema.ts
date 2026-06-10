@@ -330,6 +330,7 @@ const SCENE_PARTS: ReadonlySet<string> = new Set(['settings', 'markers', 'lights
 export const classifySceneEvents = (events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction): SceneChange[] => {
   const changes: SceneChange[] = [];
   const remote = !transaction.local;
+  const undoRedo = transaction.origin instanceof Y.UndoManager;
 
   for (const event of events) {
     const path = event.path;
@@ -337,13 +338,13 @@ export const classifySceneEvents = (events: Y.YEvent<Y.Map<unknown>>[], transact
 
     if (path.length === 0) {
       // Scenes added/removed at the top level
-      changes.push({ sceneId: keys[0] ?? '', part: 'scenes', keys, remote });
+      changes.push({ sceneId: keys[0] ?? '', part: 'scenes', keys, remote, undoRedo });
     } else if (path.length === 1) {
       // A key set directly on a scene map (fogMask, or a collection map replaced)
       const sceneId = String(path[0]);
       for (const key of keys) {
         if (SCENE_PARTS.has(key)) {
-          changes.push({ sceneId, part: key as ScenePart, keys: [key], remote });
+          changes.push({ sceneId, part: key as ScenePart, keys: [key], remote, undoRedo });
         }
       }
     } else if (SCENE_PARTS.has(String(path[1]))) {
@@ -356,7 +357,8 @@ export const classifySceneEvents = (events: Y.YEvent<Y.Map<unknown>>[], transact
         part,
         keys,
         childId: path.length >= 3 ? String(path[2]) : undefined,
-        remote
+        remote,
+        undoRedo
       });
     }
   }
