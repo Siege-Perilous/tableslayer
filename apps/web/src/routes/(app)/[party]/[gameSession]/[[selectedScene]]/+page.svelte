@@ -1043,8 +1043,14 @@
       const key = event.key.toLowerCase();
       if (key === 'z' || key === 'y') {
         event.preventDefault();
-        if (key === 'y' || event.shiftKey) session.client?.redo();
-        else session.client?.undo();
+        if (!session.client) return;
+        if (key === 'y' || event.shiftKey) {
+          if (session.client.canRedo) session.client.redo();
+          else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
+        } else {
+          if (session.client.canUndo) session.client.undo();
+          else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
+        }
         return;
       }
     }
