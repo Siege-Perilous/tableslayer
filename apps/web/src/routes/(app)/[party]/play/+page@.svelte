@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Head } from '$lib/components';
   import { buildRenderProps, reuseUnchanged } from '$lib/realtime';
-  import { buildSceneProps, devLog, throttle } from '$lib/utils';
+  import { buildSceneProps, throttle } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
-  import { createConditionalActivityTimer } from '$lib/utils/yjs/activityTimer';
+  import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
   import {
     MapLayerType,
     PerformanceDebugger,
@@ -123,18 +123,6 @@
   );
   const hoveredMarkerId = $derived(session.presence?.hoveredMarker?.id ?? null);
   const latestMeasurement = $derived(getLatestMeasurement(session.presence?.measurements ?? {}));
-  $effect(() => {
-    if (latestMeasurement) devLog('play', `measurement received (type ${latestMeasurement.type})`);
-  });
-  $effect(() => {
-    devLog(
-      'play',
-      `state: client=${!!session.client} ready=${session.ready} ` +
-        `conn=${session.client?.status.gameSession}/${session.client?.status.party} ` +
-        `room=${session.gameSessionId?.slice(0, 8)} active=${session.activeSceneId?.slice(0, 8)} ` +
-        `snapshot=${!!session.activeScene} rendered=${renderedSceneId?.slice(0, 8)}`
-    );
-  });
   const pinnedMarkerIds = $derived(renderedProps.marker.markers.filter((m) => m.pinnedTooltip).map((m) => m.id));
 
   // Apply masks + refit when the rendered scene changes. Gated on session.ready
@@ -144,7 +132,6 @@
     if (stageIsLoading || !renderedSceneId || !session.ready) return;
     if (renderedSceneId === lastPreparedSceneId) return;
     lastPreparedSceneId = renderedSceneId;
-    devLog('play', `applying masks for scene ${renderedSceneId.slice(0, 8)}`);
     session.applyMasks();
     requestAnimationFrame(() => stage?.scene?.fit());
   });

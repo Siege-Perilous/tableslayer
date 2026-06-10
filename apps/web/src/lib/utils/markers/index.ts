@@ -1,1 +1,0 @@
-export { mergeMarkersWithProtection } from './mergeMarkersWithProtection';

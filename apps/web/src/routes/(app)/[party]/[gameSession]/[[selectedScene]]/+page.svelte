@@ -22,7 +22,6 @@
     bindPropertyUpdatesToDoc,
     buildSceneProps,
     convertMarkerToDbFormat,
-    devLog,
     extractLocationFromUrl,
     handleKeyCommands,
     handleStageZoom,
@@ -51,7 +50,7 @@
     type StageExports,
     type StageProps
   } from '@tableslayer/stage';
-  import { FogSliders, Icon } from '@tableslayer/ui';
+  import { addToast, FogSliders, Icon } from '@tableslayer/ui';
   import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp } from '@tabler/icons-svelte';
   import { Pane, PaneGroup, PaneResizer, type PaneAPI } from 'paneforge';
   import { onMount, untrack } from 'svelte';
@@ -103,6 +102,25 @@
   );
   const activeSceneId = $derived(partyState.activeSceneId ?? undefined);
   const currentParty = $derived({ ...party, gameSessionIsPaused: partyState.isPaused });
+
+  // "Connected" now means "your edits are durable" — the server persists doc
+  // changes. Toast only the transitions worth telling the user about: a drop
+  // after being live, and the subsequent recovery. First connect is silent.
+  const connectionLive = $derived(
+    session.client?.status.gameSession === 'connected' && session.client?.status.party === 'connected'
+  );
+  let wasLive = false;
+  $effect(() => {
+    const live = session.ready && connectionLive;
+    if (wasLive && !live) {
+      addToast({ data: { title: 'Connection lost — edits will sync when back online', type: 'danger' } });
+    } else if (!wasLive && live && wasEverLive) {
+      addToast({ data: { title: 'Reconnected', type: 'success' } });
+    }
+    if (live) wasEverLive = true;
+    wasLive = live;
+  });
+  let wasEverLive = false;
 
   // Doc settings stand in for the SelectScene row that the control panels expect
   const selectedSceneForControls = $derived.by(() => {
@@ -766,14 +784,8 @@
   const annotationMaskTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const commitAnnotationMask = async (layerId: string) => {
-    if (!session.client || !stage?.annotations) {
-      devLog('editor', 'annotation commit skipped: no client/stage');
-      return;
-    }
-    if (stage.annotations.isDrawing()) {
-      devLog('editor', 'annotation commit skipped: still drawing');
-      return;
-    }
+    if (!session.client || !stage?.annotations) return;
+    if (stage.annotations.isDrawing()) return;
 
     // toRLE reads the active layer; point it at the target temporarily
     const originalActiveLayer = stageProps.annotations.activeLayer;
@@ -782,9 +794,6 @@
       const rle = await stage.annotations.toRLE();
       if (rle && rle.length > 0) {
         session.client.write.setAnnotationMask(selectedSceneId, layerId, rle);
-        devLog('editor', `committed annotation mask ${layerId} (${rle.length} bytes)`);
-      } else {
-        devLog('editor', `annotation commit skipped: empty RLE for ${layerId}`);
       }
     } finally {
       stageProps.annotations.activeLayer = originalActiveLayer;
@@ -808,23 +817,15 @@
   let fogCommitTimer: ReturnType<typeof setTimeout> | null = null;
 
   const commitFogMask = async () => {
-    if (!session.client || !stage?.fogOfWar) {
-      devLog('editor', 'fog commit skipped: no client/stage');
-      return;
-    }
-    if (stage.fogOfWar.isDrawing()) {
-      devLog('editor', 'fog commit skipped: still drawing');
-      return; // next stroke end re-arms
-    }
+    if (!session.client || !stage?.fogOfWar) return;
+    if (stage.fogOfWar.isDrawing()) return; // next stroke end re-arms
     const rle = await stage.fogOfWar.toRLE();
     if (rle && !stage.fogOfWar.isDrawing()) {
       session.client.write.setFogMask(selectedSceneId, rle);
-      devLog('editor', `committed fog mask (${rle.length} bytes)`);
     }
   };
 
   const onFogUpdate = (_blob: Promise<Blob>) => {
-    devLog('editor', 'fog stroke; commit scheduled in 500ms');
     trackChecklistItemLocal('fog-erase');
     if (fogCommitTimer) clearTimeout(fogCommitTimer);
     fogCommitTimer = setTimeout(() => {
@@ -854,10 +855,6 @@
   });
 
   const onMeasurementStart = (startPoint: { x: number; y: number }, type: number) => {
-    devLog(
-      'editor',
-      `measurement start; broadcasting=${isOnActiveScene()} (selected=${selectedSceneId}, active=${partyState.activeSceneId})`
-    );
     if (!isOnActiveScene()) return;
     session.presence?.updateMeasurement(startPoint, startPoint, type, measurementStyle());
   };

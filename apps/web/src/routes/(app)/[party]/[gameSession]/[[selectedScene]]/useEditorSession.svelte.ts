@@ -106,13 +106,11 @@ export class EditorSession {
       if (!stage) continue;
       if (change.part === 'fogMask' && !stage.fogOfWar?.isDrawing()) {
         const mask = client.fogMask(change.sceneId);
-        devLog('editor', `applying remote fog mask (${mask?.length ?? 0} bytes)`);
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
       }
       if (change.part === 'annotations' && change.childId && change.keys.includes('mask')) {
         if (!stage.annotations?.isDrawing()) {
           const mask = client.annotationMask(change.sceneId, change.childId);
-          devLog('editor', `applying remote annotation mask ${change.childId} (${mask?.length ?? 0} bytes)`);
           if (mask) stage.annotations.loadMask(change.childId, mask);
         }
       }

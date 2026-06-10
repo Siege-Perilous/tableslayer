@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { devLog } from '../debug';
+import { devLog } from './debug';
 
 export interface ActivityTimer {
   /**

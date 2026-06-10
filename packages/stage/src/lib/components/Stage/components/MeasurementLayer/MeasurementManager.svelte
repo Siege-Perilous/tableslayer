@@ -25,10 +25,6 @@
 
   const { props, visible, displayProps, gridProps, sceneRotation = 0, onFadeComplete }: Props = $props();
 
-  $effect(() => {
-    console.log('[MeasurementManager] Grid props:', gridProps);
-  });
-
   let currentMeasurement: IMeasurement | null = null;
   // Use $state.raw() for Three.js objects to prevent Svelte's proxy from interfering
   // with internal Three.js property access (like object.layers)
@@ -333,19 +329,8 @@
     enableDMG252?: boolean
   ): void {
     if (!props) {
-      console.log('[MeasurementManager] No props available for displayReceivedMeasurement');
       return;
     }
-
-    console.log('[MeasurementManager] displayReceivedMeasurement called:', {
-      startPoint,
-      endPoint,
-      type,
-      beamWidth,
-      coneAngle,
-      thickness,
-      hasCurrentMeasurement: !!currentMeasurement
-    });
 
     // Clear any existing measurement
     clearMeasurement();
@@ -397,16 +382,8 @@
     currentMeasurement = measurement;
     measurementGroup.add(measurement.object);
 
-    console.log('[MeasurementManager] Measurement created and added to group:', {
-      groupChildren: measurementGroup.children.length,
-      measurementObject: measurement.object,
-      visible: measurementGroup.visible
-    });
-
     // Update to the end point
     currentMeasurement.update(endPoint, sceneRotation);
-
-    console.log('[MeasurementManager] Measurement updated to endpoint');
 
     // Store the fadeout time if provided for the fade animation
     if (fadeoutTime !== undefined) {
@@ -415,20 +392,11 @@
 
     // Schedule auto-fade with the received timing properties
     const delay = autoHideDelay ?? props.autoHideDelay;
-    console.log(
-      '[MeasurementManager] Scheduling auto-fade with delay:',
-      delay,
-      'fadeTime:',
-      fadeoutTime ?? props.fadeoutTime
-    );
-
     autoHideTimeoutId = setTimeout(() => {
       // Start the fade animation
       fadeStartTime = performance.now();
       isFading = true;
     }, delay);
-
-    console.log('[MeasurementManager] Measurement auto-fade scheduled');
   }
 
   // Export the methods for use by parent components

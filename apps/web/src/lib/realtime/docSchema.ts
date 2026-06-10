@@ -141,6 +141,12 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
   const transact = (fn: () => void) => doc.transact(fn, origin);
   const scenes = () => getScenesMap(doc);
 
+  // A write against a missing scene is a caller bug (stale id, not-yet-hydrated
+  // doc). Never fail silently — silent no-ops cost hours of debugging.
+  const warnMissing = (what: string, sceneId: string) => {
+    console.warn(`[realtime] write dropped: ${what} — scene ${sceneId} not in doc`);
+  };
+
   const collectionOf = (sceneId: string, collection: 'markers' | 'lights' | 'annotations') =>
     scenes().get(sceneId)?.get(collection) as Y.Map<Y.Map<unknown>> | undefined;
 
@@ -152,7 +158,10 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
   ) => {
     transact(() => {
       const map = collectionOf(sceneId, collection);
-      if (!map) return;
+      if (!map) {
+        warnMissing(`upsert ${collection}/${id}`, sceneId);
+        return;
+      }
       let row = map.get(id);
       if (!row) {
         row = new Y.Map();
@@ -163,7 +172,14 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
   };
 
   const deleteRow = (sceneId: string, collection: 'markers' | 'lights' | 'annotations', id: string) => {
-    transact(() => collectionOf(sceneId, collection)?.delete(id));
+    transact(() => {
+      const map = collectionOf(sceneId, collection);
+      if (!map) {
+        warnMissing(`delete ${collection}/${id}`, sceneId);
+        return;
+      }
+      map.delete(id);
+    });
   };
 
   return {
@@ -207,12 +223,23 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
     setSceneSettings(sceneId: string, fields: Partial<SceneSettings>) {
       transact(() => {
         const settings = scenes().get(sceneId)?.get('settings') as Y.Map<unknown> | undefined;
-        if (settings) setChangedFields(settings, fields as Record<string, unknown>);
+        if (!settings) {
+          warnMissing('setSceneSettings', sceneId);
+          return;
+        }
+        setChangedFields(settings, fields as Record<string, unknown>);
       });
     },
 
     setFogMask(sceneId: string, mask: Uint8Array) {
-      transact(() => scenes().get(sceneId)?.set('fogMask', mask));
+      transact(() => {
+        const scene = scenes().get(sceneId);
+        if (!scene) {
+          warnMissing('setFogMask', sceneId);
+          return;
+        }
+        scene.set('fogMask', mask);
+      });
     },
 
     upsertMarker(sceneId: string, marker: MarkerRow) {
@@ -247,7 +274,14 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
       upsertRow(sceneId, 'annotations', annotationId, fields as Record<string, unknown>);
     },
     setAnnotationMask(sceneId: string, annotationId: string, mask: Uint8Array) {
-      transact(() => collectionOf(sceneId, 'annotations')?.get(annotationId)?.set(ANNOTATION_MASK_KEY, mask));
+      transact(() => {
+        const row = collectionOf(sceneId, 'annotations')?.get(annotationId);
+        if (!row) {
+          warnMissing(`setAnnotationMask ${annotationId}`, sceneId);
+          return;
+        }
+        row.set(ANNOTATION_MASK_KEY, mask);
+      });
     },
     deleteAnnotation(sceneId: string, annotationId: string) {
       deleteRow(sceneId, 'annotations', annotationId);

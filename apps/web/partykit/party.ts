@@ -122,4 +122,32 @@ export default class PartyServer implements Party.Server {
       await this.#persistState();
     }
   }
+
+  async onRequest(req: Party.Request) {
+    // After the app writes party state to the DB directly (import, admin tools),
+    // it calls this to refresh the live doc from the database.
+    if (req.method === 'POST') {
+      const body = (await req.json()) as { type?: string };
+      if (body.type === 'resync') {
+        const token = (this.room.env.INTERNAL_API_TOKEN as string | undefined) ?? 'dev-internal-token';
+        if (req.headers.get('x-internal-token') !== token) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+        const doc = await unstable_getYDoc(this.room, this.#options);
+        const state = await appRequest<PartyStateWire>(this.room, '/api/internal/partySnapshot', {
+          partyId: this.room.id
+        });
+        doc.transact(() => {
+          const map = getPartyStateMap(doc);
+          map.set('activeSceneId', state.activeSceneId);
+          map.set('isPaused', state.isPaused);
+          getMeta(doc).set('schemaVersion', DOC_SCHEMA_VERSION);
+          getMeta(doc).set('hydratedAt', Date.now());
+        }, HYDRATION_ORIGIN);
+        this.#dirty = false;
+        return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+    return new Response('OK', { status: 200 });
+  }
 }

@@ -77,14 +77,20 @@
   $effect(() => {
     const resChanged = display.resolution.x !== prevResX || display.resolution.y !== prevResY;
 
-    // Reset any lingering measurement state when layer deactivates or scene changes
-    if (!isActive || resChanged) {
+    if (resChanged) {
+      // Scene switched: remove any measurement immediately
       isDrawing = false;
       startPoint = null;
       if (measurementManager) {
         measurementManager.clearMeasurement();
         measurementManager.hidePreview();
       }
+    } else if (!isActive) {
+      // Tool deactivated: stop drawing and hide the preview, but let a finished
+      // measurement linger and auto-fade (matches how received measurements behave)
+      isDrawing = false;
+      startPoint = null;
+      measurementManager?.hidePreview();
     }
 
     // Update tracked resolution

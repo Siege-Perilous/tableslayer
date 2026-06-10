@@ -193,13 +193,11 @@ export class PlaySession {
       if (change.part === 'fogMask') {
         if (stage.fogOfWar?.isDrawing()) continue;
         const mask = client.fogMask(sceneId);
-        devLog('play', `applying remote fog mask (${mask?.length ?? 0} bytes)`);
         if (mask) stage.fogOfWar.fromRLE(mask, 1024, 1024);
       }
 
       if (change.part === 'annotations' && change.childId && change.keys.includes('mask')) {
         const mask = client.annotationMask(sceneId, change.childId);
-        devLog('play', `applying remote annotation mask ${change.childId} (${mask?.length ?? 0} bytes)`);
         if (mask) this.loadAnnotationMask(change.childId, mask);
       }
     }

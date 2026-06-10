@@ -39,7 +39,7 @@
     IconHandFinger,
     IconLocationPin
   } from '@tabler/icons-svelte';
-  import { useUploadFileMutation, useDeleteMarkerMutation } from '$lib/queries';
+  import { useUploadFileMutation } from '$lib/queries';
   import type { Snippet } from 'svelte';
   import { queuePropertyUpdate, extractLocationFromUrl, throttle, trackChecklistItem } from '$lib/utils';
   import { handleMutation } from '$lib/factories';
@@ -69,7 +69,6 @@
   } = $props();
 
   const uploadFile = useUploadFileMutation();
-  const deleteMarker = useDeleteMarkerMutation();
 
   let activeMarkerId = $state<string | null>(null);
   let formIsLoading = $state(false);
@@ -134,32 +133,18 @@
     });
   };
 
-  const handleMarkerDelete = async (markerId: string) => {
-    await handleMutation({
-      mutation: () => deleteMarker.mutateAsync({ partyId: partyId, markerId: markerId }),
-      formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => {
-        // Call the deletion callback if provided (for Y.js sync)
-        // The callback will handle removing the marker from stageProps
-        if (onMarkerDeleted) {
-          onMarkerDeleted(markerId);
-        } else {
-          // Fallback - only update locally if no callback provided
-          const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
-          stageProps.marker.markers = updatedMarkers;
-          queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
-        }
-
-        // Reset selected marker if we just deleted it
-        if (selectedMarkerId === markerId) {
-          selectedMarkerId = undefined;
-        }
-      },
-      toastMessages: {
-        success: { title: 'Marker deleted' },
-        error: { title: 'Error deleting marker', body: (error) => error.message }
-      }
-    });
+  // Deleting a marker is a doc write (via the callback); the server persists it.
+  const handleMarkerDelete = (markerId: string) => {
+    if (onMarkerDeleted) {
+      onMarkerDeleted(markerId);
+    } else {
+      const updatedMarkers = stageProps.marker.markers.filter((marker) => marker.id !== markerId);
+      stageProps.marker.markers = updatedMarkers;
+      queuePropertyUpdate(stageProps, ['marker', 'markers'], updatedMarkers, 'marker');
+    }
+    if (selectedMarkerId === markerId) {
+      selectedMarkerId = undefined;
+    }
   };
 </script>
 
