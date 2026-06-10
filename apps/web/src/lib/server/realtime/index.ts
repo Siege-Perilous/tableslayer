@@ -139,7 +139,8 @@ const requestRoomResync = async (party: 'party' | 'game_session', roomId: string
     await fetch(`${protocol}://${host}/parties/${party}/${roomId}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-internal-token': token },
-      body: JSON.stringify({ type: 'resync' })
+      body: JSON.stringify({ type: 'resync' }),
+      signal: AbortSignal.timeout(3000)
     });
   } catch (error) {
     console.warn(`room resync failed for ${party}/${roomId}`, error);
