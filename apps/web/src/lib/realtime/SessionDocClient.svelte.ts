@@ -7,6 +7,7 @@ import {
   getAnnotationMask,
   getFogMask,
   getPartyState,
+  getScenesMap,
   getSceneSnapshot,
   isDocHydrated,
   listScenes,
@@ -42,8 +43,12 @@ export class SessionDocClient {
   readonly partyDoc = new Y.Doc();
   /** Identity tag for this client's transactions. */
   readonly origin: object = { client: 'SessionDocClient' };
+  /** Origin for system writes (thumbnails etc.) — excluded from undo tracking. */
+  readonly systemOrigin: object = { client: 'SessionDocClient', system: true };
 
   readonly write: SessionWriter;
+  /** Writer for system-initiated changes that must never land on the undo stack. */
+  readonly systemWrite: SessionWriter;
   readonly party: PartyWriter;
   readonly presence: PresenceChannel;
   readonly gameSessionId: string;
@@ -56,6 +61,8 @@ export class SessionDocClient {
   });
   /** True once both rooms have synced and the server has hydrated the session doc. */
   ready = $state(false);
+  canUndo = $state(false);
+  canRedo = $state(false);
 
   #sceneRevs = $state<Record<string, number>>({});
   #listRev = $state(0);
@@ -66,6 +73,7 @@ export class SessionDocClient {
   #partyCache: { rev: number; state: PartyState } | null = null;
   #changeListeners = new Set<(changes: SceneChange[]) => void>();
 
+  #undoManager: Y.UndoManager | null = null;
   #gameSessionProvider: YPartyKitProvider;
   #partyProvider: YPartyKitProvider;
   #gameSessionSynced = false;
@@ -78,6 +86,7 @@ export class SessionDocClient {
     this.userId = options.userId;
 
     this.write = createSessionWriter(this.doc, this.origin);
+    this.systemWrite = createSessionWriter(this.doc, this.systemOrigin);
     this.party = createPartyWriter(this.partyDoc, this.origin);
 
     this.#gameSessionProvider = new YPartyKitProvider(options.partykitHost, options.gameSessionId, this.doc, {
@@ -184,6 +193,57 @@ export class SessionDocClient {
   }
 
   // -------------------------------------------------------------------------
+  // Undo/redo — a per-scene Y.UndoManager tracking only this client's origin,
+  // so undo reverts your own edits and never another collaborator's. Each undo
+  // stack item can pin prior mask bytes against GC, hence the stack cap.
+  // -------------------------------------------------------------------------
+
+  static readonly #UNDO_STACK_LIMIT = 100;
+
+  /** Scope undo history to one scene (or null to disable). Clears prior history. */
+  setUndoScope(sceneId: string | null) {
+    this.#undoManager?.destroy();
+    this.#undoManager = null;
+    this.canUndo = false;
+    this.canRedo = false;
+    if (!sceneId) return;
+
+    const scene = getScenesMap(this.doc).get(sceneId);
+    if (!scene) {
+      console.warn(`[realtime] undo scope dropped — scene ${sceneId} not in doc`);
+      return;
+    }
+
+    const undoManager = new Y.UndoManager(scene, {
+      trackedOrigins: new Set([this.origin])
+    });
+    const refresh = () => {
+      if (undoManager.undoStack.length > SessionDocClient.#UNDO_STACK_LIMIT) {
+        undoManager.undoStack.splice(0, undoManager.undoStack.length - SessionDocClient.#UNDO_STACK_LIMIT);
+      }
+      this.canUndo = undoManager.canUndo();
+      this.canRedo = undoManager.canRedo();
+    };
+    undoManager.on('stack-item-added', refresh);
+    undoManager.on('stack-item-popped', refresh);
+    undoManager.on('stack-cleared', refresh);
+    this.#undoManager = undoManager;
+  }
+
+  undo() {
+    this.#undoManager?.undo();
+  }
+
+  redo() {
+    this.#undoManager?.redo();
+  }
+
+  /** Close the current capture group so the next edit starts a new undo step. */
+  stopCapturing() {
+    this.#undoManager?.stopCapturing();
+  }
+
+  // -------------------------------------------------------------------------
   // Imperative reads + change subscription (for canvas mask application etc.)
   // -------------------------------------------------------------------------
 
@@ -205,6 +265,8 @@ export class SessionDocClient {
   }
 
   destroy() {
+    this.#undoManager?.destroy();
+    this.#undoManager = null;
     this.presence.destroy();
     this.#changeListeners.clear();
     this.#gameSessionProvider.destroy();

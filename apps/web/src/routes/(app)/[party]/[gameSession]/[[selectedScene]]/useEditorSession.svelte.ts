@@ -92,11 +92,11 @@ export class EditorSession {
         this.#scheduleThumbnail(change.sceneId);
       }
 
-      if (!change.remote || change.sceneId !== selectedSceneId) continue;
+      if ((!change.remote && !change.undoRedo) || change.sceneId !== selectedSceneId) continue;
 
-      // Remote fog changes apply straight to the canvas (own commits are
-      // excluded by transaction identity, not timing). Annotation masks are
-      // declarative layer props and need no handling here.
+      // Remote and undo/redo fog changes apply straight to the canvas (own
+      // commits are excluded by transaction identity, not timing). Annotation
+      // masks are declarative layer props and need no handling here.
       const stage = this.#options.getStage();
       if (!stage) continue;
       if (change.part === 'fogMask' && !stage.fogOfWar?.isDrawing()) {
@@ -131,7 +131,8 @@ export class EditorSession {
       const currentUrl = client.scene(sceneId)?.settings.mapThumbLocation ?? null;
       const result = await this.#options.uploadThumbnail(blob, sceneId, currentUrl);
       if (result?.location) {
-        client.write.setSceneSettings(sceneId, { mapThumbLocation: result.location });
+        // System origin: a thumbnail write must never become a Ctrl+Z step
+        client.systemWrite.setSceneSettings(sceneId, { mapThumbLocation: result.location });
         devLog('editor', `Updated scene thumbnail: ${result.location}`);
       }
     } catch (error) {

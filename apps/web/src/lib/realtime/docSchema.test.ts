@@ -302,9 +302,9 @@ describe('classifySceneEvents', () => {
     writer.setFogMask('s1', new Uint8Array([1]));
 
     expect(changes).toEqual([
-      { sceneId: 's1', part: 'settings', keys: ['gridOpacity'], childId: undefined, remote: false },
-      { sceneId: 's1', part: 'markers', keys: ['positionX'], childId: 'm1', remote: false },
-      { sceneId: 's1', part: 'fogMask', keys: ['fogMask'], remote: false }
+      { sceneId: 's1', part: 'settings', keys: ['gridOpacity'], childId: undefined, remote: false, undoRedo: false },
+      { sceneId: 's1', part: 'markers', keys: ['positionX'], childId: 'm1', remote: false, undoRedo: false },
+      { sceneId: 's1', part: 'fogMask', keys: ['fogMask'], remote: false, undoRedo: false }
     ]);
   });
 
@@ -317,8 +317,25 @@ describe('classifySceneEvents', () => {
 
     createSessionWriter(a, 'clientA').setAnnotationMask('s1', 'a1', new Uint8Array([5]));
 
-    expect(changesB).toEqual([{ sceneId: 's1', part: 'annotations', keys: ['mask'], childId: 'a1', remote: true }]);
+    expect(changesB).toEqual([
+      { sceneId: 's1', part: 'annotations', keys: ['mask'], childId: 'a1', remote: true, undoRedo: false }
+    ]);
     disconnect();
+  });
+
+  it('flags undo/redo transactions while keeping them local', () => {
+    const doc = hydratedDoc();
+    const undoManager = new Y.UndoManager(doc.getMap('scenes').get('s1') as Y.Map<unknown>, {
+      trackedOrigins: new Set(['me'])
+    });
+    createSessionWriter(doc, 'me').setSceneSettings('s1', { gridOpacity: 0.1 });
+
+    const changes = collect(doc);
+    undoManager.undo();
+
+    expect(changes).toEqual([
+      { sceneId: 's1', part: 'settings', keys: ['gridOpacity'], childId: undefined, remote: false, undoRedo: true }
+    ]);
   });
 
   it('does not emit events for writes that do not change values', () => {
@@ -328,6 +345,108 @@ describe('classifySceneEvents', () => {
     createSessionWriter(doc, 'me').setSceneSettings('s1', { gridOpacity: 0.8, name: 'Scene s1' });
 
     expect(changes).toEqual([]);
+  });
+});
+
+describe('undo/redo (Y.UndoManager semantics)', () => {
+  const sceneUndoManager = (doc: Y.Doc, sceneId: string, origin: unknown) =>
+    new Y.UndoManager(doc.getMap('scenes').get(sceneId) as Y.Map<unknown>, {
+      trackedOrigins: new Set([origin])
+    });
+
+  it('undoes and redoes a settings change, converging across live clients', () => {
+    const a = hydratedDoc();
+    const b = new Y.Doc();
+    syncOnce(a, b);
+    const disconnect = connect(a, b);
+    const undoManager = sceneUndoManager(a, 's1', 'me');
+
+    createSessionWriter(a, 'me').setSceneSettings('s1', { gridOpacity: 0.25 });
+    expect(undoManager.canUndo()).toBe(true);
+
+    undoManager.undo();
+    expect(getSceneSnapshot(a, 's1')!.settings.gridOpacity).toBe(0.8);
+    expect(getSceneSnapshot(b, 's1')!.settings.gridOpacity).toBe(0.8);
+
+    undoManager.redo();
+    expect(getSceneSnapshot(a, 's1')!.settings.gridOpacity).toBe(0.25);
+    expect(getSceneSnapshot(b, 's1')!.settings.gridOpacity).toBe(0.25);
+    disconnect();
+  });
+
+  it('ignores remote and untracked-origin (system) transactions', () => {
+    const a = hydratedDoc();
+    const b = new Y.Doc();
+    syncOnce(a, b);
+    const disconnect = connect(a, b);
+    const undoManager = sceneUndoManager(a, 's1', 'me');
+
+    createSessionWriter(b, 'them').setSceneSettings('s1', { name: 'Remote rename' });
+    createSessionWriter(a, 'system').setSceneSettings('s1', { mapThumbLocation: 'thumb.png' });
+
+    expect(undoManager.canUndo()).toBe(false);
+    disconnect();
+  });
+
+  it('restores a deleted marker with all of its fields', () => {
+    const doc = hydratedDoc();
+    const undoManager = sceneUndoManager(doc, 's1', 'me');
+
+    createSessionWriter(doc, 'me').deleteMarker('s1', 'm2');
+    expect(getSceneSnapshot(doc, 's1')!.markers.map((m) => m.id)).not.toContain('m2');
+
+    undoManager.undo();
+    const restored = getSceneSnapshot(doc, 's1')!.markers.find((m) => m.id === 'm2');
+    expect(restored?.positionX).toBe(10);
+  });
+
+  it('restores the previous fog mask bytes', () => {
+    const doc = hydratedDoc();
+    const undoManager = sceneUndoManager(doc, 's1', 'me');
+    const writer = createSessionWriter(doc, 'me');
+
+    writer.setFogMask('s1', new Uint8Array([5, 5]));
+    undoManager.undo();
+    expect(getFogMask(doc, 's1')).toEqual(new Uint8Array([1, 2, 3, 4]));
+    undoManager.redo();
+    expect(getFogMask(doc, 's1')).toEqual(new Uint8Array([5, 5]));
+  });
+
+  it('merges rapid writes into one step and splits on stopCapturing', () => {
+    const doc = hydratedDoc();
+    const undoManager = sceneUndoManager(doc, 's1', 'me');
+    const writer = createSessionWriter(doc, 'me');
+
+    writer.setSceneSettings('s1', { mapZoom: 2 });
+    writer.setSceneSettings('s1', { mapZoom: 4 }); // within captureTimeout — merges
+    undoManager.stopCapturing();
+    writer.setSceneSettings('s1', { mapZoom: 8 });
+
+    expect(undoManager.undoStack).toHaveLength(2);
+    undoManager.undo();
+    expect(getSceneSnapshot(doc, 's1')!.settings.mapZoom).toBe(4);
+    undoManager.undo();
+    expect(getSceneSnapshot(doc, 's1')!.settings.mapZoom).toBe(1);
+  });
+
+  it('pins the same-field reconciliation: undo does not clobber a newer remote write', () => {
+    const a = hydratedDoc();
+    const b = new Y.Doc();
+    syncOnce(a, b);
+    const disconnect = connect(a, b);
+    const undoManager = sceneUndoManager(a, 's1', 'me');
+
+    createSessionWriter(a, 'me').setSceneSettings('s1', { mapZoom: 2 });
+    createSessionWriter(b, 'them').setSceneSettings('s1', { mapZoom: 3 });
+    undoManager.undo();
+
+    const zoomA = getSceneSnapshot(a, 's1')!.settings.mapZoom;
+    const zoomB = getSceneSnapshot(b, 's1')!.settings.mapZoom;
+    expect(zoomA).toBe(zoomB);
+    // The remote write already displaced the tracked item, so undoing it is a
+    // no-op for that key — the newer remote value survives. Undo never reverts
+    // another collaborator's work, even on the same field.
+    expect(zoomA).toBe(3);
   });
 });
 

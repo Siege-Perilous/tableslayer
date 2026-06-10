@@ -3,13 +3,18 @@
   import { Icon, Button, Hr, Popover } from '@tableslayer/ui';
   import { onMount } from 'svelte';
 
-  let hasTouchSupport = false;
+  let hasTouchSupport = $state(false);
+  let isMac = $state(false);
 
   onMount(() => {
     hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in document.documentElement;
+    isMac = /mac/i.test(navigator.platform);
   });
 
   const shortcuts = $derived([
+    { label: 'Undo', shortcut: isMac ? 'Cmd + Z' : 'Ctrl + Z' },
+    { label: 'Redo', shortcut: isMac ? 'Cmd + Shift + Z' : 'Ctrl + Shift + Z' },
+    { divider: true },
     { label: 'Brush size', shortcut: 'Mouse wheel' },
     { label: 'Erase brush', shortcut: 'E' },
     { label: 'Add brush', shortcut: 'Shift + E' },
@@ -90,12 +95,13 @@
   .shortcut__listItem {
     display: flex;
     justify-content: space-between;
-    gap: 4rem;
-    padding: 0.5rem;
+    gap: 2.5rem;
+    padding: 0.25rem 0.5rem;
     white-space: nowrap;
+    font-size: 0.875rem;
   }
   .shortcut__listDivider {
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
   }
   .shortcut__listItem:hover {
     background: var(--contrastLow);
@@ -103,7 +109,7 @@
   .shortcut__key {
     color: var(--fgMuted);
     font-family: var(--font-mono);
-    font-size: 0.875rem;
+    font-size: 0.75rem;
   }
 
   @container stageWrapper (max-width: 768px) {
