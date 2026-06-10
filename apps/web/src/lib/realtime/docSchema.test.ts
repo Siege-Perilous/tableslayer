@@ -447,6 +447,7 @@ describe('undo/redo (Y.UndoManager semantics)', () => {
     // no-op for that key — the newer remote value survives. Undo never reverts
     // another collaborator's work, even on the same field.
     expect(zoomA).toBe(3);
+    disconnect();
   });
 });
 
