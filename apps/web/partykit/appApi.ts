@@ -5,7 +5,8 @@ import type * as Party from 'partykit/server';
 // falls back to the local SvelteKit server and the shared dev token.
 
 export const appRequest = async <T>(room: Party.Room, path: string, body: unknown): Promise<T> => {
-  const base = (room.env.APP_API_URL as string | undefined) ?? 'http://localhost:5173';
+  // 5174 is the web app's pinned dev port (apps/web/vite.config.ts)
+  const base = (room.env.APP_API_URL as string | undefined) ?? 'http://localhost:5174';
   const token = (room.env.INTERNAL_API_TOKEN as string | undefined) ?? 'dev-internal-token';
 
   const response = await fetch(`${base}${path}`, {

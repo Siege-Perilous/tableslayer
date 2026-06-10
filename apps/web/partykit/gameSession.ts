@@ -29,18 +29,26 @@ export default class GameSessionServer implements Party.Server {
   #deletedSceneIds = new Set<string>();
   #observed = false;
   #persisting = false;
+  #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #options: YPartyKitOptions;
 
   constructor(public room: Party.Room) {
     this.#options = {
       persist: { mode: 'snapshot' },
+      gc: false, // y-partykit forces this with persist; setting it keeps the options hash stable
       callback: {
-        handler: () => this.#persistDirty(),
+        handler: () => {
+          this.#stats.flushes++;
+          return this.#persistDirty();
+        },
         debounceWait: 2000,
         debounceMaxWait: 10000
       }
     };
   }
+
+  // Diagnostics surfaced via the `debug` room command
+  #stats = { flushes: 0, persistAttempts: 0, persistOk: 0, persistFail: 0, lastError: '' };
 
   #markDirty(sceneId: string, parts: Iterable<ScenePart>) {
     let set = this.#dirty.get(sceneId);
@@ -93,6 +101,7 @@ export default class GameSessionServer implements Party.Server {
     if (this.#dirty.size === 0 && this.#deletedSceneIds.size === 0) return;
 
     this.#persisting = true;
+    this.#stats.persistAttempts++;
     const dirty = this.#dirty;
     const deleted = this.#deletedSceneIds;
     this.#dirty = new Map();
@@ -108,20 +117,47 @@ export default class GameSessionServer implements Party.Server {
         deletedSceneIds: [...deleted]
       };
       await appRequest(this.room, '/api/internal/persistSession', payload);
+      this.#stats.persistOk++;
     } catch (error) {
-      // Merge back what we drained and retry on an alarm; the doc itself is safe
-      // in room storage regardless.
+      this.#stats.persistFail++;
+      this.#stats.lastError = error instanceof Error ? `${error.message}` : String(error);
+      // Merge back what we drained and retry; the doc itself is safe in room
+      // storage regardless.
       for (const [sceneId, parts] of dirty) this.#markDirty(sceneId, parts);
       for (const sceneId of deleted) this.#deletedSceneIds.add(sceneId);
       console.error(`persistSession failed for ${this.room.id}; retrying in ${PERSIST_RETRY_MS}ms`, error);
-      await this.room.storage.setAlarm(Date.now() + PERSIST_RETRY_MS);
+      this.#scheduleRetry();
     } finally {
       this.#persisting = false;
     }
   }
 
+  // PartyKit alarms cannot read room.id (platform limitation), so retries use an
+  // in-instance timer. If the room is evicted before the retry fires, the doc
+  // snapshot is still safe and the next connection re-hydrates and re-persists.
+  #scheduleRetry() {
+    if (this.#retryTimer) return;
+    this.#retryTimer = setTimeout(async () => {
+      this.#retryTimer = null;
+      try {
+        await this.#getDoc();
+      } catch (error) {
+        console.error(`hydration retry failed for game session ${this.room.id}`, error);
+        this.#scheduleRetry();
+      }
+      await this.#persistDirty();
+    }, PERSIST_RETRY_MS);
+  }
+
   async onConnect(conn: Party.Connection) {
-    await this.#getDoc();
+    // A failed hydration must not kill the websocket: keep the connection open,
+    // let clients wait on the ready gate, and retry shortly.
+    try {
+      await this.#getDoc();
+    } catch (error) {
+      console.error(`hydration failed for game session ${this.room.id}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+      this.#scheduleRetry();
+    }
     return onConnect(conn, this.room, this.#options);
   }
 
@@ -132,14 +168,28 @@ export default class GameSessionServer implements Party.Server {
     }
   }
 
-  async onAlarm() {
-    await this.#persistDirty();
-  }
-
   async onRequest(req: Party.Request) {
     // Ping endpoint for diagnostics
     if (req.method === 'POST') {
       const body = (await req.json()) as { type?: string; timestamp?: number };
+
+      // Diagnostics: expose persister state without needing terminal access
+      if (body.type === 'debug') {
+        const token = (this.room.env.INTERNAL_API_TOKEN as string | undefined) ?? 'dev-internal-token';
+        if (req.headers.get('x-internal-token') !== token) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+        return new Response(
+          JSON.stringify({
+            observed: this.#observed,
+            persisting: this.#persisting,
+            dirty: [...this.#dirty.entries()].map(([sceneId, parts]) => [sceneId.slice(0, 8), [...parts]]),
+            deleted: [...this.#deletedSceneIds],
+            stats: this.#stats
+          }),
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+      }
 
       // After the app writes session data to the DB directly (import, admin tools),
       // it calls this to rebuild the live doc from the database.

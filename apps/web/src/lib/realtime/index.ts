@@ -19,6 +19,7 @@ export {
   type PartyWriter,
   type SessionWriter
 } from './docSchema';
+export { annotationRowFromDb, lightRowFromDb, markerRowFromDb, sceneRowToSettings } from './fromDb';
 export {
   PresenceChannel,
   TEMPORARY_LAYER_TTL_MS,
@@ -28,6 +29,7 @@ export {
   type TemporaryLayer
 } from './presence.svelte';
 export { SessionDocClient, type ConnectionState, type SessionDocClientOptions } from './SessionDocClient.svelte';
+export { reuseUnchanged } from './structuralSharing';
 export type {
   AnnotationRow,
   GameSessionHydrationData,

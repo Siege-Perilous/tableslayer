@@ -22,11 +22,13 @@ export default class PartyServer implements Party.Server {
   #dirty = false;
   #observed = false;
   #persisting = false;
+  #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #options: YPartyKitOptions;
 
   constructor(public room: Party.Room) {
     this.#options = {
       persist: { mode: 'snapshot' },
+      gc: false, // y-partykit forces this with persist; setting it keeps the options hash stable
       callback: {
         handler: () => this.#persistState(),
         debounceWait: 1000,
@@ -79,14 +81,38 @@ export default class PartyServer implements Party.Server {
     } catch (error) {
       this.#dirty = true;
       console.error(`persistParty failed for ${this.room.id}; retrying in ${PERSIST_RETRY_MS}ms`, error);
-      await this.room.storage.setAlarm(Date.now() + PERSIST_RETRY_MS);
+      this.#scheduleRetry();
     } finally {
       this.#persisting = false;
     }
   }
 
+  // PartyKit alarms cannot read room.id (platform limitation), so retries use an
+  // in-instance timer. If the room is evicted before the retry fires, the doc
+  // snapshot is still safe and the next connection re-hydrates and re-persists.
+  #scheduleRetry() {
+    if (this.#retryTimer) return;
+    this.#retryTimer = setTimeout(async () => {
+      this.#retryTimer = null;
+      try {
+        await this.#getDoc();
+      } catch (error) {
+        console.error(`hydration retry failed for party ${this.room.id}`, error);
+        this.#scheduleRetry();
+      }
+      await this.#persistState();
+    }, PERSIST_RETRY_MS);
+  }
+
   async onConnect(conn: Party.Connection) {
-    await this.#getDoc();
+    // A failed hydration must not kill the websocket: keep the connection open,
+    // let clients wait on the ready gate, and retry shortly.
+    try {
+      await this.#getDoc();
+    } catch (error) {
+      console.error(`hydration failed for party ${this.room.id}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+      this.#scheduleRetry();
+    }
     return onConnect(conn, this.room, this.#options);
   }
 
@@ -95,9 +121,5 @@ export default class PartyServer implements Party.Server {
     if (remaining === 0) {
       await this.#persistState();
     }
-  }
-
-  async onAlarm() {
-    await this.#persistState();
   }
 }

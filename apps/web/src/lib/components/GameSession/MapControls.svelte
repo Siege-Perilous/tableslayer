@@ -7,7 +7,7 @@
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
   import { type ZodIssue } from 'zod';
-  import { usePartyData } from '$lib/utils/yjs/stores';
+  import type { SessionDocClient } from '$lib/realtime';
   import { queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
 
   let {
@@ -17,7 +17,7 @@
     handleMapFit,
     errors,
     party,
-    partyData
+    client
   }: {
     handleSelectActiveControl: (control: string) => void;
     activeControl: string;
@@ -28,7 +28,7 @@
     handleMapFill: () => void;
     handleMapFit: () => void;
     errors: ZodIssue[] | undefined;
-    partyData: ReturnType<typeof usePartyData> | null;
+    client: SessionDocClient | null;
   } = $props();
 
   let contextSceneId = $state('');
@@ -121,7 +121,7 @@
     <Button onclick={handleMapFill}>Fill in scene</Button>
     <Button onclick={handleMapFit}>Fit in scene</Button>
   </div>
-  <UpdateMapImage sceneId={contextSceneId} partyId={party.id} {partyData} />
+  <UpdateMapImage sceneId={contextSceneId} {client} />
 </div>
 
 <style>

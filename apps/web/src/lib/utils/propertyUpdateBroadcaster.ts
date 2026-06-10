@@ -1,185 +1,168 @@
+import type { SceneSettings, SessionDocClient } from '$lib/realtime';
 import type { StageProps } from '@tableslayer/stage';
-import { devError, devLog, devWarn } from './debug';
-import { getPartyDataManager } from './yjs/stores';
+import { convertAnnotationToDbFormat } from './convertStagePropsToAnnotationData';
+import { convertStageMarkersToDbFormat } from './convertStagePropsToMarkerData';
+import { convertPropsToSceneDetails } from './convertStagePropsToSceneData';
 
-// Track pending updates for different property paths
-const pendingUpdates: Record<string, unknown> = {};
-let updateScheduled = false;
-let currentSceneId: string | null = null;
-
-// Queue for updates that happen before Y.js is ready
-const preYjsUpdatesQueue: Array<{ sceneId: string; updates: Record<string, unknown> }> = [];
-let yjsReadyCheckTimer: ReturnType<typeof setTimeout> | null = null;
-
-// Different throttle times for different property types
-const MARKER_UPDATE_DELAY = 50; // Reduced from 150ms for faster marker sync
-const UI_CONTROL_DELAY = 100; // Reduced from 250ms
-const SCENE_UPDATE_DELAY = 200; // Reduced from 500ms
-
-// Flag to enable immediate Y.js sync mode
-let immediateYjsSyncEnabled = false;
-
-export function enableImmediateYjsSync() {
-  immediateYjsSyncEnabled = true;
-}
-
-export function disableImmediateYjsSync() {
-  immediateYjsSyncEnabled = false;
-}
+// Doc-backed property updates for the editor's control panels.
+//
+// Panels call queuePropertyUpdate(stageProps, path, value) exactly as before:
+// the value is applied to stageProps for instant feedback, and shared properties
+// are written through to the session doc in the same microtask (one transaction
+// per tick). The page re-derives stageProps from the doc, so local mutation and
+// doc state stay identical with no timing windows. Local-only properties (tools,
+// viewport, measurement config) never touch the doc.
 
 export type PropertyPath = string[];
 
-// Define which properties should be shared vs local per user
-const LOCAL_ONLY_PROPERTIES = new Set([
-  'scene.offset.x',
-  'scene.offset.y',
-  'scene.rotation', // Scene rotation and offset should be local only, but zoom should sync
-  'activeLayer', // Active layer should be local per editor (fog tools, etc.)
-  'annotations.activeLayer', // Active annotation layer should be local per editor
-  'annotations.lineWidth', // Annotation line width should be local per editor
-  'fogOfWar.tool.size', // Fog of war brush size should be local per editor
-  'measurement', // Entire measurement object should be local (ephemeral tool)
-  'measurement.type', // Measurement type should be local per editor
-  'measurement.beamWidth', // Measurement beam width should be local per editor
-  'measurement.coneAngle' // Measurement cone angle should be local per editor
-]);
+// View/tool state that stays on this client. Prefix match on the joined path.
+const LOCAL_ONLY_PREFIXES = [
+  'scene.', // editor workspace viewport (offset/zoom/rotation)
+  'activeLayer',
+  'annotations.activeLayer',
+  'annotations.lineWidth',
+  'annotations.smoothingEnabled',
+  'fogOfWar.tool', // brush size/mode/type are per-user tools
+  'measurement', // measurement tool config is ephemeral
+  'debug'
+];
 
-// Check if a property path should be local-only
-function isLocalOnlyProperty(propertyPath: PropertyPath): boolean {
+const isLocalOnlyProperty = (propertyPath: PropertyPath): boolean => {
   const pathString = propertyPath.join('.');
-  return LOCAL_ONLY_PROPERTIES.has(pathString);
+  return LOCAL_ONLY_PREFIXES.some((prefix) =>
+    prefix.endsWith('.')
+      ? pathString.startsWith(prefix) || pathString === prefix.slice(0, -1)
+      : pathString === prefix || pathString.startsWith(`${prefix}.`)
+  );
+};
+
+interface DocBinding {
+  client: SessionDocClient;
+  sceneId: string;
 }
 
-// Callback function for user changes (to trigger auto-save)
-let onUserChangeCallback: (() => void) | null = null;
+let binding: DocBinding | null = null;
+let flushScheduled = false;
+let latestProps: StageProps | null = null;
+const dirty = { settings: false, markers: false, lights: false, annotations: false };
 
-export function setUserChangeCallback(callback: () => void) {
-  onUserChangeCallback = callback;
+/** Bind panel property updates to a scene's doc subtree. Call on scene switch. */
+export function bindPropertyUpdatesToDoc(client: SessionDocClient, sceneId: string) {
+  binding = { client, sceneId };
 }
 
-// Update specific property and schedule broadcast
+export function unbindPropertyUpdates() {
+  binding = null;
+}
+
 export function queuePropertyUpdate(
   stageProps: StageProps,
   propertyPath: PropertyPath,
   value: unknown,
-  updateType: 'marker' | 'light' | 'control' | 'scene' = 'control'
+  _updateType: 'marker' | 'light' | 'control' | 'scene' = 'control'
 ) {
-  // Skip Y.js sync for local-only properties but still apply them locally
-  if (isLocalOnlyProperty(propertyPath)) {
-    // devLog('broadcaster', `Local-only property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
-    applyUpdate(stageProps, propertyPath, value);
-    // Don't trigger auto-save for local-only properties
-    return;
+  applyUpdate(stageProps as unknown as Record<string, unknown>, propertyPath, value);
+  if (isLocalOnlyProperty(propertyPath)) return;
+
+  latestProps = stageProps;
+  switch (propertyPath[0]) {
+    case 'marker':
+      dirty.markers = true;
+      break;
+    case 'light':
+      dirty.lights = true;
+      break;
+    case 'annotations':
+      dirty.annotations = true;
+      break;
+    default:
+      dirty.settings = true;
   }
 
-  // For shared properties, apply locally for immediate UI feedback
-  // But Y.js will be the source of truth for other editors
-  devLog('broadcaster', `Queueing shared property update: ${propertyPath.join('.')} = ${JSON.stringify(value)}`);
-
-  // Special logging for map properties
-  if (propertyPath[0] === 'map') {
-    devLog('broadcaster', `🗺️ Map property update:`, {
-      path: propertyPath.join('.'),
-      value,
-      type: typeof value
-    });
-  }
-
-  applyUpdate(stageProps, propertyPath, value);
-
-  // Check if PartyDataManager is available early
-  const partyDataManager = getPartyDataManager();
-  if (!partyDataManager) {
-    devWarn('broadcaster', `PartyDataManager not available when queueing property update: ${propertyPath.join('.')}`);
-    devWarn('broadcaster', 'This update will be applied locally but not synced to other editors!');
-  }
-
-  // If immediate sync is enabled and we have Y.js, sync immediately
-  if (immediateYjsSyncEnabled && partyDataManager && currentSceneId) {
-    devLog('broadcaster', '🚀 Immediate Y.js sync for:', propertyPath.join('.'), '=', value);
-
-    // Get current scene data from Y.js
-    const currentSceneData = partyDataManager.getSceneData(currentSceneId);
-    if (currentSceneData) {
-      // Update Y.js immediately with current stageProps
-      devLog('broadcaster', '🚀 Calling updateSceneStageProps with immediate sync');
-      // Clean local-only properties before sending to Y.js
-      const cleanedStageProps = {
-        ...stageProps,
-        annotations: {
-          ...stageProps.annotations,
-          activeLayer: null, // activeLayer is local-only, not synchronized
-          lineWidth: undefined // lineWidth is local-only, not synchronized
-        },
-        fogOfWar: {
-          ...stageProps.fogOfWar,
-          tool: {
-            ...stageProps.fogOfWar.tool
-            // size is omitted to prevent syncing
-          }
-        }
-      };
-      partyDataManager.updateSceneStageProps(currentSceneId, cleanedStageProps as StageProps);
-    } else {
-      devWarn('broadcaster', '⚠️ No Y.js scene data found for immediate sync - scene may not be initialized');
-    }
-  } else {
-    devLog('broadcaster', '⏭️ Immediate sync skipped:', {
-      enabled: immediateYjsSyncEnabled,
-      hasManager: !!partyDataManager,
-      hasSceneId: !!currentSceneId
-    });
-  }
-
-  // Store path and value for later batch update (for database save)
-  const pathKey = propertyPath.join('.');
-  pendingUpdates[pathKey] = { path: propertyPath, value };
-
-  // Schedule batch update if not already scheduled
-  if (!updateScheduled) {
-    updateScheduled = true;
-
-    // Select throttle delay based on update type
-    const delay =
-      updateType === 'marker' ? MARKER_UPDATE_DELAY : updateType === 'scene' ? SCENE_UPDATE_DELAY : UI_CONTROL_DELAY;
-
-    setTimeout(() => {
-      // Make a copy of pending updates before clearing
-      const updates = { ...pendingUpdates };
-
-      // Clear pending updates and reset flag
-      Object.keys(pendingUpdates).forEach((key) => delete pendingUpdates[key]);
-      updateScheduled = false;
-
-      // Now broadcast the batched updates via Y.js (only needed when immediate sync is disabled)
-      if (!immediateYjsSyncEnabled && currentSceneId && Object.keys(updates).length > 0) {
-        const partyDataManager = getPartyDataManager();
-        if (!partyDataManager) {
-          // Queue updates for when Y.js becomes ready
-          devLog('broadcaster', 'Y.js not ready, queueing updates for later processing');
-          preYjsUpdatesQueue.push({ sceneId: currentSceneId, updates });
-          scheduleYjsReadyCheck();
-        } else {
-          broadcastPropertyUpdatesViaYjs(updates, currentSceneId);
-        }
-      }
-    }, delay);
-  }
-
-  // Trigger user change callback for auto-save (only for shared properties)
-  if (onUserChangeCallback && !isLocalOnlyProperty(propertyPath)) {
-    onUserChangeCallback();
+  if (!flushScheduled) {
+    flushScheduled = true;
+    queueMicrotask(flushToDoc);
   }
 }
+
+function flushToDoc() {
+  flushScheduled = false;
+  const props = latestProps;
+  if (!binding || !props) return;
+  const { client, sceneId } = binding;
+
+  // One Y transaction per tick; nested writer transactions reuse it (same origin)
+  client.doc.transact(() => {
+    if (dirty.settings) {
+      const details = convertPropsToSceneDetails(props, null);
+      // annotations live as rows, and the editor viewport is local-only in v2
+      delete details.annotationLayers;
+      delete details.sceneOffsetX;
+      delete details.sceneOffsetY;
+      delete details.sceneRotation;
+      client.write.setSceneSettings(sceneId, details as Partial<SceneSettings>);
+    }
+    if (dirty.markers) syncMarkers(client, sceneId, props);
+    if (dirty.lights) syncLights(client, sceneId, props);
+    if (dirty.annotations) syncAnnotations(client, sceneId, props);
+  }, client.origin);
+
+  dirty.settings = dirty.markers = dirty.lights = dirty.annotations = false;
+}
+
+function syncMarkers(client: SessionDocClient, sceneId: string, props: StageProps) {
+  const rows = convertStageMarkersToDbFormat(props.marker?.markers, sceneId);
+  const keepIds = new Set(rows.map((row) => row.id));
+  for (const existing of client.scene(sceneId)?.markers ?? []) {
+    if (!keepIds.has(existing.id)) client.write.deleteMarker(sceneId, existing.id);
+  }
+  for (const row of rows) {
+    if (!row.id) continue;
+    client.write.setMarkerFields(sceneId, row.id, { ...row, sceneId });
+  }
+}
+
+function syncLights(client: SessionDocClient, sceneId: string, props: StageProps) {
+  const lights = props.light?.lights ?? [];
+  const keepIds = new Set(lights.map((light) => light.id));
+  for (const existing of client.scene(sceneId)?.lights ?? []) {
+    if (!keepIds.has(existing.id)) client.write.deleteLight(sceneId, existing.id);
+  }
+  for (const light of lights) {
+    client.write.setLightFields(sceneId, light.id, {
+      id: light.id,
+      sceneId,
+      positionX: light.position.x,
+      positionY: light.position.y,
+      radius: light.radius,
+      color: light.color,
+      style: light.style,
+      pulse: light.pulse,
+      opacity: light.opacity ?? 1
+    });
+  }
+}
+
+function syncAnnotations(client: SessionDocClient, sceneId: string, props: StageProps) {
+  const layers = props.annotations?.layers ?? [];
+  const keepIds = new Set(layers.map((layer) => layer.id));
+  for (const existing of client.scene(sceneId)?.annotations ?? []) {
+    if (!keepIds.has(existing.id)) client.write.deleteAnnotation(sceneId, existing.id);
+  }
+  layers.forEach((layer, index) => {
+    client.write.setAnnotationFields(sceneId, layer.id, convertAnnotationToDbFormat(layer, sceneId, index));
+  });
+}
+
+/** @deprecated Updates apply synchronously now; kept for call-site compatibility. */
+export function flushQueuedPropertyUpdates() {}
 
 // Helper to apply update at specific path
 function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: unknown) {
   const lastKey = path[path.length - 1];
   let current: Record<string, unknown> = obj;
 
-  // Navigate to the parent object
   for (let i = 0; i < path.length - 1; i++) {
-    // If the value is undefined or not an object, create an object
     if (current[path[i]] === undefined || typeof current[path[i]] !== 'object' || current[path[i]] === null) {
       current[path[i]] = {};
     }
@@ -188,117 +171,3 @@ function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: un
 
   current[lastKey] = value;
 }
-
-// Register the current scene ID for property updates
-export function registerSceneForPropertyUpdates(sceneId: string) {
-  currentSceneId = sceneId;
-  devLog('broadcaster', `Property updates registered for scene: ${sceneId}`);
-}
-
-// Schedule periodic checks for Y.js readiness to process queued updates
-function scheduleYjsReadyCheck() {
-  if (yjsReadyCheckTimer) return; // Already scheduled
-
-  yjsReadyCheckTimer = setTimeout(() => {
-    const partyDataManager = getPartyDataManager();
-    if (partyDataManager && preYjsUpdatesQueue.length > 0) {
-      devLog('broadcaster', `Y.js now ready, processing ${preYjsUpdatesQueue.length} queued update batches`);
-
-      // Process all queued updates
-      const queuedUpdates = [...preYjsUpdatesQueue];
-      preYjsUpdatesQueue.length = 0; // Clear the queue
-
-      queuedUpdates.forEach(({ sceneId, updates }) => {
-        broadcastPropertyUpdatesViaYjs(updates, sceneId);
-      });
-    }
-
-    // Continue checking if there are still queued updates
-    yjsReadyCheckTimer = null;
-    if (preYjsUpdatesQueue.length > 0) {
-      scheduleYjsReadyCheck();
-    }
-  }, 500); // Check every 500ms
-}
-
-// Export function to manually trigger processing of queued updates (called when Y.js initializes)
-export function flushQueuedPropertyUpdates() {
-  if (yjsReadyCheckTimer) {
-    clearTimeout(yjsReadyCheckTimer);
-    yjsReadyCheckTimer = null;
-  }
-  scheduleYjsReadyCheck();
-}
-
-// Broadcast multiple property updates via Y.js
-function broadcastPropertyUpdatesViaYjs(updates: Record<string, unknown>, sceneId: string) {
-  const partyDataManager = getPartyDataManager();
-  if (!partyDataManager) {
-    devWarn('broadcaster', 'PartyDataManager not available for property updates - Y.js sync will not work!');
-    devWarn('broadcaster', 'Updates that will be lost:', updates);
-    return;
-  }
-
-  try {
-    devLog(
-      'broadcaster',
-      `Broadcasting ${Object.keys(updates).length} property updates via Y.js for scene: ${sceneId}`
-    );
-    devLog('broadcaster', 'Property paths being updated:', Object.keys(updates));
-
-    // Get current scene data from Y.js - this is the source of truth
-    const currentSceneData = partyDataManager.getSceneData(sceneId);
-    if (!currentSceneData) {
-      devWarn('broadcaster', `No scene data found for scene: ${sceneId} - scene may not be initialized in Y.js yet`);
-      devWarn('broadcaster', 'Updates that will be lost:', updates);
-      return;
-    }
-
-    // IMPORTANT: Always use Y.js state as the base, not local stageProps
-    // This prevents desync issues when multiple editors are making changes
-    const updatedStageProps = JSON.parse(JSON.stringify(currentSceneData.stageProps));
-    devLog('broadcaster', 'Using Y.js stageProps as base for updates:', updatedStageProps);
-
-    // Apply all pending updates to the copy
-    Object.values(updates).forEach((update) => {
-      const { path, value } = update as { path: PropertyPath; value: unknown };
-      devLog('broadcaster', `Applying update: ${path.join('.')} = ${JSON.stringify(value)}`);
-      applyUpdate(updatedStageProps, path, value);
-    });
-
-    // Clean local-only properties before sending to Y.js
-    const cleanedStageProps = {
-      ...updatedStageProps,
-      annotations: {
-        ...updatedStageProps.annotations,
-        activeLayer: null, // activeLayer is local-only, not synchronized
-        lineWidth: undefined // lineWidth is local-only, not synchronized
-      },
-      fogOfWar: {
-        ...updatedStageProps.fogOfWar,
-        tool: {
-          ...updatedStageProps.fogOfWar.tool
-          // size is omitted to prevent syncing
-        }
-      }
-    };
-
-    // Update scene data via the PartyDataManager method
-    partyDataManager.updateSceneStageProps(sceneId, cleanedStageProps as StageProps);
-
-    devLog('broadcaster', `Y.js property updates applied for scene: ${sceneId}`);
-  } catch (error) {
-    devError('broadcaster', 'Error broadcasting property updates via Y.js:', error);
-  }
-}
-
-export type PropertyUpdate = {
-  path: PropertyPath;
-  value: unknown;
-  sceneId: string;
-};
-
-export type PropertyUpdates = {
-  properties: Array<{ path: PropertyPath; value: unknown }>;
-  sceneId: string;
-};

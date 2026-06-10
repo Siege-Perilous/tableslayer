@@ -1,9 +1,14 @@
 // Base64 <-> Uint8Array helpers that work in the browser, Cloudflare workers
 // (PartyKit), and node (vitest). RLE masks cross JSON boundaries as base64 during
 // hydration/persistence but live in the doc as raw Uint8Array.
+//
+// workerd exposes a partial Buffer global without Buffer.from, so feature-detect
+// the function itself rather than the global.
+
+const hasBuffer = typeof Buffer !== 'undefined' && typeof Buffer.from === 'function';
 
 export const uint8ToBase64 = (bytes: Uint8Array): string => {
-  if (typeof Buffer !== 'undefined') {
+  if (hasBuffer) {
     return Buffer.from(bytes).toString('base64');
   }
   let binary = '';
@@ -15,7 +20,7 @@ export const uint8ToBase64 = (bytes: Uint8Array): string => {
 };
 
 export const base64ToUint8 = (base64: string): Uint8Array => {
-  if (typeof Buffer !== 'undefined') {
+  if (hasBuffer) {
     return new Uint8Array(Buffer.from(base64, 'base64'));
   }
   const binary = atob(base64);

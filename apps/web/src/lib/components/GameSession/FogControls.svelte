@@ -5,11 +5,9 @@
   import chroma from 'chroma-js';
 
   let {
-    socketUpdate,
     stage,
     stageProps = $bindable()
   }: {
-    socketUpdate: () => void;
     stage: StageExports;
     stageProps: StageProps;
   } = $props();
@@ -91,7 +89,6 @@
     <Button
       onclick={() => {
         stage.fogOfWar.clear();
-        socketUpdate();
       }}
     >
       Clear fog
@@ -103,7 +100,6 @@
     <Button
       onclick={() => {
         stage.fogOfWar.reset();
-        socketUpdate();
         trackChecklistItem('fog-reset');
       }}
     >

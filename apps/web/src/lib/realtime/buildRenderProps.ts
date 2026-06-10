@@ -32,6 +32,8 @@ export interface LocalView {
     lineWidth?: number;
     smoothingEnabled?: boolean;
   };
+  /** Active measurement tool configuration (type, cone angle, beam width). */
+  measurement?: { type?: number; coneAngle?: number; beamWidth?: number };
 }
 
 /**
@@ -75,6 +77,10 @@ export const buildRenderProps = (snapshot: SceneSnapshot, view: LocalView, bucke
   if (view.annotations?.smoothingEnabled !== undefined) {
     props.annotations.smoothingEnabled = view.annotations.smoothingEnabled;
   }
+
+  if (view.measurement?.type !== undefined) props.measurement.type = view.measurement.type;
+  if (view.measurement?.coneAngle !== undefined) props.measurement.coneAngle = view.measurement.coneAngle;
+  if (view.measurement?.beamWidth !== undefined) props.measurement.beamWidth = view.measurement.beamWidth;
 
   return props;
 };

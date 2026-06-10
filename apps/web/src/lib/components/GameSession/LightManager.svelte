@@ -36,7 +36,7 @@
     partyId = '',
     sceneId = '',
     handleSelectActiveControl,
-    socketUpdate,
+    socketUpdate = () => {},
     updateLightAndSave,
     onLightDeleted,
     onLightDuplicated
@@ -46,7 +46,8 @@
     partyId: string;
     sceneId: string;
     handleSelectActiveControl: (control: string) => void;
-    socketUpdate: () => void;
+    /** @deprecated no-op; sync flows through the session doc */
+    socketUpdate?: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateLightAndSave: (lightId: string, updateFn: (light: any) => void) => void;
     onLightDeleted?: (lightId: string) => void;
