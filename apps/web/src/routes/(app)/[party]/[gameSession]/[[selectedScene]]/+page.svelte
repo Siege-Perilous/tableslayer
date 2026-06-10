@@ -174,7 +174,39 @@
   $effect(() => {
     const snapshot = session.ready && session.client ? session.client.scene(selectedSceneId) : null;
     const drags = dragPositions;
-    if (!snapshot) return;
+    const ssrScene = data.selectedScene;
+
+    if (!snapshot) {
+      // Realtime not ready (or scene missing from the doc): scene navigation must
+      // still work from SSR data — degraded mode, not a frozen editor.
+      if (ssrScene.id === selectedSceneId && ssrScene.id !== lastBuiltSceneId) {
+        lastBuiltSceneId = ssrScene.id;
+        untrack(() => {
+          const props = buildSceneProps(
+            ssrScene,
+            data.selectedSceneMarkers,
+            'editor',
+            data.selectedSceneAnnotations,
+            data.selectedSceneLights,
+            data.bucketUrl
+          );
+          props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizePercent') || 10.0, props);
+          props.annotations.lineWidth = Math.max(
+            0.01,
+            Math.min(5.0, getPreference('annotationLineWidthPercent') || 2.0)
+          );
+          props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
+          stageProps = props;
+          activeControl = 'none';
+          selectedMarkerId = undefined;
+          selectedLightId = undefined;
+          selectedAnnotationId = undefined;
+          resetGridOrigin();
+          sceneMasksApplied = false;
+        });
+      }
+      return;
+    }
 
     const isSceneSwitch = snapshot.id !== lastBuiltSceneId;
     lastBuiltSceneId = snapshot.id;

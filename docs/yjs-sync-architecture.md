@@ -67,7 +67,8 @@ Key properties:
   `requestGameSessionRoomResync` in `$lib/server/realtime`.
 - Internal endpoints authenticate via the `INTERNAL_API_TOKEN` shared secret
   (`x-internal-token`); dev falls back to `dev-internal-token` on both sides. The PartyKit env
-  also needs `APP_API_URL` (defaults to `http://localhost:5174`, the web app's pinned dev port).
+  also needs `BASE_URL` (the app's URL — passed via `--var` at deploy; defaults to
+  `http://localhost:5174`, the web app's pinned dev port; `APP_API_URL` overrides if set).
 
 ## Clients (`apps/web/src/lib/realtime/`)
 
