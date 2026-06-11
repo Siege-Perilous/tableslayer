@@ -8,6 +8,7 @@
   import type { GridLayerProps } from '../GridLayer/types';
   import type { DisplayProps } from '../Stage/types';
   import { createLightMaterial, getStyleIndex } from './lightShader';
+  import { mapClippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   interface Props {
     light: Light;
@@ -66,10 +67,12 @@
     lightMaterial.uniforms.uStyle.value = getStyleIndex(light.style);
     lightMaterial.uniforms.uColor.value = new THREE.Color(light.color);
     lightMaterial.uniforms.uSelected.value = isSelected || isHovered;
-    // Update position, size, and display bounds for clipping
-    lightMaterial.uniforms.uLightPosition.value.set(light.position.x, light.position.y);
     lightMaterial.uniforms.uLightSize.value = lightSize;
-    lightMaterial.uniforms.uDisplayBounds.value.set(display.resolution.x / 2, display.resolution.y / 2);
+  });
+
+  // Constrain the light glow to the map bounds
+  $effect(() => {
+    lightMaterial.clippingPlanes = mapClippingPlaneStore.value;
   });
 
   onDestroy(() => {
@@ -79,7 +82,7 @@
 
 <T.Group position={[light.position.x, light.position.y, 0]} scale={[lightSize, lightSize, 1]}>
   <T.Mesh renderOrder={SceneLayerOrder.Light} layers={[SceneLayer.Main]}>
-    <T.ShaderMaterial args={[lightMaterial]} attach="material" />
+    <T.ShaderMaterial is={lightMaterial} attach="material" />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>
 </T.Group>

@@ -3,11 +3,15 @@ import { LightStyle } from './types';
 
 // Vertex shader - simple passthrough with UV
 export const lightVertexShader = /* glsl */ `
+  #include <clipping_planes_pars_vertex>
+
   varying vec2 vUv;
 
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <clipping_planes_vertex>
   }
 `;
 
@@ -19,6 +23,8 @@ export const lightVertexShader = /* glsl */ `
 export const lightFragmentShader = /* glsl */ `
   precision highp float;
 
+  #include <clipping_planes_pars_fragment>
+
   varying vec2 vUv;
 
   uniform float uTime;
@@ -28,9 +34,7 @@ export const lightFragmentShader = /* glsl */ `
   uniform int uStyle;
   uniform vec3 uColor;
   uniform bool uSelected;
-  uniform vec2 uLightPosition;
   uniform float uLightSize;
-  uniform vec2 uDisplayBounds;
 
   // Hash function for noise
   vec2 hash(vec2 p) {
@@ -101,14 +105,7 @@ export const lightFragmentShader = /* glsl */ `
   }
 
   void main() {
-    // Calculate world position of this fragment
-    vec2 localOffset = (vUv - 0.5) * uLightSize;
-    vec2 worldPos = uLightPosition + localOffset;
-
-    // Clip to display bounds
-    if (abs(worldPos.x) > uDisplayBounds.x || abs(worldPos.y) > uDisplayBounds.y) {
-      discard;
-    }
+    #include <clipping_planes_fragment>
 
     // Center UV coordinates (-0.5 to 0.5)
     vec2 uv = vUv - 0.5;
@@ -789,13 +786,12 @@ export const createLightMaterial = (style: LightStyle, color: THREE.Color): THRE
       uStyle: { value: getStyleIndex(style) },
       uColor: { value: color },
       uSelected: { value: false },
-      uLightPosition: { value: new THREE.Vector2(0, 0) },
-      uLightSize: { value: 1.0 },
-      uDisplayBounds: { value: new THREE.Vector2(960, 540) }
+      uLightSize: { value: 1.0 }
     },
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
+    clipping: true
   });
 };

@@ -17,7 +17,12 @@
   import { getLUT } from './luts';
   import { type Callbacks, type StageProps } from '../Stage/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
-  import { clippingPlaneStore, updateClippingPlanes } from '../../helpers/clippingPlaneStore.svelte';
+  import {
+    clippingPlaneStore,
+    updateClippingPlanes,
+    updateMapClippingPlanes
+  } from '../../helpers/clippingPlaneStore.svelte';
+  import type { Size } from '../../types';
   import { beginFrame, endFrame, startTiming, endTiming, logMetrics } from '../../helpers/performanceMetrics.svelte';
   import { debugState } from '../../helpers/debugState.svelte';
   import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
@@ -85,6 +90,7 @@
   let mapLayer: MapLayerExports;
   let markerLayer: MarkerLayerExports;
   let measurementLayer: MeasurementLayerExports | null = $state(null);
+  let mapSize: Size | null = $state(null);
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
 
@@ -169,6 +175,11 @@
   $effect(() => {
     updateClippingPlanes(props.scene, props.display);
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
+  });
+
+  // Clipping planes that constrain weather and light effects to the map bounds
+  $effect(() => {
+    updateMapClippingPlanes(props.scene, props.map, mapSize, props.display);
   });
 
   // Update needsResize when map URL changes
@@ -591,7 +602,8 @@
       callbacks.onStageLoading();
       setLoadingState(SceneLoadingState.LoadingMap);
     }}
-    onMapLoaded={() => {
+    onMapLoaded={(_mapUrl, size) => {
+      mapSize = size;
       needsResize = true;
       if (loadingState === SceneLoadingState.LoadingMap) {
         setLoadingState(SceneLoadingState.Resizing);
