@@ -642,6 +642,7 @@
     isActive={props.activeLayer === MapLayerType.Annotation}
     sceneZoom={props.scene.zoom}
     display={props.display}
+    grid={props.grid}
   />
 
   <LightLayer

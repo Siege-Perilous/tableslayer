@@ -49,7 +49,8 @@ const DRAW_EFFECTS: Record<string, AnnotationEffect> = {
   'effect-entangle': AnnotationEffect.Entangle
 };
 
-const PLAYFIELD_FOG_BRUSH_SIZE = 7.0;
+// Fog brush size in grid units (number of grid squares the brush spans)
+const PLAYFIELD_FOG_BRUSH_SIZE = 2;
 const FOG_COMMIT_DEBOUNCE_MS = 500;
 const DRAWING_IDLE_RESET_MS = 3000;
 const PERSIST_BUTTON_HIDE_MS = 3000;
@@ -71,7 +72,7 @@ export class PlayTools {
   // Local-only view state (never shared)
   activeLayer = $state<MapLayerType>(MapLayerType.None);
   annotationsActiveLayer = $state<string | null>(null);
-  lineWidth = $state(1.0);
+  lineWidth = $state(0.25);
   fogTool = $state<{ mode: DrawMode; size: number }>({ mode: DrawMode.Erase, size: PLAYFIELD_FOG_BRUSH_SIZE });
   measurement = $state<{ type: number; coneAngle?: number; beamWidth?: number }>({ type: MeasurementType.Line });
 
@@ -350,7 +351,7 @@ export class PlayTools {
 
     this.annotationsActiveLayer = this.currentTemporaryLayerId;
     this.activeLayer = MapLayerType.Annotation;
-    this.lineWidth = 1.0;
+    this.lineWidth = 0.25;
     this.resetToNoneAfterDelay();
   }
 

@@ -12,10 +12,8 @@ export interface PaneConfig {
 }
 
 export interface GameSessionPreferences {
-  brushSize?: number;
-  brushSizePercent?: number;
-  annotationLineWidth?: number;
-  annotationLineWidthPercent?: number;
+  brushSizeGridUnits?: number;
+  annotationLineWidthGridUnits?: number;
   annotationSmoothing?: boolean;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
@@ -35,25 +33,16 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 // Preference configurations
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, PreferenceConfig<any>> = {
-  brushSize: {
-    cookieName: 'tableslayer:brushSize',
-    defaultValue: 75, // Old pixel-based default (deprecated)
-    validate: (value): value is number => typeof value === 'number' && value >= 10 && value <= 1000
+  brushSizeGridUnits: {
+    cookieName: 'tableslayer:brushSizeGridUnits',
+    defaultValue: 2,
+    validate: (value): value is number =>
+      typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5
   },
-  brushSizePercent: {
-    cookieName: 'tableslayer:brushSizePercent',
-    defaultValue: 10.0, // New percentage-based default (5-20% range)
-    validate: (value): value is number => typeof value === 'number' && value >= 5 && value <= 20
-  },
-  annotationLineWidth: {
-    cookieName: 'tableslayer:annotationLineWidth',
-    defaultValue: 50,
-    validate: (value): value is number => typeof value === 'number' && value >= 1 && value <= 200
-  },
-  annotationLineWidthPercent: {
-    cookieName: 'tableslayer:annotationLineWidthPercent',
-    defaultValue: 2.0,
-    validate: (value): value is number => typeof value === 'number' && value >= 0.01 && value <= 5.0
+  annotationLineWidthGridUnits: {
+    cookieName: 'tableslayer:annotationLineWidthGridUnits',
+    defaultValue: 0.5,
+    validate: (value): value is number => typeof value === 'number' && value >= 0.25 && value <= 5
   },
   annotationSmoothing: {
     cookieName: 'tableslayer:annotationSmoothing',

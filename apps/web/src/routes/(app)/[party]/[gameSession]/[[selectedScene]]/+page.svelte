@@ -149,15 +149,13 @@
   // stageProps identical to the doc. Local-only view state is carried over.
   // ---------------------------------------------------------------------------
 
-  const getMinBrushSize = (gridSpacing: number, displayWidth: number) => {
-    if (gridSpacing && displayWidth && displayWidth > 0) {
-      return Math.max(0.5, (gridSpacing / displayWidth) * 100);
-    }
-    return 2;
-  };
-
-  const clampFogBrush = (value: number, props: StageProps) =>
-    Math.max(getMinBrushSize(props.grid.spacing, props.display.size.x), Math.min(20, value));
+  // Brush sizes are in grid units (number of grid squares the brush spans).
+  // Fog uses whole squares; annotations use quarter steps up to one square,
+  // then whole squares (must match BRUSH_SIZES in DrawingSliders).
+  const ANNOTATION_BRUSH_SIZES = [0.25, 0.5, 0.75, 1, 2, 3, 4, 5];
+  const clampFogBrush = (value: number) => Math.max(1, Math.min(5, Math.round(value)));
+  const snapAnnotationBrush = (value: number) =>
+    ANNOTATION_BRUSH_SIZES.reduce((best, size) => (Math.abs(size - value) < Math.abs(best - value) ? size : best));
 
   // SSR strips masks from annotation rows (serialization) and ships them as a
   // separate record; merge them back so the seed props paint layers immediately
@@ -176,8 +174,8 @@
       data.selectedSceneLights,
       data.bucketUrl
     );
-    props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizePercent') || 10.0, props);
-    props.annotations.lineWidth = Math.max(0.01, Math.min(5.0, getPreference('annotationLineWidthPercent') || 2.0));
+    props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizeGridUnits') || 2);
+    props.annotations.lineWidth = snapAnnotationBrush(getPreference('annotationLineWidthGridUnits') || 0.5);
     props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
     return props;
   });
@@ -205,11 +203,8 @@
             data.selectedSceneLights,
             data.bucketUrl
           );
-          props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizePercent') || 10.0, props);
-          props.annotations.lineWidth = Math.max(
-            0.01,
-            Math.min(5.0, getPreference('annotationLineWidthPercent') || 2.0)
-          );
+          props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizeGridUnits') || 2);
+          props.annotations.lineWidth = snapAnnotationBrush(getPreference('annotationLineWidthGridUnits') || 0.5);
           props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
           stageProps = props;
           activeControl = 'none';
@@ -242,12 +237,12 @@
             : { offset: prev.scene.offset, zoom: prev.scene.zoom, rotation: prev.scene.rotation },
           markerPositions: drags,
           fogTool: isSceneSwitch
-            ? { size: clampFogBrush(getPreference('brushSizePercent') || 10.0, prev) }
+            ? { size: clampFogBrush(getPreference('brushSizeGridUnits') || 2) }
             : { type: prev.fogOfWar.tool.type, size: prev.fogOfWar.tool.size, mode: prev.fogOfWar.tool.mode },
           annotations: isSceneSwitch
             ? {
                 activeLayer: null,
-                lineWidth: Math.max(0.01, Math.min(5.0, getPreference('annotationLineWidthPercent') || 2.0)),
+                lineWidth: snapAnnotationBrush(getPreference('annotationLineWidthGridUnits') || 0.5),
                 smoothingEnabled: getPreference('annotationSmoothing') ?? true
               }
             : {
@@ -1000,26 +995,39 @@
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
+  // Brush sizes step through discrete values, so accumulate wheel deltas and
+  // emit one step (+1 grows, -1 shrinks) per ~100 units (one wheel notch)
+  let brushWheelAccum = 0;
+  const brushWheelStep = (e: WheelEvent): number => {
+    brushWheelAccum += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(brushWheelAccum) < 100) return 0;
+    const direction = brushWheelAccum > 0 ? -1 : 1;
+    brushWheelAccum = 0;
+    return direction;
+  };
+
   const onWheel = (e: WheelEvent) => {
     if (e.ctrlKey) e.preventDefault();
 
     if (stageProps.activeLayer === MapLayerType.Annotation && !e.shiftKey && !e.ctrlKey) {
       e.preventDefault();
-      const scrollDelta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.05;
-      const currentLineWidth = stageProps.annotations.lineWidth || 2.0;
-      const newLineWidth = Math.max(0.01, Math.min(currentLineWidth - scrollDelta * 0.01, 5.0));
+      const direction = brushWheelStep(e);
+      if (direction === 0) return;
+      const currentIndex = ANNOTATION_BRUSH_SIZES.indexOf(snapAnnotationBrush(stageProps.annotations.lineWidth || 0.5));
+      const newLineWidth =
+        ANNOTATION_BRUSH_SIZES[Math.max(0, Math.min(ANNOTATION_BRUSH_SIZES.length - 1, currentIndex + direction))];
       stageProps.annotations.lineWidth = newLineWidth;
-      setPreference('annotationLineWidthPercent', newLineWidth);
+      setPreference('annotationLineWidthGridUnits', newLineWidth);
       return;
     }
 
     if (stageProps.activeLayer === MapLayerType.FogOfWar && !e.shiftKey && !e.ctrlKey) {
       e.preventDefault();
-      const scrollDelta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.1;
-      const currentSize = stageProps.fogOfWar.tool.size || 10.0;
-      const newSize = clampFogBrush(currentSize - scrollDelta * 0.1, stageProps);
+      const direction = brushWheelStep(e);
+      if (direction === 0) return;
+      const newSize = clampFogBrush((stageProps.fogOfWar.tool.size || 2) + direction);
       stageProps.fogOfWar.tool.size = newSize;
-      setPreference('brushSizePercent', newSize);
+      setPreference('brushSizeGridUnits', newSize);
       return;
     }
 
@@ -1154,7 +1162,7 @@
         {#if stageProps.activeLayer === MapLayerType.Annotation && activeAnnotation && handleOpacityChange && handleBrushSizeChange && handleColorChange}
           <DrawingSliders
             opacity={activeAnnotation.opacity}
-            brushSize={stageProps.annotations.lineWidth || 2.0}
+            brushSize={stageProps.annotations.lineWidth || 0.5}
             color={activeAnnotation.color}
             currentEffect={activeAnnotation.effect?.type ?? AnnotationEffect.None}
             activeLayerIndex={stageProps.annotations.layers.findIndex(
@@ -1169,12 +1177,10 @@
         {/if}
         {#if stageProps.activeLayer === MapLayerType.FogOfWar && stageProps.fogOfWar.tool.type === ToolType.Brush}
           <FogSliders
-            brushSize={stageProps.fogOfWar.tool.size || 10.0}
-            gridSpacing={stageProps.grid.spacing}
-            displayWidth={stageProps.display.size.x}
+            brushSize={stageProps.fogOfWar.tool.size || 2}
             onBrushSizeChange={(size) => {
               queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], size, 'control');
-              setPreference('brushSizePercent', size);
+              setPreference('brushSizeGridUnits', size);
             }}
           />
         {/if}

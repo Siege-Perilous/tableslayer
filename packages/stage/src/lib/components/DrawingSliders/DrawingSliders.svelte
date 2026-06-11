@@ -100,29 +100,20 @@
   // Check if current selection is an effect
   const hasEffect = $derived(currentEffect !== AnnotationEffect.None);
 
-  // Brush size is now stored as a percentage (0.01% to 5%)
-  // Use quadratic curve for slider to give more precision to lower values
-  // Slider range: 0-100, maps to percentage range: 0.01-5.0
-  // At 50% slider we want 2%, so we use: percentage = 0.0008 * slider^2
-  // This gives: 10% → 0.08%, 50% → 2%, 100% → 8% (capped at 5%)
-  const percentageToSlider = (percentage: number): number => {
-    // Inverse: slider = sqrt(percentage / 0.0008)
-    // Clamp to minimum of 0.01
-    const clampedPercentage = Math.max(0.01, percentage);
-    return Math.sqrt(clampedPercentage / 0.0008);
-  };
+  // Brush size is stored in grid units (number of grid squares the line width
+  // spans on the display): quarter-square steps up to one square, then whole squares.
+  // The slider operates on indices into this list since the steps are non-uniform.
+  const BRUSH_SIZES = [0.25, 0.5, 0.75, 1, 2, 3, 4, 5];
 
-  const sliderToPercentage = (slider: number): number => {
-    // Quadratic curve: percentage = 0.0008 * slider^2
-    const percentage = 0.0008 * slider * slider;
-    return Math.max(0.01, Math.min(5.0, percentage));
-  };
+  const brushSliderIndex = $derived(
+    BRUSH_SIZES.reduce(
+      (best, size, i) => (Math.abs(size - brushSize) < Math.abs(BRUSH_SIZES[best] - brushSize) ? i : best),
+      0
+    )
+  );
 
-  let brushSliderValue = $derived(percentageToSlider(brushSize));
-
-  const handleBrushSliderChange = (value: number) => {
-    const actualPercentage = sliderToPercentage(value);
-    onBrushSizeChange(actualPercentage);
+  const handleBrushSliderChange = (index: number) => {
+    onBrushSizeChange(BRUSH_SIZES[Math.max(0, Math.min(BRUSH_SIZES.length - 1, Math.round(index)))]);
   };
 
   const handleColorSelect = (selectedColor: string, close?: () => void) => {
@@ -209,14 +200,15 @@
       type="range"
       class="drawingSliders__input"
       min="0"
-      max="100"
-      step="0.1"
-      value={brushSliderValue}
+      max={BRUSH_SIZES.length - 1}
+      step="1"
+      value={brushSliderIndex}
       oninput={(e) => handleBrushSliderChange(Number(e.currentTarget.value))}
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
+      title="Brush size in grid squares"
     />
-    <div class="drawingSliders__value">{brushSize.toFixed(2)}%</div>
+    <div class="drawingSliders__value">{String(Number(brushSize.toFixed(2))).replace(/^0\./, '.')} sq</div>
   </div>
 
   <IconButton

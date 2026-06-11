@@ -23,7 +23,7 @@
     bind:value={props.fogOfWar.tool.size}
     label="Brush Size"
     min={1}
-    max={500}
+    max={5}
     step={1}
     disabled={props.fogOfWar.tool.type !== ToolType.Brush}
   />

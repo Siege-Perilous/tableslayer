@@ -229,7 +229,10 @@
       e.preventDefault();
       stageProps.scene.zoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
     } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-      stageProps.fogOfWar.tool.size = Math.max(10, Math.min(stageProps.fogOfWar.tool.size + 500.0 * scrollDelta, 1000));
+      stageProps.fogOfWar.tool.size = Math.max(
+        1,
+        Math.min(Math.round(stageProps.fogOfWar.tool.size + 40.0 * scrollDelta), 5)
+      );
     }
   }
 </script>

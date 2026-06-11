@@ -54,6 +54,7 @@ export interface DrawingLayerProps {
 
     /**
      * When `toolType = ToolType.Brush`, setting this controls the brush size
+     * in grid units (number of grid squares the brush diameter spans, 1-5)
      */
     size: number;
 

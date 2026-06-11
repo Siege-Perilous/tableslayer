@@ -5,7 +5,9 @@
   import { ToolType } from '../DrawingLayer/types';
   import { type FogOfWarLayerProps } from './types';
   import type { Size } from '../../types';
-  import type { Callbacks } from '../Stage/types';
+  import type { Callbacks, DisplayProps } from '../Stage/types';
+  import type { GridLayerProps } from '../GridLayer/types';
+  import { getGridCellSize } from '../../helpers/grid';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
@@ -16,18 +18,22 @@
     props: FogOfWarLayerProps;
     isActive: boolean;
     mapSize: Size | null;
+    grid: GridLayerProps;
+    display: DisplayProps;
+    mapZoom: number;
   }
 
-  const { props, isActive, mapSize, ...meshProps }: Props = $props();
+  const { props, isActive, mapSize, grid, display, mapZoom, ...meshProps }: Props = $props();
 
   const onFogUpdate = getContext<Callbacks>('callbacks').onFogUpdate;
 
-  // Convert percentage-based tool.size to texture pixels for outline
-  // This must match the conversion in FogOfWarMaterial
+  // Convert tool.size (grid units, brush diameter) to fog texture pixels. The map
+  // mesh is scaled mapSize * mapZoom in world units (1 world unit = 1 display
+  // pixel), so one fog texture pixel covers mapZoom display pixels. The shaders
+  // treat uBrushSize as a radius, so halve the diameter.
   const toolSizePixels = $derived.by(() => {
-    if (!mapSize) return props.tool.size;
-    const textureSize = Math.min(mapSize.width, mapSize.height);
-    return Math.round(textureSize * (props.tool.size / 100));
+    const cellSizePixels = getGridCellSize(grid, display);
+    return Math.max(1, Math.round((props.tool.size * cellSizePixels) / (2 * (mapZoom || 1))));
   });
 
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
@@ -245,6 +251,6 @@ events to be detected outside of the fog of war layer.
 </T.Mesh>
 
 <T.Mesh name="fogOfWar" {...meshProps} layers={[SceneLayer.Main]}>
-  <FogOfWarMaterial bind:this={material} {props} {mapSize} />
+  <FogOfWarMaterial bind:this={material} {props} {mapSize} {toolSizePixels} />
   <T.PlaneGeometry />
 </T.Mesh>

@@ -190,6 +190,9 @@
     props={props.fogOfWar}
     isActive={props.activeLayer === MapLayerType.FogOfWar}
     {mapSize}
+    grid={props.grid}
+    display={props.display}
+    mapZoom={props.map.zoom}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.FogOfWar}
   />

@@ -9,6 +9,8 @@
   import AnnotationMaterial from './AnnotationMaterial.svelte';
   import { LazyBrushManager } from '../../helpers/lazyBrush';
   import { ToolType } from '../DrawingLayer/types';
+  import type { GridLayerProps } from '../GridLayer/types';
+  import { getGridCellSize } from '../../helpers/grid';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
 
@@ -17,10 +19,11 @@
     mode: StageMode;
     isActive: boolean;
     display: DisplayProps;
+    grid: GridLayerProps;
     sceneZoom: number;
   }
 
-  const { props, mode, isActive, display, sceneZoom }: Props = $props();
+  const { props, mode, isActive, display, grid, sceneZoom }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
@@ -32,10 +35,11 @@
   // Pre-allocated vector for display center offset to avoid GC pressure
   const displayCenterOffset = new THREE.Vector2();
 
-  // Convert percentage-based lineWidth to texture pixels for outline
+  // Convert lineWidth (grid units, line width/diameter) to texture pixels; the
+  // annotation texture is display-resolution sized, so one texture pixel = one
+  // display pixel. The shaders treat uBrushSize as a radius, so halve it.
   const lineWidthPixels = $derived.by(() => {
-    const textureSize = Math.min(display.resolution.x, display.resolution.y);
-    return Math.round(textureSize * ((props.lineWidth ?? 2.0) / 100));
+    return Math.max(1, Math.round(((props.lineWidth ?? 0.5) * getGridCellSize(grid, display)) / 2));
   });
 
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
@@ -444,7 +448,7 @@ and markers - the trade-off is they receive post-processing (bloom etc.) there.
         bind:this={layers[index]}
         props={layer}
         {display}
-        lineWidth={props.lineWidth}
+        {lineWidthPixels}
         isDrawingThisLayer={() => drawing && props.activeLayer === layer.id}
       />
       <T.PlaneGeometry />
