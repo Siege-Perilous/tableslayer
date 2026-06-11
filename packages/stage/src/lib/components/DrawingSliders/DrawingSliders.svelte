@@ -16,7 +16,7 @@
   import { AnnotationEffect } from '../Stage/components/AnnotationLayer/types';
   import EffectPreview from '../RadialMenu/EffectPreview.svelte';
 
-  // Color palette - 10 colors
+  // Color palette - 9 colors (pink gave up its slot to the web effect)
   const COLORS = [
     '#d73e2e', // red
     '#ffa500', // orange
@@ -24,7 +24,6 @@
     '#6bcf7f', // green
     '#2e86ab', // blue
     '#b197fc', // purple
-    '#f06595', // pink
     '#20c997', // turquoise
     '#ffffff', // white
     '#2a2a2a' // dark
@@ -37,7 +36,8 @@
     AnnotationEffect.Ice,
     AnnotationEffect.Magic,
     AnnotationEffect.Grease,
-    AnnotationEffect.SpaceTear
+    AnnotationEffect.SpaceTear,
+    AnnotationEffect.Web
   ];
 
   // Effect colors for the opacity slider gradient
@@ -48,7 +48,8 @@
     [AnnotationEffect.Ice]: '#b3d9ff',
     [AnnotationEffect.Magic]: '#9333ea',
     [AnnotationEffect.Grease]: '#4d3319',
-    [AnnotationEffect.SpaceTear]: '#330066'
+    [AnnotationEffect.SpaceTear]: '#330066',
+    [AnnotationEffect.Web]: '#e6e8eb'
   };
 
   interface Props {

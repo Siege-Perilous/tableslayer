@@ -595,7 +595,14 @@ vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
   // Final color with intensity
   vec3 finalColor = waterColor * uIntensity;
 
-  float alpha = mask * uOpacity;
+  // === ALPHA - thin water at the edges lets the map show through ===
+  // Deeper center is more opaque, shallow edges fade so the map blends in
+  float waterThickness = 1.0 - shallowZone;
+  float baseAlpha = 0.5 + waterThickness * 0.4; // 0.5 at edges to 0.9 in deep center
+  baseAlpha += foam * 0.3; // Foam stays visible over the fade
+  baseAlpha = clamp(baseAlpha, 0.0, 0.9); // Never fully opaque
+
+  float alpha = mask * uOpacity * baseAlpha;
 
   return vec4(finalColor, alpha);
 }
@@ -774,12 +781,12 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   float depthNoise = snoise(pos * 2.0 + time * 0.03) * 0.15;
   darkZone = clamp(darkZone + depthNoise * uBorder, 0.0, 1.0);
 
-  // === BROWN COLORS - inverted: edges get darker with border (softened) ===
-  vec3 centerColor = vec3(0.4, 0.3, 0.18);       // Lighter brown in center
-  vec3 midColor = vec3(0.32, 0.24, 0.14);        // Medium brown
-  vec3 darkColor = vec3(0.24, 0.18, 0.1);        // Dark brown
-  vec3 veryDarkColor = vec3(0.16, 0.12, 0.06);   // Very dark brown
-  vec3 edgeColor = vec3(0.1, 0.07, 0.03);        // Dark but not black at edges
+  // === OIL COLORS - near-black film so the iridescence reads ===
+  vec3 centerColor = vec3(0.16, 0.13, 0.09);     // Dark brown in center
+  vec3 midColor = vec3(0.12, 0.10, 0.07);        // Darker brown
+  vec3 darkColor = vec3(0.09, 0.07, 0.05);       // Very dark brown
+  vec3 veryDarkColor = vec3(0.06, 0.05, 0.03);   // Near black
+  vec3 edgeColor = vec3(0.04, 0.03, 0.02);       // Almost black at edges
   vec3 highlightColor = vec3(0.8, 0.7, 0.5);     // Warm highlights
 
   float heightNorm = height * 0.5 + 0.5;
@@ -799,13 +806,36 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   float heightInfluence = 0.25 + (1.0 - darkZone) * 0.25; // More height variation in lighter areas
   vec3 greaseColor = mix(baseGreaseColor * 0.85, baseGreaseColor * 1.15, heightNorm * heightInfluence + diffuse * 0.25);
 
-  // Specular highlights - oily sheen, stronger in lighter center areas
+  // === THIN-FILM IRIDESCENCE - rainbow sheen like a real oil slick ===
+  // Interference color cycles with film thickness: wave height plus slow-drifting swirls
+  float filmSwirl = fbm3(pos * 1.2 + warp * 0.5 + time * 0.04);
+  float filmThickness = filmSwirl * 1.4 + height * 0.8 + snoise(pos * 0.5 + 200.0) * 0.6;
+  // Surface tilt shifts the phase, so the colors slide as the waves move
+  filmThickness += (normal.x + normal.y) * 0.8;
+  vec3 iridescence = 0.5 + 0.5 * cos(6.2831 * (filmThickness + vec3(0.0, 0.33, 0.67)));
+
+  // Rainbow shows in broad patches where light grazes the film, fading at the thin edges
+  float sheenPatches = smoothstep(0.4, 0.8, fbm3(pos * 0.7 + 80.0 + time * 0.025) * 0.5 + 0.5);
+  float sheen = sheenPatches * (0.15 + diffuse * 0.25) * (1.0 - darkZone * 0.6);
+  // Confine the rainbow to the solid body - no tinting in the feathered fringe
+  sheen *= smoothstep(0.05, 0.5, maskHigh);
+  greaseColor = mix(greaseColor, iridescence * (0.25 + heightNorm * 0.15), sheen * uIntensity);
+
+  // Specular glints pick up the interference color - rainbow highlights, not just white
   float specularStrength = 0.8 + (1.0 - darkZone) * 0.4;
-  greaseColor += highlightColor * specular * specularStrength * uIntensity * 0.6;
+  vec3 specularColor = mix(highlightColor, iridescence, 0.7);
+  greaseColor += specularColor * specular * specularStrength * uIntensity * 0.45;
 
   vec3 finalColor = greaseColor * uIntensity;
 
-  float alpha = mask * uOpacity;
+  // === ALPHA - contrast is painted inside the mask, like water's shore ===
+  // The dark rim stays solid so the shape reads against the map; the feathered
+  // mask alone handles the fade-out, with no outer shadow to blotch the surroundings
+  float baseAlpha = 0.7 + darkZone * 0.15; // Translucent center, solid dark rim
+  baseAlpha += specular * 0.1; // Oily sheen reads through the film
+  baseAlpha = clamp(baseAlpha, 0.0, 0.9); // Never fully opaque
+
+  float alpha = mask * uOpacity * baseAlpha;
 
   return vec4(finalColor, alpha);
 }
@@ -979,6 +1009,136 @@ vec4 iceEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(finalColor, alpha);
 }
 
+// Voronoi cell-boundary distance - boundaries read as straight connective strands
+float webMesh(vec2 p, float seed) {
+  vec2 cellId = floor(p);
+  vec2 cellUV = fract(p);
+  float minDist = 8.0;
+  float secondDist = 8.0;
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 neighbor = vec2(float(x), float(y));
+      vec2 point = neighbor + hash2(cellId + neighbor + seed) * 0.9 + 0.05;
+      float dist = length(cellUV - point);
+      if(dist < minDist) {
+        secondDist = minDist;
+        minDist = dist;
+      } else if(dist < secondDist) {
+        secondDist = dist;
+      }
+    }
+  }
+  return secondDist - minDist; // ~0 along the straight cell boundaries
+}
+
+// One orb web: radial spokes and concentric rings around a hub
+float orbWebStrands(vec2 toCenter, float cellRand, float maxRadius) {
+  float d = length(toCenter);
+  if(d > maxRadius) return 0.0;
+  float a = atan(toCenter.y, toCenter.x);
+
+  // Spokes: thin radial lines at evenly quantized angles
+  float spokeCount = 8.0 + floor(cellRand * 5.0);
+  float spokePhase = fract(a / 6.28318 * spokeCount + cellRand * 7.0);
+  float spokeArc = abs(spokePhase - 0.5) / spokeCount * 6.28318 * d;
+  float spokes = 1.0 - smoothstep(0.0, 0.018, spokeArc);
+
+  // Rings: concentric threads strung between the spokes
+  float ringFreq = 7.0 / maxRadius;
+  float ringPhase = fract(d * ringFreq + cellRand * 3.0);
+  float ringDist = abs(ringPhase - 0.5) / ringFreq;
+  float rings = 1.0 - smoothstep(0.0, 0.014, ringDist);
+  rings *= step(maxRadius * 0.08, d); // No rings on top of the hub
+
+  // Dense hub where the spokes meet
+  float hub = 1.0 - smoothstep(0.0, maxRadius * 0.05, d);
+
+  // Each web fades toward its outer rim
+  float falloff = 1.0 - smoothstep(maxRadius * 0.5, maxRadius, d);
+  return max(max(spokes, rings * 0.85), hub) * falloff;
+}
+
+// Web effect - wispy spider webs, dense in the center thinning to stray strands
+vec4 webEffect(vec2 uv, vec2 texSize, float time) {
+  float mask = getVolumeMask(uv, texSize, time, 1.5, 0.08, 0.3);
+  if(mask < 0.001) return vec4(0.0);
+
+  vec2 basePos = uv * texSize * 0.004;
+
+  // Gentle sway, like a draft moving through the strands
+  vec2 sway = vec2(
+    snoise(basePos * 0.3 + time * 0.05),
+    snoise(basePos * 0.3 + vec2(40.0, 40.0) + time * 0.04)
+  ) * 0.05;
+  vec2 pos = basePos + sway;
+
+  // === DENSITY GRADIENT - thick in the center, wispy at the edges ===
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
+
+  // Border controls how far the sparse fringe reaches into the center
+  float fringeSpread = uBorder * 0.8 + 0.2;
+  float fringe = smoothstep(0.0, fringeSpread, edgeProximity); // 0 center, 1 edge
+  // Break up the density falloff so the fringe isn't a clean ring
+  fringe = clamp(fringe + snoise(pos * 1.5 + 60.0) * 0.2, 0.0, 1.0);
+
+  // === STRAND LAYERS - geometric: straight segments, spokes, and rings ===
+  // Tiny wobble so strands aren't laser-straight, while staying geometric.
+  // Scaled up 1.75x so webs stay small relative to typical drawn shapes (~a few grid squares)
+  vec2 strandPos = (pos + vec2(snoise(pos * 2.0), snoise(pos * 2.0 + 50.0)) * 0.02) * 1.75;
+
+  // Orb webs scattered across the shape: spokes + concentric rings
+  float orb = 0.0;
+  float orbCell = 1.8;
+  vec2 orbGrid = strandPos / orbCell;
+  vec2 orbId = floor(orbGrid);
+  vec2 orbUv = fract(orbGrid);
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 nb = vec2(float(x), float(y));
+      vec2 ctr = nb + hash2(orbId + nb + 7.0) * 0.6 + 0.2;
+      float rnd = hash(orbId + nb + 13.0);
+      vec2 toC = (orbUv - ctr) * orbCell;
+      orb = max(orb, orbWebStrands(toC, rnd, 1.15));
+    }
+  }
+
+  // Connective cobweb mesh: straight strands strung between anchor points
+  float mesh1 = 1.0 - smoothstep(0.0, 0.035, webMesh(strandPos * 1.2, 0.0));
+  float mesh2 = 1.0 - smoothstep(0.0, 0.05, webMesh(strandPos * 2.4, 100.0));
+
+  // Finer structure dies out toward the edges; orb webs and main strands persist
+  float web = 0.0;
+  web = max(web, orb * (1.0 - fringe * 0.5));
+  web = max(web, mesh1 * 0.75 * (1.0 - fringe * 0.85));
+  web = max(web, mesh2 * 0.5 * (1.0 - smoothstep(0.0, 0.55, fringe)));
+  web *= clamp(uIntensity, 0.0, 1.5);
+
+  // === HAZE - faint matted sheet between strands, center only ===
+  float haze = fbm3(pos * 1.4 + 200.0) * 0.5 + 0.5;
+  float hazeAlpha = haze * (1.0 - fringe * 0.9) * 0.3;
+
+  // Subtle shimmer where light catches a strand
+  float shimmer = pow(snoise(pos * 6.0 + time * 0.08) * 0.5 + 0.5, 4.0) * web * 0.3;
+
+  // === COLORS - white/grey gossamer ===
+  vec3 strandColor = vec3(0.92, 0.93, 0.95);
+  vec3 hazeColor = vec3(0.78, 0.8, 0.83);
+
+  vec3 color = mix(hazeColor, strandColor, clamp(web * 1.2, 0.0, 1.0));
+  color += vec3(1.0) * shimmer;
+
+  // Strands stay readable, haze is faint, gaps show the map through
+  float strandAlpha = web * (0.5 + (1.0 - fringe) * 0.3);
+  float bodyAlpha = clamp(hazeAlpha + strandAlpha, 0.0, 0.85);
+
+  float alpha = mask * uOpacity * bodyAlpha;
+
+  return vec4(color, alpha);
+}
+
 void main() {
   // Clipping planes
   vec4 plane;
@@ -1041,6 +1201,8 @@ void main() {
     result = greaseEffect(vUv, texSize, time);
   } else if(uEffectType == 6) {
     result = iceEffect(vUv, texSize, time);
+  } else if(uEffectType == 7) {
+    result = webEffect(vUv, texSize, time);
   } else {
     // No effect - solid color
     float mask = texture2D(uMaskTexture, vUv).a;
@@ -1048,10 +1210,10 @@ void main() {
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they handle their own depth or don't need it)
+  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they paint their own depth inside the mask)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice
+  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6 || uEffectType == 7) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice/web
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {
