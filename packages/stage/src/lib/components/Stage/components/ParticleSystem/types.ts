@@ -1,4 +1,5 @@
 import ash from './particles/atlases/ash.png';
+import fireflies from './particles/atlases/fireflies.png';
 import leaves from './particles/atlases/leaves.png';
 import rain from './particles/atlases/rain.png';
 import snow from './particles/atlases/snow.png';
@@ -7,7 +8,8 @@ export enum ParticleType {
   Snow = 1,
   Rain = 2,
   Leaves = 3,
-  Ash = 4
+  Ash = 4,
+  Fireflies = 5
 }
 
 export const ParticleData = {
@@ -31,6 +33,12 @@ export const ParticleData = {
   },
   [ParticleType.Ash]: {
     url: ash,
+    size: 768,
+    columns: 3,
+    rows: 3
+  },
+  [ParticleType.Fireflies]: {
+    url: fireflies,
     size: 768,
     columns: 3,
     rows: 3

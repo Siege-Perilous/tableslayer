@@ -38,7 +38,16 @@ export { default as PointerInputManager } from './components/PointerInputManager
 export { SceneRotation, type PostProcessingProps, type SceneLayerProps } from './components/Scene/types';
 export { default as Stage } from './components/Stage/Stage.svelte';
 export * from './components/Stage/types';
-export { AshPreset, LeavesPreset, RainPreset, SnowPreset } from './components/WeatherLayer/presets';
+export {
+  AshPreset,
+  BlizzardPreset,
+  DustStormPreset,
+  EmbersPreset,
+  FirefliesPreset,
+  LeavesPreset,
+  RainPreset,
+  SnowPreset
+} from './components/WeatherLayer/presets';
 export {
   WeatherType,
   type DepthOfFieldConfig,

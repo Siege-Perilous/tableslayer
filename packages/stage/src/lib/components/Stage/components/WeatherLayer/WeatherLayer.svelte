@@ -11,6 +11,10 @@
   import RainPreset from './presets/RainPreset';
   import LeavesPreset from './presets/LeavesPreset';
   import AshPreset from './presets/AshPreset';
+  import DustStormPreset from './presets/DustStormPreset';
+  import EmbersPreset from './presets/EmbersPreset';
+  import BlizzardPreset from './presets/BlizzardPreset';
+  import FirefliesPreset from './presets/FirefliesPreset';
 
   interface Props extends ThrelteProps<typeof THREE.Mesh> {
     props: StageProps;
@@ -83,6 +87,18 @@
         case WeatherType.Ash:
           weatherPreset = { ...AshPreset };
           break;
+        case WeatherType.DustStorm:
+          weatherPreset = { ...DustStormPreset };
+          break;
+        case WeatherType.Embers:
+          weatherPreset = { ...EmbersPreset };
+          break;
+        case WeatherType.Blizzard:
+          weatherPreset = { ...BlizzardPreset };
+          break;
+        case WeatherType.Fireflies:
+          weatherPreset = { ...FirefliesPreset };
+          break;
         default:
           // Fallback to rain preset
           weatherPreset = { ...RainPreset };
@@ -134,6 +150,13 @@
 <T.Scene is={particleScene} visible={false}>
   <T.PerspectiveCamera is={particleCamera} manual />
   <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
+  {#if weatherPreset.secondaryParticles}
+    <ParticleSystem
+      props={weatherPreset.secondaryParticles}
+      opacity={weatherPreset.secondaryParticles.opacity}
+      intensity={weatherPreset.intensity}
+    />
+  {/if}
 </T.Scene>
 
 <T.Mesh bind:ref={mesh} {...meshProps} visible={props.weather.type !== WeatherType.None}>

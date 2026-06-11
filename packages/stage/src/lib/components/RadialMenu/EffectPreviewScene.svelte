@@ -114,6 +114,8 @@
         return new THREE.Vector3(0.2, 0.0, 0.4);
       case AnnotationEffect.Web:
         return new THREE.Vector3(0.9, 0.91, 0.93);
+      case AnnotationEffect.Entangle:
+        return new THREE.Vector3(0.18, 0.42, 0.12);
       default:
         return new THREE.Vector3(1.0, 1.0, 1.0);
     }

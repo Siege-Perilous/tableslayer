@@ -27,7 +27,8 @@
     { text: 'Magic', value: AnnotationEffect.Magic },
     { text: 'Grease', value: AnnotationEffect.Grease },
     { text: 'Space Tear', value: AnnotationEffect.SpaceTear },
-    { text: 'Web', value: AnnotationEffect.Web }
+    { text: 'Web', value: AnnotationEffect.Web },
+    { text: 'Entangle', value: AnnotationEffect.Entangle }
   ];
 
   function getLayerEffectType(layer: AnnotationLayerData): AnnotationEffect {

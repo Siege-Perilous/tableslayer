@@ -11,7 +11,18 @@
     RadioButton,
     Label
   } from '@tableslayer/ui';
-  import { type StageProps } from '@tableslayer/stage';
+  import {
+    WeatherType,
+    RainPreset,
+    SnowPreset,
+    LeavesPreset,
+    AshPreset,
+    DustStormPreset,
+    EmbersPreset,
+    BlizzardPreset,
+    FirefliesPreset,
+    type StageProps
+  } from '@tableslayer/stage';
   import { to8CharHex, queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
   import chroma from 'chroma-js';
 
@@ -27,11 +38,30 @@
 
   const selectedWeather = $state(stageProps.weather.type.toString());
 
+  // Each weather type looks right at its own field of view and intensity
+  const weatherPresets: Record<number, { fov: number; intensity: number }> = {
+    [WeatherType.Rain]: RainPreset,
+    [WeatherType.Snow]: SnowPreset,
+    [WeatherType.Leaves]: LeavesPreset,
+    [WeatherType.Ash]: AshPreset,
+    [WeatherType.DustStorm]: DustStormPreset,
+    [WeatherType.Embers]: EmbersPreset,
+    [WeatherType.Blizzard]: BlizzardPreset,
+    [WeatherType.Fireflies]: FirefliesPreset
+  };
+
   // Weather toggle
   const handleWeatherTypeChange = (weatherType: string) => {
-    queuePropertyUpdate(stageProps, ['weather', 'type'], Number(weatherType), 'control');
+    const type = Number(weatherType);
+    queuePropertyUpdate(stageProps, ['weather', 'type'], type, 'control');
+    // Reset to the preset's tuned FOV and intensity; the sliders then adjust per type from there
+    const preset = weatherPresets[type];
+    if (preset) {
+      queuePropertyUpdate(stageProps, ['weather', 'fov'], preset.fov, 'control');
+      queuePropertyUpdate(stageProps, ['weather', 'intensity'], preset.intensity, 'control');
+    }
     // Track checklist completion for changing weather (only if setting to non-none weather)
-    if (Number(weatherType) > 0) {
+    if (type > 0) {
       trackChecklistItem('weather');
     }
   };
@@ -41,7 +71,11 @@
     { label: 'Rain', value: '1' },
     { label: 'Snow', value: '2' },
     { label: 'Leaves', value: '3' },
-    { label: 'Embers', value: '4' }
+    { label: 'Ash', value: '4' },
+    { label: 'Dust storm', value: '5' },
+    { label: 'Embers', value: '6' },
+    { label: 'Blizzard', value: '7' },
+    { label: 'Fireflies', value: '8' }
   ];
 
   const handleFogColorUpdate = (cd: ColorUpdatePayload) => {
