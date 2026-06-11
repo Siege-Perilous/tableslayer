@@ -5,6 +5,7 @@
   import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
   import type { StageProps } from '../Stage/types';
+  import { mapClippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   import SnowPreset from './presets/SnowPreset';
   import RainPreset from './presets/RainPreset';
@@ -40,6 +41,11 @@
     map: renderTarget.texture,
     transparent: true,
     blending: THREE.NormalBlending
+  });
+
+  // Constrain the weather to the map bounds
+  $effect(() => {
+    quadMaterial.clippingPlanes = mapClippingPlaneStore.value;
   });
 
   onMount(() => {
