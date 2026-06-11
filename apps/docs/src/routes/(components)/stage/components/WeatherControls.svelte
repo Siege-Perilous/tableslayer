@@ -7,6 +7,10 @@
     RainPreset,
     LeavesPreset,
     AshPreset,
+    DustStormPreset,
+    EmbersPreset,
+    BlizzardPreset,
+    FirefliesPreset,
     type StageProps
   } from '@tableslayer/stage';
   import { KernelSize } from 'postprocessing';
@@ -19,11 +23,16 @@
     Snow: WeatherType.Snow,
     Leaves: WeatherType.Leaves,
     Ash: WeatherType.Ash,
+    'Dust storm': WeatherType.DustStorm,
+    Embers: WeatherType.Embers,
+    Blizzard: WeatherType.Blizzard,
+    Fireflies: WeatherType.Fireflies,
     Custom: WeatherType.Custom
   };
 
   const particleTypeOptions: ListOptions<number> = {
     Ash: ParticleType.Ash,
+    Fireflies: ParticleType.Fireflies,
     Leaves: ParticleType.Leaves,
     Rain: ParticleType.Rain,
     Snow: ParticleType.Snow
@@ -50,6 +59,18 @@
           break;
         case WeatherType.Ash:
           preset = { ...AshPreset };
+          break;
+        case WeatherType.DustStorm:
+          preset = { ...DustStormPreset };
+          break;
+        case WeatherType.Embers:
+          preset = { ...EmbersPreset };
+          break;
+        case WeatherType.Blizzard:
+          preset = { ...BlizzardPreset };
+          break;
+        case WeatherType.Fireflies:
+          preset = { ...FirefliesPreset };
           break;
         default:
           preset = { ...RainPreset };

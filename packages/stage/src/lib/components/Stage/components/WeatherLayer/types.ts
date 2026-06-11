@@ -7,6 +7,10 @@ export enum WeatherType {
   Snow = 2,
   Leaves = 3,
   Ash = 4,
+  DustStorm = 5,
+  Embers = 6,
+  Blizzard = 7,
+  Fireflies = 8,
   Custom = 99
 }
 
@@ -24,6 +28,11 @@ export interface WeatherLayerPreset {
   opacity: number;
   depthOfField: DepthOfFieldConfig;
   particles: ParticleSystemProps;
+  /**
+   * Optional second particle system rendered alongside the primary one,
+   * e.g. a soft fog bank billowing behind dust storm grit
+   */
+  secondaryParticles?: ParticleSystemProps;
 }
 
 export interface WeatherLayerProps {

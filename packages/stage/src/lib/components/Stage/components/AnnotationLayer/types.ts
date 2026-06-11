@@ -10,7 +10,9 @@ export enum AnnotationEffect {
   Water = 3,
   Magic = 4,
   Grease = 5,
-  Ice = 6
+  Ice = 6,
+  Web = 7,
+  Entangle = 8
 }
 
 /**
@@ -186,6 +188,20 @@ export const AnnotationEffectDefaults: Record<AnnotationEffect, Omit<AnnotationE
     softness: 0.32,
     border: 0.44,
     roughness: 0.55
+  },
+  [AnnotationEffect.Web]: {
+    speed: 0.3,
+    intensity: 1.0,
+    softness: 0.3,
+    border: 0.5,
+    roughness: 0.45
+  },
+  [AnnotationEffect.Entangle]: {
+    speed: 0.6,
+    intensity: 1.0,
+    softness: 0.3,
+    border: 0.5,
+    roughness: 0.5
   }
 };
 

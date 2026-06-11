@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.1.25
+
+### Patch Changes
+
+- no wrap on select
+
 ## 0.1.24
 
 ### Patch Changes

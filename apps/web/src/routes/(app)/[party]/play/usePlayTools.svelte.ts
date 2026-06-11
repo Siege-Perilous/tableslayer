@@ -35,9 +35,7 @@ const DRAW_COLORS: Record<string, string> = {
   'draw-yellow': '#ffd93d',
   'draw-green': '#6bcf7f',
   'draw-blue': '#2e86ab',
-  'draw-purple': '#b197fc',
-  'draw-pink': '#f06595',
-  'draw-turquoise': '#20c997'
+  'draw-purple': '#b197fc'
 };
 
 const DRAW_EFFECTS: Record<string, AnnotationEffect> = {
@@ -46,7 +44,9 @@ const DRAW_EFFECTS: Record<string, AnnotationEffect> = {
   'effect-ice': AnnotationEffect.Ice,
   'effect-magic': AnnotationEffect.Magic,
   'effect-grease': AnnotationEffect.Grease,
-  'effect-spacetear': AnnotationEffect.SpaceTear
+  'effect-spacetear': AnnotationEffect.SpaceTear,
+  'effect-web': AnnotationEffect.Web,
+  'effect-entangle': AnnotationEffect.Entangle
 };
 
 const PLAYFIELD_FOG_BRUSH_SIZE = 7.0;

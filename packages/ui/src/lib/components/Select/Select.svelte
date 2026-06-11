@@ -297,6 +297,7 @@
     gap: 0.5rem;
     border: solid 2px transparent;
     gap: 1rem;
+    white-space: nowrap;
   }
 
   .select__option:hover,

@@ -427,8 +427,9 @@ events to be detected outside of the fog of war layer.
 </T.Mesh>
 
 <!--
-All annotations render on Overlay layer (over fog, no post-processing).
-Effect annotations have a different render order to appear below plain color annotations.
+Color annotations render on the Overlay layer (over fog, no post-processing).
+Effect annotations render in the Main pass so they sit under fog of war, lights,
+and markers - the trade-off is they receive post-processing (bloom etc.) there.
 -->
 <T.Mesh name="annotationLayer" scale={[display.resolution.x, display.resolution.y, 1]}>
   {#each props.layers as layer, index (layer.id)}
@@ -436,7 +437,7 @@ Effect annotations have a different render order to appear below plain color ann
       name={layer.id}
       visible={isVisible(layer)}
       position.z={(props.layers.length - index) * 0.001}
-      layers={[SceneLayer.Overlay]}
+      layers={hasEffect(layer) ? [SceneLayer.Main] : [SceneLayer.Overlay]}
       renderOrder={hasEffect(layer) ? SceneLayerOrder.EffectAnnotation : SceneLayerOrder.Annotation}
     >
       <AnnotationMaterial

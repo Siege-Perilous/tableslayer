@@ -40,12 +40,13 @@ These rules ensure maintainability, safety, and developer velocity.
 ### 5 - Changesets (Package Publishing)
 
 - **CS-1 (MUST)** When modifying files in `packages/ui/`, you MUST create a changeset
-- **CS-2** Run `pnpm changeset` and follow the interactive prompts:
+- **CS-2 (MUST NOT)** Never create changesets for any other package. `@tableslayer/ui` is the only published package; everything else (`stage`, `web`, `docs`, configs) is private/internal and excluded via `privatePackages: false` in `.changeset/config.json`
+- **CS-3** Run `pnpm changeset` and follow the interactive prompts:
   - Select `@tableslayer/ui` as the changed package
   - Choose bump type: `patch` (bug fixes), `minor` (new features), `major` (breaking changes)
   - Write a brief description of the change
-- **CS-3** Commit the generated `.changeset/*.md` file with your changes
-- **CS-4** The CI will fail if UI files change without a changeset
+- **CS-4** Commit the generated `.changeset/*.md` file with your changes
+- **CS-5** The CI will fail if UI files change without a version bump (run `pnpm release` before merging)
 
 ### 6 - Important File References
 

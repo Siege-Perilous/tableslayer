@@ -595,7 +595,14 @@ vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
   // Final color with intensity
   vec3 finalColor = waterColor * uIntensity;
 
-  float alpha = mask * uOpacity;
+  // === ALPHA - thin water at the edges lets the map show through ===
+  // Deeper center is more opaque, shallow edges fade so the map blends in
+  float waterThickness = 1.0 - shallowZone;
+  float baseAlpha = 0.5 + waterThickness * 0.4; // 0.5 at edges to 0.9 in deep center
+  baseAlpha += foam * 0.3; // Foam stays visible over the fade
+  baseAlpha = clamp(baseAlpha, 0.0, 0.9); // Never fully opaque
+
+  float alpha = mask * uOpacity * baseAlpha;
 
   return vec4(finalColor, alpha);
 }
@@ -774,12 +781,12 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   float depthNoise = snoise(pos * 2.0 + time * 0.03) * 0.15;
   darkZone = clamp(darkZone + depthNoise * uBorder, 0.0, 1.0);
 
-  // === BROWN COLORS - inverted: edges get darker with border (softened) ===
-  vec3 centerColor = vec3(0.4, 0.3, 0.18);       // Lighter brown in center
-  vec3 midColor = vec3(0.32, 0.24, 0.14);        // Medium brown
-  vec3 darkColor = vec3(0.24, 0.18, 0.1);        // Dark brown
-  vec3 veryDarkColor = vec3(0.16, 0.12, 0.06);   // Very dark brown
-  vec3 edgeColor = vec3(0.1, 0.07, 0.03);        // Dark but not black at edges
+  // === OIL COLORS - near-black film so the iridescence reads ===
+  vec3 centerColor = vec3(0.16, 0.13, 0.09);     // Dark brown in center
+  vec3 midColor = vec3(0.12, 0.10, 0.07);        // Darker brown
+  vec3 darkColor = vec3(0.09, 0.07, 0.05);       // Very dark brown
+  vec3 veryDarkColor = vec3(0.06, 0.05, 0.03);   // Near black
+  vec3 edgeColor = vec3(0.04, 0.03, 0.02);       // Almost black at edges
   vec3 highlightColor = vec3(0.8, 0.7, 0.5);     // Warm highlights
 
   float heightNorm = height * 0.5 + 0.5;
@@ -799,13 +806,36 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   float heightInfluence = 0.25 + (1.0 - darkZone) * 0.25; // More height variation in lighter areas
   vec3 greaseColor = mix(baseGreaseColor * 0.85, baseGreaseColor * 1.15, heightNorm * heightInfluence + diffuse * 0.25);
 
-  // Specular highlights - oily sheen, stronger in lighter center areas
+  // === THIN-FILM IRIDESCENCE - rainbow sheen like a real oil slick ===
+  // Interference color cycles with film thickness: wave height plus slow-drifting swirls
+  float filmSwirl = fbm3(pos * 1.2 + warp * 0.5 + time * 0.04);
+  float filmThickness = filmSwirl * 1.4 + height * 0.8 + snoise(pos * 0.5 + 200.0) * 0.6;
+  // Surface tilt shifts the phase, so the colors slide as the waves move
+  filmThickness += (normal.x + normal.y) * 0.8;
+  vec3 iridescence = 0.5 + 0.5 * cos(6.2831 * (filmThickness + vec3(0.0, 0.33, 0.67)));
+
+  // Rainbow shows in broad patches where light grazes the film, fading at the thin edges
+  float sheenPatches = smoothstep(0.4, 0.8, fbm3(pos * 0.7 + 80.0 + time * 0.025) * 0.5 + 0.5);
+  float sheen = sheenPatches * (0.15 + diffuse * 0.25) * (1.0 - darkZone * 0.6);
+  // Confine the rainbow to the solid body - no tinting in the feathered fringe
+  sheen *= smoothstep(0.05, 0.5, maskHigh);
+  greaseColor = mix(greaseColor, iridescence * (0.25 + heightNorm * 0.15), sheen * uIntensity);
+
+  // Specular glints pick up the interference color - rainbow highlights, not just white
   float specularStrength = 0.8 + (1.0 - darkZone) * 0.4;
-  greaseColor += highlightColor * specular * specularStrength * uIntensity * 0.6;
+  vec3 specularColor = mix(highlightColor, iridescence, 0.7);
+  greaseColor += specularColor * specular * specularStrength * uIntensity * 0.45;
 
   vec3 finalColor = greaseColor * uIntensity;
 
-  float alpha = mask * uOpacity;
+  // === ALPHA - contrast is painted inside the mask, like water's shore ===
+  // The dark rim stays solid so the shape reads against the map; the feathered
+  // mask alone handles the fade-out, with no outer shadow to blotch the surroundings
+  float baseAlpha = 0.7 + darkZone * 0.15; // Translucent center, solid dark rim
+  baseAlpha += specular * 0.1; // Oily sheen reads through the film
+  baseAlpha = clamp(baseAlpha, 0.0, 0.9); // Never fully opaque
+
+  float alpha = mask * uOpacity * baseAlpha;
 
   return vec4(finalColor, alpha);
 }
@@ -979,6 +1009,336 @@ vec4 iceEffect(vec2 uv, vec2 texSize, float time) {
   return vec4(finalColor, alpha);
 }
 
+// Voronoi cell-boundary distance - boundaries read as straight connective strands
+float webMesh(vec2 p, float seed) {
+  vec2 cellId = floor(p);
+  vec2 cellUV = fract(p);
+  float minDist = 8.0;
+  float secondDist = 8.0;
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 neighbor = vec2(float(x), float(y));
+      vec2 point = neighbor + hash2(cellId + neighbor + seed) * 0.9 + 0.05;
+      float dist = length(cellUV - point);
+      if(dist < minDist) {
+        secondDist = minDist;
+        minDist = dist;
+      } else if(dist < secondDist) {
+        secondDist = dist;
+      }
+    }
+  }
+  return secondDist - minDist; // ~0 along the straight cell boundaries
+}
+
+// One orb web: radial spokes and concentric rings around a hub
+float orbWebStrands(vec2 toCenter, float cellRand, float maxRadius) {
+  float d = length(toCenter);
+  if(d > maxRadius) return 0.0;
+  float a = atan(toCenter.y, toCenter.x);
+
+  // Spokes: thin radial lines at evenly quantized angles
+  float spokeCount = 8.0 + floor(cellRand * 5.0);
+  float spokePhase = fract(a / 6.28318 * spokeCount + cellRand * 7.0);
+  float spokeArc = abs(spokePhase - 0.5) / spokeCount * 6.28318 * d;
+  float spokes = 1.0 - smoothstep(0.0, 0.018, spokeArc);
+
+  // Rings: concentric threads strung between the spokes
+  float ringFreq = 7.0 / maxRadius;
+  float ringPhase = fract(d * ringFreq + cellRand * 3.0);
+  float ringDist = abs(ringPhase - 0.5) / ringFreq;
+  float rings = 1.0 - smoothstep(0.0, 0.014, ringDist);
+  rings *= step(maxRadius * 0.08, d); // No rings on top of the hub
+
+  // Dense hub where the spokes meet
+  float hub = 1.0 - smoothstep(0.0, maxRadius * 0.05, d);
+
+  // Each web fades toward its outer rim
+  float falloff = 1.0 - smoothstep(maxRadius * 0.5, maxRadius, d);
+  return max(max(spokes, rings * 0.85), hub) * falloff;
+}
+
+// Web effect - wispy spider webs, dense in the center thinning to stray strands
+vec4 webEffect(vec2 uv, vec2 texSize, float time) {
+  float mask = getVolumeMask(uv, texSize, time, 1.5, 0.08, 0.3);
+  if(mask < 0.001) return vec4(0.0);
+
+  vec2 basePos = uv * texSize * 0.004;
+
+  // Gentle sway, like a draft moving through the strands
+  vec2 sway = vec2(
+    snoise(basePos * 0.3 + time * 0.05),
+    snoise(basePos * 0.3 + vec2(40.0, 40.0) + time * 0.04)
+  ) * 0.05;
+  vec2 pos = basePos + sway;
+
+  // === DENSITY GRADIENT - thick in the center, wispy at the edges ===
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
+
+  // Border controls how far the sparse fringe reaches into the center
+  float fringeSpread = uBorder * 0.8 + 0.2;
+  float fringe = smoothstep(0.0, fringeSpread, edgeProximity); // 0 center, 1 edge
+  // Break up the density falloff so the fringe isn't a clean ring
+  fringe = clamp(fringe + snoise(pos * 1.5 + 60.0) * 0.2, 0.0, 1.0);
+
+  // === STRAND LAYERS - geometric: straight segments, spokes, and rings ===
+  // Tiny wobble so strands aren't laser-straight, while staying geometric.
+  // Scaled up 1.75x so webs stay small relative to typical drawn shapes (~a few grid squares)
+  vec2 strandPos = (pos + vec2(snoise(pos * 2.0), snoise(pos * 2.0 + 50.0)) * 0.02) * 1.75;
+
+  // Orb webs scattered across the shape: spokes + concentric rings
+  float orb = 0.0;
+  float orbCell = 1.8;
+  vec2 orbGrid = strandPos / orbCell;
+  vec2 orbId = floor(orbGrid);
+  vec2 orbUv = fract(orbGrid);
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 nb = vec2(float(x), float(y));
+      vec2 ctr = nb + hash2(orbId + nb + 7.0) * 0.6 + 0.2;
+      float rnd = hash(orbId + nb + 13.0);
+      vec2 toC = (orbUv - ctr) * orbCell;
+      orb = max(orb, orbWebStrands(toC, rnd, 1.15));
+    }
+  }
+
+  // Connective cobweb mesh: straight strands strung between anchor points
+  float mesh1 = 1.0 - smoothstep(0.0, 0.035, webMesh(strandPos * 1.2, 0.0));
+  float mesh2 = 1.0 - smoothstep(0.0, 0.05, webMesh(strandPos * 2.4, 100.0));
+
+  // Finer structure dies out toward the edges; orb webs and main strands persist
+  float web = 0.0;
+  web = max(web, orb * (1.0 - fringe * 0.5));
+  web = max(web, mesh1 * 0.75 * (1.0 - fringe * 0.85));
+  web = max(web, mesh2 * 0.5 * (1.0 - smoothstep(0.0, 0.55, fringe)));
+  web *= clamp(uIntensity, 0.0, 1.5);
+
+  // === HAZE - faint matted sheet between strands, center only ===
+  float haze = fbm3(pos * 1.4 + 200.0) * 0.5 + 0.5;
+  float hazeAlpha = haze * (1.0 - fringe * 0.9) * 0.3;
+
+  // Subtle shimmer where light catches a strand
+  float shimmer = pow(snoise(pos * 6.0 + time * 0.08) * 0.5 + 0.5, 4.0) * web * 0.3;
+
+  // === COLORS - white/grey gossamer ===
+  vec3 strandColor = vec3(0.92, 0.93, 0.95);
+  vec3 hazeColor = vec3(0.78, 0.8, 0.83);
+
+  vec3 color = mix(hazeColor, strandColor, clamp(web * 1.2, 0.0, 1.0));
+  color += vec3(1.0) * shimmer;
+
+  // Strands stay readable, haze is faint, gaps show the map through
+  float strandAlpha = web * (0.5 + (1.0 - fringe) * 0.3);
+  float bodyAlpha = clamp(hazeAlpha + strandAlpha, 0.0, 0.85);
+
+  float alpha = mask * uOpacity * bodyAlpha;
+
+  return vec4(color, alpha);
+}
+
+// One vine segment seen from above: a tapering ribbon between startR and endR from the base.
+// centerAngle is the strand's centerline direction at this radius; returns x = body, y = ridge crest
+vec2 vineSegment(float r, float phi, float startR, float endR, float centerAngle, float baseWidth, float seed, float grain) {
+  if(r < startR || r > endR) return vec2(0.0);
+
+  float dPhi = atan(sin(phi - centerAngle), cos(phi - centerAngle));
+  float arcDist = abs(dPhi) * r;
+
+  // Segment thins toward its tip
+  float taper = 1.0 - (r - startR) / (endR - startR);
+  float width = baseWidth * (0.3 + taper * 0.7);
+
+  // Long, gentle swells so the strand isn't a constant-width tube (kept low-frequency: short wavelengths read as beads)
+  float along = r - startR;
+  width *= 0.88 + 0.12 * sin(along * 7.0 + seed * 9.0);
+
+  // Grainy edges instead of a clean gradient rim
+  arcDist += grain * width * 0.35;
+
+  float body = 1.0 - smoothstep(width * 0.45, width, arcDist);
+  float ridge = 1.0 - smoothstep(0.0, width * 0.5, arcDist);
+  // Dappled crest - broken highlights read as leafy texture, not a specular line down a tube
+  ridge *= 0.55 + 0.45 * sin(along * 31.0 + seed * 12.0 + grain * 4.0);
+  // Tips sit higher, closer to the light, so they read brighter
+  ridge *= 0.45 + (1.0 - taper) * 0.55;
+  return vec2(body, clamp(ridge, 0.0, 1.0));
+}
+
+// Centerline direction of a vine: a gentle curl plus wandering S-bends so the
+// strand changes direction as it reaches out instead of sweeping a circle
+float vineAngle(float t, float angle0, float curl, float bendFreq, float bendPhase) {
+  return angle0 + curl * t + sin(t * bendFreq + bendPhase) * 0.7 + sin(t * bendFreq * 2.3 + bendPhase * 1.7) * 0.3;
+}
+
+// A vine clump: a main stem that forks into wandering branches as it reaches out
+vec2 vineClump(vec2 toBase, float rnd, float time, float grain) {
+  float r = length(toBase);
+  float len = 0.8 + rnd * 0.4;
+  if(r > len * 1.1 || r < 0.001) return vec2(0.0);
+
+  float phi = atan(toBase.y, toBase.x);
+  float rnd2 = fract(rnd * 7.31);
+  float rnd3 = fract(rnd * 13.7);
+
+  // Gentle base curl - direction comes mostly from the wandering bends
+  float curl = (0.9 + rnd2 * 1.0) * (rnd > 0.5 ? 1.0 : -1.0);
+  curl += sin(time * 0.4 + rnd * 6.28) * 0.5;
+  float bendFreq = 5.0 + rnd3 * 4.0;
+  float bendPhase = rnd * 6.28;
+  float angle0 = rnd * 6.28;
+
+  // Lash whips the tip while the base stays anchored
+  float lash = sin(time * 0.9 + r * 4.0 + rnd3 * 6.28) * 0.45 * (r / len);
+
+  // Each clump grows at its own girth, from wiry up to twice as thick
+  float girth = 1.0 + fract(rnd * 23.3);
+
+  float stemAngle = vineAngle(r, angle0, curl, bendFreq, bendPhase) + lash;
+  vec2 acc = vineSegment(r, phi, 0.0, len, stemAngle, 0.085 * girth, rnd, grain);
+
+  // Offshoots: thin side vines that split away on alternating sides and sweep outward
+  for(int i = 0; i < 3; i++) {
+    float fi = float(i);
+    float li = len * (0.18 + fi * 0.22 + fract(rnd * (17.0 + fi * 3.0)) * 0.08);
+    float ai = vineAngle(li, angle0, curl, bendFreq, bendPhase);
+    float side = mod(fi + floor(rnd * 4.0), 2.0) < 1.0 ? 1.0 : -1.0;
+    float offshootAngle = ai + side * (1.6 + fract(rnd * 5.3) * 0.8) * (r - li) +
+      sin((r - li) * (bendFreq + 4.0) + rnd * 6.28 + fi) * 0.3 + lash * 0.6;
+    float offshootLen = len * (0.3 + fract(rnd * (7.0 + fi)) * 0.15);
+    acc = max(acc, vineSegment(r, phi, li, li + offshootLen, offshootAngle, 0.04 * girth, rnd * 3.7 + fi, grain) * 0.92);
+  }
+
+  // Fork 1: splits a third of the way out, veers away from the stem, then wanders on its own
+  float f1 = len * (0.28 + rnd3 * 0.12);
+  float a1 = vineAngle(f1, angle0, curl, bendFreq, bendPhase);
+  float lash1 = sin(time * 1.1 + r * 5.0 + rnd2 * 6.28) * 0.5 * (r / len);
+  float branch1 = a1 + (-curl * 1.4 - 0.8 * sign(curl)) * (r - f1) + sin((r - f1) * (bendFreq + 3.0) + rnd2 * 6.28) * 0.6 + lash1;
+  acc = max(acc, vineSegment(r, phi, f1, len * 1.05, branch1, 0.06 * girth, rnd2, grain) * 0.95);
+
+  // Fork 2: splits further out, finer, whipping back the other way
+  float f2 = len * (0.5 + rnd2 * 0.12);
+  float a2 = vineAngle(f2, angle0, curl, bendFreq, bendPhase);
+  float lash2 = sin(time * 1.3 + r * 6.0 + rnd * 6.28) * 0.55 * (r / len);
+  float branch2 = a2 + (curl * 1.8 + 0.9 * sign(curl)) * (r - f2) + sin((r - f2) * (bendFreq + 5.0) + rnd3 * 6.28) * 0.5 + lash2;
+  acc = max(acc, vineSegment(r, phi, f2, len * 1.1, branch2, 0.045 * girth, rnd3, grain) * 0.9);
+
+  return acc;
+}
+
+// Entangle effect - writhing tendrils that grasp across the area
+vec4 entangleEffect(vec2 uv, vec2 texSize, float time) {
+  float mask = getVolumeMask(uv, texSize, time, 2.0, 0.15, 0.8);
+  if(mask < 0.001) return vec4(0.0);
+
+  vec2 basePos = uv * texSize * 0.004;
+
+  // === DENSITY GRADIENT - tangled center, grasping tips at the edges ===
+  float maskHigh = textureLod(uMaskTexture, uv, 0.0).a;
+  float maskMid = textureLod(uMaskTexture, uv, 3.0).a;
+  float maskLow = textureLod(uMaskTexture, uv, 5.0).a;
+  float edgeProximity = 1.0 - min(maskHigh, min(maskMid, maskLow));
+  float fringeSpread = uBorder * 0.8 + 0.2;
+  float fringe = smoothstep(0.0, fringeSpread, edgeProximity); // 0 center, 1 edge
+  fringe = clamp(fringe + snoise(basePos * 1.5 + 60.0) * 0.2, 0.0, 1.0);
+
+  // === VINES - forking clumps reaching out from scattered anchored bases ===
+  // Vine size adapts to the drawn area: the mask's coarsest mip is the covered
+  // fraction of the canvas, so sprawling fields grow proportionally bigger vines.
+  // Anchored so a ~5x5 grid blob gets the 2.4x scale this was tuned at.
+  float maxMip = floor(log2(max(texSize.x, texSize.y)));
+  float coverage = textureLod(uMaskTexture, vec2(0.5, 0.5), maxMip).a;
+  float vineScale = clamp(0.53 / sqrt(max(coverage, 0.001)), 1.0, 3.0);
+  vec2 vinePos = basePos * vineScale;
+  float body = 0.0;
+  float ridge = 0.0;
+  float shadow = 0.0;
+  vec2 shadowOffset = vec2(0.09, 0.11); // Cast shadows fall to one side, selling height
+  // Fine grain shared by every strand - roughens edges and dapples the crests
+  float grain = snoise(vinePos * 9.0);
+
+  // Main clumps
+  float vineCell = 1.35;
+  vec2 tGrid = vinePos / vineCell;
+  vec2 tId = floor(tGrid);
+  vec2 tUv = fract(tGrid);
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 nb = vec2(float(x), float(y));
+      vec2 base = nb + hash2(tId + nb + 9.0) * 0.7 + 0.15;
+      float rnd = hash(tId + nb + 17.0);
+      vec2 toBase = (tUv - base) * vineCell;
+      vec2 arm = vineClump(toBase, rnd, time, grain);
+      body = max(body, arm.x);
+      ridge = max(ridge, arm.y);
+      shadow = max(shadow, vineClump(toBase - shadowOffset, rnd, time, grain).x);
+    }
+  }
+
+  // Smaller clumps thicken the tangled center, retreating from the fringe
+  float smallWeight = 1.0 - fringe;
+  float vineCell2 = 0.8;
+  vec2 sGrid = vinePos / vineCell2 + 50.0;
+  vec2 sId = floor(sGrid);
+  vec2 sUv = fract(sGrid);
+  for(int x = -1; x <= 1; x++) {
+    for(int y = -1; y <= 1; y++) {
+      vec2 nb = vec2(float(x), float(y));
+      vec2 base = nb + hash2(sId + nb + 23.0) * 0.7 + 0.15;
+      float rnd = hash(sId + nb + 31.0);
+      vec2 toBase = (sUv - base) * vineCell2;
+      vec2 arm = vineClump(toBase, rnd, time + 5.0, grain);
+      body = max(body, arm.x * 0.9 * smallWeight);
+      ridge = max(ridge, arm.y * 0.8 * smallWeight);
+      shadow = max(shadow, vineClump(toBase - shadowOffset * 0.6, rnd, time + 5.0, grain).x * smallWeight);
+    }
+  }
+
+  // Limbs thin out toward the edges of the area
+  float reach = 1.0 - fringe * 0.5;
+  body *= reach * clamp(uIntensity, 0.0, 1.5);
+  ridge *= reach;
+
+  // === GRASS GROUND COVER - dense turf with fine rustling blade streaks ===
+  vec2 grassPos = basePos * 3.0;
+  // Lawn tone mottling at two scales
+  float tone1 = fbm3(grassPos * 0.6 + 200.0) * 0.5 + 0.5;
+  float tone2 = snoise(grassPos * 2.0 + 80.0) * 0.5 + 0.5;
+  // Thin bright blade streaks, drifting slowly like a breeze through the turf
+  float blades1 = pow(1.0 - abs(snoise(grassPos * 9.0 + time * 0.05)), 6.0);
+  float blades2 = pow(1.0 - abs(snoise(grassPos * 13.0 + 50.0 - time * 0.04)), 6.0);
+  float blades = max(blades1, blades2 * 0.85);
+
+  // Mostly opaque turf in the center, thinning to nothing at the fringe
+  float turfAlpha = (0.78 + tone2 * 0.08 + blades * 0.08) * (1.0 - fringe * 0.85);
+
+  // === COLORS - warm olive turf so the cooler, darker vines stand off it ===
+  vec3 grassDark = vec3(0.1, 0.17, 0.04);      // Shaded turf
+  vec3 grassMid = vec3(0.18, 0.28, 0.07);      // Lawn body
+  vec3 grassLight = vec3(0.32, 0.44, 0.12);    // Sunlit blades
+  vec3 shadowGreen = vec3(0.02, 0.05, 0.02);   // Cast shadow on the ground
+  vec3 vineGreen = vec3(0.06, 0.2, 0.08);      // Limb flanks - deep cool green
+  vec3 brightGreen = vec3(0.28, 0.55, 0.22);   // Lit crest and tips
+
+  vec3 limbColor = mix(vineGreen, brightGreen, clamp(ridge, 0.0, 1.0));
+  vec3 turfColor = mix(grassDark, grassMid, tone1);
+  turfColor = mix(turfColor, turfColor * 1.25, tone2 * 0.5);
+  turfColor = mix(turfColor, grassLight, blades * (0.35 + tone2 * 0.35));
+  // Vine shadows fall softly across the turf as well as the bare map
+  vec3 groundColor = mix(turfColor, shadowGreen, clamp(shadow * (1.0 - body) * 2.0, 0.0, 1.0) * 0.5);
+  vec3 color = mix(groundColor, limbColor, clamp(body * 1.2, 0.0, 1.0));
+
+  float limbAlpha = body * (0.65 + (1.0 - fringe) * 0.25);
+  float shadowAlpha = shadow * (1.0 - body) * 0.28 * (1.0 - fringe * 0.6);
+  float bodyAlpha = clamp(max(limbAlpha, max(shadowAlpha, turfAlpha)), 0.0, 0.92);
+
+  float alpha = mask * uOpacity * bodyAlpha;
+
+  return vec4(color, alpha);
+}
+
 void main() {
   // Clipping planes
   vec4 plane;
@@ -1041,6 +1401,10 @@ void main() {
     result = greaseEffect(vUv, texSize, time);
   } else if(uEffectType == 6) {
     result = iceEffect(vUv, texSize, time);
+  } else if(uEffectType == 7) {
+    result = webEffect(vUv, texSize, time);
+  } else if(uEffectType == 8) {
+    result = entangleEffect(vUv, texSize, time);
   } else {
     // No effect - solid color
     float mask = texture2D(uMaskTexture, vUv).a;
@@ -1048,10 +1412,10 @@ void main() {
     result = vec4(uBaseColor, mask * uOpacity);
   }
 
-  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they handle their own depth or don't need it)
+  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they paint their own depth inside the mask)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice
+  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6 || uEffectType == 7 || uEffectType == 8) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice/web/entangle
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {
