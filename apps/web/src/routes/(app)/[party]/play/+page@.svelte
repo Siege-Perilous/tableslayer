@@ -120,6 +120,12 @@
   });
 
   const sceneIsChanging = $derived(session.activeSceneId !== null && session.activeSceneId !== renderedSceneId);
+
+  // A pending fog commit belongs to the scene it was drawn on; flush it the
+  // moment the GM switches scenes, before the stage repaints
+  $effect(() => {
+    if (session.activeSceneId !== renderedSceneId) tools.flushPendingFogCommit();
+  });
   const gameIsPaused = $derived(session.isPaused || !session.activeSceneId);
   const stageClasses = $derived([
     'stage',
