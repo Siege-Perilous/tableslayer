@@ -4,67 +4,14 @@
     onBrushSizeChange: (value: number) => void;
     min?: number;
     max?: number;
-    curve?: 'linear' | 'quadratic';
-    displayAsPercentage?: boolean;
+    step?: number;
+    displayUnit?: string;
   }
 
-  let {
-    brushSize,
-    onBrushSizeChange,
-    min = 1,
-    max = 200,
-    curve = 'quadratic',
-    displayAsPercentage = false
-  }: Props = $props();
-
-  // For quadratic curve: size = coefficient * slider^2
-  // We want: at slider=50%, size should be at the midpoint between min and max
-  // midpoint = (min + max) / 2
-  // So: midpoint = coefficient * 50^2
-  // coefficient = midpoint / 2500
-  const midpoint = $derived((min + max) / 2);
-  const coefficient = $derived(midpoint / 2500);
-
-  const brushSizeToSlider = (size: number): number => {
-    const clampedSize = Math.max(min, Math.min(max, size));
-
-    if (curve === 'linear') {
-      // Linear: map size range to 0-100 slider range
-      return ((clampedSize - min) / (max - min)) * 100;
-    } else {
-      // Quadratic: inverse of size = coefficient * slider^2
-      return Math.sqrt(clampedSize / coefficient);
-    }
-  };
-
-  const sliderToBrushSize = (slider: number): number => {
-    if (curve === 'linear') {
-      // Linear mapping from slider (0-100) to size range (min-max)
-      const size = min + (slider / 100) * (max - min);
-      // For linear curve (used by fog), keep decimal precision
-      // Round to 1 decimal place
-      return Math.max(min, Math.min(max, Math.round(size * 10) / 10));
-    } else {
-      // Quadratic curve (used by annotations)
-      const size = coefficient * slider * slider;
-      // For quadratic, we can round to integers as the range is small decimals (0.01-5.0)
-      // but we need to preserve decimal precision, so round to 2 decimal places
-      return Math.max(min, Math.min(max, Math.round(size * 100) / 100));
-    }
-  };
-
-  let brushSliderValue = $derived(brushSizeToSlider(brushSize));
+  let { brushSize, onBrushSizeChange, min = 1, max = 5, step = 1, displayUnit }: Props = $props();
 
   const handleBrushSliderChange = (value: number) => {
-    const actualSize = sliderToBrushSize(value);
-    console.log('[BrushSizeSlider] Slider change:', {
-      sliderValue: value,
-      actualSize,
-      min,
-      max,
-      curve
-    });
-    onBrushSizeChange(actualSize);
+    onBrushSizeChange(Math.max(min, Math.min(max, value)));
   };
 
   // Touch event handlers for better mobile support
@@ -85,15 +32,17 @@
     id="brush-size-slider"
     type="range"
     class="brushSizeSlider__input"
-    min="0"
-    max="100"
-    step="0.1"
-    value={brushSliderValue}
+    {min}
+    {max}
+    {step}
+    value={brushSize}
     oninput={(e) => handleBrushSliderChange(Number(e.currentTarget.value))}
     ontouchstart={handleTouchStart}
     ontouchmove={handleTouchMove}
   />
-  <div class="brushSizeSlider__value">{displayAsPercentage ? `${brushSize.toFixed(1)}%` : brushSize}</div>
+  <div class="brushSizeSlider__value">
+    {Number(brushSize.toFixed(2))}{displayUnit ? ` ${displayUnit}` : ''}
+  </div>
 </div>
 
 <style>

@@ -1,5 +1,15 @@
 # @tableslayer/ui
 
+## 0.2.0
+
+### Minor Changes
+
+- BrushSizeSlider and FogSliders now work in grid units instead of percentages. BrushSizeSlider takes min/max/step/displayUnit props and operates directly in value space; the curve and displayAsPercentage props are removed. FogSliders ranges over 1-5 whole grid squares and no longer needs gridSpacing/displayWidth props.
+
+### Patch Changes
+
+- Brush slider clamping
+
 ## 0.1.25
 
 ### Patch Changes

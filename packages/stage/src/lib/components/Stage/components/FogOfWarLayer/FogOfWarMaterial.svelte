@@ -14,22 +14,15 @@
   interface Props {
     props: FogOfWarLayerProps;
     mapSize: Size | null;
+    toolSizePixels: number;
   }
 
-  const { props, mapSize }: Props = $props();
+  const { props, mapSize, toolSizePixels }: Props = $props();
 
   const stage = getContext<{ mode: StageMode }>('stage');
   let drawMaterial: DrawingMaterial;
 
-  // Convert percentage-based tool.size to texture pixels
-  // tool.size is a percentage (5-20), mapSize gives texture dimensions
-  const toolSizePixels = $derived.by(() => {
-    if (!mapSize) return props.tool.size;
-    const textureSize = Math.min(mapSize.width, mapSize.height);
-    return Math.round(textureSize * (props.tool.size / 100));
-  });
-
-  // Create derived props with converted tool size
+  // Create derived props with tool.size (grid units) converted to texture pixels
   const drawingProps = $derived({
     ...props,
     tool: {

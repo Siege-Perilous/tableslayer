@@ -85,7 +85,7 @@
 </script>
 
 <Folder title="Annotations" expanded={false}>
-  <Slider bind:value={props.annotations.lineWidth} label="Line Width" min={1} max={200} step={1} />
+  <Slider bind:value={props.annotations.lineWidth} label="Line Width" min={0.25} max={5} step={0.25} />
   <Folder title="Layers" expanded={true}>
     {#each props.annotations.layers as layer}
       <Folder title={layer.id + (layer.id === props.annotations.activeLayer ? ' (Active)' : '')} expanded={false}>

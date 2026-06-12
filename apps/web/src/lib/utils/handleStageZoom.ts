@@ -1,6 +1,5 @@
-import { type StageProps, MapLayerType } from '@tableslayer/stage';
+import { type StageProps } from '@tableslayer/stage';
 import { trackChecklistItem } from './checklistTracker';
-import { setPreferenceDebounced } from './gameSessionPreferences';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
@@ -23,21 +22,5 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
     e.preventDefault();
     const newSceneZoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], newSceneZoom, 'control');
-  } else if (stageProps.activeLayer === MapLayerType.FogOfWar) {
-    const newFogSize = Math.round(Math.max(40, Math.min(stageProps.fogOfWar.tool.size - 500.0 * scrollDelta, 200)));
-    queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'size'], newFogSize, 'control');
-    // Save brush size to cookie with debouncing
-    setPreferenceDebounced('brushSize', newFogSize);
-  } else if (stageProps.activeLayer === MapLayerType.Annotation) {
-    // Handle annotation line width adjustment
-    const currentLineWidth = stageProps.annotations.lineWidth || 50;
-    const lineWidthDelta = scrollDelta * 200; // Scale to make it more responsive
-    const newLineWidth = Math.round(Math.max(1, Math.min(currentLineWidth - lineWidthDelta, 200)));
-
-    // Update annotation line width locally
-    queuePropertyUpdate(stageProps, ['annotations', 'lineWidth'], newLineWidth, 'control');
-
-    // Save preference with debouncing
-    setPreferenceDebounced('annotationLineWidth', newLineWidth);
   }
 };

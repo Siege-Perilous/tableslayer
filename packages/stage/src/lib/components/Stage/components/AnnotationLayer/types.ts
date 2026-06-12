@@ -68,7 +68,9 @@ export interface AnnotationsLayerProps {
   activeLayer: string | null;
 
   /**
-   * The line width for drawing (global setting)
+   * The line width for drawing (global setting) in grid units
+   * (number of grid squares the line width spans: 0.25-1 in
+   * quarter steps, then whole numbers up to 5)
    */
   lineWidth?: number;
 

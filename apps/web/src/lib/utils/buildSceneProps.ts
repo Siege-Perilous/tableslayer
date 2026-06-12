@@ -159,7 +159,7 @@ export const buildSceneProps = (
       },
       tool: {
         type: ToolType.Brush,
-        size: 10.0, // Default brush size as percentage (5-20% range)
+        size: 2, // Default brush size in grid units (0.25-3 range)
         mode: DrawMode.Erase
       },
       edge: {

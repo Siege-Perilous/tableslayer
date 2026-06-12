@@ -15,17 +15,12 @@
   interface Props {
     props: AnnotationLayerData;
     display: DisplayProps;
-    lineWidth?: number;
+    lineWidthPixels: number;
     /** True while the user is actively drawing on this layer (skip mask re-apply) */
     isDrawingThisLayer?: () => boolean;
   }
 
-  const { props, display, lineWidth = 2.0, isDrawingThisLayer = () => false }: Props = $props();
-
-  const lineWidthPixels = $derived.by(() => {
-    const textureSize = Math.min(display.resolution.x, display.resolution.y);
-    return Math.round(textureSize * (lineWidth / 100));
-  });
+  const { props, display, lineWidthPixels, isDrawingThisLayer = () => false }: Props = $props();
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 

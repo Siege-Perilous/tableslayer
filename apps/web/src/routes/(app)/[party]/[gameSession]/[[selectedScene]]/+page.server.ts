@@ -55,7 +55,6 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
 
   const paneLayoutDesktop = getPreferenceServer(cookies, 'paneLayoutDesktop');
   const paneLayoutMobile = getPreferenceServer(cookies, 'paneLayoutMobile');
-  const brushSize = getPreferenceServer(cookies, 'brushSize');
 
   const checklistState = await getUserChecklistState(user.id);
   const isEligibleForAutoShow = checkUserChecklistEligibility(
@@ -75,7 +74,6 @@ export const load: PageServerLoad = async ({ parent, params, url, cookies }) => 
     activeScene,
     paneLayoutDesktop,
     paneLayoutMobile,
-    brushSize,
     partykitHost,
     checklistState: {
       completedItems: checklistState.completedItems,

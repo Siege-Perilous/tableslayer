@@ -29,7 +29,7 @@ export const StageDefaultProps: StageProps = {
       }
     ],
     activeLayer: 'default-layer',
-    lineWidth: 1
+    lineWidth: 0.5
   },
   debug: {
     enableStats: false,
@@ -76,7 +76,7 @@ export const StageDefaultProps: StageProps = {
     },
     tool: {
       type: ToolType.Brush,
-      size: 50,
+      size: 2,
       mode: DrawMode.Erase
     },
     edge: {
