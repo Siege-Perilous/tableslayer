@@ -89,7 +89,7 @@ export class PlayTools {
   #pendingPersistPosition: { x: number; y: number } | null = null;
   #persistButtonTimer: ReturnType<typeof setTimeout> | null = null;
   #resetLayerTimer: ReturnType<typeof setTimeout> | null = null;
-  #fogCommitTimer: ReturnType<typeof setTimeout> | null = null;
+  #pendingFogCommit: { timer: ReturnType<typeof setTimeout>; sceneId: string } | null = null;
   #expiryTicker: ReturnType<typeof setInterval>;
   #now = $state(Date.now());
   // Memoized base64 → bytes per layer so mask references stay stable across rebuilds
@@ -358,18 +358,34 @@ export class PlayTools {
   /** Stage callback: a fog stroke changed — commit the RLE to the doc, debounced. */
   onFogUpdate = () => {
     this.resetToNoneAfterDelay();
-    if (this.#fogCommitTimer) clearTimeout(this.#fogCommitTimer);
-    this.#fogCommitTimer = setTimeout(() => {
-      this.#fogCommitTimer = null;
-      this.#commitFog();
-    }, FOG_COMMIT_DEBOUNCE_MS);
+    const sceneId = this.#options.session.activeSceneId;
+    if (!sceneId) return;
+    if (this.#pendingFogCommit) clearTimeout(this.#pendingFogCommit.timer);
+    this.#pendingFogCommit = {
+      sceneId,
+      timer: setTimeout(() => {
+        this.#pendingFogCommit = null;
+        if (this.#options.session.activeSceneId === sceneId) this.#commitFog(sceneId);
+      }, FOG_COMMIT_DEBOUNCE_MS)
+    };
   };
 
-  async #commitFog() {
+  /**
+   * Commit a pending fog stroke to the scene it was drawn on. Called when the
+   * active scene changes, while the fog canvas still shows that scene's mask.
+   */
+  flushPendingFogCommit() {
+    if (!this.#pendingFogCommit) return;
+    const { timer, sceneId } = this.#pendingFogCommit;
+    this.#pendingFogCommit = null;
+    clearTimeout(timer);
+    this.#commitFog(sceneId);
+  }
+
+  async #commitFog(sceneId: string) {
     const { session, getStage } = this.#options;
     const stage = getStage();
-    const sceneId = session.activeSceneId;
-    if (!stage?.fogOfWar || !sceneId || !session.client) return;
+    if (!stage?.fogOfWar || !session.client) return;
     if (stage.fogOfWar.isDrawing()) return; // the next stroke end re-arms the commit
 
     try {
@@ -483,6 +499,6 @@ export class PlayTools {
     clearInterval(this.#expiryTicker);
     if (this.#resetLayerTimer) clearTimeout(this.#resetLayerTimer);
     if (this.#persistButtonTimer) clearTimeout(this.#persistButtonTimer);
-    if (this.#fogCommitTimer) clearTimeout(this.#fogCommitTimer);
+    if (this.#pendingFogCommit) clearTimeout(this.#pendingFogCommit.timer);
   }
 }

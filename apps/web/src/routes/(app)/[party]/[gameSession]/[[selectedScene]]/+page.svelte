@@ -812,9 +812,9 @@
   };
 
   // Annotation mask strokes -> doc, debounced per layer
-  const annotationMaskTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const pendingAnnotationCommits = new Map<string, { timer: ReturnType<typeof setTimeout>; sceneId: string }>();
 
-  const commitAnnotationMask = async (layerId: string) => {
+  const commitAnnotationMask = async (sceneId: string, layerId: string) => {
     if (!session.client || !stage?.annotations) return;
     if (stage.annotations.isDrawing()) return;
 
@@ -824,47 +824,79 @@
     try {
       const rle = await stage.annotations.toRLE();
       if (rle && rle.length > 0) {
-        session.client.write.setAnnotationMask(selectedSceneId, layerId, rle);
+        session.client.write.setAnnotationMask(sceneId, layerId, rle);
       }
     } finally {
       stageProps.annotations.activeLayer = originalActiveLayer;
     }
   };
 
+  // Like fog: pending commits land on the scene the stroke was drawn on, flushed
+  // on scene switch while the stage still holds that scene's layers
+  $effect(() => {
+    for (const [layerId, pending] of pendingAnnotationCommits) {
+      if (pending.sceneId !== selectedSceneId) {
+        pendingAnnotationCommits.delete(layerId);
+        clearTimeout(pending.timer);
+        commitAnnotationMask(pending.sceneId, layerId);
+      }
+    }
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onAnnotationUpdate = (layerId: string, _blob: Promise<Blob>) => {
-    const existing = annotationMaskTimers.get(layerId);
-    if (existing) clearTimeout(existing);
-    annotationMaskTimers.set(
-      layerId,
-      setTimeout(() => {
-        annotationMaskTimers.delete(layerId);
-        commitAnnotationMask(layerId);
+    const existing = pendingAnnotationCommits.get(layerId);
+    if (existing) clearTimeout(existing.timer);
+    const sceneId = selectedSceneId;
+    pendingAnnotationCommits.set(layerId, {
+      sceneId,
+      timer: setTimeout(() => {
+        pendingAnnotationCommits.delete(layerId);
+        if (selectedSceneId === sceneId) commitAnnotationMask(sceneId, layerId);
       }, 500)
-    );
+    });
   };
 
   // Fog of war -------------------------------------------------------------------
 
-  let fogCommitTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingFogCommit: { timer: ReturnType<typeof setTimeout>; sceneId: string } | null = null;
 
-  const commitFogMask = async () => {
+  const commitFogMask = async (sceneId: string) => {
     if (!session.client || !stage?.fogOfWar) return;
     if (stage.fogOfWar.isDrawing()) return; // next stroke end re-arms
     const rle = await stage.fogOfWar.toRLE();
     if (rle && !stage.fogOfWar.isDrawing()) {
-      session.client.write.setFogMask(selectedSceneId, rle);
+      session.client.write.setFogMask(sceneId, rle);
     }
   };
+
+  // A pending commit must land on the scene the stroke was drawn on. Flushing at
+  // switch time is safe: the fog canvas still shows that scene's mask until the
+  // new map texture loads and applyMasks repaints it.
+  const flushPendingFogCommit = () => {
+    if (!pendingFogCommit) return;
+    const { timer, sceneId } = pendingFogCommit;
+    pendingFogCommit = null;
+    clearTimeout(timer);
+    commitFogMask(sceneId);
+  };
+
+  $effect(() => {
+    if (pendingFogCommit && pendingFogCommit.sceneId !== selectedSceneId) flushPendingFogCommit();
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onFogUpdate = (_blob: Promise<Blob>) => {
     trackChecklistItemLocal('fog-erase');
-    if (fogCommitTimer) clearTimeout(fogCommitTimer);
-    fogCommitTimer = setTimeout(() => {
-      fogCommitTimer = null;
-      commitFogMask();
-    }, 500);
+    if (pendingFogCommit) clearTimeout(pendingFogCommit.timer);
+    const sceneId = selectedSceneId;
+    pendingFogCommit = {
+      sceneId,
+      timer: setTimeout(() => {
+        pendingFogCommit = null;
+        if (selectedSceneId === sceneId) commitFogMask(sceneId);
+      }, 500)
+    };
   };
 
   // Measurements (broadcast only when editing the active scene) -------------------
@@ -1092,9 +1124,9 @@
     }
 
     return () => {
-      if (fogCommitTimer) clearTimeout(fogCommitTimer);
-      annotationMaskTimers.forEach((timer) => clearTimeout(timer));
-      annotationMaskTimers.clear();
+      if (pendingFogCommit) clearTimeout(pendingFogCommit.timer);
+      pendingAnnotationCommits.forEach((pending) => clearTimeout(pending.timer));
+      pendingAnnotationCommits.clear();
       dragClearTimers.forEach((timer) => clearTimeout(timer));
       dragClearTimers.clear();
       unbindPropertyUpdates();
