@@ -232,9 +232,15 @@
             ? {
                 offset: { x: snapshot.settings.sceneOffsetX, y: snapshot.settings.sceneOffsetY },
                 rotation: snapshot.settings.sceneRotation,
-                zoom: 1
+                zoom: 1,
+                autoFit: true
               }
-            : { offset: prev.scene.offset, zoom: prev.scene.zoom, rotation: prev.scene.rotation },
+            : {
+                offset: prev.scene.offset,
+                zoom: prev.scene.zoom,
+                rotation: prev.scene.rotation,
+                autoFit: prev.scene.autoFit
+              },
           markerPositions: drags,
           fogTool: isSceneSwitch
             ? { size: clampFogBrush(getPreference('brushSizeGridUnits') || 2) }
@@ -560,7 +566,10 @@
   // Stage callbacks: every shared edit writes the doc; nothing here saves to the DB
   // ---------------------------------------------------------------------------
 
-  const handleSceneFit = () => stage.scene.fit();
+  const handleSceneFit = () => {
+    stageProps.scene.autoFit = true;
+    stage.scene.fit();
+  };
   const handleMapFill = () => stage.map.fit();
   const handleMapFit = () => stage.map.fit();
 
@@ -1015,6 +1024,7 @@
   }
 
   function onScenePan(dx: number, dy: number) {
+    stageProps.scene.autoFit = false;
     stageProps.scene.offset.x += dx;
     stageProps.scene.offset.y += dy;
   }
@@ -1024,6 +1034,7 @@
   }
 
   function onSceneZoom(zoom: number) {
+    stageProps.scene.autoFit = false;
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], zoom, 'control');
   }
 
@@ -1163,7 +1174,7 @@
         saveCollapseState();
       }}
       onResize={() => {
-        if (stage) {
+        if (stage && stageProps.scene.autoFit) {
           stage.scene.fit();
         }
       }}
@@ -1327,7 +1338,7 @@
         saveCollapseState();
       }}
       onResize={() => {
-        if (stage) {
+        if (stage && stageProps.scene.autoFit) {
           stage.scene.fit();
         }
       }}

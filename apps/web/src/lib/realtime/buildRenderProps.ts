@@ -17,6 +17,7 @@ export interface LocalView {
     offset?: { x: number; y: number };
     zoom?: number;
     rotation?: number;
+    autoFit?: boolean;
   };
   /** In-progress map alignment drag (committed to the doc on gesture end). */
   mapTransform?: {
@@ -57,6 +58,7 @@ export const buildRenderProps = (snapshot: SceneSnapshot, view: LocalView, bucke
   if (view.viewport?.offset) props.scene.offset = view.viewport.offset;
   if (view.viewport?.zoom !== undefined) props.scene.zoom = view.viewport.zoom;
   if (view.viewport?.rotation !== undefined) props.scene.rotation = view.viewport.rotation;
+  if (view.viewport?.autoFit !== undefined) props.scene.autoFit = view.viewport.autoFit;
 
   if (view.mapTransform?.offset) props.map.offset = view.mapTransform.offset;
   if (view.mapTransform?.zoom !== undefined) props.map.zoom = view.mapTransform.zoom;
