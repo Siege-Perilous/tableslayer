@@ -20,6 +20,9 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
     trackChecklistItem('scale-map');
   } else if (e.ctrlKey) {
     e.preventDefault();
+    // Manual zoom opts out of auto-fit so layout changes (pane resize, toolbar
+    // expand) don't snap the viewport back to the fitted zoom.
+    stageProps.scene.autoFit = false;
     const newSceneZoom = Math.max(minZoom, Math.min(stageProps.scene.zoom - scrollDelta, maxZoom));
     queuePropertyUpdate(stageProps, ['scene', 'zoom'], newSceneZoom, 'control');
   }
