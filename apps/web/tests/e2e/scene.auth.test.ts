@@ -111,12 +111,10 @@ test.describe('Scene CRUD operations', () => {
     await expect(deleteMenuItem).toBeVisible({ timeout: 5000 });
     await deleteMenuItem.click({ force: true });
 
-    // Confirm deletion if confirmation dialog appears
+    // Deletion now requires confirmation via the ConfirmActionButton popover
     const confirmBtn = page.getByTestId('confirmActionButton');
-    if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmBtn.click({ force: true });
-      console.log('[scene test] confirmed deletion');
-    }
+    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+    await confirmBtn.click({ force: true });
 
     // Wait for deletion to complete
     await page.waitForLoadState('networkidle');

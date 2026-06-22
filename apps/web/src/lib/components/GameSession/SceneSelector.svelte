@@ -11,7 +11,18 @@
   import { devLog } from '$lib/utils/debug';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
   import { GridMode } from '@tableslayer/stage';
-  import { Button, ColorMode, FileInput, FormControl, Icon, IconButton, Input, Popover } from '@tableslayer/ui';
+  import {
+    Button,
+    ColorMode,
+    ConfirmActionButton,
+    FileInput,
+    FormControl,
+    Icon,
+    IconButton,
+    Input,
+    Popover,
+    Text
+  } from '@tableslayer/ui';
   import {
     IconCheck,
     IconChevronDown,
@@ -505,16 +516,20 @@
             >
               Change map image
             </button>
-            <button
-              class="scene__menuItem"
-              data-testid="sceneMenuDelete"
-              onclick={() => {
+            <ConfirmActionButton
+              actionButtonText="Confirm delete"
+              action={() => {
                 handleDeleteScene(scene.id);
                 contentProps.close();
               }}
             >
-              Delete scene
-            </button>
+              {#snippet trigger({ triggerProps })}
+                <button class="scene__menuItem" data-testid="sceneMenuDelete" {...triggerProps}>Delete scene</button>
+              {/snippet}
+              {#snippet actionMessage()}
+                <Text size="0.875rem" color="var(--fgDanger)">Delete this scene? This can not be undone.</Text>
+              {/snippet}
+            </ConfirmActionButton>
             <button
               class="scene__menuItem"
               data-testid="sceneMenuSetActive"
