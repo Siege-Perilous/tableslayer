@@ -42,6 +42,7 @@
   import { useUploadFileMutation } from '$lib/queries';
   import type { Snippet } from 'svelte';
   import { queuePropertyUpdate, extractLocationFromUrl, throttle, trackChecklistItem } from '$lib/utils';
+  import { setPreference } from '$lib/utils/gameSessionPreferences';
   import { handleMutation } from '$lib/factories';
 
   let {
@@ -197,6 +198,7 @@
       ]}
       onSelectedChange={(value) => {
         queuePropertyUpdate(stageProps, ['marker', 'snapToGrid'], value === 'true', 'control');
+        setPreference('markerSnapToGrid', value === 'true');
       }}
     />
   </div>

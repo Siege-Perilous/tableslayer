@@ -177,6 +177,8 @@
     props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizeGridUnits') || 2);
     props.annotations.lineWidth = snapAnnotationBrush(getPreference('annotationLineWidthGridUnits') || 0.5);
     props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
+    props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
+    props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
     return props;
   });
 
@@ -206,6 +208,8 @@
           props.fogOfWar.tool.size = clampFogBrush(getPreference('brushSizeGridUnits') || 2);
           props.annotations.lineWidth = snapAnnotationBrush(getPreference('annotationLineWidthGridUnits') || 0.5);
           props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
+          props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
+          props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
           stageProps = props;
           activeControl = 'none';
           selectedMarkerId = undefined;
@@ -256,6 +260,12 @@
                 lineWidth: prev.annotations.lineWidth,
                 smoothingEnabled: prev.annotations.smoothingEnabled
               },
+          marker: isSceneSwitch
+            ? { snapToGrid: getPreference('markerSnapToGrid') ?? true }
+            : { snapToGrid: prev.marker.snapToGrid },
+          light: isSceneSwitch
+            ? { snapToGrid: getPreference('lightSnapToGrid') ?? false }
+            : { snapToGrid: prev.light.snapToGrid },
           measurement: isSceneSwitch
             ? undefined
             : {

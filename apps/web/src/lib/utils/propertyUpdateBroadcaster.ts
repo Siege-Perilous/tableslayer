@@ -22,6 +22,8 @@ const LOCAL_ONLY_PREFIXES = [
   'annotations.activeLayer',
   'annotations.lineWidth',
   'annotations.smoothingEnabled',
+  'marker.snapToGrid', // per-user preference, stored in a cookie
+  'light.snapToGrid', // per-user preference, stored in a cookie
   'fogOfWar.tool', // brush size/mode/type are per-user tools
   'measurement', // measurement tool config is ephemeral
   'debug'
