@@ -5,7 +5,10 @@ import { z } from 'zod';
 
 const validationSchema = z.object({
   partyId: z.string(),
-  sceneData: insertSceneSchema
+  // Scene order uses fractional indexing in the session doc (see orderBetween), so a
+  // duplicated/inserted scene can carry a non-integer order. Relax the schema's int
+  // constraint on this one field; SQLite's integer affinity stores the real value fine.
+  sceneData: insertSceneSchema.extend({ order: z.number().optional() })
 });
 
 export const POST = apiFactory(
