@@ -159,6 +159,42 @@ function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', dir
   return currentOffset + direction;
 }
 
+type ArrowKey = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
+
+// Map a browser arrow key to the scene-local offset axis/direction, compensating
+// for scene rotation so arrows always pan relative to the browser viewport rather
+// than the rotated scene. Matches the rotated mouse-drag panning behavior.
+function getRotatedPanAxis(key: ArrowKey, rotation: number): { axis: 'x' | 'y'; direction: 1 | -1 } {
+  const normalized = (((Math.round(rotation / 90) * 90) % 360) + 360) % 360;
+  const byRotation: Record<number, Record<ArrowKey, { axis: 'x' | 'y'; direction: 1 | -1 }>> = {
+    0: {
+      ArrowRight: { axis: 'x', direction: 1 },
+      ArrowLeft: { axis: 'x', direction: -1 },
+      ArrowUp: { axis: 'y', direction: 1 },
+      ArrowDown: { axis: 'y', direction: -1 }
+    },
+    90: {
+      ArrowRight: { axis: 'y', direction: 1 },
+      ArrowLeft: { axis: 'y', direction: -1 },
+      ArrowUp: { axis: 'x', direction: -1 },
+      ArrowDown: { axis: 'x', direction: 1 }
+    },
+    180: {
+      ArrowRight: { axis: 'x', direction: -1 },
+      ArrowLeft: { axis: 'x', direction: 1 },
+      ArrowUp: { axis: 'y', direction: -1 },
+      ArrowDown: { axis: 'y', direction: 1 }
+    },
+    270: {
+      ArrowRight: { axis: 'y', direction: -1 },
+      ArrowLeft: { axis: 'y', direction: 1 },
+      ArrowUp: { axis: 'x', direction: 1 },
+      ArrowDown: { axis: 'x', direction: -1 }
+    }
+  };
+  return byRotation[normalized][key];
+}
+
 export function handleKeyCommands(
   event: KeyboardEvent,
   stageProps: StageProps,
@@ -365,47 +401,20 @@ export function handleKeyCommands(
       handleSelectActiveControl('none');
       return 'none';
 
-    // Precise map movement with Shift+Arrow keys
+    // Precise map movement with Shift+Arrow keys (rotation-aware so arrows
+    // always pan relative to the browser viewport, not the rotated scene)
     case 'ArrowLeft':
-      if (event.shiftKey) {
-        event.preventDefault();
-        const newX = calculateGridSnappedOffset(stageProps, 'x', -1);
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
-        // Also snap Y axis if misaligned
-        snapOtherAxisIfNeeded(stageProps, 'y');
-        trackChecklistItem('pan-map');
-      }
-      break;
-
     case 'ArrowRight':
-      if (event.shiftKey) {
-        event.preventDefault();
-        const newX = calculateGridSnappedOffset(stageProps, 'x', 1);
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], newX, 'control');
-        // Also snap Y axis if misaligned
-        snapOtherAxisIfNeeded(stageProps, 'y');
-        trackChecklistItem('pan-map');
-      }
-      break;
-
     case 'ArrowUp':
-      if (event.shiftKey) {
-        event.preventDefault();
-        const newY = calculateGridSnappedOffset(stageProps, 'y', 1); // Inverted: up is positive Y
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
-        // Also snap X axis if misaligned
-        snapOtherAxisIfNeeded(stageProps, 'x');
-        trackChecklistItem('pan-map');
-      }
-      break;
-
     case 'ArrowDown':
       if (event.shiftKey) {
         event.preventDefault();
-        const newY = calculateGridSnappedOffset(stageProps, 'y', -1); // Inverted: down is negative Y
-        queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], newY, 'control');
-        // Also snap X axis if misaligned
-        snapOtherAxisIfNeeded(stageProps, 'x');
+        const { axis, direction } = getRotatedPanAxis(event.key, stageProps.scene.rotation);
+        const otherAxis = axis === 'x' ? 'y' : 'x';
+        const newOffset = calculateGridSnappedOffset(stageProps, axis, direction);
+        queuePropertyUpdate(stageProps, ['map', 'offset', axis], newOffset, 'control');
+        // Also snap the other axis if misaligned
+        snapOtherAxisIfNeeded(stageProps, otherAxis);
         trackChecklistItem('pan-map');
       }
       break;

@@ -201,9 +201,11 @@
     renamingScenes[sceneId] = null;
   };
 
-  // Duplicate entirely in the doc: copies settings, markers, lights,
-  // annotations, and masks with fresh ids. The server persists the new rows.
-  const handleDuplicateScene = (sceneId: string) => {
+  // Duplicate copies settings, markers, lights, annotations, and masks with
+  // fresh ids. Like scene creation, the row is persisted server-side first so
+  // the navigation below can resolve it immediately (doc persistence is
+  // debounced); the doc write is then the live source of truth.
+  const handleDuplicateScene = async (sceneId: string) => {
     if (!client) return;
     const snapshot = client.scene(sceneId);
     if (!snapshot) return;
@@ -212,29 +214,37 @@
     const index = list.findIndex((scene) => scene.id === sceneId);
     const order = orderBetween(list[index]?.order ?? null, list[index + 1]?.order ?? null);
     const newId = uuidv4();
+    const settings = {
+      ...snapshot.settings,
+      id: newId,
+      name: `${snapshot.settings.name} (copy)`,
+      order,
+      mapThumbLocation: null
+    };
 
-    client.write.createScene(
-      {
-        ...snapshot.settings,
-        id: newId,
-        name: `${snapshot.settings.name} (copy)`,
-        order,
-        mapThumbLocation: null
+    await handleMutation({
+      mutation: () => createNewScene.mutateAsync({ partyId: party.id, sceneData: settings }),
+      formLoadingState: (loading) => (formIsLoading = loading),
+      onSuccess: () => {
+        client!.write.createScene(settings, {
+          markers: snapshot.markers.map((marker) => ({ ...marker, id: uuidv4(), sceneId: newId })),
+          lights: snapshot.lights.map((light) => ({ ...light, id: uuidv4(), sceneId: newId })),
+          annotations: snapshot.annotations.map((annotation) => ({
+            ...annotation,
+            id: uuidv4(),
+            sceneId: newId,
+            mask: client!.annotationMask(sceneId, annotation.id)
+          })),
+          fogMask: client!.fogMask(sceneId)
+        });
+        devLog('scene', `Duplicated scene ${sceneId} -> ${newId}`);
+        goto(`/${party.slug}/${gameSession.slug}/${newId}`);
       },
-      {
-        markers: snapshot.markers.map((marker) => ({ ...marker, id: uuidv4(), sceneId: newId })),
-        lights: snapshot.lights.map((light) => ({ ...light, id: uuidv4(), sceneId: newId })),
-        annotations: snapshot.annotations.map((annotation) => ({
-          ...annotation,
-          id: uuidv4(),
-          sceneId: newId,
-          mask: client.annotationMask(sceneId, annotation.id)
-        })),
-        fogMask: client.fogMask(sceneId)
+      toastMessages: {
+        success: { title: 'Scene duplicated' },
+        error: { title: 'Error duplicating scene' }
       }
-    );
-    devLog('scene', `Duplicated scene ${sceneId} -> ${newId}`);
-    goto(`/${party.slug}/${gameSession.slug}/${newId}`);
+    });
   };
 
   // Reorder = one fractional-order write on the dragged scene
