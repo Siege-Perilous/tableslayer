@@ -15,6 +15,8 @@ export interface GameSessionPreferences {
   brushSizeGridUnits?: number;
   annotationLineWidthGridUnits?: number;
   annotationSmoothing?: boolean;
+  markerSnapToGrid?: boolean;
+  lightSnapToGrid?: boolean;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
 }
@@ -47,6 +49,16 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
   annotationSmoothing: {
     cookieName: 'tableslayer:annotationSmoothing',
     defaultValue: true, // ON by default in editor
+    validate: (value): value is boolean => typeof value === 'boolean'
+  },
+  markerSnapToGrid: {
+    cookieName: 'tableslayer:markerSnapToGrid',
+    defaultValue: true, // ON by default
+    validate: (value): value is boolean => typeof value === 'boolean'
+  },
+  lightSnapToGrid: {
+    cookieName: 'tableslayer:lightSnapToGrid',
+    defaultValue: false, // OFF by default
     validate: (value): value is boolean => typeof value === 'boolean'
   },
   paneLayoutDesktop: {

@@ -26,6 +26,9 @@ export interface LocalView {
   };
   /** In-progress marker drags by id (committed to the doc on drop). */
   markerPositions?: Record<string, { x: number; y: number }>;
+  /** Snap-to-grid is a per-user preference, not a shared scene setting. */
+  marker?: { snapToGrid?: boolean };
+  light?: { snapToGrid?: boolean };
   /** Local tool configuration; brush size/line width are per-user preferences. */
   fogTool?: { type?: ToolType; size?: number; mode?: DrawMode };
   annotations?: {
@@ -69,6 +72,9 @@ export const buildRenderProps = (snapshot: SceneSnapshot, view: LocalView, bucke
       if (override) marker.position = override;
     }
   }
+
+  if (view.marker?.snapToGrid !== undefined) props.marker.snapToGrid = view.marker.snapToGrid;
+  if (view.light?.snapToGrid !== undefined) props.light.snapToGrid = view.light.snapToGrid;
 
   if (view.fogTool?.type !== undefined) props.fogOfWar.tool.type = view.fogTool.type;
   if (view.fogTool?.size !== undefined) props.fogOfWar.tool.size = view.fogTool.size;
