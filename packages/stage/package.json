@@ -32,18 +32,18 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",
-    "@sveltejs/kit": "^2.65.1",
+    "@sveltejs/kit": "^2.68.0",
     "@sveltejs/package": "^2.5.8",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
-    "@types/node": "^25",
-    "@types/three": "0.184.1",
-    "svelte": "5.56.3",
-    "svelte-check": "^4.6.0",
+    "@types/node": "^26",
+    "@types/three": "0.185.0",
+    "svelte": "5.56.4",
+    "svelte-check": "^4.7.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16"
+    "vite": "^8.1.0"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
@@ -51,13 +51,13 @@
     "@tableslayer/ui": "workspace:*",
     "@threlte/core": "8.5.16",
     "@threlte/extras": "9.21.0",
-    "@tiptap/core": "^3.26.1",
+    "@tiptap/core": "^3.27.1",
     "chroma-js": "^3.2.0",
     "gifuct-js": "^2.1.2",
     "lazy-brush": "^2.0.2",
     "postprocessing": "6.39.1",
-    "three": "0.184.0",
-    "uuid": "^14.0.0"
+    "three": "0.185.0",
+    "uuid": "^14.0.1"
   },
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
