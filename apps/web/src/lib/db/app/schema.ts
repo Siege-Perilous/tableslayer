@@ -663,3 +663,19 @@ export type SelectPromoRedemption = typeof promoRedemptionsTable.$inferSelect;
 export const insertPromoRedemptionSchema = createInsertSchema(promoRedemptionsTable);
 export const selectPromoRedemptionSchema = createSelectSchema(promoRedemptionsTable);
 export const updatePromoRedemptionSchema = createUpdateSchema(promoRedemptionsTable);
+
+// HEALTH
+// HEALTH
+// HEALTH
+
+// Single-row table (fixed id = 1) upserted by the /healthcheck/db write probe so a broken
+// write path is observable. See spec/embedded-replica-stream-recovery.md.
+export const healthTable = sqliteTable('_health', {
+  id: integer('id').primaryKey(),
+  checkedAt: integer('checked_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date())
+});
+
+export type InsertHealth = typeof healthTable.$inferInsert;
+export type SelectHealth = typeof healthTable.$inferSelect;
