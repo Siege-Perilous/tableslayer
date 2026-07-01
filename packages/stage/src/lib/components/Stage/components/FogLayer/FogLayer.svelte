@@ -1,8 +1,10 @@
 <script lang="ts">
   import * as THREE from 'three';
+  import { getContext } from 'svelte';
   import { T, useTask, type Props as ThrelteProps, useThrelte } from '@threlte/core';
   import type { Size } from '../../types';
   import type { FogLayerProps } from './types';
+  import { PERFORMANCE_TIER_SETTINGS, type PerformanceTier } from '../Stage/types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   import vertexShader from '../../shaders/default.vert?raw';
@@ -17,7 +19,14 @@
 
   const { renderStage } = useThrelte();
 
+  const stage = getContext<{ performanceTier: PerformanceTier }>('stage');
+
   const aspectRatio = $derived((mapSize?.width ?? 1) / (mapSize?.height ?? 1));
+
+  // Lower performance tiers cap the noise octaves
+  const clampedLevels = $derived(
+    Math.min(props.levels, PERFORMANCE_TIER_SETTINGS[stage.performanceTier ?? 'high'].fogOctaveCap)
+  );
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -31,7 +40,7 @@
       uFrequency: { value: props.frequency },
       uOffset: { value: props.offset },
       uAmplitude: { value: props.amplitude },
-      uLevels: { value: props.levels },
+      uLevels: { value: clampedLevels },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
       )
@@ -54,7 +63,7 @@
     material.uniforms.uFrequency.value = props.frequency;
     material.uniforms.uOffset.value = props.offset;
     material.uniforms.uAmplitude.value = props.amplitude;
-    material.uniforms.uLevels.value = props.levels;
+    material.uniforms.uLevels.value = clampedLevels;
 
     material.uniforms.uClippingPlanes.value = clippingPlaneStore.value.map(
       (p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant)

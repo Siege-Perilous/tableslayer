@@ -41,6 +41,52 @@ export enum StageMode {
   Player = 1
 }
 
+/**
+ * Rendering quality tier. The Stage only ever receives a concrete tier;
+ * automatic tier selection is the responsibility of the consumer.
+ */
+export type PerformanceTier = 'high' | 'medium' | 'low';
+
+/**
+ * Per-tier rendering settings applied by the individual layers.
+ * fogOctaveCap limits noise octaves per fog layer, fogLayerCount limits how
+ * many of the four fog-of-war noise layers render, weatherResolutionScale
+ * scales the particle render target, weatherParticleScale scales particle
+ * counts, and forcePostProcessingOff bypasses the effect composer entirely.
+ */
+export const PERFORMANCE_TIER_SETTINGS: Record<
+  PerformanceTier,
+  {
+    fogLayerCount: number;
+    fogOctaveCap: number;
+    weatherResolutionScale: number;
+    weatherParticleScale: number;
+    forcePostProcessingOff: boolean;
+  }
+> = {
+  high: {
+    fogLayerCount: 4,
+    fogOctaveCap: Number.MAX_SAFE_INTEGER,
+    weatherResolutionScale: 1,
+    weatherParticleScale: 1,
+    forcePostProcessingOff: false
+  },
+  medium: {
+    fogLayerCount: 2,
+    fogOctaveCap: 3,
+    weatherResolutionScale: 0.5,
+    weatherParticleScale: 0.5,
+    forcePostProcessingOff: false
+  },
+  low: {
+    fogLayerCount: 1,
+    fogOctaveCap: 2,
+    weatherResolutionScale: 0.5,
+    weatherParticleScale: 0.25,
+    forcePostProcessingOff: true
+  }
+};
+
 export interface DisplayProps {
   /**
    * The minimum padding around the grid relative to the edge of the scene.
@@ -93,6 +139,10 @@ export type StageProps = {
   map: MapLayerProps;
   marker: MarkerLayerProps;
   measurement: MeasurementLayerProps;
+  /**
+   * Rendering quality tier. Defaults to 'high' (full quality).
+   */
+  performanceTier?: PerformanceTier;
   postProcessing: PostProcessingProps;
   scene: SceneLayerProps;
   weather: WeatherLayerProps;

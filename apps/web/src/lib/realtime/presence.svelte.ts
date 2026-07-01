@@ -1,3 +1,4 @@
+import type { StagePerformanceSetting } from '$lib/stores/stagePerformance.svelte';
 import type { HoveredMarker } from '@tableslayer/stage';
 import type YPartyKitProvider from 'y-partykit/provider';
 
@@ -78,6 +79,7 @@ export class PresenceChannel {
   hoveredMarker = $state<HoveredMarker | null>(null);
   pinnedMarkers = $state<string[]>([]);
   temporaryLayers = $state<TemporaryLayer[]>([]);
+  stagePerformance = $state<StagePerformanceSetting | null>(null);
 
   #awareness: Awareness;
   #userId: string;
@@ -96,6 +98,7 @@ export class PresenceChannel {
     let hoveredMarker: HoveredMarker | null = null;
     let pinnedMarkers: string[] = [];
     const temporaryLayers: TemporaryLayer[] = [];
+    let stagePerformance: StagePerformanceSetting | null = null;
 
     this.#awareness.getStates().forEach((state, clientId) => {
       if (state.cursor && clientId !== this.#awareness.clientID) {
@@ -113,6 +116,9 @@ export class PresenceChannel {
       if (Array.isArray(state.temporaryLayers)) {
         temporaryLayers.push(...state.temporaryLayers);
       }
+      if (state.stagePerformance?.setting) {
+        stagePerformance = state.stagePerformance.setting as StagePerformanceSetting;
+      }
     });
 
     this.cursors = cursors;
@@ -120,6 +126,7 @@ export class PresenceChannel {
     this.hoveredMarker = hoveredMarker;
     this.pinnedMarkers = pinnedMarkers;
     this.temporaryLayers = temporaryLayers;
+    this.stagePerformance = stagePerformance;
   };
 
   #refresh() {
@@ -175,6 +182,15 @@ export class PresenceChannel {
 
   updatePinnedMarkers(markerIds: string[]) {
     this.#awareness.setLocalStateField('pinnedMarkers', markerIds);
+  }
+
+  /**
+   * Broadcasts the DM's stage performance setting so connected playfields
+   * mirror it. Playfields persist the received value locally, so it survives
+   * reloads even when the editor is offline.
+   */
+  updateStagePerformance(setting: StagePerformanceSetting) {
+    this.#awareness.setLocalStateField('stagePerformance', { setting, userId: this.#userId });
   }
 
   #ownTemporaryLayers(): TemporaryLayer[] {

@@ -7,7 +7,7 @@
   import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { InitialState } from '../DrawingLayer/types';
-  import { StageMode } from '../Stage/types';
+  import { PERFORMANCE_TIER_SETTINGS, StageMode, type PerformanceTier } from '../Stage/types';
   import fogVertexShader from '../../shaders/default.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
 
@@ -19,8 +19,18 @@
 
   const { props, mapSize, toolSizePixels }: Props = $props();
 
-  const stage = getContext<{ mode: StageMode }>('stage');
+  const stage = getContext<{ mode: StageMode; performanceTier: PerformanceTier }>('stage');
   let drawMaterial: DrawingMaterial;
+
+  const tierSettings = $derived(PERFORMANCE_TIER_SETTINGS[stage.performanceTier ?? 'high']);
+
+  // Lower tiers cap the noise octaves per fog layer
+  const clampedLevels = $derived({
+    x: Math.min(props.noise.levels.x, tierSettings.fogOctaveCap),
+    y: Math.min(props.noise.levels.y, tierSettings.fogOctaveCap),
+    z: Math.min(props.noise.levels.z, tierSettings.fogOctaveCap),
+    w: Math.min(props.noise.levels.w, tierSettings.fogOctaveCap)
+  });
 
   // Create derived props with tool.size (grid units) converted to texture pixels
   const drawingProps = $derived({
@@ -53,7 +63,8 @@
       uFrequency: { value: props.noise.frequency },
       uOffset: { value: props.noise.offset },
       uAmplitude: { value: props.noise.amplitude },
-      uLevels: { value: props.noise.levels },
+      uLevels: { value: clampedLevels },
+      uFogLayerCount: { value: tierSettings.fogLayerCount },
       uOpacity: { value: stage.mode === StageMode.DM ? props.opacity.dm : props.opacity.player },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
@@ -92,7 +103,8 @@
     fogMaterial.uniforms.uFrequency.value = props.noise.frequency;
     fogMaterial.uniforms.uPersistence.value = props.noise.persistence;
     fogMaterial.uniforms.uLacunarity.value = props.noise.lacunarity;
-    fogMaterial.uniforms.uLevels.value = props.noise.levels;
+    fogMaterial.uniforms.uLevels.value = clampedLevels;
+    fogMaterial.uniforms.uFogLayerCount.value = tierSettings.fogLayerCount;
     fogMaterial.uniforms.uOffset.value = props.noise.offset;
     fogMaterial.uniforms.uAmplitude.value = props.noise.amplitude;
 

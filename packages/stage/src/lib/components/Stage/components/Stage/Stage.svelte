@@ -101,13 +101,19 @@
 
   const renderedTooltips = new Map<string, { element: HTMLElement; bounds: DOMRect }>();
 
-  let stageContext = $state({ mode: props.mode, hoveredMarkerId, pinnedMarkerIds });
+  let stageContext = $state({
+    mode: props.mode,
+    hoveredMarkerId,
+    pinnedMarkerIds,
+    performanceTier: props.performanceTier ?? 'high'
+  });
   setContext('stage', stageContext);
 
   $effect(() => {
     stageContext.mode = props.mode;
     stageContext.hoveredMarkerId = hoveredMarkerId;
     stageContext.pinnedMarkerIds = pinnedMarkerIds;
+    stageContext.performanceTier = props.performanceTier ?? 'high';
   });
 
   setContext('callbacks', callbacks);

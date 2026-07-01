@@ -2,8 +2,10 @@
   import type { SelectParty, SelectScene } from '$lib/db/app/schema';
   import type { SessionDocClient } from '$lib/realtime';
   import type { Thumb } from '$lib/server';
+  import { stagePerformance, type StagePerformanceSetting } from '$lib/stores';
   import { trackChecklistItem } from '$lib/utils';
-  import { Button, Hr, Spacer, Text } from '@tableslayer/ui';
+  import { debugState, setDebugEnabled } from '@tableslayer/stage';
+  import { Button, FormControl, Hr, Link, RadioButton, Spacer, Text } from '@tableslayer/ui';
 
   let {
     party,
@@ -29,6 +31,13 @@
   };
 
   const canSetActiveScene = $derived(!activeSceneId || selectedScene.id !== activeSceneId);
+
+  const performanceOptions = [
+    { label: 'Auto', value: 'auto' },
+    { label: 'High', value: 'high' },
+    { label: 'Med', value: 'medium' },
+    { label: 'Low', value: 'low' }
+  ];
 </script>
 
 <div class="playControls">
@@ -55,6 +64,26 @@
   </Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">Displays your party's pause screen instead of a scene.</Text>
+  <Spacer />
+  <Hr />
+  <Spacer />
+  <FormControl label="Performance" name="stagePerformance">
+    {#snippet input({ inputProps })}
+      <RadioButton
+        {...inputProps}
+        selected={stagePerformance.setting}
+        options={performanceOptions}
+        onSelectedChange={(value) => stagePerformance.setSetting(value as StagePerformanceSetting)}
+      />
+    {/snippet}
+  </FormControl>
+  <Spacer size="0.5rem" />
+  <Text size="0.85rem" color="var(--fgMuted)">
+    Lowering this setting trades off visual fidelity for performance.
+    <Link as="span" type="button" onclick={() => setDebugEnabled(!debugState.enableMetrics)}>
+      {debugState.enableMetrics ? 'Hide FPS counter' : 'Show FPS counter'}
+    </Link>
+  </Text>
 </div>
 
 <style>

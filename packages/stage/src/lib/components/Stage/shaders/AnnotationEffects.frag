@@ -14,6 +14,10 @@ uniform float uRoughness;
 uniform int uEdgeMinMipMapLevel;
 uniform int uEdgeMaxMipMapLevel;
 
+// 0 = high, 1 = medium, 2 = low; lower tiers reduce noise octaves,
+// domain warp layers, and feathering mip samples
+uniform int uPerformanceTier;
+
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
 varying vec2 vUv;
@@ -64,17 +68,22 @@ float fbm(vec2 p, int octaves, float persistence, float lacunarity) {
 
 // Simplified fbm for performance
 float fbm3(vec2 p) {
-  return fbm(p, 3, 0.5, 2.0);
+  return fbm(p, uPerformanceTier == 2 ? 2 : 3, 0.5, 2.0);
 }
 
 float fbm5(vec2 p) {
-  return fbm(p, 5, 0.5, 2.0);
+  return fbm(p, uPerformanceTier == 0 ? 5 : (uPerformanceTier == 1 ? 4 : 3), 0.5, 2.0);
 }
 
-// Domain warping - creates organic, natural patterns (Inigo Quilez technique)
+// Domain warping - creates organic, natural patterns (Inigo Quilez technique).
+// The second warp layer is skipped on the low tier; this halves the dominant
+// per-pixel cost at the price of a less turbulent pattern.
 float domainWarp(vec2 p, float time) {
   vec2 q = vec2(fbm3(p + vec2(0.0, 0.0) + time * 0.1),
                 fbm3(p + vec2(5.2, 1.3) + time * 0.15));
+  if(uPerformanceTier == 2) {
+    return fbm3(p + 4.0 * q);
+  }
   vec2 r = vec2(fbm3(p + 4.0 * q + vec2(1.7, 9.2) + time * 0.2),
                 fbm3(p + 4.0 * q + vec2(8.3, 2.8) + time * 0.1));
   return fbm3(p + 4.0 * r);
@@ -116,6 +125,8 @@ float getVolumeMask(vec2 uv, vec2 texSize, float time, float edgeFreq, float edg
   float featheredMask = 0.0;
   float totalWeight = 0.0;
   int maxMip = int(7.0 + uSoftness * 5.0); // 7-12 mip levels
+  if(uPerformanceTier == 1) maxMip = min(maxMip, 9);
+  if(uPerformanceTier == 2) maxMip = min(maxMip, 7);
 
   for(int i = 0; i <= 12; i++) {
     if(i > maxMip) break;
@@ -1352,6 +1363,14 @@ void main() {
 
   float time = uTime * uSpeed;
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
+
+  // Pixels far from any drawn area end up with ~zero alpha, so skip the
+  // effect and shadow work entirely. Mip 8 averages a ~256 texel block
+  // (~512px reach with bilinear filtering), comfortably beyond the widest
+  // visible feather/shadow falloff; the epsilon errs toward not discarding.
+  if(textureLod(uMaskTexture, vUv, 8.0).a < 0.002) {
+    discard;
+  }
 
   // === OUTER SHADOW - makes effects feel inset (color burn style) ===
   // Sample mask at increasing mip levels to get expanded/blurred versions

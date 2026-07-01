@@ -151,6 +151,7 @@
       uRoughness: { value: effectProps.roughness },
       uEdgeMinMipMapLevel: { value: 0 },
       uEdgeMaxMipMapLevel: { value: 4 },
+      uPerformanceTier: { value: 0 },
       uClippingPlanes: { value: emptyClippingPlanes }
     },
     transparent: true,
