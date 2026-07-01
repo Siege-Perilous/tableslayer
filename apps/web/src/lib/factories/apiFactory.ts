@@ -1,4 +1,4 @@
-import { AppError } from '$lib/server/errors';
+import { AppError } from '$lib/errors';
 import * as Sentry from '@sentry/sveltekit';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
