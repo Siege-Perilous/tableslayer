@@ -125,6 +125,14 @@ void main() {
     }
   }
 
+  // Fully revealed pixels far from any fog edge produce zero alpha, so skip
+  // the noise and feathering work entirely. The widest mip level is an average
+  // of the whole surrounding neighborhood; if it is ~0 here, every narrower
+  // mip and the base mask are ~0 too, making all mask() terms below zero.
+  if (textureLod(uMaskTexture, vUv, float(uEdgeMaxMipMapLevel)).a < 0.004) {
+    discard;
+  }
+
   // Sample at multiple levels of detail to get a nice feathered edge
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 

@@ -28,6 +28,7 @@
   import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
+  import type { PostProcessingProps } from './types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import CursorLayer from '../CursorLayer/CursorLayer.svelte';
   import type { CursorData } from '../CursorLayer/types';
@@ -104,6 +105,15 @@
   const intersectionPoint = new THREE.Vector3();
 
   let composer = new EffectComposer(renderer);
+
+  // Effects with zero-strength settings contribute nothing visible, so treat
+  // them as disabled; this lets the render loop bypass the composer entirely
+  const getActiveEffects = (pp: PostProcessingProps) => ({
+    bloom: pp.bloom.enabled && pp.bloom.intensity > 0,
+    chromaticAberration: pp.chromaticAberration.enabled && pp.chromaticAberration.offset !== 0,
+    vignette: pp.vignette.enabled && pp.vignette.darkness > 0,
+    lut: pp.lut.enabled && pp.lut.url !== null
+  });
 
   onMount(() => {
     let before = autoRender.current;
@@ -205,8 +215,10 @@
         const renderPass = new RenderPass(scene, $camera);
         composer.addPass(renderPass);
 
+        const activeEffects = getActiveEffects(postProcessing);
+
         if (postProcessing.enabled) {
-          if (postProcessing.bloom.enabled) {
+          if (activeEffects.bloom) {
             const bloomEffect = new BloomEffect({
               intensity: postProcessing.bloom.intensity,
               mipmapBlur: postProcessing.bloom.mipmapBlur,
@@ -218,7 +230,7 @@
             effects.push(bloomEffect);
           }
 
-          if (postProcessing.chromaticAberration.enabled) {
+          if (activeEffects.chromaticAberration) {
             const chromaticAberrationEffect = new ChromaticAberrationEffect({
               offset: new THREE.Vector2(postProcessing.chromaticAberration.offset),
               radialModulation: true,
@@ -227,7 +239,7 @@
             effects.push(chromaticAberrationEffect);
           }
 
-          if (postProcessing.vignette.enabled) {
+          if (activeEffects.vignette) {
             const vignetteEffect = new VignetteEffect({
               offset: postProcessing.vignette.offset,
               darkness: postProcessing.vignette.darkness,
@@ -236,7 +248,7 @@
             effects.push(vignetteEffect);
           }
 
-          if (postProcessing.lut.enabled && postProcessing.lut.url !== null) {
+          if (activeEffects.lut) {
             const lutEffect = new LUT3DEffect(new THREE.Data3DTexture(), {
               blendFunction: BlendFunction.SET
             });
@@ -285,7 +297,8 @@
   const hasActiveEffects = $derived(() => {
     const pp = props.postProcessing;
     if (!pp.enabled) return false;
-    return pp.bloom.enabled || pp.chromaticAberration.enabled || pp.vignette.enabled || pp.lut.enabled;
+    const activeEffects = getActiveEffects(pp);
+    return activeEffects.bloom || activeEffects.chromaticAberration || activeEffects.vignette || activeEffects.lut;
   });
 
   // Custom render task
