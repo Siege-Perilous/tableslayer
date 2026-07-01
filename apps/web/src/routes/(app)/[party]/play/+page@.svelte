@@ -7,6 +7,7 @@
   import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
   import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
+  import { stagePerformance } from '$lib/stores';
   import {
     MapLayerType,
     PerformanceDebugger,
@@ -113,10 +114,34 @@
       data.bucketUrl
     );
     props.annotations.layers = [...tools.tempAnnotationLayers, ...props.annotations.layers];
+    props.performanceTier = stagePerformance.effectiveTier;
+    props.display.maxPixelRatio = stagePerformance.maxPixelRatio;
     // Structural sharing: unchanged subtrees keep their identity so stage-internal
     // effects (measurement reset, material/texture updates) don't re-fire
     renderedProps = untrack(() => reuseUnchanged(renderedProps, props));
     renderedSceneId = snapshot.id;
+  });
+
+  // Apply performance tier changes (watchdog step-downs or remote selection)
+  // between prop rebuilds; rebuilds pick the tier up at build time
+  $effect(() => {
+    const tier = stagePerformance.effectiveTier;
+    const maxPixelRatio = stagePerformance.maxPixelRatio;
+    untrack(() => {
+      if (renderedProps.performanceTier !== tier) {
+        renderedProps.performanceTier = tier;
+        renderedProps.display = { ...renderedProps.display, maxPixelRatio };
+      }
+    });
+  });
+
+  // Mirror the performance setting the DM broadcasts from the editor; persist
+  // it locally so it survives reloads while the editor is offline
+  $effect(() => {
+    const remote = session.presence?.stagePerformance;
+    if (remote && remote !== stagePerformance.setting) {
+      stagePerformance.setSetting(remote);
+    }
   });
 
   const sceneIsChanging = $derived(session.activeSceneId !== null && session.activeSceneId !== renderedSceneId);
@@ -245,6 +270,8 @@
   let isTouchDevice = $state(false);
 
   onMount(() => {
+    stagePerformance.init();
+
     const gestureDetector = stageElement
       ? createUnifiedGestureDetector((position) => {
           menuVisible = true;

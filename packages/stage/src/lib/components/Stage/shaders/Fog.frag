@@ -26,6 +26,9 @@ uniform float uEdgeSpeed;
 uniform sampler2D uMaskTexture;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
+// Number of noise layers to render (1-4); lower performance tiers reduce this
+uniform int uFogLayerCount;
+
 varying vec2 vUv;
 varying vec3 vWorldPosition;
 
@@ -136,20 +139,35 @@ void main() {
   // Sample at multiple levels of detail to get a nice feathered edge
   vec2 texSize = vec2(textureSize(uMaskTexture, 0));
 
-  float mask1 = mask(vUv, texSize, uEdgeAmplitude.x, uEdgeFrequency.x);
-  float mask2 = mask(vUv, texSize, uEdgeAmplitude.y, uEdgeFrequency.y);
-  float mask3 = mask(vUv, texSize, uEdgeAmplitude.z, uEdgeFrequency.z);
-  float mask4 = mask(vUv, texSize, uEdgeAmplitude.w, uEdgeFrequency.w);
+  // Layers 2-4 are skipped on lower performance tiers; the branches are on a
+  // uniform, so the skipped noise work is genuinely not executed
+  vec4 finalFog = vec4(
+    uFogColor1 * fog(vUv, texSize, uAmplitude.x, uFrequency.x, uPersistence.x, uLacunarity.x, uOffset.x, uLevels.x, uFogSpeed.x),
+    mask(vUv, texSize, uEdgeAmplitude.x, uEdgeFrequency.x)
+  );
 
-  vec3 fog1 = uFogColor1 * fog(vUv, texSize, uAmplitude.x, uFrequency.x, uPersistence.x, uLacunarity.x, uOffset.x, uLevels.x, uFogSpeed.x);
-  vec3 fog2 = uFogColor2 * fog(vUv, texSize, uAmplitude.y, uFrequency.y, uPersistence.y, uLacunarity.y, uOffset.y, uLevels.y, uFogSpeed.y);
-  vec3 fog3 = uFogColor3 * fog(vUv, texSize, uAmplitude.z, uFrequency.z, uPersistence.z, uLacunarity.z, uOffset.z, uLevels.z, uFogSpeed.z);
-  vec3 fog4 = uFogColor4 * fog(vUv, texSize, uAmplitude.w, uFrequency.w, uPersistence.w, uLacunarity.w, uOffset.w, uLevels.w, uFogSpeed.w);
+  if(uFogLayerCount >= 2) {
+    finalFog += vec4(
+      uFogColor2 * fog(vUv, texSize, uAmplitude.y, uFrequency.y, uPersistence.y, uLacunarity.y, uOffset.y, uLevels.y, uFogSpeed.y),
+      mask(vUv, texSize, uEdgeAmplitude.y, uEdgeFrequency.y)
+    );
+  }
 
-  vec4 finalFog = clamp(vec4(fog1, mask1) +
-    vec4(fog2, mask2) +
-    vec4(fog3, mask3) +
-    vec4(fog4, mask4), 0.0, 1.0);
+  if(uFogLayerCount >= 3) {
+    finalFog += vec4(
+      uFogColor3 * fog(vUv, texSize, uAmplitude.z, uFrequency.z, uPersistence.z, uLacunarity.z, uOffset.z, uLevels.z, uFogSpeed.z),
+      mask(vUv, texSize, uEdgeAmplitude.z, uEdgeFrequency.z)
+    );
+  }
+
+  if(uFogLayerCount >= 4) {
+    finalFog += vec4(
+      uFogColor4 * fog(vUv, texSize, uAmplitude.w, uFrequency.w, uPersistence.w, uLacunarity.w, uOffset.w, uLevels.w, uFogSpeed.w),
+      mask(vUv, texSize, uEdgeAmplitude.w, uEdgeFrequency.w)
+    );
+  }
+
+  finalFog = clamp(finalFog, 0.0, 1.0);
 
   gl_FragColor = vec4(uBaseColor + finalFog.rgb, finalFog.a * uOpacity);
 }

@@ -4,7 +4,7 @@
   import { T, useTask, useThrelte, type Props as ThrelteProps } from '@threlte/core';
   import { WeatherType, type WeatherLayerPreset } from './types';
   import ParticleSystem from '../ParticleSystem/ParticleSystem.svelte';
-  import type { StageProps } from '../Stage/types';
+  import { PERFORMANCE_TIER_SETTINGS, type StageProps } from '../Stage/types';
   import { mapClippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
 
   import SnowPreset from './presets/SnowPreset';
@@ -24,6 +24,11 @@
   const { props, size, ...meshProps }: Props = $props();
 
   const { renderer, renderStage } = useThrelte();
+
+  // Lower tiers render particles at reduced resolution and count; the render
+  // target is stretched over the full-size quad, which upscales softly
+  const tierSettings = $derived(PERFORMANCE_TIER_SETTINGS[props.performanceTier ?? 'high']);
+
   let weatherType: WeatherType | null = $state(null);
   let weatherPreset: WeatherLayerPreset = $state(RainPreset);
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
@@ -54,7 +59,10 @@
 
   onMount(() => {
     if (particleCamera && particleScene) {
-      renderTarget.setSize(size.x, size.y);
+      renderTarget.setSize(
+        Math.round(size.x * tierSettings.weatherResolutionScale),
+        Math.round(size.y * tierSettings.weatherResolutionScale)
+      );
     }
   });
 
@@ -121,12 +129,15 @@
     }
   });
 
-  // Update the camera and render target when size changes
+  // Update the camera and render target when size or tier changes
   $effect(() => {
     particleCamera.aspect = size.x / size.y;
     particleCamera.fov = weatherPreset.fov;
     particleCamera.updateProjectionMatrix();
-    renderTarget.setSize(size.x, size.y);
+    renderTarget.setSize(
+      Math.round(size.x * tierSettings.weatherResolutionScale),
+      Math.round(size.y * tierSettings.weatherResolutionScale)
+    );
   });
 
   // Render particle scene directly to render target (bypasses unnecessary EffectComposer overhead)
@@ -149,12 +160,16 @@
 <!-- Remove the stencil mesh and keep only the particle scenes -->
 <T.Scene is={particleScene} visible={false}>
   <T.PerspectiveCamera is={particleCamera} manual />
-  <ParticleSystem props={weatherPreset.particles} opacity={weatherPreset.opacity} intensity={weatherPreset.intensity} />
+  <ParticleSystem
+    props={weatherPreset.particles}
+    opacity={weatherPreset.opacity}
+    intensity={weatherPreset.intensity * tierSettings.weatherParticleScale}
+  />
   {#if weatherPreset.secondaryParticles}
     <ParticleSystem
       props={weatherPreset.secondaryParticles}
       opacity={weatherPreset.secondaryParticles.opacity}
-      intensity={weatherPreset.intensity}
+      intensity={weatherPreset.intensity * tierSettings.weatherParticleScale}
     />
   {/if}
 </T.Scene>

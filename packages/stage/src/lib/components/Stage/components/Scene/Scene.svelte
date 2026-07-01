@@ -15,7 +15,7 @@
     LUT3DEffect
   } from 'postprocessing';
   import { getLUT } from './luts';
-  import { type Callbacks, type StageProps } from '../Stage/types';
+  import { PERFORMANCE_TIER_SETTINGS, type Callbacks, type StageProps } from '../Stage/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import {
     clippingPlaneStore,
@@ -120,10 +120,6 @@
     autoRender.set(false);
     renderer.autoClear = false;
     renderer.setClearColor(0, 0);
-    // Cap pixel ratio for performance on weak GPUs (e.g., Mac Mini)
-    const maxDpr = props.display.maxPixelRatio ?? 2;
-    const dpr = Math.min(window.devicePixelRatio, maxDpr);
-    renderer.setPixelRatio(dpr);
     renderer.localClippingEnabled = true;
 
     // Add mouse tracking if enabled
@@ -169,6 +165,17 @@
 
   onDestroy(() => {
     composer.dispose();
+  });
+
+  // Cap pixel ratio for performance on weak GPUs (e.g., Mac Mini).
+  // Reactive so performance tier changes apply without a reload.
+  $effect(() => {
+    const maxDpr = props.display.maxPixelRatio ?? 2;
+    const dpr = Math.min(window.devicePixelRatio, maxDpr);
+    if (renderer.getPixelRatio() !== dpr) {
+      renderer.setPixelRatio(dpr);
+      needsResize = true;
+    }
   });
 
   // Setup camera and renderer in effect
@@ -295,6 +302,7 @@
 
   // Check if any post-processing effects are active
   const hasActiveEffects = $derived(() => {
+    if (PERFORMANCE_TIER_SETTINGS[props.performanceTier ?? 'high'].forcePostProcessingOff) return false;
     const pp = props.postProcessing;
     if (!pp.enabled) return false;
     const activeEffects = getActiveEffects(pp);

@@ -19,6 +19,8 @@ export interface GameSessionPreferences {
   lightSnapToGrid?: boolean;
   paneLayoutDesktop?: PaneConfig[];
   paneLayoutMobile?: PaneConfig[];
+  stagePerformance?: 'auto' | 'high' | 'medium' | 'low';
+  stagePerformanceResolved?: 'high' | 'medium' | 'low';
 }
 
 export interface PreferenceConfig<T> {
@@ -98,6 +100,17 @@ export const PREFERENCE_CONFIGS: Record<keyof GameSessionPreferences, Preference
           (pane as PaneConfig).size >= 0 &&
           ((pane as PaneConfig).isCollapsed === undefined || typeof (pane as PaneConfig).isCollapsed === 'boolean')
       )
+  },
+  stagePerformance: {
+    cookieName: 'tableslayer:stagePerformance',
+    defaultValue: 'auto',
+    validate: (value): value is 'auto' | 'high' | 'medium' | 'low' =>
+      value === 'auto' || value === 'high' || value === 'medium' || value === 'low'
+  },
+  stagePerformanceResolved: {
+    cookieName: 'tableslayer:stagePerformanceResolved',
+    defaultValue: 'high',
+    validate: (value): value is 'high' | 'medium' | 'low' => value === 'high' || value === 'medium' || value === 'low'
   }
 };
 

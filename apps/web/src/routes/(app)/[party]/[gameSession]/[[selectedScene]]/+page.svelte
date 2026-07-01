@@ -30,6 +30,7 @@
     unbindPropertyUpdates
   } from '$lib/utils';
   import { getPreference, setPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
+  import { stagePerformance } from '$lib/stores';
   import { getLatestMeasurement } from '$lib/utils/measurements';
   import { throttle } from '$lib/utils/throttle';
   import {
@@ -179,6 +180,8 @@
     props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
     props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
     props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
+    props.performanceTier = stagePerformance.effectiveTier;
+    props.display.maxPixelRatio = stagePerformance.maxPixelRatio;
     return props;
   });
 
@@ -210,6 +213,8 @@
           props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
           props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
           props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
+          props.performanceTier = stagePerformance.effectiveTier;
+          props.display.maxPixelRatio = stagePerformance.maxPixelRatio;
           stageProps = props;
           activeControl = 'none';
           selectedMarkerId = undefined;
@@ -276,6 +281,8 @@
         },
         data.bucketUrl
       );
+      next.performanceTier = stagePerformance.effectiveTier;
+      next.display.maxPixelRatio = stagePerformance.maxPixelRatio;
       // Structural sharing: unchanged subtrees keep their identity so stage-internal
       // effects (measurement reset, material/texture updates) don't re-fire
       stageProps = reuseUnchanged(prev, next);
@@ -289,6 +296,25 @@
         sceneMasksApplied = false;
       }
     });
+  });
+
+  // Apply performance tier changes (watchdog step-downs or manual selection)
+  // between prop rebuilds; rebuilds pick the tier up at build time
+  $effect(() => {
+    const tier = stagePerformance.effectiveTier;
+    const maxPixelRatio = stagePerformance.maxPixelRatio;
+    untrack(() => {
+      if (stageProps.performanceTier !== tier) {
+        stageProps.performanceTier = tier;
+        stageProps.display = { ...stageProps.display, maxPixelRatio };
+      }
+    });
+  });
+
+  // Broadcast the performance setting so connected playfields mirror it
+  $effect(() => {
+    const setting = stagePerformance.setting;
+    session.presence?.updateStagePerformance(setting);
   });
 
   // Apply doc masks when the displayed scene changes (and once the stage exists)
@@ -1135,6 +1161,8 @@
   let handleEffectChange: ((effect: AnnotationEffect) => void) | undefined = $state();
 
   onMount(() => {
+    stagePerformance.init();
+
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
       stageElement.addEventListener('mouseleave', () => {
