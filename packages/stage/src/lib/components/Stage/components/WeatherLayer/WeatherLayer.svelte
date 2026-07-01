@@ -132,6 +132,7 @@
   // Render particle scene directly to render target (bypasses unnecessary EffectComposer overhead)
   useTask(
     () => {
+      if (props.weather.type === WeatherType.None) return;
       if (!particleScene || !particleCamera || !size) return;
 
       particleScene.visible = true;
@@ -140,7 +141,6 @@
       renderer.render(particleScene, particleCamera);
       renderer.setRenderTarget(null);
       particleScene.visible = false;
-      quadMaterial.needsUpdate = true;
     },
     { stage: renderStage }
   );

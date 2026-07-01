@@ -15,12 +15,16 @@
    * This fixes Chrome/Mac performance issues by:
    * - Requesting high-performance GPU mode (critical for macOS)
    * - Disabling unnecessary features like stencil buffer
+   *
+   * MSAA (antialias) is off: the scene is entirely textured quads whose edges
+   * are anti-aliased in their textures/shaders, and the post-processing path
+   * renders through non-MSAA targets anyway, so MSAA only costs bandwidth.
    */
   const createRenderer = (canvas: HTMLCanvasElement) => {
     return new THREE.WebGLRenderer({
       canvas,
       powerPreference: 'high-performance',
-      antialias: true,
+      antialias: false,
       alpha: false,
       stencil: false,
       depth: true
