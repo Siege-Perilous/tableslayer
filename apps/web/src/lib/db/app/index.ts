@@ -3,6 +3,7 @@ import { type Client, createClient } from '@libsql/client';
 import { config } from 'dotenv';
 import { drizzle } from 'drizzle-orm/libsql';
 import fs from 'fs';
+import { makeResilientClient } from './resilientClient';
 
 config({ path: '.env' });
 
@@ -103,4 +104,4 @@ await initializeDatabase();
 // Create a simple endpoint to check the database mode
 export const getDatabaseMode = () => databaseMode;
 
-export const db = drizzle(client!);
+export const db = drizzle(makeResilientClient(client!));
