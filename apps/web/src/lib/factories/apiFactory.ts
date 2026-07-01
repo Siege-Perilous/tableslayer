@@ -1,3 +1,5 @@
+import { AppError } from '$lib/server/errors';
+import * as Sentry from '@sentry/sveltekit';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
 
@@ -56,8 +58,9 @@ export function apiFactory<BodyType>(
         );
       }
 
-      // This covers custom errors set in $lib/server/errors
-      if (err instanceof Error) {
+      // Expected, user-facing errors: AppError subclasses and the plain `new Error('message')`
+      // idiom used throughout handlers. These are returned as 400s and NOT reported to Sentry.
+      if (err instanceof AppError || (err instanceof Error && err.constructor === Error)) {
         return json(
           {
             success: false,
@@ -68,7 +71,9 @@ export function apiFactory<BodyType>(
         );
       }
 
-      // Handle unexpected errors
+      // Anything else is unexpected — a typed Error subclass (e.g. DB/driver errors like
+      // DrizzleQueryError, or a code bug like TypeError) or a non-Error throw. Surface it to Sentry.
+      Sentry.captureException(err);
       return json(
         {
           success: false,
