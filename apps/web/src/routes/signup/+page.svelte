@@ -62,7 +62,7 @@
   <Spacer />
   {#if isGoogleOAuthEnabled && data.envName !== 'preview'}
     <div>
-      <Button href="/login/google" data-sveltekit-preload-data="tap">
+      <Button href="/login/google" data-sveltekit-reload>
         {#snippet start()}
           <img src="/google.svg" alt="Google logo" width="16" height="16" />
         {/snippet}
