@@ -1,4 +1,9 @@
-export class SlugConflictError extends Error {
+import { AppError } from '$lib/errors';
+
+// AppError is re-exported so existing `$lib/server/errors` / `$lib/server` imports keep working.
+export { AppError };
+
+export class SlugConflictError extends AppError {
   name = 'SlugConflictError';
 
   constructor(message: string) {
@@ -7,7 +12,7 @@ export class SlugConflictError extends Error {
   }
 }
 
-export class UserAlreadyInvitedError extends Error {
+export class UserAlreadyInvitedError extends AppError {
   name = 'UserAlreadyInvitedError';
 
   constructor(message: string) {
@@ -16,7 +21,7 @@ export class UserAlreadyInvitedError extends Error {
   }
 }
 
-export class UserAlreadyInPartyError extends Error {
+export class UserAlreadyInPartyError extends AppError {
   name = 'UserAlreadyInPartyError';
 
   constructor(message: string) {
@@ -25,7 +30,7 @@ export class UserAlreadyInPartyError extends Error {
   }
 }
 
-export class UserIsLastAdminInParty extends Error {
+export class UserIsLastAdminInParty extends AppError {
   name = 'UserIsLastAdminInParty';
 
   constructor(message: string) {
@@ -34,7 +39,7 @@ export class UserIsLastAdminInParty extends Error {
   }
 }
 
-export class EmailAlreadyInUseError extends Error {
+export class EmailAlreadyInUseError extends AppError {
   name = 'EmailAlreadyInUseError';
 
   constructor(message: string) {
