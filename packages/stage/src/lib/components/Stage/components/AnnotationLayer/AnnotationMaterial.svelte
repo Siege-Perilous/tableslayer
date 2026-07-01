@@ -1,13 +1,13 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
-  import { onDestroy } from 'svelte';
+  import { getContext, onDestroy } from 'svelte';
   import chroma from 'chroma-js';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayerData, AnnotationEffect } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { DrawMode, ToolType, InitialState } from '../DrawingLayer/types';
-  import type { DisplayProps } from '../Stage/types';
+  import type { DisplayProps, PerformanceTier } from '../Stage/types';
 
   import annotationEffectsFragmentShader from '../../shaders/AnnotationEffects.frag?raw';
   import annotationVertexShader from '../../shaders/default.vert?raw';
@@ -25,6 +25,11 @@
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   let drawMaterial: DrawingMaterial;
+
+  const stage = getContext<{ performanceTier: PerformanceTier }>('stage');
+
+  // Shader tier index: 0 = high, 1 = medium, 2 = low
+  const shaderTier = $derived({ high: 0, medium: 1, low: 2 }[stage.performanceTier ?? 'high']);
 
   const hexToRGB = (hex: string): THREE.Vector3 => {
     const [r, g, b] = chroma(hex).gl();
@@ -63,6 +68,7 @@
       uRoughness: { value: getEffectRoughness() },
       uEdgeMinMipMapLevel: { value: 0 },
       uEdgeMaxMipMapLevel: { value: 4 },
+      uPerformanceTier: { value: shaderTier },
       uClippingPlanes: new THREE.Uniform(
         clippingPlaneStore.value.map((p) => new THREE.Vector4(p.normal.x, p.normal.y, p.normal.z, p.constant))
       )
@@ -82,6 +88,7 @@
     material.uniforms.uSoftness.value = getEffectSoftness();
     material.uniforms.uBorder.value = getEffectBorder();
     material.uniforms.uRoughness.value = getEffectRoughness();
+    material.uniforms.uPerformanceTier.value = shaderTier;
     // Update clipping planes in place to avoid allocating new Vector4 objects
     const planes = clippingPlaneStore.value;
     for (let i = 0; i < planes.length; i++) {
