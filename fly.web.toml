@@ -40,6 +40,18 @@ regions = ["ewr", "ams"]
     protocol = "http"
     tls_skip_verify = false
 
+  # Write-aware DB probe. Longer timeout/grace than the liveness check above so an in-place
+  # libsql reconnect() can complete without falsely failing (which, with min_machines_running = 2,
+  # could otherwise restart the whole fleet). See spec/embedded-replica-stream-recovery.md.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/healthcheck/db"
+    protocol = "http"
+    tls_skip_verify = false
+
 [[mounts]]
   source = "turso_data"
   destination = "/app/data"
