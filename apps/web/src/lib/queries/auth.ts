@@ -29,7 +29,11 @@ export const useAuthResetPasswordMutation = () => {
   return mutationFactory<{ email: string; password: string; confirmPassword: string; code: string }>({
     mutationKey: ['authResetPassword'],
     endpoint: '/api/auth/resetPassword',
-    method: 'POST'
+    method: 'POST',
+    // Skip the default invalidateAll. It re-runs the [code] page load after the
+    // code is consumed, redirecting to /reset-password/invalid before the page
+    // can navigate away. The page invalidates on goto instead.
+    onSuccess: () => {}
   });
 };
 
