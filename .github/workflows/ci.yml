@@ -310,8 +310,7 @@ jobs:
           TURSO_APP_DB_URL=${{ needs.create_database.outputs.turso_db_url }}
           TURSO_API_TOKEN=${{ secrets.TURSO_API_TOKEN }}
           TURSO_APP_DB_AUTH_TOKEN=${{ secrets.TURSO_APP_DB_AUTH_TOKEN }}
-          RESEND_TOKEN=${{ secrets.RESEND_TOKEN }}
-          RESEND_AUDIENCE_ID=${{ secrets.RESEND_AUDIENCE_ID }}
+          CLOUDFLARE_EMAIL_API_KEY=${{ secrets.CLOUDFLARE_EMAIL_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCESS_KEY=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
           CLOUDFLARE_R2_SECRET_KEY=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}

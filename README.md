@@ -95,7 +95,7 @@ This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://v
   - [Cloudflare Image Transformations](https://developers.cloudflare.com/images/transform-images/transform-via-url/) is used to resize images.
 - [Party Kit](https://www.partykit.io/) hosted on Cloudflare workers handle realtime web socket updates.
   - [Yjs](https://yjs.dev/) provides conflict resolution and typing for the Party Kit Layer
-- [Resend](https://resend.com) is used for email management.
+- [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) is used for transactional email. Email is optional — it is enabled when `CLOUDFLARE_EMAIL_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` are set and the sending domain is onboarded to Email Sending.
 - [Turso](https://turso.com) is used for SQLite db hosting.
   - [Drizzle](https://orm.drizzle.team) provides the ORM
 - [Stripe](https://stripe.com) provides billing and subscription management

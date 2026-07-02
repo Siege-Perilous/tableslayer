@@ -25,7 +25,8 @@ export const isGoogleOAuthEnabled = (): boolean => {
 };
 
 export const isEmailEnabled = (): boolean => {
-  const resendToken = process.env.RESEND_TOKEN;
+  const cloudflareEmailApiKey = process.env.CLOUDFLARE_EMAIL_API_KEY;
+  const cloudflareAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
 
-  return !!resendToken;
+  return !!(cloudflareEmailApiKey && cloudflareAccountId);
 };

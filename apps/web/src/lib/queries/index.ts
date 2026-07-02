@@ -1,7 +1,6 @@
 export * from './apiKeys';
 export * from './auth';
 export * from './checklist';
-export * from './email';
 export * from './file';
 export * from './gameSessions';
 export * from './parties';

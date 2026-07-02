@@ -1,17 +1,4 @@
 import { dev } from '$app/environment';
-import { Resend } from 'resend';
-
-let resend: Resend | null = null;
-
-const getResendClient = () => {
-  if (!process.env.RESEND_TOKEN) {
-    throw new Error('RESEND_TOKEN is not set');
-  }
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_TOKEN);
-  }
-  return resend;
-};
 
 interface EmailOptions {
   to: string;
@@ -21,8 +8,8 @@ interface EmailOptions {
 }
 
 export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, subject, html }: EmailOptions) => {
-  if (!process.env.RESEND_TOKEN) {
-    console.error('RESEND_TOKEN is not set');
+  if (!process.env.CLOUDFLARE_EMAIL_API_KEY || !process.env.CLOUDFLARE_ACCOUNT_ID) {
+    console.error('CLOUDFLARE_EMAIL_API_KEY or CLOUDFLARE_ACCOUNT_ID is not set');
     return;
   }
   if (process.env.ENV_NAME === 'preview') {
@@ -31,31 +18,27 @@ export const sendSingleEmail = async ({ from = 'no-reply@tableslayer.com', to, s
   }
   const recipient = dev ? process.env.DEV_EMAIL! : to;
   try {
-    const client = getResendClient();
-    await client.emails.send({
-      from,
-      to: recipient,
-      subject,
-      html
-    });
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/email/sending/send`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_EMAIL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: recipient,
+          from: { address: from, name: 'Table Slayer' },
+          subject,
+          html,
+          text: html
+        })
+      }
+    );
+    if (!response.ok) {
+      console.error('Error sending email:', await response.text());
+    }
   } catch (e) {
     console.error('Error sending email:', e);
-  }
-};
-
-export const addEmailtoAudience = async (email: string) => {
-  if (!process.env.RESEND_TOKEN) {
-    console.error('RESEND_TOKEN is not set');
-    return;
-  }
-  try {
-    const client = getResendClient();
-    await client.contacts.create({
-      email,
-      audienceId: process.env.RESEND_AUDIENCE_ID!,
-      unsubscribed: false
-    });
-  } catch (e) {
-    console.error('Error adding email to audience:', e);
   }
 };
