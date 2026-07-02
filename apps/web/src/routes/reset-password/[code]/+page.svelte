@@ -29,7 +29,7 @@
         resetPasswordError = error;
       },
       onSuccess: () => {
-        goto('/profile');
+        goto('/profile', { invalidateAll: true });
       },
       toastMessages: {
         success: { title: 'Password reset' },

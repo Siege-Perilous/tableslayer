@@ -56,7 +56,6 @@
     "mode-watcher": "^1.1.0",
     "paneforge": "^1.0.2",
     "partykit": "^0.0.115",
-    "resend": "^6.16.0",
     "slugify": "^1.6.9",
     "stripe": "^22.3.0",
     "uuid": "^14.0.1",
