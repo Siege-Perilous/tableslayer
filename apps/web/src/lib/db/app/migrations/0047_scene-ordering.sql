@@ -1,0 +1,1 @@
+DROP INDEX `unique_session_scene_order`;

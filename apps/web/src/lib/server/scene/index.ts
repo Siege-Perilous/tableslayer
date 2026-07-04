@@ -1,8 +1,8 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
-import { and, asc, desc, eq, getTableColumns, gt, gte, lt, lte, sql } from 'drizzle-orm';
+import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { copySceneFile, getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
+import { getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
 import { getPartyFromGameSessionId } from '../party';
 
 // Get all scene columns except fogOfWarMask for list queries (avoids transferring large blob data)
@@ -16,7 +16,7 @@ export const getSceneList = async (gameSessionId: string): Promise<SceneListItem
     .select({ id: sceneTable.id, name: sceneTable.name })
     .from(sceneTable)
     .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order))
+    .orderBy(asc(sceneTable.order), asc(sceneTable.id))
     .all();
   return scenes;
 };
@@ -31,84 +31,6 @@ export const isSceneInParty = async (sceneId: string, partyId: string): Promise<
     .get();
 
   return result?.partyId === partyId;
-};
-
-export const reorderScenes = async (gameSessionId: string, sceneId: string, newPosition: number): Promise<void> => {
-  try {
-    // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
-    await db
-      .update(sceneTable)
-      .set({ order: sql`${sceneTable.order} + 10000` })
-      .where(eq(sceneTable.gameSessionId, gameSessionId));
-
-    // Step 2: Get all scenes for this session (now with high order numbers)
-    const scenes = await db
-      .select({ id: sceneTable.id, order: sceneTable.order })
-      .from(sceneTable)
-      .where(eq(sceneTable.gameSessionId, gameSessionId))
-      .orderBy(asc(sceneTable.order));
-
-    // Find the original position (1-based index) of the scene being moved
-    const movedSceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
-    if (movedSceneIndex === -1) {
-      // If scene not found, restore original order numbers
-      for (let i = 0; i < scenes.length; i++) {
-        await db
-          .update(sceneTable)
-          .set({ order: i + 1 })
-          .where(eq(sceneTable.id, scenes[i].id));
-      }
-      return;
-    }
-
-    const originalPosition = movedSceneIndex + 1; // Convert to 1-based
-
-    // No change in position
-    if (originalPosition === newPosition) {
-      // Restore original order numbers
-      for (let i = 0; i < scenes.length; i++) {
-        await db
-          .update(sceneTable)
-          .set({ order: i + 1 })
-          .where(eq(sceneTable.id, scenes[i].id));
-      }
-      return;
-    }
-
-    // Step 3: Create a new ordering by removing the scene and then inserting it at the new position
-
-    // First, create a new array without the moved scene
-    const newOrdering = scenes.filter((scene) => scene.id !== sceneId);
-
-    // Then, insert the moved scene at the correct target index (using 0-based index for array insertion)
-    const targetIndex = Math.min(Math.max(newPosition - 1, 0), newOrdering.length);
-    newOrdering.splice(targetIndex, 0, scenes[movedSceneIndex]);
-
-    // Step 4: Update all scenes with their new consecutive order numbers
-    for (let i = 0; i < newOrdering.length; i++) {
-      const scene = newOrdering[i];
-      const newOrder = i + 1; // 1-based ordering
-
-      await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scene.id));
-    }
-  } catch (error) {
-    // If any error occurs, try to restore original order
-    const scenes = await db
-      .select({ id: sceneTable.id })
-      .from(sceneTable)
-      .where(eq(sceneTable.gameSessionId, gameSessionId))
-      .orderBy(asc(sceneTable.order));
-
-    // Reset to simple consecutive ordering
-    for (let i = 0; i < scenes.length; i++) {
-      await db
-        .update(sceneTable)
-        .set({ order: i + 1 })
-        .where(eq(sceneTable.id, scenes[i].id));
-    }
-
-    throw error;
-  }
 };
 
 const isVideoFile = (location: string): boolean => {
@@ -166,25 +88,11 @@ export const getScenes = async (gameSessionId: string): Promise<(SelectScene | (
     .select(sceneColumnsWithoutMask)
     .from(sceneTable)
     .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order))
+    .orderBy(asc(sceneTable.order), asc(sceneTable.id))
     .all();
 
   if (!scenes || scenes.length === 0) {
     return [];
-  }
-
-  // Check if any scene has an order > 1000 (indicating they got stuck with high numbers)
-  const needsReordering = scenes.some((scene) => scene.order > 1000);
-
-  if (needsReordering) {
-    // Fix the ordering by resetting to consecutive numbers
-    for (let i = 0; i < scenes.length; i++) {
-      await db
-        .update(sceneTable)
-        .set({ order: i + 1 })
-        .where(eq(sceneTable.id, scenes[i].id));
-      scenes[i].order = i + 1; // Update local copy too
-    }
   }
 
   // Process thumbnails in parallel for better performance
@@ -226,6 +134,9 @@ export const createScene = async (
     fileLocation = data.mapLocation;
   }
 
+  // Order is a fractional sort key owned by the realtime session doc — callers
+  // inserting between scenes compute it with orderBetween. Never shift existing
+  // rows here: the doc would not see the change and the two would diverge.
   if (order === undefined) {
     const maxOrderScene = await db
       .select({ maxOrder: sql<number>`MAX(${sceneTable.order})` })
@@ -234,21 +145,6 @@ export const createScene = async (
       .get();
 
     order = (maxOrderScene?.maxOrder ?? 0) + 1; // Default to the next available order
-  }
-
-  const scenesToShift = await db
-    .select({ id: sceneTable.id, currentOrder: sceneTable.order })
-    .from(sceneTable)
-    .where(and(eq(sceneTable.gameSessionId, gameSessiondId), gte(sceneTable.order, order)))
-    .orderBy(sql`${sceneTable.order} DESC`) // Process from highest order to lowest
-    .all();
-
-  for (const { id, currentOrder } of scenesToShift) {
-    await db
-      .update(sceneTable)
-      .set({ order: currentOrder + 1 }) // Increment order
-      .where(eq(sceneTable.id, id))
-      .execute();
   }
 
   // Get the party's default settings
@@ -580,124 +476,6 @@ export const createScene = async (
   return await getScene(sceneId);
 };
 
-export const getSceneFromOrder = async (
-  gameSessiondId: string,
-  order: number
-): Promise<SelectScene | (SelectScene & Thumb)> => {
-  const scene = await db
-    .select()
-    .from(sceneTable)
-    .where(and(eq(sceneTable.gameSessionId, gameSessiondId), eq(sceneTable.order, order)))
-    .get();
-  if (!scene) {
-    throw new Error('Scene not found');
-  }
-
-  // Remove fogOfWarMask if present to avoid serialization issues
-  if ('fogOfWarMask' in scene) {
-    delete (scene as Record<string, unknown>).fogOfWarMask;
-  }
-
-  let thumb = null;
-  if (scene.mapLocation) {
-    // For video files, return direct URL without transformation
-    if (isVideoFile(scene.mapLocation)) {
-      thumb = getVideoUrl(scene.mapLocation);
-    } else {
-      thumb = await transformImage(scene.mapLocation, 'w=3000,h=3000,fit=scale-down,gravity=center');
-    }
-  }
-  const sceneWithThumb = { ...scene, thumb };
-
-  return sceneWithThumb;
-};
-
-export const deleteScene = async (gameSessionId: string, sceneId: string): Promise<void> => {
-  const sceneToDelete = await db
-    .select({ order: sceneTable.order })
-    .from(sceneTable)
-    .where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)))
-    .get();
-
-  if (!sceneToDelete) {
-    throw new Error('Scene not found');
-  }
-
-  // Get the party for this game session to check if this scene is active
-  const party = await getPartyFromGameSessionId(gameSessionId);
-  const isActiveScene = party.activeSceneId === sceneId;
-
-  // Delete the scene
-  await db.delete(sceneTable).where(and(eq(sceneTable.id, sceneId), eq(sceneTable.gameSessionId, gameSessionId)));
-
-  // If this was the active scene, clear the party's activeSceneId
-  if (isActiveScene) {
-    await db.update(partyTable).set({ activeSceneId: null }).where(eq(partyTable.id, party.id));
-  }
-
-  const scenes = await db
-    .select()
-    .from(sceneTable)
-    .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order))
-    .all();
-
-  // Update all scene orders to ensure they are sequential without gaps
-  for (let i = 0; i < scenes.length; i++) {
-    const newOrder = i + 1; // Orders start at 1
-    await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, scenes[i].id)).execute();
-  }
-};
-
-export const adjustSceneOrder = async (gameSessionId: string, sceneId: string, newOrder: number) => {
-  const currentScene = await db
-    .select({ currentOrder: sceneTable.order })
-    .from(sceneTable)
-    .where(eq(sceneTable.id, sceneId))
-    .get();
-
-  if (!currentScene) {
-    throw new Error('Scene not found');
-  }
-
-  const { currentOrder } = currentScene;
-
-  if (currentOrder === newOrder) {
-    return;
-  }
-
-  if (newOrder > currentOrder) {
-    // If moving down, decrement `order` for rows between `currentOrder + 1` and `newOrder`
-    await db
-      .update(sceneTable)
-      .set({ order: sql`${sceneTable.order} - 1` })
-      .where(
-        and(
-          eq(sceneTable.gameSessionId, gameSessionId),
-          gt(sceneTable.order, currentOrder),
-          lte(sceneTable.order, newOrder)
-        )
-      )
-      .execute();
-  } else {
-    // If moving up, increment `order` for rows between `newOrder` and `currentOrder - 1`
-    await db
-      .update(sceneTable)
-      .set({ order: sql`${sceneTable.order} + 1` })
-      .where(
-        and(
-          eq(sceneTable.gameSessionId, gameSessionId),
-          gte(sceneTable.order, newOrder),
-          lt(sceneTable.order, currentOrder)
-        )
-      )
-      .execute();
-  }
-
-  // Update the target scene's order to the new order
-  await db.update(sceneTable).set({ order: newOrder }).where(eq(sceneTable.id, sceneId)).execute();
-};
-
 export const updateScene = async (
   userId: string,
   sceneId: string,
@@ -772,7 +550,7 @@ export const getFirstAvailableSceneForParty = async (partyId: string): Promise<S
       .select()
       .from(sceneTable)
       .where(eq(sceneTable.gameSessionId, gameSession.id))
-      .orderBy(asc(sceneTable.order))
+      .orderBy(asc(sceneTable.order), asc(sceneTable.id))
       .limit(1)
       .get();
 
@@ -825,94 +603,6 @@ export const getActiveSceneForParty = async (
 
 export const setActiveSceneForParty = async (partyId: string, sceneId: string): Promise<void> => {
   await db.update(partyTable).set({ activeSceneId: sceneId }).where(eq(partyTable.id, partyId));
-};
-
-export const duplicateScene = async (sceneId: string): Promise<SelectScene | ((SelectScene & Thumb) | null)> => {
-  const originalScene = await db.select().from(sceneTable).where(eq(sceneTable.id, sceneId)).get();
-
-  if (!originalScene) {
-    throw new Error('Scene not found');
-  }
-
-  const newSceneId = uuidv4();
-  const newSceneName = `${originalScene.name} (Copy)`;
-  const gameSessionId = originalScene.gameSessionId;
-
-  // Copy map and thumbnail files if they exist and aren't the default
-  let newMapLocation = originalScene.mapLocation;
-  let newMapThumbLocation = originalScene.mapThumbLocation;
-
-  // Copy map file if it exists and isn't the default example map
-  if (originalScene.mapLocation && originalScene.mapLocation !== 'map/example1080.png') {
-    try {
-      newMapLocation = await copySceneFile(originalScene.mapLocation, newSceneId, 'map');
-    } catch (error) {
-      console.error('Error copying map file during scene duplication:', error);
-      // Continue with original location if copy fails
-    }
-  }
-
-  // Copy thumbnail file if it exists
-  if (originalScene.mapThumbLocation) {
-    try {
-      newMapThumbLocation = await copySceneFile(originalScene.mapThumbLocation, newSceneId, 'thumbnail');
-    } catch (error) {
-      console.error('Error copying thumbnail file during scene duplication:', error);
-      // Continue with original location if copy fails
-    }
-  }
-
-  // Place the new scene right after the original scene
-  const targetOrder = originalScene.order + 1;
-
-  // Step 1: First move all scenes to high numbers to avoid conflicts (add 10000)
-  await db
-    .update(sceneTable)
-    .set({ order: sql`${sceneTable.order} + 10000` })
-    .where(eq(sceneTable.gameSessionId, gameSessionId));
-
-  // Step 2: Get all scenes for this session (now with high order numbers)
-  const scenes = await db
-    .select({ id: sceneTable.id, order: sceneTable.order })
-    .from(sceneTable)
-    .where(eq(sceneTable.gameSessionId, gameSessionId))
-    .orderBy(asc(sceneTable.order))
-    .all();
-
-  // Step 3: Reassign orders, inserting the new scene at the target position
-  let currentOrder = 1;
-  for (const scene of scenes) {
-    if (currentOrder === targetOrder) {
-      currentOrder++; // Skip this order for the new scene
-    }
-    await db.update(sceneTable).set({ order: currentOrder }).where(eq(sceneTable.id, scene.id)).execute();
-    currentOrder++;
-  }
-
-  // The new scene will get the targetOrder
-  const newOrder = targetOrder;
-
-  // Copy all scene data except the fields we need to change
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id: _, name: __, order: ___, fogOfWarUrl: ____, lastUpdated: _____, ...sceneDataToCopy } = originalScene;
-
-  // Insert the duplicated scene with all settings preserved
-  await db
-    .insert(sceneTable)
-    .values({
-      ...sceneDataToCopy,
-      id: newSceneId,
-      name: newSceneName,
-      order: newOrder,
-      mapLocation: newMapLocation,
-      mapThumbLocation: newMapThumbLocation,
-      fogOfWarUrl: null, // Reset fog of war URL for duplicated scene
-      lastUpdated: new Date()
-    })
-    .execute();
-
-  // Return the created scene with thumbnails
-  return await getScene(newSceneId);
 };
 
 /**
