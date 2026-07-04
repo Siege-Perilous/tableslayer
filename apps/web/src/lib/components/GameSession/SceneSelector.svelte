@@ -459,10 +459,7 @@
         <Popover
           triggerClass="scene__popoverBtn"
           triggerTestId="scenePopoverButton"
-          isOpen={openScenePopover === scene.id}
-          onIsOpenChange={(open) => {
-            if (!open) openScenePopover = null;
-          }}
+          bind:isOpen={() => openScenePopover === scene.id, (open) => (openScenePopover = open ? scene.id : null)}
           positioning={{ placement: 'bottom-end' }}
           portal="#scenes"
         >
