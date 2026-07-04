@@ -438,7 +438,9 @@ export const sceneTable = sqliteTable(
     annotationLayers: text('annotation_layers', { mode: 'json' })
   },
   (table) => [
-    uniqueIndex('unique_session_scene_order').on(table.gameSessionId, table.order),
+    // No unique index on (gameSessionId, order): scene order is a fractional sort
+    // key owned by the realtime session doc, and concurrent inserts between the
+    // same neighbors can legitimately produce equal orders (ties break by id).
     check('protected_fog_of_war_opacity_dm', sql`${table.fogOfWarOpacityDm} >= 0 AND ${table.fogOfWarOpacityDm} <= 1`),
     check(
       'protected_fog_of_war_opacity_player',

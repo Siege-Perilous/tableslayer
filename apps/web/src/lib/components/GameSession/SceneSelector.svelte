@@ -127,6 +127,12 @@
     }
   });
 
+  // New scenes get a fractional order between their neighbors (like reorder and
+  // duplicate) so the server never has to shift existing rows.
+  const orderAfterIndex = (index: number) =>
+    orderBetween(orderedScenes[index]?.order ?? null, orderedScenes[index + 1]?.order ?? null);
+  const orderAtEnd = () => orderBetween(orderedScenes[orderedScenes.length - 1]?.order ?? null, null);
+
   // Scene creation still goes through the API: the server computes map/grid
   // alignment from the uploaded image. The response row is then added to the
   // doc, which is the live source of truth from that point on.
@@ -291,7 +297,7 @@
     event.preventDefault();
     if (file && file.length) {
       const dimensions = extractDimensionsFromFilename(file[0].name);
-      handleCreateScene(scenes.length + 1, dimensions.width, dimensions.height);
+      handleCreateScene(orderAtEnd(), dimensions.width, dimensions.height);
     }
   };
 
@@ -479,7 +485,7 @@
               disabled={needsToUpgrade}
               data-testid="sceneMenuNewScene"
               onclick={() => {
-                handleCreateScene(scene.order + 1);
+                handleCreateScene(orderAfterIndex(index));
                 contentProps.close();
               }}
             >
