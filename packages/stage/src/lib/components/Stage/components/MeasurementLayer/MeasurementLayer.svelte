@@ -13,6 +13,8 @@
     props: MeasurementLayerProps;
     isActive: boolean;
     display: DisplayProps;
+    /** The physical display, when `display` is the synthetic map-space display */
+    realDisplay?: DisplayProps;
     grid: GridLayerProps;
     sceneRotation?: number;
     /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
@@ -49,6 +51,7 @@
     props,
     isActive,
     display,
+    realDisplay = display,
     grid,
     sceneRotation = 0,
     localScale = 1,
@@ -365,6 +368,7 @@
   {props}
   visible={isActive}
   displayProps={display}
+  {realDisplay}
   gridProps={grid}
   {sceneRotation}
   {localScale}

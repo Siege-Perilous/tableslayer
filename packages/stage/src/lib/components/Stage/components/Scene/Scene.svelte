@@ -724,6 +724,7 @@
         props={props.measurement}
         isActive={props.activeLayer === MapLayerType.Measurement}
         display={anchoredDisplay}
+        realDisplay={props.display}
         grid={props.grid}
         sceneRotation={props.scene.rotation}
         {localScale}

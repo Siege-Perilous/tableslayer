@@ -1,5 +1,6 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { DEFAULT_MAP, DEFAULT_MAP_GRID, DEFAULT_MAP_SIZE } from '$lib/utils/generateR2Url';
 import { getAlignedMapTransform } from '@tableslayer/stage';
 import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -128,12 +129,19 @@ export const createScene = async (
   const name = data.name;
 
   // Default to a placeholder map
-  let fileLocation = 'map/example1080.png';
+  let fileLocation: string = DEFAULT_MAP;
   // Handle file upload
 
   if (data.mapLocation) {
     fileLocation = data.mapLocation;
   }
+
+  // The default map is a MapDefined battle map; scenes created without an
+  // explicit map inherit its grid unless the caller specifies otherwise
+  const usingDefaultMap = !data.mapLocation;
+  const gridMode = data.gridMode ?? (usingDefaultMap ? 1 : 0);
+  const gridMapDefinedX = data.gridMapDefinedX ?? (usingDefaultMap ? DEFAULT_MAP_GRID.x : null);
+  const gridMapDefinedY = data.gridMapDefinedY ?? (usingDefaultMap ? DEFAULT_MAP_GRID.y : null);
 
   // Order is a fractional sort key owned by the realtime session doc — callers
   // inserting between scenes compute it with orderBetween. Never shift existing
@@ -160,35 +168,43 @@ export const createScene = async (
   let mapOffsetY = data.mapOffsetY ?? 0;
 
   // If grid dimensions are provided and we're in MapDefined mode, calculate alignment
-  if (data.gridMode === 1 && data.gridMapDefinedX && data.gridMapDefinedY && fileLocation) {
+  if (gridMode === 1 && gridMapDefinedX && gridMapDefinedY && fileLocation) {
     console.log('[createScene] Calculating map alignment for Fixed Count mode:', {
-      gridMapDefinedX: data.gridMapDefinedX,
-      gridMapDefinedY: data.gridMapDefinedY,
+      gridMapDefinedX,
+      gridMapDefinedY,
       mapLocation: fileLocation
     });
 
-    // Get map dimensions using the existing transformImage function
+    // Get map dimensions; the default map's size is known statically
     try {
-      const imageResult = await transformImage(fileLocation, 'format=json');
-      const originalWidth = imageResult.details.original.width || imageResult.details.width;
-      const originalHeight = imageResult.details.original.height || imageResult.details.height;
+      let mapWidth: number;
+      let mapHeight: number;
 
-      // The client will receive a scaled-down version (max 3000x3000)
-      // Calculate the actual dimensions the client will see
-      const maxDimension = 3000;
-      let mapWidth = originalWidth;
-      let mapHeight = originalHeight;
+      if (fileLocation === DEFAULT_MAP) {
+        mapWidth = DEFAULT_MAP_SIZE.width;
+        mapHeight = DEFAULT_MAP_SIZE.height;
+      } else {
+        const imageResult = await transformImage(fileLocation, 'format=json');
+        const originalWidth = imageResult.details.original.width || imageResult.details.width;
+        const originalHeight = imageResult.details.original.height || imageResult.details.height;
 
-      if (originalWidth > maxDimension || originalHeight > maxDimension) {
-        const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
-        mapWidth = Math.round(originalWidth * scale);
-        mapHeight = Math.round(originalHeight * scale);
-        console.log(
-          '[createScene] Image will be scaled from',
-          originalWidth + 'x' + originalHeight,
-          'to',
-          mapWidth + 'x' + mapHeight
-        );
+        // The client will receive a scaled-down version (max 3000x3000)
+        // Calculate the actual dimensions the client will see
+        const maxDimension = 3000;
+        mapWidth = originalWidth;
+        mapHeight = originalHeight;
+
+        if (originalWidth > maxDimension || originalHeight > maxDimension) {
+          const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
+          mapWidth = Math.round(originalWidth * scale);
+          mapHeight = Math.round(originalHeight * scale);
+          console.log(
+            '[createScene] Image will be scaled from',
+            originalWidth + 'x' + originalHeight,
+            'to',
+            mapWidth + 'x' + mapHeight
+          );
+        }
       }
 
       if (mapWidth && mapHeight) {
@@ -198,7 +214,7 @@ export const createScene = async (
         // that centers the map or top-left aligns it when it overflows
         const aligned = getAlignedMapTransform(
           {
-            fixedGridCount: { x: data.gridMapDefinedX, y: data.gridMapDefinedY },
+            fixedGridCount: { x: gridMapDefinedX, y: gridMapDefinedY },
             spacing: data.gridSpacing ?? party.defaultGridSpacing
           },
           {
@@ -219,7 +235,7 @@ export const createScene = async (
       console.error('[createScene] Error getting image dimensions:', error);
       // Continue without auto-alignment if we can't get dimensions
     }
-  } else if (fileLocation && fileLocation !== 'map/example1080.png' && data.gridMode !== 1) {
+  } else if (fileLocation && fileLocation !== DEFAULT_MAP && gridMode !== 1) {
     // For maps without grid dimensions (FillSpace mode), autofit the map to the scene
     // This matches the old client-side fit() behavior and only runs at scene creation
     console.log('[createScene] Autofitting map without grid dimensions:', {
@@ -338,9 +354,9 @@ export const createScene = async (
       mapOffsetX,
       mapOffsetY,
       gridType: data.gridType ?? party.defaultGridType,
-      gridMode: data.gridMode ?? 0,
-      gridMapDefinedX: data.gridMapDefinedX ?? null,
-      gridMapDefinedY: data.gridMapDefinedY ?? null,
+      gridMode,
+      gridMapDefinedX,
+      gridMapDefinedY,
       // New scenes are born with map-local coordinate semantics
       mapCoordVersion: 1,
       displaySizeX: party.defaultDisplaySizeX,
@@ -392,12 +408,7 @@ export const updateScene = async (
   for (const [key, value] of Object.entries(details)) {
     if (value !== undefined) {
       // Prevent overwriting existing mapLocation with the default example map
-      if (
-        key === 'mapLocation' &&
-        value === 'map/example1080.png' &&
-        scene.mapLocation &&
-        scene.mapLocation !== 'map/example1080.png'
-      ) {
+      if (key === 'mapLocation' && value === DEFAULT_MAP && scene.mapLocation && scene.mapLocation !== DEFAULT_MAP) {
         console.warn('Preventing overwrite of existing mapLocation with default example map');
         continue;
       }

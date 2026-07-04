@@ -18,6 +18,8 @@
     props: MeasurementLayerProps;
     visible: boolean;
     displayProps: DisplayProps;
+    /** The physical display, when displayProps is the synthetic map-space display */
+    realDisplay?: DisplayProps;
     gridProps: GridLayerProps;
     sceneRotation?: number;
     /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
@@ -31,6 +33,7 @@
     props,
     visible,
     displayProps,
+    realDisplay = displayProps,
     gridProps,
     sceneRotation = 0,
     localScale = 1,
@@ -45,12 +48,16 @@
 
   // Visual sizes in MeasurementLayerProps are display-pixel values; the
   // measurement geometry lives in local pixels, so convert them to keep the
-  // on-screen appearance constant (identity in FillSpace where localScale is 1)
+  // on-screen appearance constant (identity in FillSpace where localScale is 1).
+  // The distance label sizes itself from displayProps.resolution (the map size
+  // when anchored), so textScale converts it back to physical-display sizing.
+  const textScale = $derived(realDisplay.resolution.y / displayProps.resolution.y / localScale);
   const scaleMeasurementProps = (p: MeasurementLayerProps): MeasurementLayerProps => ({
     ...p,
     thickness: p.thickness / localScale,
     markerSize: p.markerSize / localScale,
-    outlineThickness: p.outlineThickness / localScale
+    outlineThickness: p.outlineThickness / localScale,
+    textScale
   });
 
   let currentMeasurement: IMeasurement | null = null;
