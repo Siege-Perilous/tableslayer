@@ -19,9 +19,13 @@
     isActive: boolean;
     grid: GridLayerProps;
     display: DisplayProps;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
+    /** Map rotation in degrees, inherited from the map anchor in MapDefined mode */
+    mapRotation?: number;
   }
 
-  const { props, isActive, display, grid }: Props = $props();
+  const { props, isActive, display, grid, localScale = 1, mapRotation = 0 }: Props = $props();
 
   const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
   const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
@@ -123,7 +127,7 @@
       const newMarker: Marker = {
         id: uuidv4(),
         title: 'New Marker',
-        position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
+        position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display, false, localScale) : gridCoords,
         size: MarkerSize.Small,
         shape: MarkerShape.Circle,
         shapeColor: '#ffffff',
@@ -146,7 +150,7 @@
     }
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
-    const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
+    const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display, false, localScale) : position;
 
     ghostMarker.position = snapPosition;
 
@@ -371,6 +375,7 @@
         isSelected={selectedMarker?.id === marker.id}
         isHovered={hoveredMarker?.id === marker.id}
         sceneRotation={props.scene.rotation}
+        {mapRotation}
       />
     {/if}
   {/each}
@@ -394,6 +399,7 @@
       isSelected={false}
       isHovered={false}
       sceneRotation={props.scene.rotation}
+      {mapRotation}
     />
   {/if}
 </T.Group>

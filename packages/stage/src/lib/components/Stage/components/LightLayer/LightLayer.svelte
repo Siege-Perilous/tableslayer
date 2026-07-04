@@ -19,9 +19,11 @@
     isActive: boolean;
     grid: GridLayerProps;
     display: DisplayProps;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
   }
 
-  const { props, isActive, display, grid }: Props = $props();
+  const { props, isActive, display, grid, localScale = 1 }: Props = $props();
 
   const stage = getContext<{ mode: StageMode }>('stage');
   const { onLightAdded, onLightMoved, onLightSelected } = getContext<Callbacks>('callbacks');
@@ -100,7 +102,7 @@
 
       // In DM mode with Light tool active, create a new light
       if (props.activeLayer === MapLayerType.Light) {
-        const position = props.light.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords;
+        const position = props.light.snapToGrid ? snapToGrid(gridCoords, grid, display, false, localScale) : gridCoords;
         const newLight: Light = {
           id: uuidv4(),
           position,
@@ -127,7 +129,7 @@
     }
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
-    const snapPosition = props.light.snapToGrid ? snapToGrid(position, grid, display) : position;
+    const snapPosition = props.light.snapToGrid ? snapToGrid(position, grid, display, false, localScale) : position;
 
     ghostLight.position = snapPosition;
 

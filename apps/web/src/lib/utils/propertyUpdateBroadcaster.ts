@@ -46,6 +46,7 @@ interface DocBinding {
 let binding: DocBinding | null = null;
 let flushScheduled = false;
 let latestProps: StageProps | null = null;
+let pendingRawSettings: Partial<SceneSettings> | null = null;
 const dirty = { settings: false, markers: false, lights: false, annotations: false };
 
 /** Bind panel property updates to a scene's doc subtree. Call on scene switch. */
@@ -88,26 +89,46 @@ export function queuePropertyUpdate(
   }
 }
 
+/**
+ * Queues scene-settings fields that have no StageProps representation (e.g.
+ * mapCoordVersion). Flushed in the same microtask transaction as regular
+ * property updates, so a mode toggle plus its coordinate rewrite land as one
+ * undo step.
+ */
+export function queueRawSettingsUpdate(fields: Partial<SceneSettings>) {
+  pendingRawSettings = { ...pendingRawSettings, ...fields };
+  if (!flushScheduled) {
+    flushScheduled = true;
+    queueMicrotask(flushToDoc);
+  }
+}
+
 function flushToDoc() {
   flushScheduled = false;
   const props = latestProps;
-  if (!binding || !props) return;
+  if (!binding) return;
   const { client, sceneId } = binding;
 
   // One Y transaction per tick; nested writer transactions reuse it (same origin)
   client.doc.transact(() => {
-    if (dirty.settings) {
-      const details = convertPropsToSceneDetails(props, null);
-      // annotations live as rows, and the editor viewport is local-only in v2
-      delete details.annotationLayers;
-      delete details.sceneOffsetX;
-      delete details.sceneOffsetY;
-      delete details.sceneRotation;
-      client.write.setSceneSettings(sceneId, details as Partial<SceneSettings>);
+    if (props) {
+      if (dirty.settings) {
+        const details = convertPropsToSceneDetails(props, null);
+        // annotations live as rows, and the editor viewport is local-only in v2
+        delete details.annotationLayers;
+        delete details.sceneOffsetX;
+        delete details.sceneOffsetY;
+        delete details.sceneRotation;
+        client.write.setSceneSettings(sceneId, details as Partial<SceneSettings>);
+      }
+      if (dirty.markers) syncMarkers(client, sceneId, props);
+      if (dirty.lights) syncLights(client, sceneId, props);
+      if (dirty.annotations) syncAnnotations(client, sceneId, props);
     }
-    if (dirty.markers) syncMarkers(client, sceneId, props);
-    if (dirty.lights) syncLights(client, sceneId, props);
-    if (dirty.annotations) syncAnnotations(client, sceneId, props);
+    if (pendingRawSettings) {
+      client.write.setSceneSettings(sceneId, pendingRawSettings);
+      pendingRawSettings = null;
+    }
   }, client.origin);
 
   dirty.settings = dirty.markers = dirty.lights = dirty.annotations = false;

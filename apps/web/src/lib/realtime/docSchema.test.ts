@@ -42,6 +42,7 @@ const makeSettings = (id: string, overrides: Partial<SceneSettings> = {}): Scene
   gridMode: 0,
   gridMapDefinedX: null,
   gridMapDefinedY: null,
+  mapCoordVersion: 0,
   gridSpacing: 50,
   gridOpacity: 0.8,
   gridLineColor: '#E6E6E6',

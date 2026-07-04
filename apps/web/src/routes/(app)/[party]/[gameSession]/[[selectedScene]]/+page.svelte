@@ -25,7 +25,7 @@
     handleKeyCommands,
     handleStageZoom,
     queuePropertyUpdate,
-    resetGridOrigin,
+    relockMapZoom,
     setChecklistContext,
     unbindPropertyUpdates
   } from '$lib/utils';
@@ -36,6 +36,7 @@
   import {
     AnnotationEffect,
     DrawingSliders,
+    GridMode,
     MapLayerType,
     MarkerVisibility,
     PerformanceDebugger,
@@ -220,7 +221,6 @@
           selectedMarkerId = undefined;
           selectedLightId = undefined;
           selectedAnnotationId = undefined;
-          resetGridOrigin();
           sceneMasksApplied = false;
         });
       }
@@ -292,7 +292,6 @@
         selectedMarkerId = undefined;
         selectedLightId = undefined;
         selectedAnnotationId = undefined;
-        resetGridOrigin();
         sceneMasksApplied = false;
       }
     });
@@ -324,6 +323,19 @@
     if (lastBuiltSceneId !== selectedSceneId) return;
     sceneMasksApplied = true;
     session.applyMasks(selectedSceneId);
+  });
+
+  // The map-defined zoom is derived, not user-set: one grid cell = grid
+  // spacing inches on the TV. Control handlers re-lock it synchronously for
+  // atomic writes; this effect is the safety net for everything else (map
+  // replacement with different pixel dimensions, remote editors changing the
+  // grid count or display). relockMapZoom reads the grid/display/rotation
+  // inputs, so they become this effect's dependencies; idempotent writes
+  // converge without ping-pong.
+  $effect(() => {
+    if (stageIsLoading || !session.ready) return;
+    if (lastBuiltSceneId !== selectedSceneId) return;
+    relockMapZoom(stageProps, stage);
   });
 
   // ---------------------------------------------------------------------------
@@ -1046,6 +1058,11 @@
     }
   };
 
+  // In map-defined mode the map zoom is locked (derived from the grid) and
+  // rotation snaps to 90° steps; panning stays free — grid, tokens, fog and
+  // drawings are anchored to the map and ride along
+  const isMapDefinedMode = $derived((stageProps.grid.gridMode ?? GridMode.FillSpace) === GridMode.MapDefined);
+
   function onMapPan(dx: number, dy: number) {
     queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], stageProps.map.offset.x + dx, 'control');
     queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], stageProps.map.offset.y + dy, 'control');
@@ -1053,9 +1070,13 @@
 
   function onMapRotate(angle: number) {
     queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
+    // In map-defined mode rotation snaps to 90° steps and swaps the map's
+    // effective axes, so the locked zoom must follow
+    relockMapZoom(stageProps, stage);
   }
 
   function onMapZoom(zoom: number) {
+    if (isMapDefinedMode) return;
     queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
@@ -1272,6 +1293,8 @@
             {zoomSensitivity}
             {stageElement}
             {stageProps}
+            mapRotationStep={isMapDefinedMode ? 90 : undefined}
+            disableMapZoom={isMapDefinedMode}
             {onMapPan}
             {onMapRotate}
             {onMapZoom}
@@ -1343,7 +1366,7 @@
           client={session.client}
           {keyboardPopoverId}
         />
-        <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
+        <SceneZoom {stage} {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
         <ChecklistHelpButton onclick={handleShowChecklist} />
         <Hints {stageProps} />

@@ -1,5 +1,6 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
+import { getAlignedMapTransform } from '@tableslayer/stage';
 import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getFile, getVideoUrl, transformImage, uploadFileFromInput, type Thumb } from '../file';
@@ -191,141 +192,28 @@ export const createScene = async (
       }
 
       if (mapWidth && mapHeight) {
-        const gridCountX = data.gridMapDefinedX;
-        const gridCountY = data.gridMapDefinedY;
-
-        // Display settings - Always use party defaults for TV size
-        const displayResolutionX = party.defaultDisplayResolutionX;
-        const displayResolutionY = party.defaultDisplayResolutionY;
-        const displaySizeX = party.defaultDisplaySizeX;
-        const displaySizeY = party.defaultDisplaySizeY;
-        const gridSpacing = data.gridSpacing ?? party.defaultGridSpacing;
-        const gridLineThickness = data.gridLineThickness ?? party.defaultLineThickness;
-
-        let effectiveMapWidth = mapWidth;
-        let effectiveMapHeight = mapHeight;
-
-        // Calculate grid square sizes for both orientations
-        const straightSquareWidth = mapWidth / gridCountX;
-        const straightSquareHeight = mapHeight / gridCountY;
-        const straightSquareDiff = Math.abs(straightSquareWidth - straightSquareHeight);
-
-        const rotatedSquareWidth = mapHeight / gridCountX;
-        const rotatedSquareHeight = mapWidth / gridCountY;
-        const rotatedSquareDiff = Math.abs(rotatedSquareWidth - rotatedSquareHeight);
-
-        console.log('[createScene] Rotation check:', {
-          map: { width: mapWidth, height: mapHeight },
-          grid: { countX: gridCountX, countY: gridCountY },
-          straight: {
-            squareWidth: straightSquareWidth,
-            squareHeight: straightSquareHeight,
-            diff: straightSquareDiff
+        // Same aligned transform the client computes ("Reset map position"):
+        // cardinal rotation matching the display orientation, locked zoom so
+        // one grid cell spans gridSpacing inches on the TV, and an offset
+        // that centers the map or top-left aligns it when it overflows
+        const aligned = getAlignedMapTransform(
+          {
+            fixedGridCount: { x: data.gridMapDefinedX, y: data.gridMapDefinedY },
+            spacing: data.gridSpacing ?? party.defaultGridSpacing
           },
-          rotated: {
-            squareWidth: rotatedSquareWidth,
-            squareHeight: rotatedSquareHeight,
-            diff: rotatedSquareDiff
-          }
-        });
+          {
+            resolution: { x: party.defaultDisplayResolutionX, y: party.defaultDisplayResolutionY },
+            size: { x: party.defaultDisplaySizeX, y: party.defaultDisplaySizeY }
+          },
+          { width: mapWidth, height: mapHeight }
+        );
 
-        // Choose orientation that gives most square grid cells
-        if (rotatedSquareDiff < straightSquareDiff) {
-          mapRotation = 90;
-          effectiveMapWidth = mapHeight;
-          effectiveMapHeight = mapWidth;
-          console.log('[createScene] Rotating map 90 degrees for better grid square match');
-        }
+        mapRotation = aligned.rotation;
+        mapZoom = aligned.zoom;
+        mapOffsetX = aligned.offset.x;
+        mapOffsetY = aligned.offset.y;
 
-        // Calculate pixel pitch (inches per pixel)
-        const pixelPitchX = displaySizeX / displayResolutionX;
-        const pixelPitchY = displaySizeY / displayResolutionY;
-
-        // Calculate grid spacing in pixels
-        const gridSpacingX = gridSpacing / pixelPitchX;
-        const gridSpacingY = gridSpacing / pixelPitchY;
-
-        // Calculate total grid size in pixels
-        const gridWidthPx = gridSpacingX * gridCountX + gridLineThickness / 2.0;
-        const gridHeightPx = gridSpacingY * gridCountY + gridLineThickness / 2.0;
-
-        // Calculate grid origin (matching shader logic)
-        let gridOriginX: number;
-        let gridOriginY: number;
-
-        // If grid fits horizontally, center it; otherwise align left
-        if (gridWidthPx <= displayResolutionX) {
-          gridOriginX = (displayResolutionX - gridWidthPx) / 2.0;
-        } else {
-          gridOriginX = 0;
-        }
-
-        // If grid fits vertically, center it; otherwise align top
-        // In UV space: Y=0 is bottom, Y=resolution is top
-        // To start at top when overflowing: originY = resolution - gridSize
-        if (gridHeightPx <= displayResolutionY) {
-          gridOriginY = (displayResolutionY - gridHeightPx) / 2.0;
-        } else {
-          gridOriginY = displayResolutionY - gridHeightPx;
-        }
-
-        // Calculate how many pixels per map grid square in the original image
-        const mapGridSquareWidth = effectiveMapWidth / gridCountX;
-        const mapGridSquareHeight = effectiveMapHeight / gridCountY;
-
-        // Calculate zoom so map grid squares match display grid squares
-        // We want: mapGridSquare * zoom = gridSpacing (in pixels)
-        const zoomX = gridSpacingX / mapGridSquareWidth;
-        const zoomY = gridSpacingY / mapGridSquareHeight;
-
-        // Use average for uniform scaling
-        mapZoom = (zoomX + zoomY) / 2;
-
-        console.log('[createScene] Zoom calculation:', {
-          mapDimensions: { width: effectiveMapWidth, height: effectiveMapHeight },
-          gridCount: { x: gridCountX, y: gridCountY },
-          mapGridSquare: { width: mapGridSquareWidth, height: mapGridSquareHeight },
-          gridSpacingPx: { x: gridSpacingX, y: gridSpacingY },
-          zoom: { x: zoomX, y: zoomY, final: mapZoom },
-          pixelPitch: { x: pixelPitchX, y: pixelPitchY },
-          display: {
-            resolution: { x: displayResolutionX, y: displayResolutionY },
-            size: { x: displaySizeX, y: displaySizeY }
-          }
-        });
-
-        // Calculate the scaled map dimensions
-        const scaledMapWidth = effectiveMapWidth * mapZoom;
-        const scaledMapHeight = effectiveMapHeight * mapZoom;
-
-        // Position map so its top-left aligns with grid's top-left
-        // For X: align map's left edge with grid's left edge
-        mapOffsetX = gridOriginX - displayResolutionX / 2 + scaledMapWidth / 2;
-
-        // For Y: Align map's top edge with grid's top edge
-        // In WebGL coordinate system: -Y is up (toward top of screen), +Y is down
-        // Screen top = -(resolution.y / 2), Screen bottom = +(resolution.y / 2)
-        // Grid top in screen coords: gridOriginY (0 when overflow, centered value when fits)
-        // Grid top in WebGL: -(resolution.y / 2) + gridOriginY
-        // Map center position for top alignment: gridTopWebGL + (scaledMapHeight / 2)
-
-        const gridTopWebGL = -(displayResolutionY / 2) + gridOriginY;
-        mapOffsetY = gridTopWebGL + scaledMapHeight / 2;
-
-        console.log('[createScene] Calculated alignment:', {
-          gridOrigin: { x: gridOriginX, y: gridOriginY },
-          gridSize: { widthPx: gridWidthPx, heightPx: gridHeightPx },
-          gridTopWebGL,
-          scaledMap: { width: scaledMapWidth, height: scaledMapHeight },
-          targetGridSquareSize: gridSpacing + ' inches = ' + gridSpacingX + ' pixels',
-          actualMapGridSquareSize: scaledMapWidth / gridCountX + ' x ' + scaledMapHeight / gridCountY + ' pixels',
-          finalValues: {
-            mapRotation,
-            mapZoom,
-            mapOffsetX,
-            mapOffsetY
-          }
-        });
+        console.log('[createScene] Calculated alignment:', { mapRotation, mapZoom, mapOffsetX, mapOffsetY });
       }
     } catch (error) {
       console.error('[createScene] Error getting image dimensions:', error);
@@ -453,6 +341,8 @@ export const createScene = async (
       gridMode: data.gridMode ?? 0,
       gridMapDefinedX: data.gridMapDefinedX ?? null,
       gridMapDefinedY: data.gridMapDefinedY ?? null,
+      // New scenes are born with map-local coordinate semantics
+      mapCoordVersion: 1,
       displaySizeX: party.defaultDisplaySizeX,
       displaySizeY: party.defaultDisplaySizeY,
       displayResolutionX: party.defaultDisplayResolutionX,

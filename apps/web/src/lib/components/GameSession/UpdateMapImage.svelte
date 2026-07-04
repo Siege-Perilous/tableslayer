@@ -17,8 +17,7 @@
 
 <script lang="ts">
   import { useUploadFileMutation } from '$lib/queries';
-  import type { SceneSettings, SessionDocClient } from '$lib/realtime';
-  import { resetGridOrigin } from '$lib/utils';
+  import { upgradeSceneCoordinates, type SceneSettings, type SessionDocClient } from '$lib/realtime';
   import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
   import { GridMode } from '@tableslayer/stage';
 
@@ -66,15 +65,21 @@
 
     // The doc is the source of truth — one settings write propagates the new
     // map (and grid mode) to every client and the persister.
+    const wasMapDefined = client.scene(sceneId)?.settings.gridMode === GridMode.MapDefined;
     const settings: Partial<SceneSettings> = { mapLocation: uploadedFile.location };
     const dimensions = extractDimensionsFromFilename(pickedFile.name);
     if (dimensions.width !== undefined && dimensions.height !== undefined) {
       settings.gridMode = GridMode.MapDefined;
       settings.gridMapDefinedX = dimensions.width;
       settings.gridMapDefinedY = dimensions.height;
-      resetGridOrigin();
+      // Positions are still display-space when flipping into map-defined mode;
+      // the upgrade below converts them with the scene's stored map transform
+      if (!wasMapDefined) settings.mapCoordVersion = 0;
     }
     client.write.setSceneSettings(sceneId, settings);
+    if (!wasMapDefined && settings.gridMode === GridMode.MapDefined) {
+      upgradeSceneCoordinates(client, sceneId);
+    }
   }
 </script>
 

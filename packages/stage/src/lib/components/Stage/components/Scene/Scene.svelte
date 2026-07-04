@@ -15,8 +15,10 @@
     LUT3DEffect
   } from 'postprocessing';
   import { getLUT } from './luts';
-  import { PERFORMANCE_TIER_SETTINGS, type Callbacks, type StageProps } from '../Stage/types';
+  import { PERFORMANCE_TIER_SETTINGS, StageMode, type Callbacks, type StageProps } from '../Stage/types';
+  import { GridMode } from '../GridLayer/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
+  import { getMapSpaceDisplay, mapToDisplaySpace } from '../../helpers/mapSpace';
   import {
     clippingPlaneStore,
     updateClippingPlanes,
@@ -40,6 +42,7 @@
   import MarkerLayer from '../MarkerLayer/MarkerLayer.svelte';
   import MeasurementLayer from '../MeasurementLayer/MeasurementLayer.svelte';
   import type { MarkerLayerExports } from '../MarkerLayer/types';
+  import TvViewportLayer from '../TvViewportLayer/TvViewportLayer.svelte';
   import WeatherLayer from '../WeatherLayer/WeatherLayer.svelte';
 
   interface Props {
@@ -94,6 +97,18 @@
   let mapSize: Size | null = $state(null);
   let needsResize = true;
   let loadingState = SceneLoadingState.LoadingMap;
+
+  // In MapDefined mode the grid/marker/light/annotation/measurement layers are
+  // anchored to the map: they mount inside the mapAnchor group and all their
+  // display-space math runs against a synthetic map-space DisplayProps, so
+  // positions/sizes come out in center-relative map pixels. Until the map
+  // image resolves, everything behaves exactly like FillSpace.
+  const isMapDefined = $derived(props.grid.gridMode === GridMode.MapDefined && mapSize !== null);
+  // Display pixels per local (map) pixel for anchored layers
+  const localScale = $derived(isMapDefined ? props.map.zoom : 1);
+  const anchoredDisplay = $derived(
+    isMapDefined && mapSize ? getMapSpaceDisplay(props.grid, mapSize, props.display) : props.display
+  );
 
   // Local cursor tracking
   let raycaster = new THREE.Raycaster();
@@ -188,9 +203,11 @@
     $camera.layers.enable(SceneLayer.Overlay);
   });
 
-  // Whenever the scene or display properties change, update the clipping planes
+  // Whenever the scene or display properties change, update the clipping planes.
+  // In MapDefined mode the DM sees the whole map (no display-rect clipping);
+  // the TV viewport rectangle overlay indicates the playfield-visible region.
   $effect(() => {
-    updateClippingPlanes(props.scene, props.display);
+    updateClippingPlanes(props.scene, props.display, props.mode === StageMode.DM && isMapDefined);
     untrack(() => (renderer.clippingPlanes = clippingPlaneStore.value));
   });
 
@@ -401,7 +418,42 @@
     onSceneUpdate({ x: 0, y: 0 }, newZoom);
   }
 
+  // In MapDefined mode the DM's "fit" frames the whole map plus the TV
+  // viewport rectangle instead of just the display bounds
+  function fitToMap() {
+    if (!mapSize) return;
+
+    // Bounds of the map rect (cardinal rotations swap its extents) union the
+    // TV rect (display bounds at the scene origin), in scene units
+    const swapped = Math.abs(Math.round(props.map.rotation / 90)) % 2 === 1;
+    const mapWidth = (swapped ? mapSize.height : mapSize.width) * props.map.zoom;
+    const mapHeight = (swapped ? mapSize.width : mapSize.height) * props.map.zoom;
+
+    const minX = Math.min(props.map.offset.x - mapWidth / 2, -props.display.resolution.x / 2);
+    const maxX = Math.max(props.map.offset.x + mapWidth / 2, props.display.resolution.x / 2);
+    const minY = Math.min(props.map.offset.y - mapHeight / 2, -props.display.resolution.y / 2);
+    const maxY = Math.max(props.map.offset.y + mapHeight / 2, props.display.resolution.y / 2);
+
+    let boundsWidth = maxX - minX;
+    let boundsHeight = maxY - minY;
+    if (props.scene.rotation === 90 || props.scene.rotation === 270) {
+      [boundsWidth, boundsHeight] = [boundsHeight, boundsWidth];
+    }
+
+    const margin = 0.95;
+    const newZoom = Math.min(($size.width / boundsWidth) * margin, ($size.height / boundsHeight) * margin);
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    onSceneUpdate({ x: -centerX * newZoom, y: -centerY * newZoom }, newZoom);
+  }
+
   export function fit() {
+    if (props.mode === StageMode.DM && isMapDefined) {
+      fitToMap();
+      return;
+    }
+
     const canvasAspectRatio = $size.width / $size.height;
     let sceneAspectRatio = props.display.resolution.x / props.display.resolution.y;
     let sceneWidth = props.display.resolution.x;
@@ -576,7 +628,9 @@
   };
 
   export function getMarkerSizeInScreenSpace(markerSize = 1) {
-    const worldGridSize = getGridCellSizeHelper(props.grid, props.display);
+    // In MapDefined mode the cell size is in map pixels; localScale converts
+    // it back to display pixels (identity in FillSpace)
+    const worldGridSize = getGridCellSizeHelper(props.grid, anchoredDisplay) * localScale;
     const worldMarkerDiameter = worldGridSize * markerSize * 0.9;
     const zoomedMarkerDiameter = worldMarkerDiameter * props.scene.zoom;
     const screenMarkerDiameter = (zoomedMarkerDiameter / props.display.resolution.x) * $size.width;
@@ -587,8 +641,12 @@
   export function getMarkerScreenPosition(marker: { position?: { x: number; y: number } }) {
     if (!marker?.position) return null;
 
+    // In MapDefined mode marker positions are center-relative map pixels;
+    // apply the map transform to get display-space coordinates first
+    const displayPosition = isMapDefined ? mapToDisplaySpace(marker.position, props.map) : marker.position;
+
     // Create a vector at the marker's local position
-    const vector = new THREE.Vector3(marker.position.x, marker.position.y, 0);
+    const vector = new THREE.Vector3(displayPosition.x, displayPosition.y, 0);
 
     // Apply scene transformations to get world position
     // The markers are rendered inside a T.Object3D with position and scale transforms
@@ -616,36 +674,106 @@
 
 <!-- Scene -->
 <T.Object3D position={[props.scene.offset.x, props.scene.offset.y, 0]} scale={[props.scene.zoom, props.scene.zoom, 1]}>
-  <MapLayer
-    bind:this={mapLayer}
-    {props}
-    onMapLoading={() => {
-      callbacks.onStageLoading();
-      setLoadingState(SceneLoadingState.LoadingMap);
-    }}
-    onMapLoaded={(_mapUrl, size) => {
-      mapSize = size;
-      needsResize = true;
-      if (loadingState === SceneLoadingState.LoadingMap) {
-        setLoadingState(SceneLoadingState.Resizing);
-      }
-    }}
-  />
+  <!-- Layers that anchor to the map in MapDefined mode (mounted inside
+       mapAnchor) and to the display in FillSpace mode (mounted at scene
+       level). In map space all coordinates are center-relative map pixels. -->
+  {#snippet anchoredLayers()}
+    <GridLayer
+      grid={props.grid}
+      display={anchoredDisplay}
+      sceneZoom={props.scene.zoom}
+      {localScale}
+      layers={[SceneLayer.Overlay]}
+      renderOrder={SceneLayerOrder.Grid}
+    />
+
+    <AnnotationLayer
+      bind:this={annotationsLayer}
+      props={props.annotations}
+      mode={props.mode}
+      isActive={props.activeLayer === MapLayerType.Annotation}
+      sceneZoom={props.scene.zoom}
+      display={anchoredDisplay}
+      grid={props.grid}
+      {localScale}
+      conversion={isMapDefined ? { realDisplay: props.display, map: props.map } : undefined}
+    />
+
+    <LightLayer
+      bind:this={lightLayer}
+      {props}
+      isActive={props.activeLayer === MapLayerType.Light}
+      grid={props.grid}
+      display={anchoredDisplay}
+      {localScale}
+    />
+
+    <MarkerLayer
+      bind:this={markerLayer}
+      {props}
+      isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
+      grid={props.grid}
+      display={anchoredDisplay}
+      {localScale}
+      mapRotation={isMapDefined ? props.map.rotation : 0}
+    />
+
+    {#if props.measurement}
+      <MeasurementLayer
+        bind:this={measurementLayer}
+        props={props.measurement}
+        isActive={props.activeLayer === MapLayerType.Measurement}
+        display={anchoredDisplay}
+        grid={props.grid}
+        sceneRotation={props.scene.rotation}
+        {localScale}
+        mapRotation={isMapDefined ? props.map.rotation : 0}
+        onMeasurementStart={callbacks.onMeasurementStart}
+        onMeasurementUpdate={callbacks.onMeasurementUpdate}
+        onMeasurementEnd={callbacks.onMeasurementEnd}
+        {receivedMeasurement}
+      />
+    {:else}
+      <!-- MeasurementLayer skipped: props.measurement is undefined -->
+    {/if}
+  {/snippet}
+
+  <!-- The map anchor carries the uniform map transform; MapLayer's inner node
+       only scales the unit plane to the map image size, so map, fog, and (in
+       MapDefined mode) the anchored layers share one transform and can never
+       drift apart -->
+  <T.Object3D
+    name="mapAnchor"
+    position={[props.map.offset.x, props.map.offset.y, 0]}
+    rotation.z={(props.map.rotation / 180.0) * Math.PI}
+    scale={[props.map.zoom, props.map.zoom, 1]}
+  >
+    <MapLayer
+      bind:this={mapLayer}
+      {props}
+      onMapLoading={() => {
+        callbacks.onStageLoading();
+        setLoadingState(SceneLoadingState.LoadingMap);
+      }}
+      onMapLoaded={(_mapUrl, size) => {
+        mapSize = size;
+        needsResize = true;
+        if (loadingState === SceneLoadingState.LoadingMap) {
+          setLoadingState(SceneLoadingState.Resizing);
+        }
+      }}
+    />
+
+    {#if isMapDefined}
+      {@render anchoredLayers()}
+    {/if}
+  </T.Object3D>
 
   <WeatherLayer
     {props}
     size={props.display.resolution}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.Weather}
-  />
-
-  <!-- Map overlays that scale with the scene -->
-  <GridLayer
-    grid={props.grid}
-    display={props.display}
-    sceneZoom={props.scene.zoom}
-    layers={[SceneLayer.Overlay]}
-    renderOrder={SceneLayerOrder.Grid}
   />
 
   <EdgeOverlayLayer
@@ -656,47 +784,15 @@
     renderOrder={SceneLayerOrder.EdgeOverlay}
   />
 
-  <AnnotationLayer
-    bind:this={annotationsLayer}
-    props={props.annotations}
-    mode={props.mode}
-    isActive={props.activeLayer === MapLayerType.Annotation}
-    sceneZoom={props.scene.zoom}
-    display={props.display}
-    grid={props.grid}
-  />
+  {#if !isMapDefined}
+    {@render anchoredLayers()}
+  {/if}
 
-  <LightLayer
-    bind:this={lightLayer}
-    {props}
-    isActive={props.activeLayer === MapLayerType.Light}
-    grid={props.grid}
-    display={props.display}
-  />
-
-  <MarkerLayer
-    bind:this={markerLayer}
-    {props}
-    isActive={props.activeLayer === MapLayerType.Marker || props.activeLayer === MapLayerType.None}
-    grid={props.grid}
-    display={props.display}
-  />
-
-  {#if props.measurement}
-    <MeasurementLayer
-      bind:this={measurementLayer}
-      props={props.measurement}
-      isActive={props.activeLayer === MapLayerType.Measurement}
-      display={props.display}
-      grid={props.grid}
-      sceneRotation={props.scene.rotation}
-      onMeasurementStart={callbacks.onMeasurementStart}
-      onMeasurementUpdate={callbacks.onMeasurementUpdate}
-      onMeasurementEnd={callbacks.onMeasurementEnd}
-      {receivedMeasurement}
-    />
-  {:else}
-    <!-- MeasurementLayer skipped: props.measurement is undefined -->
+  <!-- DM-only TV viewport rectangle: shows the playfield-visible region and
+       dims everything outside it (the display-rect clipping is disabled in
+       this mode so the DM can see the whole map) -->
+  {#if props.mode === StageMode.DM && isMapDefined}
+    <TvViewportLayer display={props.display} sceneZoom={props.scene.zoom} map={props.map} {mapSize} />
   {/if}
 
   <!-- Cursor Layer for rendering remote cursors -->

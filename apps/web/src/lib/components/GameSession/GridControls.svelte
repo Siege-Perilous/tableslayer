@@ -27,8 +27,9 @@
     to8CharHex,
     getTvSizeFromPhysicalDimensions,
     queuePropertyUpdate,
-    resetGridOrigin,
-    devLog,
+    applyGridModeTransition,
+    alignMapForMapDefined,
+    relockMapZoom,
     trackChecklistItem
   } from '$lib/utils';
 
@@ -72,6 +73,7 @@
     const { width, height } = getTvDimensions(diagonalSize);
     queuePropertyUpdate(stageProps, ['display', 'size', 'x'], width, 'control');
     queuePropertyUpdate(stageProps, ['display', 'size', 'y'], height, 'control');
+    relockMapZoom(stageProps, stage);
     // Track checklist completion for changing TV size
     trackChecklistItem('tv-size');
   };
@@ -95,6 +97,7 @@
     if (selectedResolution) {
       queuePropertyUpdate(stageProps, ['display', 'resolution', 'x'], selectedResolution.width, 'control');
       queuePropertyUpdate(stageProps, ['display', 'resolution', 'y'], selectedResolution.height, 'control');
+      relockMapZoom(stageProps, stage);
       return selectedResolution;
     }
     return null;
@@ -112,11 +115,25 @@
     queuePropertyUpdate(stageProps, ['grid', 'opacity'], cd.rgba.a, 'control');
   };
 
-  // Handle grid mode change
+  // Handle grid mode change: converts marker/light positions between display
+  // and map coordinate spaces (one undo step) and applies the aligned map
+  // transform when entering map-defined mode
   const handleGridModeChange = (value: string) => {
     const newMode = value === 'map-defined' ? GridMode.MapDefined : GridMode.FillSpace;
+    if (((stageProps.grid.gridMode as GridMode) ?? GridMode.FillSpace) === newMode) return;
+
+    // Annotation drawings are map-sized textures in map-defined mode and
+    // cannot be numerically converted back to display space
+    if (newMode === GridMode.FillSpace && stageProps.annotations.layers.length > 0) {
+      if (!confirm('Switching to fill space clears annotation drawings. Markers, lights and fog are kept. Continue?')) {
+        isMapDefinedMode = true;
+        return;
+      }
+      stageProps.annotations.layers.forEach((layer) => stage?.annotations.clear(layer.id));
+    }
+
     isMapDefinedMode = newMode === GridMode.MapDefined;
-    queuePropertyUpdate(stageProps, ['grid', 'gridMode'], newMode, 'control');
+    applyGridModeTransition(stageProps, newMode, stage);
 
     // When switching to MapDefined mode, set padding to 0 and force square grid
     if (newMode === GridMode.MapDefined) {
@@ -125,20 +142,20 @@
       // Map defined mode only supports square grids
       queuePropertyUpdate(stageProps, ['grid', 'gridType'], 0, 'control');
     }
-
-    // Reset grid origin when switching modes
-    resetGridOrigin();
   };
 
-  // Handle map-defined grid count changes
+  // Handle map-defined grid count changes; the locked zoom derives from the
+  // count, so it must follow (one grid cell = grid spacing inches on the TV)
   const handleMapDefinedGridX = (value: number) => {
     mapDefinedGridX = value;
     queuePropertyUpdate(stageProps, ['grid', 'fixedGridCount', 'x'], value, 'control');
+    relockMapZoom(stageProps, stage);
   };
 
   const handleMapDefinedGridY = (value: number) => {
     mapDefinedGridY = value;
     queuePropertyUpdate(stageProps, ['grid', 'fixedGridCount', 'y'], value, 'control');
+    relockMapZoom(stageProps, stage);
   };
 
   /** Padding
@@ -152,113 +169,11 @@
     queuePropertyUpdate(stageProps, ['display', 'padding', 'y'], localPadding, 'control');
   };
 
-  // Auto-align map to grid
+  // Reset the map to its aligned map-defined transform (locked zoom, cardinal
+  // rotation, centered/top-left offset). The grid, tokens, fog and drawings
+  // are anchored to the map, so they all move with it.
   const alignMapToGrid = () => {
-    if (!stage) return;
-
-    const mapSize = stage.map.getSize();
-    if (!mapSize) return;
-
-    // Get map-defined grid count
-    const gridCountX = stageProps.grid.fixedGridCount?.x || 24;
-    const gridCountY = stageProps.grid.fixedGridCount?.y || 17;
-
-    // Determine if map needs rotation (if width < height but grid width > height)
-    const mapAspect = mapSize.width / mapSize.height;
-    const gridAspect = gridCountX / gridCountY;
-
-    let rotation = 0;
-    let effectiveMapWidth = mapSize.width;
-    let effectiveMapHeight = mapSize.height;
-
-    // If aspects don't match (one is portrait, other is landscape), rotate
-    if ((mapAspect < 1 && gridAspect > 1) || (mapAspect > 1 && gridAspect < 1)) {
-      rotation = 90;
-      // Swap dimensions for rotated map
-      effectiveMapWidth = mapSize.height;
-      effectiveMapHeight = mapSize.width;
-    }
-
-    // Calculate pixel pitch (inches per pixel)
-    const pixelPitchX = stageProps.display.size.x / stageProps.display.resolution.x;
-    const pixelPitchY = stageProps.display.size.y / stageProps.display.resolution.y;
-
-    // Calculate grid spacing in pixels (matching the shader logic)
-    // gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in
-    const gridSpacingX = stageProps.grid.spacing / pixelPitchX;
-    const gridSpacingY = stageProps.grid.spacing / pixelPitchY;
-
-    // Calculate total grid size in pixels (matching shader)
-    // gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0
-    const gridWidthPx = gridSpacingX * gridCountX + stageProps.grid.lineThickness / 2.0;
-    const gridHeightPx = gridSpacingY * gridCountY + stageProps.grid.lineThickness / 2.0;
-
-    // Calculate grid origin (matching shader positioning logic)
-    let gridOriginX: number;
-    let gridOriginY: number;
-
-    // If grid fits horizontally, center it; otherwise align left
-    if (gridWidthPx <= stageProps.display.resolution.x) {
-      gridOriginX = (stageProps.display.resolution.x - gridWidthPx) / 2.0;
-    } else {
-      gridOriginX = 0;
-    }
-
-    // If grid fits vertically, center it; otherwise align top
-    // In UV space: Y=0 is bottom, Y=resolution is top
-    // To start at top when overflowing: originY = resolution - gridSize
-    if (gridHeightPx <= stageProps.display.resolution.y) {
-      gridOriginY = (stageProps.display.resolution.y - gridHeightPx) / 2.0;
-    } else {
-      gridOriginY = stageProps.display.resolution.y - gridHeightPx;
-    }
-
-    // Calculate how many pixels per map grid square
-    const mapGridSquareWidth = effectiveMapWidth / gridCountX;
-    const mapGridSquareHeight = effectiveMapHeight / gridCountY;
-
-    // Calculate zoom so map grid squares match display grid squares
-    const zoomX = gridSpacingX / mapGridSquareWidth;
-    const zoomY = gridSpacingY / mapGridSquareHeight;
-
-    // Use average for uniform scaling
-    const zoom = (zoomX + zoomY) / 2;
-
-    // Calculate the scaled map dimensions
-    const scaledMapWidth = effectiveMapWidth * zoom;
-    const scaledMapHeight = effectiveMapHeight * zoom;
-
-    // Position map so its top-left aligns with grid's top-left
-    // For X: align map's left edge with grid's left edge
-    const offsetX = gridOriginX - stageProps.display.resolution.x / 2 + scaledMapWidth / 2;
-
-    // For Y: Align map's top edge with grid's top edge
-    // In this WebGL coordinate system: -Y is up (toward top of screen), +Y is down
-    // Screen top = -(resolution.y / 2), Screen bottom = +(resolution.y / 2)
-    // Grid top in screen coords: gridOriginY (0 when overflow, centered value when fits)
-    // Grid top in WebGL: -(resolution.y / 2) + gridOriginY
-    // Map center position for top alignment: gridTopWebGL + (scaledMapHeight / 2)
-
-    const gridTopWebGL = -(stageProps.display.resolution.y / 2) + gridOriginY;
-    const offsetY = gridTopWebGL + scaledMapHeight / 2;
-
-    devLog('grid', '[CLIENT alignMapToGrid]', {
-      gridOrigin: { x: gridOriginX, y: gridOriginY },
-      gridSize: { widthPx: gridWidthPx, heightPx: gridHeightPx },
-      gridTopWebGL,
-      scaledMap: { width: scaledMapWidth, height: scaledMapHeight },
-      mapGridSquare: {
-        original: { width: mapGridSquareWidth, height: mapGridSquareHeight },
-        scaled: { width: mapGridSquareWidth * zoom, height: mapGridSquareHeight * zoom }
-      },
-      finalValues: { rotation, zoom, offsetX, offsetY }
-    });
-
-    // Apply the calculated values
-    queuePropertyUpdate(stageProps, ['map', 'rotation'], rotation, 'control');
-    queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], offsetX, 'control');
-    queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], offsetY, 'control');
+    alignMapForMapDefined(stageProps, stage);
   };
 
   // Local state and conversion for grid color, tv size and padding
@@ -346,8 +261,10 @@
         min={0}
         step={0.25}
         value={stageProps.grid.spacing}
-        oninput={(e) =>
-          queuePropertyUpdate(stageProps, ['grid', 'spacing'], parseFloat(e.currentTarget.value), 'control')}
+        oninput={(e) => {
+          queuePropertyUpdate(stageProps, ['grid', 'spacing'], parseFloat(e.currentTarget.value), 'control');
+          relockMapZoom(stageProps, stage);
+        }}
       />
     {/snippet}
     {#snippet end()}
@@ -422,7 +339,7 @@
   {/if}
 </div>
 <Spacer />
-<Button onclick={alignMapToGrid} style="width: 100%">Auto fit map to grid</Button>
+<Button onclick={alignMapToGrid} style="width: 100%">Reset map position</Button>
 <Spacer />
 <FormControl label="Grid Color" name="gridLineColor" {errors}>
   {#snippet input({ inputProps })}

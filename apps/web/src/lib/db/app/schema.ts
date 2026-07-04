@@ -396,6 +396,9 @@ export const sceneTable = sqliteTable(
     gridMode: integer('grid_mode').notNull().default(0),
     gridMapDefinedX: integer('grid_map_defined_x'),
     gridMapDefinedY: integer('grid_map_defined_y'),
+    // Coordinate space of marker/light positions in MapDefined scenes:
+    // 0 = legacy display-center pixels, 1 = center-relative map pixels
+    mapCoordVersion: integer('map_coord_version').notNull().default(0),
     gridSpacing: integer('grid_spacing').notNull().default(1),
     gridOpacity: real('grid_opacity').notNull().default(0.8),
     gridLineColor: text('grid_line_color').notNull().default('#E6E6E6'),

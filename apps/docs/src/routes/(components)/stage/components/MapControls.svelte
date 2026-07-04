@@ -1,6 +1,6 @@
 <script lang="ts">
   import { List, Slider, Button, Folder, type ListOptions, Separator } from 'svelte-tweakpane-ui';
-  import type { StageProps, StageExports } from '@tableslayer/stage';
+  import { getAlignedMapTransform, type StageProps, type StageExports } from '@tableslayer/stage';
   import caveWebmUrl from './maps/cave.webm?url';
   import bridgeMp4Url from './maps/bridge.mp4?url';
   import bridgeGifUrl from './maps/bridge.gif?url';
@@ -36,6 +36,17 @@
     props.fogOfWar.url = null;
     props.marker.markers = [];
   }
+
+  // Set the locked MapDefined transform: rotation to match the display
+  // orientation, zoom so one grid cell spans grid.spacing inches on the TV
+  function alignMapToGrid() {
+    const mapSize = stage?.map.getSize();
+    if (!mapSize) return;
+    const aligned = getAlignedMapTransform(props.grid, props.display, mapSize);
+    props.map.rotation = aligned.rotation;
+    props.map.zoom = aligned.zoom;
+    props.map.offset = aligned.offset;
+  }
 </script>
 
 <Folder title="Map" expanded={false}>
@@ -43,7 +54,9 @@
   <Button on:click={() => updateMapUrl()} title="Load" />
   <Separator />
   <Slider bind:value={props.map.rotation} label="Rotation" min={0} max={360} step={1} />
+  <Button on:click={() => (props.map.rotation = (props.map.rotation + 90) % 360)} title="Rotate 90°" />
   <Button on:click={() => (props.map.offset = { x: 0, y: 0 })} title="Center" />
   <Button on:click={() => stage?.map.fill()} title="Fill" />
   <Button on:click={() => stage?.map.fit()} title="Fit" />
+  <Button on:click={() => alignMapToGrid()} title="Align to grid" />
 </Folder>

@@ -28,6 +28,8 @@
     isSelected: boolean;
     isHovered?: boolean;
     sceneRotation: number;
+    /** Map rotation in degrees, inherited from the map anchor in MapDefined mode */
+    mapRotation?: number;
   }
 
   const {
@@ -46,7 +48,8 @@
     shadowOffset,
     isSelected = false,
     isHovered = false,
-    sceneRotation
+    sceneRotation,
+    mapRotation = 0
   }: Props = $props();
 
   const loader = useLoader(THREE.TextureLoader);
@@ -54,13 +57,15 @@
   const markerSize = $derived(isHovered ? baseMarkerSize * 1.15 : baseMarkerSize);
   const sizeMultiplier = 0.9;
 
-  // Counter-rotate markers to keep them upright relative to the viewport
-  const normalizedRotation = $derived(((sceneRotation % 360) + 360) % 360);
+  // Counter-rotate markers to keep them upright relative to the viewport;
+  // in MapDefined mode the token also inherits the map anchor's rotation
+  const effectiveRotation = $derived(sceneRotation + mapRotation);
+  const normalizedRotation = $derived(((effectiveRotation % 360) + 360) % 360);
   const needsFlip = $derived(
     (normalizedRotation > 85 && normalizedRotation < 95) || (normalizedRotation > 265 && normalizedRotation < 275)
   );
   const counterRotation = $derived(
-    needsFlip ? -((sceneRotation + 180) * Math.PI) / 180 : -(sceneRotation * Math.PI) / 180
+    needsFlip ? -((effectiveRotation + 180) * Math.PI) / 180 : -(effectiveRotation * Math.PI) / 180
   );
 
   const canvasSize = 1024;

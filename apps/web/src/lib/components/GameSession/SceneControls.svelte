@@ -420,6 +420,7 @@
               <FogControls {stage} {stageProps} />
             {:else if scene.id === 'map'}
               <MapControls
+                {stage}
                 {stageProps}
                 {handleSelectActiveControl}
                 {activeControl}

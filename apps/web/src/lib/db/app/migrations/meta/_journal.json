@@ -337,6 +337,13 @@
       "when": 1783132816172,
       "tag": "0047_scene-ordering",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1783182293359,
+      "tag": "0048_map-anchor-version",
+      "breakpoints": true
     }
   ]
 }

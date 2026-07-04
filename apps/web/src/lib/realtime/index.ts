@@ -1,6 +1,7 @@
 export { base64ToUint8, uint8ToBase64 } from './binary';
 export { buildRenderProps, type LocalView } from './buildRenderProps';
 export { editorCapabilities, playCapabilities, type SessionCapabilities } from './capabilities';
+export { upgradeSceneCoordinates } from './coordinateUpgrade';
 export {
   ANNOTATION_MASK_KEY,
   DOC_SCHEMA_VERSION,

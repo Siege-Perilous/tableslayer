@@ -1,162 +1,16 @@
 import { DrawMode, GridMode, MapLayerType, ToolType, type StageProps } from '@tableslayer/stage';
 import { trackChecklistItem } from './checklistTracker';
-import { devLog } from './debug';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
-// Track the grid origin (the initial aligned position when first used)
-let gridOrigin: { x?: number; y?: number } = {};
-
-// Snap the other axis if it's misaligned
-function snapOtherAxisIfNeeded(stageProps: StageProps, axis: 'x' | 'y'): void {
-  if ((stageProps.grid.gridMode || 0) !== GridMode.MapDefined || !stageProps.grid.fixedGridCount) {
-    return;
-  }
-
-  const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
-  const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
-  const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
-
-  // Initialize grid origin if not set - calculate the aligned grid position
-  if (gridOrigin[axis] === undefined) {
-    // Calculate where the grid should be positioned (matching GridControls alignment logic)
-    const gridCount = axis === 'x' ? stageProps.grid.fixedGridCount.x : stageProps.grid.fixedGridCount.y;
-    const gridSizePx = gridSpacingPx * gridCount + stageProps.grid.lineThickness / 2.0;
-
-    let gridOriginPx: number;
-    const resolution = stageProps.display.resolution[axis];
-
-    if (gridSizePx <= resolution) {
-      // Grid fits - center it
-      gridOriginPx = (resolution - gridSizePx) / 2.0;
-    } else {
-      // Grid overflows
-      if (axis === 'x') {
-        gridOriginPx = 0; // Align left
-      } else {
-        gridOriginPx = resolution - gridSizePx; // Align top
-      }
-    }
-
-    // Convert grid origin to map coordinates
-    // This should match the offset calculation from GridControls
-    if (axis === 'x') {
-      gridOrigin[axis] = gridOriginPx - resolution / 2 + gridSizePx / 2;
-    } else {
-      // Y axis: convert from UV space to WebGL coordinates
-      const gridTopWebGL = -(resolution / 2) + gridOriginPx;
-      gridOrigin[axis] = gridTopWebGL + gridSizePx / 2;
-    }
-  }
-
-  const origin = gridOrigin[axis]!;
-  const offsetFromOrigin = currentOffset - origin;
-  const gridSteps = Math.round(offsetFromOrigin / gridSpacingPx);
-  const alignedPosition = origin + gridSteps * gridSpacingPx;
-  const misalignment = Math.abs(currentOffset - alignedPosition);
-
-  // If misaligned by more than 5%, snap to nearest grid line
-  if (misalignment > gridSpacingPx * 0.05) {
-    devLog('grid', '[GRID-SNAP Other Axis]', {
-      axis,
-      currentOffset,
-      alignedPosition,
-      misalignment,
-      snapping: true
-    });
-    queuePropertyUpdate(stageProps, ['map', 'offset', axis], alignedPosition, 'control');
-  }
-}
-
-// Calculate grid-snapped position for arrow key movement
-function calculateGridSnappedOffset(stageProps: StageProps, axis: 'x' | 'y', direction: 1 | -1): number {
-  // In MapDefined mode, move by one grid square
-  if ((stageProps.grid.gridMode || 0) === GridMode.MapDefined && stageProps.grid.fixedGridCount) {
-    // Get current offset
-    const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
-
-    // Calculate pixel pitch (inches per pixel)
+// Arrow-key pan distance: one grid cell in MapDefined mode (the grid is
+// anchored to the map, so moving the map a cell keeps everything aligned),
+// 1px in FillSpace mode
+function arrowPanDistance(stageProps: StageProps, axis: 'x' | 'y'): number {
+  if ((stageProps.grid.gridMode || 0) === GridMode.MapDefined) {
     const pixelPitch = stageProps.display.size[axis] / stageProps.display.resolution[axis];
-
-    // Calculate grid spacing in pixels
-    const gridSpacingPx = stageProps.grid.spacing / pixelPitch;
-
-    // Initialize grid origin if not set - calculate the aligned grid position
-    if (gridOrigin[axis] === undefined) {
-      // Calculate where the grid should be positioned (matching GridControls alignment logic)
-      const gridCount = axis === 'x' ? stageProps.grid.fixedGridCount.x : stageProps.grid.fixedGridCount.y;
-      const gridSizePx = gridSpacingPx * gridCount + stageProps.grid.lineThickness / 2.0;
-
-      let gridOriginPx: number;
-      const resolution = stageProps.display.resolution[axis];
-
-      if (gridSizePx <= resolution) {
-        // Grid fits - center it
-        gridOriginPx = (resolution - gridSizePx) / 2.0;
-      } else {
-        // Grid overflows
-        if (axis === 'x') {
-          gridOriginPx = 0; // Align left
-        } else {
-          gridOriginPx = resolution - gridSizePx; // Align top
-        }
-      }
-
-      // Convert grid origin to map coordinates
-      // This should match the offset calculation from GridControls
-      if (axis === 'x') {
-        gridOrigin[axis] = gridOriginPx - resolution / 2 + gridSizePx / 2;
-      } else {
-        // Y axis: convert from UV space to WebGL coordinates
-        const gridTopWebGL = -(resolution / 2) + gridOriginPx;
-        gridOrigin[axis] = gridTopWebGL + gridSizePx / 2;
-      }
-    }
-
-    const origin = gridOrigin[axis]!;
-    let newOffset: number;
-    let snapAction = 'none';
-
-    // Calculate how far we are from the grid origin
-    const offsetFromOrigin = currentOffset - origin;
-    const gridSteps = Math.round(offsetFromOrigin / gridSpacingPx);
-    const alignedPosition = origin + gridSteps * gridSpacingPx;
-    const misalignment = Math.abs(currentOffset - alignedPosition);
-
-    // If we're close to aligned (within 5% of grid spacing), move from aligned position
-    // Otherwise, snap to the next grid line in the direction of movement
-    if (misalignment < gridSpacingPx * 0.05) {
-      // We're aligned, move by one grid unit
-      newOffset = alignedPosition + direction * gridSpacingPx;
-      snapAction = 'aligned-move';
-    } else {
-      // We're misaligned, snap to next grid line in movement direction
-      const nextGridStep =
-        direction > 0 ? Math.ceil(offsetFromOrigin / gridSpacingPx) : Math.floor(offsetFromOrigin / gridSpacingPx);
-      newOffset = origin + nextGridStep * gridSpacingPx;
-      snapAction = 'snap-to-grid';
-    }
-
-    devLog('grid', '[GRID-SNAP Arrow]', {
-      axis,
-      direction,
-      gridSpacingPx,
-      currentOffset,
-      gridOrigin: origin,
-      offsetFromOrigin,
-      gridSteps,
-      alignedPosition,
-      misalignment,
-      newOffset,
-      moveDistance: newOffset - currentOffset,
-      snapAction
-    });
-
-    return newOffset;
+    return stageProps.grid.spacing / pixelPitch;
   }
-
-  // Default to 1px movement in FillSpace mode
-  const currentOffset = axis === 'x' ? stageProps.map.offset.x : stageProps.map.offset.y;
-  return currentOffset + direction;
+  return 1;
 }
 
 type ArrowKey = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
@@ -410,20 +264,12 @@ export function handleKeyCommands(
       if (event.shiftKey) {
         event.preventDefault();
         const { axis, direction } = getRotatedPanAxis(event.key, stageProps.scene.rotation);
-        const otherAxis = axis === 'x' ? 'y' : 'x';
-        const newOffset = calculateGridSnappedOffset(stageProps, axis, direction);
+        const newOffset = stageProps.map.offset[axis] + direction * arrowPanDistance(stageProps, axis);
         queuePropertyUpdate(stageProps, ['map', 'offset', axis], newOffset, 'control');
-        // Also snap the other axis if misaligned
-        snapOtherAxisIfNeeded(stageProps, otherAxis);
         trackChecklistItem('pan-map');
       }
       break;
   }
 
   return activeControl;
-}
-
-// Reset grid origin when scene changes or grid mode switches
-export function resetGridOrigin(): void {
-  gridOrigin = {};
 }

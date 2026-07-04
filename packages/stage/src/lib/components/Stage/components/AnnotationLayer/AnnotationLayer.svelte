@@ -11,6 +11,7 @@
   import { ToolType } from '../DrawingLayer/types';
   import type { GridLayerProps } from '../GridLayer/types';
   import { getGridCellSize } from '../../helpers/grid';
+  import type { MapTransform } from '../../helpers/mapSpace';
   import toolOutlineVertexShader from '../../shaders/default.vert?raw';
   import toolOutlineFragmentShader from '../../shaders/ToolOutline.frag?raw';
 
@@ -21,9 +22,13 @@
     display: DisplayProps;
     grid: GridLayerProps;
     sceneZoom: number;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
+    /** Legacy display-space mask conversion config, set in MapDefined mode */
+    conversion?: { realDisplay: DisplayProps; map: MapTransform };
   }
 
-  const { props, mode, isActive, display, grid, sceneZoom }: Props = $props();
+  const { props, mode, isActive, display, grid, sceneZoom, localScale = 1, conversion }: Props = $props();
 
   const onAnnotationUpdate = getContext<Callbacks>('callbacks').onAnnotationUpdate;
 
@@ -104,7 +109,8 @@
     // Scale radius inversely with zoom - less smoothing when zoomed in
     // At zoom 2x, radius is 25 (half)
     // At zoom 0.5x, radius is 100 (double)
-    const adjustedRadius = BASE_RADIUS / sceneZoom;
+    // localScale converts the screen-space radius into local (map) pixels
+    const adjustedRadius = BASE_RADIUS / (sceneZoom * localScale);
 
     // Adjust friction based on zoom - more responsive when zoomed in
     // At high zoom (>2), reduce friction for more immediate response
@@ -124,6 +130,8 @@
     // Use .set() to avoid allocating new objects
     outlineMaterial.uniforms.uTextureSize.value.set(display.resolution.x, display.resolution.y);
     outlineMaterial.uniforms.uBrushSize.value = lineWidthPixels;
+    // Outline thickness is a screen-space style; convert to local pixels
+    outlineMaterial.uniforms.uOutlineThickness.value = OUTLINE_THICKNESS / localScale;
     displayCenterOffset.set(display.resolution.x / 2, display.resolution.y / 2);
   });
 
@@ -449,7 +457,12 @@ and markers - the trade-off is they receive post-processing (bloom etc.) there.
         props={layer}
         {display}
         {lineWidthPixels}
+        {conversion}
         isDrawingThisLayer={() => drawing && props.activeLayer === layer.id}
+        onMaskConverted={() => {
+          const converted = layers.find((l) => l && l.getId() === layer.id);
+          if (converted) onAnnotationUpdate(layer.id, converted.toPng());
+        }}
       />
       <T.PlaneGeometry />
     </T.Mesh>

@@ -162,13 +162,9 @@
   };
 </script>
 
-<!-- Map -->
-<T.Object3D
-  name="mapLayer"
-  position={[props.map.offset.x, props.map.offset.y, 0]}
-  rotation.z={(props.map.rotation / 180.0) * Math.PI}
-  scale={[(mapSize?.width ?? 0) * props.map.zoom, (mapSize?.height ?? 0) * props.map.zoom, 1]}
->
+<!-- Map: offset/rotation/zoom live on the parent mapAnchor node in Scene.svelte;
+     this node only scales the unit plane to the map image size -->
+<T.Object3D name="mapLayer" scale={[mapSize?.width ?? 0, mapSize?.height ?? 0, 1]}>
   <!-- Map image -->
   {#key materialUpdateKey}
     <T.Mesh name="mapImage" layers={[SceneLayer.Main]} renderOrder={SceneLayerOrder.Map} visible={true}>

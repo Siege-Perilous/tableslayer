@@ -33,6 +33,7 @@ export enum SceneLayerOrder {
   EdgeOverlay = 70,
   Annotation = 80, // Color annotations render over fog of war
   Measurement = 90,
+  TvViewport = 95, // DM-only TV viewport rectangle; dims everything outside the playfield
   Cursor = 100
 }
 

@@ -7,6 +7,10 @@
     zoomSensitivity: number;
     stageElement: HTMLDivElement;
     stageProps: StageProps;
+    /** When set, map rotation gestures snap to this step in degrees (e.g. 90 in MapDefined mode) */
+    mapRotationStep?: number;
+    /** Disables pinch-zooming the map (MapDefined mode derives the map zoom from the grid) */
+    disableMapZoom?: boolean;
     onMapPan: (dx: number, dy: number) => void;
     onMapRotate: (angle: number) => void;
     onMapZoom: (zoom: number) => void;
@@ -22,6 +26,8 @@
     zoomSensitivity,
     stageElement,
     stageProps,
+    mapRotationStep,
+    disableMapZoom = false,
     onMapPan,
     onMapRotate,
     onMapZoom,
@@ -135,8 +141,11 @@
     if (prevDiff > 0) {
       if (isMapControl) {
         onMapPan(dx, dy);
-        onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
+        if (!disableMapZoom) {
+          onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
+        }
+        const rotation = stageProps.map.rotation - (angleDelta * 180) / Math.PI;
+        onMapRotate(mapRotationStep ? Math.round(rotation / mapRotationStep) * mapRotationStep : rotation);
       } else {
         onScenePan(dx, dy);
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));

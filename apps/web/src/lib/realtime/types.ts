@@ -30,6 +30,8 @@ export interface SceneSettings {
   gridMode: number;
   gridMapDefinedX: number | null;
   gridMapDefinedY: number | null;
+  /** 0 = legacy display-space marker/light positions, 1 = map-local (MapDefined scenes) */
+  mapCoordVersion: number;
   gridSpacing: number;
   gridOpacity: number;
   gridLineColor: string;

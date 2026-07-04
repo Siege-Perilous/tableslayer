@@ -1,0 +1,1 @@
+ALTER TABLE `scene` ADD `map_coord_version` integer DEFAULT 0 NOT NULL;

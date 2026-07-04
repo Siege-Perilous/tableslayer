@@ -9,12 +9,14 @@
     grid: GridLayerProps;
     display: DisplayProps;
     sceneZoom: number;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
   }
 
-  const { grid, display, sceneZoom, ...meshProps }: Props = $props();
+  const { grid, display, sceneZoom, localScale = 1, ...meshProps }: Props = $props();
 </script>
 
 <T.Mesh name="gridLayer" scale={[display.resolution.x, display.resolution.y, 1]} {...meshProps}>
-  <GridMaterial {grid} {display} {sceneZoom} />
+  <GridMaterial {grid} {display} {sceneZoom} {localScale} />
   <T.PlaneGeometry />
 </T.Mesh>

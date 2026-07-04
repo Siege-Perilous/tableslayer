@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { SessionDocClient, type SceneChange } from '$lib/realtime';
+import { SessionDocClient, upgradeSceneCoordinates, type SceneChange } from '$lib/realtime';
 import { devError, devLog } from '$lib/utils/debug';
 import type { StageExports } from '@tableslayer/stage';
 
@@ -55,8 +55,17 @@ export class EditorSession {
    * Apply a scene's fog mask from the doc to the stage. Retries on a short
    * schedule: the fog layer refills itself when the map texture loads.
    * (Annotation masks are declarative layer props — no application needed.)
+   *
+   * Runs once per displayed scene after the stage has loaded the map, which
+   * is also the right moment to upgrade legacy MapDefined coordinates — the
+   * loaded map's pixel size lets the upgrade reconcile a stale grid count.
    */
   async applyMasks(sceneId: string) {
+    if (this.client) {
+      const mapSize = this.#options.getStage()?.map.getSize() ?? null;
+      upgradeSceneCoordinates(this.client, sceneId, mapSize);
+    }
+
     for (const delay of [0, 300, 1000, 3000]) {
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       if (this.#options.selectedSceneId() !== sceneId) return; // scene changed mid-retry

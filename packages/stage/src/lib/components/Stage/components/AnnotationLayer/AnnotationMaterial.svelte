@@ -1,12 +1,14 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
   import { getContext, onDestroy } from 'svelte';
   import chroma from 'chroma-js';
   import DrawingMaterial from '../DrawingLayer/DrawingMaterial.svelte';
   import { type AnnotationLayerData, AnnotationEffect } from './types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
-  import { DrawMode, ToolType, InitialState } from '../DrawingLayer/types';
+  import { DrawMode, ToolType, InitialState, peekRLEDimensions } from '../DrawingLayer/types';
+  import { convertMaskToMapSpace, rleToDataTexture } from '../../helpers/annotationSpaceConversion';
+  import type { MapTransform } from '../../helpers/mapSpace';
   import type { DisplayProps, PerformanceTier } from '../Stage/types';
 
   import annotationEffectsFragmentShader from '../../shaders/AnnotationEffects.frag?raw';
@@ -18,9 +20,26 @@
     lineWidthPixels: number;
     /** True while the user is actively drawing on this layer (skip mask re-apply) */
     isDrawingThisLayer?: () => boolean;
+    /**
+     * Set in MapDefined mode, where the annotation texture is map-sized. A
+     * persisted mask whose dimensions equal the real display resolution is
+     * legacy display-space data and is re-projected into map space on load.
+     */
+    conversion?: { realDisplay: DisplayProps; map: MapTransform };
+    /** Fired after a legacy mask has been re-projected, so it can be persisted once */
+    onMaskConverted?: () => void;
   }
 
-  const { props, display, lineWidthPixels, isDrawingThisLayer = () => false }: Props = $props();
+  const {
+    props,
+    display,
+    lineWidthPixels,
+    isDrawingThisLayer = () => false,
+    conversion,
+    onMaskConverted
+  }: Props = $props();
+
+  const { renderer } = useThrelte();
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
@@ -130,8 +149,36 @@
     return drawMaterial.toRLE();
   };
 
-  export const fromRLE = async (rleData: Uint8Array, width: number, height: number) => {
+  /**
+   * Loads RLE mask data into the drawing buffer. In MapDefined mode, a mask
+   * persisted at the real display resolution (legacy display-space data) is
+   * re-projected into the map-sized texture and persisted once via
+   * onMaskConverted; everything else loads directly.
+   */
+  const applyMask = async (rleData: Uint8Array, width: number, height: number) => {
+    const dims = peekRLEDimensions(rleData);
+    const isLegacyDisplaySpace =
+      conversion !== undefined &&
+      dims !== null &&
+      (dims.width !== size.width || dims.height !== size.height) &&
+      dims.width === conversion.realDisplay.resolution.x &&
+      dims.height === conversion.realDisplay.resolution.y;
+
+    if (isLegacyDisplaySpace) {
+      const { texture } = rleToDataTexture(rleData);
+      const target = convertMaskToMapSpace(renderer, texture, dims, size, conversion.map);
+      drawMaterial.loadTexture(target.texture);
+      texture.dispose();
+      target.dispose();
+      onMaskConverted?.();
+      return;
+    }
+
     return drawMaterial.fromRLE(rleData, width, height);
+  };
+
+  export const fromRLE = async (rleData: Uint8Array, width: number, height: number) => {
+    return applyMask(rleData, width, height);
   };
 
   // Declarative mask application: load on mount and whenever the mask reference
@@ -153,7 +200,7 @@
       appliedMask = props.mask;
       appliedWidth = width;
       appliedHeight = height;
-      drawMaterial.fromRLE(props.mask, 1024, 1024);
+      applyMask(props.mask, 1024, 1024);
     });
   });
 

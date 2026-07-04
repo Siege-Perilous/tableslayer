@@ -3,6 +3,22 @@ export enum InitialState {
   Fill = 1
 }
 
+/**
+ * Reads the width/height header that DrawingMaterial.toRLE prepends to
+ * persisted mask data (two little-endian uint32s). Returns null when the
+ * data has no plausible header (legacy headerless masks).
+ */
+export const peekRLEDimensions = (rleData: Uint8Array): { width: number; height: number } | null => {
+  if (rleData.length <= 8) return null;
+  const view = new DataView(rleData.buffer, rleData.byteOffset, rleData.byteLength);
+  const width = view.getUint32(0, true);
+  const height = view.getUint32(4, true);
+  if (width > 0 && width <= 8192 && height > 0 && height <= 8192) {
+    return { width, height };
+  }
+  return null;
+};
+
 export enum ToolType {
   Brush = 1,
   Rectangle = 2,
