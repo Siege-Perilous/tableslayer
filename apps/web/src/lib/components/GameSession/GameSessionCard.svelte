@@ -235,7 +235,7 @@
 <style>
   :global {
     .panel.gameSessionCard {
-      padding: var(--size-4);
+      padding: 1rem;
       display: flex;
       flex-direction: column;
       width: 100%;

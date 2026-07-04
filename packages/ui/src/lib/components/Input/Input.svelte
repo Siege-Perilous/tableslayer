@@ -24,12 +24,12 @@
 
 <style>
   .input {
-    height: var(--size-8);
+    height: 2rem;
     font-family: var(--font-sans);
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
     border-radius: var(--radius-2);
-    padding: 0 var(--size-3);
+    padding: 0 0.75rem;
     background: var(--inputBg);
     width: 100%;
     &:focus-visible {

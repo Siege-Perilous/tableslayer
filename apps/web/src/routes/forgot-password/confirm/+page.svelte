@@ -16,7 +16,7 @@
     display: flex;
     flex-direction: column;
     max-width: var(--contain-smallForm);
-    padding: var(--size-8);
+    padding: 2rem;
     margin: 20vh auto auto auto;
   }
 </style>

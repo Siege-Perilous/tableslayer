@@ -92,12 +92,12 @@
   .btn {
     color: var(--btn-color);
     background-color: var(--btn-bg);
-    padding: 0 var(--size-2);
+    padding: 0 0.5rem;
     border-radius: var(--radius-2);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--size-2);
+    gap: 0.5rem;
     cursor: pointer;
     border: var(--btn-border);
     border-color: transparent;
@@ -107,16 +107,16 @@
   }
 
   .btn--sm {
-    font-size: var(--font-size-1);
-    height: var(--size-6);
+    font-size: 1rem;
+    height: 1.5rem;
   }
   .btn--md {
-    font-size: var(--font-size-1);
-    height: var(--size-8);
+    font-size: 1rem;
+    height: 2rem;
   }
   .btn--lg {
-    font-size: var(--font-size-2);
-    height: var(--size-9);
+    font-size: 1.1rem;
+    height: 2.25rem;
   }
 
   .btn--primary {

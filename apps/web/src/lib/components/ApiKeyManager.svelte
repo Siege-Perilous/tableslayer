@@ -165,20 +165,20 @@
 <style>
   .apiKeyManager__form {
     display: flex;
-    gap: var(--size-2);
+    gap: 0.5rem;
     align-items: flex-end;
   }
 
   .apiKeyManager__keyDisplay {
     display: flex;
-    gap: var(--size-2);
+    gap: 0.5rem;
     align-items: center;
   }
 
   .apiKeyManager__key {
     font-family: monospace;
     font-size: 0.75rem;
-    padding: var(--size-2);
+    padding: 0.5rem;
     background: var(--bg);
     border-radius: var(--radius-1);
     word-break: break-all;
@@ -187,14 +187,14 @@
 
   .apiKeyManager__list {
     border-top: 1px solid var(--contrastLow);
-    padding-top: var(--size-3);
+    padding-top: 0.75rem;
   }
 
   .apiKeyManager__item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--size-2) 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--contrastLow);
   }
 
@@ -205,6 +205,6 @@
   .apiKeyManager__itemInfo {
     display: flex;
     flex-direction: column;
-    gap: var(--size-1);
+    gap: 0.25rem;
   }
 </style>

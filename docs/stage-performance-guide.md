@@ -31,10 +31,10 @@ The performance system uses timestamp-based FPS calculation because `performance
 
 Key files:
 
-- `packages/ui/src/lib/components/Stage/helpers/performanceMetrics.svelte.ts`
-- `packages/ui/src/lib/components/Stage/helpers/debugState.svelte.ts`
-- `packages/ui/src/lib/components/Stage/components/PerformanceOverlay/`
-- `packages/ui/src/lib/components/Stage/components/PerformanceDebugger/`
+- `packages/stage/src/lib/components/Stage/helpers/performanceMetrics.svelte.ts`
+- `packages/stage/src/lib/components/Stage/helpers/debugState.svelte.ts`
+- `packages/stage/src/lib/components/Stage/components/PerformanceOverlay/`
+- `packages/stage/src/lib/components/Stage/components/PerformanceDebugger/`
 
 ---
 
@@ -219,7 +219,7 @@ export const debugState = $state({
 
 When investigating performance issues:
 
-1. **Baseline**: Enable metrics overlay (Shift+P), note FPS with all features on
+1. **Baseline**: Enable metrics overlay (F9), note FPS with all features on
 2. **Isolate**: Disable features one at a time to identify impact
 3. **Profile**: Use browser DevTools Performance tab for CPU profiling
 4. **GPU**: Watch `renderer.info.render.calls` and `renderer.info.memory` for GPU metrics

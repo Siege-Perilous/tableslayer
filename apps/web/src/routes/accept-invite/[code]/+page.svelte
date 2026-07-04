@@ -53,12 +53,12 @@
     display: flex;
     flex-direction: column;
     max-width: var(--contain-mobile);
-    padding: var(--size-8);
+    padding: 2rem;
     margin: 20vh auto auto auto;
   }
   .name {
     color: var(--fgMuted);
-    font-size: var(--font-size-4);
+    font-size: 1.5rem;
   }
   .partyName {
     font-weight: var(--font-weight-8);
@@ -66,7 +66,7 @@
   }
   .invitedBy {
     display: flex;
-    gap: var(--size-2);
+    gap: 0.5rem;
     align-items: center;
   }
 </style>

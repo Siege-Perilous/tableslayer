@@ -99,7 +99,7 @@
   }
   .fileInput__input::file-selector-button {
     background: var(--inputBg);
-    padding: 0 var(--size-2);
+    padding: 0 0.5rem;
     color: var(--fg);
     border: var(--borderThin);
     border-radius: var(--radius-2);

@@ -133,8 +133,8 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: var(--size-1) var(--size-4);
-    gap: var(--size-4);
+    padding: 0.25rem 1rem;
+    gap: 1rem;
     border-radius: var(--radius-1);
     width: 100%;
     border: solid 2px transparent;

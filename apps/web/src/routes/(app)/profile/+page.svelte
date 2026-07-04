@@ -259,8 +259,8 @@
 <style>
   .profile {
     max-width: 600px;
-    margin: var(--size-12) auto;
-    padding: 0 var(--size-4);
+    margin: 3rem auto;
+    padding: 0 1rem;
   }
 
   .profile__header {
@@ -273,7 +273,7 @@
   .profile__content {
     display: flex;
     flex-direction: column;
-    gap: var(--size-8);
+    gap: 2rem;
   }
 
   .profile__section {

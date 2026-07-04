@@ -198,7 +198,7 @@
 <style>
   header {
     background: var(--bg);
-    padding: var(--size-2);
+    padding: 0.5rem;
     border-bottom: var(--borderThin);
   }
   .headerContainer {
@@ -215,7 +215,7 @@
   .headerContainer__section {
     display: flex;
     align-items: center;
-    gap: var(--size-4);
+    gap: 1rem;
     white-space: nowrap;
     max-width: calc(100% - 100px);
   }
@@ -231,14 +231,14 @@
   }
   .partyDropdown {
     display: flex;
-    gap: var(--size-2);
+    gap: 0.5rem;
     align-items: center;
   }
   .partyDropdown__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--size-2);
+    padding: 0.5rem;
   }
   .partyDropdown__icon:hover {
     background: var(--contrastLow);
@@ -252,7 +252,7 @@
   }
   .gameSessionDropdown {
     display: flex;
-    gap: var(--size-2);
+    gap: 0.5rem;
     align-items: center;
   }
   .gameSessionDropdown__text {
@@ -261,8 +261,8 @@
   .logo {
     background: var(--fgPrimary);
     border-radius: var(--radius-2);
-    height: var(--size-8);
-    width: var(--size-8);
+    height: 2rem;
+    width: 2rem;
     align-items: center;
     display: flex;
     justify-content: center;

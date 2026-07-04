@@ -38,7 +38,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--size-2);
+    gap: 0.5rem;
     cursor: pointer;
     font-weight: var(--font-weight-5);
     border: var(--iconBtn-border);
@@ -47,22 +47,22 @@
   }
 
   .iconBtn--sm {
-    font-size: var(--font-size-1);
-    height: var(--size-6);
-    width: var(--size-6);
-    min-width: var(--size-6);
+    font-size: 1rem;
+    height: 1.5rem;
+    width: 1.5rem;
+    min-width: 1.5rem;
   }
   .iconBtn--md {
-    font-size: var(--font-size-1);
-    height: var(--size-8);
-    width: var(--size-8);
-    min-width: var(--size-8);
+    font-size: 1rem;
+    height: 2rem;
+    width: 2rem;
+    min-width: 2rem;
   }
   .iconBtn--lg {
-    font-size: var(--font-size-2);
-    height: var(--size-9);
-    width: var(--size-9);
-    min-width: var(--size-9);
+    font-size: 1.1rem;
+    height: 2.25rem;
+    width: 2.25rem;
+    min-width: 2.25rem;
   }
   .iconBtn--primary {
     border-color: var(--fg);

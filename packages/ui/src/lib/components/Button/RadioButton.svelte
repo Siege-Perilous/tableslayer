@@ -52,7 +52,7 @@
     display: inline-flex;
     border-radius: var(--radius-2);
     overflow: hidden;
-    height: var(--size-8);
+    height: 2rem;
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
   }
@@ -61,7 +61,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-size-1);
+    font-size: 1rem;
     min-width: 2rem;
     height: 100%;
     cursor: pointer;

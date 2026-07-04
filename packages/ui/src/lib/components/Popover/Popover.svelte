@@ -123,7 +123,7 @@
     top: 0;
     left: 0;
     width: max-content;
-    padding: var(--size-2);
+    padding: 0.5rem;
     background: var(--popoverBg);
     color: var(--fg);
     border: var(--borderThin);
