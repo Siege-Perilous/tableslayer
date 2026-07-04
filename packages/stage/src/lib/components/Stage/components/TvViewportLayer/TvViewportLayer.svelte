@@ -12,11 +12,13 @@
   interface Props {
     display: DisplayProps;
     sceneZoom: number;
+    /** Editor viewport rotation in degrees; the hint text counter-rotates to stay readable */
+    sceneRotation?: number;
     map: MapTransform;
     mapSize: Size | null;
   }
 
-  const { display, sceneZoom, map, mapSize }: Props = $props();
+  const { display, sceneZoom, sceneRotation = 0, map, mapSize }: Props = $props();
 
   const { invalidate } = useThrelte();
 
@@ -25,6 +27,50 @@
   const OUTLINE_OPACITY = 0.9;
   const DIM_COLOR = '#000000';
   const DIM_OPACITY = 0.4;
+
+  const HINT_TEXT = 'SHIFT + mouse drag to adjust TV view';
+  const HINT_FONT_SCREEN_PX = 13;
+  const HINT_MARGIN_SCREEN_PX = 8;
+  // Rasterize the label larger and scale down so it stays crisp when zooming
+  const HINT_SUPERSAMPLE = 4;
+
+  const hint = (() => {
+    const canvas = document.createElement('canvas');
+    const font = `600 ${HINT_FONT_SCREEN_PX * HINT_SUPERSAMPLE}px system-ui, -apple-system, sans-serif`;
+    const measureContext = canvas.getContext('2d')!;
+    measureContext.font = font;
+    const padding = 2 * HINT_SUPERSAMPLE;
+    canvas.width = Math.ceil(measureContext.measureText(HINT_TEXT).width) + padding * 2;
+    canvas.height = Math.ceil(HINT_FONT_SCREEN_PX * HINT_SUPERSAMPLE * 1.5);
+
+    // Resizing the canvas resets the context state
+    const context = canvas.getContext('2d')!;
+    context.font = font;
+    context.textBaseline = 'middle';
+    context.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    context.shadowBlur = 3 * HINT_SUPERSAMPLE;
+    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    context.fillText(HINT_TEXT, padding, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return { texture, aspect: canvas.width / canvas.height };
+  })();
+
+  const hintMaterial = new THREE.MeshBasicMaterial({
+    map: hint.texture,
+    transparent: true,
+    depthTest: false,
+    toneMapped: false
+  });
+
+  // Constant on-screen size, left-aligned just above the rect's top-left corner
+  const hintHeight = $derived((HINT_FONT_SCREEN_PX * 1.5) / sceneZoom);
+  const hintWidth = $derived(hintHeight * hint.aspect);
+  const hintPosition = $derived([
+    -display.resolution.x / 2 + hintWidth / 2,
+    display.resolution.y / 2 + HINT_MARGIN_SCREEN_PX / sceneZoom + hintHeight / 2,
+    0
+  ]);
 
   // The quad must cover everything the dim mask should reach: the whole map
   // plus the TV rectangle, with margin for panning around them
@@ -52,6 +98,8 @@
 
   onDestroy(() => {
     material.dispose();
+    hintMaterial.dispose();
+    hint.texture.dispose();
   });
 
   $effect(() => {
@@ -70,5 +118,20 @@
   renderOrder={SceneLayerOrder.TvViewport}
 >
   <T is={material} />
+  <T.PlaneGeometry />
+</T.Mesh>
+
+<!-- Reminder above the rect's top-left corner; counter-rotated so it reads
+     upright under the editor's seating rotation (camera rotates by
+     +sceneRotation, so upright world orientation follows it) -->
+<T.Mesh
+  name="tvViewportHint"
+  position={hintPosition as [number, number, number]}
+  rotation={[0, 0, (sceneRotation * Math.PI) / 180]}
+  scale={[hintWidth, hintHeight, 1]}
+  layers={[SceneLayer.Overlay]}
+  renderOrder={SceneLayerOrder.TvViewport}
+>
+  <T is={hintMaterial} />
   <T.PlaneGeometry />
 </T.Mesh>

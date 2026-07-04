@@ -4,7 +4,7 @@
   import { buildSceneProps, throttle } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
+  import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
   import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
   import { stagePerformance } from '$lib/stores';
@@ -102,6 +102,7 @@
         mode: 'client',
         activeLayer: tools.activeLayer,
         viewport: { offset: { x: 0, y: 0 }, zoom: sceneZoom },
+        mapTransform: mapDragOffset ? { offset: mapDragOffset } : undefined,
         markerPositions: dragPositions,
         fogTool: { mode: tools.fogTool.mode, size: tools.fogTool.size },
         annotations: {
@@ -210,6 +211,34 @@
     );
   }
 
+  // Four-finger pan adjusts which part of the map the TV shows: instant local
+  // override + throttled doc writes, committed shortly after the gesture ends
+  // (the same pattern as marker drags)
+  let mapDragOffset = $state<{ x: number; y: number } | null>(null);
+  let mapDragClearTimer: ReturnType<typeof setTimeout> | undefined;
+  const writeMapOffset = throttle((sceneId: string, offset: { x: number; y: number }) => {
+    session.client?.write.setSceneSettings(sceneId, { mapOffsetX: offset.x, mapOffsetY: offset.y });
+  }, 50);
+
+  function onMapPan(dx: number, dy: number) {
+    const sceneId = session.activeSceneId;
+    const settings = sceneId ? session.client?.scene(sceneId)?.settings : null;
+    if (!sceneId || !settings) return;
+
+    // Screen px → scene units; screen y points down, scene y up
+    const zoom = sceneZoom || 1;
+    const current = mapDragOffset ?? { x: settings.mapOffsetX ?? 0, y: settings.mapOffsetY ?? 0 };
+    const next = { x: current.x + dx / zoom, y: current.y - dy / zoom };
+    mapDragOffset = next;
+    writeMapOffset(sceneId, next);
+
+    clearTimeout(mapDragClearTimer);
+    mapDragClearTimer = setTimeout(() => {
+      session.client?.write.setSceneSettings(sceneId, { mapOffsetX: next.x, mapOffsetY: next.y });
+      mapDragOffset = null;
+    }, 300);
+  }
+
   function onSceneUpdate(_offset: { x: number; y: number }, zoom: number) {
     if (zoom > 0 && sceneZoom !== zoom) {
       sceneZoom = zoom;
@@ -279,6 +308,11 @@
         }, stageElement)
       : null;
 
+    // Four-finger drag pans the map (matches the editor's four-finger gesture)
+    const mapPanGesture = stageElement
+      ? createMultiFingerPan({ fingerCount: 4, target: stageElement, onPan: onMapPan })
+      : null;
+
     // Drop back to no tool after 5s of inactivity while a tool is active
     const activityTimer = stageElement
       ? createConditionalActivityTimer(
@@ -292,8 +326,10 @@
 
     return () => {
       gestureDetector?.destroy();
+      mapPanGesture?.destroy();
       activityTimer?.destroy();
       for (const timer of dragClearTimers.values()) clearTimeout(timer);
+      clearTimeout(mapDragClearTimer);
       tools.destroy();
       session.destroy();
     };

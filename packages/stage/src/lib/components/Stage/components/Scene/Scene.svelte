@@ -792,7 +792,13 @@
        dims everything outside it (the display-rect clipping is disabled in
        this mode so the DM can see the whole map) -->
   {#if props.mode === StageMode.DM && isMapDefined}
-    <TvViewportLayer display={props.display} sceneZoom={props.scene.zoom} map={props.map} {mapSize} />
+    <TvViewportLayer
+      display={props.display}
+      sceneZoom={props.scene.zoom}
+      sceneRotation={props.scene.rotation}
+      map={props.map}
+      {mapSize}
+    />
   {/if}
 
   <!-- Cursor Layer for rendering remote cursors -->

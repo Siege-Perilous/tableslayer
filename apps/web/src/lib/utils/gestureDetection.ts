@@ -225,3 +225,85 @@ export function createUnifiedGestureDetector(
     }
   };
 }
+
+export interface MultiFingerPanOptions {
+  /**
+   * Exact number of fingers required for the pan
+   */
+  fingerCount: number;
+
+  /**
+   * Called with the centroid's screen-pixel movement per touchmove
+   */
+  onPan: (dx: number, dy: number) => void;
+
+  /**
+   * Called when the gesture ends (a finger lifted or was added)
+   */
+  onPanEnd?: () => void;
+
+  /**
+   * Optional target element (defaults to document.body)
+   */
+  target?: HTMLElement;
+}
+
+/**
+ * Creates a multi-finger drag gesture that emits centroid movement deltas,
+ * e.g. a four-finger map pan. Only active while exactly `fingerCount` fingers
+ * are down; adding or lifting a finger ends the gesture.
+ */
+export function createMultiFingerPan(options: MultiFingerPanOptions): GestureDetector {
+  if (!browser) {
+    return { destroy: () => {} };
+  }
+
+  const { fingerCount, onPan, onPanEnd, target = document.body } = options;
+
+  let previousCentroid: { x: number; y: number } | null = null;
+
+  function centroid(touches: TouchList): { x: number; y: number } {
+    let sumX = 0;
+    let sumY = 0;
+    for (let i = 0; i < touches.length; i++) {
+      sumX += touches[i].clientX;
+      sumY += touches[i].clientY;
+    }
+    return { x: sumX / touches.length, y: sumY / touches.length };
+  }
+
+  function syncTracking(e: TouchEvent) {
+    const active = e.touches.length === fingerCount;
+    if (!active && previousCentroid) onPanEnd?.();
+    previousCentroid = active ? centroid(e.touches) : null;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (e.touches.length !== fingerCount) {
+      if (previousCentroid) onPanEnd?.();
+      previousCentroid = null;
+      return;
+    }
+
+    e.preventDefault();
+    const current = centroid(e.touches);
+    if (previousCentroid) {
+      onPan(current.x - previousCentroid.x, current.y - previousCentroid.y);
+    }
+    previousCentroid = current;
+  }
+
+  target.addEventListener('touchstart', syncTracking, { passive: true });
+  target.addEventListener('touchend', syncTracking, { passive: true });
+  target.addEventListener('touchcancel', syncTracking, { passive: true });
+  target.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+  return {
+    destroy() {
+      target.removeEventListener('touchstart', syncTracking);
+      target.removeEventListener('touchend', syncTracking);
+      target.removeEventListener('touchcancel', syncTracking);
+      target.removeEventListener('touchmove', handleTouchMove);
+    }
+  };
+}

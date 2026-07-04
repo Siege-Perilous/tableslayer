@@ -38,15 +38,19 @@
     { label: 'Med', value: 'medium' },
     { label: 'Low', value: 'low' }
   ];
+
+  // A separate window (not a tab) so it can be dragged to the TV and fullscreened
+  const handleOpenPlayfield = () => {
+    window.open(`/${party.slug}/play`, 'tableslayer-playfield', 'popup,width=1280,height=720');
+    trackChecklistItem('launch-playfield');
+  };
 </script>
 
 <div class="playControls">
-  <Button href={`/${party.slug}/play`} target="_blank" onclick={() => trackChecklistItem('launch-playfield')}>
-    Open playfield
-  </Button>
+  <Button onclick={handleOpenPlayfield}>Open playfield</Button>
   <Spacer size="0.5rem" />
   <Text size="0.85rem" color="var(--fgMuted)">
-    This will open a new tab with the playfield. Fullscreen it on your display.
+    This will open a new window with the playfield. Move it to your display and fullscreen it.
   </Text>
   <Spacer />
   <Hr />
