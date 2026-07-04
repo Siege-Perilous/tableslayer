@@ -94,6 +94,9 @@ test.describe('Scene CRUD operations', () => {
     await expect(setActiveMenuItem).toBeVisible({ timeout: 5000 });
     await setActiveMenuItem.click({ force: true });
 
+    // Wait for the popover to close so the next menu open can't race it
+    await expect(setActiveMenuItem).not.toBeVisible({ timeout: 5000 });
+
     // Wait for the active scene indicator to appear
     await expect(page.getByTestId('sceneActiveIcon')).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('sceneActiveIcon')).toContainText('Active on table', { timeout: 5000 });
