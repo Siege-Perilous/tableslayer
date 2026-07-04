@@ -103,7 +103,7 @@
   .control {
     display: flex;
     flex-direction: column;
-    gap: var(--size-1);
+    gap: 0.25rem;
     width: 100%;
   }
   .control__inputWrapper {
@@ -115,10 +115,10 @@
   .control__end {
     display: flex;
     align-items: center;
-    height: var(--size-8);
+    height: 2rem;
     border: var(--borderThin);
     border-color: var(--inputBorderColor);
-    padding: 0 var(--size-3);
+    padding: 0 0.75rem;
     background: var(--contrastLow);
     color: var(--fgMuted);
   }
@@ -134,13 +134,13 @@
   }
   .control__error {
     display: inline-flex;
-    gap: var(--size-1);
+    gap: 0.25rem;
     color: var(--fgDanger);
-    font-size: var(--font-size-1);
+    font-size: 1rem;
     font-weight: var(--font-weight-6);
-    margin-top: var(--size-1);
-    border-radius: var(--size-2);
-    min-height: var(--size-7);
+    margin-top: 0.25rem;
+    border-radius: 0.5rem;
+    min-height: 1.75rem;
     align-items: center;
   }
 

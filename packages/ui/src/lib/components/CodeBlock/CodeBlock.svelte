@@ -29,12 +29,12 @@
 <style>
   :global(.shiki) {
     font-family: var(--font-mono);
-    padding: var(--size-4);
+    padding: 1rem;
     margin: 0;
   }
   :global(.codeBlock--inline .shiki) {
     font-family: var(--font-mono);
-    padding: 0 var(--size-1);
+    padding: 0 0.25rem;
     margin: 0;
   }
   .codeBlock {

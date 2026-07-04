@@ -202,8 +202,8 @@
 <style>
   .diagnostics {
     max-width: 900px;
-    margin: var(--size-12) auto;
-    padding: 0 var(--size-4);
+    margin: 3rem auto;
+    padding: 0 1rem;
   }
 
   .diagnostics__header {

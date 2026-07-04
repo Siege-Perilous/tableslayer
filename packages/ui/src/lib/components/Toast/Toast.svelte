@@ -124,25 +124,25 @@
   .toasts {
     display: flex;
     flex-direction: column;
-    gap: var(--size-2);
+    gap: 0.5rem;
     width: 300px;
     position: fixed;
-    right: var(--size-8);
-    bottom: var(--size-8);
+    right: 2rem;
+    bottom: 2rem;
     z-index: 2;
   }
   .toast {
     position: fixed;
-    right: var(--size-8);
-    bottom: var(--size-8);
+    right: 2rem;
+    bottom: 2rem;
     display: flex;
     justify-content: space-between;
     align-items: start;
     background: var(--fg);
     color: var(--bg);
-    gap: var(--size-2);
+    gap: 0.5rem;
     width: 300px;
-    padding: var(--size-2);
+    padding: 0.5rem;
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-2);
     border: 1px solid var(--bg);
@@ -153,7 +153,7 @@
   .toast__title {
     display: flex;
     align-items: start;
-    gap: var(--size-2);
+    gap: 0.5rem;
   }
   .toast__titleText {
     font-weight: var(--font-weight-6);
@@ -163,11 +163,11 @@
     transition: none;
   }
   .toast__titleDot {
-    width: var(--size-2);
-    height: var(--size-2);
-    min-width: var(--size-2);
-    min-height: var(--size-2);
-    margin-top: var(--size-1);
+    width: 0.5rem;
+    height: 0.5rem;
+    min-width: 0.5rem;
+    min-height: 0.5rem;
+    margin-top: 0.25rem;
     border-radius: 50%;
   }
 

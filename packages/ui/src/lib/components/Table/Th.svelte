@@ -12,7 +12,7 @@
   .th {
     text-align: left;
     font-weight: var(--font-weight-6);
-    padding: var(--size-1) var(--size-3);
+    padding: 0.25rem 0.75rem;
     border-bottom: var(--borderThin);
   }
 </style>

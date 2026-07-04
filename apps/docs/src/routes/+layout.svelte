@@ -108,7 +108,7 @@
     padding-left: 0;
     border-right: var(--borderThin);
     li {
-      font-size: var(--font-size-1);
+      font-size: 1rem;
     }
     li.isActive {
       a {

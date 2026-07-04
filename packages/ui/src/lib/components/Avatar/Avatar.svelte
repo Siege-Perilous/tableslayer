@@ -81,7 +81,7 @@
     height: 2rem;
     min-width: 2rem;
     min-height: 2rem;
-    font-size: var(--font-size-4);
+    font-size: 1.5rem;
   }
   .avatar--lg {
     width: 2.5rem;

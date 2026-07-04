@@ -123,3 +123,9 @@ IMPORTANT: you SHOULD NOT refactor out a separate function unless there is a com
   - Data flow
   - Key functions and their purposes
   - How to modify or extend the feature
+
+### Skill and Doc Freshness
+
+- **SK-1 (MUST)** Project skills live in `.claude/skills/*/SKILL.md`. When a change alters a pattern documented in a skill (see each skill's "Anchor files" list), update that SKILL.md in the same PR and bump its "last verified" date
+- **SK-2 (MUST)** If a skill or `/docs` file contradicts the code, the code wins — fix the document as part of the current change rather than working around it
+- **SK-3 (SHOULD)** When an architecture doc in `/docs` is updated, check whether a skill references it and keep the two consistent

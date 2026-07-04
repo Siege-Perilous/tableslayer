@@ -148,7 +148,7 @@
     display: flex;
     flex-direction: column;
     max-width: 360px;
-    padding: var(--size-8);
+    padding: 2rem;
     margin: 10vh auto auto 10vh;
     position: relative;
     z-index: 5;

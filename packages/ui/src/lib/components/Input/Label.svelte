@@ -13,7 +13,7 @@
   .label {
     display: block;
     font-weight: var(--font-weight-6);
-    font-size: var(--font-size-1);
+    font-size: 1rem;
     cursor: pointer;
   }
 </style>

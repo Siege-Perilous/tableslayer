@@ -57,13 +57,13 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    padding: var(--size-4);
+    padding: 1rem;
   }
   .maintenance__content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--size-4);
+    gap: 1rem;
     text-align: center;
     max-width: 24rem;
   }

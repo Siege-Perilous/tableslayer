@@ -92,7 +92,7 @@
       padding: 1rem;
     }
     .panel.panelUpgrade {
-      padding: var(--size-4);
+      padding: 1rem;
       display: flex;
       flex-direction: column;
       width: 100%;
@@ -106,19 +106,19 @@
   }
   .container {
     max-width: var(--contain-desktop);
-    margin: var(--size-12) auto;
+    margin: 3rem auto;
   }
   .containerLayout {
     display: grid;
     grid-template-columns: 3fr 1fr;
-    margin-top: var(--size-8);
-    gap: var(--size-12);
+    margin-top: 2rem;
+    gap: 3rem;
     min-height: 400px; /* Prevent vertical shift */
   }
   .sessionList {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--size-4);
+    gap: 1rem;
   }
   .partyMembers {
     display: flex;

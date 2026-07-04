@@ -1,5 +1,13 @@
 # @tableslayer/ui
 
+## 0.2.3
+
+### Patch Changes
+
+- Units to REM
+
+- Replace `var(--size-*)` and `var(--font-size-*)` tokens with their exact rem equivalents in component styles. Value-identical substitution — no visual change.
+
 ## 0.2.2
 
 ### Patch Changes
