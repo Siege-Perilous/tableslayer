@@ -38,8 +38,10 @@
     onFadeComplete
   }: Props = $props();
 
-  // Text/labels counter-rotate against both the viewport and the map anchor
-  const effectiveRotation = $derived(sceneRotation + mapRotation);
+  // Text/labels counter-rotate to stay upright. Scene rotation turns the
+  // CAMERA (compensation follows it) while map rotation turns the parent
+  // anchor (compensation opposes it) — hence the difference.
+  const effectiveRotation = $derived(sceneRotation - mapRotation);
 
   // Visual sizes in MeasurementLayerProps are display-pixel values; the
   // measurement geometry lives in local pixels, so convert them to keep the

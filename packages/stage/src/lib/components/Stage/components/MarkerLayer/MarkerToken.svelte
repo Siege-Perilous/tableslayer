@@ -57,9 +57,11 @@
   const markerSize = $derived(isHovered ? baseMarkerSize * 1.15 : baseMarkerSize);
   const sizeMultiplier = 0.9;
 
-  // Counter-rotate markers to keep them upright relative to the viewport;
-  // in MapDefined mode the token also inherits the map anchor's rotation
-  const effectiveRotation = $derived(sceneRotation + mapRotation);
+  // Counter-rotate markers to keep them upright relative to the viewport.
+  // The two rotations compose with opposite signs: scene rotation turns the
+  // CAMERA (compensation follows it), while map rotation turns the token's
+  // parent anchor (compensation opposes it) — hence the difference.
+  const effectiveRotation = $derived(sceneRotation - mapRotation);
   const normalizedRotation = $derived(((effectiveRotation % 360) + 360) % 360);
   const needsFlip = $derived(
     (normalizedRotation > 85 && normalizedRotation < 95) || (normalizedRotation > 265 && normalizedRotation < 275)
