@@ -191,7 +191,17 @@
   $effect(() => {
     const mask = props.mask;
     const { width, height } = size;
-    if (!mask) return;
+    if (!mask) {
+      // Undo of a layer's first-ever stroke removes the mask entirely; clear the
+      // canvas or the drawn pixels would survive the revert
+      if (!appliedMask) return;
+      queueMicrotask(() => {
+        if (!drawMaterial || props.mask || isDrawingThisLayer()) return;
+        appliedMask = null;
+        drawMaterial.clear();
+      });
+      return;
+    }
     if (mask === appliedMask && width === appliedWidth && height === appliedHeight) return;
 
     queueMicrotask(() => {

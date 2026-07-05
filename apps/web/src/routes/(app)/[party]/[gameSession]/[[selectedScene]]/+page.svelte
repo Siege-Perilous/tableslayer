@@ -935,8 +935,9 @@
     if (remainingLayers.length > 0) {
       stageProps.annotations.activeLayer = remainingLayers[0].id;
     } else {
+      // Leave the draw tool armed: create-on-first-use spawns a fresh layer,
+      // so the brush cursor survives deleting the last layer
       stageProps.annotations.activeLayer = null;
-      stageProps.activeLayer = MapLayerType.None;
     }
     session.client?.write.deleteAnnotation(selectedSceneId, annotationId);
   };
@@ -973,6 +974,16 @@
     }
   });
 
+  const flushPendingAnnotationCommits = () => {
+    const flushes: Promise<void>[] = [];
+    for (const [layerId, pending] of pendingAnnotationCommits) {
+      pendingAnnotationCommits.delete(layerId);
+      clearTimeout(pending.timer);
+      flushes.push(commitAnnotationMask(pending.sceneId, layerId));
+    }
+    return Promise.all(flushes);
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onAnnotationUpdate = (layerId: string, _blob: Promise<Blob>) => {
     const existing = pendingAnnotationCommits.get(layerId);
@@ -1004,11 +1015,11 @@
   // switch time is safe: the fog canvas still shows that scene's mask until the
   // new map texture loads and applyMasks repaints it.
   const flushPendingFogCommit = () => {
-    if (!pendingFogCommit) return;
+    if (!pendingFogCommit) return Promise.resolve();
     const { timer, sceneId } = pendingFogCommit;
     pendingFogCommit = null;
     clearTimeout(timer);
-    commitFogMask(sceneId);
+    return commitFogMask(sceneId);
   };
 
   $effect(() => {
@@ -1225,13 +1236,19 @@
       if (key === 'z' || key === 'y') {
         event.preventDefault();
         if (!session.client) return;
-        if (key === 'y' || event.shiftKey) {
-          if (session.client.canRedo) session.client.redo();
-          else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
-        } else {
-          if (session.client.canUndo) session.client.undo();
-          else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
-        }
+        const client = session.client;
+        const isRedo = key === 'y' || event.shiftKey;
+        // Debounced mask commits must land on the undo stack before we pop it,
+        // or ctrl-z right after a stroke reverts the wrong edit
+        Promise.all([flushPendingAnnotationCommits(), flushPendingFogCommit()]).then(() => {
+          if (isRedo) {
+            if (client.canRedo) client.redo();
+            else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
+          } else {
+            if (client.canUndo) client.undo();
+            else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
+          }
+        });
         return;
       }
     }

@@ -45,13 +45,18 @@ test.describe('Checklist feature tour', () => {
     // Get the initial progress count
     const initialCount = await getProgressCount(progress);
 
-    // Click on the first checklist item to expand it
+    // The first uncompleted item is auto-expanded when the checklist opens
+    const instructions = page.locator('.checklist__instructions').first();
+    await expect(instructions).toBeVisible({ timeout: 5000 });
+
+    // Clicking the expanded item's title collapses it
     const firstItemTitle = page.getByTestId('checklistItemTitle').first();
     await expect(firstItemTitle).toBeVisible();
     await firstItemTitle.click();
+    await expect(instructions).not.toBeVisible({ timeout: 5000 });
 
-    // Verify instructions are shown (item expanded)
-    const instructions = page.locator('.checklist__instructions').first();
+    // Clicking again re-expands it
+    await firstItemTitle.click();
     await expect(instructions).toBeVisible({ timeout: 5000 });
 
     // Find an uncompleted checkbox to click
