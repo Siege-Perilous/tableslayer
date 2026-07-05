@@ -133,8 +133,12 @@
 
     ghostLight.position = snapPosition;
 
-    // Check for hover when not dragging
-    if (!isDragging && (props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Light)) {
+    // Check for hover when not dragging (DM mode only — no hover outlines on the playfield)
+    if (
+      !isDragging &&
+      stage.mode === StageMode.DM &&
+      (props.activeLayer === MapLayerType.None || props.activeLayer === MapLayerType.Light)
+    ) {
       hoveredLight = findClosestLight(position) ?? null;
     } else {
       hoveredLight = null;
