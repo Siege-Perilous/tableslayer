@@ -96,6 +96,7 @@ export interface SceneExports {
     isDraggingMarker: boolean;
     hoveredMarker: Marker | null;
     selectedMarker: Marker | null;
+    tooltipSuppressed: boolean;
     maintainHover: (maintain: boolean) => void;
     onSceneChange: () => void;
   };

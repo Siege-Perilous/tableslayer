@@ -594,6 +594,9 @@
     get selectedMarker() {
       return markerLayer?.markerState?.selectedMarker ?? null;
     },
+    get tooltipSuppressed() {
+      return markerLayer?.markerState?.tooltipSuppressed ?? false;
+    },
     maintainHover: (maintain: boolean) => {
       markerLayer?.maintainHover?.(maintain);
     },

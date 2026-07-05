@@ -35,6 +35,25 @@
   const DOUBLE_CLICK_MS = 350;
   let lastMarkerClick: { id: string; time: number } | null = null;
 
+  // A drag that actually moved must not pop the selection tooltip on release; a
+  // simple tap still does, and a tooltip already open before the drag survives it
+  const DRAG_TOOLTIP_THRESHOLD_PX = 5;
+  let downClientPoint: { x: number; y: number } | null = null;
+  let tooltipWasOpenAtDown = false;
+  let dragMoved = false;
+  let tooltipSuppressed = $state(false);
+
+  function getClientPoint(e: Event): { x: number; y: number } | null {
+    if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
+      const touch = e.touches[0] ?? e.changedTouches[0];
+      return touch ? { x: touch.clientX, y: touch.clientY } : null;
+    }
+    if (e instanceof MouseEvent) {
+      return { x: e.clientX, y: e.clientY };
+    }
+    return null;
+  }
+
   // Quad used for raycasting / mouse input detection
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
   let inputMesh = $state.raw(new THREE.Mesh());
@@ -106,6 +125,10 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
+      tooltipWasOpenAtDown = selectedMarker?.id === closestMarker.id && !tooltipSuppressed;
+      tooltipSuppressed = false;
+      dragMoved = false;
+      downClientPoint = getClientPoint(e);
       selectedMarker = closestMarker;
 
       // Double-click/tap detection (only when a consumer is registered):
@@ -203,6 +226,15 @@
     }
 
     if (isDragging && selectedMarker) {
+      if (!dragMoved && downClientPoint) {
+        const clientPoint = getClientPoint(e);
+        if (
+          clientPoint &&
+          Math.hypot(clientPoint.x - downClientPoint.x, clientPoint.y - downClientPoint.y) > DRAG_TOOLTIP_THRESHOLD_PX
+        ) {
+          dragMoved = true;
+        }
+      }
       onMarkerMoved(selectedMarker, snapPosition);
     }
   }
@@ -262,7 +294,9 @@
   function onMouseUp() {
     if (isDragging && selectedMarker) {
       isDragging = false;
+      tooltipSuppressed = dragMoved && !tooltipWasOpenAtDown;
     }
+    downClientPoint = null;
   }
 
   function onMouseLeave() {
@@ -309,6 +343,9 @@
     isDragging = false;
     hoveredMarker = null;
     hoveredMarkerDelayed = null;
+    tooltipSuppressed = false;
+    dragMoved = false;
+    downClientPoint = null;
 
     if (hoverTimer) {
       clearTimeout(hoverTimer);
@@ -350,6 +387,9 @@
     },
     get selectedMarker() {
       return selectedMarker;
+    },
+    get tooltipSuppressed() {
+      return tooltipSuppressed;
     }
   };
 </script>
