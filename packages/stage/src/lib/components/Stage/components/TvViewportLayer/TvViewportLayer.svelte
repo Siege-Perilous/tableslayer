@@ -64,13 +64,20 @@
   });
 
   // Constant on-screen size, left-aligned just above the rect's top-left corner
+  // as seen on screen: anchor against the rect's screen-space bounding box under
+  // the seating rotation, then rotate that offset back into world space
   const hintHeight = $derived((HINT_FONT_SCREEN_PX * 1.5) / sceneZoom);
   const hintWidth = $derived(hintHeight * hint.aspect);
-  const hintPosition = $derived([
-    -display.resolution.x / 2 + hintWidth / 2,
-    display.resolution.y / 2 + HINT_MARGIN_SCREEN_PX / sceneZoom + hintHeight / 2,
-    0
-  ]);
+  const hintPosition = $derived.by(() => {
+    const theta = (sceneRotation * Math.PI) / 180;
+    const cos = Math.cos(theta);
+    const sin = Math.sin(theta);
+    const screenHalfWidth = Math.abs((display.resolution.x / 2) * cos) + Math.abs((display.resolution.y / 2) * sin);
+    const screenHalfHeight = Math.abs((display.resolution.x / 2) * sin) + Math.abs((display.resolution.y / 2) * cos);
+    const screenX = -screenHalfWidth + hintWidth / 2;
+    const screenY = screenHalfHeight + HINT_MARGIN_SCREEN_PX / sceneZoom + hintHeight / 2;
+    return [screenX * cos - screenY * sin, screenX * sin + screenY * cos, 0];
+  });
 
   // The quad must cover everything the dim mask should reach: the whole map
   // plus the TV rectangle, with margin for panning around them
