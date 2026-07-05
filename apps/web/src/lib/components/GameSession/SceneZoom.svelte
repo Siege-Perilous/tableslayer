@@ -31,10 +31,6 @@
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
     queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
-    // Track checklist completion for scaling map
-    if (zoomType === 'map') {
-      trackChecklistItem('scale-map');
-    }
   };
 
   const toggleZoomType = () => {

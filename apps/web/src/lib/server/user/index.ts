@@ -7,6 +7,7 @@ import {
   type SelectUser
 } from '$lib/db/app/schema';
 import {
+  createDemoGameSession,
   createGameSession,
   createRandomNamedParty,
   EmailAlreadyInUseError,
@@ -137,8 +138,13 @@ export const createUserByEmailAndPassword = async (email: string, password: stri
       role: 'admin'
     });
 
-    // Create a game session database
-    await createGameSession(party.id);
+    // Seed the first session with the demo scene; fall back to a bare session
+    try {
+      await createDemoGameSession(party.id);
+    } catch (demoError) {
+      console.error('Error creating demo game session, falling back to default', demoError);
+      await createGameSession(party.id);
+    }
 
     // Only send verification email if email service is enabled
     if (emailEnabled) {
@@ -451,8 +457,13 @@ export const createOrUpdateGoogleUser = async (googleId: string, email: string, 
       role: 'admin'
     });
 
-    // Create a game session database
-    await createGameSession(party.id);
+    // Seed the first session with the demo scene; fall back to a bare session
+    try {
+      await createDemoGameSession(party.id);
+    } catch (demoError) {
+      console.error('Error creating demo game session, falling back to default', demoError);
+      await createGameSession(party.id);
+    }
 
     return await getUser(userId);
   } catch (error) {

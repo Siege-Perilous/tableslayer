@@ -14,7 +14,6 @@ import {
   PlaceMarkerInstructions,
   RotateMapInstructions,
   RotateSceneInstructions,
-  ScaleMapInstructions,
   SpellEffectInstructions,
   TvSizeInstructions,
   WeatherInstructions
@@ -33,7 +32,6 @@ export type ChecklistItemId =
   | 'marker-visibility'
   | 'add-scene'
   | 'add-light'
-  | 'scale-map'
   | 'rotate-map'
   | 'rotate-scene'
   | 'change-scene'
@@ -106,11 +104,6 @@ export const checklistItems: ChecklistItem[] = [
     id: 'add-light',
     title: 'Add a light to the scene',
     instructions: AddLightInstructions
-  },
-  {
-    id: 'scale-map',
-    title: 'Scale the map',
-    instructions: ScaleMapInstructions
   },
   {
     id: 'rotate-map',

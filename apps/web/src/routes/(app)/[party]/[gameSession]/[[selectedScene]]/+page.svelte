@@ -51,7 +51,7 @@
     type StageExports,
     type StageProps
   } from '@tableslayer/stage';
-  import { addToast, FogSliders, Icon } from '@tableslayer/ui';
+  import { addToast, ContextMenu, FogSliders, Icon, type ContextMenuItem } from '@tableslayer/ui';
   import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp } from '@tabler/icons-svelte';
   import { Pane, PaneGroup, PaneResizer, type PaneAPI } from 'paneforge';
   import { onMount, untrack } from 'svelte';
@@ -700,13 +700,83 @@
     selectedMarkerId = marker?.id || undefined;
   };
 
-  const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
-    if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
-    } else {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+  // Double-clicking a marker opens its editing panel even when collapsed
+  const onMarkerDoubleClick = (marker: Marker) => {
+    selectedMarkerId = marker.id;
+    if (isMarkersCollapsed) {
+      markersPane.expand();
     }
   };
+
+  // Right-click quick menu on a marker; touch devices use the marker panel instead
+  let markerContextMenu = $state<ContextMenu>();
+  let contextMenuMarkerId = $state<string>();
+  const contextMenuMarker = $derived(stageProps.marker.markers.find((m) => m.id === contextMenuMarkerId));
+
+  const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
+    if (!(event instanceof MouseEvent)) return;
+    contextMenuMarkerId = marker.id;
+    selectedMarkerId = marker.id;
+    markerContextMenu?.open(event);
+  };
+
+  const setMarkerVisibility = (markerId: string, visibility: MarkerVisibility) => {
+    updateMarkerAndSave(markerId, (m) => (m.visibility = visibility));
+    // Mirrors the marker panel: DM-only markers can't stay pinned for players
+    if (visibility === MarkerVisibility.DM && pinnedMarkerIds.includes(markerId)) {
+      onPinToggle(markerId, false);
+    }
+    if (visibility === MarkerVisibility.Always || visibility === MarkerVisibility.Hover) {
+      trackChecklistItemLocal('marker-visibility');
+    }
+  };
+
+  const markerContextMenuItems = $derived.by((): ContextMenuItem[] => {
+    const marker = contextMenuMarker;
+    if (!marker) return [];
+    const items: ContextMenuItem[] = [
+      { type: 'label', label: 'Visibility' },
+      {
+        label: 'DM',
+        selected: marker.visibility === MarkerVisibility.DM,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.DM)
+      },
+      {
+        label: 'Everyone',
+        selected: marker.visibility === MarkerVisibility.Always,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.Always)
+      },
+      {
+        label: 'On hover',
+        selected: marker.visibility === MarkerVisibility.Hover,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.Hover)
+      }
+    ];
+    if (marker.visibility !== MarkerVisibility.DM) {
+      items.push(
+        { type: 'divider' },
+        {
+          label: 'Pin tooltip for players',
+          selected: pinnedMarkerIds.includes(marker.id),
+          onclick: () => onPinToggle(marker.id, !pinnedMarkerIds.includes(marker.id))
+        }
+      );
+    }
+    items.push(
+      { type: 'divider' },
+      {
+        label: 'Delete marker',
+        variant: 'danger',
+        onclick: () => {
+          onMarkerDeleted(marker.id);
+          if (selectedMarkerId === marker.id) {
+            selectedMarkerId = undefined;
+          }
+        }
+      }
+    );
+    return items;
+  });
 
   const onMarkerDeleted = (markerId: string) => {
     stageProps.marker.markers = stageProps.marker.markers.filter((m) => m.id !== markerId);
@@ -1315,6 +1385,7 @@
               onMarkerAdded,
               onMarkerMoved,
               onMarkerSelected,
+              onMarkerDoubleClick,
               onMarkerContextMenu,
               onMarkerHover,
               onLightAdded,
@@ -1351,6 +1422,7 @@
               : null}
           />
           <PerformanceDebugger />
+          <ContextMenu bind:this={markerContextMenu} items={markerContextMenuItems} />
         </div>
         <SceneControls
           {stageProps}

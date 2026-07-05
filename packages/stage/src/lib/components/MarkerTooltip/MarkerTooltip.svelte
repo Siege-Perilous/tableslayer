@@ -10,7 +10,7 @@
     Hover: 3
   } as const;
   type MarkerVisibility = (typeof MarkerVisibility)[keyof typeof MarkerVisibility];
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { IconPin, IconPinFilled } from '@tabler/icons-svelte';
 
   interface MarkerData {
@@ -202,29 +202,25 @@
     }, 0);
   }
 
+  // Portal lives inside the stage container (not document.body) so tooltips stack
+  // below surrounding app chrome like the editor toolbar and side panes
   function createPortalContainer() {
-    const existingContainer = document.getElementById('markerTooltipPortal');
+    if (!containerElement) return;
+    const existingContainer = containerElement.querySelector<HTMLDivElement>(':scope > .markerTooltipPortal');
     if (existingContainer) {
-      portalContainer = existingContainer as HTMLDivElement;
+      portalContainer = existingContainer;
       return;
     }
 
     const container = document.createElement('div');
-    container.id = 'markerTooltipPortal';
+    container.className = 'markerTooltipPortal';
     container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '0';
-    container.style.height = '0';
+    container.style.inset = '0';
     container.style.pointerEvents = 'none';
     container.style.zIndex = '1';
-    document.body.appendChild(container);
+    containerElement.appendChild(container);
     portalContainer = container;
   }
-
-  onMount(() => {
-    createPortalContainer();
-  });
 
   onDestroy(() => {
     if (cleanup) {
@@ -241,13 +237,15 @@
     }
 
     if (portalContainer && portalContainer.childNodes.length === 0) {
-      if (document.body.contains(portalContainer)) {
-        document.body.removeChild(portalContainer);
-      }
+      portalContainer.remove();
     }
   });
 
   $effect(() => {
+    if (containerElement && !portalContainer) {
+      createPortalContainer();
+    }
+
     if (tooltipElement && position && containerElement && portalContainer) {
       if (!portalContainer.contains(tooltipElement)) {
         portalContainer.appendChild(tooltipElement);
@@ -310,13 +308,13 @@
         const { x, y, placement } = await computePosition(virtualEl, tooltipElement!, {
           placement: bestPlacement,
           middleware,
-          strategy: 'fixed'
+          strategy: 'absolute'
         });
 
         currentPlacement = placement.split('-')[0] as 'top' | 'bottom' | 'left' | 'right';
 
         Object.assign(tooltipElement!.style, {
-          position: 'fixed',
+          position: 'absolute',
           left: `${x}px`,
           top: `${y}px`,
           pointerEvents: 'auto'
@@ -381,6 +379,7 @@
 
 <style>
   .markerTooltip {
+    width: max-content;
     max-width: 400px;
     background-color: var(--bg);
     padding: 0.5rem 1rem;

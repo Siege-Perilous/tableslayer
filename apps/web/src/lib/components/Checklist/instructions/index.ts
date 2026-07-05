@@ -12,7 +12,6 @@ export { default as PanMapInstructions } from './PanMapInstructions.svelte';
 export { default as PlaceMarkerInstructions } from './PlaceMarkerInstructions.svelte';
 export { default as RotateMapInstructions } from './RotateMapInstructions.svelte';
 export { default as RotateSceneInstructions } from './RotateSceneInstructions.svelte';
-export { default as ScaleMapInstructions } from './ScaleMapInstructions.svelte';
 export { default as SpellEffectInstructions } from './SpellEffectInstructions.svelte';
 export { default as TvSizeInstructions } from './TvSizeInstructions.svelte';
 export { default as WeatherInstructions } from './WeatherInstructions.svelte';

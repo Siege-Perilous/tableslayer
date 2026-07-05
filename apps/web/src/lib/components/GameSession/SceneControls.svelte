@@ -489,6 +489,7 @@
     padding: 0.25rem;
     width: auto;
     position: absolute;
+    z-index: 2;
     left: 50%;
     transform: translateX(-50%);
     top: 3rem;

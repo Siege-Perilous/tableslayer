@@ -56,7 +56,7 @@ export const StageDefaultProps: StageProps = {
   fogOfWar: {
     url: null,
     opacity: {
-      dm: 0.3,
+      dm: 0.78,
       player: 0.9
     },
     outline: {
@@ -100,8 +100,8 @@ export const StageDefaultProps: StageProps = {
       y: 17
     },
     spacing: 1,
-    opacity: 0.05,
-    lineColor: '#E6E6E6',
+    opacity: 0.16,
+    lineColor: '#000000',
     lineThickness: 1.0,
     shadowOpacity: 0.4,
     shadowBlur: 0.5,

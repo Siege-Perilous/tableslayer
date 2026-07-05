@@ -72,6 +72,15 @@
 
   const canvasSize = 1024;
 
+  // Extra canvas margin so the shadow's gaussian blur isn't cropped at the quad
+  // edge (one grid cell); the mesh scales up by the same ratio so the shape
+  // itself keeps its size
+  const shadowPadding = $derived(
+    Math.ceil(shadowBlur * 1.5 + Math.max(Math.abs(shadowOffset.x), Math.abs(shadowOffset.y)) + strokeWidth / 2)
+  );
+  const paddedCanvasSize = $derived(canvasSize + shadowPadding * 2);
+  const shadowScale = $derived(paddedCanvasSize / canvasSize);
+
   let markerCanvas = new OffscreenCanvas(canvasSize, canvasSize);
   let ctx = markerCanvas.getContext('2d')!;
   ctx.globalCompositeOperation = 'source-over';
@@ -225,6 +234,11 @@
 
   // Create and update marker texture when properties change (including hover state)
   $effect(() => {
+    if (markerCanvas.width !== paddedCanvasSize) {
+      markerCanvas.width = paddedCanvasSize;
+      markerCanvas.height = paddedCanvasSize;
+    }
+
     markerCanvas = drawMarker();
 
     // Dispose old texture before creating new one
@@ -262,7 +276,7 @@
   rotation={[0, 0, counterRotation]}
 >
   <!-- Combined shape, stroke and text -->
-  <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Main]}>
+  <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Main]} scale={[shadowScale, shadowScale, 1]}>
     <T.MeshBasicMaterial is={markerMaterial} />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>

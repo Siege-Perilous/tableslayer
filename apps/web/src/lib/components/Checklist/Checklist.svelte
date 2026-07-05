@@ -12,7 +12,23 @@
 
   let { completedItems, onComplete, onDismiss }: Props = $props();
 
-  let expandedItemId = $state<ChecklistItemId | null>(null);
+  let expandedItemId = $state<ChecklistItemId | null>(
+    checklistItems.find((item) => !completedItems.includes(item.id))?.id ?? null
+  );
+
+  // When an item gets completed (checkbox or auto-completed from the app) and the
+  // expanded accordion was that item (or none was open), advance to the first
+  // non-completed item. Manual expand/collapse is left alone.
+  let prevCompletedItems = completedItems;
+  $effect(() => {
+    const newlyCompleted = completedItems.filter((id) => !prevCompletedItems.includes(id));
+    prevCompletedItems = completedItems;
+    if (newlyCompleted.length === 0) return;
+
+    if (expandedItemId === null || newlyCompleted.includes(expandedItemId)) {
+      expandedItemId = checklistItems.find((item) => !completedItems.includes(item.id))?.id ?? null;
+    }
+  });
 
   const completedCount = $derived(checklistItems.filter((item) => completedItems.includes(item.id)).length);
 

@@ -10,6 +10,17 @@
     { label: 'Alert', onclick: () => alert('Alert'), end: alertEnd as Snippet },
     { label: 'Quit', href: '#', end: quitEnd as Snippet }
   ];
+
+  let controlledMenu = $state<ContextMenu>();
+  let visibility = $state('everyone');
+  const controlledItems: ContextMenuItem[] = $derived([
+    { type: 'label', label: 'Visibility' },
+    { label: 'DM', selected: visibility === 'dm', onclick: () => (visibility = 'dm') },
+    { label: 'Everyone', selected: visibility === 'everyone', onclick: () => (visibility = 'everyone') },
+    { label: 'On hover', selected: visibility === 'hover', onclick: () => (visibility = 'hover') },
+    { type: 'divider' },
+    { label: 'Delete', variant: 'danger', onclick: () => alert('Deleted') }
+  ]);
 </script>
 
 {#snippet alertEnd()}
@@ -20,12 +31,19 @@
   <div>⌘Q</div>
 {/snippet}
 
-<Example title="Avatar" propsName="Avatar">
+<Example title="Context menu" propsName="ContextMenu">
   <ContextMenu {items}>
     {#snippet trigger()}
       <div class="trigger">Right click me</div>
     {/snippet}
   </ContextMenu>
+</Example>
+
+<Example title="Controlled with selection and danger items" propsName="ContextMenu">
+  <div class="trigger" role="presentation" oncontextmenu={(e) => controlledMenu?.open(e)}>
+    Right click me (opened via open(event))
+  </div>
+  <ContextMenu bind:this={controlledMenu} items={controlledItems} />
 </Example>
 
 <style>

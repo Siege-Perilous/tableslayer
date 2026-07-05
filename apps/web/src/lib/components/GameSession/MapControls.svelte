@@ -70,7 +70,6 @@
             value={stageProps.map.zoom}
             oninput={(e) => {
               queuePropertyUpdate(stageProps, ['map', 'zoom'], parseFloat(e.currentTarget.value), 'control');
-              trackChecklistItem('scale-map');
             }}
           />
         {/snippet}

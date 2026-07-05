@@ -28,8 +28,12 @@
   const { props, isActive, display, grid, localScale = 1, mapRotation = 0 }: Props = $props();
 
   const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
-  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
+  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerDoubleClick, onMarkerContextMenu, onMarkerHover } =
     getContext<Callbacks>('callbacks');
+
+  // Double-click / double-tap detection on markers
+  const DOUBLE_CLICK_MS = 350;
+  let lastMarkerClick: { id: string; time: number } | null = null;
 
   // Quad used for raycasting / mouse input detection
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
@@ -103,15 +107,29 @@
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
       selectedMarker = closestMarker;
+
+      // Double-click/tap detection (only when a consumer is registered):
+      // the second click opens the marker panel and must not start a drag
+      const now = performance.now();
+      const isDoubleClick =
+        onMarkerDoubleClick !== undefined &&
+        lastMarkerClick?.id === closestMarker.id &&
+        now - lastMarkerClick.time < DOUBLE_CLICK_MS;
+      lastMarkerClick = isDoubleClick ? null : { id: closestMarker.id, time: now };
+
       // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
-      if (closestMarker.shape !== MarkerShape.Pin) {
+      if (!isDoubleClick && closestMarker.shape !== MarkerShape.Pin) {
         isDragging = true;
         // Clear tooltip when drag starts
         hoveredMarkerDelayed = null;
         clearHoverTimer();
       }
       onMarkerSelected(selectedMarker);
+      if (isDoubleClick) {
+        onMarkerDoubleClick(closestMarker);
+      }
     } else {
+      lastMarkerClick = null;
       // In player mode, clicking empty space clears selection
       if (stage.mode === StageMode.Player) {
         selectedMarker = null;

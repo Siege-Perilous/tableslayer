@@ -265,13 +265,8 @@
     tools.activeLayer = MapLayerType.None;
   }
 
-  function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
-    if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
-    } else {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
-    }
-  }
+  // Players have no marker context menu; the callback is required by the stage
+  function onMarkerContextMenu() {}
 
   function onStageLoading() {
     stageIsLoading = true;
