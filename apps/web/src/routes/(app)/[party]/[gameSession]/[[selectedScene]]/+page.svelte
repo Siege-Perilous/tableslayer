@@ -676,9 +676,12 @@
   const dragClearTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
-    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
-    if (index === -1) return;
-    stageProps.marker.markers[index] = { ...marker, position: { x: position.x, y: position.y } };
+    const target = stageProps.marker.markers.find((m: Marker) => m.id === marker.id);
+    if (!target) return;
+    // Mutate in place — replacing the marker object would retrigger every
+    // effect that reads it (notably the token's canvas/texture redraw) on
+    // each pointermove
+    target.position = { x: position.x, y: position.y };
     dragPositions[marker.id] = position;
     writeMarkerPosition(marker.id, position);
 

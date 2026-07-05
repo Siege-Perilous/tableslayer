@@ -53,6 +53,17 @@
   }: Props = $props();
 
   const loader = useLoader(THREE.TextureLoader);
+
+  // The marker object is replaced on every drag frame (new identity, same
+  // visuals). Route the draw inputs through deriveds so the canvas/texture
+  // effects below only re-fire when a value actually changes — re-rasterizing
+  // and re-uploading the texture per pointermove stalls the render loop.
+  const shape = $derived(marker.shape);
+  const shapeColor = $derived(marker.shapeColor);
+  const label = $derived(marker.label);
+  const imageScale = $derived(marker.imageScale);
+  const imageUrl = $derived(marker.imageUrl);
+
   const baseMarkerSize = $derived(getGridCellSize(grid, display) * marker.size);
   const markerSize = $derived(isHovered ? baseMarkerSize * 1.15 : baseMarkerSize);
   const sizeMultiplier = 0.9;
@@ -93,9 +104,9 @@
 
   // Load image if URL is provided
   $effect(() => {
-    if (marker.imageUrl) {
+    if (imageUrl) {
       loader
-        .load(marker.imageUrl)
+        .load(imageUrl)
         .then((texture) => {
           imageTexture = texture;
           imageTexture.needsUpdate = true;
@@ -110,7 +121,7 @@
   function createShape(centerX: number, centerY: number, size: number, clipOnly: boolean = false) {
     ctx.beginPath();
 
-    switch (marker.shape) {
+    switch (shape) {
       case MarkerShape.None:
         break;
       case MarkerShape.Circle:
@@ -150,7 +161,7 @@
 
   // Create text for the marker
   function createText(centerX: number, centerY: number) {
-    if (!marker.label) return;
+    if (!label) return;
 
     // Reset shadow settings for text
     ctx.shadowColor = 'transparent';
@@ -167,12 +178,12 @@
     if (textStroke && textStrokeColor) {
       ctx.strokeStyle = textStrokeColor;
       ctx.lineWidth = textStroke * (textSize / 5);
-      ctx.strokeText(marker.label, centerX, centerY);
+      ctx.strokeText(label, centerX, centerY);
     }
 
     // Fill text
     ctx.fillStyle = textColor || '#ffffff';
-    ctx.fillText(marker.label, centerX, centerY);
+    ctx.fillText(label, centerX, centerY);
   }
 
   // Create the marker canvas
@@ -185,12 +196,12 @@
     // Clear canvas with transparency
     ctx.clearRect(0, 0, width, height);
 
-    if (marker.shape !== undefined) {
+    if (shape !== undefined) {
       // Set stroke and fill styles for shape
       // Use --fgPrimary color when hovered or selected, otherwise use the default stroke color
       ctx.strokeStyle = isHovered || isSelected ? getCSSVariable('--fgPrimary') : (strokeColor ?? '#000000');
       ctx.lineWidth = strokeWidth;
-      ctx.fillStyle = marker.shapeColor ?? '#ffffff';
+      ctx.fillStyle = shapeColor ?? '#ffffff';
 
       createShape(centerX, centerY, canvasSize);
 
@@ -213,10 +224,10 @@
         // Draw the image (will only appear inside the clipped shape)
         ctx.drawImage(
           imageTexture.image as CanvasImageSource,
-          centerX - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
-          centerY - (canvasSize / 2) * marker.imageScale * sizeMultiplier,
-          sizeMultiplier * canvasSize * marker.imageScale,
-          sizeMultiplier * canvasSize * marker.imageScale
+          centerX - (canvasSize / 2) * imageScale * sizeMultiplier,
+          centerY - (canvasSize / 2) * imageScale * sizeMultiplier,
+          sizeMultiplier * canvasSize * imageScale,
+          sizeMultiplier * canvasSize * imageScale
         );
 
         // Restore the canvas state (removes clipping)
@@ -225,7 +236,7 @@
     }
 
     // // Draw text if enabled
-    if (marker.label) {
+    if (label) {
       createText(centerX, centerY);
     }
 

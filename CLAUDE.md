@@ -36,6 +36,7 @@ These rules ensure maintainability, safety, and developer velocity.
 
 - **G-1** `pnpm run check` passes
 - **G-2** `pnpm run format-check` passes
+- **G-3** Do NOT run the Svelte MCP autofixer/validator tools on edited components; `pnpm run check` is the source of truth for Svelte validation
 
 ### 5 - Changesets (Package Publishing)
 

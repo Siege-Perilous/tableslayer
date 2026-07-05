@@ -103,7 +103,12 @@
         activeLayer: tools.activeLayer,
         viewport: { offset: { x: 0, y: 0 }, zoom: sceneZoom },
         mapTransform: mapDragOffset ? { offset: mapDragOffset } : undefined,
-        markerPositions: dragPositions,
+        // Untracked on purpose: drag movement is applied to renderedProps in
+        // place by onMarkerMoved; the overrides only matter when a rebuild
+        // fires for another reason (doc echo, remote change) so it doesn't
+        // snap the marker back mid-drag. Tracking the keys here would rebuild
+        // the whole scene on every pointermove.
+        markerPositions: untrack(() => ({ ...dragPositions })),
         fogTool: { mode: tools.fogTool.mode, size: tools.fogTool.size },
         annotations: {
           activeLayer: tools.annotationsActiveLayer,
@@ -197,6 +202,11 @@
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
     const sceneId = session.activeSceneId;
     if (!sceneId) return;
+    // Mutate in place — replacing the marker object would retrigger every
+    // effect that reads it (notably the token's canvas/texture redraw) on
+    // each pointermove
+    const target = renderedProps.marker.markers.find((m) => m.id === marker.id);
+    if (target) target.position = { x: position.x, y: position.y };
     dragPositions[marker.id] = position;
     writeMarkerPosition(sceneId, marker.id, position);
 
