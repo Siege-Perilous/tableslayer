@@ -35,7 +35,7 @@ DROP INDEX "idx_session_user_id";--> statement-breakpoint
 DROP INDEX "idx_user_files_user_id";--> statement-breakpoint
 DROP INDEX "idx_user_files_file_id";--> statement-breakpoint
 DROP INDEX "users_email_unique";--> statement-breakpoint
-DROP INDEX "users_google_id_unique";--> statement-breakpoint
+DROP INDEX IF EXISTS "users_google_id_unique";--> statement-breakpoint
 ALTER TABLE `scene` ALTER COLUMN "fog_of_war_color" TO "fog_of_war_color" text NOT NULL DEFAULT '#626262';--> statement-breakpoint
 CREATE INDEX `idx_annotations_scene_id` ON `annotations` (`scene_id`);--> statement-breakpoint
 CREATE INDEX `idx_annotations_order` ON `annotations` (`scene_id`,`order`);--> statement-breakpoint
