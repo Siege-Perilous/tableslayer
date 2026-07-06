@@ -1,4 +1,3 @@
-import { createCadenceTracker } from '$lib/utils/syncLog';
 import YPartyKitProvider from 'y-partykit/provider';
 import * as Y from 'yjs';
 import {
@@ -8,7 +7,6 @@ import {
   getAnnotationMask,
   getFogMask,
   getPartyState,
-  getSceneSettings,
   getScenesMap,
   getSceneSnapshot,
   isDocHydrated,
@@ -147,23 +145,12 @@ export class SessionDocClient {
   #pendingListRev = false;
   #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
-  #recvLog = createCadenceTracker('recv-remote');
-  #revFlushLog = createCadenceTracker('recv-revflush');
-  // Catches EVERY local writer of the shared map transform (broadcaster, play
-  // page direct writes, undo/redo) — a client that moves the map must show it
-  // in its own console, or the write came from a client whose console we can't
-  // see (e.g. a phone on the play page)
-  #localMapWriteLog = createCadenceTracker('local-map-write');
-  static readonly #MAP_FIELDS = ['mapOffsetX', 'mapOffsetY', 'mapZoom', 'mapRotation'];
-
   #applyChanges(changes: SceneChange[]) {
-    let sawRemote = false;
     for (const change of changes) {
       const sceneIds = change.part === 'scenes' ? change.keys : [change.sceneId];
       // The scene list mirrors a few settings fields (name, order, thumbnails)
       const touchesList = change.part === 'scenes' || change.part === 'settings';
       if (change.remote) {
-        sawRemote = true;
         for (const sceneId of sceneIds) this.#pendingSceneRevs.add(sceneId);
         this.#pendingListRev ||= touchesList;
         this.#scheduleRevFlush();
@@ -172,16 +159,7 @@ export class SessionDocClient {
           this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
         }
         if (touchesList) this.#listRev++;
-        if (change.part === 'settings' && change.keys.some((key) => SessionDocClient.#MAP_FIELDS.includes(key))) {
-          const settings = getSceneSettings(this.doc, change.sceneId);
-          this.#localMapWriteLog.record(
-            `keys=${change.keys.join(',')} x=${Math.round(settings?.mapOffsetX ?? 0)} y=${Math.round(settings?.mapOffsetY ?? 0)} undo=${change.undoRedo}`
-          );
-        }
       }
-    }
-    if (sawRemote) {
-      this.#recvLog.record(`parts=${changes.map((c) => c.part).join(',')}`);
     }
     if (changes.length > 0) {
       this.#changeListeners.forEach((listener) => listener(changes));
@@ -200,8 +178,6 @@ export class SessionDocClient {
 
   #flushPendingRevs() {
     this.#cancelRevFlush();
-    this.#revFlushLog.record(`scenes=${this.#pendingSceneRevs.size}`);
-    const flushStart = performance.now();
     for (const sceneId of this.#pendingSceneRevs) {
       this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
     }
@@ -210,16 +186,6 @@ export class SessionDocClient {
       this.#pendingListRev = false;
       this.#listRev++;
     }
-    // Svelte flushes the effects invalidated by these rev bumps (page rebuild
-    // plus everything downstream of the new props) in microtasks that run
-    // before this one — so this measures the full synchronous cost of
-    // reacting to a remote change, which the rebuild timer alone does not.
-    queueMicrotask(() => {
-      const dur = performance.now() - flushStart;
-      if (dur > 50) {
-        console.log(`[sync ${new Date().toISOString().slice(11, 23)} client] rev-effects: dur=${dur.toFixed(0)}ms`);
-      }
-    });
   }
 
   #checkReady() {

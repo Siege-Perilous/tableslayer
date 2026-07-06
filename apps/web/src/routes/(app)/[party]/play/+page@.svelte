@@ -1,14 +1,7 @@
 <script lang="ts">
   import { Head } from '$lib/components';
   import { buildRenderProps, reuseUnchanged } from '$lib/realtime';
-  import {
-    buildSceneProps,
-    createCadenceTracker,
-    setSyncLogRole,
-    startRafLogger,
-    startStallDetector,
-    throttle
-  } from '$lib/utils';
+  import { buildSceneProps, throttle } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
@@ -99,12 +92,10 @@
 
   let renderedProps = $state<StageProps>(fallbackProps);
   let renderedSceneId = $state<string | null>(untrack(() => data.activeScene?.id ?? null));
-  const rebuildLog = createCadenceTracker('rebuild');
 
   $effect(() => {
     const snapshot = session.activeScene;
     if (!snapshot) return;
-    const rebuildStart = performance.now();
     const props = buildRenderProps(
       snapshot,
       {
@@ -135,9 +126,6 @@
     // effects (measurement reset, material/texture updates) don't re-fire
     renderedProps = untrack(() => reuseUnchanged(renderedProps, props));
     renderedSceneId = snapshot.id;
-    rebuildLog.record(
-      `x=${Math.round(renderedProps.map.offset.x)} dur=${(performance.now() - rebuildStart).toFixed(0)}ms`
-    );
   });
 
   // Apply performance tier changes (watchdog step-downs or remote selection)
@@ -316,9 +304,6 @@
   let isTouchDevice = $state(false);
 
   onMount(() => {
-    setSyncLogRole('play');
-    startRafLogger();
-    startStallDetector();
     stagePerformance.init();
 
     const gestureDetector = stageElement
