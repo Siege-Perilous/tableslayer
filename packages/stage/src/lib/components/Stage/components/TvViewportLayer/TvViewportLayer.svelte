@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useThrelte } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
   import { onDestroy } from 'svelte';
   import type { Size } from '../../types';
   import type { MapTransform } from '../../helpers/mapSpace';
@@ -24,13 +24,15 @@
 
   const OUTLINE_THICKNESS_SCREEN_PX = 2;
   const OUTLINE_COLOR = '#ffffff';
-  const OUTLINE_OPACITY = 0.9;
+  const OUTLINE_OPACITY = 0.3;
   const DIM_COLOR = '#000000';
   const DIM_OPACITY = 0.4;
 
   const HINT_TEXT = 'SHIFT + mouse drag to adjust TV view';
   const HINT_FONT_SCREEN_PX = 13;
   const HINT_MARGIN_SCREEN_PX = 8;
+  const HINT_VISIBLE_S = 10;
+  const HINT_FADE_S = 1;
   // Rasterize the label larger and scale down so it stays crisp when zooming
   const HINT_SUPERSAMPLE = 4;
 
@@ -103,6 +105,22 @@
     depthTest: false
   });
 
+  let hintVisible = $state(true);
+  let hintElapsed = 0;
+
+  const hintFadeTask = useTask((delta) => {
+    hintElapsed += delta;
+    if (hintElapsed < HINT_VISIBLE_S) return;
+    const opacity = 1 - (hintElapsed - HINT_VISIBLE_S) / HINT_FADE_S;
+    if (opacity <= 0) {
+      hintVisible = false;
+      hintFadeTask.stop();
+    } else {
+      hintMaterial.opacity = opacity;
+    }
+    invalidate();
+  });
+
   onDestroy(() => {
     material.dispose();
     hintMaterial.dispose();
@@ -131,14 +149,16 @@
 <!-- Reminder above the rect's top-left corner; counter-rotated so it reads
      upright under the editor's seating rotation (camera rotates by
      +sceneRotation, so upright world orientation follows it) -->
-<T.Mesh
-  name="tvViewportHint"
-  position={hintPosition as [number, number, number]}
-  rotation={[0, 0, (sceneRotation * Math.PI) / 180]}
-  scale={[hintWidth, hintHeight, 1]}
-  layers={[SceneLayer.Overlay]}
-  renderOrder={SceneLayerOrder.TvViewport}
->
-  <T is={hintMaterial} />
-  <T.PlaneGeometry />
-</T.Mesh>
+{#if hintVisible}
+  <T.Mesh
+    name="tvViewportHint"
+    position={hintPosition as [number, number, number]}
+    rotation={[0, 0, (sceneRotation * Math.PI) / 180]}
+    scale={[hintWidth, hintHeight, 1]}
+    layers={[SceneLayer.Overlay]}
+    renderOrder={SceneLayerOrder.TvViewport}
+  >
+    <T is={hintMaterial} />
+    <T.PlaneGeometry />
+  </T.Mesh>
+{/if}
