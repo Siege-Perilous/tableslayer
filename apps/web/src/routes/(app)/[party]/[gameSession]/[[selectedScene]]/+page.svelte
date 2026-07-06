@@ -23,6 +23,7 @@
     convertMarkerToDbFormat,
     createCadenceTracker,
     extractLocationFromUrl,
+    flushQueuedPropertyUpdates,
     handleKeyCommands,
     handleStageZoom,
     queuePropertyUpdate,
@@ -1280,11 +1281,36 @@
   let handleColorChange: ((color: string, opacity: number) => void) | undefined = $state();
   let handleEffectChange: ((effect: AnnotationEffect) => void) | undefined = $state();
 
+  // Tablets get used as editors; background tabs freeze timers and flush them
+  // on wake, which would commit stale gesture state into the shared doc long
+  // after the fact. Hiding the tab ends any in-flight gesture — commit the
+  // still-fresh values now and cancel the timers so nothing fires on wake.
+  const commitPendingGestureWrites = () => {
+    if (document.visibilityState !== 'hidden') return;
+    flushQueuedPropertyUpdates();
+    for (const [markerId, timer] of dragClearTimers) {
+      clearTimeout(timer);
+      const position = dragPositions[markerId];
+      if (position) {
+        session.client?.write.setMarkerFields(selectedSceneId, markerId, {
+          positionX: position.x,
+          positionY: position.y
+        });
+      }
+    }
+    dragClearTimers.clear();
+    dragPositions = {};
+    flushPendingFogCommit();
+    flushPendingAnnotationCommits();
+  };
+
   onMount(() => {
     setSyncLogRole('editor');
     startRafLogger();
     startStallDetector();
     stagePerformance.init();
+
+    document.addEventListener('visibilitychange', commitPendingGestureWrites);
 
     if (stageElement) {
       stageElement.addEventListener('mousemove', onMouseMove);
@@ -1296,6 +1322,7 @@
     }
 
     return () => {
+      document.removeEventListener('visibilitychange', commitPendingGestureWrites);
       if (pendingFogCommit) clearTimeout(pendingFogCommit.timer);
       pendingAnnotationCommits.forEach((pending) => clearTimeout(pending.timer));
       pendingAnnotationCommits.clear();

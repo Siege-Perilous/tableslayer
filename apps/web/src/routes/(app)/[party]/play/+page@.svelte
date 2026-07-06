@@ -347,19 +347,30 @@
     // Mobile browsers freeze background tabs and flush their timers on wake:
     // a pending gesture-commit timer would then write a position from minutes
     // ago into the doc, yanking the map/markers for every connected client.
-    // Hiding the tab ends any in-flight gesture — drop the pending commits.
-    const cancelPendingGestureWrites = () => {
+    // Hiding the tab ends any in-flight gesture — commit the still-fresh
+    // values now and cancel the timers so nothing fires on wake.
+    const commitPendingGestureWrites = () => {
       if (document.visibilityState !== 'hidden') return;
+      const sceneId = session.activeSceneId;
       clearTimeout(mapDragClearTimer);
+      if (mapDragOffset && sceneId) {
+        session.client?.write.setSceneSettings(sceneId, { mapOffsetX: mapDragOffset.x, mapOffsetY: mapDragOffset.y });
+      }
       mapDragOffset = null;
-      for (const timer of dragClearTimers.values()) clearTimeout(timer);
+      for (const [markerId, timer] of dragClearTimers) {
+        clearTimeout(timer);
+        const position = dragPositions[markerId];
+        if (position && sceneId) {
+          session.client?.write.setMarkerFields(sceneId, markerId, { positionX: position.x, positionY: position.y });
+        }
+      }
       dragClearTimers.clear();
       dragPositions = {};
     };
-    document.addEventListener('visibilitychange', cancelPendingGestureWrites);
+    document.addEventListener('visibilitychange', commitPendingGestureWrites);
 
     return () => {
-      document.removeEventListener('visibilitychange', cancelPendingGestureWrites);
+      document.removeEventListener('visibilitychange', commitPendingGestureWrites);
       gestureDetector?.destroy();
       mapPanGesture?.destroy();
       activityTimer?.destroy();
