@@ -127,21 +127,70 @@ export class SessionDocClient {
     });
   }
 
+  // Remote peers can produce doc updates faster than frames render (e.g.
+  // another editor panning the map), and websocket messages — unlike input
+  // events — are never coalesced by the browser. Bumping revs per message would
+  // run the full snapshot -> StageProps rebuild once per message and fall
+  // behind, replaying stale positions in slow motion. Remote bumps therefore
+  // coalesce to one flush per animation frame: reads always re-derive from the
+  // latest doc state, so only rebuilds of states that could never be painted
+  // are skipped. Local writes keep synchronous bumps so same-tick
+  // read-after-write stays exact. #changeListeners still fire per transaction.
+  #pendingSceneRevs = new Set<string>();
+  #pendingListRev = false;
+  #revFlushRaf: number | null = null;
+  #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
   #applyChanges(changes: SceneChange[]) {
     for (const change of changes) {
-      if (change.part === 'scenes') {
-        this.#listRev++;
-        for (const sceneId of change.keys) {
+      const sceneIds = change.part === 'scenes' ? change.keys : [change.sceneId];
+      // The scene list mirrors a few settings fields (name, order, thumbnails)
+      const touchesList = change.part === 'scenes' || change.part === 'settings';
+      if (change.remote) {
+        for (const sceneId of sceneIds) this.#pendingSceneRevs.add(sceneId);
+        this.#pendingListRev ||= touchesList;
+        this.#scheduleRevFlush();
+      } else {
+        for (const sceneId of sceneIds) {
           this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
         }
-      } else {
-        this.#sceneRevs[change.sceneId] = (this.#sceneRevs[change.sceneId] ?? 0) + 1;
-        // The scene list mirrors a few settings fields (name, order, thumbnails)
-        if (change.part === 'settings') this.#listRev++;
+        if (touchesList) this.#listRev++;
       }
     }
     if (changes.length > 0) {
       this.#changeListeners.forEach((listener) => listener(changes));
+    }
+  }
+
+  #scheduleRevFlush() {
+    if (this.#revFlushRaf !== null || this.#revFlushTimer !== null) return;
+    if (typeof requestAnimationFrame === 'function') {
+      this.#revFlushRaf = requestAnimationFrame(() => this.#flushPendingRevs());
+      // rAF is suspended in hidden tabs; the timer backstop keeps snapshots advancing there
+      this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 250);
+    } else {
+      this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 0);
+    }
+  }
+
+  #cancelRevFlush() {
+    if (this.#revFlushRaf !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.#revFlushRaf);
+    }
+    if (this.#revFlushTimer !== null) clearTimeout(this.#revFlushTimer);
+    this.#revFlushRaf = null;
+    this.#revFlushTimer = null;
+  }
+
+  #flushPendingRevs() {
+    this.#cancelRevFlush();
+    for (const sceneId of this.#pendingSceneRevs) {
+      this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
+    }
+    this.#pendingSceneRevs.clear();
+    if (this.#pendingListRev) {
+      this.#pendingListRev = false;
+      this.#listRev++;
     }
   }
 
@@ -265,6 +314,7 @@ export class SessionDocClient {
   }
 
   destroy() {
+    this.#cancelRevFlush();
     this.#undoManager?.destroy();
     this.#undoManager = null;
     this.presence.destroy();

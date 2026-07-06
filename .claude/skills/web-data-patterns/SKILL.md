@@ -5,7 +5,7 @@ description: Data-layer patterns for apps/web — apiFactory error semantics, mu
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-07-04.
+> **Freshness**: last verified 2026-07-06.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 
@@ -51,6 +51,7 @@ PartyKit + Y.js. Two Y docs per session (`game_session` = scene content, `party`
 - **There is no save pipeline.** Do not add autosave, save buttons, or scene-update API mutations. Edits are doc writes; PartyKit persists.
 - Scene **create** still goes through `/api/scenes/createScene` (server computes alignment), then the client adds the row to the doc. Update/delete/reorder scenes = doc writes only (see the comment atop `queries/scenes.ts`).
 - After any **direct DB write** to scene data (import, admin tooling), trigger a room `resync` (`requestGameSessionRoomResync` in `src/lib/server/realtime/`), or the live doc won't see it.
+- **Write cadence is handled for you.** `queuePropertyUpdate` applies locally at once and flushes to the doc through a 33ms throttle (`$lib/utils/propertyUpdateBroadcaster.ts`), and `SessionDocClient` coalesces remote rev bumps to one per frame — so continuous gestures (pans, sliders) can queue per input event. Do not bypass the broadcaster with per-event `client.write.*` calls in a gesture loop; one broadcast per Y transaction means unthrottled writes flood remote peers.
 - System writes that must not pollute user undo (e.g. thumbnails) go through `systemWrite`.
 - Editor integration: `useEditorSession.svelte.ts` in `routes/(app)/[party]/[gameSession]/[[selectedScene]]/` (applies remote fog/annotation masks to the stage, idle thumbnail regen).
 

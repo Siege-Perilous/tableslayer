@@ -75,7 +75,10 @@ Key properties:
 `SessionDocClient` owns both Y docs, their providers, and the presence channel. It exposes:
 
 - **Reactive snapshot reads** — `scenes()`, `scene(id)`, `partyState()` — backed by per-scene
-  revision counters bumped from doc observers, with memoized snapshots.
+  revision counters bumped from doc observers, with memoized snapshots. Local writes bump revs
+  synchronously; **remote** bumps coalesce to one flush per animation frame (250ms timer backstop
+  for hidden tabs), so a burst of incoming messages triggers a single snapshot rebuild from the
+  latest doc state instead of one per websocket message.
 - **Origin-tagged writers** — `write.setSceneSettings/upsertMarker/setFogMask/...` and
   `party.setActiveScene/setPaused`. Writers warn loudly when a target scene is missing rather
   than silently no-oping.
@@ -98,9 +101,12 @@ renderProps = buildRenderProps(docSnapshot, localView) → structural sharing �
   the snapshot while writes throttle to the doc at 50ms; the override clears shortly after the
   gesture ends. No wall-clock protection windows.
 - The editor's control panels still call `queuePropertyUpdate(stageProps, path, value)`; the
-  broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally and flushes
-  shared paths to the doc in the same microtask. Local-only paths (viewport, tools, measurement
-  config) never touch the doc.
+  broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally right away
+  and flushes shared paths to the doc through a 33ms throttle (leading edge on the next
+  microtask), so continuous gestures like a map pan broadcast ~30 transactions/sec instead of
+  one per mousemove. `flushQueuedPropertyUpdates()` forces a pending flush; rebinding or
+  unbinding flushes automatically. Local-only paths (viewport, tools, measurement config) never
+  touch the doc.
 
 ### Editor vs play
 
