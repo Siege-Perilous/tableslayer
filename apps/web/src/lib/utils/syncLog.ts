@@ -111,20 +111,28 @@ export const startRafLogger = () => {
   let lastAt = windowStart;
   let gapMax = 0;
 
-  const tick = () => {
+  let workMax = 0;
+
+  // This callback re-registers every frame, so it always runs LAST in the rAF
+  // list: now() minus the frame's vsync timestamp ≈ time all earlier rAF
+  // callbacks (the whole Threlte frame, every useTask) spent this frame.
+  const tick = (frameTimestamp: number) => {
     const t = performance.now();
     frames++;
     const gap = t - lastAt;
     if (gap > gapMax) gapMax = gap;
+    const work = t - frameTimestamp;
+    if (work > workMax) workMax = work;
     lastAt = t;
     if (t - windowStart >= WINDOW_MS) {
       const fps = (frames * 1000) / (t - windowStart);
       line(
         'raf',
-        `fps=${fps.toFixed(1)} gapMax=${gapMax.toFixed(1)}ms visible=${document.visibilityState === 'visible'} focused=${document.hasFocus()}`
+        `fps=${fps.toFixed(1)} gapMax=${gapMax.toFixed(1)}ms workMax=${workMax.toFixed(1)}ms visible=${document.visibilityState === 'visible'} focused=${document.hasFocus()}`
       );
       frames = 0;
       gapMax = 0;
+      workMax = 0;
       windowStart = t;
     }
     requestAnimationFrame(tick);

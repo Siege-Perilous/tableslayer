@@ -201,6 +201,7 @@ export class SessionDocClient {
   #flushPendingRevs() {
     this.#cancelRevFlush();
     this.#revFlushLog.record(`scenes=${this.#pendingSceneRevs.size}`);
+    const flushStart = performance.now();
     for (const sceneId of this.#pendingSceneRevs) {
       this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
     }
@@ -209,6 +210,16 @@ export class SessionDocClient {
       this.#pendingListRev = false;
       this.#listRev++;
     }
+    // Svelte flushes the effects invalidated by these rev bumps (page rebuild
+    // plus everything downstream of the new props) in microtasks that run
+    // before this one — so this measures the full synchronous cost of
+    // reacting to a remote change, which the rebuild timer alone does not.
+    queueMicrotask(() => {
+      const dur = performance.now() - flushStart;
+      if (dur > 50) {
+        console.log(`[sync ${new Date().toISOString().slice(11, 23)} client] rev-effects: dur=${dur.toFixed(0)}ms`);
+      }
+    });
   }
 
   #checkReady() {
