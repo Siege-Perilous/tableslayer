@@ -127,21 +127,64 @@ export class SessionDocClient {
     });
   }
 
+  // Remote peers can produce doc updates faster than this client processes
+  // them (e.g. another editor panning the map), and websocket/BroadcastChannel
+  // messages — unlike input events — are never coalesced by the browser.
+  // Bumping revs per message would run the full snapshot -> StageProps rebuild
+  // once per message and fall behind under backlog, replaying stale positions
+  // in slow motion. Remote bumps therefore coalesce through a setTimeout(0)
+  // macrotask: it runs after every message already sitting in the task queue,
+  // so a backlog drains into ONE rebuild from the latest doc state, while
+  // steady sub-rate streams still rebuild promptly per batch. Deliberately NOT
+  // requestAnimationFrame: rAF cadence is per-window (focus, occlusion, GPU
+  // contention) and would chain the receive pipeline to this window's
+  // rendering health — an unfocused editor would receive gestures as chunks.
+  // Local writes keep synchronous bumps so same-tick read-after-write stays
+  // exact. #changeListeners still fire per transaction.
+  #pendingSceneRevs = new Set<string>();
+  #pendingListRev = false;
+  #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
   #applyChanges(changes: SceneChange[]) {
     for (const change of changes) {
-      if (change.part === 'scenes') {
-        this.#listRev++;
-        for (const sceneId of change.keys) {
+      const sceneIds = change.part === 'scenes' ? change.keys : [change.sceneId];
+      // The scene list mirrors a few settings fields (name, order, thumbnails)
+      const touchesList = change.part === 'scenes' || change.part === 'settings';
+      if (change.remote) {
+        for (const sceneId of sceneIds) this.#pendingSceneRevs.add(sceneId);
+        this.#pendingListRev ||= touchesList;
+        this.#scheduleRevFlush();
+      } else {
+        for (const sceneId of sceneIds) {
           this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
         }
-      } else {
-        this.#sceneRevs[change.sceneId] = (this.#sceneRevs[change.sceneId] ?? 0) + 1;
-        // The scene list mirrors a few settings fields (name, order, thumbnails)
-        if (change.part === 'settings') this.#listRev++;
+        if (touchesList) this.#listRev++;
       }
     }
     if (changes.length > 0) {
       this.#changeListeners.forEach((listener) => listener(changes));
+    }
+  }
+
+  #scheduleRevFlush() {
+    if (this.#revFlushTimer !== null) return;
+    this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 0);
+  }
+
+  #cancelRevFlush() {
+    if (this.#revFlushTimer !== null) clearTimeout(this.#revFlushTimer);
+    this.#revFlushTimer = null;
+  }
+
+  #flushPendingRevs() {
+    this.#cancelRevFlush();
+    for (const sceneId of this.#pendingSceneRevs) {
+      this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
+    }
+    this.#pendingSceneRevs.clear();
+    if (this.#pendingListRev) {
+      this.#pendingListRev = false;
+      this.#listRev++;
     }
   }
 
@@ -265,6 +308,7 @@ export class SessionDocClient {
   }
 
   destroy() {
+    this.#cancelRevFlush();
     this.#undoManager?.destroy();
     this.#undoManager = null;
     this.presence.destroy();

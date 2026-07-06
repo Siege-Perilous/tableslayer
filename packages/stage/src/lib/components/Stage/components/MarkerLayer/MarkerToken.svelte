@@ -37,20 +37,38 @@
     grid,
     display,
     opacity,
-    textColor,
-    textStroke,
-    textStrokeColor,
-    textSize,
-    strokeColor,
-    strokeWidth,
-    shadowColor,
-    shadowBlur,
-    shadowOffset,
+    textColor: textColorProp,
+    textStroke: textStrokeProp,
+    textStrokeColor: textStrokeColorProp,
+    textSize: textSizeProp,
+    strokeColor: strokeColorProp,
+    strokeWidth: strokeWidthProp,
+    shadowColor: shadowColorProp,
+    shadowBlur: shadowBlurProp,
+    shadowOffset: shadowOffsetProp,
     isSelected = false,
     isHovered = false,
     sceneRotation,
     mapRotation = 0
   }: Props = $props();
+
+  // The style props arrive as template expressions rooted at the consumer's
+  // stageProps, and that root is replaced on every remote doc rebuild (e.g.
+  // another editor panning). Reading them directly in the canvas effect would
+  // re-fire it per rebuild — a full redraw with gaussian shadow blur plus a
+  // texture upload PER MARKER, hundreds of ms per remote update. $derived
+  // memoizes by value, cutting the chain when the style didn't change (same
+  // guard as the marker.* deriveds below).
+  const textColor = $derived(textColorProp);
+  const textStroke = $derived(textStrokeProp);
+  const textStrokeColor = $derived(textStrokeColorProp);
+  const textSize = $derived(textSizeProp);
+  const strokeColor = $derived(strokeColorProp);
+  const strokeWidth = $derived(strokeWidthProp);
+  const shadowColor = $derived(shadowColorProp);
+  const shadowBlur = $derived(shadowBlurProp);
+  const shadowOffsetX = $derived(shadowOffsetProp.x);
+  const shadowOffsetY = $derived(shadowOffsetProp.y);
 
   const loader = useLoader(THREE.TextureLoader);
 
@@ -87,7 +105,7 @@
   // edge (one grid cell); the mesh scales up by the same ratio so the shape
   // itself keeps its size
   const shadowPadding = $derived(
-    Math.ceil(shadowBlur * 1.5 + Math.max(Math.abs(shadowOffset.x), Math.abs(shadowOffset.y)) + strokeWidth / 2)
+    Math.ceil(shadowBlur * 1.5 + Math.max(Math.abs(shadowOffsetX), Math.abs(shadowOffsetY)) + strokeWidth / 2)
   );
   const paddedCanvasSize = $derived(canvasSize + shadowPadding * 2);
   const shadowScale = $derived(paddedCanvasSize / canvasSize);
@@ -148,8 +166,8 @@
     if (!clipOnly) {
       ctx.shadowColor = shadowColor;
       ctx.shadowBlur = shadowBlur;
-      ctx.shadowOffsetX = shadowOffset.x;
-      ctx.shadowOffsetY = shadowOffset.y;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
       ctx.fill();
       if (strokeWidth > 0) {
         ctx.stroke();

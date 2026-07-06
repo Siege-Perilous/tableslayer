@@ -75,7 +75,12 @@ Key properties:
 `SessionDocClient` owns both Y docs, their providers, and the presence channel. It exposes:
 
 - **Reactive snapshot reads** — `scenes()`, `scene(id)`, `partyState()` — backed by per-scene
-  revision counters bumped from doc observers, with memoized snapshots.
+  revision counters bumped from doc observers, with memoized snapshots. Local writes bump revs
+  synchronously; **remote** bumps coalesce through a `setTimeout(0)` macrotask, so a backlog of
+  incoming messages drains into a single snapshot rebuild from the latest doc state instead of
+  one per message. Never move this (or any realtime scheduling) onto `requestAnimationFrame` —
+  rAF cadence is per-window (focus/occlusion/GPU contention) and chains receive latency to that
+  window's rendering health.
 - **Origin-tagged writers** — `write.setSceneSettings/upsertMarker/setFogMask/...` and
   `party.setActiveScene/setPaused`. Writers warn loudly when a target scene is missing rather
   than silently no-oping.
@@ -98,9 +103,18 @@ renderProps = buildRenderProps(docSnapshot, localView) → structural sharing �
   the snapshot while writes throttle to the doc at 50ms; the override clears shortly after the
   gesture ends. No wall-clock protection windows.
 - The editor's control panels still call `queuePropertyUpdate(stageProps, path, value)`; the
-  broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally and flushes
-  shared paths to the doc in the same microtask. Local-only paths (viewport, tools, measurement
-  config) never touch the doc.
+  broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally right away
+  and flushes shared paths to the doc throttled: an 8ms leading-edge gate sits below typical
+  input-event spacing, so during a gesture nearly every input event flushes immediately and the
+  broadcast inherits the input stream's even rhythm; a trailing timer catches the gesture tail.
+  (Not rAF — see above.) `flushQueuedPropertyUpdates()` forces a pending flush; rebinding or
+  unbinding flushes automatically. Local-only paths (viewport, tools, measurement config) never
+  touch the doc.
+- Settings flushes are **field-level**: only fields mapped from the queued property paths are
+  written (`sceneSettingsFieldsForPropPaths` in `convertStagePropsToSceneData.ts`), never a
+  full settings snapshot. A full snapshot would write this client's stale copies of fields it
+  never touched — with two live editors that reverts the other editor's in-flight changes
+  (e.g. a receiver's `relockMapZoom` write rubber-banding the sender's pan).
 
 ### Editor vs play
 

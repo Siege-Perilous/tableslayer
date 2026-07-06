@@ -2,16 +2,26 @@ import type { SceneSettings, SessionDocClient } from '$lib/realtime';
 import type { StageProps } from '@tableslayer/stage';
 import { convertAnnotationToDbFormat } from './convertStagePropsToAnnotationData';
 import { convertStageMarkersToDbFormat } from './convertStagePropsToMarkerData';
-import { convertPropsToSceneDetails } from './convertStagePropsToSceneData';
+import { convertPropsToSceneDetails, sceneSettingsFieldsForPropPaths } from './convertStagePropsToSceneData';
 
 // Doc-backed property updates for the editor's control panels.
 //
 // Panels call queuePropertyUpdate(stageProps, path, value) exactly as before:
-// the value is applied to stageProps for instant feedback, and shared properties
-// are written through to the session doc in the same microtask (one transaction
-// per tick). The page re-derives stageProps from the doc, so local mutation and
-// doc state stay identical with no timing windows. Local-only properties (tools,
-// viewport, measurement config) never touch the doc.
+// the value is applied to stageProps synchronously for instant feedback, and
+// shared properties are written through to the session doc in a throttled flush
+// (leading edge on the next microtask, trailing timer for the gesture tail).
+// Continuous gestures (map pan, wheel zoom, slider drags) queue an update per
+// input event; each flush is one Y transaction and thus one websocket
+// broadcast, so the throttle is what keeps a pan from drowning remote peers in
+// per-mousemove messages. The page re-derives stageProps from the doc, so local
+// mutation and doc state converge. Local-only properties (tools, viewport,
+// measurement config) never touch the doc.
+//
+// Settings writes are FIELD-LEVEL: only fields reachable from the queued paths
+// are written, never a full settings snapshot. With two live editors, a full
+// snapshot would write this client's stale copy of fields it never touched —
+// e.g. a receiver's relockMapZoom write reverting the sender's in-flight pan,
+// yanking the map back and forth (rubber-banding) until the gesture ends.
 
 export type PropertyPath = string[];
 
@@ -44,17 +54,61 @@ interface DocBinding {
 }
 
 let binding: DocBinding | null = null;
-let flushScheduled = false;
 let latestProps: StageProps | null = null;
 let pendingRawSettings: Partial<SceneSettings> | null = null;
-const dirty = { settings: false, markers: false, lights: false, annotations: false };
+const dirtySettingsPaths = new Set<string>();
+const dirty = { markers: false, lights: false, annotations: false };
+
+// Leading-edge gate. Deliberately BELOW typical input-event spacing (60Hz ≈
+// 16.7ms, 125Hz mice ≈ 8ms): during a gesture nearly every input event flushes
+// immediately, so the broadcast inherits the input stream's even spacing. The
+// trailing timer only catches the gesture's final position. Never schedule
+// realtime flushes on requestAnimationFrame — rAF cadence is per-window
+// (focus, occlusion, GPU contention) and couples the shared doc's update
+// rhythm to this window's rendering health. Exported for tests.
+export const FLUSH_INTERVAL_MS = 8;
+let flushScheduled = false;
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let lastFlushAt = 0;
+
+function scheduleFlush() {
+  if (flushScheduled) return;
+  flushScheduled = true;
+  const wait = FLUSH_INTERVAL_MS - (Date.now() - lastFlushAt);
+  if (wait <= 0) {
+    queueMicrotask(runScheduledFlush);
+  } else {
+    flushTimer = setTimeout(runScheduledFlush, wait);
+  }
+}
+
+function runScheduledFlush() {
+  if (!flushScheduled) return; // already flushed via flushQueuedPropertyUpdates
+  flushScheduled = false;
+  if (flushTimer !== null) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  lastFlushAt = Date.now();
+  flushToDoc();
+}
+
+/** Write any queued updates to the doc now instead of waiting for the throttle. */
+export function flushQueuedPropertyUpdates() {
+  runScheduledFlush();
+}
 
 /** Bind panel property updates to a scene's doc subtree. Call on scene switch. */
 export function bindPropertyUpdatesToDoc(client: SessionDocClient, sceneId: string) {
+  if (binding && (binding.client !== client || binding.sceneId !== sceneId)) {
+    // Pending writes were queued against the previous scene; land them there
+    flushQueuedPropertyUpdates();
+  }
   binding = { client, sceneId };
 }
 
 export function unbindPropertyUpdates() {
+  flushQueuedPropertyUpdates();
   binding = null;
 }
 
@@ -79,47 +133,41 @@ export function queuePropertyUpdate(
     case 'annotations':
       dirty.annotations = true;
       break;
-    default:
-      dirty.settings = true;
+  }
+  // Independent of the collection buckets: some collection-prefixed paths (e.g.
+  // marker.shape.*) are global style stored in scene settings
+  if (sceneSettingsFieldsForPropPaths([propertyPath.join('.')]).length > 0) {
+    dirtySettingsPaths.add(propertyPath.join('.'));
   }
 
-  if (!flushScheduled) {
-    flushScheduled = true;
-    queueMicrotask(flushToDoc);
-  }
+  scheduleFlush();
 }
 
 /**
  * Queues scene-settings fields that have no StageProps representation (e.g.
- * mapCoordVersion). Flushed in the same microtask transaction as regular
- * property updates, so a mode toggle plus its coordinate rewrite land as one
- * undo step.
+ * mapCoordVersion). Flushed in the same transaction as regular property
+ * updates, so a mode toggle plus its coordinate rewrite land as one undo step.
  */
 export function queueRawSettingsUpdate(fields: Partial<SceneSettings>) {
   pendingRawSettings = { ...pendingRawSettings, ...fields };
-  if (!flushScheduled) {
-    flushScheduled = true;
-    queueMicrotask(flushToDoc);
-  }
+  scheduleFlush();
 }
 
 function flushToDoc() {
-  flushScheduled = false;
   const props = latestProps;
   if (!binding) return;
   const { client, sceneId } = binding;
 
-  // One Y transaction per tick; nested writer transactions reuse it (same origin)
+  // One Y transaction per flush; nested writer transactions reuse it (same origin)
   client.doc.transact(() => {
     if (props) {
-      if (dirty.settings) {
+      if (dirtySettingsPaths.size > 0) {
         const details = convertPropsToSceneDetails(props, null);
-        // annotations live as rows, and the editor viewport is local-only in v2
-        delete details.annotationLayers;
-        delete details.sceneOffsetX;
-        delete details.sceneOffsetY;
-        delete details.sceneRotation;
-        client.write.setSceneSettings(sceneId, details as Partial<SceneSettings>);
+        const fields: Partial<Record<string, unknown>> = {};
+        for (const field of sceneSettingsFieldsForPropPaths(dirtySettingsPaths)) {
+          if (field in details) fields[field] = details[field];
+        }
+        client.write.setSceneSettings(sceneId, fields as Partial<SceneSettings>);
       }
       if (dirty.markers) syncMarkers(client, sceneId, props);
       if (dirty.lights) syncLights(client, sceneId, props);
@@ -131,7 +179,8 @@ function flushToDoc() {
     }
   }, client.origin);
 
-  dirty.settings = dirty.markers = dirty.lights = dirty.annotations = false;
+  dirtySettingsPaths.clear();
+  dirty.markers = dirty.lights = dirty.annotations = false;
 }
 
 function syncMarkers(client: SessionDocClient, sceneId: string, props: StageProps) {
@@ -177,9 +226,6 @@ function syncAnnotations(client: SessionDocClient, sceneId: string, props: Stage
     client.write.setAnnotationFields(sceneId, layer.id, convertAnnotationToDbFormat(layer, sceneId, index));
   });
 }
-
-/** @deprecated Updates apply synchronously now; kept for call-site compatibility. */
-export function flushQueuedPropertyUpdates() {}
 
 // Helper to apply update at specific path
 function applyUpdate(obj: Record<string, unknown>, path: PropertyPath, value: unknown) {

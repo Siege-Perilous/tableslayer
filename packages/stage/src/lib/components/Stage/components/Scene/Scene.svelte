@@ -216,17 +216,31 @@
     updateMapClippingPlanes(props.scene, props.map, mapSize, props.display);
   });
 
-  // Update needsResize when map URL changes
+  // Update needsResize when map URL changes. Guard on the URL VALUE: the map
+  // object is replaced wholesale when a remote doc update changes any map
+  // field (e.g. another editor panning), and keying off its identity would
+  // re-run setSize + autoFit refit once per received pan step — camera
+  // bouncing on auto-fit editors and render-target churn on every receiver.
+  let resizedForMapUrl: string | null = null;
   $effect(() => {
     const mapUrl = props.map.url;
-    if (mapUrl) {
+    if (mapUrl && mapUrl !== resizedForMapUrl) {
       needsResize = true;
     }
+    resizedForMapUrl = mapUrl;
   });
 
-  // Effect to update post-processing settings when props change
+  // Effect to update post-processing settings when props change. Guarded by
+  // VALUE: the props root is replaced on every remote doc rebuild (another
+  // editor panning re-runs every props-reading effect), and rebuilding the
+  // composer per identity change blocks the main thread for hundreds of ms —
+  // receivers dropped to ~4fps while a remote peer panned.
+  let lastPostProcessingKey = '';
   $effect(() => {
     const postProcessing = $state.snapshot(props.postProcessing);
+    const postProcessingKey = JSON.stringify(postProcessing);
+    if (postProcessingKey === lastPostProcessingKey) return;
+    lastPostProcessingKey = postProcessingKey;
 
     // Need to convert the LUT to a LookupTexture
     Promise.resolve(getLUT(postProcessing.lut.url))
