@@ -8,6 +8,7 @@ import {
   getAnnotationMask,
   getFogMask,
   getPartyState,
+  getSceneSettings,
   getScenesMap,
   getSceneSnapshot,
   isDocHydrated,
@@ -148,6 +149,12 @@ export class SessionDocClient {
 
   #recvLog = createCadenceTracker('recv-remote');
   #revFlushLog = createCadenceTracker('recv-revflush');
+  // Catches EVERY local writer of the shared map transform (broadcaster, play
+  // page direct writes, undo/redo) — a client that moves the map must show it
+  // in its own console, or the write came from a client whose console we can't
+  // see (e.g. a phone on the play page)
+  #localMapWriteLog = createCadenceTracker('local-map-write');
+  static readonly #MAP_FIELDS = ['mapOffsetX', 'mapOffsetY', 'mapZoom', 'mapRotation'];
 
   #applyChanges(changes: SceneChange[]) {
     let sawRemote = false;
@@ -165,6 +172,12 @@ export class SessionDocClient {
           this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
         }
         if (touchesList) this.#listRev++;
+        if (change.part === 'settings' && change.keys.some((key) => SessionDocClient.#MAP_FIELDS.includes(key))) {
+          const settings = getSceneSettings(this.doc, change.sceneId);
+          this.#localMapWriteLog.record(
+            `keys=${change.keys.join(',')} x=${Math.round(settings?.mapOffsetX ?? 0)} y=${Math.round(settings?.mapOffsetY ?? 0)} undo=${change.undoRedo}`
+          );
+        }
       }
     }
     if (sawRemote) {

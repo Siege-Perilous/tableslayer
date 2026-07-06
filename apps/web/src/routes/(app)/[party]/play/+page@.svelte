@@ -1,7 +1,14 @@
 <script lang="ts">
   import { Head } from '$lib/components';
   import { buildRenderProps, reuseUnchanged } from '$lib/realtime';
-  import { buildSceneProps, createCadenceTracker, setSyncLogRole, startRafLogger, throttle } from '$lib/utils';
+  import {
+    buildSceneProps,
+    createCadenceTracker,
+    setSyncLogRole,
+    startRafLogger,
+    startStallDetector,
+    throttle
+  } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
@@ -97,6 +104,7 @@
   $effect(() => {
     const snapshot = session.activeScene;
     if (!snapshot) return;
+    const rebuildStart = performance.now();
     const props = buildRenderProps(
       snapshot,
       {
@@ -127,7 +135,9 @@
     // effects (measurement reset, material/texture updates) don't re-fire
     renderedProps = untrack(() => reuseUnchanged(renderedProps, props));
     renderedSceneId = snapshot.id;
-    rebuildLog.record(`x=${Math.round(renderedProps.map.offset.x)}`);
+    rebuildLog.record(
+      `x=${Math.round(renderedProps.map.offset.x)} dur=${(performance.now() - rebuildStart).toFixed(0)}ms`
+    );
   });
 
   // Apply performance tier changes (watchdog step-downs or remote selection)
@@ -308,6 +318,7 @@
   onMount(() => {
     setSyncLogRole('play');
     startRafLogger();
+    startStallDetector();
     stagePerformance.init();
 
     const gestureDetector = stageElement
@@ -333,7 +344,22 @@
         )
       : null;
 
+    // Mobile browsers freeze background tabs and flush their timers on wake:
+    // a pending gesture-commit timer would then write a position from minutes
+    // ago into the doc, yanking the map/markers for every connected client.
+    // Hiding the tab ends any in-flight gesture — drop the pending commits.
+    const cancelPendingGestureWrites = () => {
+      if (document.visibilityState !== 'hidden') return;
+      clearTimeout(mapDragClearTimer);
+      mapDragOffset = null;
+      for (const timer of dragClearTimers.values()) clearTimeout(timer);
+      dragClearTimers.clear();
+      dragPositions = {};
+    };
+    document.addEventListener('visibilitychange', cancelPendingGestureWrites);
+
     return () => {
+      document.removeEventListener('visibilitychange', cancelPendingGestureWrites);
       gestureDetector?.destroy();
       mapPanGesture?.destroy();
       activityTimer?.destroy();

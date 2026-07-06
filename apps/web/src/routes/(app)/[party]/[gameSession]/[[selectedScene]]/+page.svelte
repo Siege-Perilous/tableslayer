@@ -30,6 +30,7 @@
     setChecklistContext,
     setSyncLogRole,
     startRafLogger,
+    startStallDetector,
     unbindPropertyUpdates
   } from '$lib/utils';
   import { getPreference, setPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
@@ -235,6 +236,7 @@
     lastBuiltSceneId = snapshot.id;
 
     untrack(() => {
+      const rebuildStart = performance.now();
       const prev = stageProps;
       const next = buildRenderProps(
         snapshot,
@@ -290,7 +292,9 @@
       // Structural sharing: unchanged subtrees keep their identity so stage-internal
       // effects (measurement reset, material/texture updates) don't re-fire
       stageProps = reuseUnchanged(prev, next);
-      rebuildLog.record(`x=${Math.round(stageProps.map.offset.x)}`);
+      rebuildLog.record(
+        `x=${Math.round(stageProps.map.offset.x)} dur=${(performance.now() - rebuildStart).toFixed(0)}ms`
+      );
 
       if (isSceneSwitch) {
         activeControl = 'none';
@@ -1279,6 +1283,7 @@
   onMount(() => {
     setSyncLogRole('editor');
     startRafLogger();
+    startStallDetector();
     stagePerformance.init();
 
     if (stageElement) {

@@ -65,6 +65,39 @@ export const createCadenceTracker = (label: string) => {
 };
 
 /**
+ * Detects main-thread stalls regardless of cause: a 25ms heartbeat timer that
+ * logs whenever it fires much later than scheduled. A `stall=280ms` line means
+ * SOMETHING blocked the main thread that long — correlate its timestamp with
+ * the surrounding rebuild/frame duration lines to attribute it.
+ */
+let stallDetectorStarted = false;
+export const startStallDetector = () => {
+  if (stallDetectorStarted) return;
+  stallDetectorStarted = true;
+  const HEARTBEAT_MS = 25;
+  const REPORT_OVER_MS = 100;
+  let expected = performance.now() + HEARTBEAT_MS;
+  setInterval(() => {
+    const t = performance.now();
+    const late = t - expected;
+    if (late > REPORT_OVER_MS) line('stall', `blocked=${late.toFixed(0)}ms`);
+    expected = t + HEARTBEAT_MS;
+  }, HEARTBEAT_MS);
+};
+
+/**
+ * Times a synchronous block and returns its result; durations over the
+ * threshold log immediately as their own line.
+ */
+export const timeSync = <T>(label: string, thresholdMs: number, fn: () => T): T => {
+  const start = performance.now();
+  const result = fn();
+  const dur = performance.now() - start;
+  if (dur > thresholdMs) line(label, `dur=${dur.toFixed(0)}ms`);
+  return result;
+};
+
+/**
  * Logs this window's animation-frame health once per second: frames per
  * second and the worst frame gap. Slow fps / big gaps in a window that is
  * visibly on screen means the compositor or GPU is starving it.

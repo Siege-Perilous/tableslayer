@@ -332,10 +332,17 @@
     return activeEffects.bloom || activeEffects.chromaticAberration || activeEffects.vignette || activeEffects.lut;
   });
 
+  // TEMPORARY sync-smoothness diagnostics: log render-task frames that block
+  // the main thread, with the resize flag to attribute setSize/fit cost
+  let lastSlowFrameLog = 0;
+
   // Custom render task
   useTask(
     (dt) => {
       if (!scene || !renderer || !camera) return;
+
+      const taskStart = performance.now();
+      const taskResized = needsResize;
 
       const enableMetrics = debugState.enableMetrics;
       const frameStart = enableMetrics ? beginFrame() : 0;
@@ -389,6 +396,14 @@
         setLoadingState(SceneLoadingState.Rendering);
       } else if (loadingState === SceneLoadingState.Rendering) {
         setLoadingState(SceneLoadingState.Initialized);
+      }
+
+      const taskDur = performance.now() - taskStart;
+      if (taskDur > 50 && taskStart - lastSlowFrameLog > 500) {
+        lastSlowFrameLog = taskStart;
+        console.log(
+          `[sync ${new Date().toISOString().slice(11, 23)} stage] slow-frame: dur=${taskDur.toFixed(0)}ms resized=${taskResized} mode=${props.mode}`
+        );
       }
     },
     { stage: renderStage }
