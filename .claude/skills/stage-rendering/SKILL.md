@@ -5,7 +5,7 @@ description: Architecture and gotchas for packages/stage — the Threlte/Three.j
 
 # @tableslayer/stage rendering architecture
 
-> **Freshness**: last verified 2026-07-04 (Threlte 8.5, Three 0.185, postprocessing 6.39).
+> **Freshness**: last verified 2026-07-06 (Threlte 8.5, Three 0.185, postprocessing 6.39).
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 > Deeper current docs: `docs/grid-system-architecture.md` (grid math), `docs/stage-performance-guide.md` (perf workflow).
 
@@ -40,6 +40,7 @@ description: Architecture and gotchas for packages/stage — the Threlte/Three.j
 - **Y-flips everywhere**: render-target readback is vertically flipped — `toPng` un-flips via canvas transform; `toRLE`/`fromRLE` flip rows manually (`height-1-y`) and pack **alpha channel only**. NDC→pixel conversions flip y (`-v.y*0.5+0.5`). The weather particle camera is intentionally upside-down (`rotation.x = Math.PI`).
 - **Brush sizes are in grid units**, converted to texture pixels via `getGridCellSize` (fog additionally divides by map zoom; annotation uses the synthetic map-space display in MapDefined — the two formulas agree under the locked zoom), then **halved** (shaders treat `uBrushSize` as a radius).
 - **Resize must happen in the render task, not `$effect`** — `needsResize` flag pattern in Scene.svelte; the size-mismatch check doesn't work in effects.
+- **Effects must key off prop VALUES, not sub-object identity.** apps/web replaces whole prop subtrees (e.g. `props.map`) on every remote doc change — structural sharing only preserves identity for _unchanged_ subtrees, so `props.map` is a new object on every received pan step. An effect that reads `props.map.url` and unconditionally does work re-fires per step (this once caused setSize + autoFit refit per received update: camera bounce on auto-fit editors, render-target churn on every receiver). Guard with a last-value comparison — see Scene.svelte's `resizedForMapUrl` and MapLayer's `currentMapUrl`.
 - DPR is capped by `props.display.maxPixelRatio` (default 2) for weak GPUs.
 - **Performance tiers**: `PerformanceTier = 'high'|'medium'|'low'` with the knob table `PERFORMANCE_TIER_SETTINGS` in `Stage/components/Stage/types.ts` (fog layer count/octave cap, weather resolution+particle scale, `forcePostProcessingOff` on low). The consumer picks the tier — Stage never auto-detects. Shaders also receive `uPerformanceTier`. Tier changes apply live.
 - **Clipping planes**: two stores in `helpers/clippingPlaneStore.svelte.ts` — display bounds (on the renderer) vs map bounds (on weather/light materials so effects stop at map edges). `generateThumbnail` temporarily clears them. In **DM + MapDefined** the display-bounds store is "disabled" (planes pushed to 1e9, keeping the 4-plane shape `AnnotationEffects.frag` bakes in) so the whole map is visible; `TvViewportLayer` draws the playfield rectangle + dim mask instead. Player mode keeps clipping.
