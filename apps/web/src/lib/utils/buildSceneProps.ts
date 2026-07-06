@@ -7,6 +7,7 @@ import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from 
 import {
   AnnotationEffect,
   type AnnotationLayerData,
+  displayToMapSpace,
   DrawMode,
   getDefaultEffectProps,
   GridMode,
@@ -35,6 +36,20 @@ export const buildSceneProps = (
 ): StageProps => {
   const fogColors = generateGradientColors(activeScene.fogOfWarColor || '#000000');
 
+  // MapDefined marker/light positions are center-relative map pixels
+  // (mapCoordVersion 1). Scenes not yet upgraded (v0, including old exports)
+  // still store display-space positions, so convert them on read with the
+  // scene's stored map transform — the stage never sees legacy coordinates.
+  const isMapDefined = ((activeScene.gridMode as GridMode) ?? GridMode.FillSpace) === GridMode.MapDefined;
+  const needsCoordConversion = isMapDefined && (activeScene.mapCoordVersion ?? 0) !== 1;
+  const legacyMapTransform = {
+    offset: { x: activeScene.mapOffsetX ?? 0, y: activeScene.mapOffsetY ?? 0 },
+    rotation: activeScene.mapRotation ?? 0,
+    zoom: activeScene.mapZoom || 1
+  };
+  const toStagePosition = (x: number, y: number) =>
+    needsCoordConversion ? displayToMapSpace({ x, y }, legacyMapTransform) : { x, y };
+
   const thumbUrl =
     !isDefaultMap(activeScene.mapLocation) && activeScene.mapLocation
       ? generateLargeImageUrl(activeScene.mapLocation, bucketUrl)
@@ -48,7 +63,7 @@ export const buildSceneProps = (
       .map((marker) => ({
         id: marker.id,
         title: marker.title,
-        position: { x: marker.positionX, y: marker.positionY },
+        position: toStagePosition(marker.positionX, marker.positionY),
         size: marker.size,
         shape: marker.shape,
         shapeColor: marker.shapeColor,
@@ -88,7 +103,7 @@ export const buildSceneProps = (
   if (activeSceneLights && Array.isArray(activeSceneLights)) {
     lights = activeSceneLights.map((light) => ({
       id: light.id,
-      position: { x: light.positionX, y: light.positionY },
+      position: toStagePosition(light.positionX, light.positionY),
       radius: light.radius,
       color: light.color,
       style: light.style as LightStyle,

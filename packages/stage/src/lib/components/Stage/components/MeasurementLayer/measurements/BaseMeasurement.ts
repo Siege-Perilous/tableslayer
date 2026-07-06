@@ -93,6 +93,8 @@ export abstract class BaseMeasurement implements IMeasurement {
   public snapToGrid: boolean;
   /** Whether to use DMG 252 measurement calculations */
   public enableDMG252: boolean;
+  /** Converts display-pixel text sizing into local pixels (1 in display space) */
+  protected textScale: number;
 
   /** Display properties containing resolution and size information */
   protected displayProps: DisplayProps;
@@ -141,6 +143,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.showDistance = measurementProps.showDistance;
     this.snapToGrid = measurementProps.snapToGrid;
     this.enableDMG252 = measurementProps.enableDMG252;
+    this.textScale = measurementProps.textScale ?? 1;
     this.displayProps = displayProps;
     this.gridProps = gridProps;
 
@@ -218,10 +221,10 @@ export abstract class BaseMeasurement implements IMeasurement {
     const direction = this.endPoint.clone().sub(this.startPoint).normalize();
 
     // Initial text position at standard offset distance from the end point
-    let textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE));
+    let textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE * this.textScale));
 
     // Edge detection and adjustment
-    const padding = 150; // Padding from edges to prevent clipping
+    const padding = 150 * this.textScale; // Padding from edges to prevent clipping
     const halfWidth = this.displayProps.resolution.x / 2;
     const halfHeight = this.displayProps.resolution.y / 2;
 
@@ -286,7 +289,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     // Show the text mesh since we have content
     this.textMesh.visible = true;
 
-    const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
+    const fontSize = (this.displayProps.resolution.y / FONT_SIZE_DIVISOR) * this.textScale;
     const textCanvas = createTextCanvas(
       displayText,
       fontSize,
@@ -349,7 +352,7 @@ export abstract class BaseMeasurement implements IMeasurement {
    * @returns {THREE.Mesh} A Three.js mesh containing the rendered text
    */
   protected createTextMesh(text: string, position: THREE.Vector2): THREE.Mesh {
-    const fontSize = this.displayProps.resolution.y / FONT_SIZE_DIVISOR;
+    const fontSize = (this.displayProps.resolution.y / FONT_SIZE_DIVISOR) * this.textScale;
 
     const canvas = createTextCanvas(text, fontSize, this.color, this.outlineColor, this.outlineThickness);
 

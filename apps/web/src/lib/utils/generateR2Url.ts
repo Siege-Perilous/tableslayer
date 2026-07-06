@@ -12,7 +12,15 @@ export type R2TransformOptions = {
 };
 
 const DEFAULT_R2_BASE_URL = 'https://files.tableslayer.com';
-const DEFAULT_MAP = 'map/example1080.png';
+
+/**
+ * The placeholder map new scenes are born with: a MapDefined battle map whose
+ * grid spans the image edge-to-edge. The size is fixed (60 px per cell), which
+ * lets scene creation skip an image-dimension fetch.
+ */
+export const DEFAULT_MAP = 'map/pirateking-30x60.jpg';
+export const DEFAULT_MAP_GRID = { x: 30, y: 60 };
+export const DEFAULT_MAP_SIZE = { width: 1800, height: 3600 };
 
 /**
  * Check if a file is a video based on its extension

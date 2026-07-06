@@ -428,6 +428,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
+      # Unit tests import @tableslayer/stage, which resolves to its built dist
+      # (and stage imports @tableslayer/ui, so build the chain in order)
+      - name: Build workspace packages
+        run: pnpm --filter @tableslayer/ui package && pnpm --filter @tableslayer/stage build
       # Load NVIDIA kernel modules for Tesla T4 GPU acceleration.
       # The GPU runner has drivers installed but modules aren't loaded by default.
       # This enables hardware WebGL rendering (1.4min) vs software llvmpipe (1.6min).

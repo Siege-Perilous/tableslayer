@@ -28,7 +28,10 @@ import type {
 // party doc
 //   state: Y.Map { activeSceneId, isPaused }
 
-export const DOC_SCHEMA_VERSION = 1;
+// v2: MapDefined marker/light positions are center-relative map pixels (see
+// scene.mapCoordVersion). The bump fences stale tabs from writing legacy
+// display-space coordinates into upgraded scenes; rooms rehydrate from the DB.
+export const DOC_SCHEMA_VERSION = 2;
 export const ANNOTATION_MASK_KEY = 'mask';
 
 type SceneMap = Y.Map<unknown>;
@@ -187,6 +190,13 @@ export const createSessionWriter = (doc: Y.Doc, origin: unknown) => {
   };
 
   return {
+    /**
+     * Groups multiple writer calls into one Y transaction (nested transacts
+     * fold into the outer one), so multi-row updates land atomically.
+     */
+    transaction(fn: () => void) {
+      transact(fn);
+    },
     createScene(
       settings: SceneSettings,
       content?: {

@@ -15,7 +15,12 @@ uniform vec2 uDisplaySize_in;
 uniform float uFixedGridCountX;
 uniform float uFixedGridCountY;
 
+// NUM_CLIPPING_PLANES is provided via material defines (three.js rewrites the
+// token in shader source, so it must not be #define'd here)
+uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
+
 varying vec2 vUv;
+varying vec3 vWorldPosition;
 
 #define PI 3.141592653589793
 
@@ -35,7 +40,16 @@ float squareGrid(vec2 coords, vec2 spacing, float thickness, float sharpness) {
   // Compute distance to the grid line and modulate opacity based on line thickness
   vec2 distanceToLine_px = abs(coords - gridLine_px);
 
-  vec2 grid = 1.0 - smoothstep(vec2(thickness / 4.0) - 50.0 * sharpness, vec2(thickness / 4.0) + 50.0 * sharpness, distanceToLine_px);
+  // Analytic anti-aliasing: fwidth() is this fragment's footprint in local px
+  // (device-pixel-ratio included). The half-width floors at one device pixel
+  // so every line keeps a solid core regardless of its sub-pixel phase — hard
+  // or sub-pixel bands alias into patchy, phase-dependent moiré — and edges
+  // always get at least a pixel of falloff.
+  vec2 aa = fwidth(coords);
+  vec2 halfWidth = max(vec2(thickness / 4.0), aa);
+  vec2 edge = max(vec2(50.0 * sharpness), aa);
+
+  vec2 grid = 1.0 - smoothstep(halfWidth - edge, halfWidth + edge, distanceToLine_px);
 
   return max(grid.x, grid.y);
 }
@@ -76,11 +90,28 @@ float hexGrid(vec2 coords, vec2 spacing, float thickness, float sharpness) {
   // 0 maps to spacing * 0.5 pixels
   vec2 maxThickness = spacing * 0.5;
 
+  // Anti-alias over at least one device pixel of the hex field (see squareGrid)
+  float aa = fwidth(hexValue);
+  float edge = max(sharpness, aa);
+
   // When the thickness is equal to spacing * 0.5, it must be zero
-  return smoothstep(0.5 * (1.0 - thickness / spacing.x / 2.0) - sharpness, 0.5 * (1.0 - thickness / spacing.x / 2.0) + sharpness, hexValue);
+  float edgePosition = 0.5 * (1.0 - thickness / spacing.x / 2.0);
+  return smoothstep(edgePosition - edge, edgePosition + edge, hexValue);
 }
 
 void main() {
+  // Manual clipping against the display-rect planes (raw ShaderMaterials skip
+  // the renderer's global clipping planes). In MapDefined mode the quad is
+  // map-sized and can extend beyond the playfield; the DM whole-map view
+  // disables these planes, the Player view clips like every other layer.
+  vec4 plane;
+  for (int i = 0; i < NUM_CLIPPING_PLANES; i++) {
+    plane = uClippingPlanes[i];
+    if (dot(-vWorldPosition, plane.xyz) > plane.w) {
+      discard;
+    }
+  }
+
   // NOTE: To make it easier to determine what units a variable is, the _px suffix is used
   // for values measured in pixels and the _in suffix is for inches.
 
@@ -103,30 +134,15 @@ void main() {
     gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
     gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
   } else {
-    // MapDefined mode - use exact grid dimensions
+    // MapDefined mode - the layer is anchored to the map and the quad IS the
+    // map (uResolution_px is the map size in map pixels). Cells are always
+    // square: pixelPitch is uniform per axis (see getMapSpaceDisplay), so this
+    // yields the average cell the fixed count implies. The grid is centered on
+    // the map; a count/aspect mismatch shows as misfit at the map edges.
     gridCount = vec2(uFixedGridCountX, uFixedGridCountY);
-
-    // Calculate grid spacing to maintain 1:1 inch squares
     gridSpacing_px = vec2(uSpacing_in) / pixelPitch_in;
-
-    // Calculate total grid size
-    gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0;
-
-    // Position grid based on overflow:
-    // - If grid fits horizontally, center it
-    // - If grid overflows horizontally, align left
-    float originX = gridSize_px.x <= uResolution_px.x ?
-      (uResolution_px.x - gridSize_px.x) / 2.0 : 0.0;
-
-    // - If grid fits vertically, center it
-    // - If grid overflows vertically, align to top of screen (bleed goes down)
-    // In UV space: Y=0 is bottom, Y=uResolution_px.y is top
-    // To start at top when overflowing: originY = uResolution_px.y - gridSize_px.y
-    float originY = gridSize_px.y <= uResolution_px.y ?
-      (uResolution_px.y - gridSize_px.y) / 2.0 :
-      uResolution_px.y - gridSize_px.y;
-
-    gridOrigin_px = vec2(originX, originY);
+    gridSize_px = gridSpacing_px * gridCount;
+    gridOrigin_px = (uResolution_px - gridSize_px) / 2.0;
   }
 
   vec2 gridCoords_px = displayCoord_px - gridOrigin_px;

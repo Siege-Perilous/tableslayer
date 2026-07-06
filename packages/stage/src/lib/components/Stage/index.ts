@@ -7,7 +7,7 @@ export {
   type AnnotationLayerData,
   type AnnotationsLayerProps
 } from './components/AnnotationLayer/types';
-export { DrawMode, RenderMode, ToolType } from './components/DrawingLayer/types';
+export { DrawMode, RenderMode, ToolType, peekRLEDimensions } from './components/DrawingLayer/types';
 export { type EdgeOverlayProps } from './components/EdgeOverlayLayer/types';
 export { type FogLayerProps } from './components/FogLayer/types';
 export { type FogOfWarLayerProps } from './components/FogOfWarLayer/types';
@@ -55,6 +55,18 @@ export {
   type WeatherLayerProps
 } from './components/WeatherLayer/types';
 export { debugState, isDebugEnabled, setDebugEnabled } from './helpers/debugState.svelte';
+export {
+  displayToMapSpace,
+  getAlignedMapTransform,
+  getLockedMapZoom,
+  getMapGridCellSize,
+  getMapSpaceDisplay,
+  mapToDisplaySpace,
+  type AlignedMapTransform,
+  type MapImageSize,
+  type MapTransform,
+  type Point2
+} from './helpers/mapSpace';
 export {
   get1PercentLowFps,
   getAverageFps,

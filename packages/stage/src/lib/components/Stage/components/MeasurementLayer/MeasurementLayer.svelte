@@ -13,8 +13,14 @@
     props: MeasurementLayerProps;
     isActive: boolean;
     display: DisplayProps;
+    /** The physical display, when `display` is the synthetic map-space display */
+    realDisplay?: DisplayProps;
     grid: GridLayerProps;
     sceneRotation?: number;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
+    /** Map rotation in degrees, inherited from the map anchor in MapDefined mode */
+    mapRotation?: number;
     onMeasurementStart?: (startPoint: THREE.Vector2, type: number) => void;
     onMeasurementUpdate?: (startPoint: THREE.Vector2, endPoint: THREE.Vector2, type: number) => void;
     onMeasurementEnd?: () => void;
@@ -45,8 +51,11 @@
     props,
     isActive,
     display,
+    realDisplay = display,
     grid,
     sceneRotation = 0,
+    localScale = 1,
+    mapRotation = 0,
     onMeasurementStart,
     onMeasurementUpdate,
     onMeasurementEnd,
@@ -114,7 +123,7 @@
 
     // For measurements on hex grids, snap to centers only
     const isHexGrid = grid.gridType === GridType.Hex;
-    const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
+    const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid, localScale) : coords;
 
     // Always clear any existing measurement state before starting new one
     // This handles edge cases where isDrawing might be unexpectedly true
@@ -151,7 +160,7 @@
     // For measurements on hex grids, snap to centers only
     const isHexGrid = grid.gridType === GridType.Hex;
     if (props.snapToGrid) {
-      snappedPosition = snapToGrid(coords, grid, display, isHexGrid);
+      snappedPosition = snapToGrid(coords, grid, display, isHexGrid, localScale);
     } else {
       snappedPosition.copy(coords);
     }
@@ -194,7 +203,7 @@
       coords.sub(centerOffset);
       // For measurements on hex grids, snap to centers only
       const isHexGrid = grid.gridType === GridType.Hex;
-      const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid) : coords;
+      const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid, localScale) : coords;
 
       if (snappedCoords) {
         measurementManager.finishMeasurement();
@@ -359,8 +368,11 @@
   {props}
   visible={isActive}
   displayProps={display}
+  {realDisplay}
   gridProps={grid}
   {sceneRotation}
+  {localScale}
+  {mapRotation}
   onFadeComplete={() => {
     measurementIsFading = false;
   }}

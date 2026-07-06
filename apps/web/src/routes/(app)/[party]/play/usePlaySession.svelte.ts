@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { SessionDocClient, type SceneChange, type SceneSnapshot } from '$lib/realtime';
+import { SessionDocClient, upgradeSceneCoordinates, type SceneChange, type SceneSnapshot } from '$lib/realtime';
 import { devError, devLog } from '$lib/utils/debug';
 import { generateLargeImageUrl } from '$lib/utils/generateR2Url';
 import type { StageExports } from '@tableslayer/stage';
@@ -137,9 +137,20 @@ export class PlaySession {
    * short schedule: the fog layer refills itself when the map texture finishes
    * loading. (Annotation masks are declarative layer props — no application
    * needed here.)
+   *
+   * Runs once per displayed scene after the stage has loaded the map, which
+   * is also the right moment to upgrade legacy MapDefined coordinates —
+   * players move markers too, so the play route must not write into an
+   * unconverted scene, and the loaded map's pixel size lets the upgrade
+   * reconcile a stale grid count.
    */
   async applyMasks() {
     const sceneId = this.activeSceneId;
+    if (sceneId && this.client) {
+      const mapSize = this.#options.getStage()?.map.getSize() ?? null;
+      upgradeSceneCoordinates(this.client, sceneId, mapSize);
+    }
+
     for (const delay of [0, 300, 1000, 3000]) {
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       if (this.activeSceneId !== sceneId) return; // scene changed mid-retry

@@ -1,14 +1,16 @@
 <script lang="ts">
   import { Button, IconButton, Icon } from '@tableslayer/ui';
-  import { type StageProps } from '@tableslayer/stage';
+  import { GridMode, type StageExports, type StageProps } from '@tableslayer/stage';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
+  import { queuePropertyUpdate, relockMapZoom, trackChecklistItem } from '$lib/utils';
 
   let {
+    stage,
     stageProps,
     handleSceneFit,
     handleMapFill
   }: {
+    stage?: StageExports;
     stageProps: StageProps;
     handleSceneFit: () => void;
     handleMapFill: () => void;
@@ -16,18 +18,19 @@
 
   let zoomType = $state<'map' | 'scene'>('scene');
 
+  // Map zoom is locked in map-defined mode (derived from the grid), so the
+  // map side of the toggle only offers rotation there
+  const isMapDefined = $derived((stageProps.grid.gridMode ?? GridMode.FillSpace) === GridMode.MapDefined);
+
   const minZoom = 0.1;
   const maxZoom = 10;
   const zoomSensitivity = 0.001;
 
   const handleZoom = (deltaY: number, zoomType: 'map' | 'scene') => {
+    if (zoomType === 'map' && isMapDefined) return;
     const zoom = stageProps[zoomType].zoom + deltaY * zoomSensitivity;
     const newZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
     queuePropertyUpdate(stageProps, [zoomType, 'zoom'], newZoom, 'control');
-    // Track checklist completion for scaling map
-    if (zoomType === 'map') {
-      trackChecklistItem('scale-map');
-    }
   };
 
   const toggleZoomType = () => {
@@ -39,6 +42,8 @@
     const cardinals = [0, 90, 180, 270];
     const next = cardinals.find((angle) => angle > current) ?? cardinals[0];
     queuePropertyUpdate(stageProps, ['map', 'rotation'], next, 'control');
+    // Rotation swaps the map's effective axes, so the locked zoom must follow
+    relockMapZoom(stageProps, stage);
     // Track checklist completion for rotating map
     trackChecklistItem('rotate-map');
   };
@@ -59,38 +64,42 @@
     <span class={zoomType === 'scene' ? 'sceneZoom__mutedText' : ''}>Map</span>
   </Button>
 
-  <IconButton
-    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
-    class="zoomControls__button"
-    aria-label="Zoom in"
-    variant="ghost"
-    onclick={() => {
-      handleZoom(100, zoomType);
-    }}
-  >
-    <Icon Icon={IconPlus} stroke={3} />
-  </IconButton>
-  <IconButton
-    title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
-    class="zoomControls__button"
-    aria-label="Zoom out"
-    variant="ghost"
-    onclick={() => {
-      handleZoom(-100, zoomType);
-    }}
-  >
-    <Icon Icon={IconMinus} stroke={3} />
-  </IconButton>
-  {#if zoomType === 'map'}
+  {#if !(zoomType === 'map' && isMapDefined)}
     <IconButton
-      title="Fit map within scene"
+      title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
       class="zoomControls__button"
-      aria-label="Fit scene"
+      aria-label="Zoom in"
       variant="ghost"
-      onclick={handleMapFill}
+      onclick={() => {
+        handleZoom(100, zoomType);
+      }}
     >
-      <Icon Icon={IconArrowsMaximize} stroke={3} />
+      <Icon Icon={IconPlus} stroke={3} />
     </IconButton>
+    <IconButton
+      title={zoomType === 'map' ? 'SHIFT + mouse wheel' : 'CTRL + mouse wheel'}
+      class="zoomControls__button"
+      aria-label="Zoom out"
+      variant="ghost"
+      onclick={() => {
+        handleZoom(-100, zoomType);
+      }}
+    >
+      <Icon Icon={IconMinus} stroke={3} />
+    </IconButton>
+  {/if}
+  {#if zoomType === 'map'}
+    {#if !isMapDefined}
+      <IconButton
+        title="Fit map within scene"
+        class="zoomControls__button"
+        aria-label="Fit scene"
+        variant="ghost"
+        onclick={handleMapFill}
+      >
+        <Icon Icon={IconArrowsMaximize} stroke={3} />
+      </IconButton>
+    {/if}
     <IconButton
       title="Rotate map"
       class="zoomControls__button"

@@ -48,7 +48,20 @@ const rectClippingPlanes = (
   ];
 };
 
-export function updateClippingPlanes(sceneProps: SceneLayerProps, displayProps: DisplayProps) {
+export function updateClippingPlanes(sceneProps: SceneLayerProps, displayProps: DisplayProps, disabled = false) {
+  // When disabled (DM view in MapDefined mode shows the whole map), keep the
+  // 4-plane array shape — shader uniforms and the thumbnail restore path
+  // depend on it — but push the planes far enough away that nothing clips
+  if (disabled) {
+    clippingPlaneStore.value = [
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9),
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), 1e9),
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9),
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e9)
+    ];
+    return;
+  }
+
   // Whenever the scene is translated/zoomed, update the clipping planes
   clippingPlaneStore.value = rectClippingPlanes(sceneProps, { x: 0, y: 0 }, 0, {
     x: displayProps.resolution.x / 2,

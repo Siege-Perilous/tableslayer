@@ -38,6 +38,12 @@ export interface MeasurementLayerProps {
   enableDMG252: boolean;
 
   /**
+   * Internal: converts the label's display-pixel sizing into local pixels when
+   * the layer is anchored to the map (set by MeasurementManager; leave unset)
+   */
+  textScale?: number;
+
+  /**
    * Auto-hide delay in milliseconds (default 3000ms)
    */
   autoHideDelay: number;

@@ -230,6 +230,16 @@
     const target = e.target as HTMLElement;
     const linkElement = target.closest('a');
 
+    if (!editable) {
+      const href = linkElement?.getAttribute('href');
+      if (href) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
     if (linkElement && linkElement.classList.contains('editor-link')) {
       e.preventDefault();
       e.stopPropagation();
@@ -759,6 +769,9 @@
     }
     .editor__content a:hover {
       text-decoration: underline;
+    }
+    .editor--notEdtiable .editor__content a {
+      pointer-events: auto;
     }
     .editor__content strong {
       font-weight: 700;

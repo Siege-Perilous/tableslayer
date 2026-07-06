@@ -19,13 +19,40 @@
     isActive: boolean;
     grid: GridLayerProps;
     display: DisplayProps;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
+    /** Map rotation in degrees, inherited from the map anchor in MapDefined mode */
+    mapRotation?: number;
   }
 
-  const { props, isActive, display, grid }: Props = $props();
+  const { props, isActive, display, grid, localScale = 1, mapRotation = 0 }: Props = $props();
 
   const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
-  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerContextMenu, onMarkerHover } =
+  const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerDoubleClick, onMarkerContextMenu, onMarkerHover } =
     getContext<Callbacks>('callbacks');
+
+  // Double-click / double-tap detection on markers
+  const DOUBLE_CLICK_MS = 350;
+  let lastMarkerClick: { id: string; time: number } | null = null;
+
+  // A drag that actually moved must not pop the selection tooltip on release; a
+  // simple tap still does, and a tooltip already open before the drag survives it
+  const DRAG_TOOLTIP_THRESHOLD_PX = 5;
+  let downClientPoint: { x: number; y: number } | null = null;
+  let tooltipWasOpenAtDown = false;
+  let dragMoved = false;
+  let tooltipSuppressed = $state(false);
+
+  function getClientPoint(e: Event): { x: number; y: number } | null {
+    if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
+      const touch = e.touches[0] ?? e.changedTouches[0];
+      return touch ? { x: touch.clientX, y: touch.clientY } : null;
+    }
+    if (e instanceof MouseEvent) {
+      return { x: e.clientX, y: e.clientY };
+    }
+    return null;
+  }
 
   // Quad used for raycasting / mouse input detection
   // Use $state.raw() for Three.js objects to prevent proxy interference with internal properties
@@ -98,16 +125,34 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
+      tooltipWasOpenAtDown = selectedMarker?.id === closestMarker.id && !tooltipSuppressed;
+      tooltipSuppressed = false;
+      dragMoved = false;
+      downClientPoint = getClientPoint(e);
       selectedMarker = closestMarker;
+
+      // Double-click/tap detection (only when a consumer is registered):
+      // the second click opens the marker panel and must not start a drag
+      const now = performance.now();
+      const isDoubleClick =
+        onMarkerDoubleClick !== undefined &&
+        lastMarkerClick?.id === closestMarker.id &&
+        now - lastMarkerClick.time < DOUBLE_CLICK_MS;
+      lastMarkerClick = isDoubleClick ? null : { id: closestMarker.id, time: now };
+
       // Allow dragging in both DM and Player mode, except for pin-shaped markers (locked)
-      if (closestMarker.shape !== MarkerShape.Pin) {
+      if (!isDoubleClick && closestMarker.shape !== MarkerShape.Pin) {
         isDragging = true;
         // Clear tooltip when drag starts
         hoveredMarkerDelayed = null;
         clearHoverTimer();
       }
       onMarkerSelected(selectedMarker);
+      if (isDoubleClick) {
+        onMarkerDoubleClick(closestMarker);
+      }
     } else {
+      lastMarkerClick = null;
       // In player mode, clicking empty space clears selection
       if (stage.mode === StageMode.Player) {
         selectedMarker = null;
@@ -123,7 +168,7 @@
       const newMarker: Marker = {
         id: uuidv4(),
         title: 'New Marker',
-        position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display) : gridCoords,
+        position: props.marker.snapToGrid ? snapToGrid(gridCoords, grid, display, false, localScale) : gridCoords,
         size: MarkerSize.Small,
         shape: MarkerShape.Circle,
         shapeColor: '#ffffff',
@@ -146,7 +191,7 @@
     }
 
     let position = new THREE.Vector2(coords.x - display.resolution.x / 2, coords.y - display.resolution.y / 2);
-    const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display) : position;
+    const snapPosition = props.marker.snapToGrid ? snapToGrid(position, grid, display, false, localScale) : position;
 
     ghostMarker.position = snapPosition;
 
@@ -181,6 +226,15 @@
     }
 
     if (isDragging && selectedMarker) {
+      if (!dragMoved && downClientPoint) {
+        const clientPoint = getClientPoint(e);
+        if (
+          clientPoint &&
+          Math.hypot(clientPoint.x - downClientPoint.x, clientPoint.y - downClientPoint.y) > DRAG_TOOLTIP_THRESHOLD_PX
+        ) {
+          dragMoved = true;
+        }
+      }
       onMarkerMoved(selectedMarker, snapPosition);
     }
   }
@@ -240,7 +294,9 @@
   function onMouseUp() {
     if (isDragging && selectedMarker) {
       isDragging = false;
+      tooltipSuppressed = dragMoved && !tooltipWasOpenAtDown;
     }
+    downClientPoint = null;
   }
 
   function onMouseLeave() {
@@ -287,6 +343,9 @@
     isDragging = false;
     hoveredMarker = null;
     hoveredMarkerDelayed = null;
+    tooltipSuppressed = false;
+    dragMoved = false;
+    downClientPoint = null;
 
     if (hoverTimer) {
       clearTimeout(hoverTimer);
@@ -328,6 +387,9 @@
     },
     get selectedMarker() {
       return selectedMarker;
+    },
+    get tooltipSuppressed() {
+      return tooltipSuppressed;
     }
   };
 </script>
@@ -371,6 +433,7 @@
         isSelected={selectedMarker?.id === marker.id}
         isHovered={hoveredMarker?.id === marker.id}
         sceneRotation={props.scene.rotation}
+        {mapRotation}
       />
     {/if}
   {/each}
@@ -394,6 +457,7 @@
       isSelected={false}
       isHovered={false}
       sceneRotation={props.scene.rotation}
+      {mapRotation}
     />
   {/if}
 </T.Group>

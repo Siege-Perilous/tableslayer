@@ -7,6 +7,10 @@
     zoomSensitivity: number;
     stageElement: HTMLDivElement;
     stageProps: StageProps;
+    /** When set, map rotation gestures snap to this step in degrees (e.g. 90 in MapDefined mode) */
+    mapRotationStep?: number;
+    /** Disables pinch-zooming the map (MapDefined mode derives the map zoom from the grid) */
+    disableMapZoom?: boolean;
     onMapPan: (dx: number, dy: number) => void;
     onMapRotate: (angle: number) => void;
     onMapZoom: (zoom: number) => void;
@@ -22,6 +26,8 @@
     zoomSensitivity,
     stageElement,
     stageProps,
+    mapRotationStep,
+    disableMapZoom = false,
     onMapPan,
     onMapRotate,
     onMapZoom,
@@ -93,10 +99,15 @@
   }
 
   function calculateCentroidMovement(pointers: PointerEvent[], rotation: number) {
-    const [p1, p2] = pointers;
+    let sumX = 0;
+    let sumY = 0;
+    for (const pointer of pointers) {
+      sumX += pointer.clientX;
+      sumY += pointer.clientY;
+    }
     const curCentroid = {
-      x: (p1.clientX + p2.clientX) / 2,
-      y: (p1.clientY + p2.clientY) / 2
+      x: sumX / pointers.length,
+      y: sumY / pointers.length
     };
 
     if (!prevCentroid) {
@@ -135,8 +146,11 @@
     if (prevDiff > 0) {
       if (isMapControl) {
         onMapPan(dx, dy);
-        onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
-        onMapRotate(stageProps.map.rotation - (angleDelta * 180) / Math.PI);
+        if (!disableMapZoom) {
+          onMapZoom(Math.max(minZoom, Math.min(stageProps.map.zoom - zoomDelta, maxZoom)));
+        }
+        const rotation = stageProps.map.rotation - (angleDelta * 180) / Math.PI;
+        onMapRotate(mapRotationStep ? Math.round(rotation / mapRotationStep) * mapRotationStep : rotation);
       } else {
         onScenePan(dx, dy);
         onSceneZoom(Math.max(minZoom, Math.min(stageProps.scene.zoom - zoomDelta, maxZoom)));
@@ -148,6 +162,16 @@
     prevAngle = curAngle;
   }
 
+  // Four-finger drag pans the map without zoom/rotate (the map zoom is locked
+  // in MapDefined mode); mirrors the Shift+drag pan including the zoom factor
+  function handleMultiPointerMapPan(pointers: PointerEvent[]) {
+    const { dx, dy, curCentroid } = calculateCentroidMovement(pointers, stageProps.scene.rotation);
+    prevCentroid = curCentroid;
+
+    const movementFactor = 1 / stageProps.scene.zoom;
+    onMapPan(dx * movementFactor, dy * movementFactor);
+  }
+
   function onPointerMove(e: PointerEvent) {
     if (!isDragging) return;
 
@@ -157,14 +181,12 @@
       pointerCache[index] = e;
     }
 
-    // Reset multi-touch state when transitioning from single to multi-touch
-    // This prevents using stale movement data from single-touch phase
+    // Reset multi-touch state whenever the pointer count changes so a gesture
+    // never consumes stale movement data from the previous configuration
     if (lastPointerCount !== pointerCache.length) {
-      if (pointerCache.length >= 2 && lastPointerCount < 2) {
-        prevDiff = -1;
-        prevAngle = 0;
-        prevCentroid = null;
-      }
+      prevDiff = -1;
+      prevAngle = 0;
+      prevCentroid = null;
       lastPointerCount = pointerCache.length;
     }
 
@@ -178,6 +200,9 @@
         break;
       case 3:
         handleMultiPointer([pointerCache[0], pointerCache[2]], true); // Map controls
+        break;
+      case 4:
+        handleMultiPointerMapPan(pointerCache); // Map pan only
         break;
     }
   }

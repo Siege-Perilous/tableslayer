@@ -5,7 +5,8 @@
   import { onDestroy, untrack } from 'svelte';
   import type { Size } from '../../types';
   import { RenderMode } from './types';
-  import { encodeRLE, decodeRLE } from '@tableslayer/ui';
+  import { encodeRLE } from '@tableslayer/ui';
+  import { rleToDataTexture } from '../../helpers/annotationSpaceConversion';
 
   import drawVertexShader from '../../shaders/Drawing.vert?raw';
   import drawFragmentShader from '../../shaders/Drawing.frag?raw';
@@ -304,53 +305,20 @@
    * @param height Image height (ignored if dimensions are in data)
    */
   export async function fromRLE(rleData: Uint8Array, width?: number, height?: number) {
-    // Check if dimensions are prepended (new format)
-    let actualWidth = width || 1024;
-    let actualHeight = height || 1024;
-    let rleStart = 0;
-
-    if (rleData.length > 8) {
-      const view = new DataView(rleData.buffer, rleData.byteOffset, rleData.byteLength);
-      const possibleWidth = view.getUint32(0, true);
-      const possibleHeight = view.getUint32(4, true);
-
-      // Sanity check - dimensions should be reasonable (8192 is common max texture size for modern GPUs)
-      if (possibleWidth > 0 && possibleWidth <= 8192 && possibleHeight > 0 && possibleHeight <= 8192) {
-        actualWidth = possibleWidth;
-        actualHeight = possibleHeight;
-        rleStart = 8;
-      }
-    }
-
-    // Extract the actual RLE data
-    const actualRleData = rleStart > 0 ? rleData.slice(rleStart) : rleData;
-
-    // Decode RLE to binary
-    const binaryData = decodeRLE(actualRleData, actualWidth * actualHeight);
-
-    // Create texture from binary data - flip vertically to match WebGL coordinate system
-    const rgba = new Uint8Array(actualWidth * actualHeight * 4);
-    for (let y = 0; y < actualHeight; y++) {
-      for (let x = 0; x < actualWidth; x++) {
-        const srcIndex = y * actualWidth + x;
-        const dstIndex = (actualHeight - 1 - y) * actualWidth + x; // Flip vertically
-        const idx = dstIndex * 4;
-        rgba[idx] = 0; // R
-        rgba[idx + 1] = 0; // G
-        rgba[idx + 2] = 0; // B
-        rgba[idx + 3] = binaryData[srcIndex]; // A
-      }
-    }
-
-    // Create texture
-    const texture = new THREE.DataTexture(rgba, actualWidth, actualHeight, THREE.RGBAFormat);
-    texture.needsUpdate = true;
+    const { texture } = rleToDataTexture(rleData, width || 1024, height || 1024);
 
     // Load into buffer
     render(RenderMode.Revert, true, texture);
 
     // Dispose the temporary texture after rendering to buffer
     texture.dispose();
+  }
+
+  /**
+   * Loads an existing texture into the drawing buffer and persists it
+   */
+  export function loadTexture(texture: THREE.Texture) {
+    render(RenderMode.Revert, true, texture);
   }
 </script>
 

@@ -1,21 +1,24 @@
 <script lang="ts">
   import { computePosition, flip, shift, offset, platform } from '@floating-ui/dom';
+  import { IconCheck } from '@tabler/icons-svelte';
   import type { ContextMenuProps, ContextMenuItem } from './types';
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
   import { tick, onDestroy } from 'svelte';
   import { Hr } from '../Hr';
+  import { Icon } from '../Icon';
   import Spacer from '../Spacer/Spacer.svelte';
 
   let { items, trigger }: ContextMenuProps = $props();
 
-  let triggerElement: HTMLElement | null = null;
+  let triggerElement = $state<HTMLElement | null>(null);
   let menuElement = $state<HTMLElement | null>(null);
   let isOpen = $state(false);
   let floatingStyles = $state('');
   let clickPosition = $state({ x: 0, y: 0 });
 
   const handleItemClick = (item: ContextMenuItem) => {
+    if (item.disabled) return;
     isOpen = false;
     if (item.href) {
       goto(item.href);
@@ -52,21 +55,27 @@
     floatingStyles = `position: ${strategy}; left: ${x}px; top: ${y}px;`;
   };
 
-  const handleContextMenu = async (e: MouseEvent) => {
+  // Stops propagation so the window-level close handlers never see the
+  // opening event itself
+  export const open = async (e: MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     clickPosition = { x: e.clientX, y: e.clientY };
     isOpen = true;
     await tick();
     updatePosition();
   };
 
-  const handleGlobalClick = (e: MouseEvent) => {
-    if (isOpen && menuElement && triggerElement) {
-      const target = e.target as Node;
-      if (!menuElement.contains(target) && !triggerElement.contains(target)) {
-        isOpen = false;
-      }
-    }
+  export const close = () => {
+    isOpen = false;
+  };
+
+  const handleGlobalPointer = (e: MouseEvent) => {
+    if (!isOpen || !menuElement) return;
+    const target = e.target as Node;
+    if (menuElement.contains(target)) return;
+    if (triggerElement?.contains(target)) return;
+    isOpen = false;
   };
 
   const handleKeydown = (e: KeyboardEvent) => {
@@ -80,22 +89,40 @@
   });
 </script>
 
-<svelte:window onclick={handleGlobalClick} onkeydown={handleKeydown} />
+<svelte:window onclick={handleGlobalPointer} oncontextmenu={handleGlobalPointer} onkeydown={handleKeydown} />
 
-<button bind:this={triggerElement} oncontextmenu={handleContextMenu} class="cMenuTrigger">
-  {@render trigger()}
-</button>
+{#if trigger}
+  <button bind:this={triggerElement} oncontextmenu={open} class="cMenuTrigger">
+    {@render trigger()}
+  </button>
+{/if}
 
 {#if isOpen}
   <div bind:this={menuElement} class="cMenu" style={floatingStyles} transition:fly={{ duration: 50 }} role="menu">
-    {#each items as item}
+    {#each items as item (item)}
       {#if item.type === 'divider'}
         <Spacer size="0.5rem" />
         <Hr />
         <Spacer size="0.5rem" />
+      {:else if item.type === 'label'}
+        <div class="cMenuLabel">{item.label}</div>
       {:else}
-        <button onclick={() => handleItemClick(item)} class="cMenuItem" role="menuitem">
-          {item.label}
+        <button
+          onclick={() => handleItemClick(item)}
+          class={['cMenuItem', item.variant === 'danger' && 'cMenuItem--danger']}
+          disabled={item.disabled}
+          role="menuitem"
+        >
+          <span class="cMenuItemLabel">
+            {#if item.selected !== undefined}
+              <span class="cMenuItemCheck">
+                {#if item.selected}
+                  <Icon Icon={IconCheck} size="1rem" />
+                {/if}
+              </span>
+            {/if}
+            {item.label}
+          </span>
           {#if item.end}
             <div class="cMenuItemEnd">
               {@render item.end()}
@@ -140,14 +167,37 @@
     border: solid 2px transparent;
     justify-content: space-between;
   }
-  .cMenuItem:hover,
-  .cMenuItem:focus,
-  .cMenuItem:active {
-    background-color: var(--menuItemHover);
-    border: var(--menuItemBorderHover);
+  .cMenuItem:hover:not(:disabled),
+  .cMenuItem:focus:not(:disabled),
+  .cMenuItem:active:not(:disabled) {
+    background-color: var(--cMenuItemHover);
+    border: var(--cMenuItemBorderHover);
+  }
+  .cMenuItem:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .cMenuItem--danger {
+    color: var(--fgDanger);
+  }
+  .cMenuItemLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .cMenuItemCheck {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
   }
   .cMenuItemEnd {
     justify-self: flex-end;
+  }
+  .cMenuLabel {
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+    color: var(--fgMuted);
   }
   .cMenuTrigger {
     display: block;

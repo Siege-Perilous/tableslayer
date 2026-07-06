@@ -4,7 +4,7 @@
   import { buildSceneProps, throttle } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
+  import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
   import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
   import { stagePerformance } from '$lib/stores';
@@ -102,7 +102,13 @@
         mode: 'client',
         activeLayer: tools.activeLayer,
         viewport: { offset: { x: 0, y: 0 }, zoom: sceneZoom },
-        markerPositions: dragPositions,
+        mapTransform: mapDragOffset ? { offset: mapDragOffset } : undefined,
+        // Untracked on purpose: drag movement is applied to renderedProps in
+        // place by onMarkerMoved; the overrides only matter when a rebuild
+        // fires for another reason (doc echo, remote change) so it doesn't
+        // snap the marker back mid-drag. Tracking the keys here would rebuild
+        // the whole scene on every pointermove.
+        markerPositions: untrack(() => ({ ...dragPositions })),
         fogTool: { mode: tools.fogTool.mode, size: tools.fogTool.size },
         annotations: {
           activeLayer: tools.annotationsActiveLayer,
@@ -196,6 +202,11 @@
   function onMarkerMoved(marker: Marker, position: { x: number; y: number }) {
     const sceneId = session.activeSceneId;
     if (!sceneId) return;
+    // Mutate in place — replacing the marker object would retrigger every
+    // effect that reads it (notably the token's canvas/texture redraw) on
+    // each pointermove
+    const target = renderedProps.marker.markers.find((m) => m.id === marker.id);
+    if (target) target.position = { x: position.x, y: position.y };
     dragPositions[marker.id] = position;
     writeMarkerPosition(sceneId, marker.id, position);
 
@@ -208,6 +219,34 @@
         dragClearTimers.delete(marker.id);
       }, 300)
     );
+  }
+
+  // Four-finger pan adjusts which part of the map the TV shows: instant local
+  // override + throttled doc writes, committed shortly after the gesture ends
+  // (the same pattern as marker drags)
+  let mapDragOffset = $state<{ x: number; y: number } | null>(null);
+  let mapDragClearTimer: ReturnType<typeof setTimeout> | undefined;
+  const writeMapOffset = throttle((sceneId: string, offset: { x: number; y: number }) => {
+    session.client?.write.setSceneSettings(sceneId, { mapOffsetX: offset.x, mapOffsetY: offset.y });
+  }, 50);
+
+  function onMapPan(dx: number, dy: number) {
+    const sceneId = session.activeSceneId;
+    const settings = sceneId ? session.client?.scene(sceneId)?.settings : null;
+    if (!sceneId || !settings) return;
+
+    // Screen px → scene units; screen y points down, scene y up
+    const zoom = sceneZoom || 1;
+    const current = mapDragOffset ?? { x: settings.mapOffsetX ?? 0, y: settings.mapOffsetY ?? 0 };
+    const next = { x: current.x + dx / zoom, y: current.y - dy / zoom };
+    mapDragOffset = next;
+    writeMapOffset(sceneId, next);
+
+    clearTimeout(mapDragClearTimer);
+    mapDragClearTimer = setTimeout(() => {
+      session.client?.write.setSceneSettings(sceneId, { mapOffsetX: next.x, mapOffsetY: next.y });
+      mapDragOffset = null;
+    }, 300);
   }
 
   function onSceneUpdate(_offset: { x: number; y: number }, zoom: number) {
@@ -236,13 +275,8 @@
     tools.activeLayer = MapLayerType.None;
   }
 
-  function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
-    if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
-    } else {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
-    }
-  }
+  // Players have no marker context menu; the callback is required by the stage
+  function onMarkerContextMenu() {}
 
   function onStageLoading() {
     stageIsLoading = true;
@@ -279,6 +313,11 @@
         }, stageElement)
       : null;
 
+    // Four-finger drag pans the map (matches the editor's four-finger gesture)
+    const mapPanGesture = stageElement
+      ? createMultiFingerPan({ fingerCount: 4, target: stageElement, onPan: onMapPan })
+      : null;
+
     // Drop back to no tool after 5s of inactivity while a tool is active
     const activityTimer = stageElement
       ? createConditionalActivityTimer(
@@ -292,8 +331,10 @@
 
     return () => {
       gestureDetector?.destroy();
+      mapPanGesture?.destroy();
       activityTimer?.destroy();
       for (const timer of dragClearTimers.values()) clearTimeout(timer);
+      clearTimeout(mapDragClearTimer);
       tools.destroy();
       session.destroy();
     };

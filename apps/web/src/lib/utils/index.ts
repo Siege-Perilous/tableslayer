@@ -11,6 +11,7 @@ export * from './extractLocationFromUrl';
 export * from './gameSessionExportImport';
 export * from './generateR2Url';
 export * from './generateSlug';
+export * from './gridModeTransition';
 export * from './handleStageZoom';
 export * from './hasThumb';
 export * from './isValidEmail';

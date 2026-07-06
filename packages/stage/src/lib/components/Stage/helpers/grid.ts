@@ -16,10 +16,10 @@ export function getGridCellSize(grid: GridLayerProps, display: DisplayProps): nu
 }
 
 /**
- * Calculates the grid origin for Map defined mode
+ * Calculates the grid origin (in pixels from the top-left corner)
  * Matches the shader logic for grid positioning
  * @param grid Grid configuration
- * @param display Display properties
+ * @param display Display properties (the map-space display in MapDefined mode)
  * @returns Grid origin in pixels (from top-left corner)
  */
 export function getGridOrigin(grid: GridLayerProps, display: DisplayProps): THREE.Vector2 {
@@ -29,44 +29,12 @@ export function getGridOrigin(grid: GridLayerProps, display: DisplayProps): THRE
     return new THREE.Vector2(display.padding.x, display.padding.y);
   }
 
-  // In MapDefined mode, calculate based on grid size
-  if (!grid.fixedGridCount) {
-    // Fallback to padding if no fixed count
-    return new THREE.Vector2(display.padding.x, display.padding.y);
-  }
-
-  // Calculate pixel pitch (inches per pixel)
-  const pixelPitchX = display.size.x / display.resolution.x;
-  const pixelPitchY = display.size.y / display.resolution.y;
-
-  // Calculate grid spacing in pixels
-  const gridSpacingX = grid.spacing / pixelPitchX;
-  const gridSpacingY = grid.spacing / pixelPitchY;
-
-  // Calculate total grid size in pixels (must match shader calculation)
-  // This matches the shader: gridSize_px = gridSpacing_px * gridCount + uLineThickness / 2.0
-  const gridWidthPx = gridSpacingX * grid.fixedGridCount.x + grid.lineThickness / 2.0;
-  const gridHeightPx = gridSpacingY * grid.fixedGridCount.y + grid.lineThickness / 2.0;
-
-  let originX: number;
-  let originY: number;
-
-  // If grid fits horizontally, center it; otherwise align left
-  if (gridWidthPx <= display.resolution.x) {
-    originX = (display.resolution.x - gridWidthPx) / 2.0;
-  } else {
-    originX = 0;
-  }
-
-  // If grid fits vertically, center it; otherwise align top
-  if (gridHeightPx <= display.resolution.y) {
-    originY = (display.resolution.y - gridHeightPx) / 2.0;
-  } else {
-    // Grid overflows - start at top (Y=0 in screen coordinates)
-    originY = 0;
-  }
-
-  return new THREE.Vector2(originX, originY);
+  // In MapDefined mode the grid is anchored to the map-sized quad. Cells are
+  // square (the synthetic map-space display has uniform pixel pitch) and the
+  // grid is centered on the map; mirrors the shader's MapDefined branch
+  const count = grid.fixedGridCount ?? { x: 24, y: 17 };
+  const cell = (grid.spacing * display.resolution.x) / display.size.x;
+  return new THREE.Vector2((display.resolution.x - cell * count.x) / 2, (display.resolution.y - cell * count.y) / 2);
 }
 
 /**
@@ -233,15 +201,18 @@ function distanceToHexCenter(position: THREE.Vector2, spacing: THREE.Vector2): T
  * Snaps a position to the nearest grid intersection based on the current grid configuration
  * @param position Position to snap (in screen coordinates, relative to center)
  * @param grid Grid configuration
- * @param display Display properties
+ * @param display Display properties (the map-space display in MapDefined mode)
  * @param centerOnly For hex grids, whether to snap to centers only (used for measurements)
+ * @param localScale Display pixels per local pixel (map.zoom in MapDefined mode, 1 otherwise);
+ *   used to express the shader's line-thickness offset in local pixels
  * @returns Snapped position (in screen coordinates, relative to center)
  */
 export function snapToGrid(
   position: THREE.Vector2,
   grid: GridLayerProps,
   display: DisplayProps,
-  centerOnly: boolean = false
+  centerOnly: boolean = false,
+  localScale: number = 1
 ): THREE.Vector2 {
   // Compute the pixel pitch in inches
   const pixelsPerInch = new THREE.Vector2(display.resolution.x / display.size.x, display.resolution.y / display.size.y);
@@ -263,8 +234,9 @@ export function snapToGrid(
     // Convert to grid-relative coordinates
     let gridRelativePos = new THREE.Vector2(screenPos.x - gridOrigin.x, screenPos.y - gridOrigin.y);
 
-    // Account for the shader offset (t / 4.0) that shifts the visual grid lines
-    const shaderOffset = grid.lineThickness / 4.0;
+    // Account for the shader offset (t / 4.0) that shifts the visual grid lines;
+    // the shader receives the line thickness in local pixels
+    const shaderOffset = grid.lineThickness / localScale / 4.0;
     gridRelativePos.x -= shaderOffset;
     gridRelativePos.y -= shaderOffset;
 

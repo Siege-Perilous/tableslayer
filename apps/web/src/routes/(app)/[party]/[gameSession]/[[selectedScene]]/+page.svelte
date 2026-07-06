@@ -25,7 +25,7 @@
     handleKeyCommands,
     handleStageZoom,
     queuePropertyUpdate,
-    resetGridOrigin,
+    relockMapZoom,
     setChecklistContext,
     unbindPropertyUpdates
   } from '$lib/utils';
@@ -36,6 +36,7 @@
   import {
     AnnotationEffect,
     DrawingSliders,
+    GridMode,
     MapLayerType,
     MarkerVisibility,
     PerformanceDebugger,
@@ -50,7 +51,7 @@
     type StageExports,
     type StageProps
   } from '@tableslayer/stage';
-  import { addToast, FogSliders, Icon } from '@tableslayer/ui';
+  import { addToast, ContextMenu, FogSliders, Icon, type ContextMenuItem } from '@tableslayer/ui';
   import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp } from '@tabler/icons-svelte';
   import { Pane, PaneGroup, PaneResizer, type PaneAPI } from 'paneforge';
   import { onMount, untrack } from 'svelte';
@@ -220,7 +221,6 @@
           selectedMarkerId = undefined;
           selectedLightId = undefined;
           selectedAnnotationId = undefined;
-          resetGridOrigin();
           sceneMasksApplied = false;
         });
       }
@@ -292,7 +292,6 @@
         selectedMarkerId = undefined;
         selectedLightId = undefined;
         selectedAnnotationId = undefined;
-        resetGridOrigin();
         sceneMasksApplied = false;
       }
     });
@@ -324,6 +323,19 @@
     if (lastBuiltSceneId !== selectedSceneId) return;
     sceneMasksApplied = true;
     session.applyMasks(selectedSceneId);
+  });
+
+  // The map-defined zoom is derived, not user-set: one grid cell = grid
+  // spacing inches on the TV. Control handlers re-lock it synchronously for
+  // atomic writes; this effect is the safety net for everything else (map
+  // replacement with different pixel dimensions, remote editors changing the
+  // grid count or display). relockMapZoom reads the grid/display/rotation
+  // inputs, so they become this effect's dependencies; idempotent writes
+  // converge without ping-pong.
+  $effect(() => {
+    if (stageIsLoading || !session.ready) return;
+    if (lastBuiltSceneId !== selectedSceneId) return;
+    relockMapZoom(stageProps, stage);
   });
 
   // ---------------------------------------------------------------------------
@@ -664,9 +676,12 @@
   const dragClearTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const onMarkerMoved = (marker: Marker, position: { x: number; y: number }) => {
-    const index = stageProps.marker.markers.findIndex((m: Marker) => m.id === marker.id);
-    if (index === -1) return;
-    stageProps.marker.markers[index] = { ...marker, position: { x: position.x, y: position.y } };
+    const target = stageProps.marker.markers.find((m: Marker) => m.id === marker.id);
+    if (!target) return;
+    // Mutate in place — replacing the marker object would retrigger every
+    // effect that reads it (notably the token's canvas/texture redraw) on
+    // each pointermove
+    target.position = { x: position.x, y: position.y };
     dragPositions[marker.id] = position;
     writeMarkerPosition(marker.id, position);
 
@@ -688,13 +703,83 @@
     selectedMarkerId = marker?.id || undefined;
   };
 
-  const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
-    if (event instanceof MouseEvent) {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
-    } else {
-      alert('You clicked on marker: ' + marker.title + ' at ' + event.touches[0].pageX + ',' + event.touches[0].pageY);
+  // Double-clicking a marker opens its editing panel even when collapsed
+  const onMarkerDoubleClick = (marker: Marker) => {
+    selectedMarkerId = marker.id;
+    if (isMarkersCollapsed) {
+      markersPane.expand();
     }
   };
+
+  // Right-click quick menu on a marker; touch devices use the marker panel instead
+  let markerContextMenu = $state<ContextMenu>();
+  let contextMenuMarkerId = $state<string>();
+  const contextMenuMarker = $derived(stageProps.marker.markers.find((m) => m.id === contextMenuMarkerId));
+
+  const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
+    if (!(event instanceof MouseEvent)) return;
+    contextMenuMarkerId = marker.id;
+    selectedMarkerId = marker.id;
+    markerContextMenu?.open(event);
+  };
+
+  const setMarkerVisibility = (markerId: string, visibility: MarkerVisibility) => {
+    updateMarkerAndSave(markerId, (m) => (m.visibility = visibility));
+    // Mirrors the marker panel: DM-only markers can't stay pinned for players
+    if (visibility === MarkerVisibility.DM && pinnedMarkerIds.includes(markerId)) {
+      onPinToggle(markerId, false);
+    }
+    if (visibility === MarkerVisibility.Always || visibility === MarkerVisibility.Hover) {
+      trackChecklistItemLocal('marker-visibility');
+    }
+  };
+
+  const markerContextMenuItems = $derived.by((): ContextMenuItem[] => {
+    const marker = contextMenuMarker;
+    if (!marker) return [];
+    const items: ContextMenuItem[] = [
+      { type: 'label', label: 'Visibility' },
+      {
+        label: 'DM',
+        selected: marker.visibility === MarkerVisibility.DM,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.DM)
+      },
+      {
+        label: 'Everyone',
+        selected: marker.visibility === MarkerVisibility.Always,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.Always)
+      },
+      {
+        label: 'On hover',
+        selected: marker.visibility === MarkerVisibility.Hover,
+        onclick: () => setMarkerVisibility(marker.id, MarkerVisibility.Hover)
+      }
+    ];
+    if (marker.visibility !== MarkerVisibility.DM) {
+      items.push(
+        { type: 'divider' },
+        {
+          label: 'Pin tooltip for players',
+          selected: pinnedMarkerIds.includes(marker.id),
+          onclick: () => onPinToggle(marker.id, !pinnedMarkerIds.includes(marker.id))
+        }
+      );
+    }
+    items.push(
+      { type: 'divider' },
+      {
+        label: 'Delete marker',
+        variant: 'danger',
+        onclick: () => {
+          onMarkerDeleted(marker.id);
+          if (selectedMarkerId === marker.id) {
+            selectedMarkerId = undefined;
+          }
+        }
+      }
+    );
+    return items;
+  });
 
   const onMarkerDeleted = (markerId: string) => {
     stageProps.marker.markers = stageProps.marker.markers.filter((m) => m.id !== markerId);
@@ -850,8 +935,9 @@
     if (remainingLayers.length > 0) {
       stageProps.annotations.activeLayer = remainingLayers[0].id;
     } else {
+      // Leave the draw tool armed: create-on-first-use spawns a fresh layer,
+      // so the brush cursor survives deleting the last layer
       stageProps.annotations.activeLayer = null;
-      stageProps.activeLayer = MapLayerType.None;
     }
     session.client?.write.deleteAnnotation(selectedSceneId, annotationId);
   };
@@ -888,6 +974,16 @@
     }
   });
 
+  const flushPendingAnnotationCommits = () => {
+    const flushes: Promise<void>[] = [];
+    for (const [layerId, pending] of pendingAnnotationCommits) {
+      pendingAnnotationCommits.delete(layerId);
+      clearTimeout(pending.timer);
+      flushes.push(commitAnnotationMask(pending.sceneId, layerId));
+    }
+    return Promise.all(flushes);
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onAnnotationUpdate = (layerId: string, _blob: Promise<Blob>) => {
     const existing = pendingAnnotationCommits.get(layerId);
@@ -919,11 +1015,11 @@
   // switch time is safe: the fog canvas still shows that scene's mask until the
   // new map texture loads and applyMasks repaints it.
   const flushPendingFogCommit = () => {
-    if (!pendingFogCommit) return;
+    if (!pendingFogCommit) return Promise.resolve();
     const { timer, sceneId } = pendingFogCommit;
     pendingFogCommit = null;
     clearTimeout(timer);
-    commitFogMask(sceneId);
+    return commitFogMask(sceneId);
   };
 
   $effect(() => {
@@ -1046,6 +1142,11 @@
     }
   };
 
+  // In map-defined mode the map zoom is locked (derived from the grid) and
+  // rotation snaps to 90° steps; panning stays free — grid, tokens, fog and
+  // drawings are anchored to the map and ride along
+  const isMapDefinedMode = $derived((stageProps.grid.gridMode ?? GridMode.FillSpace) === GridMode.MapDefined);
+
   function onMapPan(dx: number, dy: number) {
     queuePropertyUpdate(stageProps, ['map', 'offset', 'x'], stageProps.map.offset.x + dx, 'control');
     queuePropertyUpdate(stageProps, ['map', 'offset', 'y'], stageProps.map.offset.y + dy, 'control');
@@ -1053,9 +1154,13 @@
 
   function onMapRotate(angle: number) {
     queuePropertyUpdate(stageProps, ['map', 'rotation'], angle, 'control');
+    // In map-defined mode rotation snaps to 90° steps and swaps the map's
+    // effective axes, so the locked zoom must follow
+    relockMapZoom(stageProps, stage);
   }
 
   function onMapZoom(zoom: number) {
+    if (isMapDefinedMode) return;
     queuePropertyUpdate(stageProps, ['map', 'zoom'], zoom, 'control');
   }
 
@@ -1131,13 +1236,19 @@
       if (key === 'z' || key === 'y') {
         event.preventDefault();
         if (!session.client) return;
-        if (key === 'y' || event.shiftKey) {
-          if (session.client.canRedo) session.client.redo();
-          else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
-        } else {
-          if (session.client.canUndo) session.client.undo();
-          else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
-        }
+        const client = session.client;
+        const isRedo = key === 'y' || event.shiftKey;
+        // Debounced mask commits must land on the undo stack before we pop it,
+        // or ctrl-z right after a stroke reverts the wrong edit
+        Promise.all([flushPendingAnnotationCommits(), flushPendingFogCommit()]).then(() => {
+          if (isRedo) {
+            if (client.canRedo) client.redo();
+            else addToast({ data: { title: 'Nothing to redo', type: 'info' } });
+          } else {
+            if (client.canUndo) client.undo();
+            else addToast({ data: { title: 'Nothing to undo', type: 'info' } });
+          }
+        });
         return;
       }
     }
@@ -1272,6 +1383,8 @@
             {zoomSensitivity}
             {stageElement}
             {stageProps}
+            mapRotationStep={isMapDefinedMode ? 90 : undefined}
+            disableMapZoom={isMapDefinedMode}
             {onMapPan}
             {onMapRotate}
             {onMapZoom}
@@ -1292,6 +1405,7 @@
               onMarkerAdded,
               onMarkerMoved,
               onMarkerSelected,
+              onMarkerDoubleClick,
               onMarkerContextMenu,
               onMarkerHover,
               onLightAdded,
@@ -1328,6 +1442,7 @@
               : null}
           />
           <PerformanceDebugger />
+          <ContextMenu bind:this={markerContextMenu} items={markerContextMenuItems} />
         </div>
         <SceneControls
           {stageProps}
@@ -1343,7 +1458,7 @@
           client={session.client}
           {keyboardPopoverId}
         />
-        <SceneZoom {handleSceneFit} {handleMapFill} {stageProps} />
+        <SceneZoom {stage} {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />
         <ChecklistHelpButton onclick={handleShowChecklist} />
         <Hints {stageProps} />

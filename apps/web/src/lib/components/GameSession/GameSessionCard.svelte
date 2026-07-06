@@ -261,7 +261,7 @@
   }
   .cardFan__image {
     background-size: 100%;
-    background-position: center center;
+    background-position: center top;
     filter: grayscale(0.5);
     opacity: 0.5;
     position: absolute;

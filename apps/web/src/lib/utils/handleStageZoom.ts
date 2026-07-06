@@ -1,5 +1,4 @@
-import { type StageProps } from '@tableslayer/stage';
-import { trackChecklistItem } from './checklistTracker';
+import { GridMode, type StageProps } from '@tableslayer/stage';
 import { queuePropertyUpdate } from './propertyUpdateBroadcaster';
 
 export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
@@ -15,9 +14,10 @@ export const handleStageZoom = (e: WheelEvent, stageProps: StageProps) => {
   }
 
   if (e.shiftKey) {
+    // Map zoom is locked in map-defined mode (derived from the grid)
+    if ((stageProps.grid.gridMode ?? GridMode.FillSpace) === GridMode.MapDefined) return;
     const newMapZoom = Math.max(minZoom, Math.min(stageProps.map.zoom - scrollDelta, maxZoom));
     queuePropertyUpdate(stageProps, ['map', 'zoom'], newMapZoom, 'control');
-    trackChecklistItem('scale-map');
   } else if (e.ctrlKey) {
     e.preventDefault();
     // Manual zoom opts out of auto-fit so layout changes (pane resize, toolbar

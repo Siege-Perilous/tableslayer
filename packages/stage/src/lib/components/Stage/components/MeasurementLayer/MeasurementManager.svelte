@@ -18,12 +18,47 @@
     props: MeasurementLayerProps;
     visible: boolean;
     displayProps: DisplayProps;
+    /** The physical display, when displayProps is the synthetic map-space display */
+    realDisplay?: DisplayProps;
     gridProps: GridLayerProps;
     sceneRotation?: number;
+    /** Display pixels per local pixel (map.zoom when anchored to the map in MapDefined mode) */
+    localScale?: number;
+    /** Map rotation in degrees, inherited from the map anchor in MapDefined mode */
+    mapRotation?: number;
     onFadeComplete?: () => void;
   }
 
-  const { props, visible, displayProps, gridProps, sceneRotation = 0, onFadeComplete }: Props = $props();
+  const {
+    props,
+    visible,
+    displayProps,
+    realDisplay = displayProps,
+    gridProps,
+    sceneRotation = 0,
+    localScale = 1,
+    mapRotation = 0,
+    onFadeComplete
+  }: Props = $props();
+
+  // Text/labels counter-rotate to stay upright. Scene rotation turns the
+  // CAMERA (compensation follows it) while map rotation turns the parent
+  // anchor (compensation opposes it) — hence the difference.
+  const effectiveRotation = $derived(sceneRotation - mapRotation);
+
+  // Visual sizes in MeasurementLayerProps are display-pixel values; the
+  // measurement geometry lives in local pixels, so convert them to keep the
+  // on-screen appearance constant (identity in FillSpace where localScale is 1).
+  // The distance label sizes itself from displayProps.resolution (the map size
+  // when anchored), so textScale converts it back to physical-display sizing.
+  const textScale = $derived(realDisplay.resolution.y / displayProps.resolution.y / localScale);
+  const scaleMeasurementProps = (p: MeasurementLayerProps): MeasurementLayerProps => ({
+    ...p,
+    thickness: p.thickness / localScale,
+    markerSize: p.markerSize / localScale,
+    outlineThickness: p.outlineThickness / localScale,
+    textScale
+  });
 
   let currentMeasurement: IMeasurement | null = null;
   // Use $state.raw() for Three.js objects to prevent Svelte's proxy from interfering
@@ -41,7 +76,7 @@
   let previewMesh = $state.raw(new THREE.Mesh());
   let previewMaterial = $state.raw(new THREE.MeshBasicMaterial());
   let previewGeometry = $state.raw(new THREE.PlaneGeometry());
-  let previewSize = $derived(props ? props.markerSize + props.outlineThickness * 2 : 22);
+  let previewSize = $derived(props ? (props.markerSize + props.outlineThickness * 2) / localScale : 22);
   let showPreview = $state(false);
 
   // Task for fade animation
@@ -183,10 +218,10 @@
         context,
         previewSize / 2,
         previewSize / 2,
-        props.markerSize / 2,
+        props.markerSize / localScale / 2,
         props.color,
         props.outlineColor,
-        props.outlineThickness
+        props.outlineThickness / localScale
       );
     }
 
@@ -218,25 +253,26 @@
 
     // Create new measurement based on type
     let measurement: IMeasurement;
+    const scaledProps = scaleMeasurementProps(props);
 
     switch (props.type) {
       case MeasurementType.Line:
-        measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new LineMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
       case MeasurementType.Beam:
-        measurement = new BeamMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new BeamMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
       case MeasurementType.Cone:
-        measurement = new ConeMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new ConeMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
       case MeasurementType.Circle:
-        measurement = new CircleMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new CircleMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
       case MeasurementType.Square:
-        measurement = new RectangleMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new RectangleMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
       default:
-        measurement = new LineMeasurement(startPoint, props, displayProps, gridProps);
+        measurement = new LineMeasurement(startPoint, scaledProps, displayProps, gridProps);
         break;
     }
 
@@ -252,7 +288,7 @@
    * @returns {void}
    */
   function updateMeasurement(endPoint: THREE.Vector2): void {
-    currentMeasurement?.update(endPoint, sceneRotation);
+    currentMeasurement?.update(endPoint, effectiveRotation);
   }
 
   /**
@@ -339,7 +375,7 @@
     let measurement: IMeasurement;
 
     // Use the received properties if provided, override the props temporarily
-    const measurementProps = {
+    const measurementProps = scaleMeasurementProps({
       ...props,
       type,
       ...(beamWidth !== undefined && { beamWidth }),
@@ -355,7 +391,7 @@
       ...(showDistance !== undefined && { showDistance }),
       ...(snapToGrid !== undefined && { snapToGrid }),
       ...(enableDMG252 !== undefined && { enableDMG252 })
-    };
+    });
 
     switch (type) {
       case MeasurementType.Line:
@@ -383,7 +419,7 @@
     measurementGroup.add(measurement.object);
 
     // Update to the end point
-    currentMeasurement.update(endPoint, sceneRotation);
+    currentMeasurement.update(endPoint, effectiveRotation);
 
     // Store the fadeout time if provided for the fade animation
     if (fadeoutTime !== undefined) {

@@ -5,6 +5,7 @@ import { transformImage } from '$lib/server/file/transform';
 import { getLightsForScene } from '$lib/server/light';
 import { getMarkersForScene } from '$lib/server/marker';
 import { getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
+import { DEFAULT_MAP } from '$lib/utils/generateR2Url';
 import { count, desc, eq, inArray } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
@@ -235,7 +236,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
 
   // R2 Image resize tests
   // Use a test image or the scene map if available
-  const testImage = testMapLocation || 'map/example1080.png';
+  const testImage = testMapLocation || DEFAULT_MAP;
 
   // Thumbnail resize (400x225)
   try {

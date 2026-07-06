@@ -276,8 +276,11 @@
       // But only show tooltip if it has appropriate visibility (not DM-only)
       const selectedByPlayer = sceneRef?.markers?.selectedMarker;
       const isDragging = sceneRef?.markers?.isDraggingMarker;
+      // A marker that was just dragged must not pop its tooltip on release —
+      // only a simple tap (or a tooltip already open before the drag) shows it
+      const tooltipSuppressed = sceneRef?.markers?.tooltipSuppressed;
       let selectedNotPinned = null;
-      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) && !isDragging) {
+      if (selectedByPlayer && !pinnedMarkerIds.includes(selectedByPlayer.id) && !isDragging && !tooltipSuppressed) {
         // Only show if marker visibility is not DM-only (i.e., not visibility = 1)
         // MarkerVisibility: Always = 0, DM = 1, Player = 2, Hover = 3
         if (selectedByPlayer.visibility !== 1) {

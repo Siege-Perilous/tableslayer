@@ -56,7 +56,7 @@ export const StageDefaultProps: StageProps = {
   fogOfWar: {
     url: null,
     opacity: {
-      dm: 0.3,
+      dm: 0.78,
       player: 0.9
     },
     outline: {
@@ -100,8 +100,8 @@ export const StageDefaultProps: StageProps = {
       y: 17
     },
     spacing: 1,
-    opacity: 0.05,
-    lineColor: '#E6E6E6',
+    opacity: 0.16,
+    lineColor: '#000000',
     lineThickness: 1.0,
     shadowOpacity: 0.4,
     shadowBlur: 0.5,
@@ -117,7 +117,7 @@ export const StageDefaultProps: StageProps = {
       y: 0
     },
     zoom: 1.0,
-    url: 'https://files.tableslayer.com/map/example1080.png'
+    url: 'https://files.tableslayer.com/map/pirateking-30x60.jpg'
   },
   marker: {
     visible: true,

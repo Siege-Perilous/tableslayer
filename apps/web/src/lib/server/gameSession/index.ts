@@ -1,6 +1,9 @@
 import { db } from '$lib/db/app';
 import {
+  annotationsTable,
   gameSessionTable,
+  lightTable,
+  markerTable,
   partyTable,
   sceneTable,
   type InsertGameSession,
@@ -14,7 +17,8 @@ import { and, asc, desc, eq, getTableColumns } from 'drizzle-orm';
 import slugify from 'slugify';
 import { v4 as uuidv4 } from 'uuid';
 import type { Thumb } from '../file';
-import { createScene } from '../scene';
+import { createScene, setActiveSceneForParty } from '../scene';
+import { demoSessionData } from './demoSessionData';
 
 export const getPartyGameSessions = async (partyId: string): Promise<SelectGameSession[]> => {
   const gameSessions = await db
@@ -265,6 +269,55 @@ export const createGameSessionForImport = async (partyId: string, gameSessionDat
     console.error('Error creating game session for import', error);
     throw error;
   }
+};
+
+// Seeds a brand-new user's first game session from the bundled demo scene
+// (pirate king map with lights, weather, fog of war, and a credit marker).
+// The scene's mapLocation and mapThumbLocation reference shared R2 keys that
+// must exist in the bucket, so nothing is copied per user. To refresh the demo,
+// export a game session from the app and replace demoSessionData.ts.
+export const createDemoGameSession = async (partyId: string) => {
+  const gameSession = await createGameSessionForImport(partyId);
+
+  for (const rawScene of demoSessionData.gameSession.scenes) {
+    const { markers, lights, annotations, ...sceneData } = rawScene;
+    const sceneId = uuidv4();
+
+    await db
+      .insert(sceneTable)
+      .values({ ...sceneData, id: sceneId, gameSessionId: gameSession.id, fogOfWarUrl: null })
+      .execute();
+
+    if (sceneData.order === 1) {
+      const party = await db.select().from(partyTable).where(eq(partyTable.id, partyId)).get();
+      if (party && !party.activeSceneId) {
+        await setActiveSceneForParty(partyId, sceneId);
+      }
+    }
+
+    for (const marker of markers) {
+      await db
+        .insert(markerTable)
+        .values({ ...marker, id: uuidv4(), sceneId })
+        .execute();
+    }
+
+    for (const light of lights) {
+      await db
+        .insert(lightTable)
+        .values({ ...light, id: uuidv4(), sceneId })
+        .execute();
+    }
+
+    for (const annotation of annotations) {
+      await db
+        .insert(annotationsTable)
+        .values({ ...annotation, id: uuidv4(), sceneId })
+        .execute();
+    }
+  }
+
+  return gameSession;
 };
 
 export const getActiveGameSessionForParty = async (partyId: string): Promise<SelectGameSession | null> => {

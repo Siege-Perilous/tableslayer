@@ -383,8 +383,8 @@ export const sceneTable = sqliteTable(
     displayResolutionY: integer('display_resolution_y').notNull().default(1080),
     fogOfWarUrl: text('fog_of_war_url'),
     fogOfWarMask: text('fog_of_war_mask'), // Base64-encoded RLE mask data
-    fogOfWarColor: text('fog_of_war_color').notNull().default('#CCC'),
-    fogOfWarOpacityDm: real('fog_of_war_opacity_dm').notNull().default(0.5),
+    fogOfWarColor: text('fog_of_war_color').notNull().default('#626262'),
+    fogOfWarOpacityDm: real('fog_of_war_opacity_dm').notNull().default(0.75),
     fogOfWarOpacityPlayer: real('fog_of_war_opacity_player').notNull().default(0.9),
     mapLocation: text('map_location'),
     mapThumbLocation: text('map_thumb_location'),
@@ -396,9 +396,12 @@ export const sceneTable = sqliteTable(
     gridMode: integer('grid_mode').notNull().default(0),
     gridMapDefinedX: integer('grid_map_defined_x'),
     gridMapDefinedY: integer('grid_map_defined_y'),
+    // Coordinate space of marker/light positions in MapDefined scenes:
+    // 0 = legacy display-center pixels, 1 = center-relative map pixels
+    mapCoordVersion: integer('map_coord_version').notNull().default(0),
     gridSpacing: integer('grid_spacing').notNull().default(1),
-    gridOpacity: real('grid_opacity').notNull().default(0.8),
-    gridLineColor: text('grid_line_color').notNull().default('#E6E6E6'),
+    gridOpacity: real('grid_opacity').notNull().default(0.25),
+    gridLineColor: text('grid_line_color').notNull().default('#000000'),
     gridLineThickness: integer('grid_line_thickness').notNull().default(1),
     gridShadowColor: text('grid_shadow_color').notNull().default('#000000'),
     gridShadowSpread: integer('grid_shadow_spread').notNull().default(2),
