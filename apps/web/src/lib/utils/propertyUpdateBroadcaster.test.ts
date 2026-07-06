@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import {
   bindPropertyUpdatesToDoc,
+  FLUSH_INTERVAL_MS,
   flushQueuedPropertyUpdates,
   queuePropertyUpdate,
   queueRawSettingsUpdate,
@@ -95,7 +96,7 @@ describe('propertyUpdateBroadcaster flush throttle', () => {
     await Promise.resolve();
     expect(updates).toBe(1); // still throttled
 
-    vi.advanceTimersByTime(33);
+    vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
     expect(updates).toBe(2);
     expect(mapOffsetX(doc, 's1')).toBe(5);
   });

@@ -52,9 +52,12 @@ let latestProps: StageProps | null = null;
 let pendingRawSettings: Partial<SceneSettings> | null = null;
 const dirty = { settings: false, markers: false, lights: false, annotations: false };
 
-// 33ms ≈ 30 transactions/sec, matching the presence-cursor cadence. Local
-// feedback is unaffected (applyUpdate runs synchronously before scheduling).
-const FLUSH_INTERVAL_MS = 33;
+// 16ms ≈ 60 transactions/sec — one update per frame on a 60Hz receiver, so
+// remote pans step smoothly instead of visibly jumping (receivers coalesce
+// rebuilds per frame, so this rate can't back them up). Local feedback is
+// unaffected (applyUpdate runs synchronously before scheduling). Exported for
+// tests.
+export const FLUSH_INTERVAL_MS = 16;
 let flushScheduled = false;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let lastFlushAt = 0;
