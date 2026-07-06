@@ -1,3 +1,4 @@
+import { createCadenceTracker } from '$lib/utils/syncLog';
 import YPartyKitProvider from 'y-partykit/provider';
 import * as Y from 'yjs';
 import {
@@ -145,12 +146,17 @@ export class SessionDocClient {
   #pendingListRev = false;
   #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
+  #recvLog = createCadenceTracker('recv-remote');
+  #revFlushLog = createCadenceTracker('recv-revflush');
+
   #applyChanges(changes: SceneChange[]) {
+    let sawRemote = false;
     for (const change of changes) {
       const sceneIds = change.part === 'scenes' ? change.keys : [change.sceneId];
       // The scene list mirrors a few settings fields (name, order, thumbnails)
       const touchesList = change.part === 'scenes' || change.part === 'settings';
       if (change.remote) {
+        sawRemote = true;
         for (const sceneId of sceneIds) this.#pendingSceneRevs.add(sceneId);
         this.#pendingListRev ||= touchesList;
         this.#scheduleRevFlush();
@@ -160,6 +166,9 @@ export class SessionDocClient {
         }
         if (touchesList) this.#listRev++;
       }
+    }
+    if (sawRemote) {
+      this.#recvLog.record(`parts=${changes.map((c) => c.part).join(',')}`);
     }
     if (changes.length > 0) {
       this.#changeListeners.forEach((listener) => listener(changes));
@@ -178,6 +187,7 @@ export class SessionDocClient {
 
   #flushPendingRevs() {
     this.#cancelRevFlush();
+    this.#revFlushLog.record(`scenes=${this.#pendingSceneRevs.size}`);
     for (const sceneId of this.#pendingSceneRevs) {
       this.#sceneRevs[sceneId] = (this.#sceneRevs[sceneId] ?? 0) + 1;
     }

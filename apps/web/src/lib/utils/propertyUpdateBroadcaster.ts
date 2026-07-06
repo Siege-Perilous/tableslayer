@@ -3,6 +3,7 @@ import type { StageProps } from '@tableslayer/stage';
 import { convertAnnotationToDbFormat } from './convertStagePropsToAnnotationData';
 import { convertStageMarkersToDbFormat } from './convertStagePropsToMarkerData';
 import { convertPropsToSceneDetails, sceneSettingsFieldsForPropPaths } from './convertStagePropsToSceneData';
+import { createCadenceTracker } from './syncLog';
 
 // Doc-backed property updates for the editor's control panels.
 //
@@ -153,6 +154,8 @@ export function queueRawSettingsUpdate(fields: Partial<SceneSettings>) {
   scheduleFlush();
 }
 
+const sendFlushLog = createCadenceTracker('send-flush');
+
 function flushToDoc() {
   const props = latestProps;
   if (!binding) return;
@@ -168,6 +171,8 @@ function flushToDoc() {
           if (field in details) fields[field] = details[field];
         }
         client.write.setSceneSettings(sceneId, fields as Partial<SceneSettings>);
+        const offset = fields.mapOffsetX !== undefined ? ` x=${Math.round(Number(fields.mapOffsetX))}` : '';
+        sendFlushLog.record(`fields=${Object.keys(fields).join(',')}${offset}`);
       }
       if (dirty.markers) syncMarkers(client, sceneId, props);
       if (dirty.lights) syncLights(client, sceneId, props);

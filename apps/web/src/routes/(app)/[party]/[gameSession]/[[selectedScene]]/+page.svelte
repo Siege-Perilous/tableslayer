@@ -21,12 +21,15 @@
     bindPropertyUpdatesToDoc,
     buildSceneProps,
     convertMarkerToDbFormat,
+    createCadenceTracker,
     extractLocationFromUrl,
     handleKeyCommands,
     handleStageZoom,
     queuePropertyUpdate,
     relockMapZoom,
     setChecklistContext,
+    setSyncLogRole,
+    startRafLogger,
     unbindPropertyUpdates
   } from '$lib/utils';
   import { getPreference, setPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
@@ -189,6 +192,7 @@
   let stageProps: StageProps = $state(initialStageProps);
   let dragPositions = $state<Record<string, { x: number; y: number }>>({});
   let lastBuiltSceneId: string | undefined = untrack(() => data.selectedScene.id);
+  const rebuildLog = createCadenceTracker('rebuild');
 
   $effect(() => {
     const snapshot = session.ready && session.client ? session.client.scene(selectedSceneId) : null;
@@ -286,6 +290,7 @@
       // Structural sharing: unchanged subtrees keep their identity so stage-internal
       // effects (measurement reset, material/texture updates) don't re-fire
       stageProps = reuseUnchanged(prev, next);
+      rebuildLog.record(`x=${Math.round(stageProps.map.offset.x)}`);
 
       if (isSceneSwitch) {
         activeControl = 'none';
@@ -1272,6 +1277,8 @@
   let handleEffectChange: ((effect: AnnotationEffect) => void) | undefined = $state();
 
   onMount(() => {
+    setSyncLogRole('editor');
+    startRafLogger();
     stagePerformance.init();
 
     if (stageElement) {

@@ -20,4 +20,5 @@ export * from './propertyUpdateBroadcaster';
 export * from './randomQuotes';
 export * from './sceneSettings';
 export * from './stageKeyCommands';
+export * from './syncLog';
 export * from './throttle';
