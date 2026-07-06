@@ -127,18 +127,22 @@ export class SessionDocClient {
     });
   }
 
-  // Remote peers can produce doc updates faster than frames render (e.g.
-  // another editor panning the map), and websocket messages — unlike input
-  // events — are never coalesced by the browser. Bumping revs per message would
-  // run the full snapshot -> StageProps rebuild once per message and fall
-  // behind, replaying stale positions in slow motion. Remote bumps therefore
-  // coalesce to one flush per animation frame: reads always re-derive from the
-  // latest doc state, so only rebuilds of states that could never be painted
-  // are skipped. Local writes keep synchronous bumps so same-tick
-  // read-after-write stays exact. #changeListeners still fire per transaction.
+  // Remote peers can produce doc updates faster than this client processes
+  // them (e.g. another editor panning the map), and websocket/BroadcastChannel
+  // messages — unlike input events — are never coalesced by the browser.
+  // Bumping revs per message would run the full snapshot -> StageProps rebuild
+  // once per message and fall behind under backlog, replaying stale positions
+  // in slow motion. Remote bumps therefore coalesce through a setTimeout(0)
+  // macrotask: it runs after every message already sitting in the task queue,
+  // so a backlog drains into ONE rebuild from the latest doc state, while
+  // steady sub-rate streams still rebuild promptly per batch. Deliberately NOT
+  // requestAnimationFrame: rAF cadence is per-window (focus, occlusion, GPU
+  // contention) and would chain the receive pipeline to this window's
+  // rendering health — an unfocused editor would receive gestures as chunks.
+  // Local writes keep synchronous bumps so same-tick read-after-write stays
+  // exact. #changeListeners still fire per transaction.
   #pendingSceneRevs = new Set<string>();
   #pendingListRev = false;
-  #revFlushRaf: number | null = null;
   #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
   #applyChanges(changes: SceneChange[]) {
@@ -163,22 +167,12 @@ export class SessionDocClient {
   }
 
   #scheduleRevFlush() {
-    if (this.#revFlushRaf !== null || this.#revFlushTimer !== null) return;
-    if (typeof requestAnimationFrame === 'function') {
-      this.#revFlushRaf = requestAnimationFrame(() => this.#flushPendingRevs());
-      // rAF is suspended in hidden tabs; the timer backstop keeps snapshots advancing there
-      this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 250);
-    } else {
-      this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 0);
-    }
+    if (this.#revFlushTimer !== null) return;
+    this.#revFlushTimer = setTimeout(() => this.#flushPendingRevs(), 0);
   }
 
   #cancelRevFlush() {
-    if (this.#revFlushRaf !== null && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(this.#revFlushRaf);
-    }
     if (this.#revFlushTimer !== null) clearTimeout(this.#revFlushTimer);
-    this.#revFlushRaf = null;
     this.#revFlushTimer = null;
   }
 

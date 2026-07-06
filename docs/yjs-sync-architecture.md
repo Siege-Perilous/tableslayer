@@ -76,9 +76,11 @@ Key properties:
 
 - **Reactive snapshot reads** — `scenes()`, `scene(id)`, `partyState()` — backed by per-scene
   revision counters bumped from doc observers, with memoized snapshots. Local writes bump revs
-  synchronously; **remote** bumps coalesce to one flush per animation frame (250ms timer backstop
-  for hidden tabs), so a burst of incoming messages triggers a single snapshot rebuild from the
-  latest doc state instead of one per websocket message.
+  synchronously; **remote** bumps coalesce through a `setTimeout(0)` macrotask, so a backlog of
+  incoming messages drains into a single snapshot rebuild from the latest doc state instead of
+  one per message. Never move this (or any realtime scheduling) onto `requestAnimationFrame` —
+  rAF cadence is per-window (focus/occlusion/GPU contention) and chains receive latency to that
+  window's rendering health.
 - **Origin-tagged writers** — `write.setSceneSettings/upsertMarker/setFogMask/...` and
   `party.setActiveScene/setPaused`. Writers warn loudly when a target scene is missing rather
   than silently no-oping.
@@ -102,12 +104,12 @@ renderProps = buildRenderProps(docSnapshot, localView) → structural sharing �
   gesture ends. No wall-clock protection windows.
 - The editor's control panels still call `queuePropertyUpdate(stageProps, path, value)`; the
   broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally right away
-  and flushes shared paths to the doc throttled — leading edge on the next microtask, trailing
-  edge once per animation frame — so continuous gestures like a map pan broadcast one
-  frame-aligned transaction per frame (rAF keeps step spacing even; a fixed timer would beat
-  against the frame clock and judder). `flushQueuedPropertyUpdates()` forces a pending flush;
-  rebinding or unbinding flushes automatically. Local-only paths (viewport, tools, measurement
-  config) never touch the doc.
+  and flushes shared paths to the doc throttled: an 8ms leading-edge gate sits below typical
+  input-event spacing, so during a gesture nearly every input event flushes immediately and the
+  broadcast inherits the input stream's even rhythm; a trailing timer catches the gesture tail.
+  (Not rAF — see above.) `flushQueuedPropertyUpdates()` forces a pending flush; rebinding or
+  unbinding flushes automatically. Local-only paths (viewport, tools, measurement config) never
+  touch the doc.
 - Settings flushes are **field-level**: only fields mapped from the queued property paths are
   written (`sceneSettingsFieldsForPropPaths` in `convertStagePropsToSceneData.ts`), never a
   full settings snapshot. A full snapshot would write this client's stale copies of fields it

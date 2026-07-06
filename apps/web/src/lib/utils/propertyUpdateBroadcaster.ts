@@ -9,7 +9,7 @@ import { convertPropsToSceneDetails, sceneSettingsFieldsForPropPaths } from './c
 // Panels call queuePropertyUpdate(stageProps, path, value) exactly as before:
 // the value is applied to stageProps synchronously for instant feedback, and
 // shared properties are written through to the session doc in a throttled flush
-// (leading edge on the next microtask, trailing edge once per animation frame).
+// (leading edge on the next microtask, trailing timer for the gesture tail).
 // Continuous gestures (map pan, wheel zoom, slider drags) queue an update per
 // input event; each flush is one Y transaction and thus one websocket
 // broadcast, so the throttle is what keeps a pan from drowning remote peers in
@@ -59,14 +59,16 @@ let pendingRawSettings: Partial<SceneSettings> | null = null;
 const dirtySettingsPaths = new Set<string>();
 const dirty = { markers: false, lights: false, annotations: false };
 
-// Leading-edge gate: a write after ≥ one frame of quiet flushes immediately.
-// Exported for tests.
-export const FLUSH_INTERVAL_MS = 16;
-// Backstop for the rAF trailing edge in hidden tabs (rAF is suspended there).
-const HIDDEN_TAB_FLUSH_MS = 100;
+// Leading-edge gate. Deliberately BELOW typical input-event spacing (60Hz ≈
+// 16.7ms, 125Hz mice ≈ 8ms): during a gesture nearly every input event flushes
+// immediately, so the broadcast inherits the input stream's even spacing. The
+// trailing timer only catches the gesture's final position. Never schedule
+// realtime flushes on requestAnimationFrame — rAF cadence is per-window
+// (focus, occlusion, GPU contention) and couples the shared doc's update
+// rhythm to this window's rendering health. Exported for tests.
+export const FLUSH_INTERVAL_MS = 8;
 let flushScheduled = false;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
-let flushRaf: number | null = null;
 let lastFlushAt = 0;
 
 function scheduleFlush() {
@@ -75,12 +77,6 @@ function scheduleFlush() {
   const wait = FLUSH_INTERVAL_MS - (Date.now() - lastFlushAt);
   if (wait <= 0) {
     queueMicrotask(runScheduledFlush);
-  } else if (typeof requestAnimationFrame === 'function') {
-    // Trailing edge rides rAF so mid-gesture flushes sample once per frame with
-    // even spacing — a fixed timer beats against the frame clock and produces
-    // uneven step sizes on receivers (visible judder during pans)
-    flushRaf = requestAnimationFrame(runScheduledFlush);
-    flushTimer = setTimeout(runScheduledFlush, HIDDEN_TAB_FLUSH_MS);
   } else {
     flushTimer = setTimeout(runScheduledFlush, wait);
   }
@@ -89,16 +85,12 @@ function scheduleFlush() {
 function runScheduledFlush() {
   if (!flushScheduled) return; // already flushed via flushQueuedPropertyUpdates
   flushScheduled = false;
-  cancelScheduledFlush();
+  if (flushTimer !== null) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
   lastFlushAt = Date.now();
   flushToDoc();
-}
-
-function cancelScheduledFlush() {
-  if (flushRaf !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(flushRaf);
-  if (flushTimer !== null) clearTimeout(flushTimer);
-  flushRaf = null;
-  flushTimer = null;
 }
 
 /** Write any queued updates to the doc now instead of waiting for the throttle. */
