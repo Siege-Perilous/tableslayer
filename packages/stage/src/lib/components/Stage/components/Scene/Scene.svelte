@@ -230,9 +230,17 @@
     resizedForMapUrl = mapUrl;
   });
 
-  // Effect to update post-processing settings when props change
+  // Effect to update post-processing settings when props change. Guarded by
+  // VALUE: the props root is replaced on every remote doc rebuild (another
+  // editor panning re-runs every props-reading effect), and rebuilding the
+  // composer per identity change blocks the main thread for hundreds of ms —
+  // receivers dropped to ~4fps while a remote peer panned.
+  let lastPostProcessingKey = '';
   $effect(() => {
     const postProcessing = $state.snapshot(props.postProcessing);
+    const postProcessingKey = JSON.stringify(postProcessing);
+    if (postProcessingKey === lastPostProcessingKey) return;
+    lastPostProcessingKey = postProcessingKey;
 
     // Need to convert the LUT to a LookupTexture
     Promise.resolve(getLUT(postProcessing.lut.url))
