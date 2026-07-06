@@ -135,6 +135,22 @@ describe('propertyUpdateBroadcaster flush throttle', () => {
     expect(mapOffsetX(doc, 's1')).toBe(9);
   });
 
+  it('writes only the queued fields, never a full settings snapshot', async () => {
+    // Stale local copy of a field this client did not change (e.g. a receiver
+    // holding last frame's remote pan position)
+    props.map.offset.y = 123;
+    queuePropertyUpdate(props, ['map', 'offset', 'x'], 50, 'control');
+
+    // A concurrent write from another client lands before our flush
+    const other = createSessionWriter(doc, { client: 'other' });
+    other.setSceneSettings('s1', { mapOffsetY: 999 });
+
+    await Promise.resolve();
+    const settings = getSceneSnapshot(doc, 's1')?.settings;
+    expect(settings?.mapOffsetX).toBe(50);
+    expect(settings?.mapOffsetY).toBe(999); // not reverted to our stale 123
+  });
+
   it('raw settings updates share the throttled transaction with property updates', async () => {
     queuePropertyUpdate(props, ['map', 'offset', 'x'], 3, 'control');
     queueRawSettingsUpdate({ mapCoordVersion: 1 });
