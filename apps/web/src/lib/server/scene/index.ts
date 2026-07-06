@@ -1,6 +1,7 @@
 import { db } from '$lib/db/app';
 import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
 import { DEFAULT_MAP, DEFAULT_MAP_GRID, DEFAULT_MAP_SIZE } from '$lib/utils/generateR2Url';
+import { orientDimensionsToImage } from '$lib/utils/gridDimensions';
 import { getAlignedMapTransform } from '@tableslayer/stage';
 import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -140,8 +141,8 @@ export const createScene = async (
   // explicit map inherit its grid unless the caller specifies otherwise
   const usingDefaultMap = !data.mapLocation;
   const gridMode = data.gridMode ?? (usingDefaultMap ? 1 : 0);
-  const gridMapDefinedX = data.gridMapDefinedX ?? (usingDefaultMap ? DEFAULT_MAP_GRID.x : null);
-  const gridMapDefinedY = data.gridMapDefinedY ?? (usingDefaultMap ? DEFAULT_MAP_GRID.y : null);
+  let gridMapDefinedX = data.gridMapDefinedX ?? (usingDefaultMap ? DEFAULT_MAP_GRID.x : null);
+  let gridMapDefinedY = data.gridMapDefinedY ?? (usingDefaultMap ? DEFAULT_MAP_GRID.y : null);
 
   // Order is a fractional sort key owned by the realtime session doc — callers
   // inserting between scenes compute it with orderBetween. Never shift existing
@@ -208,6 +209,15 @@ export const createScene = async (
       }
 
       if (mapWidth && mapHeight) {
+        // Grid counts describe the map image; swap transposed WxH filenames
+        // to match the image orientation
+        const oriented = orientDimensionsToImage(
+          { width: gridMapDefinedX, height: gridMapDefinedY },
+          { width: mapWidth, height: mapHeight }
+        );
+        gridMapDefinedX = oriented.width ?? gridMapDefinedX;
+        gridMapDefinedY = oriented.height ?? gridMapDefinedY;
+
         // Same aligned transform the client computes ("Reset map position"):
         // cardinal rotation matching the display orientation, locked zoom so
         // one grid cell spans gridSpacing inches on the TV, and an offset

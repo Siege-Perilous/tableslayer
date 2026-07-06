@@ -68,6 +68,11 @@
   let mapDefinedGridX = $state(stageProps.grid.fixedGridCount?.x || 24);
   let mapDefinedGridY = $state(stageProps.grid.fixedGridCount?.y || 17);
 
+  // Grid counts describe the map image; when the map sits at a 90°/270°
+  // rotation (auto-applied for portrait maps on a landscape TV), width and
+  // height appear swapped on screen
+  let mapIsRotatedOnScreen = $derived(Math.abs(Math.round(stageProps.map.rotation / 90)) % 2 === 1);
+
   // Turn the local concept of TV size into the stageProps format
   const handleTvSizeChange = (diagonalSize: number) => {
     const { width, height } = getTvDimensions(diagonalSize);
@@ -306,7 +311,7 @@
     </FormControl>
   {/if}
   {#if isMapDefinedMode}
-    <FormControl label="Grid width" name="mapDefinedGridX" {errors}>
+    <FormControl label="Map width" name="mapDefinedGridX" {errors}>
       {#snippet input({ inputProps })}
         <Input
           {...inputProps}
@@ -321,7 +326,7 @@
         sq.
       {/snippet}
     </FormControl>
-    <FormControl label="Grid height" name="mapDefinedGridY" {errors}>
+    <FormControl label="Map height" name="mapDefinedGridY" {errors}>
       {#snippet input({ inputProps })}
         <Input
           {...inputProps}
@@ -338,6 +343,12 @@
     </FormControl>
   {/if}
 </div>
+{#if isMapDefinedMode && mapIsRotatedOnScreen}
+  <Spacer size="0.5rem" />
+  <Text size="0.875" color="var(--fgDanger)" class="gridControls__explanation">
+    You've rotated the map, so the width and height values are swapped.
+  </Text>
+{/if}
 <Spacer />
 <Button onclick={alignMapToGrid} style="width: 100%">Reset map position</Button>
 <Spacer />

@@ -18,7 +18,11 @@
 <script lang="ts">
   import { useUploadFileMutation } from '$lib/queries';
   import { upgradeSceneCoordinates, type SceneSettings, type SessionDocClient } from '$lib/realtime';
-  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
+  import {
+    extractDimensionsFromFilename,
+    getImageFileDimensions,
+    orientDimensionsToImage
+  } from '$lib/utils/gridDimensions';
   import { GridMode } from '@tableslayer/stage';
 
   let {
@@ -67,7 +71,11 @@
     // map (and grid mode) to every client and the persister.
     const wasMapDefined = client.scene(sceneId)?.settings.gridMode === GridMode.MapDefined;
     const settings: Partial<SceneSettings> = { mapLocation: uploadedFile.location };
-    const dimensions = extractDimensionsFromFilename(pickedFile.name);
+    const filenameDimensions = extractDimensionsFromFilename(pickedFile.name);
+    const dimensions =
+      filenameDimensions.width !== undefined && filenameDimensions.height !== undefined
+        ? orientDimensionsToImage(filenameDimensions, await getImageFileDimensions(pickedFile))
+        : filenameDimensions;
     if (dimensions.width !== undefined && dimensions.height !== undefined) {
       settings.gridMode = GridMode.MapDefined;
       settings.gridMapDefinedX = dimensions.width;
