@@ -22,7 +22,8 @@ export const peekRLEDimensions = (rleData: Uint8Array): { width: number; height:
 export enum ToolType {
   Brush = 1,
   Rectangle = 2,
-  Ellipse = 3
+  Ellipse = 3,
+  Polygon = 4
 }
 
 export enum DrawMode {

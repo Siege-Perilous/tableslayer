@@ -17,6 +17,7 @@ export interface SceneSettings {
   displayResolutionX: number;
   displayResolutionY: number;
   fogOfWarUrl: string | null;
+  fogOfWarRooms: string | null;
   fogOfWarColor: string;
   fogOfWarOpacityDm: number;
   fogOfWarOpacityPlayer: number;

@@ -591,7 +591,11 @@
     toPng: () => mapLayer.fogOfWar.toPng(),
     toRLE: () => mapLayer.fogOfWar.toRLE(),
     fromRLE: (rleData: Uint8Array, width: number, height: number) => mapLayer.fogOfWar.fromRLE(rleData, width, height),
-    isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false
+    isDrawing: () => mapLayer?.fogOfWar?.isDrawing() ?? false,
+    commitPolygon: () => mapLayer?.fogOfWar?.commitPolygon(),
+    cancelPolygon: () => mapLayer?.fogOfWar?.cancelPolygon(),
+    polygonPointCount: () => mapLayer?.fogOfWar?.polygonPointCount() ?? 0,
+    deleteRoomAtCursor: () => mapLayer?.fogOfWar?.deleteRoomAtCursor()
   };
 
   // Export marker state getters

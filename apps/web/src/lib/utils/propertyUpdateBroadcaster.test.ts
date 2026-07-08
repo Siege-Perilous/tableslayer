@@ -28,7 +28,8 @@ const makeSettings = (id: string): SceneSettings =>
 // Just enough StageProps for convertPropsToSceneDetails; missing subtrees are skipped
 const makeProps = (): StageProps =>
   ({
-    map: { rotation: 0, offset: { x: 0, y: 0 }, zoom: 1 }
+    map: { rotation: 0, offset: { x: 0, y: 0 }, zoom: 1 },
+    fogOfWar: { rooms: [] }
   }) as unknown as StageProps;
 
 const makeClient = (doc: Y.Doc) => {
@@ -149,6 +150,25 @@ describe('propertyUpdateBroadcaster flush throttle', () => {
     const settings = getSceneSnapshot(doc, 's1')?.settings;
     expect(settings?.mapOffsetX).toBe(50);
     expect(settings?.mapOffsetY).toBe(999); // not reverted to our stale 123
+  });
+
+  it('serializes fog rooms into a JSON settings field write', async () => {
+    const rooms = [
+      {
+        id: 'room-1',
+        points: [
+          { x: 0.1, y: 0.1 },
+          { x: 0.5, y: 0.1 },
+          { x: 0.5, y: 0.5 }
+        ],
+        enabled: true
+      }
+    ];
+    queuePropertyUpdate(props, ['fogOfWar', 'rooms'], rooms, 'control');
+
+    await Promise.resolve();
+    const settings = getSceneSnapshot(doc, 's1')?.settings;
+    expect(settings?.fogOfWarRooms).toBe(JSON.stringify(rooms));
   });
 
   it('raw settings updates share the throttled transaction with property updates', async () => {

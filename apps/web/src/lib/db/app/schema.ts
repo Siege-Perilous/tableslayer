@@ -383,6 +383,7 @@ export const sceneTable = sqliteTable(
     displayResolutionY: integer('display_resolution_y').notNull().default(1080),
     fogOfWarUrl: text('fog_of_war_url'),
     fogOfWarMask: text('fog_of_war_mask'), // Base64-encoded RLE mask data
+    fogOfWarRooms: text('fog_of_war_rooms'), // JSON-encoded FogRoom[] (polygon fog rooms)
     fogOfWarColor: text('fog_of_war_color').notNull().default('#626262'),
     fogOfWarOpacityDm: real('fog_of_war_opacity_dm').notNull().default(0.75),
     fogOfWarOpacityPlayer: real('fog_of_war_opacity_player').notNull().default(0.9),

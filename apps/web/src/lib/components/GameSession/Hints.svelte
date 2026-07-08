@@ -1,15 +1,27 @@
 <script lang="ts">
-  import { type StageProps } from '@tableslayer/stage';
+  import { ToolType, type StageProps } from '@tableslayer/stage';
   let { stageProps }: { stageProps: StageProps } = $props();
   const activeLayer = $derived(stageProps.activeLayer);
+  const isPolygonFogTool = $derived(stageProps.fogOfWar.tool.type === ToolType.Polygon);
 </script>
 
 <div class="hints">
   {#if activeLayer === 1}
-    Click and drag to reveal the fog. <span>F</span>
-    to clear,
-    <span>Shift + F</span>
-    to reset.
+    {#if isPolygonFogTool}
+      Click to outline a fog room. <span>Enter</span>
+      completes it,
+      <span>Esc</span>
+      cancels.
+      <span>Right-click</span>
+      toggles a room,
+      <span>Delete</span>
+      while hovering removes it.
+    {:else}
+      Click and drag to reveal the fog. <span>F</span>
+      to clear,
+      <span>Shift + F</span>
+      to reset.
+    {/if}
   {:else if activeLayer === 2}
     Left-click an empty space to add a new marker. <span>Shift + M</span>
     to exit marker mode.

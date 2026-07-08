@@ -1,6 +1,12 @@
+import type { FogRoom } from '../../helpers/fogRooms';
 import type { DrawingLayerProps } from '../DrawingLayer/types';
 
 export interface FogOfWarLayerProps extends DrawingLayerProps {
+  /**
+   * Committed polygon fog rooms, composited on top of the erasable mask
+   */
+  rooms: FogRoom[];
+
   /**
    * The outline settings
    */
@@ -113,4 +119,8 @@ export interface FogOfWarExports {
   toRLE: () => Promise<Uint8Array>;
   fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
   isDrawing: () => boolean;
+  commitPolygon: () => void;
+  cancelPolygon: () => void;
+  polygonPointCount: () => number;
+  deleteRoomAtCursor: () => void;
 }

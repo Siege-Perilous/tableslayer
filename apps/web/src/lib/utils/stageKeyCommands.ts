@@ -53,8 +53,18 @@ export function handleKeyCommands(
   event: KeyboardEvent,
   stageProps: StageProps,
   activeControl: string,
-  stage: { fogOfWar: { clear: () => void; reset: () => void } },
-  handleSelectActiveControl: (control: string) => string | null
+  stage: {
+    fogOfWar: {
+      clear: () => void;
+      reset: () => void;
+      commitPolygon: () => void;
+      cancelPolygon: () => void;
+      polygonPointCount: () => number;
+      deleteRoomAtCursor: () => void;
+    };
+  },
+  handleSelectActiveControl: (control: string) => string | null,
+  clearFog?: () => void
 ): string {
   const { activeLayer, fogOfWar } = stageProps;
 
@@ -104,7 +114,8 @@ export function handleKeyCommands(
       break;
 
     case 'f':
-      stage.fogOfWar.clear();
+      if (clearFog) clearFog();
+      else stage.fogOfWar.clear();
       trackChecklistItem('fog-erase');
       break;
 
@@ -239,8 +250,54 @@ export function handleKeyCommands(
       }
       break;
 
+    case 'p':
+    case 'P':
+      if (
+        activeLayer === MapLayerType.FogOfWar &&
+        fogOfWar.tool.mode === DrawMode.Draw &&
+        fogOfWar.tool.type === ToolType.Polygon
+      ) {
+        handleSelectActiveControl('erase'); // Toggle off
+        return 'none';
+      } else {
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], DrawMode.Draw, 'control');
+        queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], ToolType.Polygon, 'control');
+        // Only call handleSelectActiveControl if not already in fog mode to avoid toggle-off
+        if (activeLayer !== MapLayerType.FogOfWar) {
+          handleSelectActiveControl('erase');
+        }
+        return 'erase';
+      }
+      break;
+
+    case 'Enter':
+      if (
+        activeLayer === MapLayerType.FogOfWar &&
+        fogOfWar.tool.type === ToolType.Polygon &&
+        stage.fogOfWar.polygonPointCount() >= 3
+      ) {
+        stage.fogOfWar.commitPolygon();
+      }
+      break;
+
+    // Deletes the fog room under the cursor. Keyboard-driven because Firefox
+    // shows its native menu on Shift+right-click regardless of preventDefault
+    case 'Delete':
+    case 'Backspace':
+      if (
+        activeLayer === MapLayerType.FogOfWar &&
+        fogOfWar.tool.type === ToolType.Polygon &&
+        stage.fogOfWar.polygonPointCount() === 0
+      ) {
+        stage.fogOfWar.deleteRoomAtCursor();
+      }
+      break;
+
     case 'Shift':
-      if (activeLayer === MapLayerType.FogOfWar) {
+      // Deselecting protects drag-draw tools from the Shift+drag pan gesture.
+      // The polygon tool ignores Shift-modified clicks itself and needs the
+      // layer active for Shift+right-click room deletion, so it stays selected.
+      if (activeLayer === MapLayerType.FogOfWar && fogOfWar.tool.type !== ToolType.Polygon) {
         handleSelectActiveControl('none');
         return 'none';
       }
@@ -252,6 +309,11 @@ export function handleKeyCommands(
       }
       break;
     case 'Escape':
+      // Cancel an in-progress polygon room first; a second Escape deselects
+      if (activeLayer === MapLayerType.FogOfWar && stage.fogOfWar.polygonPointCount() > 0) {
+        stage.fogOfWar.cancelPolygon();
+        return activeControl;
+      }
       handleSelectActiveControl('none');
       return 'none';
 

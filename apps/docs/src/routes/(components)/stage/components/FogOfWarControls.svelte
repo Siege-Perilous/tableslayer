@@ -12,7 +12,8 @@
   const toolTypeOptions: ListOptions<number> = {
     Brush: ToolType.Brush,
     Rectangle: ToolType.Rectangle,
-    Ellipse: ToolType.Ellipse
+    Ellipse: ToolType.Ellipse,
+    'Room polygon': ToolType.Polygon
   };
 </script>
 
@@ -61,7 +62,14 @@
     <Binding bind:object={props.fogOfWar.noise} key={'levels'} label="Levels" />
   </Folder>
   <Button on:click={() => stage?.fogOfWar.reset()} title="Reset Fog Of War" />
-  <Button on:click={() => stage?.fogOfWar.clear()} title="Clear Fog Of War" />
+  <Button
+    on:click={() => {
+      stage?.fogOfWar.clear();
+      props.fogOfWar.rooms = [];
+    }}
+    title="Clear Fog Of War"
+  />
+  <Button on:click={() => (props.fogOfWar.rooms = [])} title={`Clear Rooms (${props.fogOfWar.rooms.length})`} />
   <Button
     on:click={async () => {
       const blob = await stage?.fogOfWar.toPng();

@@ -18,6 +18,7 @@
     IconAdjustmentsHorizontal,
     IconPokerChip,
     IconPencil,
+    IconPolygon,
     IconRuler,
     IconFlame
   } from '@tabler/icons-svelte';
@@ -51,7 +52,8 @@
     handleMapFit,
     errors = undefined,
     client,
-    keyboardPopoverId = null
+    keyboardPopoverId = null,
+    onFogClear
   }: {
     handleSelectActiveControl: (control: string) => string | null;
     activeControl: string;
@@ -66,6 +68,7 @@
     stage: StageExports;
     client: SessionDocClient | null;
     keyboardPopoverId?: string | null;
+    onFogClear?: () => void;
   } = $props();
 
   type SceneControl = {
@@ -183,6 +186,16 @@
       drawMode: DrawMode.Draw,
       tooltip: 'Add fog to the map with an ellipse',
       key: 'Shift+O'
+    },
+    {
+      label: 'Fog room',
+      value: 'fogRoom',
+      icon: IconPolygon,
+      toolType: ToolType.Polygon,
+      drawMode: DrawMode.Draw,
+      tooltip:
+        'Click to outline a fog room. Enter commits, right-click toggles a room, Delete while hovering removes it',
+      key: 'P'
     }
   ];
 
@@ -417,7 +430,7 @@
                 {errors}
               />
             {:else if scene.id === 'fog'}
-              <FogControls {stage} {stageProps} />
+              <FogControls {stage} {stageProps} {onFogClear} />
             {:else if scene.id === 'map'}
               <MapControls
                 {stage}

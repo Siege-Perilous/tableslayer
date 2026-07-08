@@ -719,6 +719,7 @@
 
   const onMarkerContextMenu = (marker: Marker, event: MouseEvent | TouchEvent) => {
     if (!(event instanceof MouseEvent)) return;
+    markerContextMenuOpenedAt = performance.now();
     contextMenuMarkerId = marker.id;
     selectedMarkerId = marker.id;
     markerContextMenu?.open(event);
@@ -1041,6 +1042,48 @@
     };
   };
 
+  // Polygon fog rooms are synced scene settings (fogOfWarRooms JSON), so
+  // writing the whole array through queuePropertyUpdate gives realtime sync
+  // and undo for free
+  const onFogRoomAdd = (points: { x: number; y: number }[]) => {
+    const rooms = [...stageProps.fogOfWar.rooms, { id: crypto.randomUUID(), points, enabled: true }];
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'rooms'], rooms, 'control');
+  };
+
+  // Room toggling works from any layer, so a right-click on a marker inside a
+  // room fires both this and onMarkerContextMenu (same event, synchronous).
+  // Defer one tick and let the marker's menu win.
+  let markerContextMenuOpenedAt = 0;
+
+  const onFogRoomToggle = (roomId: string) => {
+    setTimeout(() => {
+      if (performance.now() - markerContextMenuOpenedAt < 100) return;
+      const rooms = stageProps.fogOfWar.rooms.map((room) =>
+        room.id === roomId ? { ...room, enabled: !room.enabled } : room
+      );
+      queuePropertyUpdate(stageProps, ['fogOfWar', 'rooms'], rooms, 'control');
+    }, 0);
+  };
+
+  const onFogRoomDelete = (roomId: string) => {
+    const rooms = stageProps.fogOfWar.rooms.filter((room) => room.id !== roomId);
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'rooms'], rooms, 'control');
+  };
+
+  // Clearing fog wipes the rooms too; flushing the debounced mask commit keeps
+  // both writes in the same undo capture group
+  const clearFogAndRooms = () => {
+    stage?.fogOfWar.clear();
+    queuePropertyUpdate(stageProps, ['fogOfWar', 'rooms'], [], 'control');
+    flushPendingFogCommit();
+  };
+
+  // A scene switch invalidates the in-progress polygon's coordinate space
+  $effect(() => {
+    void selectedSceneId;
+    stage?.fogOfWar?.cancelPolygon();
+  });
+
   // Measurements (broadcast only when editing the active scene) -------------------
 
   const isOnActiveScene = () => selectedSceneId === partyState.activeSceneId;
@@ -1239,8 +1282,10 @@
         if (!session.client) return;
         const client = session.client;
         const isRedo = key === 'y' || event.shiftKey;
-        // Debounced mask commits must land on the undo stack before we pop it,
-        // or ctrl-z right after a stroke reverts the wrong edit
+        // Debounced mask commits and throttled property writes (fog rooms) must
+        // land on the undo stack before we pop it, or ctrl-z right after an
+        // edit reverts the wrong step
+        flushQueuedPropertyUpdates();
         Promise.all([flushPendingAnnotationCommits(), flushPendingFogCommit()]).then(() => {
           if (isRedo) {
             if (client.canRedo) client.redo();
@@ -1255,7 +1300,14 @@
     }
 
     const previousControl = activeControl;
-    const newActiveControl = handleKeyCommands(event, stageProps, activeControl, stage, handleSelectActiveControl);
+    const newActiveControl = handleKeyCommands(
+      event,
+      stageProps,
+      activeControl,
+      stage,
+      handleSelectActiveControl,
+      clearFogAndRooms
+    );
     activeControl = newActiveControl;
 
     if (
@@ -1425,6 +1477,9 @@
             callbacks={{
               onAnnotationUpdate,
               onFogUpdate,
+              onFogRoomAdd,
+              onFogRoomToggle,
+              onFogRoomDelete,
               onMapUpdate,
               onSceneUpdate,
               onStageInitialized,
@@ -1484,6 +1539,7 @@
           {gameSession}
           client={session.client}
           {keyboardPopoverId}
+          onFogClear={clearFogAndRooms}
         />
         <SceneZoom {stage} {handleSceneFit} {handleMapFill} {stageProps} />
         <Shortcuts />

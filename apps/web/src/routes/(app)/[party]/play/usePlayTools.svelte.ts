@@ -297,10 +297,16 @@ export class PlayTools {
         this.#options.getStage()?.fogOfWar?.reset();
         this.resetToNoneAfterDelay();
         break;
-      case 'fog-clear':
+      case 'fog-clear': {
         this.#options.getStage()?.fogOfWar?.clear();
+        // Clearing fog also removes polygon fog rooms, matching the editor
+        const sceneId = this.#options.session.activeSceneId;
+        if (sceneId) {
+          this.#options.session.client?.write.setSceneSettings(sceneId, { fogOfWarRooms: '[]' });
+        }
         this.resetToNoneAfterDelay();
         break;
+      }
       case 'draw-delete-all-confirm':
         this.#deleteAllDrawings();
         break;

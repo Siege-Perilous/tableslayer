@@ -17,6 +17,7 @@ const settings = {
   displayResolutionX: 1920,
   displayResolutionY: 1080,
   fogOfWarUrl: null,
+  fogOfWarRooms: null,
   fogOfWarColor: '#CCC',
   fogOfWarOpacityDm: 0.5,
   fogOfWarOpacityPlayer: 0.9,

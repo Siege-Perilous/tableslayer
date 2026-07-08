@@ -141,7 +141,11 @@
     toRLE: () => sceneRef?.fogOfWar.toRLE() ?? Promise.resolve(new Uint8Array()),
     fromRLE: (rleData: Uint8Array, width: number, height: number) =>
       sceneRef?.fogOfWar.fromRLE(rleData, width, height) ?? Promise.resolve(),
-    isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false
+    isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false,
+    commitPolygon: () => sceneRef?.fogOfWar?.commitPolygon(),
+    cancelPolygon: () => sceneRef?.fogOfWar?.cancelPolygon(),
+    polygonPointCount: () => sceneRef?.fogOfWar?.polygonPointCount() ?? 0,
+    deleteRoomAtCursor: () => sceneRef?.fogOfWar?.deleteRoomAtCursor()
   };
 
   export const scene = {

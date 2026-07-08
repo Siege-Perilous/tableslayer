@@ -8,6 +8,11 @@
   interface Props {
     id?: string;
     isActive: boolean;
+    /**
+     * Overrides isActive for the contextmenu handler only, letting a layer
+     * keep right-click behavior while it is not the active drawing layer
+     */
+    isContextMenuActive?: boolean;
     target?: THREE.Mesh;
     layerSize?: Size | null;
     onMouseDown?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
@@ -23,6 +28,7 @@
     id,
     layerSize,
     isActive,
+    isContextMenuActive,
     target,
     onMouseDown,
     onMouseUp,
@@ -127,7 +133,7 @@
   }
 
   function handleContextMenu(event: MouseEvent) {
-    if (onContextMenu && isActive) {
+    if (onContextMenu && (isContextMenuActive ?? isActive)) {
       onContextMenu(event, mouseToCanvasCoords(event));
     }
   }

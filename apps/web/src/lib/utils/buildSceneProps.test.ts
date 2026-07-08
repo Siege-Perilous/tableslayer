@@ -122,3 +122,28 @@ describe('buildSceneProps coordinate conversion', () => {
     expect(props.marker.markers[0].position).toEqual({ x: 300, y: 150 });
   });
 });
+
+describe('buildSceneProps fog rooms', () => {
+  it('parses the fogOfWarRooms JSON into stage props', () => {
+    const rooms = [
+      {
+        id: 'room-1',
+        points: [
+          { x: 0.1, y: 0.2 },
+          { x: 0.5, y: 0.2 },
+          { x: 0.3, y: 0.6 }
+        ],
+        enabled: true
+      }
+    ];
+    const scene = { ...baseScene, fogOfWarRooms: JSON.stringify(rooms) } as SelectScene;
+    const props = buildSceneProps(scene, [], 'editor');
+    expect(props.fogOfWar.rooms).toEqual(rooms);
+  });
+
+  it('falls back to no rooms for missing or corrupt JSON', () => {
+    expect(buildSceneProps(baseScene, [], 'editor').fogOfWar.rooms).toEqual([]);
+    const corrupt = { ...baseScene, fogOfWarRooms: '{not json' } as SelectScene;
+    expect(buildSceneProps(corrupt, [], 'editor').fogOfWar.rooms).toEqual([]);
+  });
+});

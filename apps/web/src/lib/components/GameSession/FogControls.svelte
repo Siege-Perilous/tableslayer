@@ -6,10 +6,12 @@
 
   let {
     stage,
-    stageProps = $bindable()
+    stageProps = $bindable(),
+    onFogClear
   }: {
     stage: StageExports;
     stageProps: StageProps;
+    onFogClear?: () => void;
   } = $props();
 
   // Just use the base color hex without opacity for the color picker
@@ -88,7 +90,8 @@
   <div>
     <Button
       onclick={() => {
-        stage.fogOfWar.clear();
+        if (onFogClear) onFogClear();
+        else stage.fogOfWar.clear();
       }}
     >
       Clear fog

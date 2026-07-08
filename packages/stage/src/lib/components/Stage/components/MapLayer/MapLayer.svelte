@@ -158,7 +158,11 @@
     toPng: () => fogOfWarLayer.toPng(),
     toRLE: () => fogOfWarLayer.toRLE(),
     fromRLE: (rleData: Uint8Array, width: number, height: number) => fogOfWarLayer.fromRLE(rleData, width, height),
-    isDrawing: () => fogOfWarLayer?.isDrawing() ?? false
+    isDrawing: () => fogOfWarLayer?.isDrawing() ?? false,
+    commitPolygon: () => fogOfWarLayer?.commitPolygon(),
+    cancelPolygon: () => fogOfWarLayer?.cancelPolygon(),
+    polygonPointCount: () => fogOfWarLayer?.polygonPointCount() ?? 0,
+    deleteRoomAtCursor: () => fogOfWarLayer?.deleteRoomAtCursor()
   };
 </script>
 
@@ -189,6 +193,7 @@
     grid={props.grid}
     display={props.display}
     mapZoom={props.map.zoom}
+    sceneZoom={props.scene.zoom}
     layers={[SceneLayer.Main]}
     renderOrder={SceneLayerOrder.FogOfWar}
   />
