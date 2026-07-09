@@ -10,6 +10,7 @@
   import { stagePerformance } from '$lib/stores';
   import {
     MapLayerType,
+    parseFogRooms,
     PerformanceDebugger,
     RadialMenu,
     Stage,
@@ -278,6 +279,18 @@
   // Players have no marker context menu; the callback is required by the stage
   function onMarkerContextMenu() {}
 
+  // Double-tap (or right-click) on a fog room toggles it, mirroring the
+  // editor. Deleting rooms stays editor-only.
+  function onFogRoomToggle(roomId: string) {
+    const sceneId = session.activeSceneId;
+    const settings = sceneId ? session.client?.scene(sceneId)?.settings : null;
+    if (!sceneId || !settings) return;
+    const rooms = parseFogRooms(settings.fogOfWarRooms).map((room) =>
+      room.id === roomId ? { ...room, enabled: !room.enabled } : room
+    );
+    session.client?.write.setSceneSettings(sceneId, { fogOfWarRooms: JSON.stringify(rooms) });
+  }
+
   function onStageLoading() {
     stageIsLoading = true;
   }
@@ -402,6 +415,7 @@
     callbacks={{
       onAnnotationUpdate: tools.onAnnotationUpdate,
       onFogUpdate: tools.onFogUpdate,
+      onFogRoomToggle,
       onMapUpdate: () => {},
       onStageLoading,
       onStageInitialized,

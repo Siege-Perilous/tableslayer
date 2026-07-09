@@ -105,7 +105,10 @@
     mode: props.mode,
     hoveredMarkerId,
     pinnedMarkerIds,
-    performanceTier: props.performanceTier ?? 'high'
+    performanceTier: props.performanceTier ?? 'high',
+    // Set by MarkerLayer when a pointer-down hits a marker; other layers use
+    // it to yield shared gestures (e.g. fog-room double-tap) to the marker
+    markerClaimAt: 0
   });
   setContext('stage', stageContext);
 

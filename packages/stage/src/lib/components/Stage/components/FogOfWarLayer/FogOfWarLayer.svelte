@@ -33,7 +33,7 @@
 
   const callbacks = getContext<Callbacks>('callbacks');
   const onFogUpdate = callbacks.onFogUpdate;
-  const stage = getContext<{ mode: StageMode }>('stage');
+  const stage = getContext<{ mode: StageMode; markerClaimAt: number }>('stage');
 
   // Convert tool.size (grid units, brush diameter) to fog texture pixels. The map
   // mesh is scaled mapSize * mapZoom in world units (1 world unit = 1 display
@@ -410,12 +410,16 @@
       }
     }
 
-    // With no draft in progress, double-click / double-tap toggles the room
-    // under the pointer (rolling back the first tap's stray vertex)
+    // A double-click / double-tap that isn't a commit is a room-toggle
+    // gesture: roll back the first tap's stray vertex. The toggle itself is
+    // handled by onDoubleTap (touch) / onContextMenu-style handlers — except
+    // mouse double-click, which only reaches here
     if (isDouble && draftPoints.length <= 1) {
       draftPoints = [];
-      const room = roomAt(point);
-      if (room) callbacks.onFogRoomToggle?.(room.id);
+      if (isMouse) {
+        const room = roomAt(point);
+        if (room) callbacks.onFogRoomToggle?.(room.id);
+      }
       return;
     }
 
@@ -439,16 +443,32 @@
   }
 
   function onContextMenu(e: Event, p: THREE.Vector2 | null) {
-    // Room toggling works with any tool or layer active (DM only). Consumers
-    // suppress the toggle when a marker context menu claims the same
-    // right-click. Deleting stays scoped to the polygon tool.
-    if (stage.mode !== StageMode.DM) return;
+    // Room toggling works with any tool or layer active, in DM mode and on
+    // the touch playfield (Player mode). Consumers suppress the toggle when a
+    // marker context menu claims the same right-click. Deleting stays scoped
+    // to the polygon tool.
     e.preventDefault();
     if (!p || !mapSize) return;
     const room = smallestRoomContaining(props.rooms, { x: p.x / mapSize.width, y: p.y / mapSize.height });
     if (!room) return;
     if (isPolygonTool && e instanceof MouseEvent && e.shiftKey) callbacks.onFogRoomDelete?.(room.id);
     else callbacks.onFogRoomToggle?.(room.id);
+  }
+
+  // Touch path for room toggling, live regardless of the active tool/layer
+  // (LayerInput registers it independently of the drawing handlers). Defers
+  // past LayerInput's 50ms touch debounce so a marker grabbed by the same tap
+  // can claim the gesture first.
+  function onDoubleTap(_e: TouchEvent, p: THREE.Vector2 | null) {
+    // Mid-draw double-taps belong to the commit gesture in addDraftPoint
+    if (isPolygonTool && draftPoints.length >= 2) return;
+    if (!p || !mapSize) return;
+    const point = { x: p.x / mapSize.width, y: p.y / mapSize.height };
+    setTimeout(() => {
+      if (performance.now() - stage.markerClaimAt < 250) return;
+      const room = roomAt(point);
+      if (room) callbacks.onFogRoomToggle?.(room.id);
+    }, 120);
   }
 
   function onMouseUp(_e: Event, p: THREE.Vector2 | null) {
@@ -636,6 +656,7 @@
   {onMouseUp}
   {onMouseLeave}
   {onContextMenu}
+  {onDoubleTap}
   isContextMenuActive={true}
 />
 

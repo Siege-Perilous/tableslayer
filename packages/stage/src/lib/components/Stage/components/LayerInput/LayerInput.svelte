@@ -19,6 +19,12 @@
     onMouseUp?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseMove?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
     onContextMenu?: (e: MouseEvent | TouchEvent, coords: THREE.Vector2 | null) => void;
+    /**
+     * Touch-only double-tap, gated like onContextMenu (isContextMenuActive
+     * overrides isActive). Fires on the second tap's touchstart, independent
+     * of the debounced drawing handlers.
+     */
+    onDoubleTap?: (e: TouchEvent, coords: THREE.Vector2 | null) => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
     onWheel?: (e: WheelEvent) => void;
@@ -36,7 +42,8 @@
     onMouseEnter,
     onMouseLeave,
     onWheel,
-    onContextMenu
+    onContextMenu,
+    onDoubleTap
   }: Props = $props();
 
   const { camera, renderer, size } = useThrelte();
@@ -72,6 +79,7 @@
     if (onMouseMove) renderer.domElement.addEventListener('touchmove', handleTouchMove);
     if (onMouseUp) renderer.domElement.addEventListener('touchend', handleTouchEnd);
     if (onMouseLeave) renderer.domElement.addEventListener('touchcancel', handleTouchCancel);
+    if (onDoubleTap) renderer.domElement.addEventListener('touchstart', handleDoubleTapTouchStart);
   });
 
   onDestroy(() => {
@@ -95,6 +103,7 @@
     if (onMouseMove) renderer.domElement.removeEventListener('touchmove', handleTouchMove);
     if (onMouseUp) renderer.domElement.removeEventListener('touchend', handleTouchEnd);
     if (onMouseLeave) renderer.domElement.removeEventListener('touchcancel', handleTouchCancel);
+    if (onDoubleTap) renderer.domElement.removeEventListener('touchstart', handleDoubleTapTouchStart);
   });
 
   export function getId() {
@@ -141,6 +150,32 @@
   function handleWheel(event: WheelEvent) {
     if (onWheel && isActive) {
       onWheel(event);
+    }
+  }
+
+  // Double-tap detection in screen px, deliberately not preventDefaulting so
+  // it observes rather than competes with the drawing/gesture handlers
+  const DOUBLE_TAP_MS = 400;
+  const DOUBLE_TAP_SLOP_PX = 40;
+  let lastTap: { time: number; x: number; y: number } | null = null;
+
+  function handleDoubleTapTouchStart(event: TouchEvent) {
+    if (!onDoubleTap || !(isContextMenuActive ?? isActive)) return;
+    if (event.touches.length !== 1) {
+      lastTap = null;
+      return;
+    }
+    const touch = event.touches[0];
+    const now = performance.now();
+    const isDouble =
+      lastTap !== null &&
+      now - lastTap.time < DOUBLE_TAP_MS &&
+      Math.hypot(touch.clientX - lastTap.x, touch.clientY - lastTap.y) < DOUBLE_TAP_SLOP_PX;
+    if (isDouble) {
+      lastTap = null;
+      onDoubleTap(event, touchToCanvasCoords(touch));
+    } else {
+      lastTap = { time: now, x: touch.clientX, y: touch.clientY };
     }
   }
 
