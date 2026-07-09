@@ -105,7 +105,10 @@
     mode: props.mode,
     hoveredMarkerId,
     pinnedMarkerIds,
-    performanceTier: props.performanceTier ?? 'high'
+    performanceTier: props.performanceTier ?? 'high',
+    // Set by MarkerLayer when a pointer-down hits a marker; other layers use
+    // it to yield shared gestures (e.g. fog-room double-tap) to the marker
+    markerClaimAt: 0
   });
   setContext('stage', stageContext);
 
@@ -141,7 +144,11 @@
     toRLE: () => sceneRef?.fogOfWar.toRLE() ?? Promise.resolve(new Uint8Array()),
     fromRLE: (rleData: Uint8Array, width: number, height: number) =>
       sceneRef?.fogOfWar.fromRLE(rleData, width, height) ?? Promise.resolve(),
-    isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false
+    isDrawing: () => sceneRef?.fogOfWar?.isDrawing() ?? false,
+    commitPolygon: () => sceneRef?.fogOfWar?.commitPolygon(),
+    cancelPolygon: () => sceneRef?.fogOfWar?.cancelPolygon(),
+    polygonPointCount: () => sceneRef?.fogOfWar?.polygonPointCount() ?? 0,
+    deleteRoomAtCursor: () => sceneRef?.fogOfWar?.deleteRoomAtCursor()
   };
 
   export const scene = {

@@ -70,6 +70,7 @@
           break;
         case 'f':
           stage?.fogOfWar.clear();
+          stageProps.fogOfWar.rooms = [];
           break;
         case 'F':
           stage?.fogOfWar.reset();
@@ -93,6 +94,12 @@
           stageProps.fogOfWar.tool.type = ToolType.Ellipse;
           stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
+        case 'p':
+        case 'P':
+          stageProps.activeLayer = MapLayerType.FogOfWar;
+          stageProps.fogOfWar.tool.type = ToolType.Polygon;
+          stageProps.fogOfWar.tool.mode = DrawMode.Draw;
+          break;
         case 'r':
           stageProps.activeLayer = MapLayerType.FogOfWar;
           stageProps.fogOfWar.tool.type = ToolType.Rectangle;
@@ -103,7 +110,20 @@
           stageProps.fogOfWar.tool.type = ToolType.Rectangle;
           stageProps.fogOfWar.tool.mode = DrawMode.Draw;
           break;
+        case 'Enter':
+          stage?.fogOfWar.commitPolygon();
+          break;
+        case 'Delete':
+        case 'Backspace':
+          if (stage && stage.fogOfWar.polygonPointCount() === 0) {
+            stage.fogOfWar.deleteRoomAtCursor();
+          }
+          break;
         case 'Escape':
+          if (stage && stage.fogOfWar.polygonPointCount() > 0) {
+            stage.fogOfWar.cancelPolygon();
+            break;
+          }
           stageProps.activeLayer = MapLayerType.None;
           break;
       }
@@ -121,6 +141,24 @@
 
   async function onFogUpdate() {
     // No-op
+  }
+
+  function onFogRoomAdd(points: { x: number; y: number }[]) {
+    stageProps.fogOfWar.rooms = [...stageProps.fogOfWar.rooms, { id: crypto.randomUUID(), points, enabled: true }];
+  }
+
+  function onFogRoomToggle(roomId: string) {
+    // Defer so a marker context menu from the same right-click wins
+    setTimeout(() => {
+      if (performance.now() - markerContextMenuOpenedAt < 100) return;
+      stageProps.fogOfWar.rooms = stageProps.fogOfWar.rooms.map((room) =>
+        room.id === roomId ? { ...room, enabled: !room.enabled } : room
+      );
+    }, 0);
+  }
+
+  function onFogRoomDelete(roomId: string) {
+    stageProps.fogOfWar.rooms = stageProps.fogOfWar.rooms.filter((room) => room.id !== roomId);
   }
 
   function onStageLoading() {
@@ -162,7 +200,10 @@
     selectedMarker = marker ?? undefined;
   }
 
+  let markerContextMenuOpenedAt = 0;
+
   function onMarkerContextMenu(marker: Marker, event: MouseEvent | TouchEvent) {
+    markerContextMenuOpenedAt = performance.now();
     if (event instanceof MouseEvent) {
       alert('You clicked on marker: ' + marker.title + ' at ' + event.pageX + ',' + event.pageY);
     } else {
@@ -260,6 +301,9 @@
     callbacks={{
       onAnnotationUpdate,
       onFogUpdate,
+      onFogRoomAdd,
+      onFogRoomToggle,
+      onFogRoomDelete,
       onMapUpdate,
       onStageLoading,
       onStageInitialized,
@@ -283,6 +327,10 @@
       <li>E - Draw Fog (Round Brush)</li>
       <li>O - Draw Fog (Ellipse)</li>
       <li>R - Draw Fog (Rectangle)</li>
+      <li>
+        p - Draw Fog Room (click points; Enter/double-click commits, Escape cancels, right-click/double-tap toggles,
+        Delete while hovering or touch hold deletes)
+      </li>
       <li>f - Clear Fog</li>
       <li>F - Reset Fog</li>
       <li>l - Place Lights</li>

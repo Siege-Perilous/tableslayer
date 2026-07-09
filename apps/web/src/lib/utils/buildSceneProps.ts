@@ -18,6 +18,7 @@ import {
   MapLayerType,
   type Marker,
   MeasurementType,
+  parseFogRooms,
   RainPreset,
   SceneRotation,
   StageMode,
@@ -163,6 +164,7 @@ export const buildSceneProps = (
     },
     fogOfWar: {
       url: activeScene.fogOfWarUrl ?? '',
+      rooms: parseFogRooms(activeScene.fogOfWarRooms),
       opacity: {
         dm: activeScene.fogOfWarOpacityDm ?? 0.3,
         player: activeScene.fogOfWarOpacityPlayer ?? 0.9

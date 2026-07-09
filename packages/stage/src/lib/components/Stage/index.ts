@@ -55,6 +55,7 @@ export {
   type WeatherLayerProps
 } from './components/WeatherLayer/types';
 export { debugState, isDebugEnabled, setDebugEnabled } from './helpers/debugState.svelte';
+export { parseFogRooms, pointInPolygon, polygonArea, smallestRoomContaining, type FogRoom } from './helpers/fogRooms';
 export {
   displayToMapSpace,
   getAlignedMapTransform,

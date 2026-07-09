@@ -1,0 +1,1 @@
+ALTER TABLE `scene` ADD `fog_of_war_rooms` text;

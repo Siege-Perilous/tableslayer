@@ -14,6 +14,9 @@ export type { CursorData } from '../CursorLayer/types';
 export interface Callbacks {
   onAnnotationUpdate: (layerId: string, blob: Promise<Blob>, endPosition?: { x: number; y: number }) => void;
   onFogUpdate: (blob: Promise<Blob>) => void;
+  onFogRoomAdd?: (points: { x: number; y: number }[]) => void;
+  onFogRoomToggle?: (roomId: string) => void;
+  onFogRoomDelete?: (roomId: string) => void;
   onMapUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onSceneUpdate: (offset: { x: number; y: number }, zoom: number) => void;
   onStageLoading: () => void;
@@ -165,6 +168,10 @@ export interface StageExports {
     toRLE: () => Promise<Uint8Array>;
     fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
     isDrawing: () => boolean;
+    commitPolygon: () => void;
+    cancelPolygon: () => void;
+    polygonPointCount: () => number;
+    deleteRoomAtCursor: () => void;
   };
   map: {
     fit: () => void;

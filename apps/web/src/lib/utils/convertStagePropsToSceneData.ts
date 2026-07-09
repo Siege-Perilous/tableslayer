@@ -23,6 +23,7 @@ const SETTINGS_FIELD_SOURCES: Record<string, string> = {
   fogColor: 'fog.color',
   fogOpacity: 'fog.opacity',
   fogOfWarUrl: 'fogOfWar.url',
+  fogOfWarRooms: 'fogOfWar.rooms',
   fogOfWarColor: 'fogOfWar.noise.baseColor',
   fogOfWarOpacityDm: 'fogOfWar.opacity.dm',
   fogOfWarOpacityPlayer: 'fogOfWar.opacity.player',
@@ -100,6 +101,11 @@ export const convertPropsToSceneDetails = (
 
   if (mapThumbLocation) {
     details.mapThumbLocation = mapThumbLocation;
+  }
+
+  // Fog rooms live in stage props as FogRoom[] but persist as a JSON string
+  if (details.fogOfWarRooms !== undefined && typeof details.fogOfWarRooms !== 'string') {
+    details.fogOfWarRooms = JSON.stringify(details.fogOfWarRooms);
   }
 
   // Ensure edgeOpacity and edgeScale are proper numbers

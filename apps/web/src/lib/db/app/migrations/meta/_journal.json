@@ -351,6 +351,13 @@
       "when": 1783259247508,
       "tag": "0049_default-map-changes",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1783526291669,
+      "tag": "0050_polygon-fog",
+      "breakpoints": true
     }
   ]
 }

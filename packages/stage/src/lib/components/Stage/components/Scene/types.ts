@@ -83,6 +83,10 @@ export interface SceneExports {
     toRLE: () => Promise<Uint8Array>;
     fromRLE: (rleData: Uint8Array, width: number, height: number) => Promise<void>;
     isDrawing: () => boolean;
+    commitPolygon: () => void;
+    cancelPolygon: () => void;
+    polygonPointCount: () => number;
+    deleteRoomAtCursor: () => void;
   };
 
   map: {

@@ -24,6 +24,7 @@ uniform float uEdgeOffset;
 uniform float uEdgeSpeed;
 
 uniform sampler2D uMaskTexture;
+uniform sampler2D uRoomsTexture;
 uniform vec4 uClippingPlanes[NUM_CLIPPING_PLANES];
 
 // Number of noise layers to render (1-4); lower performance tiers reduce this
@@ -91,12 +92,27 @@ float fog(vec2 uv, vec2 size, float amplitude, float frequency, float persistenc
   return amplitude * clamp(sum, 0.0, 1.0);
 }
 
+// Fog coverage combines the erasable base mask with the polygon rooms texture
+// (enabled rooms in green, toggled-off rooms in red). Enabled rooms are a
+// union with the base mask, so erase strokes can never cut into them; a
+// toggled-off room actively reveals its interior by suppressing the base mask
+// there — unless an enclosing enabled room still covers it (max wins).
+float combinedMask(vec4 rooms, float base) {
+  float enabledRooms = rooms.g;
+  float disabledRooms = rooms.r * (1.0 - rooms.g);
+  return max(enabledRooms, base * (1.0 - disabledRooms));
+}
+
+float combinedMaskLod(vec2 uv, float lod) {
+  return combinedMask(textureLod(uRoomsTexture, uv, lod), textureLod(uMaskTexture, uv, lod).a);
+}
+
 float mask(vec2 uv, vec2 size, float amplitude, float frequency) {
   // Sample the mask at multiple mipmap levels to get a feathered edge
   float featheredMask = 0.0;
   float totalWeight = 0.0;
   for(int i = uEdgeMinMipMapLevel; i <= uEdgeMaxMipMapLevel; i++) {
-    featheredMask += textureLod(uMaskTexture, uv, float(i)).a;
+    featheredMask += combinedMaskLod(uv, float(i));
   }
   featheredMask /= float(uEdgeMaxMipMapLevel - uEdgeMinMipMapLevel + 1);
   featheredMask = clamp(featheredMask, 0.0, 1.0);
@@ -112,7 +128,7 @@ float mask(vec2 uv, vec2 size, float amplitude, float frequency) {
   // Blend the noise only at the edges
   float finalMask = featheredMask + edgeNoise * amplitude * edgeMask;
 
-  float baseMask = texture2D(uMaskTexture, vUv).a;
+  float baseMask = combinedMask(texture2D(uRoomsTexture, vUv), texture2D(uMaskTexture, vUv).a);
   return amplitude * finalMask + (1.0 - amplitude) * baseMask;
 }
 
@@ -132,7 +148,7 @@ void main() {
   // the noise and feathering work entirely. The widest mip level is an average
   // of the whole surrounding neighborhood; if it is ~0 here, every narrower
   // mip and the base mask are ~0 too, making all mask() terms below zero.
-  if (textureLod(uMaskTexture, vUv, float(uEdgeMaxMipMapLevel)).a < 0.004) {
+  if (combinedMaskLod(vUv, float(uEdgeMaxMipMapLevel)) < 0.004) {
     discard;
   }
 

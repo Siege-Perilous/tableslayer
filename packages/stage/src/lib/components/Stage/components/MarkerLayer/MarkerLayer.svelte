@@ -27,7 +27,12 @@
 
   const { props, isActive, display, grid, localScale = 1, mapRotation = 0 }: Props = $props();
 
-  const stage = getContext<{ mode: StageMode; hoveredMarkerId: string | null; pinnedMarkerIds: string[] }>('stage');
+  const stage = getContext<{
+    mode: StageMode;
+    hoveredMarkerId: string | null;
+    pinnedMarkerIds: string[];
+    markerClaimAt: number;
+  }>('stage');
   const { onMarkerAdded, onMarkerMoved, onMarkerSelected, onMarkerDoubleClick, onMarkerContextMenu, onMarkerHover } =
     getContext<Callbacks>('callbacks');
 
@@ -125,6 +130,8 @@
 
     // Did we click on an existing marker?
     if (closestMarker !== undefined) {
+      // Claim this pointer-down so shared gestures (fog-room double-tap) yield
+      stage.markerClaimAt = performance.now();
       tooltipWasOpenAtDown = selectedMarker?.id === closestMarker.id && !tooltipSuppressed;
       tooltipSuppressed = false;
       dragMoved = false;

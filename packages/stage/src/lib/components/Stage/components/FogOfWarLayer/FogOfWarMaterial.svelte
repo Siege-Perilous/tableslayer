@@ -7,6 +7,8 @@
   import type { Size } from '../../types';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { InitialState } from '../DrawingLayer/types';
+  import type { FogRoom } from '../../helpers/fogRooms';
+  import type { Point2 } from '../../helpers/mapSpace';
   import { PERFORMANCE_TIER_SETTINGS, StageMode, type PerformanceTier } from '../Stage/types';
   import fogVertexShader from '../../shaders/default.vert?raw';
   import fogFragmentShader from '../../shaders/Fog.frag?raw';
@@ -15,9 +17,10 @@
     props: FogOfWarLayerProps;
     mapSize: Size | null;
     toolSizePixels: number;
+    draftPoints: Point2[];
   }
 
-  const { props, mapSize, toolSizePixels }: Props = $props();
+  const { props, mapSize, toolSizePixels, draftPoints }: Props = $props();
 
   const stage = getContext<{ mode: StageMode; performanceTier: PerformanceTier }>('stage');
   let drawMaterial: DrawingMaterial;
@@ -41,10 +44,21 @@
     }
   });
 
+  // Keeps uRoomsTexture bound (fully transparent) when no rooms exist, so the
+  // no-rooms shader path behaves exactly like before rooms existed
+  const emptyRoomsTexture = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
+  emptyRoomsTexture.needsUpdate = true;
+
+  // Committed rooms (plus the in-progress draft polygon) are rasterized into a
+  // map-sized canvas and composited with the erasable mask in the fog shader
+  let roomsCanvas: OffscreenCanvas | null = null;
+  let roomsTexture: THREE.CanvasTexture<OffscreenCanvas> | null = null;
+
   // Material used for rendering the fog of war
   let fogMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uMaskTexture: { value: null },
+      uRoomsTexture: { value: emptyRoomsTexture },
       uTime: { value: 0.0 },
       uBaseColor: { value: new THREE.Color(props.noise.baseColor) },
       uFogColor1: { value: new THREE.Color(props.noise.fogColor1) },
@@ -123,6 +137,64 @@
     fogMaterial.uniforms.uTime.value += delta;
   });
 
+  // Serialized so remote stageProps root replacements with unchanged rooms
+  // cannot re-trigger rasterization (only the VALUE propagates)
+  const roomsKey = $derived(JSON.stringify(props.rooms));
+
+  // Re-rasterize rooms whenever the committed rooms, the in-progress draft,
+  // or the map size change. Enabled rooms fill the green channel and
+  // toggled-off rooms the red channel (drawn first so enabled rooms win
+  // overlaps, matching the shader's max()). Canvas y is down while mask UV v
+  // is up, so vertices are drawn at (1 - v) * height; CanvasTexture's default
+  // flipY un-flips on upload.
+  $effect(() => {
+    const rooms: FogRoom[] = JSON.parse(roomsKey);
+    const draft = draftPoints;
+    if (!mapSize) return;
+
+    const hasContent = draft.length >= 3 || rooms.some((room) => room.points.length >= 3);
+    if (!hasContent && !roomsCanvas) return;
+
+    const { width, height } = mapSize;
+    if (!roomsCanvas || roomsCanvas.width !== width || roomsCanvas.height !== height) {
+      roomsCanvas = new OffscreenCanvas(width, height);
+      roomsTexture?.dispose();
+      roomsTexture = new THREE.CanvasTexture(roomsCanvas);
+      // Mipmapped like the base mask so the fog edge feathering applies to room edges
+      roomsTexture.generateMipmaps = true;
+      roomsTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    }
+
+    const texture = roomsTexture;
+    const ctx = roomsCanvas.getContext('2d');
+    if (!texture || !ctx) return;
+    ctx.clearRect(0, 0, width, height);
+
+    const fillPolygon = (points: Point2[]) => {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x * width, (1 - points[0].y) * height);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x * width, (1 - points[i].y) * height);
+      }
+      ctx.closePath();
+      ctx.fill();
+    };
+
+    ctx.fillStyle = '#ff0000';
+    for (const room of rooms) {
+      if (!room.enabled && room.points.length >= 3) fillPolygon(room.points);
+    }
+    ctx.fillStyle = '#ffffff';
+    for (const room of rooms) {
+      if (room.enabled && room.points.length >= 3) fillPolygon(room.points);
+    }
+    if (draft.length >= 3) fillPolygon(draft);
+
+    texture.needsUpdate = true;
+    fogMaterial.uniforms.uRoomsTexture.value = texture;
+    fogMaterial.uniformsNeedUpdate = true;
+  });
+
   /**
    * Reverts the changes made to the fog of war
    */
@@ -182,6 +254,8 @@
 
   onDestroy(() => {
     fogMaterial.dispose();
+    roomsTexture?.dispose();
+    emptyRoomsTexture.dispose();
   });
 </script>
 

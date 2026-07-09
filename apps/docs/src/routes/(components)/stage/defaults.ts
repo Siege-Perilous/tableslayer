@@ -65,6 +65,7 @@ export const StageDefaultProps: StageProps = {
   },
   fogOfWar: {
     url: null,
+    rooms: [],
     opacity: {
       dm: 0.3,
       player: 0.9
