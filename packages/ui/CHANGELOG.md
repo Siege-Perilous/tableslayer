@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.2.5
+
+### Patch Changes
+
+- Deps
+
 ## 0.2.4
 
 ### Patch Changes
