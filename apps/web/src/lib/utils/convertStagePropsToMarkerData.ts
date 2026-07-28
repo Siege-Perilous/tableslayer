@@ -22,7 +22,7 @@ export const convertMarkerToDbFormat = (marker: Marker, sceneId: string): Partia
   return {
     id: marker.id,
     // Don't include sceneId in the returned object as it's passed separately
-    title: marker.title || 'Unnamed Marker',
+    title: marker.title ?? 'Unnamed Marker',
     label: marker.label,
     visibility: typeof marker.visibility === 'number' ? marker.visibility : 0,
     positionX: marker.position?.x || 0,
