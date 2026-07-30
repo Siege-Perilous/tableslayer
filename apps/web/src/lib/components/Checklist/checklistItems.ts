@@ -6,6 +6,7 @@ import {
   FogEraseInstructions,
   FogOpacityInstructions,
   FogResetInstructions,
+  FogRoomInstructions,
   LaunchPlayfieldInstructions,
   MapDefinedGridInstructions,
   MarkerVisibilityInstructions,
@@ -25,6 +26,7 @@ export type ChecklistItemId =
   | 'fog-opacity'
   | 'fog-erase'
   | 'fog-reset'
+  | 'fog-room'
   | 'weather'
   | 'measurement'
   | 'spell-effect'
@@ -69,6 +71,11 @@ export const checklistItems: ChecklistItem[] = [
     id: 'fog-reset',
     title: 'Reset the fog of war',
     instructions: FogResetInstructions
+  },
+  {
+    id: 'fog-room',
+    title: 'Create a fog room',
+    instructions: FogRoomInstructions
   },
   {
     id: 'weather',

@@ -16,6 +16,7 @@
     IconScreenShareOff,
     IconBorderSides,
     IconAdjustmentsHorizontal,
+    IconDots,
     IconPokerChip,
     IconPencil,
     IconPolygon,
@@ -52,10 +53,10 @@
     handleMapFit,
     errors = undefined,
     client,
-    keyboardPopoverId = null,
+    isCompact = false,
     onFogClear
   }: {
-    handleSelectActiveControl: (control: string) => string | null;
+    handleSelectActiveControl: (control: string, opts?: { toggle?: boolean }) => void;
     activeControl: string;
     stageProps: StageProps;
     party: SelectParty & Thumb;
@@ -67,7 +68,7 @@
     errors?: ZodIssue[] | undefined;
     stage: StageExports;
     client: SessionDocClient | null;
-    keyboardPopoverId?: string | null;
+    isCompact?: boolean;
     onFogClear?: () => void;
   } = $props();
 
@@ -130,6 +131,16 @@
       tooltip: "Open or pause the player's view",
       mapLayer: MapLayerType.None
     }
+  ];
+
+  // Play stays visible on compact toolbars; the rest collapse into the overflow menu
+  const popoverControls = sceneControlArray.filter((scene) => scene.id !== 'play');
+  const playControl = sceneControlArray.find((scene) => scene.id === 'play')!;
+
+  const drawingOverflowItems = [
+    { id: 'marker', icon: IconPokerChip, text: 'Marker', testId: 'markerToolButton' },
+    { id: 'annotation', icon: IconPencil, text: 'Draw', testId: undefined },
+    { id: 'light', icon: IconFlame, text: 'Light', testId: 'lightToolButton' }
   ];
 
   const eraseOptions = [
@@ -208,44 +219,101 @@
 
   const handleSelectedFogTool = (selected: string) => {
     const selectedOption = eraseOptions.find((option) => option.value === selected)!;
-    activeControl = 'erase';
-    queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.FogOfWar, 'control');
+    handleSelectActiveControl('erase', { toggle: false });
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'type'], selectedOption.toolType, 'control');
     queuePropertyUpdate(stageProps, ['fogOfWar', 'tool', 'mode'], selectedOption.drawMode, 'control');
   };
 
-  // Track which popover is currently open
-  let openPopoverId = $state<string | null>(null);
+  // activeControl (owned by the page) is the single source of truth: button
+  // highlights and popover visibility all derive from it
+  const handleToolPopoverChange = (id: string) => (open: boolean) => {
+    if (open !== (activeControl === id)) handleSelectActiveControl(id);
+  };
 
-  // React to keyboard-triggered popover changes
-  $effect(() => {
-    if (keyboardPopoverId !== undefined) {
-      openPopoverId = keyboardPopoverId;
-    }
-  });
+  // Overflow menu: overflowListOpen only tracks whether the list view is
+  // showing; an active popover tool keeps the popover open in controls view
+  let overflowListOpen = $state(false);
+  const overflowToolActive = $derived(popoverControls.some((scene) => scene.id === activeControl));
+  const overflowAnyActive = $derived(
+    overflowToolActive || drawingOverflowItems.some((item) => item.id === activeControl)
+  );
 
-  // Also react to activeControl changes to close popovers when tools are activated
-  $effect(() => {
-    if (['erase', 'marker', 'light', 'annotation', 'measurement'].includes(activeControl)) {
-      openPopoverId = null;
-    }
-  });
-
-  // Handle popover state changes (from trigger click, outside click, etc.)
-  const handlePopoverOpenChange = (sceneId: string) => (open: boolean) => {
+  const handleOverflowOpenChange = (open: boolean) => {
     if (open) {
-      openPopoverId = sceneId;
-      activeControl = sceneId;
+      overflowListOpen = true;
     } else {
-      if (openPopoverId === sceneId) {
-        openPopoverId = null;
-      }
-      if (activeControl === sceneId) {
-        activeControl = 'none';
-      }
+      overflowListOpen = false;
+      if (overflowToolActive) handleSelectActiveControl(activeControl);
+    }
+  };
+
+  // Popover tools reopen on the next task: the popover must close and remount
+  // so floating-ui measures the controls view (it only positions on open), and
+  // the reopen must happen after the click event so the popover's global
+  // outside-click handler doesn't see the detached list item and self-close
+  const handleOverflowItemSelect = (id: string) => {
+    overflowListOpen = false;
+    const isPopoverTool = popoverControls.some((scene) => scene.id === id);
+    if (isPopoverTool && activeControl !== id) {
+      setTimeout(() => handleSelectActiveControl(id), 0);
+    } else {
+      handleSelectActiveControl(id);
     }
   };
 </script>
+
+{#snippet toolControls(controlId: string)}
+  {#if controlId === 'grid'}
+    <GridControls
+      {stageProps}
+      {handleSelectActiveControl}
+      {activeControl}
+      {party}
+      {gameSession}
+      {stage}
+      {selectedScene}
+      {activeSceneId}
+      {handleMapFill}
+      {handleMapFit}
+      {errors}
+    />
+  {:else if controlId === 'fog'}
+    <FogControls {stage} {stageProps} {onFogClear} />
+  {:else if controlId === 'map'}
+    <MapControls
+      {stage}
+      {stageProps}
+      {handleSelectActiveControl}
+      {activeControl}
+      {party}
+      {selectedScene}
+      {activeSceneId}
+      {handleMapFill}
+      {handleMapFit}
+      {errors}
+      {client}
+    />
+  {:else if controlId === 'weather'}
+    <WeatherControls {stageProps} {errors} />
+  {:else if controlId === 'edge'}
+    <EdgeControls {stageProps} {errors} {party} />
+  {:else if controlId === 'effects'}
+    <EffectsControls {stageProps} {errors} {party} />
+  {/if}
+{/snippet}
+
+{#snippet overflowItem(id: string, ItemIcon: typeof IconMap, text: string, testId: string | undefined)}
+  <button
+    data-testid={testId}
+    class="sceneControls__layer sceneControls__layer--overflow {activeControl === id
+      ? 'sceneControls__layer--isActive'
+      : ''}"
+    onclick={() => handleOverflowItemSelect(id)}
+  >
+    <Icon Icon={ItemIcon} size="1.5rem" />
+    <span class="sceneControls__overflowLabel">{text}</span>
+  </button>
+{/snippet}
 
 <ColorMode mode="dark">
   <div class="sceneControls">
@@ -253,12 +321,8 @@
       <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
         {#snippet children()}
           <button
-            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.FogOfWar &&
-              'sceneControls__layer--isActive'}"
-            onclick={() => {
-              const newPopoverId = handleSelectActiveControl('erase');
-              openPopoverId = newPopoverId;
-            }}
+            class="sceneControls__layer {activeControl === 'erase' ? 'sceneControls__layer--isActive' : ''}"
+            onclick={() => handleSelectActiveControl('erase')}
           >
             <Icon Icon={selectedFogTool.icon} size="1.5rem" />
           </button>
@@ -286,12 +350,8 @@
         <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
           {#snippet children()}
             <button
-              class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Measurement &&
-                'sceneControls__layer--isActive'}"
-              onclick={() => {
-                const newPopoverId = handleSelectActiveControl('measurement');
-                openPopoverId = newPopoverId;
-              }}
+              class="sceneControls__layer {activeControl === 'measurement' ? 'sceneControls__layer--isActive' : ''}"
+              onclick={() => handleSelectActiveControl('measurement')}
             >
               <Icon Icon={IconRuler} size="1.5rem" stroke={2} />
             </button>
@@ -307,7 +367,7 @@
               {party}
               {gameSession}
               {selectedScene}
-              onSelectedChange={() => handleSelectActiveControl('measurement')}
+              onSelectedChange={() => handleSelectActiveControl('measurement', { toggle: false })}
             />
           {/snippet}
           {#snippet toolTipContent()}
@@ -316,148 +376,160 @@
         </ToolTip>
       </div>
     </div>
-    <div class="sceneControls__item sceneControls__item--marker">
-      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
-        {#snippet children()}
-          <button
-            data-testid="markerToolButton"
-            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Marker &&
-              'sceneControls__layer--isActive'}"
-            onclick={() => {
-              const newPopoverId = handleSelectActiveControl('marker');
-              openPopoverId = newPopoverId;
-            }}
+    {#if !isCompact}
+      <div class="sceneControls__item sceneControls__item--marker">
+        <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+          {#snippet children()}
+            <button
+              data-testid="markerToolButton"
+              class="sceneControls__layer {activeControl === 'marker' ? 'sceneControls__layer--isActive' : ''}"
+              onclick={() => handleSelectActiveControl('marker')}
+            >
+              <Icon Icon={IconPokerChip} size="1.5rem" />
+              <span class="sceneControls__layerText">Marker</span>
+            </button>
+          {/snippet}
+          {#snippet toolTipContent()}
+            Place markers to note points of interest on the map with notes.
+          {/snippet}
+        </ToolTip>
+      </div>
+      <div class="sceneControls__item sceneControls__item--annotation">
+        <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+          {#snippet children()}
+            <button
+              class="sceneControls__layer {activeControl === 'annotation' ? 'sceneControls__layer--isActive' : ''}"
+              onclick={() => handleSelectActiveControl('annotation')}
+            >
+              <Icon Icon={IconPencil} size="1.5rem" />
+              <span class="sceneControls__layerText">Draw</span>
+            </button>
+          {/snippet}
+          {#snippet toolTipContent()}
+            Draw freehand annotations on the map
+          {/snippet}
+        </ToolTip>
+      </div>
+      <div class="sceneControls__item sceneControls__item--light">
+        <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+          {#snippet children()}
+            <button
+              data-testid="lightToolButton"
+              class="sceneControls__layer {activeControl === 'light' ? 'sceneControls__layer--isActive' : ''}"
+              onclick={() => handleSelectActiveControl('light')}
+            >
+              <Icon Icon={IconFlame} size="1.5rem" />
+              <span class="sceneControls__layerText">Light</span>
+            </button>
+          {/snippet}
+          {#snippet toolTipContent()}
+            Place light sources on the map for atmospheric effects.
+          {/snippet}
+        </ToolTip>
+      </div>
+      {#each popoverControls as scene}
+        <div class="sceneControls__item">
+          <Popover
+            positioning={{ placement: 'bottom', gutter: 8 }}
+            isOpen={activeControl === scene.id}
+            onIsOpenChange={handleToolPopoverChange(scene.id)}
           >
-            <Icon Icon={IconPokerChip} size="1.5rem" />
-            <span class="sceneControls__layerText">Marker</span>
-          </button>
-        {/snippet}
-        {#snippet toolTipContent()}
-          Place markers to note points of interest on the map with notes.
-        {/snippet}
-      </ToolTip>
-    </div>
-    <div class="sceneControls__item sceneControls__item--annotation">
-      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
-        {#snippet children()}
-          <button
-            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Annotation &&
-              'sceneControls__layer--isActive'}"
-            onclick={() => {
-              const newPopoverId = handleSelectActiveControl('annotation');
-              openPopoverId = newPopoverId;
-            }}
-          >
-            <Icon Icon={IconPencil} size="1.5rem" />
-            <span class="sceneControls__layerText">Draw</span>
-          </button>
-        {/snippet}
-        {#snippet toolTipContent()}
-          Draw freehand annotations on the map
-        {/snippet}
-      </ToolTip>
-    </div>
-    <div class="sceneControls__item sceneControls__item--light">
-      <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
-        {#snippet children()}
-          <button
-            data-testid="lightToolButton"
-            class="sceneControls__layer {stageProps.activeLayer === MapLayerType.Light &&
-              'sceneControls__layer--isActive'}"
-            onclick={() => {
-              const newPopoverId = handleSelectActiveControl('light');
-              openPopoverId = newPopoverId;
-            }}
-          >
-            <Icon Icon={IconFlame} size="1.5rem" />
-            <span class="sceneControls__layerText">Light</span>
-          </button>
-        {/snippet}
-        {#snippet toolTipContent()}
-          Place light sources on the map for atmospheric effects.
-        {/snippet}
-      </ToolTip>
-    </div>
-    {#each sceneControlArray as scene}
-      <!-- Regular popover controls for other tools -->
-      <div class="sceneControls__item">
+            {#snippet trigger()}
+              <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+                {#snippet children()}
+                  <div class="sceneControls__trigger">
+                    <div
+                      class="sceneControls__layer {activeControl === scene.id ? 'sceneControls__layer--isActive' : ''}"
+                    >
+                      <Icon Icon={scene.icon} size="1.5rem" stroke={2} class="sceneControls__layerBtn" />
+                      <span class="sceneControls__layerText">
+                        {scene.text}
+                      </span>
+                    </div>
+                  </div>
+                {/snippet}
+                {#snippet toolTipContent()}
+                  {scene.tooltip}
+                {/snippet}
+              </ToolTip>
+            {/snippet}
+            {#snippet content()}
+              {@render toolControls(scene.id)}
+            {/snippet}
+          </Popover>
+        </div>
+      {/each}
+    {:else}
+      <div class="sceneControls__item sceneControls__item--overflow">
         <Popover
           positioning={{ placement: 'bottom', gutter: 8 }}
-          isOpen={openPopoverId === scene.id}
-          onIsOpenChange={handlePopoverOpenChange(scene.id)}
+          isOpen={overflowListOpen || overflowToolActive}
+          onIsOpenChange={handleOverflowOpenChange}
         >
           {#snippet trigger()}
-            <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
-              {#snippet children()}
-                <div class="sceneControls__trigger">
-                  <div
-                    class="sceneControls__layer {openPopoverId === scene.id ? 'sceneControls__layer--isActive' : ''}"
-                  >
-                    <Icon
-                      Icon={scene.id === 'play'
-                        ? party.gameSessionIsPaused
-                          ? IconScreenShareOff
-                          : IconScreenShare
-                        : scene.icon}
-                      size="1.5rem"
-                      stroke={2}
-                      class="sceneControls__layerBtn"
-                    />
-                    <span class="sceneControls__layerText">
-                      {scene.text}
-                    </span>
-                  </div>
-                </div>
-              {/snippet}
-              {#snippet toolTipContent()}
-                {scene.tooltip}
-              {/snippet}
-            </ToolTip>
+            <div class="sceneControls__trigger">
+              <div
+                data-testid="sceneControlsOverflowButton"
+                class="sceneControls__layer {overflowAnyActive ? 'sceneControls__layer--isActive' : ''}"
+              >
+                <Icon Icon={IconDots} size="1.5rem" stroke={2} />
+              </div>
+            </div>
           {/snippet}
           {#snippet content()}
-            {#if scene.id === 'grid'}
-              <GridControls
-                {stageProps}
-                {handleSelectActiveControl}
-                {activeControl}
-                {party}
-                {gameSession}
-                {stage}
-                {selectedScene}
-                {activeSceneId}
-                {handleMapFill}
-                {handleMapFit}
-                {errors}
-              />
-            {:else if scene.id === 'fog'}
-              <FogControls {stage} {stageProps} {onFogClear} />
-            {:else if scene.id === 'map'}
-              <MapControls
-                {stage}
-                {stageProps}
-                {handleSelectActiveControl}
-                {activeControl}
-                {party}
-                {selectedScene}
-                {activeSceneId}
-                {handleMapFill}
-                {handleMapFit}
-                {errors}
-                {client}
-              />
-            {:else if scene.id === 'play'}
-              <PlayControls {party} {selectedScene} {activeSceneId} {client} />
-            {:else if scene.id === 'weather'}
-              <WeatherControls {stageProps} {errors} />
-            {:else if scene.id === 'edge'}
-              <EdgeControls {stageProps} {errors} {party} />
-            {:else if scene.id === 'effects'}
-              <EffectsControls {stageProps} {errors} {party} />
+            {#if overflowToolActive && !overflowListOpen}
+              {@render toolControls(activeControl)}
+            {:else}
+              <div class="sceneControls__overflowList">
+                {#each drawingOverflowItems as item}
+                  {@render overflowItem(item.id, item.icon, item.text, item.testId)}
+                {/each}
+                {#each popoverControls as scene}
+                  {@render overflowItem(scene.id, scene.icon, scene.text, undefined)}
+                {/each}
+              </div>
             {/if}
           {/snippet}
         </Popover>
       </div>
-    {/each}
+    {/if}
+    <div class="sceneControls__item">
+      <Popover
+        positioning={{ placement: 'bottom', gutter: 8 }}
+        isOpen={activeControl === playControl.id}
+        onIsOpenChange={handleToolPopoverChange(playControl.id)}
+      >
+        {#snippet trigger()}
+          <ToolTip positioning={{ placement: 'bottom' }} openDelay={500} closeOnPointerDown disableHoverableContent>
+            {#snippet children()}
+              <div class="sceneControls__trigger">
+                <div
+                  class="sceneControls__layer {activeControl === playControl.id
+                    ? 'sceneControls__layer--isActive'
+                    : ''}"
+                >
+                  <Icon
+                    Icon={party.gameSessionIsPaused ? IconScreenShareOff : IconScreenShare}
+                    size="1.5rem"
+                    stroke={2}
+                    class="sceneControls__layerBtn"
+                  />
+                  <span class="sceneControls__layerText">
+                    {playControl.text}
+                  </span>
+                </div>
+              </div>
+            {/snippet}
+            {#snippet toolTipContent()}
+              {playControl.tooltip}
+            {/snippet}
+          </ToolTip>
+        {/snippet}
+        {#snippet content()}
+          <PlayControls {party} {selectedScene} {activeSceneId} {client} />
+        {/snippet}
+      </Popover>
+    </div>
   </div>
 </ColorMode>
 
@@ -545,6 +617,25 @@
   .sceneControls__trigger {
     display: flex;
     align-items: center;
+  }
+  /* Tool controls panels are taller than a phone viewport; keep them scrollable */
+  .sceneControls__item--overflow :global(.popContent) {
+    max-height: 50dvh;
+    overflow-y: auto;
+  }
+  .sceneControls__overflowList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 10rem;
+  }
+  .sceneControls__layer--overflow {
+    width: 100%;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .sceneControls__overflowLabel {
+    white-space: nowrap;
   }
 
   @container stageWrapper (max-width: 1120px) {

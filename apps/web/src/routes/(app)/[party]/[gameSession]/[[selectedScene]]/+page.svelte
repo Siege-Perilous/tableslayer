@@ -348,11 +348,9 @@
   let stageIsLoading = $state(true);
   let isCursorInScene = $state(false);
   let activeControl = $state('none');
-  let keyboardPopoverId = $state<string | null>(null);
   let selectedMarkerId: string | undefined = $state();
   let selectedLightId: string | undefined = $state();
   let selectedAnnotationId: string | undefined = $state();
-  let activeElement: HTMLElement | null = $state(null);
   let innerWidth: number = $state(1000);
   let hoveredMarker: HoveredMarker | null = $state(null);
 
@@ -528,7 +526,9 @@
   // Tool selection
   // ---------------------------------------------------------------------------
 
-  const handleSelectActiveControl = (control: string, openPopover?: string | null): string | null => {
+  const handleSelectActiveControl = (control: string, opts: { toggle?: boolean } = {}): void => {
+    if (control === activeControl && opts.toggle === false) return;
+
     if (activeControl === 'light') selectedLightId = undefined;
 
     if (control === activeControl) {
@@ -537,7 +537,7 @@
       if (control === 'annotation') {
         queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
       }
-      return null;
+      return;
     }
 
     activeControl = control;
@@ -569,8 +569,6 @@
       queuePropertyUpdate(stageProps, ['activeLayer'], MapLayerType.None, 'control');
       queuePropertyUpdate(stageProps, ['annotations', 'activeLayer'], null, 'control');
     }
-
-    return openPopover !== undefined ? openPopover : control;
   };
 
   // Auto-manage annotation layer activation (create-on-first-use)
@@ -608,6 +606,13 @@
     if (stageProps.activeLayer === MapLayerType.Marker && activeControl !== 'marker') {
       activeControl = 'marker';
       markersPane.expand();
+    }
+  });
+
+  // MeasurementControls writes activeLayer directly; keep the toolbar highlight in sync
+  $effect(() => {
+    if (stageProps.activeLayer === MapLayerType.Measurement && activeControl !== 'measurement') {
+      activeControl = 'measurement';
     }
   });
 
@@ -1048,6 +1053,7 @@
   const onFogRoomAdd = (points: { x: number; y: number }[]) => {
     const rooms = [...stageProps.fogOfWar.rooms, { id: crypto.randomUUID(), points, enabled: true }];
     queuePropertyUpdate(stageProps, ['fogOfWar', 'rooms'], rooms, 'control');
+    trackChecklistItemLocal('fog-room');
   };
 
   // Room toggling works from any layer, so a right-click on a marker inside a
@@ -1265,6 +1271,7 @@
   // Keyboard -------------------------------------------------------------------
 
   const handleKeydown = (event: KeyboardEvent) => {
+    const activeElement = document.activeElement as HTMLElement | null;
     if (
       activeElement &&
       (activeElement.tagName === 'INPUT' ||
@@ -1299,8 +1306,7 @@
       }
     }
 
-    const previousControl = activeControl;
-    const newActiveControl = handleKeyCommands(
+    activeControl = handleKeyCommands(
       event,
       stageProps,
       activeControl,
@@ -1308,14 +1314,6 @@
       handleSelectActiveControl,
       clearFogAndRooms
     );
-    activeControl = newActiveControl;
-
-    if (
-      previousControl !== newActiveControl ||
-      ['erase', 'marker', 'annotation', 'measurement', 'none'].includes(newActiveControl)
-    ) {
-      keyboardPopoverId = null;
-    }
   };
 
   // Drawing slider handlers - bound from AnnotationManager
@@ -1376,11 +1374,7 @@
 
 <!-- Every new pointer gesture starts a new undo step (capture phase: fires before
      stage/panel handlers write, so the previous capture group closes first) -->
-<svelte:document
-  onkeydown={handleKeydown}
-  onpointerdowncapture={() => session.client?.stopCapturing()}
-  bind:activeElement
-/>
+<svelte:document onkeydown={handleKeydown} onpointerdowncapture={() => session.client?.stopCapturing()} />
 <svelte:window bind:innerWidth />
 <Head title={gameSession.name} description={`${gameSession.name} on Table Slayer`} />
 
@@ -1538,7 +1532,7 @@
           party={currentParty}
           {gameSession}
           client={session.client}
-          {keyboardPopoverId}
+          isCompact={isMobile}
           onFogClear={clearFogAndRooms}
         />
         <SceneZoom {stage} {handleSceneFit} {handleMapFill} {stageProps} />
