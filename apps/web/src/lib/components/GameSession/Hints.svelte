@@ -3,19 +3,29 @@
   let { stageProps }: { stageProps: StageProps } = $props();
   const activeLayer = $derived(stageProps.activeLayer);
   const isPolygonFogTool = $derived(stageProps.fogOfWar.tool.type === ToolType.Polygon);
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 </script>
 
 <div class="hints">
   {#if activeLayer === 1}
     {#if isPolygonFogTool}
-      Click to outline a fog room. <span>Enter</span>
-      completes it,
-      <span>Esc</span>
-      cancels.
-      <span>Right-click</span>
-      toggles a room,
-      <span>Delete</span>
-      while hovering removes it.
+      {#if isTouch}
+        Tap to outline a fog room. <span>Double-tap</span>
+        completes it.
+        <span>Double-tap</span>
+        a room to toggle it,
+        <span>press and hold</span>
+        to remove it.
+      {:else}
+        Click to outline a fog room. <span>Enter</span>
+        completes it,
+        <span>Esc</span>
+        cancels.
+        <span>Right-click</span>
+        toggles a room,
+        <span>Delete</span>
+        while hovering removes it.
+      {/if}
     {:else}
       Click and drag to reveal the fog. <span>F</span>
       to clear,
@@ -60,5 +70,17 @@
     padding: 0 4px;
     display: inline-block;
     color: var(--fg);
+  }
+
+  /* On narrow stages the hint wraps, so anchor it to the bottom away from the toolbar */
+  @container stageWrapper (max-width: 768px) {
+    .hints {
+      white-space: normal;
+      text-wrap: balance;
+      width: 100%;
+      text-align: center;
+      top: auto;
+      bottom: 3.5rem;
+    }
   }
 </style>
