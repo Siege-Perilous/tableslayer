@@ -30,8 +30,6 @@
     }
   });
 
-  const completedCount = $derived(checklistItems.filter((item) => completedItems.includes(item.id)).length);
-
   const handleToggleExpand = (itemId: ChecklistItemId) => {
     expandedItemId = expandedItemId === itemId ? null : itemId;
   };
@@ -45,9 +43,6 @@
   <div class="checklist__header">
     <div class="checklist__headerContent">
       <h3 class="checklist__title">Learn Table Slayer in 5 minutes</h3>
-      <span class="checklist__progress" data-testid="checklistProgress">
-        {completedCount} / {checklistItems.length}
-      </span>
     </div>
     <button
       type="button"
@@ -103,14 +98,6 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0;
-  }
-
-  .checklist__progress {
-    font-size: 0.75rem;
-    color: var(--fgMuted);
-    background: var(--contrastLow);
-    padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-2);
   }
 
   .checklist__closeButton {

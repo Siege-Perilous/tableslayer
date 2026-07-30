@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   activateMarkerTool,
   clickCanvasCenter,
@@ -7,11 +7,12 @@ import {
   waitForSceneEditor
 } from './helpers/test-helpers';
 
-// Helper to extract progress count from text like "5 / 18"
-const getProgressCount = async (progress: Locator): Promise<number> => {
-  const text = await progress.textContent();
-  const match = text?.match(/(\d+)\s*\/\s*\d+/);
-  return match ? parseInt(match[1], 10) : 0;
+// Helper to count completed items (checkboxes showing a check icon)
+const getCompletedCount = async (page: Page): Promise<number> => {
+  return page
+    .getByTestId('checklistItemCheckbox')
+    .filter({ has: page.locator('svg') })
+    .count();
 };
 
 test.describe('Checklist feature tour', () => {
@@ -37,13 +38,8 @@ test.describe('Checklist feature tour', () => {
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
-    // Verify progress indicator is visible and shows format "X / Y"
-    const progress = page.getByTestId('checklistProgress');
-    await expect(progress).toBeVisible();
-    await expect(progress).toContainText('/');
-
-    // Get the initial progress count
-    const initialCount = await getProgressCount(progress);
+    // Get the initial completed item count
+    const initialCount = await getCompletedCount(page);
 
     // The first uncompleted item is auto-expanded when the checklist opens
     const instructions = page.locator('.checklist__instructions').first();
@@ -79,9 +75,9 @@ test.describe('Checklist feature tour', () => {
       }
     }
 
-    // If we clicked an uncompleted checkbox, verify progress increased
+    // If we clicked an uncompleted checkbox, verify the completed count increased
     if (clickedCheckbox) {
-      const newCount = await getProgressCount(progress);
+      const newCount = await getCompletedCount(page);
       expect(newCount).toBeGreaterThan(initialCount);
     }
   });
@@ -188,10 +184,6 @@ test.describe('Checklist feature tour', () => {
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
-    // Get initial progress count
-    const progress = page.getByTestId('checklistProgress');
-    await expect(progress).toBeVisible();
-
     // Press 'T' to activate measurement tool
     await page.keyboard.press('t');
 
@@ -224,9 +216,8 @@ test.describe('Checklist feature tour', () => {
     const checklist = page.getByTestId('checklist');
     await expect(checklist).toBeVisible({ timeout: 10000 });
 
-    // Get current progress count
-    const progress = page.getByTestId('checklistProgress');
-    const initialCount = await getProgressCount(progress);
+    // Get current completed item count
+    const initialCount = await getCompletedCount(page);
 
     // Find and click an uncompleted checkbox
     const checkboxes = page.getByTestId('checklistItemCheckbox');
@@ -243,9 +234,9 @@ test.describe('Checklist feature tour', () => {
       }
     }
 
-    // If we clicked a checkbox, verify the progress increased
+    // If we clicked a checkbox, verify the completed count increased
     if (clickedItemIndex >= 0) {
-      const newCount = await getProgressCount(progress);
+      const newCount = await getCompletedCount(page);
       expect(newCount).toBeGreaterThan(initialCount);
 
       // Wait for the mutation to persist
@@ -266,7 +257,7 @@ test.describe('Checklist feature tour', () => {
       await expect(checklist).toBeVisible({ timeout: 10000 });
 
       // Verify completion persisted - count should be at least what it was after clicking
-      const persistedCount = await getProgressCount(progress);
+      const persistedCount = await getCompletedCount(page);
       expect(persistedCount).toBeGreaterThanOrEqual(newCount);
 
       // Verify the item we clicked still shows as completed

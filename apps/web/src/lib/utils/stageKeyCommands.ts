@@ -63,7 +63,7 @@ export function handleKeyCommands(
       deleteRoomAtCursor: () => void;
     };
   },
-  handleSelectActiveControl: (control: string) => string | null,
+  handleSelectActiveControl: (control: string) => void,
   clearFog?: () => void
 ): string {
   const { activeLayer, fogOfWar } = stageProps;

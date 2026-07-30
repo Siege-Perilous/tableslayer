@@ -4,6 +4,7 @@ export { default as ChangeSceneInstructions } from './ChangeSceneInstructions.sv
 export { default as FogEraseInstructions } from './FogEraseInstructions.svelte';
 export { default as FogOpacityInstructions } from './FogOpacityInstructions.svelte';
 export { default as FogResetInstructions } from './FogResetInstructions.svelte';
+export { default as FogRoomInstructions } from './FogRoomInstructions.svelte';
 export { default as LaunchPlayfieldInstructions } from './LaunchPlayfieldInstructions.svelte';
 export { default as MapDefinedGridInstructions } from './MapDefinedGridInstructions.svelte';
 export { default as MarkerVisibilityInstructions } from './MarkerVisibilityInstructions.svelte';
