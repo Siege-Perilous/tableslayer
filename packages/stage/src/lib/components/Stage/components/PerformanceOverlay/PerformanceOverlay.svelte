@@ -125,6 +125,10 @@
         <span class="perfOverlay__label">Geometries</span>
         <span class="perfOverlay__value">{metrics.geometries}</span>
       </div>
+      <div class="perfOverlay__row">
+        <span class="perfOverlay__label">Programs</span>
+        <span class="perfOverlay__value">{metrics.programs}</span>
+      </div>
     </div>
 
     {#if disabledLayers.length > 0}

@@ -1,6 +1,7 @@
 import { decodeRLE } from '@tableslayer/ui';
 import * as THREE from 'three';
 import { peekRLEDimensions } from '../components/DrawingLayer/types';
+import { noClipPlanes } from './clippingPlaneStore.svelte';
 import { displayToMapSpace, type MapTransform } from './mapSpace';
 
 /**
@@ -90,7 +91,7 @@ export const convertMaskToMapSpace = (
   // render loop; save and restore around the offscreen render
   const previousTarget = renderer.getRenderTarget();
   const previousClippingPlanes = renderer.clippingPlanes;
-  renderer.clippingPlanes = [];
+  renderer.clippingPlanes = noClipPlanes();
   renderer.setRenderTarget(target);
   renderer.clear();
   renderer.render(scene, camera);

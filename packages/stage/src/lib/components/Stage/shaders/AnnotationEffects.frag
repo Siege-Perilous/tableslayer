@@ -1,8 +1,14 @@
 precision highp float;
 
+// The effect is chosen at compile time (AnnotationMaterial sets the define) so
+// each variant only compiles its own code. The Windows D3D compiler took ~90s
+// on the all-in-one version; keep effect dispatch out of uniforms.
+#ifndef EFFECT_TYPE
+#define EFFECT_TYPE 0
+#endif
+
 uniform sampler2D uMaskTexture;
 uniform float uTime;
-uniform int uEffectType;
 uniform vec3 uBaseColor;
 uniform float uOpacity;
 uniform float uSpeed;
@@ -202,6 +208,7 @@ float getEdgeDistortion(vec2 uv, vec2 texSize) {
   return clamp(edgeIntensity, 0.0, 1.0);
 }
 
+#if EFFECT_TYPE == 1
 // Helper: get fire color from intensity
 vec3 getFireColor(float t) {
   vec3 black = vec3(0.1, 0.0, 0.0);
@@ -273,6 +280,7 @@ vec4 fireEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(color, alpha);
 }
+#endif
 
 // Space tear - dark void with stars (top-down view)
 // Hash function for consistent random values per grid cell
@@ -288,6 +296,7 @@ vec2 hash2(vec2 p) {
   );
 }
 
+#if EFFECT_TYPE == 2
 // Generate a single star layer with grid-based placement
 // Returns: x = star intensity, yzw = star color
 vec4 starLayer(vec2 uv, float time, float gridSize, float speed, float brightness, float twinkleSpeed) {
@@ -424,7 +433,9 @@ vec4 spaceTearEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(color, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 3
 // Water effect - proper ripples using sum of sine waves with lighting
 vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
   float mask = getVolumeMask(uv, texSize, time, 2.0, 0.1, 1.0);
@@ -617,7 +628,9 @@ vec4 waterEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(finalColor, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 4
 // Helper: get magic color from intensity (uses base color)
 vec3 getMagicColor(float t) {
   vec3 darkColor = uBaseColor * 0.2;
@@ -701,7 +714,9 @@ vec4 magicEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(color, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 5
 // Grease effect - murky brown liquid with depth (same technique as water)
 vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
   float mask = getVolumeMask(uv, texSize, time, 2.0, 0.1, 0.8);
@@ -850,7 +865,9 @@ vec4 greaseEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(finalColor, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 6
 // Ice effect - frosted glass look that lets map show through
 vec4 iceEffect(vec2 uv, vec2 texSize, float time) {
   float mask = getVolumeMask(uv, texSize, time, 1.2, 0.05, 0.3);
@@ -1019,7 +1036,9 @@ vec4 iceEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(finalColor, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 7
 // Voronoi cell-boundary distance - boundaries read as straight connective strands
 float webMesh(vec2 p, float seed) {
   vec2 cellId = floor(p);
@@ -1149,7 +1168,9 @@ vec4 webEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(color, alpha);
 }
+#endif
 
+#if EFFECT_TYPE == 8
 // One vine segment seen from above: a tapering ribbon between startR and endR from the base.
 // centerAngle is the strand's centerline direction at this radius; returns x = body, y = ridge crest
 vec2 vineSegment(float r, float phi, float startR, float endR, float centerAngle, float baseWidth, float seed, float grain) {
@@ -1349,6 +1370,7 @@ vec4 entangleEffect(vec2 uv, vec2 texSize, float time) {
 
   return vec4(color, alpha);
 }
+#endif
 
 void main() {
   // Clipping planes
@@ -1372,6 +1394,7 @@ void main() {
     discard;
   }
 
+#if EFFECT_TYPE == 1 || EFFECT_TYPE == 2 || EFFECT_TYPE == 4
   // === OUTER SHADOW - makes effects feel inset (color burn style) ===
   // Sample mask at increasing mip levels to get expanded/blurred versions
   // Higher mip = more blur = wider spread
@@ -1405,36 +1428,40 @@ void main() {
   // Combine with heavier weight near the edge (color burn effect)
   float shadowIntensity = innerZone * 1.0 + midInnerZone * 0.7 + midOuterZone * 0.4 + outerZone * 0.2;
   shadowIntensity *= uBorder * uOpacity;
+#else
+  // Plain color, water, grease, ice, web and entangle paint their own depth inside the mask
+  float shadowIntensity = 0.0;
+#endif
 
   vec4 result;
 
-  if(uEffectType == 1) {
-    result = fireEffect(vUv, texSize, time);
-  } else if(uEffectType == 2) {
-    result = spaceTearEffect(vUv, texSize, time);
-  } else if(uEffectType == 3) {
-    result = waterEffect(vUv, texSize, time);
-  } else if(uEffectType == 4) {
-    result = magicEffect(vUv, texSize, time);
-  } else if(uEffectType == 5) {
-    result = greaseEffect(vUv, texSize, time);
-  } else if(uEffectType == 6) {
-    result = iceEffect(vUv, texSize, time);
-  } else if(uEffectType == 7) {
-    result = webEffect(vUv, texSize, time);
-  } else if(uEffectType == 8) {
-    result = entangleEffect(vUv, texSize, time);
-  } else {
-    // No effect - solid color
-    float mask = texture2D(uMaskTexture, vUv).a;
-    if(mask < 0.001 && shadowIntensity < 0.001) discard;
-    result = vec4(uBaseColor, mask * uOpacity);
-  }
+#if EFFECT_TYPE == 1
+  result = fireEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 2
+  result = spaceTearEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 3
+  result = waterEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 4
+  result = magicEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 5
+  result = greaseEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 6
+  result = iceEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 7
+  result = webEffect(vUv, texSize, time);
+#elif EFFECT_TYPE == 8
+  result = entangleEffect(vUv, texSize, time);
+#else
+  // No effect - solid color
+  float mask = texture2D(uMaskTexture, vUv).a;
+  if(mask < 0.001) discard;
+  result = vec4(uBaseColor, mask * uOpacity);
+#endif
 
-  // Blend outer shadow under the effect (skip for no effect, water, grease, ice - they paint their own depth inside the mask)
+  // Blend outer shadow under the effect (zero for effects without one)
   // Shadow is dark, high opacity near edge for color burn effect
   vec3 shadowColor = vec3(0.0, 0.0, 0.0);
-  float shadowAlpha = (uEffectType == 0 || uEffectType == 3 || uEffectType == 5 || uEffectType == 6 || uEffectType == 7 || uEffectType == 8) ? 0.0 : shadowIntensity * 0.85; // No shadow for plain color/water/grease/ice/web/entangle
+  float shadowAlpha = shadowIntensity * 0.85;
 
   // If we have shadow but no effect, show just the shadow
   if(result.a < 0.001 && shadowAlpha > 0.001) {

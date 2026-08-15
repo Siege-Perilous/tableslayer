@@ -4,6 +4,17 @@ import type { SceneLayerProps } from '../components/Scene/types';
 import type { DisplayProps } from '../components/Stage/types';
 import type { Size } from '../types';
 
+// Four planes pushed far enough away that nothing clips. Renderer clipping must
+// always keep the 4-plane shape: three.js keys its program cache on the plane
+// count and destroys unused programs, so flipping to [] relinks every material
+// (~90s on Windows/ANGLE for the annotation shader). Use this instead of [].
+export const noClipPlanes = (): THREE.Plane[] => [
+  new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9),
+  new THREE.Plane(new THREE.Vector3(1, 0, 0), 1e9),
+  new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9),
+  new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e9)
+];
+
 export const clippingPlaneStore: { value: THREE.Plane[] } = $state({
   value: [
     new THREE.Plane(new THREE.Vector3(-1, 0, 0)),
@@ -50,15 +61,9 @@ const rectClippingPlanes = (
 
 export function updateClippingPlanes(sceneProps: SceneLayerProps, displayProps: DisplayProps, disabled = false) {
   // When disabled (DM view in MapDefined mode shows the whole map), keep the
-  // 4-plane array shape — shader uniforms and the thumbnail restore path
-  // depend on it — but push the planes far enough away that nothing clips
+  // 4-plane array shape but push the planes away so nothing clips
   if (disabled) {
-    clippingPlaneStore.value = [
-      new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9),
-      new THREE.Plane(new THREE.Vector3(1, 0, 0), 1e9),
-      new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9),
-      new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e9)
-    ];
+    clippingPlaneStore.value = noClipPlanes();
     return;
   }
 

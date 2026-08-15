@@ -39,13 +39,13 @@
     onMaskConverted
   }: Props = $props();
 
-  const { renderer } = useThrelte();
+  const { renderer, scene, camera } = useThrelte();
 
   let size = $derived({ width: display.resolution.x, height: display.resolution.y });
 
   let drawMaterial: DrawingMaterial;
 
-  const stage = getContext<{ performanceTier: PerformanceTier }>('stage');
+  const stage = getContext<{ performanceTier: PerformanceTier; mainPassUsesComposer: boolean }>('stage');
 
   // Shader tier index: 0 = high, 1 = medium, 2 = low
   const shaderTier = $derived({ high: 0, medium: 1, low: 2 }[stage.performanceTier ?? 'high']);
@@ -70,14 +70,16 @@
   const getEffectBorder = () => props.effect?.border ?? 0.5;
   const getEffectRoughness = () => props.effect?.roughness ?? 0.0;
 
+  // The effect is a compile-time define so each variant only compiles its own
+  // code (the all-in-one shader took ~90s to link on Windows/ANGLE)
   let material = new THREE.ShaderMaterial({
     defines: {
-      NUM_CLIPPING_PLANES: 4
+      NUM_CLIPPING_PLANES: 4,
+      EFFECT_TYPE: getEffectType()
     },
     uniforms: {
       uMaskTexture: { value: null },
       uTime: { value: 0.0 },
-      uEffectType: { value: getEffectType() },
       uBaseColor: { value: hexToRGB(props.color) },
       uOpacity: { value: props.opacity },
       uSpeed: { value: getEffectSpeed() },
@@ -98,10 +100,43 @@
     vertexShader: annotationVertexShader
   });
 
+  // Links the program off the main thread (KHR_parallel_shader_compile) and
+  // keeps the material hidden until it is ready, so a slow driver compile never
+  // stalls the frame loop or trips Chrome's GPU watchdog. Falls back to a
+  // regular first-use compile where the extension is missing.
+  // three keys programs on whether the output is a render target, so effect
+  // layers (Main pass, through the composer when active) are compiled with a
+  // probe target bound; otherwise the real render would compile a second copy.
+  const compileGeometry = new THREE.PlaneGeometry();
+  const compileTarget = new THREE.WebGLRenderTarget(1, 1);
+  let compileGeneration = 0;
+  const compileMaterial = (rendersToTarget: boolean) => {
+    const generation = ++compileGeneration;
+    material.visible = false;
+    const previousTarget = renderer.getRenderTarget();
+    if (rendersToTarget) renderer.setRenderTarget(compileTarget);
+    const compiled = renderer.compileAsync(new THREE.Mesh(compileGeometry, material), camera.current, scene);
+    if (rendersToTarget) renderer.setRenderTarget(previousTarget);
+    compiled
+      .catch(() => {})
+      .finally(() => {
+        if (generation === compileGeneration) material.visible = true;
+      });
+  };
+
+  const effectType = $derived(getEffectType());
+  const rendersToTarget = $derived(effectType !== AnnotationEffect.None && stage.mainPassUsesComposer);
+  $effect(() => {
+    if (material.defines.EFFECT_TYPE !== effectType) {
+      material.defines.EFFECT_TYPE = effectType;
+      material.needsUpdate = true;
+    }
+    compileMaterial(rendersToTarget);
+  });
+
   $effect(() => {
     material.uniforms.uBaseColor.value.copy(colorUniform);
     material.uniforms.uOpacity.value = props.opacity;
-    material.uniforms.uEffectType.value = getEffectType();
     material.uniforms.uSpeed.value = getEffectSpeed();
     material.uniforms.uIntensity.value = getEffectIntensity();
     material.uniforms.uSoftness.value = getEffectSoftness();
@@ -215,6 +250,9 @@
   });
 
   onDestroy(() => {
+    compileGeneration++;
+    compileGeometry.dispose();
+    compileTarget.dispose();
     material.dispose();
   });
 </script>
