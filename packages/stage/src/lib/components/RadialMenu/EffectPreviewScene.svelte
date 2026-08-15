@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
-  import { T, useTask } from '@threlte/core';
+  import { T, useTask, useThrelte } from '@threlte/core';
+  import { onDestroy } from 'svelte';
   import { AnnotationEffect, getDefaultEffectProps } from '../Stage/components/AnnotationLayer/types';
 
   import annotationEffectsFragmentShader from '../Stage/shaders/AnnotationEffects.frag?raw';
@@ -162,11 +163,32 @@
     clipping: false
   });
 
+  // Each preview is its own WebGL context, so it can't reuse the stage's
+  // program. Link off the main thread and stay hidden until ready rather than
+  // stalling the first frame (~3s per effect on Windows/ANGLE).
+  const { renderer, scene, camera } = useThrelte();
+  const compileGeometry = new THREE.PlaneGeometry(2, 2);
+  let compileGeneration = 0;
+  const compileMaterial = () => {
+    const generation = ++compileGeneration;
+    material.visible = false;
+    renderer
+      .compileAsync(new THREE.Mesh(compileGeometry, material), camera.current, scene)
+      .catch(() => {})
+      .finally(() => {
+        if (generation === compileGeneration) material.visible = true;
+      });
+  };
+
   $effect(() => {
     if (material.defines.EFFECT_TYPE !== effectType) {
       material.defines.EFFECT_TYPE = effectType;
       material.needsUpdate = true;
     }
+    compileMaterial();
+  });
+
+  $effect(() => {
     const props = getDefaultEffectProps(effectType);
     material.uniforms.uBaseColor.value = getEffectColor(effectType);
     material.uniforms.uSpeed.value = props.speed;
@@ -180,6 +202,19 @@
   // Animate the effect
   useTask((delta) => {
     material.uniforms.uTime.value += delta;
+  });
+
+  onDestroy(() => {
+    compileGeneration++;
+    compileGeometry.dispose();
+    material.dispose();
+    maskTexture.dispose();
+    // Release this preview's WebGL context once Threlte has disposed the
+    // renderer. Browsers cap live contexts (Chrome: 16) and evict the oldest,
+    // which is the stage itself; a picker with 9 previews opened twice would
+    // otherwise cost the stage its context and a full recompile.
+    const gl = renderer.getContext();
+    queueMicrotask(() => gl.getExtension('WEBGL_lose_context')?.loseContext());
   });
 </script>
 
