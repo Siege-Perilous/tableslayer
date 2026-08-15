@@ -5,6 +5,8 @@
   import Scene from '../Scene/Scene.svelte';
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
+  import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
+  import { hasActivePostProcessing } from '../../helpers/postProcessing';
   import { PerfMonitor } from '@threlte/extras';
   import { MarkerTooltip } from '../../../MarkerTooltip';
 
@@ -21,7 +23,7 @@
    * renders through non-MSAA targets anyway, so MSAA only costs bandwidth.
    */
   const createRenderer = (canvas: HTMLCanvasElement) => {
-    return new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({
       canvas,
       powerPreference: 'high-performance',
       antialias: false,
@@ -29,6 +31,10 @@
       stencil: false,
       depth: true
     });
+    // Always four planes from the first frame: the plane count is part of
+    // three's program cache key, so materials compiled against [] would relink
+    renderer.clippingPlanes = clippingPlaneStore.value;
+    return renderer;
   };
 
   interface Props {
@@ -108,7 +114,11 @@
     performanceTier: props.performanceTier ?? 'high',
     // Set by MarkerLayer when a pointer-down hits a marker; other layers use
     // it to yield shared gestures (e.g. fog-room double-tap) to the marker
-    markerClaimAt: 0
+    markerClaimAt: 0,
+    // Whether the Main pass renders through the EffectComposer (into a render
+    // target) or straight to the canvas. Materials that precompile need it
+    // because three keys programs on the output target.
+    mainPassUsesComposer: hasActivePostProcessing(props.postProcessing, props.performanceTier)
   });
   setContext('stage', stageContext);
 
@@ -117,6 +127,7 @@
     stageContext.hoveredMarkerId = hoveredMarkerId;
     stageContext.pinnedMarkerIds = pinnedMarkerIds;
     stageContext.performanceTier = props.performanceTier ?? 'high';
+    stageContext.mainPassUsesComposer = hasActivePostProcessing(props.postProcessing, props.performanceTier);
   });
 
   setContext('callbacks', callbacks);

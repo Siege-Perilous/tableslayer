@@ -138,10 +138,12 @@
   const previewBorder = Math.min(effectProps.border, 0.2);
 
   const material = new THREE.ShaderMaterial({
+    defines: {
+      EFFECT_TYPE: effectType
+    },
     uniforms: {
       uMaskTexture: { value: maskTexture },
       uTime: { value: 0.0 },
-      uEffectType: { value: effectType },
       uBaseColor: { value: getEffectColor(effectType) },
       uOpacity: { value: 1.0 },
       uSpeed: { value: effectProps.speed },
@@ -161,8 +163,11 @@
   });
 
   $effect(() => {
+    if (material.defines.EFFECT_TYPE !== effectType) {
+      material.defines.EFFECT_TYPE = effectType;
+      material.needsUpdate = true;
+    }
     const props = getDefaultEffectProps(effectType);
-    material.uniforms.uEffectType.value = effectType;
     material.uniforms.uBaseColor.value = getEffectColor(effectType);
     material.uniforms.uSpeed.value = props.speed;
     material.uniforms.uIntensity.value = props.intensity;

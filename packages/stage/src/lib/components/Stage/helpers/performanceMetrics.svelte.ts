@@ -7,6 +7,7 @@ export interface PerformanceMetrics {
   triangles: number;
   textures: number;
   geometries: number;
+  programs: number;
   composerTime: number;
   overlayTime: number;
   weatherTime: number;
@@ -28,6 +29,7 @@ export const performanceMetrics: { value: PerformanceMetrics } = $state({
     triangles: 0,
     textures: 0,
     geometries: 0,
+    programs: 0,
     composerTime: 0,
     overlayTime: 0,
     weatherTime: 0,
@@ -117,6 +119,7 @@ export const endFrame = (
     triangles: info.render.triangles,
     textures: info.memory.textures,
     geometries: info.memory.geometries,
+    programs: info.programs?.length ?? 0,
     composerTime: timings.composerTime,
     overlayTime: timings.overlayTime,
     weatherTime: timings.weatherTime ?? 0,
@@ -138,7 +141,7 @@ export const logMetrics = (rate: number): void => {
   console.log(
     `[Perf] FPS: ${m.fps.toFixed(1)} | Frame: ${m.frameTime.toFixed(2)}ms | ` +
       `Draw calls: ${m.drawCalls} | Triangles: ${m.triangles} | ` +
-      `Textures: ${m.textures} | Geometries: ${m.geometries} | ` +
+      `Textures: ${m.textures} | Geometries: ${m.geometries} | Programs: ${m.programs} | ` +
       `Composer: ${m.composerTime.toFixed(2)}ms | Overlay: ${m.overlayTime.toFixed(2)}ms`
   );
 
@@ -206,6 +209,7 @@ export const resetMetrics = (): void => {
     triangles: 0,
     textures: 0,
     geometries: 0,
+    programs: 0,
     composerTime: 0,
     overlayTime: 0,
     weatherTime: 0,

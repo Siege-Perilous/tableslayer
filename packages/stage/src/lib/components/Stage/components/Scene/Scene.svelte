@@ -15,22 +15,23 @@
     LUT3DEffect
   } from 'postprocessing';
   import { getLUT } from './luts';
-  import { PERFORMANCE_TIER_SETTINGS, StageMode, type Callbacks, type StageProps } from '../Stage/types';
+  import { StageMode, type Callbacks, type StageProps } from '../Stage/types';
   import { GridMode } from '../GridLayer/types';
   import { MapLayerType, type MapLayerExports } from '../MapLayer/types';
   import { getMapSpaceDisplay, mapToDisplaySpace } from '../../helpers/mapSpace';
   import {
     clippingPlaneStore,
+    noClipPlanes,
     updateClippingPlanes,
     updateMapClippingPlanes
   } from '../../helpers/clippingPlaneStore.svelte';
   import type { Size } from '../../types';
   import { beginFrame, endFrame, startTiming, endTiming, logMetrics } from '../../helpers/performanceMetrics.svelte';
   import { debugState } from '../../helpers/debugState.svelte';
+  import { getActiveEffects, hasActivePostProcessing } from '../../helpers/postProcessing';
   import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
-  import type { PostProcessingProps } from './types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import CursorLayer from '../CursorLayer/CursorLayer.svelte';
   import type { CursorData } from '../CursorLayer/types';
@@ -120,15 +121,6 @@
   const intersectionPoint = new THREE.Vector3();
 
   let composer = new EffectComposer(renderer);
-
-  // Effects with zero-strength settings contribute nothing visible, so treat
-  // them as disabled; this lets the render loop bypass the composer entirely
-  const getActiveEffects = (pp: PostProcessingProps) => ({
-    bloom: pp.bloom.enabled && pp.bloom.intensity > 0,
-    chromaticAberration: pp.chromaticAberration.enabled && pp.chromaticAberration.offset !== 0,
-    vignette: pp.vignette.enabled && pp.vignette.darkness > 0,
-    lut: pp.lut.enabled && pp.lut.url !== null
-  });
 
   onMount(() => {
     let before = autoRender.current;
@@ -332,13 +324,7 @@
   });
 
   // Check if any post-processing effects are active
-  const hasActiveEffects = $derived(() => {
-    if (PERFORMANCE_TIER_SETTINGS[props.performanceTier ?? 'high'].forcePostProcessingOff) return false;
-    const pp = props.postProcessing;
-    if (!pp.enabled) return false;
-    const activeEffects = getActiveEffects(pp);
-    return activeEffects.bloom || activeEffects.chromaticAberration || activeEffects.vignette || activeEffects.lut;
-  });
+  const hasActiveEffects = $derived(() => hasActivePostProcessing(props.postProcessing, props.performanceTier));
 
   // Custom render task
   useTask(
@@ -545,8 +531,8 @@
     renderer.setSize(displayWidth, displayHeight);
     composer.setSize(displayWidth, displayHeight);
 
-    // Temporarily disable clipping planes
-    renderer.clippingPlanes = [];
+    // Temporarily disable clipping planes (keeping the 4-plane shape so no material relinks)
+    renderer.clippingPlanes = noClipPlanes();
 
     // Render to the offscreen canvas
     composer.render();
