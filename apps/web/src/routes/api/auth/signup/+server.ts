@@ -4,9 +4,9 @@ import {
   createUserByEmailAndPassword,
   generateSessionToken,
   isTurnstileEnabled,
-  setSessionTokenCookie,
-  verifyTurnstileToken
+  setSessionTokenCookie
 } from '$lib/server';
+import { verifyTurnstileToken } from '$lib/server/turnstile';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 

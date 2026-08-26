@@ -14,6 +14,5 @@ export * from './party';
 export * from './partyInvite';
 export * from './profile';
 export * from './scene';
-export * from './turnstile';
 export * from './user';
 export * from './yjs';
