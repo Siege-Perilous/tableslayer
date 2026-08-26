@@ -30,3 +30,14 @@ export const isEmailEnabled = (): boolean => {
 
   return !!(cloudflareEmailApiKey && cloudflareAccountId);
 };
+
+export const isTurnstileEnabled = (): boolean => {
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY;
+  const turnstileSecretKey = process.env.TURNSTILE_SECRET_KEY;
+
+  return !!(turnstileSiteKey && turnstileSecretKey);
+};
+
+export const getTurnstileSiteKey = (): string | null => {
+  return isTurnstileEnabled() ? (process.env.TURNSTILE_SITE_KEY ?? null) : null;
+};

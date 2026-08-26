@@ -5,3 +5,4 @@ export { default as GlobalLoading } from './GlobalLoading.svelte';
 export * from './Head';
 export * from './Illustration';
 export * from './party';
+export { default as Turnstile } from './Turnstile.svelte';

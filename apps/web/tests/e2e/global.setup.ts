@@ -36,9 +36,10 @@ const globalSetup = async () => {
       await page.goto(`${baseURL}/signup`);
       console.log('Loaded signup page');
 
-      // Wait for hydration - the button should be enabled
-      await page.waitForLoadState('networkidle');
-      console.log('Network idle');
+      // Turnstile's iframe keeps a connection open, so 'networkidle' never fires here.
+      // The submit button is disabled until the widget yields a token; click() waits for it.
+      await page.waitForLoadState('load');
+      console.log('Page loaded');
 
       // Check if the submit button exists
       const submitButton = page.getByTestId('signupSubmit');

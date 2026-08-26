@@ -11,7 +11,7 @@
     FormControl,
     Text
   } from '@tableslayer/ui';
-  import { IllustrationOverlook, Head } from '$lib/components';
+  import { IllustrationOverlook, Head, Turnstile } from '$lib/components';
   import { useAuthSignupMutation } from '$lib/queries';
   import { type FormMutationError, handleMutation } from '$lib/factories';
   import { goto } from '$app/navigation';
@@ -26,6 +26,10 @@
   let signupError = $state<FormMutationError | undefined>(undefined);
   let formIsLoading = $state(false);
   let isChecked = $state(true);
+  let turnstileToken = $state<string | null>(null);
+  let turnstileWidget = $state<Turnstile | undefined>(undefined);
+  const turnstileEnabled = $derived(!!data.turnstileSiteKey);
+  const submitDisabled = $derived(formIsLoading || (turnstileEnabled && !turnstileToken));
   const signup = useAuthSignupMutation();
 
   const handleSignup = async (e: Event) => {
@@ -35,10 +39,13 @@
       return;
     }
     await handleMutation({
-      mutation: () => signup.mutateAsync({ email, password, confirmPassword }),
+      mutation: () =>
+        signup.mutateAsync({ email, password, confirmPassword, turnstileToken: turnstileToken ?? undefined }),
       formLoadingState: (loading) => (formIsLoading = loading),
       onError: (error) => {
         signupError = error;
+        turnstileToken = null;
+        turnstileWidget?.reset();
       },
       onSuccess: () => {
         // If email is disabled, users are auto-verified so go straight to their party
@@ -97,7 +104,15 @@
     <Spacer />
     <InputCheckbox bind:checked={isChecked} label={label as Snippet} />
     <Spacer />
-    <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={formIsLoading}>Submit</Button>
+    {#if data.turnstileSiteKey}
+      <Turnstile
+        bind:this={turnstileWidget}
+        siteKey={data.turnstileSiteKey}
+        onToken={(token) => (turnstileToken = token)}
+        appearance={data.envName === 'production' ? 'interaction-only' : 'always'}
+      />
+    {/if}
+    <Button type="submit" data-testid="signupSubmit" isLoading={formIsLoading} disabled={submitDisabled}>Submit</Button>
     <FormError error={signupError} />
   </form>
   <Spacer size="2rem" />

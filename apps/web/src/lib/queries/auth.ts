@@ -10,7 +10,7 @@ export const useAuthLoginMutation = () => {
 };
 
 export const useAuthSignupMutation = () => {
-  return mutationFactory<{ email: string; password: string; confirmPassword: string }>({
+  return mutationFactory<{ email: string; password: string; confirmPassword: string; turnstileToken?: string }>({
     mutationKey: ['authSignup'],
     endpoint: '/api/auth/signup',
     method: 'POST'
