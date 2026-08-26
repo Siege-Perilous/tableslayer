@@ -1,4 +1,4 @@
-import { getUser } from '$lib/server';
+import { getTurnstileSiteKey, getUser } from '$lib/server';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -16,6 +16,7 @@ export const load: PageServerLoad = async (event) => {
   // Get envName from parent layout
   const parentData = await event.parent();
   return {
-    envName: parentData.envName
+    envName: parentData.envName,
+    turnstileSiteKey: getTurnstileSiteKey()
   };
 };

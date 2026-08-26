@@ -329,6 +329,9 @@ jobs:
           BASE_URL=https://pr-${{ github.event.pull_request.number }}-web.fly.dev
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          # Cloudflare Turnstile always-pass test keys so e2e exercises the widget
+          TURNSTILE_SITE_KEY=1x00000000000000000000AA
+          TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
           PUBLIC_PARTYKIT_HOST=pr-${{ github.event.pull_request.number }}.tableslayer.com
           PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
           INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}

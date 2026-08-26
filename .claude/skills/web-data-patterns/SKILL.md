@@ -5,7 +5,7 @@ description: Data-layer patterns for apps/web — apiFactory error semantics, mu
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-07-06.
+> **Freshness**: last verified 2026-08-26.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 
@@ -68,6 +68,7 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - **Uploads (R2 via S3 API)**: client mutation → `POST /api/file/generatePresignedWriteUrl` → client PUTs blob to presigned URL → optional `/api/file/createFile` for a `filesTable` row. Throwaway assets (fog masks, thumbnails) skip the DB row and cache-bust via `incrementUrlVersion` (`src/lib/utils/fileVersion.ts`). Server: `src/lib/server/file/files.ts`.
 - **Stripe**: `api/stripe/{checkout,customerPortal,webhook}`; price→plan via `STRIPE_PRICE_ID_*` envs; updates `partyTable` plan fields; gated by `isStripeEnabled()`.
 - **Email (Cloudflare Email Sending, replaced Resend 2026-06)**: `src/lib/server/email/email.ts` → Cloudflare API, from `no-reply@tableslayer.com`. Dev redirects all mail to `DEV_EMAIL`; `ENV_NAME === 'preview'` skips sending.
+- **Turnstile (bot check on signup)**: `src/lib/server/turnstile.ts` `verifyTurnstileToken()` (fails closed); gated by `isTurnstileEnabled()` (`TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`). Widget is `lib/components/Turnstile.svelte` (`appearance` prop: `always` outside production so it can be seen/tested, `interaction-only` in production); site key reaches the page via `signup/+page.server.ts`. CI preview uses Cloudflare's always-pass test keys.
 - **Env**: `ENV_NAME ∈ production|preview|dev` drives behavior throughout. `PUBLIC_PARTYKIT_HOST` is the only public var. See `.env-example` for the full list.
 - Server business logic lives under `src/lib/server/<domain>/`, re-exported from `$lib/server` — endpoints import from there, not from deep paths.
 - **Dev**: `pnpm run dev` runs vite (port 5174) + partykit (1999) together. Gates: `pnpm run check`, `pnpm run format-check`.
