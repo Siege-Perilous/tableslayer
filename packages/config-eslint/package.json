@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.67.0",
-    "@typescript-eslint/parser": "^8.67.0",
-    "eslint": "^10.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "eslint": "^10.9.1",
     "eslint-plugin-svelte": "3.23.0"
   },
   "exports": {
