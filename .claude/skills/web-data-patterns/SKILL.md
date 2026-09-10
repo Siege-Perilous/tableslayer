@@ -5,7 +5,7 @@ description: Data-layer patterns for apps/web — apiFactory error semantics, mu
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-08-26.
+> **Freshness**: last verified 2026-09-10.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 
@@ -54,6 +54,16 @@ PartyKit + Y.js. Two Y docs per session (`game_session` = scene content, `party`
 - **Write cadence is handled for you.** `queuePropertyUpdate` applies locally at once and flushes to the doc event-driven (`$lib/utils/propertyUpdateBroadcaster.ts`: 8ms leading-edge gate + trailing timer), and `SessionDocClient` coalesces remote rev bumps via `setTimeout(0)` so message backlogs drain into one rebuild. Do not bypass the broadcaster with per-event `client.write.*` calls in a gesture loop, and never schedule realtime send/receive work on `requestAnimationFrame` — rAF cadence is per-window (focus/occlusion/GPU contention) and makes sync smoothness depend on which window has scheduler priority.
 - **Never write settings fields you didn't change.** The broadcaster writes field-level diffs (only fields mapped from queued paths — `sceneSettingsFieldsForPropPaths`). Writing a full settings object from local stageProps pushes stale copies of other clients' in-flight fields into the doc and rubber-bands their gestures. Same rule for any new direct `write.setSceneSettings` call: pass only the fields you actually changed.
 - System writes that must not pollute user undo (e.g. thumbnails) go through `systemWrite`.
+
+**Idle sleep** (Durable Objects bill while a room holds any socket — see spec/realtime-idle-sleep-and-usage.md):
+
+- Both routes sleep their connections via `SleepController` (`src/lib/realtime/SleepController.svelte.ts`) driven by the pure reducer in `idlePolicy.ts` (`EDITOR_IDLE_POLICY` / `PLAY_IDLE_POLICY`). **Never hand-roll `client.connect()`/`disconnect()` from a page**; construct a controller, `bindClient`, pass `canSleep` for gestures, and `destroy` on unmount.
+- `SessionDocClient` exposes `status` (real provider state), `synced`, `sleeping` (deliberate, flips before status), `onRemoteActivity`. `ready` latches so pages keep rendering while asleep.
+- Two user endpoints under `api/party/`: `editorActivity` (editor ping, `editor_active` row) and `liveState` (DB-only poll for a sleeping playfield). Client side: `queries/realtimeActivity.ts` — `useEditorActivityMutation` (opts out of `invalidateAll`, silent errors) and `createPartyLiveStateQuery(partyId, enabled)` (poll pattern: `enabled` + `refetchInterval` + `refetchIntervalInBackground`, `staleTime: 0`, `gcTime: 0`, `retry: false`).
+
+**Realtime activity** (`realtime_activity` table, usage on `/admin/usage`):
+
+- Rooms batch `connect`/`close` (1 s) to `/api/internal/roomActivity` via `partykit/roomActivity.ts`; never throws, never retries. Persist endpoints add `edit` / `party_state` rows. `src/lib/server/realtime/activity.ts` is the **only writer** (and the retention pruner, 90 days). The rollup (`activityRollup.ts`) is pure and tested; `usage.ts` joins metadata and is imported by path from the admin page only (not barrel-exported — see the Rolldown note under Turnstile). Optional Cloudflare gauge: `src/lib/server/cloudflare/` (`CLOUDFLARE_WORKERS_KEY` + `CLOUDFLARE_ACCOUNT_ID`, 10 min cache).
 - Editor integration: `useEditorSession.svelte.ts` in `routes/(app)/[party]/[gameSession]/[[selectedScene]]/` (applies remote fog/annotation masks to the stage, idle thumbnail regen).
 
 ## Auth
@@ -69,7 +79,7 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - **Stripe**: `api/stripe/{checkout,customerPortal,webhook}`; price→plan via `STRIPE_PRICE_ID_*` envs; updates `partyTable` plan fields; gated by `isStripeEnabled()`.
 - **Email (Cloudflare Email Sending, replaced Resend 2026-06)**: `src/lib/server/email/email.ts` → Cloudflare API, from `no-reply@tableslayer.com`. Dev redirects all mail to `DEV_EMAIL`; `ENV_NAME === 'preview'` skips sending.
 - **Turnstile (bot check on signup)**: `src/lib/server/turnstile.ts` `verifyTurnstileToken()` (fails closed) — imported directly, NOT via the `$lib/server` barrel: a server module with a single endpoint consumer that is also barrel-re-exported makes Rolldown (Vite 8) inline it into the endpoint chunk with an extra `export { x as t }`, and SvelteKit's build fails with `Invalid export 't'`; gated by `isTurnstileEnabled()` (`TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`). Widget is `lib/components/Turnstile.svelte` (`appearance` prop: `always` outside production so it can be seen/tested, `interaction-only` in production); site key reaches the page via `signup/+page.server.ts`. CI preview uses Cloudflare's always-pass test keys.
-- **Env**: `ENV_NAME ∈ production|preview|dev` drives behavior throughout. `PUBLIC_PARTYKIT_HOST` is the only public var. See `.env-example` for the full list.
+- **Env**: `ENV_NAME ∈ production|preview|dev` drives behavior throughout. `PUBLIC_PARTYKIT_HOST` is the only public var. `CLOUDFLARE_WORKERS_KEY` (Account Analytics: Read) + `CLOUDFLARE_BILLING_CYCLE_START_DAY` are optional and only feed the admin usage gauge. See `.env-example` for the full list.
 - Server business logic lives under `src/lib/server/<domain>/`, re-exported from `$lib/server` — endpoints import from there, not from deep paths.
 - **Dev**: `pnpm run dev` runs vite (port 5174) + partykit (1999) together. Gates: `pnpm run check`, `pnpm run format-check`.
 
@@ -79,7 +89,9 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - `apps/web/src/lib/factories/mutationFactory.ts`
 - `apps/web/src/lib/db/app/schema.ts` / `index.ts` / `resilientClient.ts`
 - `apps/web/src/lib/realtime/SessionDocClient.svelte.ts` / `docSchema.ts`
-- `apps/web/partykit/gameSession.ts`
+- `apps/web/src/lib/realtime/idlePolicy.ts` / `SleepController.svelte.ts`
+- `apps/web/partykit/gameSession.ts` / `roomActivity.ts`
+- `apps/web/src/lib/server/realtime/activity.ts` / `activityRollup.ts` / `usage.ts`
 - `apps/web/src/lib/server/auth.ts`, `apps/web/src/hooks.server.ts`
 - `apps/web/src/routes/api/scenes/createScene/+server.ts` — canonical endpoint
 

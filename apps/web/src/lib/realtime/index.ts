@@ -22,6 +22,20 @@ export {
 } from './docSchema';
 export { annotationRowFromDb, lightRowFromDb, markerRowFromDb, sceneRowToSettings } from './fromDb';
 export {
+  EDITOR_IDLE_POLICY,
+  PLAY_IDLE_POLICY,
+  createIdleState,
+  idlePolicyFromSearch,
+  nextDeadline,
+  reduceIdle,
+  type IdleEffect,
+  type IdleEvent,
+  type IdlePolicyConfig,
+  type IdlePolicyState,
+  type SleepReason,
+  type WakeReason
+} from './idlePolicy';
+export {
   PresenceChannel,
   TEMPORARY_LAYER_TTL_MS,
   type CursorData,
@@ -30,6 +44,7 @@ export {
   type TemporaryLayer
 } from './presence.svelte';
 export { SessionDocClient, type ConnectionState, type SessionDocClientOptions } from './SessionDocClient.svelte';
+export { SleepController, type SleepControllerOptions } from './SleepController.svelte';
 export { reuseUnchanged } from './structuralSharing';
 export type {
   AnnotationRow,

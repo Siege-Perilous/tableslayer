@@ -56,6 +56,8 @@ Key properties:
 - **Hydrate**: on first use a room fetches `/api/internal/sessionSnapshot` (or `partySnapshot`)
   and builds the doc. `meta.schemaVersion` makes hydration idempotent; y-partykit snapshot
   persistence covers room eviction between DB writes.
+  Dirty-tracking observers are attached **per doc instance**, not once per room: y-partykit
+  destroys the doc when the last socket closes, and the next connection gets a fresh one.
 - **Persist**: a doc observer collects dirty scene parts (origin-filtered so hydration never
   echoes back). y-partykit's debounced callback (2s idle / 10s max) posts only dirty scenes to
   `/api/internal/persistSession` (replace-rows semantics per collection). Failures merge the
@@ -65,6 +67,14 @@ Key properties:
   after direct DB writes (import, admin tools). `{"type":"debug"}` on the game session room
   exposes persister stats. The app calls these via `requestPartyRoomResync` /
   `requestGameSessionRoomResync` in `$lib/server/realtime`.
+- **Activity reporting**: each room batches `connect`/`close` events (1 s, via
+  `partykit/roomActivity.ts`) to `/api/internal/roomActivity`, which writes `realtime_activity`
+  rows (party, session, kind, user, socket count after the event). Best-effort: it never
+  throws, never retries, and never blocks `onConnect`. `onClose(conn)` now receives the
+  connection; the last close awaits the activity flush together with the persist so the final
+  row lands before eviction. The persist endpoints add one `edit` / `party_state` row per call.
+  Durable Objects bill wall-clock time while a room holds any socket, so this log is what
+  `/admin/usage` rolls up (`$lib/server/realtime/activityRollup.ts`, pure).
 - Internal endpoints authenticate via the `INTERNAL_API_TOKEN` shared secret
   (`x-internal-token`); dev falls back to `dev-internal-token` on both sides. The PartyKit env
   also needs `BASE_URL` (the app's URL — passed via `--var` at deploy; defaults to
@@ -85,9 +95,54 @@ Key properties:
   `party.setActiveScene/setPaused`. Writers warn loudly when a target scene is missing rather
   than silently no-oping.
 - **`ready`** — true once both rooms are synced _and_ hydrated. Pages render SSR-seeded props
-  until then.
+  until then. It latches: pages keep rendering the last doc state while the client sleeps.
+- **`status` / `synced` / `sleeping`** — `status` reports each provider's real state
+  (`connecting | connected | disconnected`); `synced` is true only while both rooms are synced
+  (false from disconnect until sync step 2 after reconnect); `sleeping` is true between
+  `disconnect()` and `connect()` and flips synchronously first, so status observers can tell a
+  deliberate pause from a fault (the editor skips its "connection lost" toast for sleep).
+- **`connect()` / `disconnect()`** — deliberate sleep/wake. Disconnect suspends presence first
+  (so cleared awareness goes out on the open socket), then closes both providers. Local edits
+  made while asleep merge by CRDT on reconnect. Never call these by hand from a page; use
+  `SleepController`.
 - **`onChanges`** — classified change stream (`{sceneId, part, keys, childId, remote}`) used for
   imperative work like applying remote masks to the GPU canvas.
+- **`onRemoteActivity`** — fires on remote scene changes, remote party-state changes, and
+  awareness changes that add/update peers (removals are excluded so a network blip does not
+  count as activity). Feeds the idle policy.
+
+### Idle sleep (`idlePolicy.ts`, `SleepController.svelte.ts`)
+
+Durable Objects bill while a room holds any socket; an abandoned tab costs about as much as a
+month of games. Both routes therefore drop their connections when nothing is happening:
+
+- `idlePolicy.ts` is a pure reducer (`input | remote | visibility | focus | tick | wake` →
+  `sleep | wake | ping` effects). Decisions are made from event timestamps, never from timer
+  cadence, so a late timer in a throttled or frozen tab cannot sleep a tab that just became
+  visible. `nextDeadline` tells the adapter when to look again.
+- `SleepController` is the browser adapter: document capture listeners (one dispatch per
+  second), `visibilitychange`, `focus`/`pageshow`, one re-armed `setTimeout`, and `canSleep()`
+  so a sleep never starts mid-gesture (a blocked tick re-checks in 30 s). `bindClient` returns
+  an unbind because the play route swaps clients on cross-session switches.
+- Thresholds: hidden 5 min (both), idle 60 min editor / 30 min play. Wake sources: input,
+  visibility, focus, and (play only) a poll.
+  In dev, append `?hiddenSleep=5&idleSleep=10&ping=5` (seconds) to either route's URL to shorten
+  them for testing (`idlePolicyFromSearch`; ignored in production builds).
+- **Editor ping**: while active with input, the editor POSTs `/api/party/editorActivity` at most
+  every 2 min (and immediately on wake), writing an `editor_active` row.
+- **Play poll**: while asleep the playfield polls `/api/party/liveState` every 20 s
+  (`createPartyLiveStateQuery`, DB only, no room time) and wakes when the active scene or
+  pause state differs from the first poll after it slept (DB-to-DB, immune to doc/DB drift) or a
+  newer wake-kind activity row exists
+  (`connect`/`edit`/`party_state`/`editor_active`; never `close`, or its own disconnect would
+  wake it). Latency for "GM moves mouse → TV wakes": the ping is immediate when the editor's last
+  ping is over 2 min old (always the case once the TV has slept in normal use), then poll ≤ 20 s,
+  then production embedded-replica sync ≤ 30 s, so under a minute in practice. Worst case, when
+  the editor pinged within the last 2 min, is about 2 min 20 s plus replica sync. Doc changes
+  (edits, scene switch, pause) skip the ping and wake within one poll of the persist.
+- A sleeping playfield shows `SleepOverlay` ("Still playing?") over the still-rendered last
+  scene; the editor shows an info toast on sleep and a loading toast until both rooms are
+  synced again.
 
 ### Render data flow (both routes)
 
@@ -129,7 +184,10 @@ legacy ordinal URLs 301-redirect.
 
 Cursors (33ms throttle), measurements, hovered/pinned markers, and temporary player drawings ride
 the awareness protocol with a 15s heartbeat. Temporary drawings expire after 10s unless persisted
-into the doc as annotations.
+into the doc as annotations. `suspend()` (called by `SessionDocClient.disconnect()`) stops the
+heartbeat and clears every ephemeral field while keeping `stagePerformance` — never a null state,
+since y-protocols ignores `setLocalStateField` on null — so a stale cursor cannot reappear when
+the provider re-sends local state on reconnect; `resume()` restarts the heartbeat.
 
 ## Thumbnails
 

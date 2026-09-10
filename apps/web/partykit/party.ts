@@ -1,5 +1,6 @@
 import type * as Party from 'partykit/server';
 import { onConnect, unstable_getYDoc, type YPartyKitOptions } from 'y-partykit';
+import type * as Y from 'yjs';
 import {
   DOC_SCHEMA_VERSION,
   getMeta,
@@ -9,6 +10,7 @@ import {
 } from '../src/lib/realtime/docSchema';
 import type { PartyStateWire } from '../src/lib/realtime/wire';
 import { appRequest } from './appApi';
+import { createRoomActivityReporter } from './roomActivity';
 
 const HYDRATION_ORIGIN = 'server-hydration';
 const PERSIST_RETRY_MS = 15000;
@@ -20,12 +22,15 @@ const PERSIST_RETRY_MS = 15000;
  */
 export default class PartyServer implements Party.Server {
   #dirty = false;
-  #observed = false;
+  // Per doc instance: y-partykit destroys the doc on last disconnect (see gameSession.ts)
+  #observedDoc: Y.Doc | null = null;
   #persisting = false;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #options: YPartyKitOptions;
+  #activity: ReturnType<typeof createRoomActivityReporter>;
 
   constructor(public room: Party.Room) {
+    this.#activity = createRoomActivityReporter(room, 'party');
     this.#options = {
       persist: { mode: 'snapshot' },
       gc: false, // y-partykit forces this with persist; setting it keeps the options hash stable
@@ -40,8 +45,8 @@ export default class PartyServer implements Party.Server {
   async #getDoc() {
     const doc = await unstable_getYDoc(this.room, this.#options);
 
-    if (!this.#observed) {
-      this.#observed = true;
+    if (this.#observedDoc !== doc) {
+      this.#observedDoc = doc;
       getPartyStateMap(doc).observe((_event, transaction) => {
         if (!transaction.local) this.#dirty = true;
       });
@@ -105,6 +110,7 @@ export default class PartyServer implements Party.Server {
   }
 
   async onConnect(conn: Party.Connection) {
+    this.#activity.queue('connect', conn);
     // A failed hydration must not kill the websocket: keep the connection open,
     // let clients wait on the ready gate, and retry shortly.
     try {
@@ -116,10 +122,11 @@ export default class PartyServer implements Party.Server {
     return onConnect(conn, this.room, this.#options);
   }
 
-  async onClose() {
+  async onClose(conn: Party.Connection) {
+    this.#activity.queue('close', conn);
     const remaining = [...this.room.getConnections()].length;
     if (remaining === 0) {
-      await this.#persistState();
+      await Promise.all([this.#persistState(), this.#activity.flush()]);
     }
   }
 

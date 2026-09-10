@@ -41,3 +41,12 @@ export const isTurnstileEnabled = (): boolean => {
 export const getTurnstileSiteKey = (): string | null => {
   return isTurnstileEnabled() ? (process.env.TURNSTILE_SITE_KEY ?? null) : null;
 };
+
+export const isCloudflareAnalyticsEnabled = (): boolean => {
+  return !!(process.env.CLOUDFLARE_WORKERS_KEY && process.env.CLOUDFLARE_ACCOUNT_ID);
+};
+
+/** Day of month the Durable Objects billing cycle starts (Cloudflare invoices this account on the 12th). */
+export const getBillingCycleStartDay = (): number => {
+  return Number(process.env.CLOUDFLARE_BILLING_CYCLE_START_DAY) || 12;
+};

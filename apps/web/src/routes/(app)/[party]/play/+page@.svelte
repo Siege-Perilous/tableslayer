@@ -1,12 +1,14 @@
 <script lang="ts">
   import { Head } from '$lib/components';
-  import { buildRenderProps, reuseUnchanged } from '$lib/realtime';
+  import { createPartyLiveStateQuery } from '$lib/queries';
+  import { PLAY_IDLE_POLICY, SleepController, buildRenderProps, reuseUnchanged } from '$lib/realtime';
   import { buildSceneProps, throttle } from '$lib/utils';
   import { transformCursorsToArray } from '$lib/utils/cursors';
   import { StageDefaultProps } from '$lib/utils/defaultMapState';
   import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
   import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
   import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
+  import { devLog } from '$lib/utils/debug';
   import { stagePerformance } from '$lib/stores';
   import {
     MapLayerType,
@@ -23,6 +25,7 @@
   import { IconArrowBackUp } from '@tabler/icons-svelte';
   import { onMount, untrack } from 'svelte';
   import PauseOverlay from './PauseOverlay.svelte';
+  import SleepOverlay from './SleepOverlay.svelte';
   import { PlaySession, type SessionRoute } from './usePlaySession.svelte';
   import { PlayTools } from './usePlayTools.svelte';
 
@@ -59,6 +62,71 @@
         defaultSessionFilter: () => session.gameSessionId
       })
   );
+
+  // ---------------------------------------------------------------------------
+  // Idle sleep. A TV left on overnight is the expensive case: Durable Objects
+  // bill while any socket is open. After 30 min without input or remote
+  // activity (5 min hidden) the client disconnects and shows a resting card;
+  // the stage keeps rendering the last scene. While asleep we poll the DB
+  // (never a room) every 20 s and reconnect when the GM does something.
+  // Touching the screen wakes immediately.
+  // ---------------------------------------------------------------------------
+
+  let waking = $state(false);
+  // Baseline comes from the first poll after sleep, not the live doc, so the
+  // comparison is DB-to-DB and cannot false-wake on doc/DB drift
+  let sleepBaseline: { sleptAt: number; state: { activeSceneId: string | null; isPaused: boolean } | null } | null =
+    null;
+  const sleep = untrack(
+    () =>
+      new SleepController({
+        policy: PLAY_IDLE_POLICY,
+        canSleep: () => !stage?.fogOfWar?.isDrawing() && !stage?.annotations?.isDrawing(),
+        onSleep: (reason) => {
+          devLog('play', `sleep (${reason})`);
+          sleepBaseline = { sleptAt: Date.now(), state: null };
+        },
+        onWake: (reason) => {
+          devLog('play', `wake (${reason})`);
+          waking = true;
+        }
+      })
+  );
+
+  // PlaySession swaps clients on cross-session scene switches; follow it
+  $effect(() => {
+    const client = session.client;
+    if (!client) return;
+    return sleep.bindClient(client);
+  });
+
+  $effect(() => {
+    if (waking && session.client?.synced) waking = false;
+  });
+
+  // Wake on a scene switch, pause toggle, or any newer wake-kind activity
+  // (connect/edit/party_state/editor_active — never our own close). Only data
+  // fetched after this sleep started counts; the query keeps its last result.
+  const liveStateQuery = createPartyLiveStateQuery(
+    untrack(() => data.party.id),
+    () => sleep.phase === 'asleep'
+  );
+  $effect(() => {
+    const state = liveStateQuery.data;
+    const fetchedAt = liveStateQuery.dataUpdatedAt;
+    const baseline = sleepBaseline;
+    if (!state || !baseline || sleep.phase !== 'asleep' || fetchedAt < baseline.sleptAt) return;
+    const known = baseline.state ?? (baseline.state = { activeSceneId: state.activeSceneId, isPaused: state.isPaused });
+    const reasons = [
+      state.activeSceneId !== known.activeSceneId && `scene ${known.activeSceneId} -> ${state.activeSceneId}`,
+      state.isPaused !== known.isPaused && `paused ${known.isPaused} -> ${state.isPaused}`,
+      (state.lastActivityAt ?? 0) > baseline.sleptAt &&
+        `activity ${(state.lastActivityAt ?? 0) - baseline.sleptAt}ms after sleep`
+    ].filter(Boolean);
+    if (reasons.length === 0) return;
+    devLog('play', `poll wake: ${reasons.join('; ')}`);
+    sleep.wake('poll');
+  });
 
   // Scene routing for the radial menu and cross-session switches. SSR provides
   // every session's list; the doc is authoritative for the connected session, so
@@ -375,6 +443,7 @@
       for (const timer of dragClearTimers.values()) clearTimeout(timer);
       clearTimeout(mapDragClearTimer);
       tools.destroy();
+      sleep.destroy();
       session.destroy();
     };
   });
@@ -384,6 +453,10 @@
 
 {#if !stageIsLoading && gameIsPaused}
   <PauseOverlay hasActiveScene={!!session.activeSceneId} pauseScreenUrl={party.pauseScreenThumb?.resizedUrl} />
+{/if}
+
+{#if sleep.phase === 'asleep' || waking}
+  <SleepOverlay reconnecting={waking} />
 {/if}
 
 <div class={stageClasses} bind:this={stageElement} data-testid="playfieldStage">

@@ -1,5 +1,5 @@
 import { apiFactory } from '$lib/factories';
-import { applyPartyStatePersist, assertInternalRequest } from '$lib/server/realtime';
+import { applyPartyStatePersist, assertInternalRequest, recordRealtimeActivity } from '$lib/server/realtime';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -16,6 +16,11 @@ export const POST = apiFactory(
       activeSceneId: event.body.activeSceneId,
       isPaused: event.body.isPaused
     });
+    try {
+      await recordRealtimeActivity({ partyId: event.body.partyId, kind: 'party_state' });
+    } catch (error) {
+      console.warn('realtime activity (party_state) failed', error);
+    }
     return { ok: true };
   },
   {

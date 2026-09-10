@@ -10,6 +10,7 @@ import {
   type SessionSnapshotWire
 } from '../src/lib/realtime/wire';
 import { appRequest } from './appApi';
+import { createRoomActivityReporter } from './roomActivity';
 
 const ALL_PARTS: ScenePart[] = ['settings', 'markers', 'lights', 'annotations', 'fogMask'];
 const HYDRATION_ORIGIN = 'server-hydration';
@@ -27,12 +28,16 @@ const PERSIST_RETRY_MS = 15000;
 export default class GameSessionServer implements Party.Server {
   #dirty = new Map<string, Set<ScenePart>>();
   #deletedSceneIds = new Set<string>();
-  #observed = false;
+  // Per doc instance: y-partykit destroys the doc on last disconnect, so a
+  // boolean would leave the next doc unobserved and dirty tracking dead
+  #observedDoc: Y.Doc | null = null;
   #persisting = false;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
   #options: YPartyKitOptions;
+  #activity: ReturnType<typeof createRoomActivityReporter>;
 
   constructor(public room: Party.Room) {
+    this.#activity = createRoomActivityReporter(room, 'game_session');
     this.#options = {
       persist: { mode: 'snapshot' },
       gc: false, // y-partykit forces this with persist; setting it keeps the options hash stable
@@ -62,8 +67,8 @@ export default class GameSessionServer implements Party.Server {
   async #getDoc() {
     const doc = await unstable_getYDoc(this.room, this.#options);
 
-    if (!this.#observed) {
-      this.#observed = true;
+    if (this.#observedDoc !== doc) {
+      this.#observedDoc = doc;
       getScenesMap(doc).observeDeep((events, transaction) => {
         for (const change of classifySceneEvents(events as Y.YEvent<Y.Map<unknown>>[], transaction)) {
           if (!change.remote) continue;
@@ -150,6 +155,9 @@ export default class GameSessionServer implements Party.Server {
   }
 
   async onConnect(conn: Party.Connection) {
+    // The connection count already includes this socket (PartyKit accepts before
+    // calling us); queueing is synchronous and never touches the network here.
+    this.#activity.queue('connect', conn);
     // A failed hydration must not kill the websocket: keep the connection open,
     // let clients wait on the ready gate, and retry shortly.
     try {
@@ -161,10 +169,13 @@ export default class GameSessionServer implements Party.Server {
     return onConnect(conn, this.room, this.#options);
   }
 
-  async onClose() {
+  async onClose(conn: Party.Connection) {
+    // The closing socket is already gone from the count
+    this.#activity.queue('close', conn);
     const remaining = [...this.room.getConnections()].length;
     if (remaining === 0) {
-      await this.#persistDirty();
+      // Flush the final close row alongside the persist so it lands before eviction
+      await Promise.all([this.#persistDirty(), this.#activity.flush()]);
     }
   }
 
@@ -181,7 +192,7 @@ export default class GameSessionServer implements Party.Server {
         }
         return new Response(
           JSON.stringify({
-            observed: this.#observed,
+            observed: this.#observedDoc === (await unstable_getYDoc(this.room, this.#options)),
             persisting: this.#persisting,
             dirty: [...this.#dirty.entries()].map(([sceneId, parts]) => [sceneId.slice(0, 8), [...parts]]),
             deleted: [...this.#deletedSceneIds],

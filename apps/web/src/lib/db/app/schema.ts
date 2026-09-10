@@ -670,6 +670,49 @@ export const insertPromoRedemptionSchema = createInsertSchema(promoRedemptionsTa
 export const selectPromoRedemptionSchema = createSelectSchema(promoRedemptionsTable);
 export const updatePromoRedemptionSchema = createUpdateSchema(promoRedemptionsTable);
 
+// REALTIME ACTIVITY
+// REALTIME ACTIVITY
+// REALTIME ACTIVITY
+//
+// Usage log for PartyKit rooms (Durable Objects bill wall-clock time while a room
+// holds any socket). Rooms report connect/close, persist endpoints add edit /
+// party_state, editors add editor_active pings. Rolled up by /admin/usage.
+export const VALID_REALTIME_ACTIVITY_KINDS = ['connect', 'close', 'edit', 'party_state', 'editor_active'] as const;
+
+export const realtimeActivityTable = sqliteTable(
+  'realtime_activity',
+  {
+    id: text('id')
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv4()),
+    partyId: text('party_id')
+      .notNull()
+      .references(() => partyTable.id, { onDelete: 'cascade' }),
+    gameSessionId: text('game_session_id').references(() => gameSessionTable.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: VALID_REALTIME_ACTIVITY_KINDS }).notNull(),
+    userId: text('user_id').references(() => usersTable.id, { onDelete: 'set null' }),
+    // connect/close only: sockets still open in the room AFTER the event
+    connections: integer('connections'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+  },
+  (table) => [
+    index('idx_realtime_activity_party_created').on(table.partyId, table.createdAt),
+    index('idx_realtime_activity_session_created').on(table.gameSessionId, table.createdAt),
+    index('idx_realtime_activity_created_at').on(table.createdAt)
+  ]
+);
+
+export type RealtimeActivityKind = (typeof VALID_REALTIME_ACTIVITY_KINDS)[number];
+
+export type InsertRealtimeActivity = typeof realtimeActivityTable.$inferInsert;
+export type SelectRealtimeActivity = typeof realtimeActivityTable.$inferSelect;
+export const insertRealtimeActivitySchema = createInsertSchema(realtimeActivityTable);
+export const selectRealtimeActivitySchema = createSelectSchema(realtimeActivityTable);
+export const updateRealtimeActivitySchema = createUpdateSchema(realtimeActivityTable);
+
 // HEALTH
 // HEALTH
 // HEALTH

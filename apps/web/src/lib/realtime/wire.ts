@@ -69,3 +69,22 @@ export const sceneWireFromDoc = (
     parts
   };
 };
+
+// Room usage reporting (PartyKit room -> /api/internal/roomActivity). Only socket
+// lifecycle events travel this way; edits are recorded by the persist endpoints.
+export type RoomActivityKindWire = 'connect' | 'close';
+
+export interface RoomActivityEventWire {
+  kind: RoomActivityKindWire;
+  userId: string | null;
+  /** Sockets still open in the room after this event. */
+  connections: number;
+  /** Epoch ms on the room's clock. */
+  at: number;
+}
+
+export interface RoomActivityWire {
+  room: 'party' | 'game_session';
+  roomId: string;
+  events: RoomActivityEventWire[];
+}

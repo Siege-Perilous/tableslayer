@@ -59,8 +59,17 @@ export class SessionDocClient {
     gameSession: 'connecting',
     party: 'connecting'
   });
-  /** True once both rooms have synced and the server has hydrated the session doc. */
+  /**
+   * True once both rooms have synced and the server has hydrated the session doc.
+   * Latches: pages keep rendering the last doc state while the client sleeps.
+   */
   ready = $state(false);
+  /** Both rooms currently synced; false from disconnect until sync step 2 after reconnect. */
+  synced = $state(false);
+  /** True between disconnect() and connect() — a deliberate pause, not a fault. */
+  sleeping = $state(false);
+  /** Epoch ms of the last remote doc/awareness activity (plain number, not reactive). */
+  lastRemoteActivityAt = 0;
   canUndo = $state(false);
   canRedo = $state(false);
 
@@ -72,6 +81,7 @@ export class SessionDocClient {
   #listCache: { rev: number; list: SceneListEntry[] } | null = null;
   #partyCache: { rev: number; state: PartyState } | null = null;
   #changeListeners = new Set<(changes: SceneChange[]) => void>();
+  #remoteActivityListeners = new Set<(at: number) => void>();
 
   #undoManager: Y.UndoManager | null = null;
   #gameSessionProvider: YPartyKitProvider;
@@ -100,20 +110,30 @@ export class SessionDocClient {
 
     this.presence = new PresenceChannel(this.#gameSessionProvider.awareness, options.userId);
 
-    this.#gameSessionProvider.on('status', (event: { status: string }) => {
-      this.status.gameSession = event.status === 'connected' ? 'connected' : 'connecting';
+    this.#gameSessionProvider.on('status', (event: { status: ConnectionState }) => {
+      this.status.gameSession = event.status;
     });
-    this.#partyProvider.on('status', (event: { status: string }) => {
-      this.status.party = event.status === 'connected' ? 'connected' : 'connecting';
+    this.#partyProvider.on('status', (event: { status: ConnectionState }) => {
+      this.status.party = event.status;
     });
     this.#gameSessionProvider.on('sync', (synced: boolean) => {
       this.#gameSessionSynced = synced;
-      this.#checkReady();
+      this.#updateSynced();
     });
     this.#partyProvider.on('sync', (synced: boolean) => {
       this.#partySynced = synced;
-      this.#checkReady();
+      this.#updateSynced();
     });
+    // Peers arriving or moving count as activity; removals do not — the
+    // provider's own close handler emits a removed-only change, which would
+    // otherwise make a network blip look like someone is here. 'change' (not
+    // 'update') excludes heartbeat renewals.
+    this.#gameSessionProvider.awareness.on(
+      'change',
+      ({ added, updated }: { added: number[]; updated: number[]; removed: number[] }, origin: unknown) => {
+        if (origin !== 'local' && (added.length > 0 || updated.length > 0)) this.#noteRemoteActivity();
+      }
+    );
 
     this.doc.getMap('scenes').observeDeep((events, transaction) => {
       const changes = classifySceneEvents(events as Y.YEvent<Y.Map<unknown>>[], transaction);
@@ -122,9 +142,61 @@ export class SessionDocClient {
     // Hydration arrives as a meta update; re-check readiness when it lands.
     this.doc.getMap('meta').observe(() => this.#checkReady());
     this.partyDoc.getMap('meta').observe(() => this.#checkReady());
-    this.partyDoc.getMap('state').observe(() => {
+    this.partyDoc.getMap('state').observe((_event, transaction) => {
       this.#partyRev++;
+      if (!transaction.local) this.#noteRemoteActivity();
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Sleep / wake — Durable Objects bill wall-clock time while a room holds any
+  // socket, so idle clients drop their connections (see SleepController). The
+  // docs stay intact; edits made while asleep merge on reconnect.
+  // -------------------------------------------------------------------------
+
+  /** Reopen both rooms after a disconnect(). No-op unless sleeping. */
+  connect() {
+    if (!this.sleeping) return;
+    this.sleeping = false;
+    // The provider emits no 'connecting' status; report it ourselves
+    this.status = { gameSession: 'connecting', party: 'connecting' };
+    this.#gameSessionProvider.connect();
+    this.#partyProvider.connect();
+    this.presence.resume();
+  }
+
+  /** Close both rooms deliberately. No-op if already sleeping. */
+  disconnect() {
+    if (this.sleeping) return;
+    // Flip first so status observers can tell a deliberate pause from a fault
+    this.sleeping = true;
+    // Clear ephemeral presence while the socket is still open so peers see it go
+    this.presence.suspend();
+    this.#gameSessionProvider.disconnect();
+    this.#partyProvider.disconnect();
+    // The close handler emits status/sync only if it had connected; closing
+    // mid-connect emits nothing, so settle the flags here
+    this.#gameSessionSynced = false;
+    this.#partySynced = false;
+    this.synced = false;
+    this.status = { gameSession: 'disconnected', party: 'disconnected' };
+  }
+
+  /** Subscribe to remote doc/awareness activity (used by the idle policy). */
+  onRemoteActivity(listener: (at: number) => void): () => void {
+    this.#remoteActivityListeners.add(listener);
+    return () => this.#remoteActivityListeners.delete(listener);
+  }
+
+  #noteRemoteActivity() {
+    const at = Date.now();
+    this.lastRemoteActivityAt = at;
+    this.#remoteActivityListeners.forEach((listener) => listener(at));
+  }
+
+  #updateSynced() {
+    this.synced = this.#gameSessionSynced && this.#partySynced;
+    this.#checkReady();
   }
 
   // Remote peers can produce doc updates faster than this client processes
@@ -146,6 +218,7 @@ export class SessionDocClient {
   #revFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
   #applyChanges(changes: SceneChange[]) {
+    if (changes.some((change) => change.remote)) this.#noteRemoteActivity();
     for (const change of changes) {
       const sceneIds = change.part === 'scenes' ? change.keys : [change.sceneId];
       // The scene list mirrors a few settings fields (name, order, thumbnails)
@@ -313,6 +386,7 @@ export class SessionDocClient {
     this.#undoManager = null;
     this.presence.destroy();
     this.#changeListeners.clear();
+    this.#remoteActivityListeners.clear();
     this.#gameSessionProvider.destroy();
     this.#partyProvider.destroy();
     this.doc.destroy();

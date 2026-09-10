@@ -6,6 +6,7 @@ export * from './gameSessions';
 export * from './parties';
 export * from './partyInvites';
 export * from './partyMembers';
+export * from './realtimeActivity';
 export * from './scenes';
 export * from './stripe';
 export * from './users';

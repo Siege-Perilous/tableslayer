@@ -1,7 +1,12 @@
 import { insertAnnotationSchema, insertLightSchema, insertMarkerSchema, insertSceneSchema } from '$lib/db/app/schema';
 import { apiFactory } from '$lib/factories';
 import type { PersistSessionWire } from '$lib/realtime/wire';
-import { applySessionPersist, assertInternalRequest } from '$lib/server/realtime';
+import {
+  applySessionPersist,
+  assertInternalRequest,
+  getGameSessionPartyId,
+  recordRealtimeActivity
+} from '$lib/server/realtime';
 import { z } from 'zod';
 
 const sceneWireSchema = z.object({
@@ -30,6 +35,16 @@ export const POST = apiFactory(
     assertInternalRequest(event.request);
     // Zod leaves defaulted columns optional; the persister always sends full rows
     await applySessionPersist(event.body as PersistSessionWire);
+    // Persists only fire after remote edits, so one row per call is a good
+    // "someone edited" signal for usage tracking. Never fails the persist.
+    try {
+      const partyId = await getGameSessionPartyId(event.body.gameSessionId);
+      if (partyId) {
+        await recordRealtimeActivity({ partyId, gameSessionId: event.body.gameSessionId, kind: 'edit' });
+      }
+    } catch (error) {
+      console.warn('realtime activity (edit) failed', error);
+    }
     return { ok: true };
   },
   {
