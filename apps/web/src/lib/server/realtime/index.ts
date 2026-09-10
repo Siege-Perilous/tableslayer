@@ -149,3 +149,5 @@ const requestRoomResync = async (party: 'party' | 'game_session', roomId: string
 
 export const requestPartyRoomResync = (partyId: string) => requestRoomResync('party', partyId);
 export const requestGameSessionRoomResync = (gameSessionId: string) => requestRoomResync('game_session', gameSessionId);
+
+export * from './activity';

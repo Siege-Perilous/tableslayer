@@ -44,6 +44,8 @@ jobs:
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
           TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}
+          CLOUDFLARE_WORKERS_KEY=${{ secrets.CLOUDFLARE_WORKERS_KEY }}
+          CLOUDFLARE_BILLING_CYCLE_START_DAY=12
           PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
           PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
           INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}

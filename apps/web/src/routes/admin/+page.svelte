@@ -74,6 +74,10 @@
 
 <div class="admin">
   <div class="admin__section">
+    <Link href="/admin/usage">Realtime usage</Link>
+  </div>
+
+  <div class="admin__section">
     <Title as="h2" size="md">Create New Promo</Title>
     <Spacer />
     <form onsubmit={handleCreatePromo} class="admin__form">

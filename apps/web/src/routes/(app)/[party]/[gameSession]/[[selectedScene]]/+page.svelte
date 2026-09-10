@@ -15,8 +15,19 @@
     Shortcuts,
     type ChecklistItemId
   } from '$lib/components';
-  import { useUpdateChecklistProgressMutation, useUploadSceneThumbnailMutation } from '$lib/queries';
-  import { buildRenderProps, reuseUnchanged, type AnnotationRow, type MarkerRow } from '$lib/realtime';
+  import {
+    useEditorActivityMutation,
+    useUpdateChecklistProgressMutation,
+    useUploadSceneThumbnailMutation
+  } from '$lib/queries';
+  import {
+    EDITOR_IDLE_POLICY,
+    SleepController,
+    buildRenderProps,
+    reuseUnchanged,
+    type AnnotationRow,
+    type MarkerRow
+  } from '$lib/realtime';
   import {
     bindPropertyUpdatesToDoc,
     buildSceneProps,
@@ -52,7 +63,7 @@
     type StageExports,
     type StageProps
   } from '@tableslayer/stage';
-  import { addToast, ContextMenu, FogSliders, Icon, type ContextMenuItem } from '@tableslayer/ui';
+  import { addToast, ContextMenu, FogSliders, Icon, removeToast, type ContextMenuItem } from '@tableslayer/ui';
   import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp } from '@tabler/icons-svelte';
   import { Pane, PaneGroup, PaneResizer, type PaneAPI } from 'paneforge';
   import { onMount, untrack } from 'svelte';
@@ -89,6 +100,33 @@
       })
   );
 
+  // Idle sleep: a tab hidden for 5 min or untouched for an hour drops its room
+  // connections (Durable Objects bill while any socket is open). Input wakes it.
+  // While active, a ping every couple of minutes lets a sleeping playfield know
+  // the GM is here. Never sleeps mid-gesture.
+  const editorActivityMutation = useEditorActivityMutation();
+  let reconnectToastId: string | null = null;
+  const sleep = untrack(
+    () =>
+      new SleepController({
+        policy: EDITOR_IDLE_POLICY,
+        canSleep: () =>
+          !stage?.fogOfWar?.isDrawing() && !stage?.annotations?.isDrawing() && Object.keys(dragPositions).length === 0,
+        onSleep: () =>
+          addToast({
+            data: {
+              title: 'Live connection paused',
+              body: 'Move the mouse or press a key to reconnect',
+              type: 'info'
+            }
+          }),
+        onWake: () => {
+          reconnectToastId = addToast({ data: { title: 'Reconnecting', type: 'loading' } });
+        },
+        onPing: () => editorActivityMutation.mutate({ partyId: data.party.id, gameSessionId: data.gameSession.id })
+      })
+  );
+
   // Panel property updates write through to the selected scene's doc subtree
   $effect(() => {
     if (session.client && selectedSceneId) {
@@ -115,15 +153,27 @@
   // "Connected" now means "your edits are durable" — the server persists doc
   // changes. Toast only the transitions worth telling the user about: a drop
   // after being live, and the subsequent recovery. First connect is silent.
+  // "Live" requires both rooms synced, so "Reconnected" means fresh state, not
+  // just an open socket. A deliberate idle sleep is not a fault: `sleeping`
+  // flips synchronously before the status changes, so the effect can tell.
   const connectionLive = $derived(
-    session.client?.status.gameSession === 'connected' && session.client?.status.party === 'connected'
+    session.client?.status.gameSession === 'connected' &&
+      session.client?.status.party === 'connected' &&
+      session.client?.synced === true
   );
   let wasLive = false;
   $effect(() => {
     const live = session.ready && connectionLive;
+    const sleeping = session.client?.sleeping ?? false;
     if (wasLive && !live) {
-      addToast({ data: { title: 'Connection lost — edits will sync when back online', type: 'danger' } });
+      if (!sleeping) {
+        addToast({ data: { title: 'Connection lost — edits will sync when back online', type: 'danger' } });
+      }
     } else if (!wasLive && live && wasEverLive) {
+      if (reconnectToastId) {
+        removeToast(reconnectToastId);
+        reconnectToastId = null;
+      }
       addToast({ data: { title: 'Reconnected', type: 'success' } });
     }
     if (live) wasEverLive = true;
@@ -1348,6 +1398,7 @@
   onMount(() => {
     stagePerformance.init();
 
+    const unbindSleep = session.client ? sleep.bindClient(session.client) : null;
     document.addEventListener('visibilitychange', commitPendingGestureWrites);
 
     if (stageElement) {
@@ -1367,6 +1418,8 @@
       dragClearTimers.forEach((timer) => clearTimeout(timer));
       dragClearTimers.clear();
       unbindPropertyUpdates();
+      unbindSleep?.();
+      sleep.destroy();
       session.destroy();
     };
   });

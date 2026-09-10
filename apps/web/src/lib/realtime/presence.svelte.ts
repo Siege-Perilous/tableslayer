@@ -83,13 +83,40 @@ export class PresenceChannel {
 
   #awareness: Awareness;
   #userId: string;
-  #heartbeat: ReturnType<typeof setInterval>;
+  #heartbeat: ReturnType<typeof setInterval> | null = null;
 
   constructor(awareness: Awareness, userId: string) {
     this.#awareness = awareness;
     this.#userId = userId;
     this.#awareness.on('change', this.#readStates);
+    this.#startHeartbeat();
+  }
+
+  #startHeartbeat() {
+    if (this.#heartbeat) return;
     this.#heartbeat = setInterval(() => this.#refresh(), HEARTBEAT_INTERVAL_MS);
+  }
+
+  #stopHeartbeat() {
+    if (this.#heartbeat) clearInterval(this.#heartbeat);
+    this.#heartbeat = null;
+  }
+
+  /**
+   * Pause before the provider disconnects: stop the heartbeat and clear every
+   * ephemeral field so a stale cursor cannot reappear on peers when the provider
+   * re-sends local state on reconnect. Keeps `stagePerformance` (the playfield
+   * mirrors it) and never sets a null state — y-protocols makes
+   * setLocalStateField a no-op on null, which would silently break cursors after wake.
+   */
+  suspend() {
+    this.#stopHeartbeat();
+    const stagePerformance = this.#awareness.getLocalState()?.stagePerformance;
+    this.#awareness.setLocalState(stagePerformance ? { stagePerformance } : {});
+  }
+
+  resume() {
+    this.#startHeartbeat();
   }
 
   #readStates = () => {
@@ -247,7 +274,7 @@ export class PresenceChannel {
   }
 
   destroy() {
-    clearInterval(this.#heartbeat);
+    this.#stopHeartbeat();
     this.#awareness.off('change', this.#readStates);
   }
 }
