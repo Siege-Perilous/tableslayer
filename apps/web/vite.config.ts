@@ -1,4 +1,4 @@
-import { sentrySvelteKit } from '@sentry/sveltekit';
+import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
 
@@ -7,11 +7,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       sentrySvelteKit({
-        sourceMapsUploadOptions: {
-          org: 'siege-perilous',
-          project: 'tableslayer',
-          authToken: env.SENTRY_AUTH_TOKEN
-        }
+        org: 'siege-perilous',
+        project: 'tableslayer',
+        authToken: env.SENTRY_AUTH_TOKEN
       }),
       sveltekit()
     ],

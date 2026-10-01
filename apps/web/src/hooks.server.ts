@@ -6,7 +6,14 @@ import { sequence } from '@sveltejs/kit/hooks';
 if (process.env.ENV_NAME === 'production' && process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    tracesSampleRate: 1
+    tracesSampleRate: 1,
+    dataCollection: {
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      databaseQueryData: false
+    }
   });
 }
 

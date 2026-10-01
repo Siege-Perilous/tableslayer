@@ -5,7 +5,11 @@ import { handleErrorWithSentry } from '@sentry/sveltekit';
 if (!dev) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    tracesSampleRate: 1.0
+    tracesSampleRate: 1.0,
+    dataCollection: {
+      cookies: false,
+      urlQueryParams: false
+    }
   });
 }
 
