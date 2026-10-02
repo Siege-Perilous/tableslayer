@@ -1,8 +1,11 @@
 import type { Client } from '@libsql/client';
 
-// libsql/Turso embedded-replica stream errors that an in-place reconnect() can recover from.
-// See spec/embedded-replica-stream-recovery.md for the full rationale (libsql#2083, #1856).
-const STREAM_ERRORS = /stream not found|stream (has )?expired|STREAM_EXPIRED|HRANA_CLOSED|invalid baton/i;
+// libsql/Turso embedded-replica errors that an in-place reconnect() can recover from: a dropped
+// Hrana stream, or a write forwarded to the primary over a stale keep-alive connection that the
+// primary already closed (hyper's IncompleteMessage / connection reset). Both surface once and heal
+// on a fresh connection. See spec/embedded-replica-stream-recovery.md (libsql#2083, #1856).
+const STREAM_ERRORS =
+  /stream not found|stream (has )?expired|STREAM_EXPIRED|HRANA_CLOSED|invalid baton|IncompleteMessage|connection closed before message completed|connection reset|broken pipe/i;
 
 // Drizzle wraps the libsql error in DrizzleQueryError, so walk the whole `cause` chain.
 export const isStreamError = (error: unknown): boolean => {
