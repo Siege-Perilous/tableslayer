@@ -18,6 +18,17 @@ describe('isStreamError', () => {
     }
   });
 
+  it('matches a write forwarded over a stale keep-alive connection to the primary', () => {
+    for (const message of [
+      'Sync(HttpDispatch(hyper::Error(IncompleteMessage)))',
+      'connection closed before message completed',
+      'Connection reset by peer (os error 104)',
+      'Broken pipe (os error 32)'
+    ]) {
+      expect(isStreamError(new Error(message))).toBe(true);
+    }
+  });
+
   it('walks the cause chain (Drizzle wraps the libsql error)', () => {
     const wrapped = new Error('Failed query: delete from "session"', { cause: streamError() });
     expect(isStreamError(wrapped)).toBe(true);
