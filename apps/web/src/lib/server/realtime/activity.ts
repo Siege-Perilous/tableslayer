@@ -26,7 +26,9 @@ export type RealtimeActivityInput = Pick<InsertRealtimeActivity, 'partyId' | 'ki
 export const recordRealtimeActivity = async (input: RealtimeActivityInput | RealtimeActivityInput[]) => {
   const rows = Array.isArray(input) ? input : [input];
   if (rows.length === 0) return;
-  await db.insert(realtimeActivityTable).values(rows);
+  // Ids are generated before the statement is sent, so a resilientClient retry of a write that
+  // already landed on the primary replays the same ids; ignoring the conflict keeps it idempotent.
+  await db.insert(realtimeActivityTable).values(rows).onConflictDoNothing();
 };
 
 export const getGameSessionPartyId = async (gameSessionId: string): Promise<string | null> => {
