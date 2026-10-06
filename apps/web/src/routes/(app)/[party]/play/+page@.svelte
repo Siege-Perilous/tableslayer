@@ -25,7 +25,6 @@
   import { IconArrowBackUp } from '@tabler/icons-svelte';
   import { onMount, untrack } from 'svelte';
   import PauseOverlay from './PauseOverlay.svelte';
-  import SleepOverlay from './SleepOverlay.svelte';
   import { PlaySession, type SessionRoute } from './usePlaySession.svelte';
   import { PlayTools } from './usePlayTools.svelte';
 
@@ -66,13 +65,12 @@
   // ---------------------------------------------------------------------------
   // Idle sleep. A TV left on overnight is the expensive case: Durable Objects
   // bill while any socket is open. After 30 min without input or remote
-  // activity (5 min hidden) the client disconnects and shows a resting card;
-  // the stage keeps rendering the last scene. While asleep we poll the DB
-  // (never a room) every 20 s and reconnect when the GM does something.
-  // Touching the screen wakes immediately.
+  // activity (5 min hidden) the client disconnects silently; the stage keeps
+  // rendering the last scene. While asleep we poll the DB (never a room) every
+  // 20 s and reconnect when the GM does something. Touching the screen wakes
+  // immediately.
   // ---------------------------------------------------------------------------
 
-  let waking = $state(false);
   // Baseline comes from the first poll after sleep, not the live doc, so the
   // comparison is DB-to-DB and cannot false-wake on doc/DB drift
   let sleepBaseline: { sleptAt: number; state: { activeSceneId: string | null; isPaused: boolean } | null } | null =
@@ -86,10 +84,7 @@
           devLog('play', `sleep (${reason})`);
           sleepBaseline = { sleptAt: Date.now(), state: null };
         },
-        onWake: (reason) => {
-          devLog('play', `wake (${reason})`);
-          waking = true;
-        }
+        onWake: (reason) => devLog('play', `wake (${reason})`)
       })
   );
 
@@ -98,10 +93,6 @@
     const client = session.client;
     if (!client) return;
     return sleep.bindClient(client);
-  });
-
-  $effect(() => {
-    if (waking && session.client?.synced) waking = false;
   });
 
   // Wake on a scene switch, pause toggle, or any newer wake-kind activity
@@ -453,10 +444,6 @@
 
 {#if !stageIsLoading && gameIsPaused}
   <PauseOverlay hasActiveScene={!!session.activeSceneId} pauseScreenUrl={party.pauseScreenThumb?.resizedUrl} />
-{/if}
-
-{#if sleep.phase === 'asleep' || waking}
-  <SleepOverlay reconnecting={waking} />
 {/if}
 
 <div class={stageClasses} bind:this={stageElement} data-testid="playfieldStage">

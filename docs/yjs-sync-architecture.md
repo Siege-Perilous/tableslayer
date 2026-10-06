@@ -140,9 +140,9 @@ month of games. Both routes therefore drop their connections when nothing is hap
   then production embedded-replica sync ≤ 30 s, so under a minute in practice. Worst case, when
   the editor pinged within the last 2 min, is about 2 min 20 s plus replica sync. Doc changes
   (edits, scene switch, pause) skip the ping and wake within one poll of the persist.
-- A sleeping playfield shows `SleepOverlay` ("Still playing?") over the still-rendered last
-  scene; the editor shows an info toast on sleep and a loading toast until both rooms are
-  synced again.
+- A sleeping playfield shows nothing: the last scene stays rendered and any touch wakes it, so
+  a notice only drew complaints. The editor shows an info toast on sleep and a loading toast
+  until both rooms are synced again.
 
 ### Render data flow (both routes)
 
