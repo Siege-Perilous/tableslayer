@@ -254,7 +254,7 @@ jobs:
 
             - Docs preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
             - Web preview in progress - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
-            - PartyKit WebSocket: `pr-${{ github.event.pull_request.number }}.tableslayer.com`
+            - Realtime worker: `tableslayer-realtime-pr-${{ github.event.pull_request.number }}.${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}.workers.dev`
 
   # Deploy docs (runs in parallel with web)
   fly_deploy_docs:
@@ -276,7 +276,7 @@ jobs:
           name: pr-${{ github.event.pull_request.number }}-docs
           config: fly.docs.toml
 
-  # Deploy web + PartyKit (runs in parallel with docs)
+  # Deploy web + realtime worker (runs in parallel with docs)
   fly_deploy_web:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -292,18 +292,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/shared
-      - name: Deploy PartyKit for PR
+      - name: Deploy realtime worker for PR
         working-directory: apps/web
         run: |
-          echo "Deploying PartyKit for PR #${{ github.event.pull_request.number }}"
-          npx partykit deploy --domain tableslayer.com --preview pr-${{ github.event.pull_request.number }} \
-            --var BASE_URL=https://pr-${{ github.event.pull_request.number }}-web.fly.dev \
-            --var INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}
+          echo "Deploying realtime worker for PR #${{ github.event.pull_request.number }}"
+          npx wrangler deploy --config partyserver/wrangler.jsonc \
+            --name tableslayer-realtime-pr-${{ github.event.pull_request.number }} \
+            --var BASE_URL:https://pr-${{ github.event.pull_request.number }}-web.fly.dev \
+            --var INTERNAL_API_TOKEN:${{ secrets.INTERNAL_API_TOKEN }}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Generate .env File
         run: |
           cat <<EOF > apps/web/.env
@@ -332,8 +331,7 @@ jobs:
           # Cloudflare Turnstile always-pass test keys so e2e exercises the widget
           TURNSTILE_SITE_KEY=1x00000000000000000000AA
           TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
-          PUBLIC_PARTYKIT_HOST=pr-${{ github.event.pull_request.number }}.tableslayer.com
-          PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
+          PUBLIC_PARTYKIT_HOST=tableslayer-realtime-pr-${{ github.event.pull_request.number }}.${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}.workers.dev
           INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}
           EOF
       - name: Deploy Web
@@ -371,7 +369,7 @@ jobs:
 
             - [Docs preview](https://pr-${{ github.event.pull_request.number }}-docs.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
             - [Web preview](https://pr-${{ github.event.pull_request.number }}-web.fly.dev) - [Fly](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
-            - PartyKit WebSocket: `pr-${{ github.event.pull_request.number }}.tableslayer.com`
+            - Realtime worker: `tableslayer-realtime-pr-${{ github.event.pull_request.number }}.${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}.workers.dev`
       - name: Update PR Comment - Failure
         if: needs.fly_deploy_docs.result == 'failure' || needs.fly_deploy_web.result == 'failure'
         uses: peter-evans/create-or-update-comment@v3
@@ -386,7 +384,7 @@ jobs:
 
             - [Inspect docs preview](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-docs/monitoring)
             - [Inspect web preview](https://fly.io/apps/pr-${{ github.event.pull_request.number }}-web/monitoring)
-            - PartyKit deployment may have failed - check workflow logs
+            - Realtime worker deployment may have failed - check workflow logs
 
   tests-docs:
     if: github.event.pull_request.draft == false
@@ -471,7 +469,7 @@ jobs:
         working-directory: apps/web
         env:
           BASE_URL: https://pr-${{ github.event.pull_request.number }}-web.fly.dev
-          PUBLIC_PARTYKIT_HOST: pr-${{ github.event.pull_request.number }}.tableslayer.com
+          PUBLIC_PARTYKIT_HOST: tableslayer-realtime-pr-${{ github.event.pull_request.number }}.${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}.workers.dev
           CI: true
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |

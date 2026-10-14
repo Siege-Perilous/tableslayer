@@ -295,7 +295,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       try {
-        const response = await fetch(`${partykitUrl}/parties/game_session/${testRoomId}`, {
+        const response = await fetch(`${partykitUrl}/parties/game-session/${testRoomId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'ping', timestamp: Date.now() }),

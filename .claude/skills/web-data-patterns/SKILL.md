@@ -1,11 +1,11 @@
 ---
 name: web-data-patterns
-description: Data-layer patterns for apps/web — apiFactory error semantics, mutationFactory/handleMutation, drizzle schema conventions, the Y.js/PartyKit realtime model (no save pipeline!), auth, R2 uploads, Stripe, email, env vars. Load when adding/changing API endpoints, queries/mutations, schema, realtime behavior, or server logic in apps/web.
+description: Data-layer patterns for apps/web — apiFactory error semantics, mutationFactory/handleMutation, drizzle schema conventions, the Y.js/PartyServer realtime model (no save pipeline!), auth, R2 uploads, Stripe, email, env vars. Load when adding/changing API endpoints, queries/mutations, schema, realtime behavior, or server logic in apps/web.
 ---
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-09-10.
+> **Freshness**: last verified 2026-10-13.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 
@@ -44,11 +44,11 @@ All in `src/lib/queries/*.ts`, one file per domain. `mutationFactory` (`src/lib/
 
 Full doc: `docs/yjs-sync-architecture.md` (current, trust it). The one-paragraph model:
 
-PartyKit + Y.js. Two Y docs per session (`game_session` = scene content, `party` = party state). Client entry is `src/lib/realtime/SessionDocClient.svelte.ts`: reactive snapshot getters (pages never touch Y types), writes through origin-tagged writers, per-scene `Y.UndoManager`. The PartyKit room (`partykit/gameSession.ts`) hydrates from the DB and is the **only** writer of scene data back to the DB (debounced 2s/max 10s via `/api/internal/persistSession`).
+PartyServer (Cloudflare Workers + Durable Objects, `apps/web/partyserver/`) + Y.js via `y-partyserver`. Two Y docs per session (`game-session` = scene content, `party` = party state; the activity/DB kind is still `'game_session'`). Client entry is `src/lib/realtime/SessionDocClient.svelte.ts`: reactive snapshot getters (pages never touch Y types), writes through origin-tagged writers, per-scene `Y.UndoManager`. The room (`partyserver/gameSession.ts`) hydrates from the DB lazily in `onStart`, keeps a chunked doc snapshot in DO storage (`docSnapshot.ts`, so Yjs item identity survives eviction and hibernation), and is the **only** writer of scene data back to the DB (y-partyserver `onSave`, debounced 2s/max 10s via `/api/internal/persistSession`; retries by alarm). Hibernation is on; never implement `webSocketMessage`/`webSocketClose`/`alarm` on the classes.
 
 **Consequences when adding features:**
 
-- **There is no save pipeline.** Do not add autosave, save buttons, or scene-update API mutations. Edits are doc writes; PartyKit persists.
+- **There is no save pipeline.** Do not add autosave, save buttons, or scene-update API mutations. Edits are doc writes; the room persists.
 - Scene **create** still goes through `/api/scenes/createScene` (server computes alignment), then the client adds the row to the doc. Update/delete/reorder scenes = doc writes only (see the comment atop `queries/scenes.ts`).
 - After any **direct DB write** to scene data (import, admin tooling), trigger a room `resync` (`requestGameSessionRoomResync` in `src/lib/server/realtime/`), or the live doc won't see it.
 - **Write cadence is handled for you.** `queuePropertyUpdate` applies locally at once and flushes to the doc event-driven (`$lib/utils/propertyUpdateBroadcaster.ts`: 8ms leading-edge gate + trailing timer), and `SessionDocClient` coalesces remote rev bumps via `setTimeout(0)` so message backlogs drain into one rebuild. Do not bypass the broadcaster with per-event `client.write.*` calls in a gesture loop, and never schedule realtime send/receive work on `requestAnimationFrame` — rAF cadence is per-window (focus/occlusion/GPU contention) and makes sync smoothness depend on which window has scheduler priority.
@@ -63,7 +63,7 @@ PartyKit + Y.js. Two Y docs per session (`game_session` = scene content, `party`
 
 **Realtime activity** (`realtime_activity` table, usage on `/admin/usage`):
 
-- Rooms batch `connect`/`close` (1 s) to `/api/internal/roomActivity` via `partykit/roomActivity.ts`; never throws, never retries. Persist endpoints add `edit` / `party_state` rows. `src/lib/server/realtime/activity.ts` is the **only writer** (and the retention pruner, 90 days). The rollup (`activityRollup.ts`) is pure and tested; `usage.ts` joins metadata and is imported by path from the admin page only (not barrel-exported — see the Rolldown note under Turnstile). Optional Cloudflare gauge: `src/lib/server/cloudflare/` (`CLOUDFLARE_WORKERS_KEY` + `CLOUDFLARE_ACCOUNT_ID`, 10 min cache).
+- Rooms batch `connect`/`close` (1 s) to `/api/internal/roomActivity` via `partyserver/roomActivity.ts`; never throws, never retries. Persist endpoints add `edit` / `party_state` rows. `src/lib/server/realtime/activity.ts` is the **only writer** (and the retention pruner, 90 days). The rollup (`activityRollup.ts`) is pure and tested; `usage.ts` joins metadata and is imported by path from the admin page only (not barrel-exported — see the Rolldown note under Turnstile). Optional Cloudflare gauge: `src/lib/server/cloudflare/` (`CLOUDFLARE_WORKERS_KEY` + `CLOUDFLARE_ACCOUNT_ID`, 10 min cache).
 - Editor integration: `useEditorSession.svelte.ts` in `routes/(app)/[party]/[gameSession]/[[selectedScene]]/` (applies remote fog/annotation masks to the stage, idle thumbnail regen).
 
 ## Auth
@@ -81,7 +81,7 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - **Turnstile (bot check on signup)**: `src/lib/server/turnstile.ts` `verifyTurnstileToken()` (fails closed) — imported directly, NOT via the `$lib/server` barrel: a server module with a single endpoint consumer that is also barrel-re-exported makes Rolldown (Vite 8) inline it into the endpoint chunk with an extra `export { x as t }`, and SvelteKit's build fails with `Invalid export 't'`; gated by `isTurnstileEnabled()` (`TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`). Widget is `lib/components/Turnstile.svelte` (`appearance` prop: `always` outside production so it can be seen/tested, `interaction-only` in production); site key reaches the page via `signup/+page.server.ts`. CI preview uses Cloudflare's always-pass test keys.
 - **Env**: `ENV_NAME ∈ production|preview|dev` drives behavior throughout. `PUBLIC_PARTYKIT_HOST` is the only public var. `CLOUDFLARE_WORKERS_KEY` (Account Analytics: Read) + `CLOUDFLARE_BILLING_CYCLE_START_DAY` are optional and only feed the admin usage gauge. See `.env-example` for the full list.
 - Server business logic lives under `src/lib/server/<domain>/`, re-exported from `$lib/server` — endpoints import from there, not from deep paths.
-- **Dev**: `pnpm run dev` runs vite (port 5174) + partykit (1999) together. Gates: `pnpm run check`, `pnpm run format-check`.
+- **Dev**: `pnpm run dev` runs vite (port 5174) + `wrangler dev` (1999) together; the worker reads no `.env`, its dev defaults live in code and `partyserver/wrangler.jsonc`. Gates: `pnpm run check` (includes `check:worker`: `wrangler types` + `tsc` for the worker), `pnpm run format-check`.
 
 ## Anchor files (freshness check)
 
@@ -90,7 +90,7 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - `apps/web/src/lib/db/app/schema.ts` / `index.ts` / `resilientClient.ts`
 - `apps/web/src/lib/realtime/SessionDocClient.svelte.ts` / `docSchema.ts`
 - `apps/web/src/lib/realtime/idlePolicy.ts` / `SleepController.svelte.ts`
-- `apps/web/partykit/gameSession.ts` / `roomActivity.ts`
+- `apps/web/partyserver/gameSession.ts` / `docSnapshot.ts` / `roomActivity.ts` / `wrangler.jsonc`
 - `apps/web/src/lib/server/realtime/activity.ts` / `activityRollup.ts` / `usage.ts`
 - `apps/web/src/lib/server/auth.ts`, `apps/web/src/hooks.server.ts`
 - `apps/web/src/routes/api/scenes/createScene/+server.ts` — canonical endpoint

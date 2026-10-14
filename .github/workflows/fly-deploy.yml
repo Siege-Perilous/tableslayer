@@ -47,22 +47,22 @@ jobs:
           CLOUDFLARE_WORKERS_KEY=${{ secrets.CLOUDFLARE_WORKERS_KEY }}
           CLOUDFLARE_BILLING_CYCLE_START_DAY=12
           PUBLIC_PARTYKIT_HOST=partykit.tableslayer.com
-          PARTYKIT_TOKEN=${{ secrets.PARTYKIT_TOKEN }}
           INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}
           EOF
       - uses: ./.github/shared
-      - name: Deploy PartyKit servers
+      - name: Deploy realtime worker
         if: github.ref == 'refs/heads/main'
         working-directory: apps/web
+        # BASE_URL and the custom domain come from env.production in wrangler.jsonc.
+        # Secrets survive deploys, so putting the token after each deploy is idempotent
+        # and also covers the very first deploy of a fresh worker.
         run: |
-          npx partykit deploy --name tableslayer --domain partykit.tableslayer.com \
-            --var BASE_URL=https://tableslayer.com \
-            --var INTERNAL_API_TOKEN=${{ secrets.INTERNAL_API_TOKEN }}
+          npx wrangler deploy --config partyserver/wrangler.jsonc --env production
+          echo "${{ secrets.INTERNAL_API_TOKEN }}" | npx wrangler secret put INTERNAL_API_TOKEN \
+            --config partyserver/wrangler.jsonc --env production
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Deploy fly productions
         run: |
           flyctl deploy --remote-only --config fly.web.toml --build-arg NODE_OPTIONS="--max-old-space-size=4096"

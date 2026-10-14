@@ -1,8 +1,8 @@
 import type { StagePerformanceSetting } from '$lib/stores/stagePerformance.svelte';
 import type { HoveredMarker } from '@tableslayer/stage';
-import type YPartyKitProvider from 'y-partykit/provider';
+import type YProvider from 'y-partyserver/provider';
 
-type Awareness = YPartyKitProvider['awareness'];
+type Awareness = YProvider['awareness'];
 
 export interface CursorData {
   userId: string;

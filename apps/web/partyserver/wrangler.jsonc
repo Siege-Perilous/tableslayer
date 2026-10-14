@@ -1,0 +1,40 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tableslayer-realtime-preview",
+  "main": "index.ts",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "vars": {
+    "BASE_URL": "http://localhost:5174"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "GameSession", "class_name": "GameSessionServer" },
+      { "name": "Party", "class_name": "PartyServer" }
+    ]
+  },
+  "exports": {
+    "GameSessionServer": { "type": "durable-object", "storage": "sqlite" },
+    "PartyServer": { "type": "durable-object", "storage": "sqlite" }
+  },
+  "env": {
+    "production": {
+      "name": "tableslayer-realtime",
+      "workers_dev": true,
+      "routes": [{ "pattern": "partykit.tableslayer.com", "custom_domain": true }],
+      "vars": {
+        "BASE_URL": "https://tableslayer.com"
+      },
+      "durable_objects": {
+        "bindings": [
+          { "name": "GameSession", "class_name": "GameSessionServer" },
+          { "name": "Party", "class_name": "PartyServer" }
+        ]
+      },
+      "exports": {
+        "GameSessionServer": { "type": "durable-object", "storage": "sqlite" },
+        "PartyServer": { "type": "durable-object", "storage": "sqlite" }
+      }
+    }
+  }
+}
