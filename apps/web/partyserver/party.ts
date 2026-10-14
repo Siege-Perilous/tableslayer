@@ -16,6 +16,7 @@ import { createRoomActivityReporter } from './roomActivity';
 const HYDRATION_ORIGIN = 'server-hydration';
 const SNAPSHOT_ORIGIN = 'server-snapshot';
 const PERSIST_RETRY_MS = 15000;
+const PERSIST_RETRY_MAX_MS = 15 * 60 * 1000;
 const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface DirtyWire {
@@ -36,6 +37,7 @@ export class PartyServer extends YServer {
   #observing = false;
   #persisting = false;
   #hydration: Promise<void> | null = null;
+  #retryAttempt = 0;
   #activity = createRoomActivityReporter(
     { name: () => this.name, env: this.env, connections: () => [...this.getConnections()].length },
     'party'
@@ -74,7 +76,7 @@ export class PartyServer extends YServer {
     if (!this.#hydration) {
       this.#hydration = this.#hydrate()
         .catch((error) => {
-          console.error(`hydration failed for party ${this.name}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+          console.error(`hydration failed for party ${this.name}; retrying`, error);
           this.#scheduleRetry();
         })
         .finally(() => {
@@ -87,6 +89,7 @@ export class PartyServer extends YServer {
   async #hydrate() {
     if (isDocHydrated(this.document)) return;
     const state = await appRequest<PartyStateWire>(this.env, '/api/internal/partySnapshot', { partyId: this.name });
+    this.#retryAttempt = 0;
     if (isDocHydrated(this.document)) return;
     this.document.transact(() => {
       const map = getPartyStateMap(this.document);
@@ -97,8 +100,12 @@ export class PartyServer extends YServer {
     }, HYDRATION_ORIGIN);
   }
 
+  // Alarms outlive the instance, so back off: a room whose app call keeps failing
+  // settles at one wake every 15 minutes instead of every 15 seconds forever
   #scheduleRetry() {
-    this.ctx.storage.setAlarm(Date.now() + PERSIST_RETRY_MS).catch((error) => {
+    const delay = Math.min(PERSIST_RETRY_MS * 2 ** this.#retryAttempt, PERSIST_RETRY_MAX_MS);
+    this.#retryAttempt++;
+    this.ctx.storage.setAlarm(Date.now() + delay).catch((error) => {
       console.error(`failed to schedule retry for party ${this.name}`, error);
     });
   }
@@ -130,9 +137,10 @@ export class PartyServer extends YServer {
         isPaused: state.isPaused
       });
       await writeDirtySet(this.ctx.storage, { dirty: this.#dirty } satisfies DirtyWire);
+      this.#retryAttempt = 0;
     } catch (error) {
       this.#dirty = true;
-      console.error(`persistParty failed for ${this.name}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+      console.error(`persistParty failed for ${this.name}; retrying`, error);
       this.#scheduleRetry();
     } finally {
       this.#persisting = false;

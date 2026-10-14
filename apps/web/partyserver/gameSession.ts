@@ -17,6 +17,7 @@ const ALL_PARTS: ScenePart[] = ['settings', 'markers', 'lights', 'annotations', 
 const HYDRATION_ORIGIN = 'server-hydration';
 const SNAPSHOT_ORIGIN = 'server-snapshot';
 const PERSIST_RETRY_MS = 15000;
+const PERSIST_RETRY_MAX_MS = 15 * 60 * 1000;
 const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface DirtyWire {
@@ -49,6 +50,7 @@ export class GameSessionServer extends YServer {
   #observing = false;
   #persisting = false;
   #hydration: Promise<void> | null = null;
+  #retryAttempt = 0;
   #activity = createRoomActivityReporter(
     { name: () => this.name, env: this.env, connections: () => [...this.getConnections()].length },
     'game_session'
@@ -134,7 +136,7 @@ export class GameSessionServer extends YServer {
     if (!this.#hydration) {
       this.#hydration = this.#hydrate()
         .catch((error) => {
-          console.error(`hydration failed for game session ${this.name}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+          console.error(`hydration failed for game session ${this.name}; retrying`, error);
           this.#scheduleRetry();
         })
         .finally(() => {
@@ -153,10 +155,15 @@ export class GameSessionServer extends YServer {
     if (!isDocHydrated(this.document)) {
       hydrateGameSessionDoc(this.document, hydrationDataFromWire(snapshot), HYDRATION_ORIGIN);
     }
+    this.#retryAttempt = 0;
   }
 
+  // Alarms outlive the instance, so back off: a room whose app call keeps failing
+  // settles at one wake every 15 minutes instead of every 15 seconds forever
   #scheduleRetry() {
-    this.ctx.storage.setAlarm(Date.now() + PERSIST_RETRY_MS).catch((error) => {
+    const delay = Math.min(PERSIST_RETRY_MS * 2 ** this.#retryAttempt, PERSIST_RETRY_MAX_MS);
+    this.#retryAttempt++;
+    this.ctx.storage.setAlarm(Date.now() + delay).catch((error) => {
       console.error(`failed to schedule retry for game session ${this.name}`, error);
     });
   }
@@ -198,6 +205,7 @@ export class GameSessionServer extends YServer {
       };
       await appRequest(this.env, '/api/internal/persistSession', payload);
       this.#stats.persistOk++;
+      this.#retryAttempt = 0;
       await writeDirtySet(this.ctx.storage, this.#dirtyWire());
     } catch (error) {
       this.#stats.persistFail++;
@@ -206,7 +214,7 @@ export class GameSessionServer extends YServer {
       // storage snapshot regardless.
       for (const [sceneId, parts] of dirty) this.#markDirty(sceneId, parts);
       for (const sceneId of deleted) this.#deletedSceneIds.add(sceneId);
-      console.error(`persistSession failed for ${this.name}; retrying in ${PERSIST_RETRY_MS}ms`, error);
+      console.error(`persistSession failed for ${this.name}; retrying`, error);
       this.#scheduleRetry();
     } finally {
       this.#persisting = false;
@@ -249,6 +257,7 @@ export class GameSessionServer extends YServer {
         connections: [...this.getConnections()].length,
         dirty: [...this.#dirty.entries()].map(([sceneId, parts]) => [sceneId.slice(0, 8), [...parts]]),
         deleted: [...this.#deletedSceneIds],
+        retryAttempt: this.#retryAttempt,
         stats: this.#stats
       });
     }
