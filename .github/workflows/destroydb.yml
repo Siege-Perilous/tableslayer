@@ -20,16 +20,16 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Install jq
         run: sudo apt-get install -y jq
-      - name: Delete PartyKit deployment
+      - name: Delete realtime worker
         working-directory: apps/web
         run: |
-          echo "Deleting PartyKit deployment for PR #${{ github.event.pull_request.number }}"
-          npx partykit delete --name tableslayer --preview pr-${{ github.event.pull_request.number }} --force || echo "PartyKit deployment not found or already deleted"
+          echo "Deleting realtime worker for PR #${{ github.event.pull_request.number }}"
+          npx wrangler delete --config partyserver/wrangler.jsonc \
+            --name tableslayer-realtime-pr-${{ github.event.pull_request.number }} --force \
+            || echo "Realtime worker not found or already deleted"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_KEY }}
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Delete fly instances
         run: |
           flyctl apps destroy pr-${{ github.event.pull_request.number }}-web --yes || echo "Fly web app not found or already deleted"

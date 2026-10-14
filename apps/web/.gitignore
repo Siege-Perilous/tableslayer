@@ -13,8 +13,9 @@ vite.config.ts.timestamp-*
 # Sentry Config File
 .env.sentry-build-plugin
 
-# PartyKit
-.partykit/
+# Wrangler (realtime worker)
+.wrangler/
+partyserver/worker-configuration.d.ts
 
 # Playwright
 tests/e2e/test-results.json

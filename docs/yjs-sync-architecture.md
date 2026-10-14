@@ -1,7 +1,7 @@
 # Realtime sync architecture (v2)
 
 How Table Slayer's real-time collaboration works: one authoritative Y.js document per game
-session, owned by the PartyKit server; every client (editor or play) commits edits to the
+session, owned by the realtime worker (PartyServer); every client (editor or play) commits edits to the
 document immediately; the database is a snapshot the server maintains. Design rationale lives in
 `spec/realtime-sync-v2.md`; implementation notes in `spec/realtime-sync-v2-progress.md`.
 
@@ -9,8 +9,8 @@ document immediately; the database is a snapshot the server maintains. Design ra
 
 | State                                                       | Owner                     | Transport          | Persisted by                      |
 | ----------------------------------------------------------- | ------------------------- | ------------------ | --------------------------------- |
-| Scene content (settings, markers, lights, annotations, fog) | Y doc (game session room) | y-partykit sync    | PartyKit server → DB (debounced)  |
-| Active scene, paused                                        | Y doc (party room)        | y-partykit sync    | PartyKit server → DB              |
+| Scene content (settings, markers, lights, annotations, fog) | Y doc (game session room) | y-partyserver sync | realtime worker → DB (debounced)  |
+| Active scene, paused                                        | Y doc (party room)        | y-partyserver sync | realtime worker → DB              |
 | Viewport, active tool, brush size, selections               | plain component `$state`  | never shared       | preference cookies where relevant |
 | Presence (cursors, measurements, temp drawings)             | awareness                 | awareness protocol | never                             |
 | Account/party/session metadata, auth                        | DB                        | SSR `load`         | normal API                        |
@@ -22,7 +22,7 @@ No state is ever merged from two sources, and clients never write scene data to 
 Granular per-field Y.Maps so concurrent edits merge last-writer-wins per field:
 
 ```
-gameSession doc (room id = gameSessionId, party "game_session")
+gameSession doc (room id = gameSessionId, party "game-session")
 ├─ meta: Y.Map        { schemaVersion, hydratedAt }
 └─ scenes: Y.Map<sceneId, Y.Map>
     ├─ settings: Y.Map<field, primitive>     // the scene table columns, flat keys
@@ -49,36 +49,63 @@ Key properties:
   client's origin, and `classifySceneEvents` reports `remote = !transaction.local`. There are no
   echo windows or protection timers anywhere in the system.
 
-## Server (PartyKit, `apps/web/partykit/`)
+## Server (PartyServer, `apps/web/partyserver/`)
 
-`gameSession.ts` and `party.ts` are the only writers of realtime-owned state to the database.
+A Cloudflare Worker built on `partyserver` + `y-partyserver` (Durable Objects, one per room),
+deployed with `wrangler` from `apps/web/partyserver/wrangler.jsonc`. `gameSession.ts` and
+`party.ts` are the only writers of realtime-owned state to the database. Rooms are addressed as
+`/parties/game-session/<gameSessionId>` and `/parties/party/<partyId>` (the binding name in
+kebab-case; the `'game_session'` kind in `wire.ts` and the DB is unchanged).
 
+- **Lifecycle**: `onLoad` (inside the DO's startup gate, local storage only) restores the doc
+  snapshot described below. `onStart` then attaches the dirty-tracking observer **after** that
+  restore (an applied update is a non-local transaction and would otherwise mark every scene
+  dirty on each wake), restores any stored dirty set, and starts DB hydration without awaiting
+  it. A failed hydration never throws: the socket stays open, clients wait on the `ready` gate,
+  and an alarm retries 15 s later. `onConnect` queues activity and defers to y-partyserver,
+  which sends sync step 1 with whatever the doc holds; hydration arrives later as a normal
+  update broadcast.
 - **Hydrate**: on first use a room fetches `/api/internal/sessionSnapshot` (or `partySnapshot`)
-  and builds the doc. `meta.schemaVersion` makes hydration idempotent; y-partykit snapshot
-  persistence covers room eviction between DB writes.
-  Dirty-tracking observers are attached **per doc instance**, not once per room: y-partykit
-  destroys the doc when the last socket closes, and the next connection gets a fresh one.
-- **Persist**: a doc observer collects dirty scene parts (origin-filtered so hydration never
-  echoes back). y-partykit's debounced callback (2s idle / 10s max) posts only dirty scenes to
+  and builds the doc. `meta.schemaVersion` makes hydration idempotent, and the post-fetch
+  re-check covers a reconnecting client whose sync step 2 hydrated the doc first.
+- **Persist**: the observer collects dirty scene parts (origin-filtered so hydration never
+  echoes back). y-partyserver's debounced `onSave` (2 s idle / 10 s max; 1 s / 5 s for the party
+  room) writes the storage snapshot, then posts only dirty scenes to
   `/api/internal/persistSession` (replace-rows semantics per collection). Failures merge the
-  dirty set back and retry via an in-instance timer — PartyKit alarms cannot read `room.id`, so
-  alarms are not used.
+  dirty set back and retry by alarm. The last `onClose` runs the same flush together with the
+  activity report so both land before eviction.
+- **Storage snapshot** (`docSnapshot.ts`): the full doc state, chunked at 1 MiB into
+  `snap:<n>` keys with a `snap:meta` record and the dirty set, written atomically. The DB is the
+  source of truth for _content_; the snapshot exists so a doc restored after eviction or a
+  hibernation wake keeps the Yjs item identities that connected clients hold (a doc rebuilt from
+  the DB would carry fresh identities and reconnecting clients would merge by arbitrary subtree
+  winners). Snapshots older than 24 h are ignored so a room that missed a best-effort `resync`
+  eventually re-reads the DB. A non-empty stored dirty set schedules an immediate alarm on start.
+- **Hibernation** (`static options = { hibernate: true }`): Durable Objects bill wall-clock time
+  while awake; with hibernation an idle socket costs nothing. In-memory state resets on
+  hibernation, but a DO cannot hibernate while a timer or in-flight request is pending, so the
+  debounced save always flushes first and the snapshot restores identical identities on wake.
+  y-partyserver re-sends sync step 1 to surviving sockets on wake; awareness refills from the
+  15 s client heartbeat. Never implement `webSocketMessage` / `webSocketClose` / `alarm` on the
+  classes: PartyServer owns them and dispatches to `onMessage` / `onClose` / `onAlarm`.
 - **Resync**: `POST {"type":"resync"}` (internal-token guarded) rebuilds a live room from the DB
   after direct DB writes (import, admin tools). `{"type":"debug"}` on the game session room
-  exposes persister stats. The app calls these via `requestPartyRoomResync` /
-  `requestGameSessionRoomResync` in `$lib/server/realtime`.
+  exposes persister stats (since the last wake). The app calls these via `requestPartyRoomResync`
+  / `requestGameSessionRoomResync` in `$lib/server/realtime`.
 - **Activity reporting**: each room batches `connect`/`close` events (1 s, via
-  `partykit/roomActivity.ts`) to `/api/internal/roomActivity`, which writes `realtime_activity`
+  `partyserver/roomActivity.ts`) to `/api/internal/roomActivity`, which writes `realtime_activity`
   rows (party, session, kind, user, socket count after the event). Best-effort: it never
-  throws, never retries, and never blocks `onConnect`. `onClose(conn)` now receives the
-  connection; the last close awaits the activity flush together with the persist so the final
-  row lands before eviction. The persist endpoints add one `edit` / `party_state` row per call.
-  Durable Objects bill wall-clock time while a room holds any socket, so this log is what
-  `/admin/usage` rolls up (`$lib/server/realtime/activityRollup.ts`, pure).
+  throws, never retries, and never blocks `onConnect`. The user id comes from the socket's
+  upgrade URL, which PartyServer keeps in the socket attachment across hibernation. The persist
+  endpoints add one `edit` / `party_state` row per call. This log is what `/admin/usage` rolls up
+  (`$lib/server/realtime/activityRollup.ts`, pure).
 - Internal endpoints authenticate via the `INTERNAL_API_TOKEN` shared secret
-  (`x-internal-token`); dev falls back to `dev-internal-token` on both sides. The PartyKit env
-  also needs `BASE_URL` (the app's URL — passed via `--var` at deploy; defaults to
-  `http://localhost:5174`, the web app's pinned dev port; `APP_API_URL` overrides if set).
+  (`x-internal-token`); dev falls back to `dev-internal-token` on both sides. The worker reads
+  `BASE_URL` (the app's URL) from `vars` in `wrangler.jsonc` (per environment; previews override
+  it with `--var` at deploy) and `INTERNAL_API_TOKEN` from a Worker secret. `APP_API_URL`
+  overrides the base if set. Dev defaults to `http://localhost:5174`, the web app's pinned port.
+- `pnpm run check` type-checks the worker separately (`check:worker`: `wrangler types` +
+  `tsc -p partyserver/tsconfig.json`), since it lives outside the SvelteKit tsconfig.
 
 ## Clients (`apps/web/src/lib/realtime/`)
 

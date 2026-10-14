@@ -10,7 +10,7 @@ primarily a receiver and never constructs an undo scope.
 `Y.UndoManager` is not a snapshot rollback; the doc only moves forward. It watches
 transactions whose `origin` is in its `trackedOrigins` set, records the inverse of each
 (items inserted/deleted), and `undo()` applies that inverse as a **new transaction**. The
-undo therefore propagates to other clients and the PartyKit persister exactly like any other
+undo therefore propagates to other clients and the room persister exactly like any other
 edit — no server, persistence, or play-route changes were needed.
 
 Reconciliation properties (pinned by tests in
@@ -82,7 +82,7 @@ Ctrl+Z → client.undo() → UndoManager applies inverse transaction (origin = t
       → revision counters bump → snapshots re-derive → buildRenderProps → Stage (declarative)
       → EditorSession re-applies fog mask to canvas (imperative, undoRedo path)
   → provider syncs the update → other editors / play apply it as an ordinary remote change
-  → PartyKit persister marks the scene dirty → debounced DB write
+  → room persister marks the scene dirty → debounced DB write
 ```
 
 ## Out of scope (v1) and how to extend

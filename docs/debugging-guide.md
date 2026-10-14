@@ -1,13 +1,13 @@
 # Debugging Guide for Table Slayer
 
-> Last verified 2026-07-04 against the realtime-v2 architecture. For how sync works (and why there is no save pipeline), read [Y.js Sync Architecture](./yjs-sync-architecture.md) first.
+> Last verified 2026-10-13 against the realtime-v2 architecture (PartyServer worker). For how sync works (and why there is no save pipeline), read [Y.js Sync Architecture](./yjs-sync-architecture.md) first.
 
 ## Quick reference: symptom → tool
 
 | Symptom                                           | Tool                                                                      |
 | ------------------------------------------------- | ------------------------------------------------------------------------- |
-| Edits not persisting / not reaching other players | PartyKit room `debug` endpoint (persister state), then `resync`           |
-| Slow page loads, slow scene switches              | `/diagnostics` page (DB / R2 / PartyKit latency checks)                   |
+| Edits not persisting / not reaching other players | Realtime room `debug` endpoint (persister state), then `resync`           |
+| Slow page loads, slow scene switches              | `/diagnostics` page (DB / R2 / realtime latency checks)                   |
 | Stage FPS drops, GPU memory growth                | F9 performance overlay ([stage perf guide](./stage-performance-guide.md)) |
 | Doc out of sync after a direct DB write           | `requestGameSessionRoomResync` / room `resync` command                    |
 | Production exceptions                             | Sentry (enabled when `ENV_NAME=production` and `SENTRY_DSN` set)          |
@@ -20,8 +20,8 @@
 ```typescript
 import { devLog, devWarn, devError } from '$lib/utils/debug';
 
-devLog('yjs', 'Connected to PartyKit', { room: gameSessionId });
-// Output: [yjs] Connected to PartyKit { room: 'abc123' }
+devLog('yjs', 'Connected to realtime room', { room: gameSessionId });
+// Output: [yjs] Connected to realtime room { room: 'abc123' }
 ```
 
 A first argument that is a single lowercase word is treated as a `[prefix]`. Prefixes in current use: `yjs`, `scene`, `markers`, `fog`, `annotation`, `save`, `query`. Match the subsystem you're debugging and pass structured objects, not interpolated strings.
@@ -36,17 +36,17 @@ Never commit raw `console.log` for debugging — use `devLog` so it strips itsel
 
 - **DB**: user parties query, raw scenes query, full scene load, markers/lights/annotations, fog and annotation mask loads
 - **R2**: thumbnail and large-image resize round-trips
-- **PartyKit**: websocket server round-trip (`ping` → `pong`)
+- **Realtime worker**: room round-trip (`ping` → `pong`)
 
 It also shows the serving region and the database mode (embedded replica vs remote). Use **Copy as JSON** to attach results to an issue. This is the first stop for "the app feels slow" reports, because it separates DB, storage, and realtime latency in one view.
 
 ## Realtime / sync debugging
 
-The PartyKit room is the authoritative persister; when data seems stuck, ask it directly. `partykit/gameSession.ts` `onRequest` accepts internal POST commands guarded by the `x-internal-token` header (`INTERNAL_API_TOKEN`, `dev-internal-token` in dev):
+The realtime room (a Durable Object in the PartyServer worker) is the authoritative persister; when data seems stuck, ask it directly. `partyserver/gameSession.ts` `onRequest` accepts internal POST commands guarded by the `x-internal-token` header (`INTERNAL_API_TOKEN`, `dev-internal-token` in dev). Locally the host is `localhost:1999`:
 
 ```bash
-# Inspect persister state: observed/persisting flags, dirty scenes+parts, deletions, flush stats
-curl -X POST "https://<PARTYKIT_HOST>/parties/game_session/<gameSessionId>" \
+# Inspect persister state: hydrated/persisting flags, dirty scenes+parts, deletions, flush stats (since last wake)
+curl -X POST "https://<PARTYKIT_HOST>/parties/game-session/<gameSessionId>" \
   -H "x-internal-token: $INTERNAL_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"type":"debug"}'
@@ -61,10 +61,12 @@ curl ... -d '{"type":"resync"}'
 Reading the `debug` payload:
 
 - `dirty` non-empty and shrinking → normal debounced persistence (2s debounce, 10s max wait).
-- `dirty` non-empty and stuck with `persisting: false` → the persist call is failing; check the app's `/api/internal/persistSession` logs. A 15s retry timer should be re-attempting.
+- `dirty` non-empty and stuck with `persisting: false` → the persist call is failing; check the app's `/api/internal/persistSession` logs. A 15s retry alarm should be re-attempting.
+- `hydrated: false` with `hydrating: false` → the DB snapshot fetch failed and is waiting on its retry alarm; check that the worker's `BASE_URL` reaches the app and the token matches.
+- Stats reset to zero on every hibernation wake; a low `flushes` count on a busy room is normal.
 - Doc content doesn't match the DB after an import or admin write → someone wrote to the DB directly without a resync. From server code use `requestGameSessionRoomResync(gameSessionId)` / `requestPartyRoomResync(partyId)` (`src/lib/server/realtime/`); manual writes can use the curl above.
 
-Client-side, `SessionDocClient` is only `ready` once both providers have synced and both docs are server-hydrated — a page stuck "loading" usually means hydration never completed (check the PartyKit dev terminal, `npx partykit dev` output runs alongside `vite dev` in `pnpm run dev`).
+Client-side, `SessionDocClient` is only `ready` once both providers have synced and both docs are server-hydrated — a page stuck "loading" usually means hydration never completed (check the worker's dev terminal: `wrangler dev` output runs alongside `vite dev` in `pnpm run dev`).
 
 ## Stage rendering performance
 

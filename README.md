@@ -42,7 +42,7 @@ A full guide for self-hosting is coming soon. Here's a quick list for anyone who
 2. Create a new database on Turso (or use libsql directly](https://github.com/Siege-Perilous/tableslayer/issues/243#issuecomment-3613109830)). Add the required keys to `.env`.
 3. Create a Cloudflare account. Add the required API keys to `.env`.
    - You will need to set up an R2 bucket for assets and uploads. If self-hosting, you can run `pnpm run assets:upload` to populate your bucket with any large files that are excluded from this repo (ex: illustrations and LUT files).
-   - You will need to setup [Partykit](https://docs.partykit.io/) with a partykit token. For dev, Parykit will run locally. For production, Partykit is hosted with Cloudflare workers.
+   - Realtime sync runs as a Cloudflare Worker with Durable Objects (`apps/web/partyserver`, built on [PartyServer](https://github.com/cloudflare/partykit)). For dev it runs locally via `wrangler dev`; for production run `npx wrangler login` once and `pnpm run deploy:party` from `apps/web`.
 4. `pnpm install` in the root of this repo.
 5. Jump into the `apps/web` folder and run `pnpm run migrate` to initialize your db.
 6. Run `pnpm run dev` from the repo root. Two runservers will open.
@@ -93,8 +93,8 @@ This is a mono repo powered by [Turbo](https://turbo.build) and [Vite](https://v
   - [Tweakpane](https://kitschpatrol.com/svelte-tweakpane-ui/docs/getting-started) for debug controls for the Three.js scene
 - [Cloudflare R2](https://developers.cloudflare.com/r2/) is used for a CDN.
   - [Cloudflare Image Transformations](https://developers.cloudflare.com/images/transform-images/transform-via-url/) is used to resize images.
-- [Party Kit](https://www.partykit.io/) hosted on Cloudflare workers handle realtime web socket updates.
-  - [Yjs](https://yjs.dev/) provides conflict resolution and typing for the Party Kit Layer
+- [PartyServer](https://github.com/cloudflare/partykit) on Cloudflare Workers + Durable Objects handles realtime web socket updates.
+  - [Yjs](https://yjs.dev/) provides conflict resolution and typing for the realtime layer
 - [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) is used for transactional email. Email is optional — it is enabled when `CLOUDFLARE_EMAIL_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` are set and the sending domain is onboarded to Email Sending.
 - [Turso](https://turso.com) is used for SQLite db hosting.
   - [Drizzle](https://orm.drizzle.team) provides the ORM

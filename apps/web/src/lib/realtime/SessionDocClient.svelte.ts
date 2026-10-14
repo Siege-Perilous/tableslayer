@@ -1,4 +1,4 @@
-import YPartyKitProvider from 'y-partykit/provider';
+import YProvider from 'y-partyserver/provider';
 import * as Y from 'yjs';
 import {
   classifySceneEvents,
@@ -84,8 +84,8 @@ export class SessionDocClient {
   #remoteActivityListeners = new Set<(at: number) => void>();
 
   #undoManager: Y.UndoManager | null = null;
-  #gameSessionProvider: YPartyKitProvider;
-  #partyProvider: YPartyKitProvider;
+  #gameSessionProvider: YProvider;
+  #partyProvider: YProvider;
   #gameSessionSynced = false;
   #partySynced = false;
   #readyResolvers: Array<() => void> = [];
@@ -99,11 +99,11 @@ export class SessionDocClient {
     this.systemWrite = createSessionWriter(this.doc, this.systemOrigin);
     this.party = createPartyWriter(this.partyDoc, this.origin);
 
-    this.#gameSessionProvider = new YPartyKitProvider(options.partykitHost, options.gameSessionId, this.doc, {
-      party: 'game_session',
+    this.#gameSessionProvider = new YProvider(options.partykitHost, options.gameSessionId, this.doc, {
+      party: 'game-session',
       params: { userId: options.userId }
     });
-    this.#partyProvider = new YPartyKitProvider(options.partykitHost, options.partyId, this.partyDoc, {
+    this.#partyProvider = new YProvider(options.partykitHost, options.partyId, this.partyDoc, {
       party: 'party',
       params: { userId: options.userId }
     });
@@ -158,10 +158,10 @@ export class SessionDocClient {
   connect() {
     if (!this.sleeping) return;
     this.sleeping = false;
-    // The provider emits no 'connecting' status; report it ourselves
+    // Report 'connecting' synchronously so observers see it before the socket opens
     this.status = { gameSession: 'connecting', party: 'connecting' };
-    this.#gameSessionProvider.connect();
-    this.#partyProvider.connect();
+    void this.#gameSessionProvider.connect();
+    void this.#partyProvider.connect();
     this.presence.resume();
   }
 

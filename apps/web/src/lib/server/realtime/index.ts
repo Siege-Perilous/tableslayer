@@ -131,7 +131,7 @@ export const applyPartyStatePersist = async (partyId: string, state: PartyStateW
 // After writing realtime-owned state to the DB directly (import, admin tools),
 // tell the live room to rebuild from the database. Best-effort: if the room
 // isn't running, the next connection hydrates from the DB anyway.
-const requestRoomResync = async (party: 'party' | 'game_session', roomId: string) => {
+const requestRoomResync = async (party: 'party' | 'game-session', roomId: string) => {
   const host = process.env.PUBLIC_PARTYKIT_HOST || 'localhost:1999';
   const protocol = host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https';
   const token = process.env.INTERNAL_API_TOKEN || 'dev-internal-token';
@@ -148,6 +148,6 @@ const requestRoomResync = async (party: 'party' | 'game_session', roomId: string
 };
 
 export const requestPartyRoomResync = (partyId: string) => requestRoomResync('party', partyId);
-export const requestGameSessionRoomResync = (gameSessionId: string) => requestRoomResync('game_session', gameSessionId);
+export const requestGameSessionRoomResync = (gameSessionId: string) => requestRoomResync('game-session', gameSessionId);
 
 export * from './activity';
