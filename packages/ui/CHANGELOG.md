@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.2.8
+
+### Patch Changes
+
+- Pins prosemirror
+
 ## 0.2.7
 
 ### Patch Changes
