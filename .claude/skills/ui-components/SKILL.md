@@ -5,7 +5,7 @@ description: Conventions for building/editing components in packages/ui (@tables
 
 # @tableslayer/ui component conventions
 
-> **Freshness**: last verified 2026-07-04 against `@tableslayer/ui` v0.2.2, Svelte 5.56.
+> **Freshness**: last verified 2026-10-16 against `@tableslayer/ui` v0.2.7, Svelte 5.57.
 > Anchor files are listed at the bottom — if one is missing or looks different, the code wins; update this skill (see "Keeping this skill current").
 
 ## Component anatomy (canonical skeleton)
@@ -112,7 +112,7 @@ Rules baked into the above:
 - **Popover**: `@floating-ui/dom`; `trigger`/`content` snippets; `portal` prop is **opt-in** (`'body'` or selector) to escape `overflow:hidden` clipping — default renders inline. Outside-click closing is a `<svelte:window onclick>`.
 - **Icon**: pass a Tabler component as a prop — `<Icon Icon={IconCheck} size="1.25rem" />` (`@tabler/icons-svelte`). No provider.
 - **ColorMode**: wrapper that applies `.light`/`.dark` to a subtree (`<svelte:element this={as} class={mode}>`) — used by docs to render both themes side by side.
-- **Editor**: TipTap 3, `content` is `$bindable` JSONContent; it's a single-file exception (props typed inline, no types.ts).
+- **Editor**: TipTap 3, `content` is `$bindable` JSONContent; it's a single-file exception (props typed inline, no types.ts). `StarterKit` already bundles `Link` — configure it via `StarterKit.configure({ link: … })`, never add `@tiptap/extension-link` separately (duplicate `link` extensions register duplicate plugins). External `content` is pushed in with `setContent(…, { emitUpdate: false })` so it never echoes through `onChange`. ProseMirror packages rely on `instanceof` across packages: the root `package.json` `pnpm.overrides` pins `prosemirror-model` to one version and `apps/web/tests/unit/dependencyDedupe.test.ts` fails if the lockfile ever resolves two copies of any `prosemirror-*`/`@tiptap/*` package (symptom: "Can not convert … to a Fragment" on every keystroke). Behavior is covered end-to-end by `apps/docs/tests/editor.test.ts`.
 - **Form inputs**: `FormControl` is the label/error wrapper around `Input` et al.; theme via `--inputBg`/`--inputFocusBg`/`--inputBorderColor`.
 
 ## Verifying a change visually

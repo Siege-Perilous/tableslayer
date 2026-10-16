@@ -354,8 +354,9 @@
               </div>
               <Spacer />
               <div
-                onblur={() => {
-                  // Save when editor loses focus
+                data-testid="markerNoteEditor"
+                onfocusout={() => {
+                  // blur doesn't bubble; focusout fires when the editor inside loses focus
                   updateMarkerAndSave(marker.id, () => {});
                 }}
               >
@@ -429,7 +430,11 @@
                 />
               </IconButton>
               {@render imagePreview(marker)}
-              <button class="markerManager__title" onclick={() => selectMarkerForEdit(marker.id)}>
+              <button
+                class="markerManager__title"
+                data-testid="markerTitleButton"
+                onclick={() => selectMarkerForEdit(marker.id)}
+              >
                 {marker.title}
               </button>
               <div class="markerManager__editIcon" data-testid="markerEditIcon">

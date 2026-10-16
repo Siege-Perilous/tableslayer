@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  prosemirror-model: ^1.25.12
+
 importers:
 
   .:
@@ -252,7 +255,7 @@ importers:
         version: 5.57.1(@typescript-eslint/types@8.70.1)
       svelte-check:
         specifier: ^4.7.6
-        version: 4.7.6(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
+        version: 4.7.6(picomatch@4.0.4)(svelte@5.57.1(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -380,9 +383,6 @@ importers:
       '@tiptap/core':
         specifier: ^3.31.3
         version: 3.31.3(@tiptap/pm@3.31.3)
-      '@tiptap/extension-link':
-        specifier: ^3.31.3
-        version: 3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3)
       '@tiptap/extension-typography':
         specifier: ^3.31.3
         version: 3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))
@@ -3877,7 +3877,6 @@ packages:
 
   libsql@0.5.28:
     resolution: {integrity: sha512-wKqx9FgtPcKHdPfR/Kfm0gejsnbuf8zV+ESPmltFvsq5uXwdeN9fsWn611DmqrdXj1e94NkARcMA2f1syiAqOg==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   liftoff@2.0.3:
@@ -4336,9 +4335,6 @@ packages:
 
   prosemirror-keymap@1.2.3:
     resolution: {integrity: sha512-4HucRlpiLd1IPQQXNqeo81BGtkY8Ai5smHhKW9jjPKRc2wQIxksg7Hl1tTI2IfT2B/LgX6bfYvXxEpJl7aKYKw==}
-
-  prosemirror-model@1.25.11:
-    resolution: {integrity: sha512-QWg9RhnpLlogAmp3p96uEFrE5txQpFynd4vhBAELkwgOCWQs/X0yCzB3/hrHqiPwf91RG5KyWq6553zs9JqIOQ==}
 
   prosemirror-model@1.25.12:
     resolution: {integrity: sha512-Ue2gTmXMa7EhpLNhC7J+h4+ykD8ha12K6rrZFFKKJHBForfIStw5gJ6Zrf1mqqAa9NmpmEB4wp9bKmA4eUVjWg==}
@@ -7603,7 +7599,7 @@ snapshots:
       prosemirror-history: 1.5.0
       prosemirror-inputrules: 1.5.1
       prosemirror-keymap: 1.2.3
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-schema-list: 1.5.1
       prosemirror-state: 1.4.4
       prosemirror-tables: 1.8.5
@@ -9036,7 +9032,7 @@ snapshots:
 
   prosemirror-commands@1.7.1:
     dependencies:
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-state: 1.4.4
       prosemirror-transform: 1.12.0
 
@@ -9049,7 +9045,7 @@ snapshots:
   prosemirror-gapcursor@1.4.1:
     dependencies:
       prosemirror-keymap: 1.2.3
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-state: 1.4.4
       prosemirror-view: 1.42.6
 
@@ -9070,37 +9066,33 @@ snapshots:
       prosemirror-state: 1.4.4
       w3c-keyname: 2.2.8
 
-  prosemirror-model@1.25.11:
-    dependencies:
-      orderedmap: 2.1.1
-
   prosemirror-model@1.25.12:
     dependencies:
       orderedmap: 2.1.1
 
   prosemirror-schema-list@1.5.1:
     dependencies:
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-state: 1.4.4
       prosemirror-transform: 1.12.0
 
   prosemirror-state@1.4.4:
     dependencies:
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-transform: 1.12.0
       prosemirror-view: 1.42.6
 
   prosemirror-tables@1.8.5:
     dependencies:
       prosemirror-keymap: 1.2.3
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
       prosemirror-state: 1.4.4
       prosemirror-transform: 1.12.0
       prosemirror-view: 1.42.6
 
   prosemirror-transform@1.12.0:
     dependencies:
-      prosemirror-model: 1.25.11
+      prosemirror-model: 1.25.12
 
   prosemirror-view@1.42.6:
     dependencies:
@@ -9355,6 +9347,19 @@ snapshots:
       has-flag: 4.0.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  svelte-check@4.7.6(picomatch@4.0.4)(svelte@5.57.1(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      '@sveltejs/load-config': 0.2.3
+      chokidar: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picocolors: 1.1.1
+      sade: 1.8.1
+      svelte: 5.57.1(@typescript-eslint/types@8.70.1)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - picomatch
 
   svelte-check@4.7.6(picomatch@4.0.7)(svelte@5.57.1(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
     dependencies:

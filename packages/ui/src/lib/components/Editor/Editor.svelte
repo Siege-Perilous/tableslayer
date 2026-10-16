@@ -2,7 +2,6 @@
   import { onMount, onDestroy } from 'svelte';
   import { Editor, type JSONContent } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
-  import { Link } from '@tiptap/extension-link';
   import Typography from '@tiptap/extension-typography';
   import {
     IconBold,
@@ -114,8 +113,10 @@
 
       // Only update if content actually changed (avoid infinite loops)
       if (JSON.stringify(currentContent) !== JSON.stringify(content)) {
-        // Update editor with new content from outside
-        editor.commands.setContent(content || { type: 'doc', content: [{ type: 'paragraph' }] });
+        // External content is not a user edit, so don't echo it through onUpdate/onChange
+        editor.commands.setContent(content || { type: 'doc', content: [{ type: 'paragraph' }] }, {
+          emitUpdate: false
+        });
       }
     }
   });
@@ -158,14 +159,16 @@
       editable,
       element: element,
       extensions: [
-        StarterKit,
-        Typography,
-        Link.configure({
-          openOnClick: false,
-          HTMLAttributes: {
-            class: 'editor-link'
+        // StarterKit already bundles Link; registering it twice duplicates its plugins
+        StarterKit.configure({
+          link: {
+            openOnClick: false,
+            HTMLAttributes: {
+              class: 'editor-link'
+            }
           }
-        })
+        }),
+        Typography
       ],
       content: initialContent, // Pass content with fallback for null/undefined
       onSelectionUpdate: () => {
@@ -567,7 +570,7 @@
             <div class="editor__toolbarTextOptions">
               <button
                 onclick={() => editor?.chain().focus().setParagraph().run()}
-                class:active={['editor__toolbarTextP', isParagraph && 'isActive']}
+                class={['editor__toolbarTextP', isParagraph && 'isActive']}
               >
                 Normal
               </button>

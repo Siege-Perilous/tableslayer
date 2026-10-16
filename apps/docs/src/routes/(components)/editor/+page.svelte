@@ -180,3 +180,5 @@
 <Example title="Editor" propsName="Editor" layout="column">
   <Editor bind:content height="300px" />
 </Example>
+
+<pre data-testid="editorContent">{JSON.stringify(content)}</pre>
