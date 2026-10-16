@@ -37,5 +37,10 @@
   "engines": {
     "node": ">=22"
   },
-  "name": "@tableslayer"
+  "name": "@tableslayer",
+  "pnpm": {
+    "overrides": {
+      "prosemirror-model": "^1.25.12"
+    }
+  }
 }

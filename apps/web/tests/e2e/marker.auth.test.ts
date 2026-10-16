@@ -50,6 +50,41 @@ test.describe('Marker CRUD operations', () => {
     const markerPreview = page.getByTestId('markerImagePreviewLabel');
     await expect(markerPreview).toContainText(newLabel, { timeout: 5000 });
 
+    // --- STEP 3b: Type a rich text note and bold it through the editor toolbar ---
+    const noteEditor = page.getByTestId('markerNoteEditor');
+    const noteContent = noteEditor.locator('.tiptap');
+    await expect(noteContent).toBeVisible({ timeout: 5000 });
+    await noteContent.click();
+    await page.waitForTimeout(100);
+    const noteText = 'Goblin ambush here';
+    await page.keyboard.type(noteText);
+    // Every keystroke must land; a duplicated prosemirror dependency drops them silently
+    await expect(noteContent).toHaveText(noteText, { timeout: 5000 });
+
+    await page.keyboard.press('Control+a');
+    await page.waitForTimeout(100);
+    await noteEditor.locator('.editor__btn').first().click();
+    await expect(noteContent.locator('strong')).toHaveText(noteText, { timeout: 5000 });
+
+    // Let the throttled doc write and the server's debounced persist flush
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(3500);
+
+    // --- STEP 3c: Reload and reopen the marker; the note round-trips through the session doc ---
+    await page.reload();
+    await waitForSceneEditor(page);
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="markerToolButton"]') as HTMLButtonElement;
+      if (btn) btn.click();
+    });
+    await expect(page.getByTestId('markerListItem')).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('markerTitleButton').first().click({ force: true });
+    await expect(page.getByTestId('markerEditView')).toBeVisible({ timeout: 10000 });
+    await expect(markerPreview).toContainText(newLabel, { timeout: 5000 });
+    const reloadedNote = page.getByTestId('markerNoteEditor').locator('.tiptap');
+    await expect(reloadedNote).toContainText(noteText, { timeout: 10000 });
+    await expect(reloadedNote.locator('strong')).toHaveText(noteText);
+
     // --- STEP 4: Go back to list view ---
     const backLink = page.getByTestId('markerBackButton');
     await expect(backLink).toBeVisible({ timeout: 5000 });

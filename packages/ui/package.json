@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/ui",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "license": "FSL-1.1-ALv2",
   "repository": {
     "type": "git",
@@ -74,7 +74,6 @@
     "@floating-ui/dom": "^1.8.0",
     "@tabler/icons-svelte": "^3.48.0",
     "@tiptap/core": "^3.31.3",
-    "@tiptap/extension-link": "^3.31.3",
     "@tiptap/extension-typography": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
