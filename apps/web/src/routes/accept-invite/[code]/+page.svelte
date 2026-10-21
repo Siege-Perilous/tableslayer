@@ -1,7 +1,7 @@
 <script lang="ts">
   let { data } = $props();
   const { invite, user } = data;
-  import { PartyInviteResponse, Head } from '$lib/components';
+  import { PartyInviteResponse, Head } from '#lib/components/index.js';
   import { Avatar, Button, Panel, Spacer, Title } from '@tableslayer/ui';
   import { page } from '$app/state';
 </script>

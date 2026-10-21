@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getRandomFantasyQuote } from '$lib/utils';
+  import { getRandomFantasyQuote } from '#lib/utils/index.js';
   import { Text, Title } from '@tableslayer/ui';
 
   let {

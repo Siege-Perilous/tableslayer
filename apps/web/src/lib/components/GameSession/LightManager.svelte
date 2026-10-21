@@ -25,8 +25,8 @@
     MapLayerType
   } from '@tableslayer/stage';
   import { IconTrash, IconArrowBack, IconFlame, IconLocationPin, IconCopy } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate, throttle } from '$lib/utils';
-  import { setPreference } from '$lib/utils/gameSessionPreferences';
+  import { queuePropertyUpdate, throttle } from '#lib/utils/index.js';
+  import { setPreference } from '#lib/utils/gameSessionPreferences.js';
   import { v4 as uuidv4 } from 'uuid';
 
   let {

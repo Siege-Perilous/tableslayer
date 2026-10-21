@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Title, Spacer, Panel, Text, Link } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
   import { page } from '$app/state';
 
   const error = $derived(page.url.searchParams.get('error'));

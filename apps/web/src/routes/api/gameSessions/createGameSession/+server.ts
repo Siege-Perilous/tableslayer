@@ -1,6 +1,6 @@
-import { insertGameSessionSchema } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import { createGameSession, isUserAdminInParty, SlugConflictError } from '$lib/server';
+import { insertGameSessionSchema } from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import { createGameSession, isUserAdminInParty, SlugConflictError } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { markerTable, type SelectMarker } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { markerTable, type SelectMarker } from '#lib/db/app/schema.js';
 import { asc, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { transformImage, type Thumb } from '../file';

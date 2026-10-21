@@ -1,4 +1,4 @@
-import type { MeasurementData } from '$lib/realtime';
+import type { MeasurementData } from '#lib/realtime/index.js';
 import type { StageProps } from '@tableslayer/stage';
 
 /**

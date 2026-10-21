@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createUsersQuery } from '$lib/queries/users';
+  import { createUsersQuery } from '#lib/queries/users.js';
 
   const usersQuery = createUsersQuery();
 </script>

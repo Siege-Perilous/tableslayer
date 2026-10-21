@@ -1,4 +1,4 @@
-import { apiFactory } from '$lib/factories';
+import { apiFactory } from '#lib/factories/index.js';
 import {
   assertInternalRequest,
   getGameSessionPartyId,
@@ -6,7 +6,7 @@ import {
   partyExists,
   recordRealtimeActivity,
   resolveKnownUserIds
-} from '$lib/server/realtime';
+} from '#lib/server/realtime/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

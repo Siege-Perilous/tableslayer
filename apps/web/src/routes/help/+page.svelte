@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Link, Text, Spacer, Title, Icon } from '@tableslayer/ui';
 
-  import { Logo, Head } from '$lib/components';
+  import { Logo, Head } from '#lib/components/index.js';
   import { IconBrandBluesky, IconBrandGithub, IconBrandDiscord, IconMail } from '@tabler/icons-svelte';
 
   const links = [

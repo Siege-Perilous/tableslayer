@@ -1,5 +1,5 @@
-import type { InsertParty, SelectParty } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import type { InsertParty, SelectParty } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useUpdatePartyMutation = () => {
   return mutationFactory<

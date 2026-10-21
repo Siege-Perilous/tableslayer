@@ -1,4 +1,4 @@
-import type { InsertMarker } from '$lib/db/app/schema';
+import type { InsertMarker } from '#lib/db/app/schema.js';
 import type { Marker } from '@tableslayer/stage';
 import { devError } from './debug';
 import { extractLocationFromUrl } from './extractLocationFromUrl';

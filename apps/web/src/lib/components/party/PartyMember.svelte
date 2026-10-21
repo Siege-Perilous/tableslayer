@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '$lib/db/app/schema';
+  import { type SelectUser, type PartyRole, VALID_PARTY_ROLES } from '#lib/db/app/schema.js';
   import {
     Hr,
     Text,
@@ -13,8 +13,8 @@
     FormControl
   } from '@tableslayer/ui';
   import { IconChevronDown, IconCrown } from '@tabler/icons-svelte';
-  import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '#lib/queries/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
   import type { Snippet } from 'svelte';
 

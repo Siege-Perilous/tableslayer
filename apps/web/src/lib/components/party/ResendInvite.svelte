@@ -5,8 +5,8 @@
     useDeletePartyInviteMutation,
     useResendPartyInviteMutation,
     useRefreshPartyInviteLinkMutation
-  } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  } from '#lib/queries/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
 
   let {
     email,

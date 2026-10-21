@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Text } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
 </script>
 
 <Example title="Text" propsName="Text" layout="column">

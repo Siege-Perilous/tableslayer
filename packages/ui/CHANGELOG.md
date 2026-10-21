@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.2.9
+
+### Patch Changes
+
+- Sveltekit 3 changes
+
 ## 0.2.8
 
 ### Patch Changes

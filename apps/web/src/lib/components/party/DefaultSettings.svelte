@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { useUpdatePartyMutation, useUploadFileMutation } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  import { useUpdatePartyMutation, useUploadFileMutation } from '#lib/queries/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
   import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title, Button } from '@tableslayer/ui';
-  import { type SelectParty, updatePartySchema } from '$lib/db/app/schema';
-  import type { Thumb, PauseScreenThumb } from '$lib/server';
+  import { type SelectParty, updatePartySchema } from '#lib/db/app/schema.js';
+  import type { Thumb, PauseScreenThumb } from '#lib/server/index.js';
   import { type ZodIssue } from 'zod';
   import { invalidateAll } from '$app/navigation';
 
   import { IconHexagons, IconLayoutGrid, IconTrash } from '@tabler/icons-svelte';
 
-  import { tvResolutionOptions, getTvDimensions, getResolutionOption } from '$lib/utils';
+  import { tvResolutionOptions, getTvDimensions, getResolutionOption } from '#lib/utils/index.js';
   let {
     party
   }: {

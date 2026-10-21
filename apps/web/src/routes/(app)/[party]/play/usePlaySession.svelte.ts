@@ -1,7 +1,14 @@
-import { browser } from '$app/environment';
-import { SessionDocClient, upgradeSceneCoordinates, type SceneChange, type SceneSnapshot } from '$lib/realtime';
-import { devError, devLog } from '$lib/utils/debug';
-import { generateLargeImageUrl } from '$lib/utils/generateR2Url';
+import { browser } from '$app/env';
+
+import {
+  SessionDocClient,
+  upgradeSceneCoordinates,
+  type SceneChange,
+  type SceneSnapshot
+} from '#lib/realtime/index.js';
+
+import { devError, devLog } from '#lib/utils/debug.js';
+import { generateLargeImageUrl } from '#lib/utils/generateR2Url.js';
 import type { StageExports } from '@tableslayer/stage';
 
 export interface SessionRoute {

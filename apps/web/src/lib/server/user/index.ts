@@ -1,11 +1,11 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   emailVerificationCodesTable,
   partyMemberTable,
   resetPasswordCodesTable,
   usersTable,
   type SelectUser
-} from '$lib/db/app/schema';
+} from '#lib/db/app/schema.js';
 import {
   createDemoGameSession,
   createGameSession,
@@ -21,9 +21,9 @@ import {
   sendVerificationEmail,
   transformImage,
   uploadFileFromUrl
-} from '$lib/server';
-import { isWithinExpirationDate } from '$lib/utils';
-import { createArgonHash, createSha256Hash, createShortCode } from '$lib/utils/hash';
+} from '#lib/server/index.js';
+import { createArgonHash, createSha256Hash, createShortCode } from '#lib/utils/hash.js';
+import { isWithinExpirationDate } from '#lib/utils/index.js';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 const baseURL = process.env.BASE_URL || 'http://localhost:5174';

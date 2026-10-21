@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Button, Avatar, Title, Panel, Spacer, Text, Link } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
-  import { useRedeemPromoMutation } from '$lib/queries/admin';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
+  import { Head } from '#lib/components/index.js';
+  import { useRedeemPromoMutation } from '#lib/queries/admin.js';
+  import { handleMutation, type FormMutationError } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
 
   let { data } = $props();

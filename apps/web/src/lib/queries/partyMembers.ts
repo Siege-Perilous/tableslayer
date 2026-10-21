@@ -1,5 +1,5 @@
-import type { InsertPartyMember, SelectPartyMember } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import type { InsertPartyMember, SelectPartyMember } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useDeletePartyMemberMutation = () => {
   return mutationFactory<{ userId: string; partyId: string }>({

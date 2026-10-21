@@ -1,5 +1,5 @@
-import { apiFactory } from '$lib/factories';
-import { updateUserChecklistProgress } from '$lib/server';
+import { apiFactory } from '#lib/factories/index.js';
+import { updateUserChecklistProgress } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const updateChecklistValidation = z.object({

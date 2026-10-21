@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Select } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import type { Snippet } from 'svelte';
   const optionsWithGroups = {
     'Group 1': [

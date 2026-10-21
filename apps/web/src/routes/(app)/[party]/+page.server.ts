@@ -1,4 +1,4 @@
-import { getEmailsInvitedToParty, getPartyGameSessionsWithScenes } from '$lib/server';
+import { getEmailsInvitedToParty, getPartyGameSessionsWithScenes } from '#lib/server/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {

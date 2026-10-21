@@ -1,4 +1,4 @@
-import { getTurnstileSiteKey, getUser } from '$lib/server';
+import { getTurnstileSiteKey, getUser } from '#lib/server/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

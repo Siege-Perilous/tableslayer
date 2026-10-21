@@ -13,8 +13,8 @@
     addToast
   } from '@tableslayer/ui';
   import { IconCopy, IconX, IconCheck } from '@tabler/icons-svelte';
-  import { useGenerateApiKeyMutation, useDeleteApiKeyMutation } from '$lib/queries';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
+  import { useGenerateApiKeyMutation, useDeleteApiKeyMutation } from '#lib/queries/index.js';
+  import { handleMutation, type FormMutationError } from '#lib/factories/index.js';
   import { invalidateAll } from '$app/navigation';
 
   type ApiKey = {

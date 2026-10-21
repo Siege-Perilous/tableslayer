@@ -12,12 +12,12 @@
     Link,
     Hr
   } from '@tableslayer/ui';
-  import { useCreateGameSessionMutation } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
-  import { handleMutation } from '$lib/factories';
+  import { useCreateGameSessionMutation } from '#lib/queries/index.js';
+  import type { FormMutationError } from '#lib/factories/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
   import { invalidateAll } from '$app/navigation';
-  import { importGameSession } from '$lib/utils';
-  import { devError } from '$lib/utils/debug';
+  import { importGameSession } from '#lib/utils/index.js';
+  import { devError } from '#lib/utils/debug.js';
 
   let {
     partyId

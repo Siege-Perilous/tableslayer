@@ -1,5 +1,5 @@
-import { getPartiesForUser } from '$lib/server';
-import { getPromoUsageCount, hasUserRedeemedPromo, validatePromo } from '$lib/server/promo';
+import { getPartiesForUser } from '#lib/server/index.js';
+import { getPromoUsageCount, hasUserRedeemedPromo, validatePromo } from '#lib/server/promo/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {

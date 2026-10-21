@@ -1,4 +1,4 @@
-import { isEmailEnabled } from '$lib/server';
+import { isEmailEnabled } from '#lib/server/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

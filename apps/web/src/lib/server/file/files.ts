@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { filesTable, userFilesTable } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { filesTable, userFilesTable } from '#lib/db/app/schema.js';
 import { CopyObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';

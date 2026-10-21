@@ -1,4 +1,4 @@
-import type { SelectUser } from '$lib/db/app/schema';
+import type { SelectUser } from '#lib/db/app/schema.js';
 import { createQuery } from '@tanstack/svelte-query';
 
 export const createUsersQuery = () => {

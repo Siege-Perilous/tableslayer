@@ -4,7 +4,7 @@ import {
   getRecentParty,
   setSessionTokenCookie,
   validateApiKey
-} from '$lib/server';
+} from '#lib/server/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

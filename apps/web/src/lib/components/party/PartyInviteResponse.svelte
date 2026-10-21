@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Button } from '@tableslayer/ui';
-  import type { PartyInviteWithDetails } from '$lib/server';
-  import { useRespondToPartyInviteMutation } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  import type { PartyInviteWithDetails } from '#lib/server/index.js';
+  import { useRespondToPartyInviteMutation } from '#lib/queries/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
   let {
     invite

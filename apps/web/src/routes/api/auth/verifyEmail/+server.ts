@@ -1,6 +1,6 @@
-import { apiFactory } from '$lib/factories';
-import { verifyEmail } from '$lib/server';
-import { hasUserRedeemedPromo, redeemPromo, validatePromo } from '$lib/server/promo';
+import { apiFactory } from '#lib/factories/index.js';
+import { verifyEmail } from '#lib/server/index.js';
+import { hasUserRedeemedPromo, redeemPromo, validatePromo } from '#lib/server/promo/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({
@@ -30,7 +30,7 @@ export const POST = apiFactory(
             const alreadyRedeemed = await hasUserRedeemedPromo(validation.promo.id, userId);
             if (!alreadyRedeemed) {
               // Get the user's first party (created during signup)
-              const { getPartiesForUser } = await import('$lib/server');
+              const { getPartiesForUser } = await import('#lib/server/index.js');
               const parties = await getPartiesForUser(userId);
 
               if (parties && parties.length > 0) {

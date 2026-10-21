@@ -1,12 +1,12 @@
-import { apiFactory } from '$lib/factories';
+import { apiFactory } from '#lib/factories/index.js';
 import {
   createSession,
   createUserByEmailAndPassword,
   generateSessionToken,
   isTurnstileEnabled,
   setSessionTokenCookie
-} from '$lib/server';
-import { verifyTurnstileToken } from '$lib/server/turnstile';
+} from '#lib/server/index.js';
+import { verifyTurnstileToken } from '#lib/server/turnstile.js';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 

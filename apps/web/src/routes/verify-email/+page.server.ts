@@ -1,7 +1,7 @@
-import { db } from '$lib/db/app';
-import { emailVerificationCodesTable } from '$lib/db/app/schema';
-import { getUser, isEmailEnabled } from '$lib/server';
-import { isWithinExpirationDate } from '$lib/utils';
+import { db } from '#lib/db/app/index.js';
+import { emailVerificationCodesTable } from '#lib/db/app/schema.js';
+import { getUser, isEmailEnabled } from '#lib/server/index.js';
+import { isWithinExpirationDate } from '#lib/utils/index.js';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';

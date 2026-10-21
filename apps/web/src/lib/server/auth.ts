@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { sessionTable, usersTable, type SelectSession, type SelectUser } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { sessionTable, usersTable, type SelectSession, type SelectUser } from '#lib/db/app/schema.js';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from '@oslojs/encoding';
 import type { RequestEvent } from '@sveltejs/kit';

@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { healthTable } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { healthTable } from '#lib/db/app/schema.js';
 import * as Sentry from '@sentry/sveltekit';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';

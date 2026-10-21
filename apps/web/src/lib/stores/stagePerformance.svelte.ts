@@ -1,4 +1,4 @@
-import { getPreference, setPreference } from '$lib/utils/gameSessionPreferences';
+import { getPreference, setPreference } from '#lib/utils/gameSessionPreferences.js';
 import type { PerformanceTier } from '@tableslayer/stage';
 
 export type StagePerformanceSetting = 'auto' | PerformanceTier;

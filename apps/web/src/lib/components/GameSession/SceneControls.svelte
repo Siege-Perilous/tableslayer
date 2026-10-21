@@ -23,9 +23,9 @@
     IconRuler,
     IconFlame
   } from '@tabler/icons-svelte';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
-  import type { SelectScene } from '$lib/db/app/schema';
+  import type { SelectGameSession, SelectParty } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
+  import type { SelectScene } from '#lib/db/app/schema.js';
   import { type ZodIssue } from 'zod';
   import {
     GridControls,
@@ -37,8 +37,8 @@
     PlayControls,
     MeasurementControls
   } from './';
-  import type { SessionDocClient } from '$lib/realtime';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import type { SessionDocClient } from '#lib/realtime/index.js';
+  import { queuePropertyUpdate } from '#lib/utils/index.js';
 
   let {
     handleSelectActiveControl,

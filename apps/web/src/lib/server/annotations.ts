@@ -1,6 +1,6 @@
-import { db } from '$lib/db/app';
-import { annotationsTable, type InsertAnnotation, type SelectAnnotation } from '$lib/db/app/schema';
-import { devError } from '$lib/utils/debug';
+import { db } from '#lib/db/app/index.js';
+import { annotationsTable, type InsertAnnotation, type SelectAnnotation } from '#lib/db/app/schema.js';
+import { devError } from '#lib/utils/debug.js';
 import { eq } from 'drizzle-orm';
 
 /**

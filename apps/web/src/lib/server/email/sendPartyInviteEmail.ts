@@ -1,5 +1,5 @@
-import { getParty, sendSingleEmail } from '$lib/server';
-import { isValidEmail } from '$lib/utils';
+import { getParty, sendSingleEmail } from '#lib/server/index.js';
+import { isValidEmail } from '#lib/utils/index.js';
 
 export const sendPartyInviteEmail = async (partyId: string, email: string, code: string) => {
   const party = await getParty(partyId);

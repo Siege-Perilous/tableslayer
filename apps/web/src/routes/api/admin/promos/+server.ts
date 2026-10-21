@@ -1,6 +1,6 @@
-import { apiFactory } from '$lib/factories';
-import { isAdmin } from '$lib/server/admin';
-import { getAllPromosWithRedemptions } from '$lib/server/promo';
+import { apiFactory } from '#lib/factories/index.js';
+import { isAdmin } from '#lib/server/admin/index.js';
+import { getAllPromosWithRedemptions } from '#lib/server/promo/index.js';
 import { z } from 'zod';
 
 // GET endpoint doesn't need a body, but apiFactory requires a schema

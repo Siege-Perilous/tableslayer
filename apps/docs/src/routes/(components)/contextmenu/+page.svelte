@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ContextMenu, Icon, type ContextMenuItem } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import { IconBell } from '@tabler/icons-svelte';
   import type { Snippet } from 'svelte';
 

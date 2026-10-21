@@ -1,6 +1,6 @@
 # Debugging Guide for Table Slayer
 
-> Last verified 2026-10-13 against the realtime-v2 architecture (PartyServer worker). For how sync works (and why there is no save pipeline), read [Y.js Sync Architecture](./yjs-sync-architecture.md) first.
+> Last verified 2026-10-21 against the realtime-v2 architecture (PartyServer worker, SvelteKit 3). For how sync works (and why there is no save pipeline), read [Y.js Sync Architecture](./yjs-sync-architecture.md) first.
 
 ## Quick reference: symptom → tool
 
@@ -18,7 +18,7 @@
 `apps/web/src/lib/utils/debug.ts` provides `devLog`, `devWarn`, and `devError`. They log **only when `dev` is true** — they are silent in preview and production builds, so they are safe to commit.
 
 ```typescript
-import { devLog, devWarn, devError } from '$lib/utils/debug';
+import { devLog, devWarn, devError } from '#lib/utils/debug.js';
 
 devLog('yjs', 'Connected to realtime room', { room: gameSessionId });
 // Output: [yjs] Connected to realtime room { room: 'abc123' }

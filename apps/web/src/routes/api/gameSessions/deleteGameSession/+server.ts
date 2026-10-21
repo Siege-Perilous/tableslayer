@@ -1,6 +1,6 @@
-import { apiFactory } from '$lib/factories';
-import { deleteGameSession, isUserAdminInParty } from '$lib/server';
-import { requestPartyRoomResync } from '$lib/server/realtime';
+import { apiFactory } from '#lib/factories/index.js';
+import { deleteGameSession, isUserAdminInParty } from '#lib/server/index.js';
+import { requestPartyRoomResync } from '#lib/server/realtime/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

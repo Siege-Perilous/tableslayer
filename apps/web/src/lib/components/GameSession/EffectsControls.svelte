@@ -2,10 +2,10 @@
   import { type ZodIssue } from 'zod';
   import { FormControl, Select, Spacer, InputSlider, Text, Hr, RadioButton } from '@tableslayer/ui';
   import { type StageProps } from '@tableslayer/stage';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate } from '#lib/utils/index.js';
   import { ToneMappingMode } from 'postprocessing';
-  import type { SelectParty } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
+  import type { SelectParty } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
   import { PartyPlanSelector } from '../party';
 
   let {

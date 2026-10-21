@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, DualInputSlider, Input, Spacer, FormControl, InputSlider } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
 </script>
 
 <Example title="InputSlider" propsName="InputSlider">

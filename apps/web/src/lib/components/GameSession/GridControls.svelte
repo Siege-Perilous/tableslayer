@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { SelectScene } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
+  import type { SelectScene } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
+  import type { SelectGameSession, SelectParty } from '#lib/db/app/schema.js';
   import { type ZodIssue } from 'zod';
   import chroma from 'chroma-js';
   import { IconHexagons, IconLayoutGrid } from '@tabler/icons-svelte';
@@ -31,7 +31,7 @@
     alignMapForMapDefined,
     relockMapZoom,
     trackChecklistItem
-  } from '$lib/utils';
+  } from '#lib/utils/index.js';
 
   let {
     stageProps,

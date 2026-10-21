@@ -1,6 +1,11 @@
-import { VALID_PARTY_ROLES } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import { createPartyInvite, isUserInParty, UserAlreadyInPartyError, UserAlreadyInvitedError } from '$lib/server';
+import { VALID_PARTY_ROLES } from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import {
+  createPartyInvite,
+  isUserInParty,
+  UserAlreadyInPartyError,
+  UserAlreadyInvitedError
+} from '#lib/server/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

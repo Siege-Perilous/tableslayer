@@ -1,15 +1,15 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { navigating } from '$app/state';
-  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
-  import type { SelectGameSession, SelectParty } from '$lib/db/app/schema';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
-  import { useCreateSceneMutation, useUploadFileMutation } from '$lib/queries';
-  import { orderBetween, sceneRowToSettings, type SessionDocClient } from '$lib/realtime';
-  import type { Thumb } from '$lib/server';
-  import { generateSmallThumbnailUrl, isVideoFile, trackChecklistItem } from '$lib/utils';
-  import { devLog } from '$lib/utils/debug';
-  import { extractDimensionsFromFilename } from '$lib/utils/gridDimensions';
+  import { useDragAndDrop } from '#lib/composables/useDragAndDrop.svelte.js';
+  import type { SelectGameSession, SelectParty } from '#lib/db/app/schema.js';
+  import { handleMutation, type FormMutationError } from '#lib/factories/index.js';
+  import { useCreateSceneMutation, useUploadFileMutation } from '#lib/queries/index.js';
+  import { orderBetween, sceneRowToSettings, type SessionDocClient } from '#lib/realtime/index.js';
+  import type { Thumb } from '#lib/server/index.js';
+  import { generateSmallThumbnailUrl, isVideoFile, trackChecklistItem } from '#lib/utils/index.js';
+  import { devLog } from '#lib/utils/debug.js';
+  import { extractDimensionsFromFilename } from '#lib/utils/gridDimensions.js';
   import { GridMode } from '@tableslayer/stage';
   import {
     Button,

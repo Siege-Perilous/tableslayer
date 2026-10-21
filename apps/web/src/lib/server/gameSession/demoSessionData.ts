@@ -1,4 +1,4 @@
-import type { InsertAnnotation, InsertLight, InsertMarker, InsertScene } from '$lib/db/app/schema';
+import type { InsertAnnotation, InsertLight, InsertMarker, InsertScene } from '#lib/db/app/schema.js';
 
 // The demo game session seeded for brand-new users (see createDemoGameSession).
 // This is a raw game session export pasted verbatim: to refresh it, export a

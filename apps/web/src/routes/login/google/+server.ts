@@ -1,4 +1,4 @@
-import { google, isGoogleOAuthEnabled } from '$lib/server';
+import { google, isGoogleOAuthEnabled } from '#lib/server/index.js';
 import type { RequestEvent } from '@sveltejs/kit';
 import { error, redirect } from '@sveltejs/kit';
 import { generateCodeVerifier, generateState } from 'arctic';
@@ -30,5 +30,5 @@ export async function GET(event: RequestEvent): Promise<Response> {
     sameSite: 'lax'
   });
 
-  return redirect(302, url.toString());
+  return redirect(302, url.toString(), { external: true });
 }

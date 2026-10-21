@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Button, Title, Spacer, Input, FormControl, Table, Th, Td, Text, Link } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
-  import { useCreatePromoMutation, useDeletePromoMutation } from '$lib/queries/admin';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
+  import { Head } from '#lib/components/index.js';
+  import { useCreatePromoMutation, useDeletePromoMutation } from '#lib/queries/admin.js';
+  import { handleMutation, type FormMutationError } from '#lib/factories/index.js';
   import { invalidateAll } from '$app/navigation';
 
   let { data } = $props();

@@ -1,4 +1,4 @@
-import type { RealtimeActivityKind } from '$lib/db/app/schema';
+import type { RealtimeActivityKind } from '#lib/db/app/schema.js';
 
 // Pure rollup of realtime_activity rows into per-room usage. No DB, no clock:
 // callers pass `now`. A "room" is a game session (gameSessionId set) or the

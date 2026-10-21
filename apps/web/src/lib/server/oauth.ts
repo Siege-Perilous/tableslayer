@@ -1,4 +1,4 @@
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { Google } from 'arctic';
 
 const redirectUri = dev

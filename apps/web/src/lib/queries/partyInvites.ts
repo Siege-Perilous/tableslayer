@@ -1,5 +1,5 @@
-import type { InsertPartyInvite, SelectPartyInvite } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import type { InsertPartyInvite, SelectPartyInvite } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useCreatePartyInviteMutation = () => {
   return mutationFactory<Partial<InsertPartyInvite>, { success: boolean; partyInvite: SelectPartyInvite }>({

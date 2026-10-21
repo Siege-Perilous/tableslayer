@@ -1,8 +1,8 @@
-import { db } from '$lib/db/app';
-import { resetPasswordCodesTable } from '$lib/db/app/schema';
-import { getUserByResetPasswordCode } from '$lib/server';
-import { isWithinExpirationDate } from '$lib/utils';
-import { createSha256Hash } from '$lib/utils/hash';
+import { db } from '#lib/db/app/index.js';
+import { resetPasswordCodesTable } from '#lib/db/app/schema.js';
+import { getUserByResetPasswordCode } from '#lib/server/index.js';
+import { createSha256Hash } from '#lib/utils/hash.js';
+import { isWithinExpirationDate } from '#lib/utils/index.js';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
 import { eq } from 'drizzle-orm';

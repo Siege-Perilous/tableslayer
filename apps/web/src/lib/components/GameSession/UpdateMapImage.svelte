@@ -1,6 +1,6 @@
 <script lang="ts" module>
-  import { handleMutation } from '$lib/factories';
-  import { devWarn } from '$lib/utils/debug';
+  import { handleMutation } from '#lib/factories/index.js';
+  import { devWarn } from '#lib/utils/debug.js';
   let hiddenFileInput: HTMLInputElement | null = null;
   export const openFileDialog = async () => {
     if (hiddenFileInput) {
@@ -16,13 +16,13 @@
 </script>
 
 <script lang="ts">
-  import { useUploadFileMutation } from '$lib/queries';
-  import { upgradeSceneCoordinates, type SceneSettings, type SessionDocClient } from '$lib/realtime';
+  import { useUploadFileMutation } from '#lib/queries/index.js';
+  import { upgradeSceneCoordinates, type SceneSettings, type SessionDocClient } from '#lib/realtime/index.js';
   import {
     extractDimensionsFromFilename,
     getImageFileDimensions,
     orientDimensionsToImage
-  } from '$lib/utils/gridDimensions';
+  } from '#lib/utils/gridDimensions.js';
   import { GridMode } from '@tableslayer/stage';
 
   let {

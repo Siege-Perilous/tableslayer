@@ -23,7 +23,7 @@
     FirefliesPreset,
     type StageProps
   } from '@tableslayer/stage';
-  import { to8CharHex, queuePropertyUpdate, trackChecklistItem } from '$lib/utils';
+  import { to8CharHex, queuePropertyUpdate, trackChecklistItem } from '#lib/utils/index.js';
   import chroma from 'chroma-js';
 
   let {

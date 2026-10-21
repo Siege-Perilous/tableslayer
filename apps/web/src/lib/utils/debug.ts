@@ -1,4 +1,4 @@
-import { browser, dev } from '$app/environment';
+import { browser, dev } from '$app/env';
 
 /**
  * Logs to console only in development mode

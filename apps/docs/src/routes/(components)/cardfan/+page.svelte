@@ -1,6 +1,6 @@
 <script lang="ts">
   import { CardFan } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   const images = [
     'https://files.tableslayer.com/maps/01.jpeg',
     'https://files.tableslayer.com/maps/02.jpeg',

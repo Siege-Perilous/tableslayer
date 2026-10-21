@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { gameSessionTable, partyMemberTable, partyTable, usersTable } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { gameSessionTable, partyMemberTable, partyTable, usersTable } from '#lib/db/app/schema.js';
 import { and, eq, inArray } from 'drizzle-orm';
 import { listRealtimeActivitySince, maybePruneRealtimeActivity } from './activity';
 import { ROLLUP_LOOKBACK_MS, findLiveRooms, rollupActivity, type SessionUsage } from './activityRollup';

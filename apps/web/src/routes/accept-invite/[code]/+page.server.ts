@@ -5,8 +5,8 @@ import {
   getUserByEmail,
   isEmailInUserTable,
   setSessionTokenCookie
-} from '$lib/server';
-import { createSha256Hash } from '$lib/utils/hash';
+} from '#lib/server/index.js';
+import { createSha256Hash } from '#lib/utils/hash.js';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import { setToastCookie } from '@tableslayer/ui';
 import type { PageServerLoad } from './$types';

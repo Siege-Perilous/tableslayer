@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   filesTable,
   partyInviteTable,
@@ -8,9 +8,9 @@ import {
   type PartyRole,
   type SelectPartyInvite,
   type SelectUser
-} from '$lib/db/app/schema';
-import { getUser, getUserByEmail, isEmailInUserTable, transformImage, type Thumb } from '$lib/server';
-import { createSha256Hash } from '$lib/utils/hash';
+} from '#lib/db/app/schema.js';
+import { getUser, getUserByEmail, isEmailInUserTable, transformImage, type Thumb } from '#lib/server/index.js';
+import { createSha256Hash } from '#lib/utils/hash.js';
 import { and, eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { sendPartyInviteEmail } from '../email';

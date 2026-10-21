@@ -1,4 +1,4 @@
-import { getActiveSceneForParty, getPartyGameSessionFromSlug } from '$lib/server';
+import { getActiveSceneForParty, getPartyGameSessionFromSlug } from '#lib/server/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

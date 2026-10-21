@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   annotationsTable,
   gameSessionTable,
@@ -9,9 +9,9 @@ import {
   type InsertGameSession,
   type SelectGameSession,
   type SelectScene
-} from '$lib/db/app/schema';
-import { getVideoUrl, SlugConflictError, transformImage } from '$lib/server';
-import { createRandomGameSessionName } from '$lib/utils';
+} from '#lib/db/app/schema.js';
+import { getVideoUrl, SlugConflictError, transformImage } from '#lib/server/index.js';
+import { createRandomGameSessionName } from '#lib/utils/index.js';
 import { error } from '@sveltejs/kit';
 import { and, asc, desc, eq, getTableColumns } from 'drizzle-orm';
 import slugify from 'slugify';

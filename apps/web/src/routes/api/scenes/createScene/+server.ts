@@ -1,6 +1,6 @@
-import { insertSceneSchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
-import { apiFactory } from '$lib/factories';
-import { createScene, isUserInParty } from '$lib/server';
+import { insertSceneSchema } from '#lib/db/app/schema.js'; // Use or create a schema for scene creation
+import { apiFactory } from '#lib/factories/index.js';
+import { createScene, isUserInParty } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

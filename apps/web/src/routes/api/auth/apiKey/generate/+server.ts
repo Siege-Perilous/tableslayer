@@ -1,5 +1,5 @@
-import { apiFactory } from '$lib/factories';
-import { generateApiKey } from '$lib/server';
+import { apiFactory } from '#lib/factories/index.js';
+import { generateApiKey } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

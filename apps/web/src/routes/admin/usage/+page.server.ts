@@ -1,5 +1,5 @@
-import { getDurableObjectsUsage } from '$lib/server/cloudflare/durableObjectsUsage';
-import { DEFAULT_USAGE_WINDOW_DAYS, USAGE_WINDOW_DAYS, getRealtimeUsage } from '$lib/server/realtime/usage';
+import { getDurableObjectsUsage } from '#lib/server/cloudflare/durableObjectsUsage.js';
+import { DEFAULT_USAGE_WINDOW_DAYS, USAGE_WINDOW_DAYS, getRealtimeUsage } from '#lib/server/realtime/usage.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, depends }) => {

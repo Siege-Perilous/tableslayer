@@ -1,4 +1,4 @@
-import { getBillingCycleStartDay, isCloudflareAnalyticsEnabled } from '$lib/server/config';
+import { getBillingCycleStartDay, isCloudflareAnalyticsEnabled } from '#lib/server/config.js';
 import {
   DO_FREE_GB_SECONDS,
   billingCycleBounds,

@@ -18,13 +18,13 @@
     ConfirmActionButton,
     addToast
   } from '@tableslayer/ui';
-  import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
-  import type { SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
+  import { useDeleteGameSessionMutation, useUpdateGameSessionMutation } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
+  import type { SelectGameSession, SelectParty, SelectScene } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
   import { IconChevronDown, IconCheck } from '@tabler/icons-svelte';
   import { invalidateAll } from '$app/navigation';
-  import { exportGameSession, isVideoFile } from '$lib/utils';
+  import { exportGameSession, isVideoFile } from '#lib/utils/index.js';
 
   let {
     party,

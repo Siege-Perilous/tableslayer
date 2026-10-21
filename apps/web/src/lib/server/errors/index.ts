@@ -1,6 +1,6 @@
-import { AppError } from '$lib/errors';
+import { AppError } from '#lib/errors.js';
 
-// AppError is re-exported so existing `$lib/server/errors` / `$lib/server` imports keep working.
+// AppError is re-exported so existing `#lib/server/errors` / `$lib/server` imports keep working.
 export { AppError };
 
 export class SlugConflictError extends AppError {

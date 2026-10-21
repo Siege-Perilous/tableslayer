@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Editor } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import type { JSONContent } from '@tiptap/core';
 
   // Define the content as JSONContent

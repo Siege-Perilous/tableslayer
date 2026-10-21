@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ToolTip, Icon } from '@tableslayer/ui';
   import { IconHeart } from '@tabler/icons-svelte';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import type { Snippet } from 'svelte';
 </script>
 
