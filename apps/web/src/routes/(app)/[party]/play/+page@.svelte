@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { Head } from '$lib/components';
-  import { createPartyLiveStateQuery } from '$lib/queries';
-  import { PLAY_IDLE_POLICY, SleepController, buildRenderProps, reuseUnchanged } from '$lib/realtime';
-  import { buildSceneProps, throttle } from '$lib/utils';
-  import { transformCursorsToArray } from '$lib/utils/cursors';
-  import { StageDefaultProps } from '$lib/utils/defaultMapState';
-  import { createMultiFingerPan, createUnifiedGestureDetector } from '$lib/utils/gestureDetection';
-  import { extractMeasurementProps, getLatestMeasurement } from '$lib/utils/measurements';
-  import { createConditionalActivityTimer } from '$lib/utils/activityTimer';
-  import { devLog } from '$lib/utils/debug';
-  import { stagePerformance } from '$lib/stores';
+  import { Head } from '#lib/components/index.js';
+  import { createPartyLiveStateQuery } from '#lib/queries/index.js';
+  import { PLAY_IDLE_POLICY, SleepController, buildRenderProps, reuseUnchanged } from '#lib/realtime/index.js';
+  import { buildSceneProps, throttle } from '#lib/utils/index.js';
+  import { transformCursorsToArray } from '#lib/utils/cursors.js';
+  import { StageDefaultProps } from '#lib/utils/defaultMapState.js';
+  import { createMultiFingerPan, createUnifiedGestureDetector } from '#lib/utils/gestureDetection.js';
+  import { extractMeasurementProps, getLatestMeasurement } from '#lib/utils/measurements.js';
+  import { createConditionalActivityTimer } from '#lib/utils/activityTimer.js';
+  import { devLog } from '#lib/utils/debug.js';
+  import { stagePerformance } from '#lib/stores/index.js';
   import {
     MapLayerType,
     parseFogRooms,

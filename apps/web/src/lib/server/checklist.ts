@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { usersTable } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { usersTable } from '#lib/db/app/schema.js';
 import { eq } from 'drizzle-orm';
 
 export const CHECKLIST_DISMISSED_MARKER = '__dismissed__';

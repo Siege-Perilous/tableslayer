@@ -2,10 +2,10 @@
 <script lang="ts">
   let { children } = $props();
   import { QueryClientProvider } from '@tanstack/svelte-query';
-  import { queryClient } from '$lib/queryClient';
+  import { queryClient } from '#lib/queryClient.js';
   import '@tableslayer/ui/styles/globals.css';
   import { ModeWatcher } from 'mode-watcher';
-  import { GlobalLoading } from '$lib/components';
+  import { GlobalLoading } from '#lib/components/index.js';
   import { Loader, Toast, Title, Text, Logo } from '@tableslayer/ui';
   import { navigating } from '$app/state';
 

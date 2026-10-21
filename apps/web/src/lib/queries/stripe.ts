@@ -1,5 +1,5 @@
-import { type PartyPlan } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import { type PartyPlan } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useStripeCheckout = () => {
   return mutationFactory<{ plan: PartyPlan; partyId: string }, { url: string }>({

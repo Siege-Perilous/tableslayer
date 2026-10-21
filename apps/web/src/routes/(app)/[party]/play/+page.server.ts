@@ -4,8 +4,8 @@ import {
   getPartyFromSlug,
   getPartyGameSessions,
   getUser
-} from '$lib/server';
-import { getSceneList } from '$lib/server/scene';
+} from '#lib/server/index.js';
+import { getSceneList } from '#lib/server/scene/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

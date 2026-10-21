@@ -1,5 +1,5 @@
-import { mutationFactory } from '$lib/factories';
-import { incrementUrlVersion } from '$lib/utils/fileVersion';
+import { mutationFactory } from '#lib/factories/index.js';
+import { incrementUrlVersion } from '#lib/utils/fileVersion.js';
 import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 

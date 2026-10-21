@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Spacer, Hr, Icon, IconButton, Input, FormControl } from '@tableslayer/ui';
-  import { useCreatePartyInviteMutation } from '$lib/queries';
-  import { type SelectParty } from '$lib/db/app/schema';
+  import { useCreatePartyInviteMutation } from '#lib/queries/index.js';
+  import { type SelectParty } from '#lib/db/app/schema.js';
   import { IconMail } from '@tabler/icons-svelte';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   let { isPartyAdmin, party }: { isPartyAdmin: boolean; party: SelectParty } = $props();
 
   let email = $state('');

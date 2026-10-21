@@ -1,6 +1,6 @@
-import { apiFactory } from '$lib/factories';
-import { getPartiesForUser } from '$lib/server';
-import { redeemPromo, validatePromo } from '$lib/server/promo';
+import { apiFactory } from '#lib/factories/index.js';
+import { getPartiesForUser } from '#lib/server/index.js';
+import { redeemPromo, validatePromo } from '#lib/server/promo/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

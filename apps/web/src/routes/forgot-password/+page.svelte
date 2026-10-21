@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Input, Button, FormControl, Title, Spacer, Panel, Text, Link } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
-  import { useAuthForgotPasswordMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { Head } from '#lib/components/index.js';
+  import { useAuthForgotPasswordMutation } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
 
   let { data } = $props();

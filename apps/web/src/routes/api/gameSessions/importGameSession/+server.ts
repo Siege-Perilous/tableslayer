@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   annotationsTable,
   insertAnnotationSchema,
@@ -12,12 +12,12 @@ import {
   type InsertLight,
   type InsertMarker,
   type InsertScene
-} from '$lib/db/app/schema';
-import { copySceneFile } from '$lib/server/file';
-import { createGameSessionForImport } from '$lib/server/gameSession';
-import { getParty, getPartyFromGameSessionId, isUserInParty } from '$lib/server/party/getParty';
-import { requestPartyRoomResync } from '$lib/server/realtime';
-import { setActiveSceneForParty } from '$lib/server/scene';
+} from '#lib/db/app/schema.js';
+import { copySceneFile } from '#lib/server/file/index.js';
+import { createGameSessionForImport } from '#lib/server/gameSession/index.js';
+import { getParty, getPartyFromGameSessionId, isUserInParty } from '#lib/server/party/getParty.js';
+import { requestPartyRoomResync } from '#lib/server/realtime/index.js';
+import { setActiveSceneForParty } from '#lib/server/scene/index.js';
 import { error, json, type RequestEvent } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';

@@ -1,6 +1,6 @@
-import { updateUserSchema } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import { EmailAlreadyInUseError, updateUser } from '$lib/server';
+import { updateUserSchema } from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import { EmailAlreadyInUseError, updateUser } from '#lib/server/index.js';
 import { z } from 'zod';
 
 // Use the extended schema with email validation

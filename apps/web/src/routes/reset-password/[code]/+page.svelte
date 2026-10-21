@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Input, FormControl, Button, Title, Spacer, Panel } from '@tableslayer/ui';
-  import { useAuthResetPasswordMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { useAuthResetPasswordMutation } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
 
   let { data } = $props();
   const { userDesiringReset, resetCode } = data;

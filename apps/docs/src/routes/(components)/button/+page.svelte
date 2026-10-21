@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, RadioButton, CodeBlock, Icon, Spacer, ConfirmActionButton, Text } from '@tableslayer/ui';
   import { IconCheck, IconX, IconGhost3, IconSun, IconCloud, IconSnowflake } from '@tabler/icons-svelte';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import type { Snippet } from 'svelte';
   const example = `import { Button, Icon } from '@tableslayer/ui';
 import { IconCheck } from '@tabler/icons-svelte';

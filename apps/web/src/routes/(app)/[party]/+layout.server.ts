@@ -4,7 +4,7 @@ import {
   getPartyMembers,
   isUserAdminInParty,
   isUserInParty
-} from '$lib/server';
+} from '#lib/server/index.js';
 import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

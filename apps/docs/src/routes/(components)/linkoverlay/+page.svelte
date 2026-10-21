@@ -1,6 +1,6 @@
 <script lang="ts">
   import { LinkBox, LinkOverlay, Panel, Text, Title, Link, Spacer } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
 </script>
 
 <Example title="LinkOverlay" propsName="LinkOverlay">

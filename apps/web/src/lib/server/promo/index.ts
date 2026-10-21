@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   partyTable,
   promoRedemptionsTable,
@@ -8,7 +8,7 @@ import {
   type SelectPromo,
   type SelectPromoRedemption,
   type SelectUser
-} from '$lib/db/app/schema';
+} from '#lib/db/app/schema.js';
 import { and, eq, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 

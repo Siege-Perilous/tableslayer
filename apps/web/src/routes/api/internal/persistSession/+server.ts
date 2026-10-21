@@ -1,12 +1,17 @@
-import { insertAnnotationSchema, insertLightSchema, insertMarkerSchema, insertSceneSchema } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import type { PersistSessionWire } from '$lib/realtime/wire';
+import {
+  insertAnnotationSchema,
+  insertLightSchema,
+  insertMarkerSchema,
+  insertSceneSchema
+} from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import type { PersistSessionWire } from '#lib/realtime/wire.js';
 import {
   applySessionPersist,
   assertInternalRequest,
   getGameSessionPartyId,
   recordRealtimeActivity
-} from '$lib/server/realtime';
+} from '#lib/server/realtime/index.js';
 import { z } from 'zod';
 
 const sceneWireSchema = z.object({

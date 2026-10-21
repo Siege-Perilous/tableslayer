@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Loader } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
 </script>
 
 <Example title="Loader" propsName="LoaderProps">

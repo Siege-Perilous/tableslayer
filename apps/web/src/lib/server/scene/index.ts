@@ -1,7 +1,7 @@
-import { db } from '$lib/db/app';
-import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '$lib/db/app/schema';
-import { DEFAULT_MAP, DEFAULT_MAP_GRID, DEFAULT_MAP_SIZE } from '$lib/utils/generateR2Url';
-import { orientDimensionsToImage } from '$lib/utils/gridDimensions';
+import { db } from '#lib/db/app/index.js';
+import { gameSessionTable, partyTable, sceneTable, type InsertScene, type SelectScene } from '#lib/db/app/schema.js';
+import { DEFAULT_MAP, DEFAULT_MAP_GRID, DEFAULT_MAP_SIZE } from '#lib/utils/generateR2Url.js';
+import { orientDimensionsToImage } from '#lib/utils/gridDimensions.js';
 import { getAlignedMapTransform } from '@tableslayer/stage';
 import { asc, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';

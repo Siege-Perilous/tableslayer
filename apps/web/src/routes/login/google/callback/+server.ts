@@ -5,7 +5,7 @@ import {
   google,
   isGoogleOAuthEnabled,
   setSessionTokenCookie
-} from '$lib/server';
+} from '#lib/server/index.js';
 import type { RequestEvent } from '@sveltejs/kit';
 import { error, redirect } from '@sveltejs/kit';
 import type { OAuth2Tokens } from 'arctic';

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { useAuthLoginMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { useAuthLoginMutation } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   import { invalidateAll } from '$app/navigation';
   import { FormError, Input, Button, FormControl, Title, Link, Text, Spacer, Panel } from '@tableslayer/ui';
-  import { IllustrationTown, Head } from '$lib/components';
+  import { IllustrationTown, Head } from '#lib/components/index.js';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
 

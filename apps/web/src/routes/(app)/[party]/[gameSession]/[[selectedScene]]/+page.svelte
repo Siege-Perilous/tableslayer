@@ -14,12 +14,12 @@
     SceneZoom,
     Shortcuts,
     type ChecklistItemId
-  } from '$lib/components';
+  } from '#lib/components/index.js';
   import {
     useEditorActivityMutation,
     useUpdateChecklistProgressMutation,
     useUploadSceneThumbnailMutation
-  } from '$lib/queries';
+  } from '#lib/queries/index.js';
   import {
     EDITOR_IDLE_POLICY,
     SleepController,
@@ -27,7 +27,7 @@
     reuseUnchanged,
     type AnnotationRow,
     type MarkerRow
-  } from '$lib/realtime';
+  } from '#lib/realtime/index.js';
   import {
     bindPropertyUpdatesToDoc,
     buildSceneProps,
@@ -40,11 +40,11 @@
     relockMapZoom,
     setChecklistContext,
     unbindPropertyUpdates
-  } from '$lib/utils';
-  import { getPreference, setPreference, type PaneConfig } from '$lib/utils/gameSessionPreferences';
-  import { stagePerformance } from '$lib/stores';
-  import { getLatestMeasurement } from '$lib/utils/measurements';
-  import { throttle } from '$lib/utils/throttle';
+  } from '#lib/utils/index.js';
+  import { getPreference, setPreference, type PaneConfig } from '#lib/utils/gameSessionPreferences.js';
+  import { stagePerformance } from '#lib/stores/index.js';
+  import { getLatestMeasurement } from '#lib/utils/measurements.js';
+  import { throttle } from '#lib/utils/throttle.js';
   import {
     AnnotationEffect,
     DrawingSliders,

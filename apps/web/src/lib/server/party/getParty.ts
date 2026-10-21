@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   gameSessionTable,
   partyInviteTable,
@@ -9,8 +9,14 @@ import {
   type SelectParty,
   type SelectPartyMember,
   type SelectUser
-} from '$lib/db/app/schema';
-import { getFile, isUserOnlyAdminInParty, transformImage, UserIsLastAdminInParty, type Thumb } from '$lib/server';
+} from '#lib/db/app/schema.js';
+import {
+  getFile,
+  isUserOnlyAdminInParty,
+  transformImage,
+  UserIsLastAdminInParty,
+  type Thumb
+} from '#lib/server/index.js';
 import { error } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 

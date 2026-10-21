@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, CodeBlock, Spacer, type ToastDataProps } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import { addToast } from '@tableslayer/ui';
   const example = `
 

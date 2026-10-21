@@ -1,5 +1,5 @@
-import { db } from '$lib/db/app';
-import { apiKeysTable, usersTable, type SelectUser } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import { apiKeysTable, usersTable, type SelectUser } from '#lib/db/app/schema.js';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';

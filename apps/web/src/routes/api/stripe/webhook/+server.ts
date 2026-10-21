@@ -1,5 +1,5 @@
-import type { PartyPlan } from '$lib/db/app/schema';
-import { isStripeEnabled, updateParty } from '$lib/server';
+import type { PartyPlan } from '#lib/db/app/schema.js';
+import { isStripeEnabled, updateParty } from '#lib/server/index.js';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import Stripe from 'stripe';
 

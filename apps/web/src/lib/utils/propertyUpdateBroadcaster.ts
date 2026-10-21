@@ -1,4 +1,4 @@
-import type { SceneSettings, SessionDocClient } from '$lib/realtime';
+import type { SceneSettings, SessionDocClient } from '#lib/realtime/index.js';
 import type { StageProps } from '@tableslayer/stage';
 import { convertAnnotationToDbFormat } from './convertStagePropsToAnnotationData';
 import { convertStageMarkersToDbFormat } from './convertStagePropsToMarkerData';

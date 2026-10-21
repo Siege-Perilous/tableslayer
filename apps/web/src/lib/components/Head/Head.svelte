@@ -1,7 +1,7 @@
 <script lang="ts">
   import { type HeadProps } from './types';
   import { page } from '$app/state';
-  import { dev } from '$app/environment';
+  import { dev } from '$app/env';
   let {
     title = 'Table Slayer',
     description = 'Create animated battle maps for in person RPG games',

@@ -1,6 +1,6 @@
 {
   "name": "@tableslayer/ui",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "license": "FSL-1.1-ALv2",
   "repository": {
     "type": "git",
@@ -49,20 +49,20 @@
     "!dist/**/*.spec.*"
   ],
   "peerDependencies": {
-    "@sveltejs/kit": "^2.16.0",
+    "@sveltejs/kit": "^2.16.0 || ^3.0.0",
     "svelte": "^5.19.0"
   },
   "devDependencies": {
     "@magidoc/plugin-svelte-marked": "^7.0.0",
-    "@sveltejs/adapter-auto": "^7.0.1",
-    "@sveltejs/kit": "^2.70.3",
-    "@sveltejs/package": "^2.5.8",
+    "@sveltejs/adapter-auto": "^8.0.0",
+    "@sveltejs/kit": "^3.0.0",
+    "@sveltejs/package": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tableslayer/eslint-config": "workspace:*",
     "@tableslayer/tsconfig": "workspace:*",
     "@types/chroma-js": "^3.1.2",
-    "@types/node": "^26.6.3",
     "@types/marked": "^6.0.0",
+    "@types/node": "^26.6.3",
     "marked": "^18.0.14",
     "svelte": "5.57.1",
     "svelte-check": "^4.7.6",
@@ -85,5 +85,9 @@
   },
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "type": "module"
+  "type": "module",
+  "imports": {
+    "#lib": "./src/lib/index.js",
+    "#lib/*": "./src/lib/*"
+  }
 }

@@ -39,11 +39,11 @@
     IconHandFinger,
     IconLocationPin
   } from '@tabler/icons-svelte';
-  import { useUploadFileMutation } from '$lib/queries';
+  import { useUploadFileMutation } from '#lib/queries/index.js';
   import type { Snippet } from 'svelte';
-  import { queuePropertyUpdate, extractLocationFromUrl, throttle, trackChecklistItem } from '$lib/utils';
-  import { setPreference } from '$lib/utils/gameSessionPreferences';
-  import { handleMutation } from '$lib/factories';
+  import { queuePropertyUpdate, extractLocationFromUrl, throttle, trackChecklistItem } from '#lib/utils/index.js';
+  import { setPreference } from '#lib/utils/gameSessionPreferences.js';
+  import { handleMutation } from '#lib/factories/index.js';
 
   let {
     stageProps,

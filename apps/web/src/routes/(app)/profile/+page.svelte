@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ApiKeyManager, PartyInviteResponse, Head } from '$lib/components';
+  import { ApiKeyManager, PartyInviteResponse, Head } from '#lib/components/index.js';
   import {
     Text,
     Title,
@@ -12,8 +12,8 @@
     Button,
     FormError
   } from '@tableslayer/ui';
-  import { useUpdateUserMutation, useUploadFileMutation } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  import { useUpdateUserMutation, useUploadFileMutation } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   import { invalidateAll } from '$app/navigation';
 
   let { data } = $props();

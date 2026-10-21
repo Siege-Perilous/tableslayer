@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { SessionDocClient, upgradeSceneCoordinates, type SceneChange } from '$lib/realtime';
-import { devError, devLog } from '$lib/utils/debug';
+import { SessionDocClient, upgradeSceneCoordinates, type SceneChange } from '#lib/realtime/index.js';
+import { devError, devLog } from '#lib/utils/debug.js';
+import { browser } from '$app/env';
 import type { StageExports } from '@tableslayer/stage';
 
 const THUMBNAIL_IDLE_MS = 10000;

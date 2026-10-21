@@ -1,11 +1,11 @@
-import { db, getDatabaseMode } from '$lib/db/app';
-import { gameSessionTable, partyMemberTable, partyTable, sceneTable } from '$lib/db/app/schema';
-import { getAnnotationMasksForScene, getAnnotationsForScene } from '$lib/server/annotations';
-import { transformImage } from '$lib/server/file/transform';
-import { getLightsForScene } from '$lib/server/light';
-import { getMarkersForScene } from '$lib/server/marker';
-import { getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
-import { DEFAULT_MAP } from '$lib/utils/generateR2Url';
+import { db, getDatabaseMode } from '#lib/db/app/index.js';
+import { gameSessionTable, partyMemberTable, partyTable, sceneTable } from '#lib/db/app/schema.js';
+import { getAnnotationMasksForScene, getAnnotationsForScene } from '#lib/server/annotations.js';
+import { transformImage } from '#lib/server/file/transform.js';
+import { getLightsForScene } from '#lib/server/light/index.js';
+import { getMarkersForScene } from '#lib/server/marker/index.js';
+import { getScene, getSceneMaskData, getScenes } from '#lib/server/scene/index.js';
+import { DEFAULT_MAP } from '#lib/utils/generateR2Url.js';
 import { count, desc, eq, inArray } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 

@@ -1,5 +1,5 @@
-import { apiFactory } from '$lib/factories';
-import { applyPartyStatePersist, assertInternalRequest, recordRealtimeActivity } from '$lib/server/realtime';
+import { apiFactory } from '#lib/factories/index.js';
+import { applyPartyStatePersist, assertInternalRequest, recordRealtimeActivity } from '#lib/server/realtime/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

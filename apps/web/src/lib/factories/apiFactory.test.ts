@@ -1,4 +1,4 @@
-import { SlugConflictError } from '$lib/server/errors';
+import { SlugConflictError } from '#lib/server/errors/index.js';
 import * as Sentry from '@sentry/sveltekit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,4 +1,4 @@
-import type { ChecklistItemId } from '$lib/components/Checklist/checklistItems';
+import type { ChecklistItemId } from '#lib/components/Checklist/checklistItems.js';
 import { getContext, setContext } from 'svelte';
 
 const CHECKLIST_CONTEXT_KEY = 'checklist-tracker';

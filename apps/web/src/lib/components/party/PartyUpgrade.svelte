@@ -1,8 +1,8 @@
 <script lang="ts">
   import { PartyPlanSelector } from './';
-  import type { SelectParty } from '$lib/db/app/schema';
-  import { useStripeCustomerPortal } from '$lib/queries';
-  import { handleMutation } from '$lib/factories';
+  import type { SelectParty } from '#lib/db/app/schema.js';
+  import { useStripeCustomerPortal } from '#lib/queries/index.js';
+  import { handleMutation } from '#lib/factories/index.js';
   import { Button, Text, Spacer, Panel, Link } from '@tableslayer/ui';
   let { party, limitText = 'Your party is limited' }: { party: SelectParty; limitText?: string } = $props();
   let formIsLoading = $state(false);

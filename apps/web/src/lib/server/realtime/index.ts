@@ -1,5 +1,4 @@
-import { dev } from '$app/environment';
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   annotationsTable,
   gameSessionTable,
@@ -8,8 +7,9 @@ import {
   partyTable,
   sceneTable,
   type SelectScene
-} from '$lib/db/app/schema';
-import type { PartyStateWire, PersistSessionWire, SceneWire, SessionSnapshotWire } from '$lib/realtime/wire';
+} from '#lib/db/app/schema.js';
+import type { PartyStateWire, PersistSessionWire, SceneWire, SessionSnapshotWire } from '#lib/realtime/wire.js';
+import { dev } from '$app/env';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
 
 // Server-to-server auth for /api/internal/* — the PartyKit persister is the only

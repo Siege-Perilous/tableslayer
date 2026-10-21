@@ -1,6 +1,6 @@
-import { updatePartySchema } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import { isUserInParty, SlugConflictError, updateParty } from '$lib/server';
+import { updatePartySchema } from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import { isUserInParty, SlugConflictError, updateParty } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const updatePartyDetails = z.object({

@@ -19,11 +19,11 @@
     getDefaultEffectProps
   } from '@tableslayer/stage';
   import { IconTrash, IconEye, IconEyeOff, IconPlus, IconGripVertical } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate, flushQueuedPropertyUpdates, trackChecklistItem } from '$lib/utils';
-  import { setPreferenceDebounced } from '$lib/utils/gameSessionPreferences';
+  import { queuePropertyUpdate, flushQueuedPropertyUpdates, trackChecklistItem } from '#lib/utils/index.js';
+  import { setPreferenceDebounced } from '#lib/utils/gameSessionPreferences.js';
   import { flip } from 'svelte/animate';
   import { sineOut } from 'svelte/easing';
-  import { useDragAndDrop } from '$lib/composables/useDragAndDrop.svelte';
+  import { useDragAndDrop } from '#lib/composables/useDragAndDrop.svelte.js';
   import { onDestroy } from 'svelte';
 
   let {

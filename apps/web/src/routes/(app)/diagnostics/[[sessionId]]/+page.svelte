@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
   import { Title, Text, Spacer, Panel, Button, Select, Icon, Link, FormControl } from '@tableslayer/ui';
   import { IconCircleCheckFilled, IconAlertCircleFilled, IconCircleXFilled } from '@tabler/icons-svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import type { DiagnosticResult } from './+page.server';
 
   let { data } = $props();
@@ -44,7 +44,7 @@
 
   const refresh = async () => {
     isRefreshing = true;
-    const currentUrl = $page.url.pathname + $page.url.search;
+    const currentUrl = page.url.pathname + page.url.search;
     await goto(currentUrl, { invalidateAll: true });
     isRefreshing = false;
   };
@@ -177,12 +177,15 @@
               <Text size="0.875rem" weight={500}>{result.name}</Text>
               <Text size="0.75rem" color="var(--fgMuted)">{result.description}</Text>
             </td>
+
             <td class="diagnostics__cell diagnostics__cell--time">
               <Text size="0.875rem" weight={500}>{result.duration} ms</Text>
             </td>
+
             <td class="diagnostics__cell diagnostics__cell--status">
               <Icon Icon={getStatusIcon(result.status)} size="1.25rem" color={getStatusColor(result.status)} />
             </td>
+
             <td class="diagnostics__cell">
               <Text size="0.75rem" color="var(--fgMuted)">{result.details || '-'}</Text>
             </td>
@@ -193,7 +196,6 @@
   </Panel>
 
   <Spacer size="1rem" />
-
   <Text size="0.75rem" color="var(--fgMuted)">
     Thresholds: Green &lt; expected, Yellow = 2-5x expected, Red &gt; 5x expected or error
   </Text>

@@ -1,4 +1,4 @@
-import { isAdmin } from '$lib/server/admin';
+import { isAdmin } from '#lib/server/admin/index.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

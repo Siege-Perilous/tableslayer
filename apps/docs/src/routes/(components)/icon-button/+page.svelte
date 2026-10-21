@@ -1,6 +1,6 @@
 <script lang="ts">
   import { IconButton, Icon } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import { IconPlus, IconGhost3, IconX, IconLink } from '@tabler/icons-svelte';
 </script>
 

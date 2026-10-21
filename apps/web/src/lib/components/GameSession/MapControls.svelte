@@ -1,14 +1,14 @@
 <script lang="ts">
   import { Icon, FormControl, Spacer, Input, Button, IconButton, Text, Hr } from '@tableslayer/ui';
   import { GridMode, type StageExports, type StageProps } from '@tableslayer/stage';
-  import type { SelectScene } from '$lib/db/app/schema';
-  import type { SelectParty } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
+  import type { SelectScene } from '#lib/db/app/schema.js';
+  import type { SelectParty } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
   import { IconRotateClockwise2 } from '@tabler/icons-svelte';
   import { UpdateMapImage, openFileDialog } from './';
   import { type ZodIssue } from 'zod';
-  import type { SessionDocClient } from '$lib/realtime';
-  import { queuePropertyUpdate, relockMapZoom, trackChecklistItem } from '$lib/utils';
+  import type { SessionDocClient } from '#lib/realtime/index.js';
+  import { queuePropertyUpdate, relockMapZoom, trackChecklistItem } from '#lib/utils/index.js';
 
   let {
     stage,

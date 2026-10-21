@@ -1,5 +1,7 @@
 import { sentrySvelteKit } from '@sentry/sveltekit/vite';
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
@@ -11,7 +13,7 @@ export default defineConfig(({ mode }) => {
         project: 'tableslayer',
         authToken: env.SENTRY_AUTH_TOKEN
       }),
-      sveltekit()
+      sveltekit({ preprocess: vitePreprocess(), adapter: adapter() })
     ],
     server: {
       port: 5174,

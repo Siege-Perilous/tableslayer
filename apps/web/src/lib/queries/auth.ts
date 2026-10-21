@@ -1,5 +1,5 @@
-import type { SelectUser } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import type { SelectUser } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useAuthLoginMutation = () => {
   return mutationFactory<{ email: string; password: string }>({

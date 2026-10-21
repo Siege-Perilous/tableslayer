@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Hr, Link, SelectorMenu, Spacer } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   const menuItems = [
     {
       label: 'Party one',

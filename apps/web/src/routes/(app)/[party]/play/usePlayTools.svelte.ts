@@ -1,5 +1,5 @@
-import { base64ToUint8, uint8ToBase64, type AnnotationRow } from '$lib/realtime';
-import { devError, devLog } from '$lib/utils/debug';
+import { base64ToUint8, uint8ToBase64, type AnnotationRow } from '#lib/realtime/index.js';
+import { devError, devLog } from '#lib/utils/debug.js';
 import {
   IconCircle,
   IconCone2,

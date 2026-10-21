@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SelectParty, SelectScene } from '$lib/db/app/schema';
-  import type { SessionDocClient } from '$lib/realtime';
-  import type { Thumb } from '$lib/server';
-  import { stagePerformance, type StagePerformanceSetting } from '$lib/stores';
-  import { trackChecklistItem } from '$lib/utils';
+  import type { SelectParty, SelectScene } from '#lib/db/app/schema.js';
+  import type { SessionDocClient } from '#lib/realtime/index.js';
+  import type { Thumb } from '#lib/server/index.js';
+  import { stagePerformance, type StagePerformanceSetting } from '#lib/stores/index.js';
+  import { trackChecklistItem } from '#lib/utils/index.js';
   import { debugState, setDebugEnabled } from '@tableslayer/stage';
   import { Button, FormControl, Hr, Link, RadioButton, Spacer, Text } from '@tableslayer/ui';
 

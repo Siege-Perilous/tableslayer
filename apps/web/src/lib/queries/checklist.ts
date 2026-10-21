@@ -1,4 +1,4 @@
-import { mutationFactory } from '$lib/factories';
+import { mutationFactory } from '#lib/factories/index.js';
 
 export const useUpdateChecklistProgressMutation = () => {
   return mutationFactory<

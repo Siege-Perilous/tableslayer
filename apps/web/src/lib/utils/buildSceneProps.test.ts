@@ -1,4 +1,4 @@
-import type { SelectLight, SelectMarker, SelectScene } from '$lib/db/app/schema';
+import type { SelectLight, SelectMarker, SelectScene } from '#lib/db/app/schema.js';
 import { GridMode } from '@tableslayer/stage';
 import { describe, expect, it } from 'vitest';
 import { buildSceneProps } from './buildSceneProps';

@@ -1,12 +1,12 @@
+import { getAnnotationMasksForScene, getAnnotationsForScene } from '#lib/server/annotations.js';
 import {
   checkUserChecklistEligibility,
   getLightsForScene,
   getMarkersForScene,
   getUserChecklistState
-} from '$lib/server';
-import { getAnnotationMasksForScene, getAnnotationsForScene } from '$lib/server/annotations';
-import { createScene, getScene, getSceneMaskData, getScenes } from '$lib/server/scene';
-import { getPreferenceServer } from '$lib/utils/gameSessionPreferences';
+} from '#lib/server/index.js';
+import { createScene, getScene, getSceneMaskData, getScenes } from '#lib/server/scene/index.js';
+import { getPreferenceServer } from '#lib/utils/gameSessionPreferences.js';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

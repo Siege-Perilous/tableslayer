@@ -26,7 +26,7 @@
     IconActivity
   } from '@tabler/icons-svelte';
   import { toggleMode, mode } from 'mode-watcher';
-  import type { SelectGameSession } from '$lib/db/app/schema';
+  import type { SelectGameSession } from '#lib/db/app/schema.js';
   let { data, children } = $props();
   import { page } from '$app/state';
   import { goto } from '$app/navigation';

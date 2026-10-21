@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SelectParty, SelectUser } from '$lib/db/app/schema';
-  import { type Thumb } from '$lib/server';
+  import type { SelectParty, SelectUser } from '#lib/db/app/schema.js';
+  import { type Thumb } from '#lib/server/index.js';
   import { IconChevronDown, IconHeart, IconHeartFilled } from '@tabler/icons-svelte';
   import { IconCheck } from '@tabler/icons-svelte';
   import {
@@ -8,10 +8,10 @@
     useUpdateUserMutation,
     useDeletePartyMutation,
     useUploadFileMutation
-  } from '$lib/queries';
-  import type { FormMutationError } from '$lib/factories';
+  } from '#lib/queries/index.js';
+  import type { FormMutationError } from '#lib/factories/index.js';
   import { goto, invalidateAll } from '$app/navigation';
-  import { handleMutation } from '$lib/factories';
+  import { handleMutation } from '#lib/factories/index.js';
 
   import {
     Avatar,

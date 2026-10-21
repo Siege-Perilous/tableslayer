@@ -1,5 +1,5 @@
-import { getDatabaseMode } from '$lib/db/app/index';
-import { isEmailEnabled, isGoogleOAuthEnabled, isStripeEnabled } from '$lib/server';
+import { getDatabaseMode } from '#lib/db/app/index.js';
+import { isEmailEnabled, isGoogleOAuthEnabled, isStripeEnabled } from '#lib/server/index.js';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async () => {

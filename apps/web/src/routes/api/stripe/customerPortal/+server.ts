@@ -1,5 +1,5 @@
-import { apiFactory } from '$lib/factories';
-import { getParty, isStripeEnabled } from '$lib/server';
+import { apiFactory } from '#lib/factories/index.js';
+import { getParty, isStripeEnabled } from '#lib/server/index.js';
 import Stripe from 'stripe';
 import { z } from 'zod';
 

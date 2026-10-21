@@ -1,6 +1,6 @@
-import { db } from '$lib/db/app';
-import type { PartyRole, SelectGameSession, SelectParty, SelectScene } from '$lib/db/app/schema';
-import { filesTable, gameSessionTable, partyMemberTable, partyTable, sceneTable } from '$lib/db/app/schema';
+import { db } from '#lib/db/app/index.js';
+import type { PartyRole, SelectGameSession, SelectParty, SelectScene } from '#lib/db/app/schema.js';
+import { filesTable, gameSessionTable, partyMemberTable, partyTable, sceneTable } from '#lib/db/app/schema.js';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Thumb } from '../file';
 import { transformImage } from '../file';

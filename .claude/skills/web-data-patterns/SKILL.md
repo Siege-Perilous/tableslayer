@@ -5,7 +5,8 @@ description: Data-layer patterns for apps/web — apiFactory error semantics, mu
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-10-13.
+> **Freshness**: last verified 2026-10-21 (SvelteKit 3).
+> **SvelteKit 3 conventions**: import app code as `#lib/<path>.js` (explicit `.js` extension, `$lib` is gone); Kit config lives in `vite.config.ts` inside `sveltekit({...})` (no `svelte.config.js`); use `$app/env` (not `$app/environment`) and `$app/state` (not `$app/stores`); `redirect()` to an external URL needs `{ external: true }`.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
 
@@ -21,7 +22,7 @@ Defined in `apps/web/src/lib/factories/apiFactory.ts`. `apiFactory<Body>(handler
 - Anything else → 500 + `Sentry.captureException`.
 - Response shape is always `{ success, status, message, errors? }` — `FormMutationError` on the client matches it.
 
-Canonical endpoint (`src/routes/api/scenes/createScene/+server.ts`): build the schema from drizzle-zod exports (`insertSceneSchema.extend(...)`), auth-check inline (`locals.user?.id` + `isUserInParty`), delegate business logic to a `$lib/server` domain function.
+Canonical endpoint (`src/routes/api/scenes/createScene/+server.ts`): build the schema from drizzle-zod exports (`insertSceneSchema.extend(...)`), auth-check inline (`locals.user?.id` + `isUserInParty`), delegate business logic to a `#lib/server/index.js` domain function.
 
 **Exception:** the Stripe webhook (`api/stripe/webhook/+server.ts`) is a raw RequestHandler — it needs the raw body for signature verification. Internal endpoints (`/api/internal/*`) are token-guarded via `assertInternalRequest` (x-internal-token vs `INTERNAL_API_TOKEN`), no user session.
 
@@ -51,7 +52,7 @@ PartyServer (Cloudflare Workers + Durable Objects, `apps/web/partyserver/`) + Y.
 - **There is no save pipeline.** Do not add autosave, save buttons, or scene-update API mutations. Edits are doc writes; the room persists.
 - Scene **create** still goes through `/api/scenes/createScene` (server computes alignment), then the client adds the row to the doc. Update/delete/reorder scenes = doc writes only (see the comment atop `queries/scenes.ts`).
 - After any **direct DB write** to scene data (import, admin tooling), trigger a room `resync` (`requestGameSessionRoomResync` in `src/lib/server/realtime/`), or the live doc won't see it.
-- **Write cadence is handled for you.** `queuePropertyUpdate` applies locally at once and flushes to the doc event-driven (`$lib/utils/propertyUpdateBroadcaster.ts`: 8ms leading-edge gate + trailing timer), and `SessionDocClient` coalesces remote rev bumps via `setTimeout(0)` so message backlogs drain into one rebuild. Do not bypass the broadcaster with per-event `client.write.*` calls in a gesture loop, and never schedule realtime send/receive work on `requestAnimationFrame` — rAF cadence is per-window (focus/occlusion/GPU contention) and makes sync smoothness depend on which window has scheduler priority.
+- **Write cadence is handled for you.** `queuePropertyUpdate` applies locally at once and flushes to the doc event-driven (`#lib/utils/propertyUpdateBroadcaster.ts`: 8ms leading-edge gate + trailing timer), and `SessionDocClient` coalesces remote rev bumps via `setTimeout(0)` so message backlogs drain into one rebuild. Do not bypass the broadcaster with per-event `client.write.*` calls in a gesture loop, and never schedule realtime send/receive work on `requestAnimationFrame` — rAF cadence is per-window (focus/occlusion/GPU contention) and makes sync smoothness depend on which window has scheduler priority.
 - **Never write settings fields you didn't change.** The broadcaster writes field-level diffs (only fields mapped from queued paths — `sceneSettingsFieldsForPropPaths`). Writing a full settings object from local stageProps pushes stale copies of other clients' in-flight fields into the doc and rubber-bands their gestures. Same rule for any new direct `write.setSceneSettings` call: pass only the fields you actually changed.
 - System writes that must not pollute user undo (e.g. thumbnails) go through `systemWrite`.
 
@@ -78,9 +79,9 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 - **Uploads (R2 via S3 API)**: client mutation → `POST /api/file/generatePresignedWriteUrl` → client PUTs blob to presigned URL → optional `/api/file/createFile` for a `filesTable` row. Throwaway assets (fog masks, thumbnails) skip the DB row and cache-bust via `incrementUrlVersion` (`src/lib/utils/fileVersion.ts`). Server: `src/lib/server/file/files.ts`.
 - **Stripe**: `api/stripe/{checkout,customerPortal,webhook}`; price→plan via `STRIPE_PRICE_ID_*` envs; updates `partyTable` plan fields; gated by `isStripeEnabled()`.
 - **Email (Cloudflare Email Sending, replaced Resend 2026-06)**: `src/lib/server/email/email.ts` → Cloudflare API, from `no-reply@tableslayer.com`. Dev redirects all mail to `DEV_EMAIL`; `ENV_NAME === 'preview'` skips sending.
-- **Turnstile (bot check on signup)**: `src/lib/server/turnstile.ts` `verifyTurnstileToken()` (fails closed) — imported directly, NOT via the `$lib/server` barrel: a server module with a single endpoint consumer that is also barrel-re-exported makes Rolldown (Vite 8) inline it into the endpoint chunk with an extra `export { x as t }`, and SvelteKit's build fails with `Invalid export 't'`; gated by `isTurnstileEnabled()` (`TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`). Widget is `lib/components/Turnstile.svelte` (`appearance` prop: `always` outside production so it can be seen/tested, `interaction-only` in production); site key reaches the page via `signup/+page.server.ts`. CI preview uses Cloudflare's always-pass test keys.
+- **Turnstile (bot check on signup)**: `src/lib/server/turnstile.ts` `verifyTurnstileToken()` (fails closed) — imported directly, NOT via the `#lib/server/index.js` barrel: a server module with a single endpoint consumer that is also barrel-re-exported makes Rolldown (Vite 8) inline it into the endpoint chunk with an extra `export { x as t }`, and SvelteKit's build fails with `Invalid export 't'`; gated by `isTurnstileEnabled()` (`TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`). Widget is `lib/components/Turnstile.svelte` (`appearance` prop: `always` outside production so it can be seen/tested, `interaction-only` in production); site key reaches the page via `signup/+page.server.ts`. CI preview uses Cloudflare's always-pass test keys.
 - **Env**: `ENV_NAME ∈ production|preview|dev` drives behavior throughout. `PUBLIC_PARTYKIT_HOST` is the only public var. `CLOUDFLARE_WORKERS_KEY` (Account Analytics: Read) + `CLOUDFLARE_BILLING_CYCLE_START_DAY` are optional and only feed the admin usage gauge. See `.env-example` for the full list.
-- Server business logic lives under `src/lib/server/<domain>/`, re-exported from `$lib/server` — endpoints import from there, not from deep paths.
+- Server business logic lives under `src/lib/server/<domain>/`, re-exported from `#lib/server/index.js` — endpoints import from there, not from deep paths.
 - **Dev**: `pnpm run dev` runs vite (port 5174) + `wrangler dev` (1999) together; the worker reads no `.env`, its dev defaults live in code and `partyserver/wrangler.jsonc`. Gates: `pnpm run check` (includes `check:worker`: `wrangler types` + `tsc` for the worker), `pnpm run format-check`.
 
 ## Anchor files (freshness check)

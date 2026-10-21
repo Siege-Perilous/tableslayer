@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Text, Spacer, Button, Link, Title } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
 
   let { data } = $props();
   const bucketUrl = data?.bucketUrl || 'https://files.tableslayer.com';

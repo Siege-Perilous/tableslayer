@@ -1,4 +1,4 @@
-import type { StagePerformanceSetting } from '$lib/stores/stagePerformance.svelte';
+import type { StagePerformanceSetting } from '#lib/stores/stagePerformance.svelte.js';
 import type { HoveredMarker } from '@tableslayer/stage';
 import type YProvider from 'y-partyserver/provider';
 

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { type PartyPlan } from '$lib/db/app/schema';
-  import type { SelectParty } from '$lib/db/app/schema';
+  import { type PartyPlan } from '#lib/db/app/schema.js';
+  import type { SelectParty } from '#lib/db/app/schema.js';
   import { IconSelector } from '@tabler/icons-svelte';
-  import { handleMutation, type FormMutationError } from '$lib/factories';
-  import { useStripeCheckout } from '$lib/queries';
+  import { handleMutation, type FormMutationError } from '#lib/factories/index.js';
+  import { useStripeCheckout } from '#lib/queries/index.js';
   import { Button, Text, Spacer, Popover, Hr, Icon, Loader } from '@tableslayer/ui';
   let formIsLoading = $state(false);
   let { party }: { party: SelectParty } = $props();

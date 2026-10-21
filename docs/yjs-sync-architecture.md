@@ -91,14 +91,14 @@ kebab-case; the `'game_session'` kind in `wire.ts` and the DB is unchanged).
 - **Resync**: `POST {"type":"resync"}` (internal-token guarded) rebuilds a live room from the DB
   after direct DB writes (import, admin tools). `{"type":"debug"}` on the game session room
   exposes persister stats (since the last wake). The app calls these via `requestPartyRoomResync`
-  / `requestGameSessionRoomResync` in `$lib/server/realtime`.
+  / `requestGameSessionRoomResync` in `#lib/server/realtime`.
 - **Activity reporting**: each room batches `connect`/`close` events (1 s, via
   `partyserver/roomActivity.ts`) to `/api/internal/roomActivity`, which writes `realtime_activity`
   rows (party, session, kind, user, socket count after the event). Best-effort: it never
   throws, never retries, and never blocks `onConnect`. The user id comes from the socket's
   upgrade URL, which PartyServer keeps in the socket attachment across hibernation. The persist
   endpoints add one `edit` / `party_state` row per call. This log is what `/admin/usage` rolls up
-  (`$lib/server/realtime/activityRollup.ts`, pure).
+  (`#lib/server/realtime/activityRollup.ts`, pure).
 - Internal endpoints authenticate via the `INTERNAL_API_TOKEN` shared secret
   (`x-internal-token`); dev falls back to `dev-internal-token` on both sides. The worker reads
   `BASE_URL` (the app's URL) from `vars` in `wrangler.jsonc` (per environment; previews override
@@ -185,7 +185,7 @@ renderProps = buildRenderProps(docSnapshot, localView) â†’ structural sharing â†
   the snapshot while writes throttle to the doc at 50ms; the override clears shortly after the
   gesture ends. No wall-clock protection windows.
 - The editor's control panels still call `queuePropertyUpdate(stageProps, path, value)`; the
-  broadcaster (`$lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally right away
+  broadcaster (`#lib/utils/propertyUpdateBroadcaster.ts`) applies the value locally right away
   and flushes shared paths to the doc throttled: an 8ms leading-edge gate sits below typical
   input-event spacing, so during a gesture nearly every input event flushes immediately and the
   broadcast inherits the input stream's even rhythm; a trailing timer catches the gesture tail.
@@ -201,7 +201,7 @@ renderProps = buildRenderProps(docSnapshot, localView) â†’ structural sharing â†
 ### Editor vs play
 
 Both routes are peers on the same doc; the difference is capability and chrome
-(`$lib/realtime/capabilities.ts`), not architecture. The play route follows
+(`#lib/realtime/capabilities.ts`), not architecture. The play route follows
 `party.state.activeSceneId` (reconnecting rooms for cross-session switches), preloads sibling
 scene maps, and exposes touch tools (fog, drawing, measurement, scene switching) that write
 through the same doc APIs as the editor. Scene URLs in the editor address scenes **by id**;

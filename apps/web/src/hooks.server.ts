@@ -1,7 +1,6 @@
-import { deleteSessionTokenCookie, setSessionTokenCookie, validateSessionToken } from '$lib/server';
+import { deleteSessionTokenCookie, setSessionTokenCookie, validateSessionToken } from '#lib/server/index.js';
 import * as Sentry from '@sentry/sveltekit';
-import { type Handle } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
 
 if (process.env.ENV_NAME === 'production' && process.env.SENTRY_DSN) {
   Sentry.init({

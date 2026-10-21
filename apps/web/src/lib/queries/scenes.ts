@@ -1,5 +1,5 @@
-import type { SelectScene } from '$lib/db/app/schema';
-import { mutationFactory } from '$lib/factories';
+import type { SelectScene } from '#lib/db/app/schema.js';
+import { mutationFactory } from '#lib/factories/index.js';
 
 // Scene creation still goes through the API: the server computes map/grid
 // alignment from the uploaded image, and the response row is then added to the

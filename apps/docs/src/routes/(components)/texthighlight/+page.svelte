@@ -1,6 +1,6 @@
 <script lang="ts">
   import { TextHighlight, Text, Spacer } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   import { IconMap, IconGrid4x4, IconScreenShare } from '@tabler/icons-svelte';
 </script>
 

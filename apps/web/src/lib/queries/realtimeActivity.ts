@@ -1,4 +1,4 @@
-import { mutationFactory } from '$lib/factories';
+import { mutationFactory } from '#lib/factories/index.js';
 import { createQuery } from '@tanstack/svelte-query';
 
 export const LIVE_STATE_POLL_MS = 20_000;

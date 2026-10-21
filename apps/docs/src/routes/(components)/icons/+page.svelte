@@ -1,7 +1,7 @@
 <script lang="ts">
   import { IconHeart, IconAxe, IconSword } from '@tabler/icons-svelte';
   import { Icon } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
 </script>
 
 <Example title="Icon" propsName="Icon">

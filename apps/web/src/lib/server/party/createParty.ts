@@ -1,7 +1,13 @@
-import { db } from '$lib/db/app';
-import { gameSessionTable, partyMemberTable, partyTable, type InsertParty, type SelectParty } from '$lib/db/app/schema';
-import { SlugConflictError, deleteGameSession, getDefaultPartyPlan } from '$lib/server';
-import { createRandomName, generateSlug } from '$lib/utils';
+import { db } from '#lib/db/app/index.js';
+import {
+  gameSessionTable,
+  partyMemberTable,
+  partyTable,
+  type InsertParty,
+  type SelectParty
+} from '#lib/db/app/schema.js';
+import { SlugConflictError, deleteGameSession, getDefaultPartyPlan } from '#lib/server/index.js';
+import { createRandomName, generateSlug } from '#lib/utils/index.js';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 

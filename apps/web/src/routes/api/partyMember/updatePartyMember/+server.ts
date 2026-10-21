@@ -1,5 +1,5 @@
-import { apiFactory } from '$lib/factories';
-import { isUserInParty, updatePartyMember } from '$lib/server';
+import { apiFactory } from '#lib/factories/index.js';
+import { isUserInParty, updatePartyMember } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const updatePartyMemberSchema = z.object({

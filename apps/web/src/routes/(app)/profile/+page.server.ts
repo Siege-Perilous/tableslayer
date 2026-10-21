@@ -1,4 +1,4 @@
-import { getApiKeysForUser, getPartyInvitesForEmail } from '$lib/server';
+import { getApiKeysForUser, getPartyInvitesForEmail } from '#lib/server/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {

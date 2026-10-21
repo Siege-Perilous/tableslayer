@@ -10,7 +10,7 @@ interface ChangelogEntry {
 }
 
 // Import all markdown files at build time - this enables HMR
-const changelogModules = import.meta.glob('$lib/changelog/*.md', {
+const changelogModules = import.meta.glob('#lib/changelog/*.md', {
   eager: true,
   query: '?raw',
   import: 'default'

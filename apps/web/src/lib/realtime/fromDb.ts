@@ -1,4 +1,4 @@
-import type { SelectAnnotation, SelectLight, SelectMarker, SelectScene } from '$lib/db/app/schema';
+import type { SelectAnnotation, SelectLight, SelectMarker, SelectScene } from '#lib/db/app/schema.js';
 import type { AnnotationRow, LightRow, MarkerRow, SceneSettings } from './types';
 
 // DB row -> doc row converters (app-side only; the PartyKit bundle never imports this).

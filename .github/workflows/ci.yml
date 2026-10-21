@@ -16,21 +16,21 @@ jobs:
   format-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - run: pnpm format-check
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - run: pnpm lint -- --quiet
 
   tsc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - name: Typescript check
         run: pnpm tsc
@@ -40,7 +40,7 @@ jobs:
   changeset-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check if UI files changed
@@ -235,14 +235,14 @@ jobs:
     needs: [create_database]
     steps:
       - name: Find Comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
       - name: Create Initial PR Comment
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -268,7 +268,7 @@ jobs:
     concurrency:
       group: pr-${{ github.event.pull_request.number }}-docs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - name: Deploy docs
         uses: superfly/fly-pr-review-apps@1.6.0
@@ -290,7 +290,7 @@ jobs:
     concurrency:
       group: pr-${{ github.event.pull_request.number }}-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - name: Deploy realtime worker for PR
         working-directory: apps/web
@@ -349,7 +349,7 @@ jobs:
     needs: [fly_deploy_docs, fly_deploy_web]
     steps:
       - name: Find Comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -357,7 +357,7 @@ jobs:
           body-includes: '[x]:eyAiYXBwIjogIndlYnNpdGUtcHJldmlldyIgfQ=='
       - name: Update PR Comment - Success
         if: needs.fly_deploy_docs.result == 'success' && needs.fly_deploy_web.result == 'success'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -372,7 +372,7 @@ jobs:
             - Realtime worker: `tableslayer-realtime-pr-${{ github.event.pull_request.number }}.${{ secrets.CLOUDFLARE_WORKERS_SUBDOMAIN }}.workers.dev`
       - name: Update PR Comment - Failure
         if: needs.fly_deploy_docs.result == 'failure' || needs.fly_deploy_web.result == 'failure'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -392,14 +392,14 @@ jobs:
     runs-on: ubuntu-latest
     name: docs tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       - name: Get Playwright version
         id: playwright-version
         working-directory: apps/docs
         run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // "unknown"')" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/ms-playwright
@@ -427,7 +427,7 @@ jobs:
     runs-on: gpu-linux-4
     name: web tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/shared
       # Unit tests import @tableslayer/stage, which resolves to its built dist
       # (and stage imports @tableslayer/ui, so build the chain in order)
@@ -454,7 +454,7 @@ jobs:
         working-directory: apps/web
         run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version // .[0].dependencies["@playwright/test"].version // "unknown"')" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/ms-playwright

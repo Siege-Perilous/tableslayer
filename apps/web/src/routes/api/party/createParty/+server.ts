@@ -1,6 +1,6 @@
-import { insertPartySchema } from '$lib/db/app/schema'; // Use or create a schema for scene creation
-import { apiFactory } from '$lib/factories';
-import { createParty, SlugConflictError } from '$lib/server';
+import { insertPartySchema } from '#lib/db/app/schema.js'; // Use or create a schema for scene creation
+import { apiFactory } from '#lib/factories/index.js';
+import { createParty, SlugConflictError } from '#lib/server/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

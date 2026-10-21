@@ -1,6 +1,6 @@
-import { apiFactory } from '$lib/factories';
-import { isUserInParty } from '$lib/server';
-import { getPartyLiveState } from '$lib/server/realtime';
+import { apiFactory } from '#lib/factories/index.js';
+import { isUserInParty } from '#lib/server/index.js';
+import { getPartyLiveState } from '#lib/server/realtime/index.js';
 import { z } from 'zod';
 
 const validationSchema = z.object({

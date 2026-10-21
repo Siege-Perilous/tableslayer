@@ -1,6 +1,6 @@
-import { VALID_PARTY_PLANS } from '$lib/db/app/schema';
-import { apiFactory } from '$lib/factories';
-import { getParty, getUser, isStripeEnabled, updateParty } from '$lib/server';
+import { VALID_PARTY_PLANS } from '#lib/db/app/schema.js';
+import { apiFactory } from '#lib/factories/index.js';
+import { getParty, getUser, isStripeEnabled, updateParty } from '#lib/server/index.js';
 import Stripe from 'stripe';
 import { z } from 'zod';
 

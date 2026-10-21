@@ -1,4 +1,4 @@
-import { getAllPromosWithRedemptions } from '$lib/server/promo';
+import { getAllPromosWithRedemptions } from '#lib/server/promo/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

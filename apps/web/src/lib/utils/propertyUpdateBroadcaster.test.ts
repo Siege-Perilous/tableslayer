@@ -1,6 +1,6 @@
-import type { SessionDocClient } from '$lib/realtime';
-import { createSessionWriter, getSceneSnapshot } from '$lib/realtime/docSchema';
-import type { SceneSettings } from '$lib/realtime/types';
+import { createSessionWriter, getSceneSnapshot } from '#lib/realtime/docSchema.js';
+import type { SessionDocClient } from '#lib/realtime/index.js';
+import type { SceneSettings } from '#lib/realtime/types.js';
 import type { StageProps } from '@tableslayer/stage';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';

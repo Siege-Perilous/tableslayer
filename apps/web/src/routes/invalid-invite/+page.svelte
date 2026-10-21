@@ -3,7 +3,7 @@
   let { data } = $props();
   const { user } = data;
   const error = page.url.searchParams.get('error');
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
 </script>
 
 <Head />

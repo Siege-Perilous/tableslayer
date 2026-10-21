@@ -1,5 +1,5 @@
-import type { SelectAnnotation, SelectLight, SelectMarker, SelectScene } from '$lib/db/app/schema';
-import { buildSceneProps } from '$lib/utils/buildSceneProps';
+import type { SelectAnnotation, SelectLight, SelectMarker, SelectScene } from '#lib/db/app/schema.js';
+import { buildSceneProps } from '#lib/utils/buildSceneProps.js';
 import type { DrawMode, MapLayerType, StageProps, ToolType } from '@tableslayer/stage';
 import type { SceneSnapshot } from './types';
 

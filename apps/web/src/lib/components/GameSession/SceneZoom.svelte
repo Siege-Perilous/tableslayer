@@ -2,7 +2,7 @@
   import { Button, IconButton, Icon } from '@tableslayer/ui';
   import { GridMode, type StageExports, type StageProps } from '@tableslayer/stage';
   import { IconPlus, IconMinus, IconRotateClockwise2, IconArrowsMaximize } from '@tabler/icons-svelte';
-  import { queuePropertyUpdate, relockMapZoom, trackChecklistItem } from '$lib/utils';
+  import { queuePropertyUpdate, relockMapZoom, trackChecklistItem } from '#lib/utils/index.js';
 
   let {
     stage,

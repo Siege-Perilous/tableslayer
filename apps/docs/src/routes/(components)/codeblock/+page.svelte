@@ -1,6 +1,6 @@
 <script lang="ts">
   import { CodeBlock, Code, Spacer } from '@tableslayer/ui';
-  import { Example } from '$lib/components';
+  import { Example } from '#lib/components/index.js';
   const exampleCode = `/* Coloring the themes comes later */
 a:has(> img) {
   border: 20px solid white;

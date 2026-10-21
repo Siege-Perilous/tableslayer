@@ -1,9 +1,9 @@
-import { type SelectAnnotation, type SelectLight, type SelectMarker, type SelectScene } from '$lib/db/app/schema';
-import { base64ToUint8 } from '$lib/realtime/binary';
-import type { Thumb } from '$lib/server';
-import { generateGradientColors } from '$lib/utils';
-import { StageDefaultProps } from '$lib/utils/defaultMapState';
-import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '$lib/utils/generateR2Url';
+import { type SelectAnnotation, type SelectLight, type SelectMarker, type SelectScene } from '#lib/db/app/schema.js';
+import { base64ToUint8 } from '#lib/realtime/binary.js';
+import type { Thumb } from '#lib/server/index.js';
+import { StageDefaultProps } from '#lib/utils/defaultMapState.js';
+import { generateLargeImageUrl, generateSquareThumbnailUrl, isDefaultMap } from '#lib/utils/generateR2Url.js';
+import { generateGradientColors } from '#lib/utils/index.js';
 import {
   AnnotationEffect,
   type AnnotationLayerData,

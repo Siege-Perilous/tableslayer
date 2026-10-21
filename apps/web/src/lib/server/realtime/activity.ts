@@ -1,4 +1,4 @@
-import { db } from '$lib/db/app';
+import { db } from '#lib/db/app/index.js';
 import {
   gameSessionTable,
   partyTable,
@@ -7,7 +7,7 @@ import {
   type InsertRealtimeActivity,
   type RealtimeActivityKind,
   type SelectRealtimeActivity
-} from '$lib/db/app/schema';
+} from '#lib/db/app/schema.js';
 import { and, eq, gte, inArray, lt, max } from 'drizzle-orm';
 
 // The only writer to realtime_activity. Rows come from three places: PartyKit

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { Title, Text } from '@tableslayer/ui';
-  import { Head } from '$lib/components';
+  import { Head } from '#lib/components/index.js';
 </script>
 
 <Head />

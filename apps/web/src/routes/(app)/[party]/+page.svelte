@@ -10,7 +10,7 @@
     InvitePartyMember,
     PartyUpgrade,
     Head
-  } from '$lib/components';
+  } from '#lib/components/index.js';
 
   let { data } = $props();
   const { party, gameSessions, isPartyAdmin, invitedEmails, user, isStripeEnabled, isEmailEnabled } = $derived(data);

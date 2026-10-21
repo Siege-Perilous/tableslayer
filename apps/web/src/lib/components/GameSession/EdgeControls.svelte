@@ -3,10 +3,10 @@
   import { Spacer, DualInputSlider, FormControl, InputSlider, Icon, Text } from '@tableslayer/ui';
   import { type StageProps } from '@tableslayer/stage';
   import { IconX } from '@tabler/icons-svelte';
-  import type { SelectParty } from '$lib/db/app/schema';
-  import type { Thumb } from '$lib/server';
+  import type { SelectParty } from '#lib/db/app/schema.js';
+  import type { Thumb } from '#lib/server/index.js';
   import { PartyPlanSelector } from '../party';
-  import { queuePropertyUpdate } from '$lib/utils';
+  import { queuePropertyUpdate } from '#lib/utils/index.js';
 
   let {
     stageProps,

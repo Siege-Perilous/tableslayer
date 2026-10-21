@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Button, FormControl, Input, Link, Panel, Spacer, Text, Title } from '@tableslayer/ui';
-  import { IllustrationPortal, Head } from '$lib/components/index.js';
+  import { IllustrationPortal, Head } from '#lib/components/index.js';
   import {
     useAuthVerifyEmailMutation,
     useAuthResendVerificationEmailMutation,
     useAuthChangeEmailMutation
-  } from '$lib/queries';
-  import { type FormMutationError, handleMutation } from '$lib/factories';
+  } from '#lib/queries/index.js';
+  import { type FormMutationError, handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
 
   let { data } = $props();
