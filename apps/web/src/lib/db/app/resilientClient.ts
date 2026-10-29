@@ -1,4 +1,5 @@
 import type { Client } from '@libsql/client';
+import { errorChainMatches } from './dbErrors';
 
 // libsql/Turso embedded-replica errors that an in-place reconnect() can recover from: a dropped
 // Hrana stream, or a write forwarded to the primary over a stale keep-alive connection that the
@@ -7,21 +8,7 @@ import type { Client } from '@libsql/client';
 const STREAM_ERRORS =
   /stream not found|stream (has )?expired|STREAM_EXPIRED|HRANA_CLOSED|invalid baton|IncompleteMessage|connection closed before message completed|connection reset|broken pipe/i;
 
-// Drizzle wraps the libsql error in DrizzleQueryError, so walk the whole `cause` chain.
-export const isStreamError = (error: unknown): boolean => {
-  const seen = new Set<unknown>();
-  let current: unknown = error;
-  while (current != null && !seen.has(current)) {
-    seen.add(current);
-    const message =
-      typeof current === 'object' && 'message' in current
-        ? String((current as { message: unknown }).message)
-        : String(current);
-    if (STREAM_ERRORS.test(message)) return true;
-    current = typeof current === 'object' && 'cause' in current ? (current as { cause: unknown }).cause : undefined;
-  }
-  return false;
-};
+export const isStreamError = (error: unknown): boolean => errorChainMatches(error, STREAM_ERRORS);
 
 // `reconnect()` exists on the concrete client (sqlite3/http/ws) but is not on the exported Client type.
 type Reconnectable = { reconnect: () => Promise<void> };

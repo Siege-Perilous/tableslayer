@@ -1,3 +1,4 @@
+import { isUniqueConstraintError } from '#lib/db/app/dbErrors.js';
 import { db } from '#lib/db/app/index.js';
 import {
   partyTable,
@@ -210,7 +211,7 @@ export const createPromo = async (key: string, createdBy: string, maxUses: numbe
     return promo;
   } catch (error) {
     console.error('Error creating promo:', error);
-    if (error instanceof Error && error.message.includes('UNIQUE')) {
+    if (isUniqueConstraintError(error)) {
       throw new Error('A promo with this key already exists');
     }
     throw new Error('Failed to create promo');

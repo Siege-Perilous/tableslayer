@@ -1,3 +1,4 @@
+import { isUniqueConstraintError } from '#lib/db/app/dbErrors.js';
 import { db } from '#lib/db/app/index.js';
 import {
   gameSessionTable,
@@ -10,10 +11,6 @@ import { SlugConflictError, deleteGameSession, getDefaultPartyPlan } from '#lib/
 import { createRandomName, generateSlug } from '#lib/utils/index.js';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-
-interface CustomError extends Error {
-  code?: string;
-}
 
 export const createParty = async (userId: string, partyData?: Partial<InsertParty>): Promise<SelectParty> => {
   let isPartyNameUnique = false;
@@ -50,24 +47,9 @@ export const createParty = async (userId: string, partyData?: Partial<InsertPart
       isPartyNameUnique = true;
       return party;
     } catch (error) {
-      const customError = error as CustomError;
-      if (error instanceof Error && error.message.includes('UNIQUE')) {
-        // Construct a new ZodError that points to "slug" as the invalid field
-        throw new SlugConflictError('Name is already taken.');
-      }
-
-      if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
-        // If the error is due to a unique constraint violation
-        if (partyData?.name) {
-          // If the user provided the name, throw an error
-          throw new SlugConflictError('Name is already in use.');
-        } else {
-          // If the name was generated, try again with a new random name
-          partyName = createRandomName();
-        }
-      } else {
-        throw error;
-      }
+      if (!isUniqueConstraintError(error)) throw error;
+      if (partyData?.name) throw new SlugConflictError('Name is already taken.');
+      partyName = createRandomName();
     }
   }
 
@@ -96,13 +78,8 @@ export const createRandomNamedParty = async (): Promise<SelectParty> => {
       isPartyNameUnique = true;
       return party;
     } catch (error) {
-      const customError = error as CustomError;
-      if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
-        // Handle unique constraint violation
-        partyName = createRandomName(); // Generate a new name and try again
-      } else {
-        throw error; // Rethrow other errors
-      }
+      if (!isUniqueConstraintError(error)) throw error;
+      partyName = createRandomName();
     }
   }
 
@@ -148,12 +125,8 @@ export const createNamedPartyForUser = async (
 
     return party;
   } catch (error) {
-    const customError = error as CustomError;
-    if (customError.code === 'SQLITE_CONSTRAINT_UNIQUE' || customError.code === '23505') {
-      throw new Error('Party name is not unique');
-    } else {
-      throw error;
-    }
+    if (isUniqueConstraintError(error)) throw new Error('Party name is not unique');
+    throw error;
   }
 };
 
@@ -213,11 +186,7 @@ export const updateParty = async (partyId: string, updates: PartialInsertParty):
     const party = await db.update(partyTable).set(updates).where(eq(partyTable.id, partyId)).returning().get();
     return party;
   } catch (error: unknown) {
-    // Check if Drizzle/SQLite complained about a unique constraint
-    if (error instanceof Error && error.message.includes('UNIQUE constraint failed: party.slug')) {
-      // Construct a new ZodError that points to "slug" as the invalid field
-      throw new SlugConflictError('Name is already taken.');
-    }
+    if (isUniqueConstraintError(error)) throw new SlugConflictError('Name is already taken.');
     throw new Error('Failed to update party.');
   }
 };

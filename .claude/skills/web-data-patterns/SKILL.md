@@ -5,7 +5,7 @@ description: Data-layer patterns for apps/web — apiFactory error semantics, mu
 
 # apps/web data & server patterns
 
-> **Freshness**: last verified 2026-10-21 (SvelteKit 3).
+> **Freshness**: last verified 2026-10-29 (SvelteKit 3).
 > **SvelteKit 3 conventions**: import app code as `#lib/<path>.js` (explicit `.js` extension, `$lib` is gone); Kit config lives in `vite.config.ts` inside `sveltekit({...})` (no `svelte.config.js`); use `$app/env` (not `$app/environment`) and `$app/state` (not `$app/stores`); `redirect()` to an external URL needs `{ external: true }`.
 > Authoritative deep-dives (verified current): `docs/yjs-sync-architecture.md`, `docs/undo-redo-architecture.md`, `docs/grid-system-architecture.md`, `docs/playwright-testing-guide.md`. Prefer them over re-deriving.
 > Anchor files at the bottom — if one is missing/renamed, the code wins; update this skill.
@@ -39,6 +39,7 @@ All in `src/lib/queries/*.ts`, one file per domain. `mutationFactory` (`src/lib/
 - **One** app database. Schema: `src/lib/db/app/schema.ts` (~18 tables). Per-table convention: `sqliteTable` → `InsertX`/`SelectX` inferred types → `insertXSchema`/`selectXSchema`/`updateXSchema` via drizzle-zod, `.extend()`ed where needed.
 - Timestamps: `integer({ mode: 'timestamp' })` = **Unix seconds** (CLAUDE.md D-5 — use `date -d @<ts>`). Booleans: `integer({ mode: 'boolean' })`. JSON: `text({ mode: 'json' }).$type<…>()`.
 - Client (`src/lib/db/app/index.ts`): in production an **embedded replica** (`/app/data/turso_local.db`, syncInterval 30s) with remote fallback; dev is remote-only. Wrapped in `makeResilientClient` (`resilientClient.ts`) — a Proxy that reconnect-retries once on Hrana stream errors; transactions deliberately not retried (rationale: `spec/embedded-replica-stream-recovery.md`).
+- Drizzle wraps driver errors in `DrizzleQueryError`; the SQLite detail is on `cause`, not the top-level message. Detect unique-constraint violations with `isUniqueConstraintError` (`dbErrors.ts`), never by string-matching `error.message`.
 - Migrations live in `src/lib/db/app/migrations/`. **Never generate/run migrations or `pnpm run push`** — ask the user (CLAUDE.md D-3/D-4).
 
 ## Realtime (the biggest thing to internalize)
@@ -88,7 +89,7 @@ Custom session-token auth (oslojs), not a library. `src/lib/server/auth.ts`: tok
 
 - `apps/web/src/lib/factories/apiFactory.ts`
 - `apps/web/src/lib/factories/mutationFactory.ts`
-- `apps/web/src/lib/db/app/schema.ts` / `index.ts` / `resilientClient.ts`
+- `apps/web/src/lib/db/app/schema.ts` / `index.ts` / `resilientClient.ts` / `dbErrors.ts`
 - `apps/web/src/lib/realtime/SessionDocClient.svelte.ts` / `docSchema.ts`
 - `apps/web/src/lib/realtime/idlePolicy.ts` / `SleepController.svelte.ts`
 - `apps/web/partyserver/gameSession.ts` / `docSnapshot.ts` / `roomActivity.ts` / `wrangler.jsonc`
