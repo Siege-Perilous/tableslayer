@@ -20,3 +20,6 @@ partyserver/worker-configuration.d.ts
 # Playwright
 tests/e2e/test-results.json
 tests/e2e/.auth/
+
+# Local worker secrets for wrangler dev
+.dev.vars
