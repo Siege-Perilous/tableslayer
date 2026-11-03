@@ -8,7 +8,13 @@ export enum MeasurementType {
   Square = 5
 }
 
-// Removed SnapType enum - using boolean instead
+/**
+ * How diagonal squares are counted on a snapped square grid.
+ * '5e': every square, including diagonals, costs one grid unit (D&D 5E)
+ * 'alternating': diagonals alternate between one and two grid units (D&D 3.5E, Pathfinder)
+ */
+export const DIAGONAL_RULES = ['5e', 'alternating'] as const;
+export type DiagonalRule = (typeof DIAGONAL_RULES)[number];
 
 export interface Measurement {
   id: string;
@@ -27,15 +33,15 @@ export interface MeasurementLayerProps {
   type: MeasurementType;
 
   /**
-   * Whether to snap to grid
+   * Whether to snap to grid cell centers. Snapped square grids count squares
+   * using the diagonal rule
    */
   snapToGrid: boolean;
 
   /**
-   * Enable DMG 252 diagonal movement rules (only applies when snapping to square grid)
-   * First diagonal = 5ft, second = 10ft, alternating
+   * How diagonals are counted on a snapped square grid
    */
-  enableDMG252: boolean;
+  diagonalRule: DiagonalRule;
 
   /**
    * Internal: converts the label's display-pixel sizing into local pixels when

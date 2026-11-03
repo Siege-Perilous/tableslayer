@@ -18,7 +18,11 @@
 <Folder title="Measurement" expanded={false}>
   <List bind:value={props.measurement.type} label="Type" options={measurementTypeOptions} />
   <List bind:value={props.measurement.snapToGrid} label="Snap to Grid" options={{ true: true, false: false }} />
-  <List bind:value={props.measurement.enableDMG252} label="DMG 252 Diagonals" options={{ true: true, false: false }} />
+  <List
+    bind:value={props.measurement.diagonalRule}
+    label="Diagonal Rule"
+    options={{ '5E (every square 5ft)': '5e', 'Pathfinder / 3.5E (alternating)': 'alternating' }}
+  />
   <Slider bind:value={props.measurement.beamWidth} label="Beam Width" min={0.5} max={10} step={0.5} />
   <Slider bind:value={props.measurement.coneAngle} label="Cone Angle (degrees)" min={15} max={180} step={15} />
   <Slider bind:value={props.measurement.autoHideDelay} label="Auto Hide Delay (ms)" min={1000} max={10000} step={500} />

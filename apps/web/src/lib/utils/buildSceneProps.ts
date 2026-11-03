@@ -265,7 +265,7 @@ export const buildSceneProps = (
       outlineColor: '#000000',
       outlineThickness: 2,
       snapToGrid: true,
-      enableDMG252: true,
+      diagonalRule: '5e',
       thickness: 6,
       showDistance: true,
       beamWidth: 10,

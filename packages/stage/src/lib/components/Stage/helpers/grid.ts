@@ -288,6 +288,32 @@ export function snapToGrid(
   }
 }
 
+/**
+ * Snaps a position to a whole number of grid cells away from an origin point.
+ * Used for measurement end points so the distance is always a whole cell count
+ * regardless of whether the start landed on a cell center or an intersection
+ * @param position Position to snap (center-relative pixels)
+ * @param origin The point the offset is measured from (center-relative pixels)
+ * @param grid Grid configuration
+ * @param display Display properties (the map-space display in MapDefined mode)
+ * @returns Snapped position (center-relative pixels)
+ */
+export function snapToWholeCellsFrom(
+  position: THREE.Vector2,
+  origin: THREE.Vector2,
+  grid: GridLayerProps,
+  display: DisplayProps
+): THREE.Vector2 {
+  const spacing = new THREE.Vector2(
+    (grid.spacing * display.resolution.x) / display.size.x,
+    (grid.spacing * display.resolution.y) / display.size.y
+  );
+  return new THREE.Vector2(
+    origin.x + Math.round((position.x - origin.x) / spacing.x) * spacing.x,
+    origin.y + Math.round((position.y - origin.y) / spacing.y) * spacing.y
+  );
+}
+
 // =============================================================================
 // HEX GRID COORDINATE FUNCTIONS
 // =============================================================================

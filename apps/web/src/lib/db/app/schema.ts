@@ -199,6 +199,7 @@ export const updateResetPasswordCodeSchema = createUpdateSchema(resetPasswordCod
 // PARTY
 //
 export const VALID_PARTY_PLANS = ['free', 'monthly', 'yearly', 'lifetime'] as const;
+export const VALID_DIAGONAL_RULES = ['5e', 'alternating'] as const;
 
 export const partyTable = sqliteTable(
   'party',
@@ -229,6 +230,7 @@ export const partyTable = sqliteTable(
     defaultDisplayPaddingY: integer('default_display_padding_y').notNull().default(16),
     defaultGridSpacing: integer('default_grid_spacing').notNull().default(1),
     defaultLineThickness: integer('default_line_thickness').notNull().default(1),
+    diagonalRule: text('diagonal_rule', { enum: VALID_DIAGONAL_RULES }).notNull().default('5e'),
     planNextBillingDate: integer('plan_next_billing_date', { mode: 'timestamp' }),
     planExpirationDate: integer('plan_expiration_date', { mode: 'timestamp' }),
     planStatus: text('plan_status'),

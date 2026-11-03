@@ -1,5 +1,5 @@
 import type { StagePerformanceSetting } from '#lib/stores/stagePerformance.svelte.js';
-import type { HoveredMarker } from '@tableslayer/stage';
+import type { DiagonalRule, HoveredMarker } from '@tableslayer/stage';
 import type YProvider from 'y-partyserver/provider';
 
 type Awareness = YProvider['awareness'];
@@ -30,7 +30,7 @@ export interface MeasurementData {
   fadeoutTime: number;
   showDistance: boolean;
   snapToGrid: boolean;
-  enableDMG252: boolean;
+  diagonalRule: DiagonalRule;
   beamWidth?: number;
   coneAngle?: number;
 }
@@ -46,7 +46,7 @@ export interface MeasurementStyleProps {
   fadeoutTime: number;
   showDistance: boolean;
   snapToGrid: boolean;
-  enableDMG252: boolean;
+  diagonalRule: DiagonalRule;
   beamWidth?: number;
   coneAngle?: number;
 }
@@ -197,7 +197,7 @@ export class PresenceChannel {
       fadeoutTime: style?.fadeoutTime ?? 500,
       showDistance: style?.showDistance ?? true,
       snapToGrid: style?.snapToGrid ?? true,
-      enableDMG252: style?.enableDMG252 ?? true,
+      diagonalRule: style?.diagonalRule ?? '5e',
       beamWidth: style?.beamWidth,
       coneAngle: style?.coneAngle
     });

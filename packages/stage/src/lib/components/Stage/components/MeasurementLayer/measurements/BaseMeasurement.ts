@@ -4,7 +4,7 @@ import type { GridLayerProps } from '../../GridLayer/types';
 import { GridType } from '../../GridLayer/types';
 import { SceneLayer, SceneLayerOrder } from '../../Scene/types';
 import type { DisplayProps } from '../../Stage/types';
-import { MeasurementType, type MeasurementLayerProps } from '../types';
+import { MeasurementType, type DiagonalRule, type MeasurementLayerProps } from '../types';
 import { createTextCanvas } from '../utils/canvasDrawing';
 import { calculateLineDistance } from '../utils/distanceCalculations';
 
@@ -91,8 +91,8 @@ export abstract class BaseMeasurement implements IMeasurement {
   public showDistance: boolean;
   /** Whether to snap measurement points to the grid */
   public snapToGrid: boolean;
-  /** Whether to use DMG 252 measurement calculations */
-  public enableDMG252: boolean;
+  /** How diagonals are counted on a snapped square grid */
+  public diagonalRule: DiagonalRule;
   /** Converts display-pixel text sizing into local pixels (1 in display space) */
   protected textScale: number;
 
@@ -142,7 +142,7 @@ export abstract class BaseMeasurement implements IMeasurement {
     this.outlineColor = measurementProps.outlineColor;
     this.showDistance = measurementProps.showDistance;
     this.snapToGrid = measurementProps.snapToGrid;
-    this.enableDMG252 = measurementProps.enableDMG252;
+    this.diagonalRule = measurementProps.diagonalRule;
     this.textScale = measurementProps.textScale ?? 1;
     this.displayProps = displayProps;
     this.gridProps = gridProps;
@@ -270,9 +270,8 @@ export abstract class BaseMeasurement implements IMeasurement {
         this.displayProps.resolution,
         this.gridProps.gridType,
         this.snapToGrid,
-        this.enableDMG252,
         this.gridProps.worldGridSize || 5,
-        this.gridProps.worldGridUnits || 'FT'
+        this.diagonalRule
       );
 
       // Format number to only show decimals if needed

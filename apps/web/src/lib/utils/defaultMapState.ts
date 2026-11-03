@@ -146,7 +146,7 @@ export const StageDefaultProps: StageProps = {
   measurement: {
     type: MeasurementType.Line,
     snapToGrid: true,
-    enableDMG252: true,
+    diagonalRule: '5e',
     autoHideDelay: 3000,
     color: '#ffff00',
     thickness: 2,

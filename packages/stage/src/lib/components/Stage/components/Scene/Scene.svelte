@@ -31,6 +31,7 @@
   import { getActiveEffects, hasActivePostProcessing } from '../../helpers/postProcessing';
   import { getGridCellSize as getGridCellSizeHelper } from '../../helpers/grid';
   import { SceneLayer, SceneLayerOrder, SceneLoadingState } from './types';
+  import type { DiagonalRule } from '../MeasurementLayer/types';
   import type { AnnotationExports } from '../AnnotationLayer/types';
   import AnnotationLayer from '../AnnotationLayer/AnnotationLayer.svelte';
   import CursorLayer from '../CursorLayer/CursorLayer.svelte';
@@ -69,7 +70,7 @@
       // Distance properties
       showDistance?: boolean;
       snapToGrid?: boolean;
-      enableDMG252?: boolean;
+      diagonalRule?: DiagonalRule;
     } | null;
   }
 
