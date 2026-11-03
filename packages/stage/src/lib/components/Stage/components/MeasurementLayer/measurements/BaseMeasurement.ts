@@ -12,8 +12,8 @@ import { calculateLineDistance } from '../utils/distanceCalculations';
 // MEASUREMENT CONSTANTS
 // =============================================================================
 
-/** Distance in pixels to offset text labels from measurement end points */
-const TEXT_OFFSET_DISTANCE = 150;
+/** Extra clearance between a measurement end point and its label, as a fraction of the font size */
+const TEXT_OFFSET_MARGIN = 0.25;
 
 /** Divisor for calculating font size based on display resolution */
 const FONT_SIZE_DIVISOR = 15;
@@ -210,37 +210,14 @@ export abstract class BaseMeasurement implements IMeasurement {
 
   /**
    * Renders the distance text label for this measurement with standard positioning logic.
-   * Positions text 150 pixels away from the end point in the direction of the measurement.
-   * All measurement types share this text positioning and styling approach.
+   * Positions the label past the end point in the direction of the measurement, far enough
+   * that the label never covers the end point regardless of scene rotation, then keeps it
+   * inside the display. All measurement types share this text positioning and styling approach.
    * Returns an empty group if distance display is disabled.
    *
    * @returns {void}
    */
   renderText(): void {
-    // Calculate direction from start to end point and normalize
-    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
-
-    // Initial text position at standard offset distance from the end point
-    let textPosition = this.endPoint.clone().add(direction.multiplyScalar(TEXT_OFFSET_DISTANCE * this.textScale));
-
-    // Edge detection and adjustment
-    const padding = 150 * this.textScale; // Padding from edges to prevent clipping
-    const halfWidth = this.displayProps.resolution.x / 2;
-    const halfHeight = this.displayProps.resolution.y / 2;
-
-    // Check and adjust for edge clipping
-    if (textPosition.x > halfWidth - padding) {
-      textPosition.x = halfWidth - padding;
-    } else if (textPosition.x < -halfWidth + padding) {
-      textPosition.x = -halfWidth + padding;
-    }
-
-    if (textPosition.y > halfHeight - padding) {
-      textPosition.y = halfHeight - padding;
-    } else if (textPosition.y < -halfHeight + padding) {
-      textPosition.y = -halfHeight + padding;
-    }
-
     // For hex grids with snapping, we want to show hex count instead of distance
     const isHexGrid = this.gridProps.gridType === GridType.Hex;
     const showHexCount = isHexGrid && this.snapToGrid;
@@ -307,6 +284,19 @@ export abstract class BaseMeasurement implements IMeasurement {
       this.textMesh.geometry.dispose();
     }
     this.textMesh.geometry = new THREE.PlaneGeometry(textCanvas.width, textCanvas.height);
+
+    // Offset the label along the measurement by its half-diagonal plus a margin, so its
+    // nearest corner clears the end point marker however the label is rotated on screen
+    const direction = this.endPoint.clone().sub(this.startPoint).normalize();
+    const halfDiagonal = Math.hypot(textCanvas.width, textCanvas.height) / 2;
+    const clearance = halfDiagonal + this.markerSize / 2 + this.outlineThickness + fontSize * TEXT_OFFSET_MARGIN;
+    const textPosition = this.endPoint.clone().add(direction.multiplyScalar(clearance));
+
+    // Keep the whole label inside the display
+    const halfWidth = this.displayProps.resolution.x / 2;
+    const halfHeight = this.displayProps.resolution.y / 2;
+    textPosition.x = THREE.MathUtils.clamp(textPosition.x, -halfWidth + halfDiagonal, halfWidth - halfDiagonal);
+    textPosition.y = THREE.MathUtils.clamp(textPosition.y, -halfHeight + halfDiagonal, halfHeight - halfDiagonal);
 
     if (this.textMesh.material instanceof THREE.MeshBasicMaterial) {
       // Dispose the old texture before assigning new one to prevent memory leak
