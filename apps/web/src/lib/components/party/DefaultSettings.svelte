@@ -2,7 +2,7 @@
   import { useUpdatePartyMutation, useUploadFileMutation } from '#lib/queries/index.js';
   import { handleMutation } from '#lib/factories/index.js';
   import { IconButton, Icon, FormControl, Input, Panel, Select, Spacer, Text, Title, Button } from '@tableslayer/ui';
-  import { type SelectParty, updatePartySchema } from '#lib/db/app/schema.js';
+  import { type SelectParty, updatePartySchema, type VALID_DIAGONAL_RULES } from '#lib/db/app/schema.js';
   import type { Thumb, PauseScreenThumb } from '#lib/server/index.js';
   import { type ZodIssue } from 'zod';
   import { invalidateAll } from '$app/navigation';
@@ -30,8 +30,14 @@
     hiddenPauseScreenInput?.click();
   };
 
+  const diagonalRuleOptions = [
+    { label: 'DND 5E', value: '5e' },
+    { label: 'Pathfinder / classic', value: 'alternating' }
+  ];
+
   const uploadFile = useUploadFileMutation();
   let partyData = $state({
+    diagonalRule: party.diagonalRule,
     defaultTvSize: party.defaultTvSize,
     defaultDisplayResolutionX: party.defaultDisplayResolutionX,
     defaultDisplayResolutionY: party.defaultDisplayResolutionY,
@@ -74,6 +80,10 @@
 
   const handleGridTypeChange = (gridType: number) => {
     partyData.defaultGridType = gridType;
+  };
+
+  const handleDiagonalRuleChange = (rule: string) => {
+    partyData.diagonalRule = rule as (typeof VALID_DIAGONAL_RULES)[number];
   };
 
   $effect(() => {
@@ -259,6 +269,17 @@
       {/snippet}
     </FormControl>
   </div>
+  <Spacer />
+  <FormControl label="Measurement rules" name="diagonalRule" {errors}>
+    {#snippet input({ inputProps })}
+      <Select
+        selected={[partyData.diagonalRule]}
+        onSelectedChange={(selected) => handleDiagonalRuleChange(selected[0])}
+        options={diagonalRuleOptions}
+        {...inputProps}
+      />
+    {/snippet}
+  </FormControl>
   <Spacer />
   <FormControl label="Custom pause screen" name="pauseScreen">
     {#snippet input()}

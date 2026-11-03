@@ -1,11 +1,11 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { T, type Props as ThrelteProps } from '@threlte/core';
-  import { type MeasurementLayerProps } from './types';
+  import type { DiagonalRule, MeasurementLayerProps } from './types';
   import { type DisplayProps } from '../Stage/types';
   import { SceneLayer } from '../Scene/types';
   import { type GridLayerProps, GridType } from '../GridLayer/types';
-  import { snapToGrid } from '../../helpers/grid';
+  import { snapToGrid, snapToWholeCellsFrom } from '../../helpers/grid';
   import LayerInput from '../LayerInput/LayerInput.svelte';
   import MeasurementManager from './MeasurementManager.svelte';
 
@@ -43,7 +43,7 @@
       // Distance properties
       showDistance?: boolean;
       snapToGrid?: boolean;
-      enableDMG252?: boolean;
+      diagonalRule?: DiagonalRule;
     } | null;
   }
 
@@ -108,6 +108,22 @@
   });
 
   /**
+   * Start points snap to half-cell points on square grids (cell centers and
+   * intersections) and to hex centers on hex grids.
+   */
+  function snapStartPoint(coords: THREE.Vector2): THREE.Vector2 {
+    return snapToGrid(coords, grid, display, grid.gridType === GridType.Hex, localScale);
+  }
+
+  /**
+   * End points snap a whole number of cells away from the start on square grids
+   * so the distance is always a whole cell count; hex grids snap to hex centers.
+   */
+  function snapEndPoint(coords: THREE.Vector2, start: THREE.Vector2): THREE.Vector2 {
+    return grid.gridType === GridType.Hex ? snapStartPoint(coords) : snapToWholeCellsFrom(coords, start, grid, display);
+  }
+
+  /**
    * Handles mouse down events to initiate measurement creation.
    * Converts screen coordinates to world coordinates, applies grid snapping if enabled,
    * and starts a new measurement at the clicked position.
@@ -121,9 +137,7 @@
 
     coords.sub(centerOffset);
 
-    // For measurements on hex grids, snap to centers only
-    const isHexGrid = grid.gridType === GridType.Hex;
-    const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid, localScale) : coords;
+    const snappedCoords = props.snapToGrid ? snapStartPoint(coords) : coords;
 
     // Always clear any existing measurement state before starting new one
     // This handles edge cases where isDrawing might be unexpectedly true
@@ -156,13 +170,12 @@
 
     coords.sub(centerOffset);
 
-    // Apply snapping if enabled
-    // For measurements on hex grids, snap to centers only
-    const isHexGrid = grid.gridType === GridType.Hex;
-    if (props.snapToGrid) {
-      snappedPosition = snapToGrid(coords, grid, display, isHexGrid, localScale);
-    } else {
+    if (!props.snapToGrid) {
       snappedPosition.copy(coords);
+    } else if (isDrawing && startPoint) {
+      snappedPosition = snapEndPoint(coords, startPoint);
+    } else {
+      snappedPosition = snapStartPoint(coords);
     }
 
     if (isDrawing && startPoint && measurementManager) {
@@ -201,9 +214,7 @@
 
     if (coords) {
       coords.sub(centerOffset);
-      // For measurements on hex grids, snap to centers only
-      const isHexGrid = grid.gridType === GridType.Hex;
-      const snappedCoords = props.snapToGrid ? snapToGrid(coords, grid, display, isHexGrid, localScale) : coords;
+      const snappedCoords = props.snapToGrid ? snapEndPoint(coords, startPoint) : coords;
 
       if (snappedCoords) {
         measurementManager.finishMeasurement();
@@ -321,7 +332,7 @@
           receivedMeasurement.fadeoutTime,
           receivedMeasurement.showDistance,
           receivedMeasurement.snapToGrid,
-          receivedMeasurement.enableDMG252
+          receivedMeasurement.diagonalRule
         );
 
         // Mark that a measurement is now fading

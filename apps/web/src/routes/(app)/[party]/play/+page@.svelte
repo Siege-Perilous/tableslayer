@@ -144,11 +144,13 @@
   let sceneZoom = 1;
   let dragPositions = $state<Record<string, { x: number; y: number }>>({});
 
-  const fallbackProps: StageProps = untrack(() =>
-    data.activeScene
+  const fallbackProps: StageProps = untrack(() => {
+    const props = data.activeScene
       ? buildSceneProps(data.activeScene, [], 'client', [], [], data.bucketUrl)
-      : { ...StageDefaultProps, mode: StageMode.Player, activeLayer: MapLayerType.None }
-  );
+      : { ...StageDefaultProps, mode: StageMode.Player, activeLayer: MapLayerType.None };
+    props.measurement.diagonalRule = data.party.diagonalRule;
+    return props;
+  });
 
   let renderedProps = $state<StageProps>(fallbackProps);
   let renderedSceneId = $state<string | null>(untrack(() => data.activeScene?.id ?? null));
@@ -175,7 +177,7 @@
           lineWidth: tools.lineWidth,
           smoothingEnabled: false
         },
-        measurement: tools.measurement
+        measurement: { ...tools.measurement, diagonalRule: data.party.diagonalRule }
       },
       data.bucketUrl
     );
@@ -469,7 +471,7 @@
           fadeoutTime: latestMeasurement.fadeoutTime,
           showDistance: latestMeasurement.showDistance,
           snapToGrid: latestMeasurement.snapToGrid,
-          enableDMG252: latestMeasurement.enableDMG252
+          diagonalRule: latestMeasurement.diagonalRule
         }
       : null}
     callbacks={{

@@ -113,7 +113,8 @@ The `snapToGrid` function ensures markers align properly with the visual grid. B
 ### Fill Space Mode
 
 1. Position is already center-relative display px
-2. Snap to nearest grid point (cell centers for squares, centers/vertices for hexagons)
+2. Snap to nearest grid point (half-cell increments for squares, centers/vertices for hexagons;
+   `centerOnly` restricts hex grids to centers for measurements)
 
 ### Map Defined Mode
 
@@ -169,6 +170,24 @@ The system supports hexagonal grids with proper snapping in FillSpace mode:
 
 - **Center-only**: For measurements and precise positioning
 - **Full snapping**: Includes vertices and edge midpoints for tokens
+
+## Measurement Distances
+
+`MeasurementLayer/utils/distanceCalculations.ts` (`calculateLineDistance`) converts both points to
+grid cells and returns whole multiples of `worldGridSize`:
+
+- **Square grid, snapped**: counts squares entered using the party's `diagonalRule`
+  (`party.diagonal_rule`, flowed into `stageProps.measurement.diagonalRule` by the editor/play pages
+  and carried in the realtime measurement payload). `'5e'` (default): every square, including
+  diagonals, is one grid unit (`max(|dx|, |dy|)` cells). `'alternating'` (Pathfinder / 3.5E):
+  diagonals alternate between one and two units. Applies to every measurement type
+- **Hex grid, snapped**: hex count via `hexDistance`
+- **Not snapped**: straight-line distance in cells, rounded to the nearest cell
+
+Measurement start points snap like markers (half-cell points on square grids, hex centers on hex
+grids). Square-grid end points snap a whole number of cells away from the start
+(`snapToWholeCellsFrom`), so the cell deltas are integers and the label is never a half-cell value
+even when the start sits on an intersection.
 
 Note: MapDefined mode forces square grids (hex + MapDefined is unsupported).
 

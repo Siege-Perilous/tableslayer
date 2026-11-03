@@ -1,0 +1,1 @@
+ALTER TABLE `party` ADD `diagonal_rule` text DEFAULT '5e' NOT NULL;

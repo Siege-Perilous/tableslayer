@@ -9,6 +9,7 @@
 
   let {
     stageProps,
+    party,
     onSelectedChange
   }: {
     stageProps: StageProps;
@@ -127,7 +128,13 @@
       </div>
       <Spacer />
       <Text size="0.875rem" color="var(--fgMuted)">
-        Square grid measurement assumes 5ft squares, with altering diagonals counting for 10ft.
+        {#if party.diagonalRule === 'alternating'}
+          Measurements snap to the grid and alternate diagonals between 5ft and 10ft (Pathfinder / 3.5E). Change this in
+          party settings.
+        {:else}
+          Measurements snap to the grid and count every square, including diagonals, as 5ft (D&D 5E). Change this in
+          party settings.
+        {/if}
       </Text>
     </div>
   {/snippet}

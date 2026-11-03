@@ -159,7 +159,7 @@ export const StageDefaultProps: StageProps = {
   measurement: {
     type: MeasurementType.Line,
     snapToGrid: true,
-    enableDMG252: true,
+    diagonalRule: '5e',
     autoHideDelay: 3000,
     fadeoutTime: 500,
     color: '#FFF',

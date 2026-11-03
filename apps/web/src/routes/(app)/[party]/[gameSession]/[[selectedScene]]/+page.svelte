@@ -232,6 +232,7 @@
     props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
     props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
     props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
+    props.measurement.diagonalRule = data.party.diagonalRule;
     props.performanceTier = stagePerformance.effectiveTier;
     props.display.maxPixelRatio = stagePerformance.maxPixelRatio;
     return props;
@@ -265,6 +266,7 @@
           props.annotations.smoothingEnabled = getPreference('annotationSmoothing') ?? true;
           props.marker.snapToGrid = getPreference('markerSnapToGrid') ?? true;
           props.light.snapToGrid = getPreference('lightSnapToGrid') ?? false;
+          props.measurement.diagonalRule = data.party.diagonalRule;
           props.performanceTier = stagePerformance.effectiveTier;
           props.display.maxPixelRatio = stagePerformance.maxPixelRatio;
           stageProps = props;
@@ -323,11 +325,12 @@
             ? { snapToGrid: getPreference('lightSnapToGrid') ?? false }
             : { snapToGrid: prev.light.snapToGrid },
           measurement: isSceneSwitch
-            ? undefined
+            ? { diagonalRule: data.party.diagonalRule }
             : {
                 type: prev.measurement.type,
                 coneAngle: prev.measurement.coneAngle,
-                beamWidth: prev.measurement.beamWidth
+                beamWidth: prev.measurement.beamWidth,
+                diagonalRule: data.party.diagonalRule
               }
         },
         data.bucketUrl
@@ -1155,7 +1158,7 @@
     fadeoutTime: stageProps.measurement.fadeoutTime,
     showDistance: stageProps.measurement.showDistance,
     snapToGrid: stageProps.measurement.snapToGrid,
-    enableDMG252: stageProps.measurement.enableDMG252,
+    diagonalRule: stageProps.measurement.diagonalRule,
     beamWidth: stageProps.measurement.beamWidth,
     coneAngle: stageProps.measurement.coneAngle
   });
@@ -1566,7 +1569,7 @@
                   fadeoutTime: latestMeasurement.fadeoutTime,
                   showDistance: latestMeasurement.showDistance,
                   snapToGrid: latestMeasurement.snapToGrid,
-                  enableDMG252: latestMeasurement.enableDMG252
+                  diagonalRule: latestMeasurement.diagonalRule
                 }
               : null}
           />

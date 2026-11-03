@@ -2,6 +2,7 @@
   import { Canvas, T } from '@threlte/core';
   import * as THREE from 'three';
   import type { Callbacks, StageProps } from './types';
+  import type { DiagonalRule } from '../MeasurementLayer/types';
   import Scene from '../Scene/Scene.svelte';
   import { type SceneExports, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
@@ -59,7 +60,7 @@
       // Distance properties
       showDistance?: boolean;
       snapToGrid?: boolean;
-      enableDMG252?: boolean;
+      diagonalRule?: DiagonalRule;
     } | null;
     cursors?: CursorData[];
     trackLocalCursor?: boolean;

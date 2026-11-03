@@ -1,6 +1,6 @@
 import type { SelectAnnotation, SelectLight, SelectMarker, SelectScene } from '#lib/db/app/schema.js';
 import { buildSceneProps } from '#lib/utils/buildSceneProps.js';
-import type { DrawMode, MapLayerType, StageProps, ToolType } from '@tableslayer/stage';
+import type { DiagonalRule, DrawMode, MapLayerType, StageProps, ToolType } from '@tableslayer/stage';
 import type { SceneSnapshot } from './types';
 
 /**
@@ -36,8 +36,8 @@ export interface LocalView {
     lineWidth?: number;
     smoothingEnabled?: boolean;
   };
-  /** Active measurement tool configuration (type, cone angle, beam width). */
-  measurement?: { type?: number; coneAngle?: number; beamWidth?: number };
+  /** Active measurement tool configuration (type, cone angle, beam width) and the party's diagonal rule. */
+  measurement?: { type?: number; coneAngle?: number; beamWidth?: number; diagonalRule?: DiagonalRule };
 }
 
 /**
@@ -89,6 +89,7 @@ export const buildRenderProps = (snapshot: SceneSnapshot, view: LocalView, bucke
   if (view.measurement?.type !== undefined) props.measurement.type = view.measurement.type;
   if (view.measurement?.coneAngle !== undefined) props.measurement.coneAngle = view.measurement.coneAngle;
   if (view.measurement?.beamWidth !== undefined) props.measurement.beamWidth = view.measurement.beamWidth;
+  if (view.measurement?.diagonalRule !== undefined) props.measurement.diagonalRule = view.measurement.diagonalRule;
 
   return props;
 };

@@ -32,7 +32,7 @@ export function extractMeasurementProps(measurement: StageProps['measurement']) 
     fadeoutTime: measurement.fadeoutTime,
     showDistance: measurement.showDistance,
     snapToGrid: measurement.snapToGrid,
-    enableDMG252: measurement.enableDMG252,
+    diagonalRule: measurement.diagonalRule,
     beamWidth: measurement.beamWidth,
     coneAngle: measurement.coneAngle
   };

@@ -2,7 +2,7 @@
   import * as THREE from 'three';
   import { T, useTask } from '@threlte/core';
   import { onDestroy } from 'svelte';
-  import { MeasurementType, type MeasurementLayerProps } from './types';
+  import { type DiagonalRule, MeasurementType, type MeasurementLayerProps } from './types';
   import type { IMeasurement } from './measurements/BaseMeasurement';
   import { LineMeasurement } from './measurements/LineMeasurement';
   import { CircleMeasurement } from './measurements/CircleMeasurement';
@@ -362,7 +362,7 @@
     fadeoutTime?: number,
     showDistance?: boolean,
     snapToGrid?: boolean,
-    enableDMG252?: boolean
+    diagonalRule?: DiagonalRule
   ): void {
     if (!props) {
       return;
@@ -390,7 +390,7 @@
       ...(fadeoutTime !== undefined && { fadeoutTime }),
       ...(showDistance !== undefined && { showDistance }),
       ...(snapToGrid !== undefined && { snapToGrid }),
-      ...(enableDMG252 !== undefined && { enableDMG252 })
+      ...(diagonalRule !== undefined && { diagonalRule })
     });
 
     switch (type) {

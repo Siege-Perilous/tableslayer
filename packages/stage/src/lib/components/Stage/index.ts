@@ -30,7 +30,12 @@ export {
   type MarkerLayerExports,
   type MarkerLayerProps
 } from './components/MarkerLayer/types';
-export { MeasurementType, type MeasurementLayerProps } from './components/MeasurementLayer/types';
+export {
+  DIAGONAL_RULES,
+  MeasurementType,
+  type DiagonalRule,
+  type MeasurementLayerProps
+} from './components/MeasurementLayer/types';
 export { ParticleType, type ParticleSystemProps } from './components/ParticleSystem/types';
 export { default as PerformanceDebugger } from './components/PerformanceDebugger/PerformanceDebugger.svelte';
 export { default as PerformanceOverlay } from './components/PerformanceOverlay/PerformanceOverlay.svelte';
