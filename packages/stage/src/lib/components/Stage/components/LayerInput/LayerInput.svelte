@@ -142,6 +142,13 @@
   }
 
   function handleContextMenu(event: MouseEvent) {
+    // WebKit on macOS/iPadOS dispatches contextmenu for Ctrl+click, which is
+    // the scene-pan gesture; swallow it so panning never toggles rooms or
+    // opens marker menus
+    if (event.ctrlKey) {
+      event.preventDefault();
+      return;
+    }
     if (onContextMenu && (isContextMenuActive ?? isActive)) {
       onContextMenu(event, mouseToCanvasCoords(event));
     }
