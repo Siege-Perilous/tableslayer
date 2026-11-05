@@ -14,10 +14,14 @@ export enum SceneRotation {
   Deg270 = 270
 }
 
+// Camera-layer masks. Main is the only layer that goes through the
+// post-processing composer; Background and Overlay render straight to the
+// canvas (before and after it) so grading never touches them.
 export enum SceneLayer {
   Main = 0,
   Overlay = 1,
-  Input = 2
+  Input = 2,
+  Background = 3
 }
 
 export enum SceneLayerOrder {
@@ -27,8 +31,8 @@ export enum SceneLayerOrder {
   Weather = 30,
   EffectAnnotation = 35, // Effect annotations render under fog of war
   Light = 36, // Lights render under markers and fog of war
-  Marker = 37, // Markers render above effect annotations but below fog of war
-  FogOfWar = 40,
+  Marker = 37, // Markers render above effect annotations but below fog of war (Overlay layer: no post-processing)
+  FogOfWar = 40, // Overlay layer so it still covers markers; hidden map content never reaches the composer's screen pass
   Grid = 50,
   EdgeOverlay = 70,
   Annotation = 80, // Color annotations render over fog of war

@@ -679,7 +679,7 @@ events to be detected outside of the fog of war layer.
 <T is={vertexGroup} name="fogRoomVertices" />
 <T is={roomOutlineGroup} name="fogRoomOutlines" />
 
-<T.Mesh name="fogOfWar" {...meshProps} layers={[SceneLayer.Main]}>
+<T.Mesh name="fogOfWar" {...meshProps} layers={[SceneLayer.Overlay]}>
   <FogOfWarMaterial bind:this={material} {props} {mapSize} {toolSizePixels} {draftPoints} />
   <T.PlaneGeometry />
 </T.Mesh>

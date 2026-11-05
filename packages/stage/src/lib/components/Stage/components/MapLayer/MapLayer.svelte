@@ -194,7 +194,7 @@
     display={props.display}
     mapZoom={props.map.zoom}
     sceneZoom={props.scene.zoom}
-    layers={[SceneLayer.Main]}
+    layers={[SceneLayer.Overlay]}
     renderOrder={SceneLayerOrder.FogOfWar}
   />
 </T.Object3D>
