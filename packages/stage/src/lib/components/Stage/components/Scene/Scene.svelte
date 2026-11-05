@@ -302,6 +302,13 @@
           effects.push(toneMappingEffect);
 
           const effectPass = new EffectPass($camera, ...effects);
+          // The Main pass is rendered over a transparent clear, so composite the
+          // graded result onto the already-drawn background instead of
+          // overwriting it. Straight (not premultiplied) alpha on purpose: a LUT
+          // or tone map can lift transparent black to a non-zero color, and
+          // premultiplied blending would add that tint onto the background.
+          effectPass.fullscreenMaterial.transparent = true;
+          effectPass.fullscreenMaterial.blending = THREE.NormalBlending;
           composer.addPass(effectPass);
         }
       })
@@ -347,20 +354,26 @@
       renderer.clear();
 
       // Render main scene with post-processing (or bypass if no effects active)
-      camera.current.layers.set(SceneLayer.Main);
-
       let composerTime = 0;
       if (hasActiveEffects()) {
+        // Background goes straight to the canvas; the composer's final pass
+        // alpha-composites the graded Main layer over it
+        camera.current.layers.set(SceneLayer.Background);
+        renderer.render(scene, camera.current);
+
+        camera.current.layers.set(SceneLayer.Main);
         const composerStart = enableMetrics ? startTiming() : 0;
         composer.render(dt);
         composerTime = enableMetrics ? endTiming(composerStart) : 0;
       } else {
+        camera.current.layers.set(SceneLayer.Main);
+        camera.current.layers.enable(SceneLayer.Background);
         const composerStart = enableMetrics ? startTiming() : 0;
         renderer.render(scene, camera.current);
         composerTime = enableMetrics ? endTiming(composerStart) : 0;
       }
 
-      // Render overlays (grid/ping) without post-processing
+      // Render overlays (grid/markers/fog of war/ping) without post-processing
       camera.current.layers.set(SceneLayer.Overlay);
 
       const overlayStart = enableMetrics ? startTiming() : 0;

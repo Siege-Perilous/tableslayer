@@ -4,7 +4,7 @@
   import type { Callbacks, StageProps } from './types';
   import type { DiagonalRule } from '../MeasurementLayer/types';
   import Scene from '../Scene/Scene.svelte';
-  import { type SceneExports, SceneLayerOrder } from '../Scene/types';
+  import { type SceneExports, SceneLayer, SceneLayerOrder } from '../Scene/types';
   import { setContext } from 'svelte';
   import { clippingPlaneStore } from '../../helpers/clippingPlaneStore.svelte';
   import { hasActivePostProcessing } from '../../helpers/postProcessing';
@@ -328,7 +328,7 @@
 
 <div bind:this={containerElement} style="height: 100%; width: 100%; position: relative;">
   <Canvas {createRenderer} renderMode="always">
-    <T.Mesh scale={[100000, 100000, 1]} layers={[SceneLayerOrder.Background]}>
+    <T.Mesh scale={[100000, 100000, 1]} layers={[SceneLayer.Background]} renderOrder={SceneLayerOrder.Background}>
       <T.PlaneGeometry />
       <T.MeshBasicMaterial color={props.backgroundColor} />
     </T.Mesh>

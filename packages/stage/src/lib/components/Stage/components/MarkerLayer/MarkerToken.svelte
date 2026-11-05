@@ -305,7 +305,7 @@
   rotation={[0, 0, counterRotation]}
 >
   <!-- Combined shape, stroke and text -->
-  <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Main]} scale={[shadowScale, shadowScale, 1]}>
+  <T.Mesh renderOrder={SceneLayerOrder.Marker} layers={[SceneLayer.Overlay]} scale={[shadowScale, shadowScale, 1]}>
     <T.MeshBasicMaterial is={markerMaterial} />
     <T.PlaneGeometry args={[1, 1]} />
   </T.Mesh>
