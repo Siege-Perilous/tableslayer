@@ -16,6 +16,8 @@
   import { useDeletePartyMemberMutation, useUpdatePartyMemberMutation } from '#lib/queries/index.js';
   import { handleMutation } from '#lib/factories/index.js';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { getPathAfterLeavingParty } from '#lib/utils/index.js';
   import type { Snippet } from 'svelte';
 
   type PartyMember = Omit<SelectUser, 'role'> & {
@@ -50,7 +52,7 @@
       formLoadingState: (loading) => (formIsLoading = loading),
       onSuccess: () => {
         if (member.id === user.id) {
-          goto('/profile');
+          goto(getPathAfterLeavingParty(page.data.parties, member.partyId));
         }
       },
       onError: (error) => {
