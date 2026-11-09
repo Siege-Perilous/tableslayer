@@ -11,7 +11,9 @@
   } from '#lib/queries/index.js';
   import type { FormMutationError } from '#lib/factories/index.js';
   import { goto, invalidateAll } from '$app/navigation';
+  import { page } from '$app/state';
   import { handleMutation } from '#lib/factories/index.js';
+  import { getPathAfterLeavingParty } from '#lib/utils/index.js';
 
   import {
     Avatar,
@@ -62,7 +64,7 @@
     await handleMutation({
       mutation: () => deleteParty.mutateAsync({ partyId: party.id }),
       formLoadingState: (loading) => (formIsLoading = loading),
-      onSuccess: () => goto('/profile'),
+      onSuccess: () => goto(getPathAfterLeavingParty(page.data.parties, party.id)),
       toastMessages: {
         success: { title: 'Party deleted successfully' },
         error: { title: 'Error deleting party', body: (error) => error.message }

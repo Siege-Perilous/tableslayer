@@ -49,7 +49,7 @@ export const load: PageServerLoad = async (event) => {
     if (recentParty) {
       return redirect(302, `/${recentParty.slug}`);
     }
-    return redirect(302, '/profile');
+    return redirect(302, '/create-party');
   }
 
   // Get envName from parent layout

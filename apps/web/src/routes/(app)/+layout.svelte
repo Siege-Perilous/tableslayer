@@ -111,6 +111,8 @@
             {/snippet}
           </SelectorMenu>
         </div>
+      {:else if page.url.pathname !== '/create-party'}
+        <Link href="/create-party">Create a party</Link>
       {/if}
 
       {#if selectedParty && gameSessions && gameSessions.length > 0}
