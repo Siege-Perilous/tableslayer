@@ -7,7 +7,7 @@
     { id: 'terrain', label: 'Terrain', icon: IconHexagon },
     { id: 'hexsides', label: 'Hexsides', icon: IconLine, badge: 212 },
     { id: 'features', label: 'Features', icon: IconMapPin },
-    { id: 'later', label: 'Later', disabled: true }
+    { id: 'later', label: 'Later', isDisabled: true }
   ];
   let underline = $state('terrain');
   let segmented = $state('hexsides');

@@ -11,7 +11,7 @@ export type Tab = {
   href?: string;
   /** A small count or note after the label. */
   badge?: string | number;
-  disabled?: boolean;
+  isDisabled?: boolean;
 };
 
 export type TabsProps = {

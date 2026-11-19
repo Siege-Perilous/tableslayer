@@ -9,8 +9,8 @@
     onIsOpenChange,
     title,
     size = 'md',
-    closeOnOutsideClick = true,
-    hasCloseButton = true,
+    isClosedOnOutsideClick = true,
+    showCloseButton = true,
     children,
     footer,
     ...restProps
@@ -66,17 +66,17 @@
   onclose={close}
   onpointerdown={(event) => (pressedOutside = event.target === dialog)}
   onclick={(event) => {
-    if (closeOnOutsideClick && pressedOutside && event.target === dialog) close();
+    if (isClosedOnOutsideClick && pressedOutside && event.target === dialog) close();
   }}
 >
   {#if isOpen}
     <div class="dialog__box">
-      {#if title || hasCloseButton}
+      {#if title || showCloseButton}
         <header class="dialog__header">
           {#if title}
             <Title as="h2" size="sm" id={`${uid}-title`}>{title}</Title>
           {/if}
-          {#if hasCloseButton}
+          {#if showCloseButton}
             <button type="button" class="dialog__close" aria-label="Close" onclick={close}>
               <Icon Icon={IconX} size="1rem" />
             </button>

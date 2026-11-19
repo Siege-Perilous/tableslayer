@@ -10,11 +10,11 @@
     min,
     max,
     step = 1,
-    allowEmpty = false,
+    isEmptyAllowed = false,
     variant = 'default',
     size = 'md',
-    hasStepper = true,
-    disabled = false,
+    showStepper = true,
+    isDisabled = false,
     element = $bindable(),
     ...restProps
   }: NumberInputProps = $props();
@@ -43,12 +43,12 @@
   };
   const commit = () => {
     const typed = text.trim().replace(',', '.');
-    if (typed === '') return settle(allowEmpty ? null : value);
+    if (typed === '') return settle(isEmptyAllowed ? null : value);
     const number = Number(typed);
     settle(Number.isFinite(number) ? fitted(number) : value);
   };
   const stepBy = (by: number) => {
-    if (disabled) return;
+    if (isDisabled) return;
     const typed = Number(text.trim().replace(',', '.'));
     const from = text.trim() !== '' && Number.isFinite(typed) ? typed : (value ?? min ?? 0);
     settle(fitted(Number((from + by).toFixed(places))));
@@ -76,7 +76,7 @@
     'numberInput',
     `numberInput--${variant}`,
     `numberInput--${size}`,
-    disabled && 'numberInput--isDisabled',
+    isDisabled && 'numberInput--isDisabled',
     restProps.class ?? ''
   ]);
 </script>
@@ -106,7 +106,7 @@
     aria-valuenow={value ?? undefined}
     aria-valuemin={min}
     aria-valuemax={max}
-    {disabled}
+    disabled={isDisabled}
     value={text}
     oninput={(event) => {
       isEditing = true;
@@ -119,14 +119,14 @@
     }}
     {onkeydown}
   />
-  {#if hasStepper}
+  {#if showStepper}
     <div class="numberInput__stepper">
       <button
         type="button"
         class="numberInput__step"
         aria-label="More"
         tabindex="-1"
-        disabled={disabled || (max !== undefined && value !== null && value >= max)}
+        disabled={isDisabled || (max !== undefined && value !== null && value >= max)}
         onpointerdown={(event) => event.preventDefault()}
         onclick={() => stepBy(step)}
       >
@@ -137,7 +137,7 @@
         class="numberInput__step"
         aria-label="Less"
         tabindex="-1"
-        disabled={disabled || (min !== undefined && value !== null && value <= min)}
+        disabled={isDisabled || (min !== undefined && value !== null && value <= min)}
         onpointerdown={(event) => event.preventDefault()}
         onclick={() => stepBy(-step)}
       >

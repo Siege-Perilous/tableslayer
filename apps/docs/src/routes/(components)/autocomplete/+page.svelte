@@ -10,7 +10,7 @@
     { value: 'town', label: 'Town', description: '1 to enter' },
     { value: 'city', label: 'City', description: '1 to enter' },
     { value: 'marsh', label: 'Marsh', description: '3 to enter' },
-    { value: 'mountain', label: 'Mountain', description: 'Cannot be entered', disabled: true }
+    { value: 'mountain', label: 'Mountain', description: 'Cannot be entered', isDisabled: true }
   ];
   const units: AutocompleteOption[] = [
     { value: 'i-1', label: '1st Infantry', group: 'I Corps' },
@@ -92,7 +92,7 @@
 
 <Example title="Several choices" propsName="Autocomplete">
   <div style="width: 22rem" data-testid="multiple">
-    <Autocomplete options={units} bind:selected={many} multiple placeholder="Add a unit" aria-label="Units" />
+    <Autocomplete options={units} bind:selected={many} isMultiple placeholder="Add a unit" aria-label="Units" />
     <p class="docValue">selected: {JSON.stringify(many)}</p>
   </div>
 </Example>
@@ -108,12 +108,12 @@
     <Autocomplete
       options={terrain}
       bind:selected={plain}
-      plainText
-      clearable={false}
+      isPlainText
+      isClearable={false}
       placeholder="Terrain"
       aria-label="Terrain, as words"
     />
-    <p class="docValue">plainText, not clearable · selected: {JSON.stringify(plain)}</p>
+    <p class="docValue">isPlainText, not clearable · selected: {JSON.stringify(plain)}</p>
   </div>
 </Example>
 <p class="docNote">As a pill, or as plain words. Choosing another replaces it.</p>
@@ -124,7 +124,7 @@
     <Autocomplete
       options={colours}
       bind:selected={coloured}
-      multiple
+      isMultiple
       placeholder="Terrain"
       aria-label="Terrain, coloured"
     />
@@ -157,7 +157,7 @@
     <Autocomplete
       options={features}
       bind:selected={made}
-      multiple
+      isMultiple
       placeholder="Feature"
       aria-label="Features"
       onCreate={(text) => {
@@ -177,8 +177,8 @@
     <Autocomplete
       options={[]}
       bind:selected={tags}
-      multiple
-      noSuggestions
+      isMultiple
+      showSuggestions={false}
       delimiter=","
       placeholder="Type names, with commas between"
       aria-label="Names"
@@ -204,8 +204,8 @@
       bind:selected={small}
       variant="transparent"
       size="sm"
-      plainText
-      clearable={false}
+      isPlainText
+      isClearable={false}
       aria-label="Terrain in a cell"
     />
   </div>
@@ -215,7 +215,7 @@
 
 <Example title="Disabled" propsName="">
   <div style="width: 14rem">
-    <Autocomplete options={terrain} selected={['rough']} disabled aria-label="Disabled" />
+    <Autocomplete options={terrain} selected={['rough']} isDisabled aria-label="Disabled" />
   </div>
 </Example>
 <Spacer size="2rem" />

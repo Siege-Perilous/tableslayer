@@ -35,7 +35,7 @@
 
 <Example title="May be empty" propsName="">
   <div style="width: 7rem">
-    <NumberInput bind:value={empty} allowEmpty placeholder="None" aria-label="Limit" />
+    <NumberInput bind:value={empty} isEmptyAllowed placeholder="None" aria-label="Limit" />
     <p class="docValue">{String(empty)}</p>
   </div>
 </Example>
@@ -52,10 +52,10 @@
     </FormControl>
   </div>
   <div style="width: 4.5rem">
-    <NumberInput bind:value={small} variant="transparent" size="sm" hasStepper={false} aria-label="In a cell" />
+    <NumberInput bind:value={small} variant="transparent" size="sm" showStepper={false} aria-label="In a cell" />
   </div>
   <div style="width: 7rem">
-    <NumberInput value={3} disabled aria-label="Disabled" />
+    <NumberInput value={3} isDisabled aria-label="Disabled" />
   </div>
 </Example>
 <p class="docNote">With a unit after it; and small and bare.</p>

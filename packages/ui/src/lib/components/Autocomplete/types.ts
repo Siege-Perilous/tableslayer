@@ -9,7 +9,7 @@ export type AutocompleteOption = {
   group?: string;
   /** A second, quieter line of text beside the label. It is searched as the label is. */
   description?: string;
-  disabled?: boolean;
+  isDisabled?: boolean;
   /** A colour for the option's pill once it is chosen: any CSS colour. Text over a hex colour is made to contrast. */
   color?: string;
   [key: string]: unknown;
@@ -20,15 +20,15 @@ export type AutocompleteSource = AutocompleteOption[] | ((query: string) => Prom
 
 export type AutocompleteProps = {
   options: AutocompleteSource;
-  /** The values chosen: one at most unless `multiple`. */
+  /** The values chosen: one at most unless `isMultiple`. */
   selected: string[];
   onSelectedChange?: (selected: string[]) => void;
-  multiple?: boolean;
+  isMultiple?: boolean;
   /** With one choice, shows it as plain text in the field and not as a pill. For a table cell or a tight form. */
-  plainText?: boolean;
+  isPlainText?: boolean;
   variant?: 'default' | 'transparent';
   size?: 'sm' | 'md';
-  disabled?: boolean;
+  isDisabled?: boolean;
   /** What has been typed to search with. It is never the name of what is chosen. */
   query?: string;
   onQueryChange?: (query: string) => void;
@@ -43,19 +43,19 @@ export type AutocompleteProps = {
   /** The wording of the row that offers it. */
   createLabel?: (text: string) => string;
   /** Whether there is a button that clears what is chosen, and Backspace may take a single choice away. On unless turned off. */
-  clearable?: boolean;
+  isClearable?: boolean;
   /** Decides whether an option matches what has been typed, in place of looking for the text in its label and description. */
   filter?: (option: AutocompleteOption, query: string) => boolean;
   /** Whether capitals matter in matching. */
-  caseSensitive?: boolean;
+  isCaseSensitive?: boolean;
   /** `startsWith` lists the options that begin with the text before those that only hold it. */
   sortMatchesBy?: 'none' | 'startsWith';
   /** A character that ends an option as it is typed or pasted, usually a comma: "a, b, c" pasted is three choices. */
   delimiter?: string;
-  /** No list at all: the field only takes what is typed, with `onCreate`. */
-  noSuggestions?: boolean;
+  /** Whether there is a list of options. Turned off, the field only takes what is typed, with `onCreate`. On unless turned off. */
+  showSuggestions?: boolean;
   /** Shows the list as busy, for options being fetched by the caller. A function given as `options` does this itself. */
-  loading?: boolean;
+  isLoading?: boolean;
   /** How long to wait after typing stops before asking a function for options, in milliseconds. */
   debounce?: number;
   /** Said when there are no options at all. */
@@ -76,4 +76,4 @@ export type AutocompleteProps = {
     offset?: OffsetOptions;
   };
   element?: HTMLInputElement;
-} & Omit<HTMLInputAttributes, 'value' | 'size' | 'disabled'>;
+} & Omit<HTMLInputAttributes, 'value' | 'size' | 'disabled' | 'multiple'>;

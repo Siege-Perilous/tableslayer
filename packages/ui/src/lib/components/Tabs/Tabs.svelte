@@ -18,14 +18,14 @@
   let list = $state<HTMLElement | null>(null);
 
   const select = (tab: Tab) => {
-    if (tab.disabled || tab.id === selected) return;
+    if (tab.isDisabled || tab.id === selected) return;
     selected = tab.id;
     onSelectedChange?.(tab.id);
   };
 
   /** Arrow keys move along the row and take the tab they land on, as a row of tabs is expected to. */
   const onkeydown = (event: KeyboardEvent) => {
-    const open = tabs.filter((tab) => !tab.disabled);
+    const open = tabs.filter((tab) => !tab.isDisabled);
     const at = open.findIndex((tab) => tab.id === selected);
     let to: Tab | undefined;
     if (event.key === 'ArrowRight') to = open[(at + 1) % open.length];
@@ -72,16 +72,16 @@
   <div bind:this={list} class="tabs__list" role="tablist" {onkeydown}>
     {#each tabs as tab (tab.id)}
       <svelte:element
-        this={tab.href && !tab.disabled ? 'a' : 'button'}
+        this={tab.href && !tab.isDisabled ? 'a' : 'button'}
         id={tabId(tab.id)}
-        class={['tabs__tab', tab.id === selected && 'tabs__tab--isSelected', tab.disabled && 'tabs__tab--isDisabled']}
+        class={['tabs__tab', tab.id === selected && 'tabs__tab--isSelected', tab.isDisabled && 'tabs__tab--isDisabled']}
         role="tab"
-        href={tab.href && !tab.disabled ? tab.href : undefined}
-        type={tab.href && !tab.disabled ? undefined : 'button'}
+        href={tab.href && !tab.isDisabled ? tab.href : undefined}
+        type={tab.href && !tab.isDisabled ? undefined : 'button'}
         aria-selected={tab.id === selected}
         aria-controls={children ? panelId : undefined}
-        aria-disabled={tab.disabled}
-        disabled={tab.href ? undefined : tab.disabled}
+        aria-disabled={tab.isDisabled}
+        disabled={tab.href ? undefined : tab.isDisabled}
         tabindex={tab.id === selected ? 0 : -1}
         onclick={() => select(tab)}
       >

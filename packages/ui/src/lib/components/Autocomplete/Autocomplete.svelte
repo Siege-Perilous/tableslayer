@@ -16,24 +16,24 @@
     options,
     selected = $bindable([]),
     onSelectedChange,
-    multiple = false,
-    plainText = false,
+    isMultiple = false,
+    isPlainText = false,
     variant = 'default',
     size = 'md',
-    disabled = false,
+    isDisabled = false,
     query = $bindable(''),
     onQueryChange,
     isOpen = $bindable(false),
     onIsOpenChange,
     onCreate,
     createLabel = (text) => `Add ${text} as a custom option`,
-    clearable = true,
+    isClearable = true,
     filter,
-    caseSensitive = false,
+    isCaseSensitive = false,
     sortMatchesBy = 'none',
     delimiter,
-    noSuggestions = false,
-    loading = false,
+    showSuggestions = true,
+    isLoading = false,
     debounce = 150,
     emptyText = 'There aren’t any options available',
     noMatchText = (text) => `${text} doesn’t match any options`,
@@ -65,7 +65,7 @@
     for (const each of list) known.set(each.value, each);
   };
 
-  const fold = (text: string) => (caseSensitive ? text : text.toLowerCase());
+  const fold = (text: string) => (isCaseSensitive ? text : text.toLowerCase());
   /** What has been typed, as it is shown; and as it is matched. */
   const typed = $derived(query.trim());
   const needle = $derived(fold(typed));
@@ -99,7 +99,7 @@
     );
     return () => clearTimeout(timer);
   });
-  const isBusy = $derived(isFinding || loading);
+  const isBusy = $derived(isFinding || isLoading);
 
   /** Everything there is to choose from, before the text typed narrows it. */
   const pool = $derived.by(() => {
@@ -114,7 +114,7 @@
 
   /** The options offered. Of several choices, those already made are in the field and not in the list. */
   const listed = $derived.by(() => {
-    const open = multiple ? pool.filter((each) => !isSelected(each.value)) : pool;
+    const open = isMultiple ? pool.filter((each) => !isSelected(each.value)) : pool;
     if (typeof options === 'function' || !needle) return open;
     const hits = open.filter((each) => matches(each, needle));
     if (sortMatchesBy !== 'startsWith') return hits;
@@ -124,7 +124,7 @@
 
   /** The choice already made that the text typed names, if it names one. */
   const alreadyAdded = $derived(
-    needle && multiple ? selected.find((value) => fold(labelOf(value)) === needle) : undefined
+    needle && isMultiple ? selected.find((value) => fold(labelOf(value)) === needle) : undefined
   );
   const canCreate = $derived(
     !!onCreate && needle.length > 0 && !alreadyAdded && !pool.some((each) => fold(each.label) === needle)
@@ -139,7 +139,7 @@
         ? alreadyAddedText(labelOf(alreadyAdded))
         : needle
           ? noMatchText(typed)
-          : pool.length > 0 && multiple
+          : pool.length > 0 && isMultiple
             ? allSelectedText
             : emptyText
   );
@@ -157,7 +157,7 @@
     onQueryChange?.(text);
   };
   const open = () => {
-    if (disabled || noSuggestions) return;
+    if (isDisabled || !showSuggestions) return;
     setOpen(true);
   };
   const close = () => {
@@ -166,7 +166,7 @@
   };
 
   // The row that Enter would take: the first that can be chosen whenever the list changes under the text typed.
-  const firstEnabled = () => listed.findIndex((each) => !each.disabled);
+  const firstEnabled = () => listed.findIndex((each) => !each.isDisabled);
   $effect(() => {
     void needle;
     void rows;
@@ -217,10 +217,10 @@
   };
   /** Takes an option. Of several it is added and the list stays open for the next; one alone replaces what was chosen. */
   const choose = (each: AutocompleteOption, keepFocus = true) => {
-    if (each.disabled) return;
+    if (each.isDisabled) return;
     remember([each]);
     setQuery('');
-    if (multiple) {
+    if (isMultiple) {
       if (!isSelected(each.value)) change([...selected, each.value]);
       if (keepFocus) element?.focus();
       return;
@@ -247,7 +247,7 @@
       const named = pool.find((each) => fold(each.label) === fold(text));
       if (named) choose(named, keepFocus);
       else await create(text, keepFocus);
-      if (!multiple) break;
+      if (!isMultiple) break;
     }
     setQuery('');
   };
@@ -275,7 +275,7 @@
     let index = activeIndex;
     for (let tried = 0; tried < rows; tried++) {
       index = (index + by + rows) % rows;
-      if (index >= listed.length || !listed[index].disabled) break;
+      if (index >= listed.length || !listed[index].isDisabled) break;
     }
     activeIndex = index;
   };
@@ -292,7 +292,7 @@
   };
   const onkeydown = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
     restProps.onkeydown?.(event);
-    if (event.defaultPrevented || disabled) return;
+    if (event.defaultPrevented || isDisabled) return;
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
@@ -329,7 +329,7 @@
         setQuery('');
         break;
       case 'Backspace':
-        if (query === '' && selected.length > 0 && (multiple || clearable)) remove(selected[selected.length - 1]);
+        if (query === '' && selected.length > 0 && (isMultiple || isClearable)) remove(selected[selected.length - 1]);
         break;
       case 'Tab':
         leave();
@@ -371,16 +371,16 @@
   };
 
   /** One choice shown as words in the field, which give way to whatever is typed. */
-  const isPlain = $derived(!multiple && plainText);
+  const isPlain = $derived(!isMultiple && isPlainText);
   const pills = $derived(isPlain ? [] : selected);
 
   const classes = $derived([
     'autocomplete',
     `autocomplete--${variant}`,
     `autocomplete--${size}`,
-    multiple && 'autocomplete--multiple',
+    isMultiple && 'autocomplete--isMultiple',
     isOpen && 'autocomplete--isOpen',
-    disabled && 'autocomplete--isDisabled',
+    isDisabled && 'autocomplete--isDisabled',
     restProps.class ?? ''
   ]);
   /** What a screen reader is told as the list changes. */
@@ -407,7 +407,7 @@
       { value: 'hills', label: 'Hills', description: 'Rough going' }
     ]}
     bind:selected
-    multiple
+    isMultiple
     placeholder="Terrain"
   />
   ```
@@ -424,13 +424,13 @@
       {#each pills as value (value)}
         <span class="autocomplete__pill" style={pillStyle(value)}>
           <span class="autocomplete__pillLabel">{labelOf(value)}</span>
-          {#if multiple}
+          {#if isMultiple}
             <button
               type="button"
               class="autocomplete__pillRemove"
               aria-label={`Remove ${labelOf(value)}`}
               tabindex="-1"
-              {disabled}
+              disabled={isDisabled}
               onclick={(event) => {
                 event.stopPropagation();
                 remove(value);
@@ -459,7 +459,7 @@
         aria-controls={listId}
         aria-activedescendant={isOpen && activeIndex >= 0 ? optionId(activeIndex) : undefined}
         placeholder={selected.length === 0 ? restProps.placeholder : undefined}
-        {disabled}
+        disabled={isDisabled}
         value={query}
         {oninput}
         {onkeydown}
@@ -467,7 +467,7 @@
         onclick={open}
       />
     </div>
-    {#if clearable && selected.length > 0 && !disabled}
+    {#if isClearable && selected.length > 0 && !isDisabled}
       <button
         type="button"
         class="autocomplete__clear"
@@ -481,13 +481,13 @@
         <Icon Icon={IconCircleXFilled} size="0.875rem" />
       </button>
     {/if}
-    {#if !noSuggestions}
+    {#if showSuggestions}
       <button
         type="button"
         class="autocomplete__toggle"
         aria-label={isOpen ? 'Close the list' : 'Open the list'}
         tabindex="-1"
-        {disabled}
+        disabled={isDisabled}
         onpointerdown={(event) => event.preventDefault()}
         onclick={(event) => {
           event.stopPropagation();
@@ -505,7 +505,7 @@
 
   <div class="autocomplete__status" role="status" aria-live="polite">{status}</div>
 
-  {#if isOpen && !noSuggestions}
+  {#if isOpen && showSuggestions}
     <ul
       bind:this={menu}
       id={listId}
@@ -513,7 +513,7 @@
       style={floatingStyles}
       role="listbox"
       aria-label="Choose from the following options"
-      aria-multiselectable={multiple}
+      aria-multiselectable={isMultiple}
       aria-busy={isBusy}
     >
       {#each listed as each, index (each.value)}
@@ -527,16 +527,16 @@
             'autocomplete__option',
             index === activeIndex && 'autocomplete__option--isActive',
             isSelected(each.value) && 'autocomplete__option--isSelected',
-            each.disabled && 'autocomplete__option--isDisabled'
+            each.isDisabled && 'autocomplete__option--isDisabled'
           ]}
           role="option"
           aria-selected={isSelected(each.value)}
-          aria-disabled={each.disabled}
-          onpointerenter={() => !each.disabled && (activeIndex = index)}
+          aria-disabled={each.isDisabled}
+          onpointerenter={() => !each.isDisabled && (activeIndex = index)}
           onpointerdown={(event) => event.preventDefault()}
           onclick={() => choose(each)}
         >
-          {#if !multiple}
+          {#if !isMultiple}
             <span class="autocomplete__mark">
               {#if isSelected(each.value)}<Icon Icon={IconCheck} size="0.875rem" />{/if}
             </span>
@@ -737,7 +737,7 @@
     border: solid 1px var(--contrastMedium);
     border-radius: var(--radius-1);
   }
-  .autocomplete--multiple .autocomplete__pill {
+  .autocomplete--isMultiple .autocomplete__pill {
     padding-right: 0.125rem;
   }
   .autocomplete--sm .autocomplete__pill {

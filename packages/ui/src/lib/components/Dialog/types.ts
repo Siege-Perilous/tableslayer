@@ -8,9 +8,9 @@ export type DialogProps = {
   title?: string;
   size?: 'sm' | 'md' | 'lg' | 'full';
   /** Whether a click on the dimmed page behind closes it. Escape always does. */
-  closeOnOutsideClick?: boolean;
+  isClosedOnOutsideClick?: boolean;
   /** Whether the heading has a button that closes it. */
-  hasCloseButton?: boolean;
+  showCloseButton?: boolean;
   children: Snippet<[{ close: () => void }]>;
   /** A row of buttons along the foot. */
   footer?: Snippet<[{ close: () => void }]>;
