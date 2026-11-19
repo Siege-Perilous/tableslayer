@@ -13,6 +13,7 @@
   };
 
   const routes = [
+    { name: 'Autocomplete', path: '/autocomplete' },
     { name: 'Avatar', path: '/avatar' },
     { name: 'AvatarPopover', path: '/avatar-popover' },
     { name: 'Button', path: '/button' },
@@ -22,6 +23,7 @@
     { name: 'Color Mode', path: '/colormode' },
     { name: 'Context Menu', path: '/contextmenu' },
     { name: 'ColorPicker', path: '/color-picker' },
+    { name: 'Dialog', path: '/dialog' },
     { name: 'Editor', path: '/editor' },
     { name: 'Hr', path: '/hr' },
     { name: 'Icons', path: '/icons' },
@@ -31,10 +33,12 @@
     { name: 'LinkOverlay', path: '/linkoverlay' },
     { name: 'Loader', path: '/loading' },
     { name: 'Menu', path: '/menu' },
+    { name: 'NumberInput', path: '/number-input' },
     { name: 'Popover', path: '/popover' },
     { name: 'Select', path: '/select' },
     { name: 'Spacer', path: '/spacer' },
     { name: 'Stage', path: '/stage' },
+    { name: 'Tabs', path: '/tabs' },
     { name: 'Text', path: '/text' },
     { name: 'TextHighlight', path: '/texthighlight' },
     { name: 'Title', path: '/title' },

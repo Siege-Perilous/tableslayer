@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.3.0
+
+### Minor Changes
+
+- Adds Autocomplete, number, tabs, dialog components
+
 ## 0.2.9
 
 ### Patch Changes
