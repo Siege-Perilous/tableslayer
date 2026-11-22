@@ -3,7 +3,7 @@
   import { ToneMappingMode } from 'postprocessing';
   import type { StageProps } from '@tableslayer/stage';
 
-  let { props = $bindable() } = $props<{ props: StageProps }>();
+  let { props = $bindable() }: { props: StageProps } = $props();
 
   const lutOptions: ListOptions<string> = {
     Cool: 'https://files.tableslayer.com/stage/luts/Cool.cube',

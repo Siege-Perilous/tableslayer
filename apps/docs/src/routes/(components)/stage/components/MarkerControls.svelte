@@ -7,10 +7,13 @@
   import imgGnome from './tokens/gnome.png';
   import imgWitch from './tokens/witch.png';
 
-  let { props = $bindable(), selectedMarker = $bindable() } = $props<{
+  let {
+    props = $bindable(),
+    selectedMarker = $bindable()
+  }: {
     props: StageProps;
     selectedMarker: Marker | undefined;
-  }>();
+  } = $props();
 
   const markerSizeOptions: ListOptions<MarkerSize> = [
     { text: 'Small', value: MarkerSize.Small },
@@ -70,7 +73,7 @@
         <List bind:value={marker.size} label="Size" options={markerSizeOptions} />
         <List bind:value={marker.shape} label="Shape" options={shapeOptions} />
         <Color bind:value={marker.shapeColor} label="Shape Color" />
-        <Text bind:value={marker.label} label="Label" />
+        <Text bind:value={() => marker.label ?? '', (value) => (marker.label = value || null)} label="Label" />
         <List bind:value={marker.imageUrl} label="Image" options={imageOptions} />
         <Slider bind:value={marker.imageScale} label="Image Scale" min={0.1} max={10} />
       </Folder>

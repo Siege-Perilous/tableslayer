@@ -9,10 +9,13 @@
     getDefaultEffectProps
   } from '@tableslayer/stage';
 
-  let { props = $bindable(), stage } = $props<{
+  let {
+    props = $bindable(),
+    stage
+  }: {
     props: StageProps;
     stage: StageExports;
-  }>();
+  } = $props();
 
   const visibilityOptions: ListOptions<StageMode> = [
     { text: 'DM', value: StageMode.DM },
@@ -85,15 +88,21 @@
 </script>
 
 <Folder title="Annotations" expanded={false}>
-  <Slider bind:value={props.annotations.lineWidth} label="Line Width" min={0.25} max={5} step={0.25} />
+  <Slider
+    bind:value={() => props.annotations.lineWidth ?? 0.5, (value) => (props.annotations.lineWidth = value)}
+    label="Line Width"
+    min={0.25}
+    max={5}
+    step={0.25}
+  />
   <Folder title="Layers" expanded={true}>
     {#each props.annotations.layers as layer}
       <Folder title={layer.id + (layer.id === props.annotations.activeLayer ? ' (Active)' : '')} expanded={false}>
         <Text bind:value={layer.id} label="Id" disabled={true} />
-        <Text bind:value={layer.name} label="Name" />
+        <Text bind:value={() => layer.name ?? '', (value) => (layer.name = value)} label="Name" />
         <Slider bind:value={layer.opacity} label="Opacity" min={0} max={1} step={0.01} />
         <Color bind:value={layer.color} label="Color" />
-        <Text bind:value={layer.url} label="URL" />
+        <Text bind:value={() => layer.url ?? '', (value) => (layer.url = value || null)} label="URL" />
         <List bind:value={layer.visibility} label="Visibility" options={visibilityOptions} />
         <Folder title="Effect" expanded={false}>
           <List

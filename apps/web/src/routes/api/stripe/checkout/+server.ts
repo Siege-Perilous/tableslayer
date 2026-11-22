@@ -79,8 +79,8 @@ export const POST = apiFactory(
       const mode = plan === 'lifetime' ? 'payment' : 'subscription';
 
       // Create the session config
-      const sessionConfig: Parameters<typeof stripe.checkout.sessions.create>[0] = {
-        payment_method_types: ['card'],
+      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+        allowed_payment_method_types: ['card'],
         allow_promotion_codes: true,
         mode,
         customer: stripeCustomerId,

@@ -2,10 +2,13 @@
   import { Color, Slider, Folder, Text, List, type ListOptions } from 'svelte-tweakpane-ui';
   import { type Light, type StageProps, LightStyle, LightPulse } from '@tableslayer/stage';
 
-  let { props = $bindable(), selectedLight = $bindable() } = $props<{
+  let {
+    props = $bindable(),
+    selectedLight = $bindable()
+  }: {
     props: StageProps;
     selectedLight: Light | undefined;
-  }>();
+  } = $props();
 
   const lightStyleOptions: ListOptions<LightStyle> = [
     { text: 'Torch', value: LightStyle.Torch },
