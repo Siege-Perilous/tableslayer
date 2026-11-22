@@ -1,5 +1,11 @@
 # @tableslayer/ui
 
+## 0.2.10
+
+### Patch Changes
+
+- Dependency updates
+
 ## 0.2.9
 
 ### Patch Changes
