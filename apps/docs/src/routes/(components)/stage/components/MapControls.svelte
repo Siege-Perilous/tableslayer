@@ -5,10 +5,13 @@
   import bridgeMp4Url from './maps/bridge.mp4?url';
   import bridgeGifUrl from './maps/bridge.gif?url';
 
-  let { props = $bindable(), stage } = $props<{
+  let {
+    props = $bindable(),
+    stage
+  }: {
     props: StageProps;
     stage: StageExports;
-  }>();
+  } = $props();
 
   const mapOptions: ListOptions<string> = {
     'Map 1': 'https://files.tableslayer.com/maps/01.jpeg',

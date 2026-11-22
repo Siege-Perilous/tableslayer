@@ -15,7 +15,7 @@
   } from '@tableslayer/stage';
   import { KernelSize } from 'postprocessing';
 
-  let { props = $bindable() } = $props<{ props: StageProps }>();
+  let { props = $bindable() }: { props: StageProps } = $props();
 
   const weatherTypeOptions: ListOptions<number> = {
     None: WeatherType.None,
