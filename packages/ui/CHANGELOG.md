@@ -1,10 +1,16 @@
 # @tableslayer/ui
 
-## 0.2.10
+## 0.3.1
 
 ### Patch Changes
 
 - Dependency updates
+
+## 0.3.0
+
+### Minor Changes
+
+- Adds Autocomplete, number, tabs, dialog components
 
 ## 0.2.9
 
